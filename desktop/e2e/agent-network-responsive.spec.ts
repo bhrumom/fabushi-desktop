@@ -268,8 +268,26 @@ async function completeBrowserLogin(
   // the independent Host roster cannot load. Keep that observed state in the
   // trace; only Agent Network requires a real Agent before its own assertions.
   if (destination === 'plugins') {
+    const shell = page.getByTestId('messenger-workspace');
+    const setup = page.getByRole('status', { name: "Setting up Grok Bot's computer", exact: true });
+    const loadedAgentRows = roster.locator('button.sand-agent-item');
+    const emptyRoster = roster.getByText('No saved agents yet.', { exact: true });
+    const unavailableRoster = page.getByText("Can't reach your computer", { exact: true });
+    let readiness = 'pending';
+    // The sidebar container appears before the shell's initial loading cover
+    // settles. Keep the existing readiness budget and observe its loaded,
+    // empty or unavailable result before starting the real pointer sequence.
+    await expect.poll(async () => {
+      if (await shell.getAttribute('data-loading') === 'true' || await setup.isVisible()) {
+        return readiness = 'pending';
+      }
+      if (await loadedAgentRows.count() > 0) return readiness = 'loaded';
+      if (await emptyRoster.isVisible()) return readiness = 'empty';
+      return readiness = await unavailableRoster.isVisible() ? 'unavailable' : 'pending';
+    }, { timeout: 15_000 }).not.toBe('pending');
     await test.info().attach('plugins-roster-observation', {
       body: Buffer.from(JSON.stringify({
+        readiness,
         agentRowCount: await roster.locator('button.sand-agent-item').count(),
         unavailable: await page.getByText("Can't reach your computer", { exact: true }).isVisible(),
         scope: 'Plugins pointer only; Host roster recovery remains unqualified',

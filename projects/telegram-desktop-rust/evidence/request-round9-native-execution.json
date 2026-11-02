@@ -1,0 +1,253 @@
+{
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 9,
+  "U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "evidenceSource": "Exact-H GitHub job metadata and complete logs read through the connector; no local executable validation.",
+  "reconciliation": [
+    {
+      "H": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "run_id": 41528369271,
+      "job_id": 125561859923,
+      "scope": "Round9 retained-sidecar fix;16-byte main header preflight; original3 corruption variants.",
+      "execution_status": "completed",
+      "execution_conclusion": "success",
+      "groups_passed": {
+        "transcript_recovery": 3,
+        "Human_gateway": 63,
+        "resource_upload": 3,
+        "concurrent_creation": 12,
+        "creation_storage": 3,
+        "forward_sharebox": 1,
+        "forward_journal": 12,
+        "Agent_nonce": 4,
+        "settlement_credential": 3,
+        "forward_HTTP": 1
+      },
+      "selected_failures": 0,
+      "selected_ignored": 0,
+      "raw_log_sha256": "f2c950015c037fbfb6b048868fdd92e0a29f56380bff258d1c7facc31c5ba3a6",
+      "artifact": {
+        "id": 13182535197,
+        "bytes": 48223,
+        "api_reported_digest": "sha256:cc65f2cf6f2bc2a90a5793d834785edd194788bb4195011bc61b9f629bd8342f",
+        "api_head_sha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+        "expired": false,
+        "zip_bytes_independently_verified": false
+      },
+      "shipping": {
+        "job_id": 125561860299,
+        "status": "queued",
+        "conclusion": null
+      },
+      "accepted": false
+    },
+    {
+      "H": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
+      "run_id": 41528875268,
+      "job_id": 125563635600,
+      "scope": "Retained concurrent enhancement; complete100-byte preflight;6 corruption variants in existing creation case.",
+      "execution_status": "completed",
+      "execution_conclusion": "success",
+      "groups_passed": {
+        "transcript_recovery": 3,
+        "Human_gateway": 63,
+        "resource_upload": 3,
+        "concurrent_creation": 12,
+        "creation_storage": 3,
+        "forward_sharebox": 1,
+        "forward_journal": 12,
+        "Agent_nonce": 4,
+        "settlement_credential": 3,
+        "forward_HTTP": 1
+      },
+      "selected_failures": 0,
+      "selected_ignored": 0,
+      "raw_log_sha256": "8ca9de25776bc94a38b86b77faa09aaea05974e13fed3b121111933367dedb01",
+      "artifact": {
+        "id": 13180844165,
+        "bytes": 48238,
+        "api_reported_digest": "sha256:cfeccf6ab799c00dd08f6fd4a73797cd5396914bb0f52d7a02fadf26eeb43a02",
+        "api_head_sha": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
+        "expired": false,
+        "zip_bytes_independently_verified": false
+      },
+      "shipping": {
+        "job_id": 125563635125,
+        "status": "queued",
+        "conclusion": null
+      },
+      "accepted": false
+    }
+  ],
+  "independentH4": {
+    "head_sha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "run_id": 41528369271,
+    "run_attempt": 1,
+    "evidence": "Terminal GitHub job conclusions and complete original job logs read through GitHub connector. Artifact digests below are API metadata; new ZIP bytes were not downloaded or verified locally.",
+    "jobs": [
+      {
+        "name": "native-message-electron",
+        "job_id": 125561859409,
+        "conclusion": "success",
+        "counts": {
+          "carrier": 10,
+          "account": 8,
+          "resources": 3,
+          "update": 16,
+          "windows_contracts": 28,
+          "macos_metadata": 18,
+          "package_scope": 10,
+          "promotion": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "todo": 0
+        },
+        "artifact": {
+          "id": 13181865330,
+          "api_sha256": "f92f0505819a8161430727dd5f13948811d82c78ec44eac38acf3a8a09e01216"
+        },
+        "scope": "Actual Electron build and eight contract suites; real UI pointers are separate."
+      },
+      {
+        "name": "windows-update-publisher",
+        "job_id": 125561859927,
+        "conclusion": "success",
+        "counts": {
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "todo": 0
+        },
+        "artifact": {
+          "id": 13180314028,
+          "api_sha256": "1d686477eab8a7cb6dbd070ea6c4dea778e52b5854acac2a74f1c1aa304cc190"
+        },
+        "scope": "Ephemeral CI certificate and inert signed fixture; no formal publisher, installer execution or package acceptance."
+      },
+      {
+        "name": "retained-direct-ffi-compatibility",
+        "job_id": 125561860063,
+        "conclusion": "success",
+        "counts": {
+          "passed": 15,
+          "failed": 0,
+          "ignored": 1,
+          "filtered": 0
+        },
+        "artifact": {
+          "id": 13182050188,
+          "api_sha256": "4e1dcb3eb733c2fb8bd3b0b7864cbee17c028d16f33d040b5c7f363228954a37"
+        },
+        "scope": "Direct C wrappers and temporary encrypted store reopen; live Telegram DC explicitly ignored, no installed consumer or final library acceptance."
+      },
+      {
+        "name": "gateway-peer-durability (ubuntu-24.04)",
+        "job_id": 125561859867,
+        "conclusion": "success",
+        "counts": {
+          "passed": 23,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        "artifact": {
+          "id": 13179904936,
+          "api_sha256": "8f8fbc1252bf8bdbb22450b25f623d13d6de7cb31314c5d7fb81e55a17de6e9b"
+        }
+      },
+      {
+        "name": "gateway-peer-durability (windows-2025)",
+        "job_id": 125561860190,
+        "conclusion": "success",
+        "counts": {
+          "passed": 23,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        "artifact": {
+          "id": 13181785494,
+          "api_sha256": "67904196ca4e69836d5f98902a4e64fb01a753cf46278b84afc5498d8cde384e"
+        }
+      },
+      {
+        "name": "desktop-social-owner-behaviors",
+        "job_id": 125561860202,
+        "conclusion": "success",
+        "counts": {
+          "featurehost": 10,
+          "sqlite_recovery": 9,
+          "session_owned_http": 6,
+          "failed": 0,
+          "ignored": 0,
+          "filtered_by_suite": [
+            35,
+            20,
+            26
+          ]
+        },
+        "artifact": {
+          "id": 13181925633,
+          "api_sha256": "9131c8678632cfcd156b3a1e97aa493dc0a206e8ad79f7f0afade85ceab8d818"
+        },
+        "scope": "Controlled FeatureHost, real temporary SQLite and loopback HTTP; no real service or macOS package acceptance."
+      }
+    ],
+    "peer_scope": "Actual filesystem transactions and OS locks; Host handoff, replay reconciliation, power-loss and mixed-version acceptance remain open.",
+    "scope": "Only this exact H and these six jobs. Native reconciliation/shipping/UI, Plugins pointer, production Worker and independent ACCEPT are not established by this receipt."
+  },
+  "failedUi": {
+    "H": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "run": 41528369271,
+    "job": 125561860003,
+    "conclusion": "failure",
+    "projection": 33,
+    "cursor": 17,
+    "settlement": 5,
+    "dialog": 16,
+    "renderer": {
+      "passed": 10,
+      "failed": 1,
+      "retries": 0
+    },
+    "recovery8": "skipped after failure",
+    "failure": "Native Add reaction pointer could not reach a hidden toolbar after hovering the full-width row rather than its right-aligned message anchor.",
+    "concurrentCorrections": [
+      {
+        "H": "221d7097f5603a6be06c8c51763047e03420090a",
+        "change": "Hover actual sand-message-action-anchor; retain native pointer and all11 cases."
+      },
+      {
+        "H": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+        "change": "Require toolbar pointer-events:auto before the native click."
+      }
+    ],
+    "replacementExecution": "No replacement pass claimed by this receipt."
+  },
+  "latestRead": {
+    "H": "7d57aa4393c4f6c13bc6129255e2bec8173ed5ed",
+    "ledger": "09ae58962a743d8010e94906190fc054f878c28f",
+    "sourceReviews": 14,
+    "completeSourceReviews": 2,
+    "pendingSourceReviews": 12,
+    "unknown": null,
+    "unread": null,
+    "scope": "Concurrent source and Human retry changes preserved. These changed native inputs need their own exact-H gates."
+  },
+  "acceptance": {
+    "qualifiedPointerAdvanced": false,
+    "shipping": false,
+    "productionWorkerAuthenticatedPagination": false,
+    "completeSourceLegal": false,
+    "signedPackages": false,
+    "fullBotRegression": false,
+    "independentAccept": false
+  },
+  "limits": [
+    "Job success covers only each recorded immutable H and selected suites; later changed inputs do not inherit full-batch acceptance.",
+    "Artifact digests are GitHub API metadata, not independently recomputed ZIP hashes. Automatic approval rejected local network/escalated artifact download; no workaround was used.",
+    "Source enumeration, review records, authored tests, executed tests and independent acceptance remain separate."
+  ]
+}
