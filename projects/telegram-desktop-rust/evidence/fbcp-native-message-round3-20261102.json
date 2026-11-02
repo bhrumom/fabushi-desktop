@@ -10,7 +10,14 @@
   "spec": "docs/specs/fbcp-native-message-reconciliation.md",
   "source_authority_consistency": {
     "status": "blocked",
-    "reason": "Ledger names fixed U, but upstream.lock.json and inventory/index.json still name 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Historical source counters do not establish current completeness; no source-review state is promoted by this compile repair."
+    "reason": "Ledger names fixed U, but upstream.lock.json and inventory/index.json still name 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Historical source counters do not establish current completeness; no source-review state is promoted by this compile repair.",
+    "observed_original_host_blocker": "cleared-by-run-41395923342",
+    "remaining": "Canonical lock, inventory index and build-time acquisitions remain on the older upstream commit. The fixed-U recursive Git observations and new original-host artifacts must be reconciled without relabeling old inventory or promoting source/legal/product acceptance.",
+    "candidate_update": {
+      "scope": "Only observed nested Git acquisition facts: 4 discovered, 4 acquired, 0 acquisition blockers. All complete-source and product acceptance states remain open; historical canonical counters are not relabeled.",
+      "ledger_shape_validation": "pending-exact-head-Actions",
+      "schema_gate_scope": "JSON structure only; accepted-source authority continues to reject the open candidate marker."
+    }
   },
   "prior_run": {
     "id": 41392023824,
@@ -414,6 +421,47 @@
           }
         }
       ]
+    },
+    {
+      "id": 41395923359,
+      "attempt": 1,
+      "head_sha": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41395923359",
+      "jobs": [
+        {
+          "id": 125117103613,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            }
+          },
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125117103613/logs"
+        },
+        {
+          "id": 125117103899,
+          "name": "native-message-shipping-compile",
+          "status": "in_progress",
+          "conclusion": null,
+          "app_host_compile": "success",
+          "protocol_and_tcp": "running-unproven",
+          "proxy_and_credential": "pending",
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125117103899/logs"
+        }
+      ]
     }
   ],
   "review": {
@@ -532,7 +580,7 @@
     }
   },
   "independent_source_acquisition": {
-    "status": "original-child-tree-acquired; nested-child-unresolved",
+    "status": "original-cppgir-and-declared-expected-lite-git-trees-acquired",
     "scope": [
       "scripts/tdrp-acquire-cppgir.py",
       ".github/workflows/tdrp-pinned-cppgir.yml"
@@ -1926,20 +1974,2149 @@
     },
     "remaining": "cppgir expected-lite gitlink 95b9cb015fa17baa749c2b396b335906e1596a9e was discovered but its declared URL and full recursive tree are not yet acquired. Canonical lock/index still use the prior U; do not promote source/semantic/legal acceptance.",
     "recursive_followup": {
-      "status": "implemented-pending-exact-head-actions",
+      "status": "completed-success",
       "format": "TDRP_CPPGIR_ACQUISITION_V2",
       "expected_root_tree": "b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8",
       "expected_gitmodules": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3",
       "expected_nested_path": "expected-lite",
       "expected_nested_commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
-      "declared_url": "must be read from exact gitmodules; not guessed",
+      "declared_url": "https://github.com/martinmoene/expected-lite.git",
       "global_source_acceptance": false,
       "review": {
         "verdict": "approved-for-read-only-focused-actions",
         "blocking_findings": [],
         "method": "Independent static frozen-helper review of original-host identities, recursive exact pins, legacy digest compatibility, strict declaration/gitlink equality, bounds and partial-failure receipts. No local executable validation.",
         "precision_fix": "Reject literal '?' and '#' even when query/fragment is empty, to enforce the documented URL policy."
-      }
+      },
+      "run_id": 41395923342,
+      "job_id": 125117103688,
+      "head_sha": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+      "end_receipt": {
+        "acquisition_scope": "fixed cmake_helpers-to-cppgir edge and cppgir descendant Git submodule trees",
+        "bounds": {
+          "edges": 128,
+          "fetch_seconds": 120,
+          "maximum_depth_from_cppgir": 8,
+          "ndjson_bytes": 16777216,
+          "record_bytes": 65536,
+          "repositories": 16,
+          "total_entries": 20000,
+          "total_seconds": 300
+        },
+        "child": {
+          "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+          "fetch_verified": true,
+          "repository_url": "https://gitlab.com/mnauw/cppgir.git",
+          "tree": "b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8"
+        },
+        "child_tree_enumerated_completely": true,
+        "counts": {
+          "blob": 103,
+          "commit": 1,
+          "tree": 22
+        },
+        "edge_count": 2,
+        "edge_jsonl_sha256": "a109d372e8ba3f8eeed356b89cba618dd66c7f43f9dfa04b58ed1b4e3be7b4c1",
+        "edge_records_emitted": 4,
+        "entries_emitted": 126,
+        "entry_digest_format": "SHA256 of canonical entry-record JSON plus LF, excluding TDRP_CPPGIR prefix",
+        "entry_jsonl_sha256": "ca7b93baea47c96a852166ecd5a35dcfa4c4d882a4e5ba240d2f103af63ab453",
+        "entry_repository_identity": "Legacy entry records without repository_id refer only to cppgir repo-000; descendants include repository_id",
+        "expected_child": {
+          "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+          "entry_jsonl_sha256": "ca7b93baea47c96a852166ecd5a35dcfa4c4d882a4e5ba240d2f103af63ab453",
+          "gitmodules_blob": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3",
+          "tree": "b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8",
+          "url": "https://gitlab.com/mnauw/cppgir.git"
+        },
+        "expected_nested_gitlink": {
+          "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+          "path": "expected-lite",
+          "url_source": "exact cppgir .gitmodules; no guessed URL"
+        },
+        "expected_parent": {
+          "commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+          "gitmodules_blob": "c92fbea3467f72e188cba4cbfe51c8c68a7e2e77",
+          "path": "external/glib/cppgir",
+          "url": "https://github.com/desktop-app/cmake_helpers.git"
+        },
+        "format": "TDRP_CPPGIR_ACQUISITION_V2",
+        "git_version": "git version 2.56.0",
+        "independent_acceptance": false,
+        "legal_review_performed": false,
+        "nested_gitlinks": [
+          {
+            "mode": "160000",
+            "object": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+            "path": "expected-lite",
+            "path_bytes_base64": "ZXhwZWN0ZWQtbGl0ZQ==",
+            "size": null,
+            "type": "commit"
+          }
+        ],
+        "nested_gitlinks_fetched": true,
+        "non_utf8_path_count": 0,
+        "parent": {
+          "attested": true,
+          "commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+          "declared_path": "external/glib/cppgir",
+          "declared_url": "https://gitlab.com/mnauw/cppgir.git",
+          "gitlink": {
+            "mode": "160000",
+            "object": "47cf94f83b54cda59018135601e19d7fb0c77776",
+            "path": "external/glib/cppgir",
+            "path_bytes_base64": "ZXh0ZXJuYWwvZ2xpYi9jcHBnaXI=",
+            "size": null,
+            "type": "commit"
+          },
+          "gitmodules_blob": "c92fbea3467f72e188cba4cbfe51c8c68a7e2e77",
+          "gitmodules_sha256": "91dc41bde7237e77944b617c54e34dd0d18a56dcdda627bec69b1a83c017b037",
+          "repository_url": "https://github.com/desktop-app/cmake_helpers.git",
+          "tree": "f5c386cb34208309aae521187611fac4a2045577"
+        },
+        "product_accepted": false,
+        "python_version": "3.12.15",
+        "raw_tree_sha256": "81501f877b62839d45eb87013d55f179eaf7adfd48360376ced0f88dcd9b3b07",
+        "record": "end",
+        "recursive_dependency_closure_accepted": false,
+        "recursive_git_trees_enumerated_completely": true,
+        "repository_count": 2,
+        "semantic_review_performed": false,
+        "status": "success",
+        "target": {
+          "GITHUB_JOB": "original-host-tree",
+          "GITHUB_REPOSITORY": "bhrumom/fabushi-desktop",
+          "GITHUB_RUN_ATTEMPT": "1",
+          "GITHUB_RUN_ID": "41395923342",
+          "GITHUB_SHA": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+          "GITHUB_WORKFLOW": "TDRP pinned cppgir acquisition",
+          "GITHUB_WORKFLOW_REF": "bhrumom/fabushi-desktop/.github/workflows/tdrp-pinned-cppgir.yml@refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "GITHUB_WORKFLOW_SHA": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+          "ImageOS": "ubuntu24",
+          "ImageVersion": "20261026.354.1",
+          "RUNNER_ARCH": "X64",
+          "RUNNER_ENVIRONMENT": "github-hosted",
+          "RUNNER_OS": "Linux"
+        },
+        "target_checkout_commit": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+        "total_tree_entries": 181
+      },
+      "repositories": [
+        {
+          "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+          "counts": {
+            "blob": 103,
+            "commit": 1,
+            "tree": 22
+          },
+          "declared_gitlink_count": 1,
+          "depth": 0,
+          "entries_emitted": 126,
+          "entry_jsonl_sha256": "ca7b93baea47c96a852166ecd5a35dcfa4c4d882a4e5ba240d2f103af63ab453",
+          "fetch_verified": true,
+          "gitmodules": {
+            "artifact": "repo-000.gitmodules",
+            "blob": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3",
+            "sha256": "fe7aada00d18e6159148e737e3496435c8a1d5a6e933b03666830fb2f9ed7502",
+            "size": 106
+          },
+          "non_utf8_path_count": 0,
+          "raw_tree_sha256": "81501f877b62839d45eb87013d55f179eaf7adfd48360376ced0f88dcd9b3b07",
+          "record": "repository-end",
+          "recursive_git_trees_enumerated_completely": true,
+          "repository_id": "repo-000",
+          "repository_url": "https://gitlab.com/mnauw/cppgir.git",
+          "status": "success",
+          "tree": "b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8",
+          "tree_enumerated_completely": true
+        },
+        {
+          "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+          "counts": {
+            "blob": 43,
+            "commit": 0,
+            "tree": 12
+          },
+          "declared_gitlink_count": 0,
+          "depth": 1,
+          "entries_emitted": 55,
+          "entry_jsonl_sha256": "261336a80e0c5aa14cdf18a703ce9ed99dbf76e1b3f3cdeebf5f6a677596f2e6",
+          "fetch_verified": true,
+          "gitmodules": null,
+          "non_utf8_path_count": 0,
+          "raw_tree_sha256": "13b0af9441c137fa3187d36587043388b16328916230fe55d2187397d5dea92c",
+          "record": "repository-end",
+          "recursive_git_trees_enumerated_completely": true,
+          "repository_id": "repo-001",
+          "repository_url": "https://github.com/martinmoene/expected-lite.git",
+          "status": "success",
+          "tree": "5f38901998c76e9c3dcc52bfbbe26877820cbbda",
+          "tree_enumerated_completely": true
+        }
+      ],
+      "edges": [
+        {
+          "child_commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+          "child_depth": 1,
+          "child_repository_id": "repo-001",
+          "child_tree": "5f38901998c76e9c3dcc52bfbbe26877820cbbda",
+          "declared_path": "expected-lite",
+          "declared_url": "https://github.com/martinmoene/expected-lite.git",
+          "edge_id": "edge-001",
+          "gitlink": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+          "gitmodules_blob": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3",
+          "parent_commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+          "parent_repository_id": "repo-000",
+          "parent_tree": "b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8",
+          "parent_url": "https://gitlab.com/mnauw/cppgir.git",
+          "path_bytes_base64": "ZXhwZWN0ZWQtbGl0ZQ==",
+          "record": "edge-attested",
+          "status": "attested"
+        },
+        {
+          "child_commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+          "child_depth": 0,
+          "child_repository_id": "repo-000",
+          "child_tree": "b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8",
+          "declared_path": "external/glib/cppgir",
+          "declared_url": "https://gitlab.com/mnauw/cppgir.git",
+          "edge_id": "edge-000",
+          "gitlink": "47cf94f83b54cda59018135601e19d7fb0c77776",
+          "gitmodules_blob": "c92fbea3467f72e188cba4cbfe51c8c68a7e2e77",
+          "parent_commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+          "parent_repository_id": "cmake-helpers-parent",
+          "parent_tree": "f5c386cb34208309aae521187611fac4a2045577",
+          "parent_url": "https://github.com/desktop-app/cmake_helpers.git",
+          "path_bytes_base64": "ZXh0ZXJuYWwvZ2xpYi9jcHBnaXI=",
+          "record": "edge-attested",
+          "status": "attested"
+        }
+      ],
+      "entries": [
+        {
+          "index": 1,
+          "mode": "100644",
+          "object": "2c9e4a6cb5998eb7f2794ebe4e2725e3da0ce1c5",
+          "path": ".clang-format",
+          "path_bytes_base64": "LmNsYW5nLWZvcm1hdA==",
+          "record": "entry",
+          "size": 796,
+          "type": "blob"
+        },
+        {
+          "index": 2,
+          "mode": "100644",
+          "object": "e5515930063d12745f1996c3cbf77db4ef69e6d1",
+          "path": ".gitlab-ci.yml",
+          "path_bytes_base64": "LmdpdGxhYi1jaS55bWw=",
+          "record": "entry",
+          "size": 912,
+          "type": "blob"
+        },
+        {
+          "index": 3,
+          "mode": "040000",
+          "object": "dd40a44790bf19b4f4c197d095a617bae29fee94",
+          "path": ".gitlab-ci",
+          "path_bytes_base64": "LmdpdGxhYi1jaQ==",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 4,
+          "mode": "100644",
+          "object": "26510d18aa77d592d633ce09626ac65e936a44db",
+          "path": ".gitlab-ci/Dockerfile",
+          "path_bytes_base64": "LmdpdGxhYi1jaS9Eb2NrZXJmaWxl",
+          "record": "entry",
+          "size": 404,
+          "type": "blob"
+        },
+        {
+          "index": 5,
+          "mode": "100755",
+          "object": "6dbfbe5dcaa0ffd28da18f13e5c4075d6cccfde5",
+          "path": ".gitlab-ci/run-docker.sh",
+          "path_bytes_base64": "LmdpdGxhYi1jaS9ydW4tZG9ja2VyLnNo",
+          "record": "entry",
+          "size": 268,
+          "type": "blob"
+        },
+        {
+          "index": 6,
+          "mode": "100644",
+          "object": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3",
+          "path": ".gitmodules",
+          "path_bytes_base64": "LmdpdG1vZHVsZXM=",
+          "record": "entry",
+          "size": 106,
+          "type": "blob"
+        },
+        {
+          "index": 7,
+          "mode": "100644",
+          "object": "7ecf3afc4fffab163fe1a8f2edfe8bc1c7c22bc2",
+          "path": "CMakeLists.txt",
+          "path_bytes_base64": "Q01ha2VMaXN0cy50eHQ=",
+          "record": "entry",
+          "size": 21551,
+          "type": "blob"
+        },
+        {
+          "index": 8,
+          "mode": "100644",
+          "object": "d113221e5489255cc4c27d8d4015f23aed0bf472",
+          "path": "LICENSE",
+          "path_bytes_base64": "TElDRU5TRQ==",
+          "record": "entry",
+          "size": 1073,
+          "type": "blob"
+        },
+        {
+          "index": 9,
+          "mode": "100644",
+          "object": "7b6a57ff48f780829aa95f89f11a89552b930913",
+          "path": "README.md",
+          "path_bytes_base64": "UkVBRE1FLm1k",
+          "record": "entry",
+          "size": 10737,
+          "type": "blob"
+        },
+        {
+          "index": 10,
+          "mode": "040000",
+          "object": "8a45e1b869e3a7c3dc6afc4e18f576439d63af98",
+          "path": "cmake",
+          "path_bytes_base64": "Y21ha2U=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 11,
+          "mode": "100644",
+          "object": "632e56b6542048ab9dd7bb771e9d66f710869f4e",
+          "path": "cmake/cmake-uninstall.cmake.in",
+          "path_bytes_base64": "Y21ha2UvY21ha2UtdW5pbnN0YWxsLmNtYWtlLmlu",
+          "record": "entry",
+          "size": 977,
+          "type": "blob"
+        },
+        {
+          "index": 12,
+          "mode": "100644",
+          "object": "57f0fc0ba93c0389b08af8e6586c4ae6fcbcf8ee",
+          "path": "cmake/cpp20_coro.cpp",
+          "path_bytes_base64": "Y21ha2UvY3BwMjBfY29yby5jcHA=",
+          "record": "entry",
+          "size": 496,
+          "type": "blob"
+        },
+        {
+          "index": 13,
+          "mode": "100644",
+          "object": "3ede98d4201e4376a6daeee894693c8091de6761",
+          "path": "cmake/cpp20_format.cpp",
+          "path_bytes_base64": "Y21ha2UvY3BwMjBfZm9ybWF0LmNwcA==",
+          "record": "entry",
+          "size": 91,
+          "type": "blob"
+        },
+        {
+          "index": 14,
+          "mode": "100644",
+          "object": "ca924e0052b79a5fc28275cc16fabd3640f0a288",
+          "path": "cmake/cppgir-config-deps.cmake",
+          "path_bytes_base64": "Y21ha2UvY3BwZ2lyLWNvbmZpZy1kZXBzLmNtYWtl",
+          "record": "entry",
+          "size": 124,
+          "type": "blob"
+        },
+        {
+          "index": 15,
+          "mode": "100644",
+          "object": "bc4e6823352a5f772c2a068b9ff150d14d0000d3",
+          "path": "cmake/cppgir-config.cmake",
+          "path_bytes_base64": "Y21ha2UvY3BwZ2lyLWNvbmZpZy5jbWFrZQ==",
+          "record": "entry",
+          "size": 58,
+          "type": "blob"
+        },
+        {
+          "index": 16,
+          "mode": "100644",
+          "object": "b0e9c145c429b31fa1ea7ffb6cf930adf8a2ab56",
+          "path": "cmake/cppgir.pc.in",
+          "path_bytes_base64": "Y21ha2UvY3BwZ2lyLnBjLmlu",
+          "record": "entry",
+          "size": 337,
+          "type": "blob"
+        },
+        {
+          "index": 17,
+          "mode": "100644",
+          "object": "d262d5e37a94cbdb521053088df9bf2b908e2d9a",
+          "path": "conanfile.py",
+          "path_bytes_base64": "Y29uYW5maWxlLnB5",
+          "record": "entry",
+          "size": 2448,
+          "type": "blob"
+        },
+        {
+          "index": 18,
+          "mode": "040000",
+          "object": "620a5a32b3c0e15a7b2b2198fef99869d4f027dc",
+          "path": "data",
+          "path_bytes_base64": "ZGF0YQ==",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 19,
+          "mode": "100644",
+          "object": "9a4a1afcf7598aeb911e4524043c7ad592e1cd3c",
+          "path": "data/cppgir.ignore",
+          "path_bytes_base64": "ZGF0YS9jcHBnaXIuaWdub3Jl",
+          "record": "entry",
+          "size": 5082,
+          "type": "blob"
+        },
+        {
+          "index": 20,
+          "mode": "100644",
+          "object": "6f5ea874ce8f56ac901d26332b3c598b2c24d7d5",
+          "path": "data/cppgir_unix.ignore",
+          "path_bytes_base64": "ZGF0YS9jcHBnaXJfdW5peC5pZ25vcmU=",
+          "record": "entry",
+          "size": 97,
+          "type": "blob"
+        },
+        {
+          "index": 21,
+          "mode": "100644",
+          "object": "84ab9d7bf9b61fa0da41ce8deaa6cd4b6f1e4dcb",
+          "path": "data/cppgir_win.ignore",
+          "path_bytes_base64": "ZGF0YS9jcHBnaXJfd2luLmlnbm9yZQ==",
+          "record": "entry",
+          "size": 54,
+          "type": "blob"
+        },
+        {
+          "index": 22,
+          "mode": "040000",
+          "object": "796afc8b72084d4bf856480f28d4f787e4dcc5ce",
+          "path": "docs",
+          "path_bytes_base64": "ZG9jcw==",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 23,
+          "mode": "100644",
+          "object": "8dbce2c6ab9b7e5b5b30f5624f07655d0d5ac760",
+          "path": "docs/cppgir.md",
+          "path_bytes_base64": "ZG9jcy9jcHBnaXIubWQ=",
+          "record": "entry",
+          "size": 42112,
+          "type": "blob"
+        },
+        {
+          "index": 24,
+          "mode": "040000",
+          "object": "f34943df720281ccd8cd154501a47833b5f9b8d0",
+          "path": "examples",
+          "path_bytes_base64": "ZXhhbXBsZXM=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 25,
+          "mode": "100644",
+          "object": "33600c373683fd29e5581795667fcc41adf0a71c",
+          "path": "examples/co-async.hpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvY28tYXN5bmMuaHBw",
+          "record": "entry",
+          "size": 5414,
+          "type": "blob"
+        },
+        {
+          "index": 26,
+          "mode": "040000",
+          "object": "29b0284555851051c7836cd51905ba2472b3f638",
+          "path": "examples/external",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWw=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 27,
+          "mode": "100644",
+          "object": "3b58d6c6dd15dbc5137c236d3a892a96d77426bf",
+          "path": "examples/external/CMakeLists.txt",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvQ01ha2VMaXN0cy50eHQ=",
+          "record": "entry",
+          "size": 2793,
+          "type": "blob"
+        },
+        {
+          "index": 28,
+          "mode": "100644",
+          "object": "bb4254ff2f07e31c73ce484f17d1000ded450707",
+          "path": "examples/external/README.md",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvUkVBRE1FLm1k",
+          "record": "entry",
+          "size": 299,
+          "type": "blob"
+        },
+        {
+          "index": 29,
+          "mode": "100644",
+          "object": "1a70af6bd18540ffeb13dea6b08da245a83109cf",
+          "path": "examples/external/conanfile.py",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvY29uYW5maWxlLnB5",
+          "record": "entry",
+          "size": 1483,
+          "type": "blob"
+        },
+        {
+          "index": 30,
+          "mode": "100644",
+          "object": "d8f14446c8413c6227b7e45d05dd5dd47eeb067b",
+          "path": "examples/external/meson.build",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvbWVzb24uYnVpbGQ=",
+          "record": "entry",
+          "size": 1836,
+          "type": "blob"
+        },
+        {
+          "index": 31,
+          "mode": "040000",
+          "object": "19e183bc1b0341e8534804199b53ab84f0bb8797",
+          "path": "examples/external/src",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvc3Jj",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 32,
+          "mode": "100644",
+          "object": "b37c86f260a5a603803e9e27e606ca99c590efe6",
+          "path": "examples/external/src/ext-gio.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvc3JjL2V4dC1naW8uY3Bw",
+          "record": "entry",
+          "size": 25,
+          "type": "blob"
+        },
+        {
+          "index": 33,
+          "mode": "100644",
+          "object": "cdd9084c47ece49e957154eec978445f178e25c1",
+          "path": "examples/external/src/ext-gobject.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvc3JjL2V4dC1nb2JqZWN0LmNwcA==",
+          "record": "entry",
+          "size": 29,
+          "type": "blob"
+        },
+        {
+          "index": 34,
+          "mode": "040000",
+          "object": "c01693a146e8994ac21de27cba430dd4c1e00a56",
+          "path": "examples/external/subprojects",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvc3VicHJvamVjdHM=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 35,
+          "mode": "100644",
+          "object": "d5f203adc2d2e6b5af47876dc6a196f6114d296b",
+          "path": "examples/external/subprojects/cppgir.wrap",
+          "path_bytes_base64": "ZXhhbXBsZXMvZXh0ZXJuYWwvc3VicHJvamVjdHMvY3BwZ2lyLndyYXA=",
+          "record": "entry",
+          "size": 104,
+          "type": "blob"
+        },
+        {
+          "index": 36,
+          "mode": "100644",
+          "object": "d2e51c964936bbc4ef71b54a10a8a1efd6a7a404",
+          "path": "examples/gio-async-co.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ2lvLWFzeW5jLWNvLmNwcA==",
+          "record": "entry",
+          "size": 6427,
+          "type": "blob"
+        },
+        {
+          "index": 37,
+          "mode": "100644",
+          "object": "5789cb6732d846c4ed6d2f7472540bcbe275beed",
+          "path": "examples/gio-async.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ2lvLWFzeW5jLmNwcA==",
+          "record": "entry",
+          "size": 9442,
+          "type": "blob"
+        },
+        {
+          "index": 38,
+          "mode": "100644",
+          "object": "0130b95fe8aa3f3405d93c3c9b18d42c5c65a3f8",
+          "path": "examples/gio-dbus-client.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ2lvLWRidXMtY2xpZW50LmNwcA==",
+          "record": "entry",
+          "size": 1823,
+          "type": "blob"
+        },
+        {
+          "index": 39,
+          "mode": "100644",
+          "object": "04b0570a1edcb8a963ab89af580a439d07f56797",
+          "path": "examples/gio-qt-async.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ2lvLXF0LWFzeW5jLmNwcA==",
+          "record": "entry",
+          "size": 6125,
+          "type": "blob"
+        },
+        {
+          "index": 40,
+          "mode": "100644",
+          "object": "669a358945c35c48e96c5eb96ecd31afc530eff3",
+          "path": "examples/gio.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ2lvLmNwcA==",
+          "record": "entry",
+          "size": 2558,
+          "type": "blob"
+        },
+        {
+          "index": 41,
+          "mode": "100644",
+          "object": "82a0683a427bc8f1875069229f9eb8f4d7aa8de7",
+          "path": "examples/gobject.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ29iamVjdC5jcHA=",
+          "record": "entry",
+          "size": 6756,
+          "type": "blob"
+        },
+        {
+          "index": 42,
+          "mode": "100644",
+          "object": "9ddd84c7c2851f7a8e3f31b292264ba4ec369d04",
+          "path": "examples/gst.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ3N0LmNwcA==",
+          "record": "entry",
+          "size": 13466,
+          "type": "blob"
+        },
+        {
+          "index": 43,
+          "mode": "100644",
+          "object": "f325badd89150a272dc1519b33043222c5b0317a",
+          "path": "examples/gtk-builder.ui",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ3RrLWJ1aWxkZXIudWk=",
+          "record": "entry",
+          "size": 3540,
+          "type": "blob"
+        },
+        {
+          "index": 44,
+          "mode": "100644",
+          "object": "559a40762bbdaba0b22e7c63db873c22f6dcb99a",
+          "path": "examples/gtk-obj.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ3RrLW9iai5jcHA=",
+          "record": "entry",
+          "size": 49,
+          "type": "blob"
+        },
+        {
+          "index": 45,
+          "mode": "100644",
+          "object": "aeea47fb4bc51038c8c91f56478452183f289aeb",
+          "path": "examples/gtk.cpp",
+          "path_bytes_base64": "ZXhhbXBsZXMvZ3RrLmNwcA==",
+          "record": "entry",
+          "size": 13742,
+          "type": "blob"
+        },
+        {
+          "index": 46,
+          "mode": "160000",
+          "object": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+          "path": "expected-lite",
+          "path_bytes_base64": "ZXhwZWN0ZWQtbGl0ZQ==",
+          "record": "entry",
+          "size": null,
+          "type": "commit"
+        },
+        {
+          "index": 47,
+          "mode": "100755",
+          "object": "d6857c89fc84f44c3d8999a09764c943aa7480f2",
+          "path": "format.sh",
+          "path_bytes_base64": "Zm9ybWF0LnNo",
+          "record": "entry",
+          "size": 303,
+          "type": "blob"
+        },
+        {
+          "index": 48,
+          "mode": "040000",
+          "object": "3539ae6b321489e4d5ee1590784f04d04751d783",
+          "path": "gi",
+          "path_bytes_base64": "Z2k=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 49,
+          "mode": "100644",
+          "object": "7799aac021161d3820d7b79ce0a098102f0d8550",
+          "path": "gi/base.hpp",
+          "path_bytes_base64": "Z2kvYmFzZS5ocHA=",
+          "record": "entry",
+          "size": 12624,
+          "type": "blob"
+        },
+        {
+          "index": 50,
+          "mode": "100644",
+          "object": "5d4f8d1d6fd1df04a6d8648477fba656e56ca839",
+          "path": "gi/boxed.hpp",
+          "path_bytes_base64": "Z2kvYm94ZWQuaHBw",
+          "record": "entry",
+          "size": 8232,
+          "type": "blob"
+        },
+        {
+          "index": 51,
+          "mode": "100644",
+          "object": "464a29df39cbb716970534937af7d06fb4e2c2b7",
+          "path": "gi/callback.hpp",
+          "path_bytes_base64": "Z2kvY2FsbGJhY2suaHBw",
+          "record": "entry",
+          "size": 28665,
+          "type": "blob"
+        },
+        {
+          "index": 52,
+          "mode": "100644",
+          "object": "f14b24cea7aeac52a038c15f6f638d99a7a4341c",
+          "path": "gi/container.hpp",
+          "path_bytes_base64": "Z2kvY29udGFpbmVyLmhwcA==",
+          "record": "entry",
+          "size": 57206,
+          "type": "blob"
+        },
+        {
+          "index": 53,
+          "mode": "100644",
+          "object": "1b0ebb5214411ca1548e1c48929342baa5e7cc62",
+          "path": "gi/enumflag.hpp",
+          "path_bytes_base64": "Z2kvZW51bWZsYWcuaHBw",
+          "record": "entry",
+          "size": 7129,
+          "type": "blob"
+        },
+        {
+          "index": 54,
+          "mode": "100644",
+          "object": "e3c62ac992c90d62e5abe8199e1b125b9765a10b",
+          "path": "gi/exception.hpp",
+          "path_bytes_base64": "Z2kvZXhjZXB0aW9uLmhwcA==",
+          "record": "entry",
+          "size": 4589,
+          "type": "blob"
+        },
+        {
+          "index": 55,
+          "mode": "100644",
+          "object": "71ab8a503a34d37207476e34c8cf4ac01aab2435",
+          "path": "gi/expected.hpp",
+          "path_bytes_base64": "Z2kvZXhwZWN0ZWQuaHBw",
+          "record": "entry",
+          "size": 2425,
+          "type": "blob"
+        },
+        {
+          "index": 56,
+          "mode": "100644",
+          "object": "beac59b7ad713d791107c8b5d3ab1b720fc04504",
+          "path": "gi/gi.hpp",
+          "path_bytes_base64": "Z2kvZ2kuaHBw",
+          "record": "entry",
+          "size": 444,
+          "type": "blob"
+        },
+        {
+          "index": 57,
+          "mode": "100644",
+          "object": "85eb740a804c494c8d4f8351041f4b4d5639a1cf",
+          "path": "gi/gi_inc.hpp",
+          "path_bytes_base64": "Z2kvZ2lfaW5jLmhwcA==",
+          "record": "entry",
+          "size": 8453,
+          "type": "blob"
+        },
+        {
+          "index": 58,
+          "mode": "100644",
+          "object": "73f7d4d604d12d6948debfe19b1fc858278ca8d3",
+          "path": "gi/object.hpp",
+          "path_bytes_base64": "Z2kvb2JqZWN0LmhwcA==",
+          "record": "entry",
+          "size": 19866,
+          "type": "blob"
+        },
+        {
+          "index": 59,
+          "mode": "100644",
+          "object": "e98abc6834ab7f41b0b5a2fa8ab6ab5c148e6cb8",
+          "path": "gi/objectbase.hpp",
+          "path_bytes_base64": "Z2kvb2JqZWN0YmFzZS5ocHA=",
+          "record": "entry",
+          "size": 4225,
+          "type": "blob"
+        },
+        {
+          "index": 60,
+          "mode": "100644",
+          "object": "5930c0b874e3aecf81efac3ff33ec72a0d73a823",
+          "path": "gi/objectclass.hpp",
+          "path_bytes_base64": "Z2kvb2JqZWN0Y2xhc3MuaHBw",
+          "record": "entry",
+          "size": 49661,
+          "type": "blob"
+        },
+        {
+          "index": 61,
+          "mode": "100644",
+          "object": "5bfe861cb3f47e1cac9a3e923b2f85be940c2238",
+          "path": "gi/paramspec.hpp",
+          "path_bytes_base64": "Z2kvcGFyYW1zcGVjLmhwcA==",
+          "record": "entry",
+          "size": 6854,
+          "type": "blob"
+        },
+        {
+          "index": 62,
+          "mode": "100644",
+          "object": "838f326cbfdd71b377bc95228f8a243c3a9837ac",
+          "path": "gi/string.hpp",
+          "path_bytes_base64": "Z2kvc3RyaW5nLmhwcA==",
+          "record": "entry",
+          "size": 21685,
+          "type": "blob"
+        },
+        {
+          "index": 63,
+          "mode": "100644",
+          "object": "07d5b20029d9598f246343c01f06236683396441",
+          "path": "gi/value.hpp",
+          "path_bytes_base64": "Z2kvdmFsdWUuaHBw",
+          "record": "entry",
+          "size": 13972,
+          "type": "blob"
+        },
+        {
+          "index": 64,
+          "mode": "100644",
+          "object": "22e5184fb2f76ecf9f9af6b714819e9db1dadd99",
+          "path": "gi/wrap.hpp",
+          "path_bytes_base64": "Z2kvd3JhcC5ocHA=",
+          "record": "entry",
+          "size": 10833,
+          "type": "blob"
+        },
+        {
+          "index": 65,
+          "mode": "100644",
+          "object": "aefb45295abde1ab072ccde8afc4b4659d9fcd75",
+          "path": "meson.build",
+          "path_bytes_base64": "bWVzb24uYnVpbGQ=",
+          "record": "entry",
+          "size": 5866,
+          "type": "blob"
+        },
+        {
+          "index": 66,
+          "mode": "100644",
+          "object": "9430866435e0a3ecac514592d0bc0fa1698fac94",
+          "path": "meson_options.txt",
+          "path_bytes_base64": "bWVzb25fb3B0aW9ucy50eHQ=",
+          "record": "entry",
+          "size": 748,
+          "type": "blob"
+        },
+        {
+          "index": 67,
+          "mode": "040000",
+          "object": "32500829be0ba62d19fc812241cbf91960a11416",
+          "path": "override",
+          "path_bytes_base64": "b3ZlcnJpZGU=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 68,
+          "mode": "040000",
+          "object": "7a88f2bda7a7f6665324ae879ea34ebec2b792a5",
+          "path": "override/cairo",
+          "path_bytes_base64": "b3ZlcnJpZGUvY2Fpcm8=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 69,
+          "mode": "100644",
+          "object": "0f327c1a48767856bf37f236acb71b0857f04ec7",
+          "path": "override/cairo/cairo_setup_post_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvY2Fpcm8vY2Fpcm9fc2V0dXBfcG9zdF9kZWYuaHBw",
+          "record": "entry",
+          "size": 154,
+          "type": "blob"
+        },
+        {
+          "index": 70,
+          "mode": "040000",
+          "object": "be1a4632ee2197d0f2b7d733a95ed563d2e40a5b",
+          "path": "override/gdkpixbuf",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2RrcGl4YnVm",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 71,
+          "mode": "100644",
+          "object": "528bf795dc1f65375c633bc34ff683cccf92c9fa",
+          "path": "override/gdkpixbuf/gdkpixbuf_setup_pre_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2RrcGl4YnVmL2dka3BpeGJ1Zl9zZXR1cF9wcmVfZGVmLmhwcA==",
+          "record": "entry",
+          "size": 244,
+          "type": "blob"
+        },
+        {
+          "index": 72,
+          "mode": "040000",
+          "object": "eebd9036adb2385cf71b0fe3d9ca7174ee65eb15",
+          "path": "override/gio",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2lv",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 73,
+          "mode": "100644",
+          "object": "3f7a622b331f8b3a355cf5dca00fc7172a2fc44d",
+          "path": "override/gio/gio_setup_post_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2lvL2dpb19zZXR1cF9wb3N0X2RlZi5ocHA=",
+          "record": "entry",
+          "size": 289,
+          "type": "blob"
+        },
+        {
+          "index": 74,
+          "mode": "100644",
+          "object": "6272067996de49aae1f508d844beeab04d08c423",
+          "path": "override/gio/simpleaction_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2lvL3NpbXBsZWFjdGlvbl9leHRyYV9kZWYuaHBw",
+          "record": "entry",
+          "size": 988,
+          "type": "blob"
+        },
+        {
+          "index": 75,
+          "mode": "040000",
+          "object": "edda685da3f044bd3a232e947d4a3c0b42f75a72",
+          "path": "override/glib",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYg==",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 76,
+          "mode": "100644",
+          "object": "9d52b5dfdf69e85fd7d86f937fe7015f7bd43d96",
+          "path": "override/glib/glib_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYi9nbGliX2V4dHJhX2RlZi5ocHA=",
+          "record": "entry",
+          "size": 1974,
+          "type": "blob"
+        },
+        {
+          "index": 77,
+          "mode": "100644",
+          "object": "92810cafe478dee0e564ed54529fff1d3700eff2",
+          "path": "override/glib/glib_extra_def_impl.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYi9nbGliX2V4dHJhX2RlZl9pbXBsLmhwcA==",
+          "record": "entry",
+          "size": 1378,
+          "type": "blob"
+        },
+        {
+          "index": 78,
+          "mode": "100644",
+          "object": "44edecc66e9fa1bb428eb9cbf9ac4e68b123cd24",
+          "path": "override/glib/glib_extra_pre_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYi9nbGliX2V4dHJhX3ByZV9kZWYuaHBw",
+          "record": "entry",
+          "size": 795,
+          "type": "blob"
+        },
+        {
+          "index": 79,
+          "mode": "100644",
+          "object": "5f0382e95a7523ee0c72dd08bd0e0cf8b81402a8",
+          "path": "override/glib/glib_setup_post_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYi9nbGliX3NldHVwX3Bvc3RfZGVmLmhwcA==",
+          "record": "entry",
+          "size": 497,
+          "type": "blob"
+        },
+        {
+          "index": 80,
+          "mode": "100644",
+          "object": "98ba47ffd1253acae25edbe68111cf1581f275fc",
+          "path": "override/glib/mainloop_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYi9tYWlubG9vcF9leHRyYV9kZWYuaHBw",
+          "record": "entry",
+          "size": 613,
+          "type": "blob"
+        },
+        {
+          "index": 81,
+          "mode": "100644",
+          "object": "8c0b3feb3004b8fcbe5dabc1e8d8985d695901bd",
+          "path": "override/glib/mainloop_extra_def_impl.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYi9tYWlubG9vcF9leHRyYV9kZWZfaW1wbC5ocHA=",
+          "record": "entry",
+          "size": 377,
+          "type": "blob"
+        },
+        {
+          "index": 82,
+          "mode": "100644",
+          "object": "30cadc5192d402bc1a6b0fd6be5ea7746d7537a9",
+          "path": "override/glib/source_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYi9zb3VyY2VfZXh0cmFfZGVmLmhwcA==",
+          "record": "entry",
+          "size": 554,
+          "type": "blob"
+        },
+        {
+          "index": 83,
+          "mode": "100644",
+          "object": "8c71e915fcbd22306d37dc3a2e4f9e68d70a3f43",
+          "path": "override/glib/source_extra_def_impl.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ2xpYi9zb3VyY2VfZXh0cmFfZGVmX2ltcGwuaHBw",
+          "record": "entry",
+          "size": 573,
+          "type": "blob"
+        },
+        {
+          "index": 84,
+          "mode": "040000",
+          "object": "98ea00fd9451aaf2f71350fb784f5abf4f184a64",
+          "path": "override/gobject",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ29iamVjdA==",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 85,
+          "mode": "100644",
+          "object": "02624745d37c3fea9527bd43bfabe64d70a4137e",
+          "path": "override/gobject/closure_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ29iamVjdC9jbG9zdXJlX2V4dHJhX2RlZi5ocHA=",
+          "record": "entry",
+          "size": 1551,
+          "type": "blob"
+        },
+        {
+          "index": 86,
+          "mode": "040000",
+          "object": "0dee1fda6de32df3a71782e0b87b35b079bfb349",
+          "path": "override/graphene",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3JhcGhlbmU=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 87,
+          "mode": "100644",
+          "object": "fd68fb32df44661477884c0ff671a762476118e1",
+          "path": "override/graphene/graphene_setup_post_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3JhcGhlbmUvZ3JhcGhlbmVfc2V0dXBfcG9zdF9kZWYuaHBw",
+          "record": "entry",
+          "size": 670,
+          "type": "blob"
+        },
+        {
+          "index": 88,
+          "mode": "040000",
+          "object": "8efe62c8d7209440b18f20d48a611226b2663425",
+          "path": "override/gst",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3N0",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 89,
+          "mode": "100644",
+          "object": "7959784d162523b1a142d382c191ab754f79ccfe",
+          "path": "override/gst/bin_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3N0L2Jpbl9leHRyYV9kZWYuaHBw",
+          "record": "entry",
+          "size": 885,
+          "type": "blob"
+        },
+        {
+          "index": 90,
+          "mode": "100644",
+          "object": "085d3718f6084be23736806e8bb2335a5773aa46",
+          "path": "override/gst/element_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3N0L2VsZW1lbnRfZXh0cmFfZGVmLmhwcA==",
+          "record": "entry",
+          "size": 871,
+          "type": "blob"
+        },
+        {
+          "index": 91,
+          "mode": "100644",
+          "object": "63e87384d26bdac9ec64fd67fb59b79b251f9b55",
+          "path": "override/gst/gst_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3N0L2dzdF9leHRyYV9kZWYuaHBw",
+          "record": "entry",
+          "size": 9876,
+          "type": "blob"
+        },
+        {
+          "index": 92,
+          "mode": "100644",
+          "object": "b75d80277c693b5a1aa7deaf40d86d732dae51a4",
+          "path": "override/gst/gst_setup_pre_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3N0L2dzdF9zZXR1cF9wcmVfZGVmLmhwcA==",
+          "record": "entry",
+          "size": 402,
+          "type": "blob"
+        },
+        {
+          "index": 93,
+          "mode": "040000",
+          "object": "5f63903e71f46f62520c527764417da6808e8b00",
+          "path": "override/gstglegl",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3N0Z2xlZ2w=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 94,
+          "mode": "100644",
+          "object": "579dcd9dcf4fb3015a4805609c93e49440f960bf",
+          "path": "override/gstglegl/gstglegl_setup_pre_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3N0Z2xlZ2wvZ3N0Z2xlZ2xfc2V0dXBfcHJlX2RlZi5ocHA=",
+          "record": "entry",
+          "size": 266,
+          "type": "blob"
+        },
+        {
+          "index": 95,
+          "mode": "040000",
+          "object": "c263a379a55595c90c0a49a23117154ec98b91d2",
+          "path": "override/gtk",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3Rr",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 96,
+          "mode": "100644",
+          "object": "7208a26ec725f7f75755723ecf456be8daf28cb1",
+          "path": "override/gtk/builder_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3RrL2J1aWxkZXJfZXh0cmFfZGVmLmhwcA==",
+          "record": "entry",
+          "size": 2729,
+          "type": "blob"
+        },
+        {
+          "index": 97,
+          "mode": "100644",
+          "object": "af679903854ede37bad31fcfc407d2570241ceea",
+          "path": "override/gtk/gtk_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3RrL2d0a19leHRyYV9kZWYuaHBw",
+          "record": "entry",
+          "size": 13477,
+          "type": "blob"
+        },
+        {
+          "index": 98,
+          "mode": "100644",
+          "object": "204fe4cf4ed553957a1e752efa1dacac78ff6941",
+          "path": "override/gtk/gtk_setup_post_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3RrL2d0a19zZXR1cF9wb3N0X2RlZi5ocHA=",
+          "record": "entry",
+          "size": 541,
+          "type": "blob"
+        },
+        {
+          "index": 99,
+          "mode": "100644",
+          "object": "c1eaf845a9257cf67ebb8194c644c08db880893a",
+          "path": "override/gtk/gtk_setup_pre_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3RrL2d0a19zZXR1cF9wcmVfZGVmLmhwcA==",
+          "record": "entry",
+          "size": 398,
+          "type": "blob"
+        },
+        {
+          "index": 100,
+          "mode": "100644",
+          "object": "e04c02f7867b78ece15281b6c6435baf3cd26606",
+          "path": "override/gtk/liststore_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3RrL2xpc3RzdG9yZV9leHRyYV9kZWYuaHBw",
+          "record": "entry",
+          "size": 537,
+          "type": "blob"
+        },
+        {
+          "index": 101,
+          "mode": "100644",
+          "object": "97b4370cd5b893febd9a76d444faf26b0dc1fe38",
+          "path": "override/gtk/treeviewcolumn_extra_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3RrL3RyZWV2aWV3Y29sdW1uX2V4dHJhX2RlZi5ocHA=",
+          "record": "entry",
+          "size": 654,
+          "type": "blob"
+        },
+        {
+          "index": 102,
+          "mode": "100644",
+          "object": "d260992e483768d7d232b27644041c85d7250eec",
+          "path": "override/gtk/treeviewcolumn_extra_def_impl.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvZ3RrL3RyZWV2aWV3Y29sdW1uX2V4dHJhX2RlZl9pbXBsLmhwcA==",
+          "record": "entry",
+          "size": 669,
+          "type": "blob"
+        },
+        {
+          "index": 103,
+          "mode": "040000",
+          "object": "c1472612465b4571e50385214cbe4da491e82d5c",
+          "path": "override/pango",
+          "path_bytes_base64": "b3ZlcnJpZGUvcGFuZ28=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 104,
+          "mode": "100644",
+          "object": "12bc4d938e3e9ba7c67b0068abf8b82713963745",
+          "path": "override/pango/pango_setup_pre_def.hpp",
+          "path_bytes_base64": "b3ZlcnJpZGUvcGFuZ28vcGFuZ29fc2V0dXBfcHJlX2RlZi5ocHA=",
+          "record": "entry",
+          "size": 202,
+          "type": "blob"
+        },
+        {
+          "index": 105,
+          "mode": "040000",
+          "object": "db18e3d29d129b56891a290080395bf0ce2eaad9",
+          "path": "test",
+          "path_bytes_base64": "dGVzdA==",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 106,
+          "mode": "100644",
+          "object": "662c3e90778954f21a57bd810280b77a5d91532a",
+          "path": "test/main.cpp",
+          "path_bytes_base64": "dGVzdC9tYWluLmNwcA==",
+          "record": "entry",
+          "size": 77131,
+          "type": "blob"
+        },
+        {
+          "index": 107,
+          "mode": "100644",
+          "object": "bda303dac6d4b50b979d28589198df083e1a9da4",
+          "path": "test/test_boxed.c",
+          "path_bytes_base64": "dGVzdC90ZXN0X2JveGVkLmM=",
+          "record": "entry",
+          "size": 563,
+          "type": "blob"
+        },
+        {
+          "index": 108,
+          "mode": "100644",
+          "object": "db5cb4ece754cacf4d5a9b0a4dab437c2aa59e3a",
+          "path": "test/test_boxed.h",
+          "path_bytes_base64": "dGVzdC90ZXN0X2JveGVkLmg=",
+          "record": "entry",
+          "size": 516,
+          "type": "blob"
+        },
+        {
+          "index": 109,
+          "mode": "100644",
+          "object": "f9f756869d4faf257a2afb38f32fea176309b04d",
+          "path": "test/test_object.c",
+          "path_bytes_base64": "dGVzdC90ZXN0X29iamVjdC5j",
+          "record": "entry",
+          "size": 7763,
+          "type": "blob"
+        },
+        {
+          "index": 110,
+          "mode": "100644",
+          "object": "5282ee3eb6ff8142af1df579248683b640119995",
+          "path": "test/test_object.h",
+          "path_bytes_base64": "dGVzdC90ZXN0X29iamVjdC5o",
+          "record": "entry",
+          "size": 2315,
+          "type": "blob"
+        },
+        {
+          "index": 111,
+          "mode": "040000",
+          "object": "b1a1897c0049c73545f8de60997a25e6b5e006f8",
+          "path": "tools",
+          "path_bytes_base64": "dG9vbHM=",
+          "record": "entry",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 112,
+          "mode": "100644",
+          "object": "3595068da131f0e59261abeb3f4e1ea100481c6f",
+          "path": "tools/common.hpp",
+          "path_bytes_base64": "dG9vbHMvY29tbW9uLmhwcA==",
+          "record": "entry",
+          "size": 5450,
+          "type": "blob"
+        },
+        {
+          "index": 113,
+          "mode": "100644",
+          "object": "3c169a84087f29723216954113792cc9e27fedbd",
+          "path": "tools/cppgir.cpp",
+          "path_bytes_base64": "dG9vbHMvY3BwZ2lyLmNwcA==",
+          "record": "entry",
+          "size": 14731,
+          "type": "blob"
+        },
+        {
+          "index": 114,
+          "mode": "100644",
+          "object": "1d9286329fed0ec4fd1daa4ff8f4e9781324901e",
+          "path": "tools/format.hpp",
+          "path_bytes_base64": "dG9vbHMvZm9ybWF0LmhwcA==",
+          "record": "entry",
+          "size": 444,
+          "type": "blob"
+        },
+        {
+          "index": 115,
+          "mode": "100644",
+          "object": "ab451246782fe304fa336c43a1c18c8cc5c80660",
+          "path": "tools/fs.hpp",
+          "path_bytes_base64": "dG9vbHMvZnMuaHBw",
+          "record": "entry",
+          "size": 198,
+          "type": "blob"
+        },
+        {
+          "index": 116,
+          "mode": "100644",
+          "object": "1ed724d494f04a779ba2aed18d9e43bec3704d80",
+          "path": "tools/function.cpp",
+          "path_bytes_base64": "dG9vbHMvZnVuY3Rpb24uY3Bw",
+          "record": "entry",
+          "size": 84566,
+          "type": "blob"
+        },
+        {
+          "index": 117,
+          "mode": "100644",
+          "object": "63f2bb1a15acf114cb26ab1165621925da5551e1",
+          "path": "tools/function.hpp",
+          "path_bytes_base64": "dG9vbHMvZnVuY3Rpb24uaHBw",
+          "record": "entry",
+          "size": 3952,
+          "type": "blob"
+        },
+        {
+          "index": 118,
+          "mode": "100644",
+          "object": "1dc40dd2b08decf91cee2ae7848fa440f1557727",
+          "path": "tools/genbase.cpp",
+          "path_bytes_base64": "dG9vbHMvZ2VuYmFzZS5jcHA=",
+          "record": "entry",
+          "size": 6982,
+          "type": "blob"
+        },
+        {
+          "index": 119,
+          "mode": "100644",
+          "object": "df8b04c1a8cd60a1e902bfaf2ea365e4dc39971f",
+          "path": "tools/genbase.hpp",
+          "path_bytes_base64": "dG9vbHMvZ2VuYmFzZS5ocHA=",
+          "record": "entry",
+          "size": 3477,
+          "type": "blob"
+        },
+        {
+          "index": 120,
+          "mode": "100644",
+          "object": "e1032b673839fe4122ba50e23ec6b0e1ef64bbd0",
+          "path": "tools/genns.cpp",
+          "path_bytes_base64": "dG9vbHMvZ2VubnMuY3Bw",
+          "record": "entry",
+          "size": 60996,
+          "type": "blob"
+        },
+        {
+          "index": 121,
+          "mode": "100644",
+          "object": "88833d47e050d0df8ea97e2d1079f6af87f9c5c1",
+          "path": "tools/genns.hpp",
+          "path_bytes_base64": "dG9vbHMvZ2VubnMuaHBw",
+          "record": "entry",
+          "size": 507,
+          "type": "blob"
+        },
+        {
+          "index": 122,
+          "mode": "100644",
+          "object": "c8b503ce33981d62f1fc289c47c082e29830ccd5",
+          "path": "tools/genutils.cpp",
+          "path_bytes_base64": "dG9vbHMvZ2VudXRpbHMuY3Bw",
+          "record": "entry",
+          "size": 1413,
+          "type": "blob"
+        },
+        {
+          "index": 123,
+          "mode": "100644",
+          "object": "b6a8e274eb02ce348ce28139084fe6ab9cdb0ba1",
+          "path": "tools/genutils.hpp",
+          "path_bytes_base64": "dG9vbHMvZ2VudXRpbHMuaHBw",
+          "record": "entry",
+          "size": 4535,
+          "type": "blob"
+        },
+        {
+          "index": 124,
+          "mode": "100644",
+          "object": "35cb9376b3aec780d3edaf19cc104411a59bccf7",
+          "path": "tools/ignore.hpp.in",
+          "path_bytes_base64": "dG9vbHMvaWdub3JlLmhwcC5pbg==",
+          "record": "entry",
+          "size": 164,
+          "type": "blob"
+        },
+        {
+          "index": 125,
+          "mode": "100644",
+          "object": "c33ec8a0a7cc9716e96c096b3126a5cc009de106",
+          "path": "tools/repository.cpp",
+          "path_bytes_base64": "dG9vbHMvcmVwb3NpdG9yeS5jcHA=",
+          "record": "entry",
+          "size": 11264,
+          "type": "blob"
+        },
+        {
+          "index": 126,
+          "mode": "100644",
+          "object": "8e5bc87e019b63b230f05e6a8f0a1983f79a6217",
+          "path": "tools/repository.hpp",
+          "path_bytes_base64": "dG9vbHMvcmVwb3NpdG9yeS5ocHA=",
+          "record": "entry",
+          "size": 3380,
+          "type": "blob"
+        },
+        {
+          "index": 1,
+          "mode": "100644",
+          "object": "accf57ad530b456b5885aee0cca0b0c9786affae",
+          "path": ".editorconfig",
+          "path_bytes_base64": "LmVkaXRvcmNvbmZpZw==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 604,
+          "type": "blob"
+        },
+        {
+          "index": 2,
+          "mode": "100644",
+          "object": "fb147c0c9cf68a31934bc3c4cdf7d6676229a0d6",
+          "path": ".gitattributes",
+          "path_bytes_base64": "LmdpdGF0dHJpYnV0ZXM=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 556,
+          "type": "blob"
+        },
+        {
+          "index": 3,
+          "mode": "040000",
+          "object": "c1992b48443e466990ee504c02012e38b95f09bc",
+          "path": ".github",
+          "path_bytes_base64": "LmdpdGh1Yg==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 4,
+          "mode": "040000",
+          "object": "1c72b16313ef5de015d798652902e8e57171284e",
+          "path": ".github/workflows",
+          "path_bytes_base64": "LmdpdGh1Yi93b3JrZmxvd3M=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 5,
+          "mode": "100644",
+          "object": "938715b8d4d06f7427fb532afd743ceee98cf316",
+          "path": ".github/workflows/ci.yml",
+          "path_bytes_base64": "LmdpdGh1Yi93b3JrZmxvd3MvY2kueW1s",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 2286,
+          "type": "blob"
+        },
+        {
+          "index": 6,
+          "mode": "100644",
+          "object": "08a9666e44d981003bb87bf1f1f1f66b0efe5ccb",
+          "path": ".gitignore",
+          "path_bytes_base64": "LmdpdGlnbm9yZQ==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 370,
+          "type": "blob"
+        },
+        {
+          "index": 7,
+          "mode": "100644",
+          "object": "9d5e66adb1d32816c3c3aae2f4c1a4de3a15a3fd",
+          "path": ".tgitconfig",
+          "path_bytes_base64": "LnRnaXRjb25maWc=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 139,
+          "type": "blob"
+        },
+        {
+          "index": 8,
+          "mode": "100644",
+          "object": "0b3d9ff3bcd08ffc3d50690cdb180edadea7d2ea",
+          "path": ".travis.yml",
+          "path_bytes_base64": "LnRyYXZpcy55bWw=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 3962,
+          "type": "blob"
+        },
+        {
+          "index": 9,
+          "mode": "100644",
+          "object": "9c18a5702f2d1483f3aa8f59e52a99991e74b819",
+          "path": "CHANGES.txt",
+          "path_bytes_base64": "Q0hBTkdFUy50eHQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 74,
+          "type": "blob"
+        },
+        {
+          "index": 10,
+          "mode": "100644",
+          "object": "d4e90c9030c6a6967f550dab3fe414273ae7416c",
+          "path": "CMakeLists.txt",
+          "path_bytes_base64": "Q01ha2VMaXN0cy50eHQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 3855,
+          "type": "blob"
+        },
+        {
+          "index": 11,
+          "mode": "100644",
+          "object": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+          "path": "LICENSE.txt",
+          "path_bytes_base64": "TElDRU5TRS50eHQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1338,
+          "type": "blob"
+        },
+        {
+          "index": 12,
+          "mode": "100644",
+          "object": "d2a73367ecaaddbb8675dea09020f2ed0055ed5a",
+          "path": "Notes.md",
+          "path_bytes_base64": "Tm90ZXMubWQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 214,
+          "type": "blob"
+        },
+        {
+          "index": 13,
+          "mode": "100644",
+          "object": "6c9e3749bd8ae534f1ae1595d8bd33baeac0d244",
+          "path": "README.md",
+          "path_bytes_base64": "UkVBRE1FLm1k",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 34992,
+          "type": "blob"
+        },
+        {
+          "index": 14,
+          "mode": "100644",
+          "object": "a1dc098f4ac6a9b1961ad845797dce8d4a202417",
+          "path": "appveyor.yml",
+          "path_bytes_base64": "YXBwdmV5b3IueW1s",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 2213,
+          "type": "blob"
+        },
+        {
+          "index": 15,
+          "mode": "040000",
+          "object": "048abd7075a516913e4bef61560f4b52ccee16b4",
+          "path": "cmake",
+          "path_bytes_base64": "Y21ha2U=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 16,
+          "mode": "100644",
+          "object": "d94242a4ff58474968b274b13a3e6faa2157311a",
+          "path": "cmake/expected-lite-config-version.cmake.in",
+          "path_bytes_base64": "Y21ha2UvZXhwZWN0ZWQtbGl0ZS1jb25maWctdmVyc2lvbi5jbWFrZS5pbg==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 787,
+          "type": "blob"
+        },
+        {
+          "index": 17,
+          "mode": "100644",
+          "object": "97497605c69319984390593ca1e8a27ad4335613",
+          "path": "cmake/expected-lite-config.cmake.in",
+          "path_bytes_base64": "Y21ha2UvZXhwZWN0ZWQtbGl0ZS1jb25maWcuY21ha2UuaW4=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 168,
+          "type": "blob"
+        },
+        {
+          "index": 18,
+          "mode": "100644",
+          "object": "78b0757dcc05da490559c88ce3fa4cd869ccc734",
+          "path": "conanfile.py",
+          "path_bytes_base64": "Y29uYW5maWxlLnB5",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 930,
+          "type": "blob"
+        },
+        {
+          "index": 19,
+          "mode": "040000",
+          "object": "7070825f40e7c3261920473f90201842d39059b7",
+          "path": "example",
+          "path_bytes_base64": "ZXhhbXBsZQ==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 20,
+          "mode": "100644",
+          "object": "04ffd600b03e9c7975890d6d2587dc939829020c",
+          "path": "example/01-basic.cpp",
+          "path_bytes_base64": "ZXhhbXBsZS8wMS1iYXNpYy5jcHA=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 953,
+          "type": "blob"
+        },
+        {
+          "index": 21,
+          "mode": "100644",
+          "object": "55aa0049d246eea17f4778f1b8a6ac052588514b",
+          "path": "example/02-required.cpp",
+          "path_bytes_base64": "ZXhhbXBsZS8wMi1yZXF1aXJlZC5jcHA=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1464,
+          "type": "blob"
+        },
+        {
+          "index": 22,
+          "mode": "100644",
+          "object": "51757145ae4b8236b2fd8f8201a8443a56d37b61",
+          "path": "example/03-no-exceptions.cpp",
+          "path_bytes_base64": "ZXhhbXBsZS8wMy1uby1leGNlcHRpb25zLmNwcA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1828,
+          "type": "blob"
+        },
+        {
+          "index": 23,
+          "mode": "100644",
+          "object": "86dfa2c0a9ce622784faf0c3b60f5a92610fcd94",
+          "path": "example/CMakeLists.txt",
+          "path_bytes_base64": "ZXhhbXBsZS9DTWFrZUxpc3RzLnR4dA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 2028,
+          "type": "blob"
+        },
+        {
+          "index": 24,
+          "mode": "040000",
+          "object": "241b34089493bb570be57d6e26edeaf86151386e",
+          "path": "include",
+          "path_bytes_base64": "aW5jbHVkZQ==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 25,
+          "mode": "040000",
+          "object": "9c81352597f391fcdb7576aae7f8ea454d50752a",
+          "path": "include/nonstd",
+          "path_bytes_base64": "aW5jbHVkZS9ub25zdGQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 26,
+          "mode": "100644",
+          "object": "f2b7f94021c9ed618eae89be804cbe5a26f654e4",
+          "path": "include/nonstd/expected.hpp",
+          "path_bytes_base64": "aW5jbHVkZS9ub25zdGQvZXhwZWN0ZWQuaHBw",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 69855,
+          "type": "blob"
+        },
+        {
+          "index": 27,
+          "mode": "040000",
+          "object": "369cdfe068c73c6f3b1732a016867dcee4f24aeb",
+          "path": "project",
+          "path_bytes_base64": "cHJvamVjdA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 28,
+          "mode": "040000",
+          "object": "c2889110afd6ebca833d800b9e5bb9cdf79f604a",
+          "path": "project/CodeBlocks",
+          "path_bytes_base64": "cHJvamVjdC9Db2RlQmxvY2tz",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 29,
+          "mode": "100644",
+          "object": "b6670db238903ec4bdbeded9c5dd7f7534cd34d7",
+          "path": "project/CodeBlocks/expected-lite.cbp",
+          "path_bytes_base64": "cHJvamVjdC9Db2RlQmxvY2tzL2V4cGVjdGVkLWxpdGUuY2Jw",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 2227,
+          "type": "blob"
+        },
+        {
+          "index": 30,
+          "mode": "100644",
+          "object": "6ca75f7b4afa09616cc611abc38a1b5c2cc143f0",
+          "path": "project/CodeBlocks/expected-lite.workspace",
+          "path_bytes_base64": "cHJvamVjdC9Db2RlQmxvY2tzL2V4cGVjdGVkLWxpdGUud29ya3NwYWNl",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 406,
+          "type": "blob"
+        },
+        {
+          "index": 31,
+          "mode": "040000",
+          "object": "9d4fff67124202f3b2ed04d4ddfd3ecdf28d95ec",
+          "path": "script",
+          "path_bytes_base64": "c2NyaXB0",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 32,
+          "mode": "100644",
+          "object": "c7fedee1c33eedcc693c33b5e11974375e2d1daa",
+          "path": "script/create-cov-rpt.py",
+          "path_bytes_base64": "c2NyaXB0L2NyZWF0ZS1jb3YtcnB0LnB5",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 3113,
+          "type": "blob"
+        },
+        {
+          "index": 33,
+          "mode": "100644",
+          "object": "de29dad35c6afd9865ada60ce0ffc31d01c7ad02",
+          "path": "script/create-vcpkg.py",
+          "path_bytes_base64": "c2NyaXB0L2NyZWF0ZS12Y3BrZy5weQ==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 6166,
+          "type": "blob"
+        },
+        {
+          "index": 34,
+          "mode": "100644",
+          "object": "034e4f00671a011ffed11919b8981d460d2c1063",
+          "path": "script/update-version.py",
+          "path_bytes_base64": "c2NyaXB0L3VwZGF0ZS12ZXJzaW9uLnB5",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 3877,
+          "type": "blob"
+        },
+        {
+          "index": 35,
+          "mode": "100644",
+          "object": "532c61e59beb583c81f4873ed20f5f32369e14b5",
+          "path": "script/upload-conan.py",
+          "path_bytes_base64": "c2NyaXB0L3VwbG9hZC1jb25hbi5weQ==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 3091,
+          "type": "blob"
+        },
+        {
+          "index": 36,
+          "mode": "040000",
+          "object": "bfd34520fab82d0934695952d3ab67dcf9b689c0",
+          "path": "test",
+          "path_bytes_base64": "dGVzdA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 37,
+          "mode": "100644",
+          "object": "c2098c1cedc712e8735f6c126cde8715ca746b00",
+          "path": "test/CMakeLists.txt",
+          "path_bytes_base64": "dGVzdC9DTWFrZUxpc3RzLnR4dA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 7314,
+          "type": "blob"
+        },
+        {
+          "index": 38,
+          "mode": "100644",
+          "object": "690662af1d808dc08dc002f4e8908d71b6c38c2c",
+          "path": "test/expected-main.t.cpp",
+          "path_bytes_base64": "dGVzdC9leHBlY3RlZC1tYWluLnQuY3Bw",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 3724,
+          "type": "blob"
+        },
+        {
+          "index": 39,
+          "mode": "100644",
+          "object": "43e8395d982427153174eb9c1506c35bdfaf61e8",
+          "path": "test/expected-main.t.hpp",
+          "path_bytes_base64": "dGVzdC9leHBlY3RlZC1tYWluLnQuaHBw",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 2088,
+          "type": "blob"
+        },
+        {
+          "index": 40,
+          "mode": "100644",
+          "object": "b2caa4bd179dce8731fb5fbe4ef70751addccee8",
+          "path": "test/expected-noexcept.t.cpp",
+          "path_bytes_base64": "dGVzdC9leHBlY3RlZC1ub2V4Y2VwdC50LmNwcA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1487,
+          "type": "blob"
+        },
+        {
+          "index": 41,
+          "mode": "100644",
+          "object": "f7664ab1bb9f116d0e85575a38983e224b9120f5",
+          "path": "test/expected.t.cpp",
+          "path_bytes_base64": "dGVzdC9leHBlY3RlZC50LmNwcA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 46213,
+          "type": "blob"
+        },
+        {
+          "index": 42,
+          "mode": "040000",
+          "object": "7b18066b40318912d94b56220ac2f9a2910ea5b8",
+          "path": "test/lest",
+          "path_bytes_base64": "dGVzdC9sZXN0",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 43,
+          "mode": "100644",
+          "object": "f3c9f495ca505c6159bf830e53d9c543a1a56834",
+          "path": "test/lest/lest.hpp",
+          "path_bytes_base64": "dGVzdC9sZXN0L2xlc3QuaHBw",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 44525,
+          "type": "blob"
+        },
+        {
+          "index": 44,
+          "mode": "040000",
+          "object": "691074193ffe1cca2aef2283c0575c9e61793f36",
+          "path": "test/nonstd",
+          "path_bytes_base64": "dGVzdC9ub25zdGQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": null,
+          "type": "tree"
+        },
+        {
+          "index": 45,
+          "mode": "100644",
+          "object": "79581e8befb744ca724e2d0c43a4e45d80c3fb80",
+          "path": "test/nonstd/expected.tweak.hpp",
+          "path_bytes_base64": "dGVzdC9ub25zdGQvZXhwZWN0ZWQudHdlYWsuaHBw",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 32,
+          "type": "blob"
+        },
+        {
+          "index": 46,
+          "mode": "100644",
+          "object": "8798c6670d12512fedbd3b10261b120f9a774dde",
+          "path": "test/odr.cpp",
+          "path_bytes_base64": "dGVzdC9vZHIuY3Bw",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 37,
+          "type": "blob"
+        },
+        {
+          "index": 47,
+          "mode": "100644",
+          "object": "24bfcb65137705d70e83d7b76eedbe5b89fff00e",
+          "path": "test/t-noexcept.bat",
+          "path_bytes_base64": "dGVzdC90LW5vZXhjZXB0LmJhdA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1872,
+          "type": "blob"
+        },
+        {
+          "index": 48,
+          "mode": "100644",
+          "object": "921b8009bd4f988ad71b61bb37dd5b339d90c33a",
+          "path": "test/t-odr.bat",
+          "path_bytes_base64": "dGVzdC90LW9kci5iYXQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 197,
+          "type": "blob"
+        },
+        {
+          "index": 49,
+          "mode": "100644",
+          "object": "8e8c2a5a670cd673965a1484d2737f5519117204",
+          "path": "test/t.bat",
+          "path_bytes_base64": "dGVzdC90LmJhdA==",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1619,
+          "type": "blob"
+        },
+        {
+          "index": 50,
+          "mode": "100644",
+          "object": "8a49e76d6797da40d174d287d901d3d65bb3c354",
+          "path": "test/tc-cl.bat",
+          "path_bytes_base64": "dGVzdC90Yy1jbC5iYXQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 2181,
+          "type": "blob"
+        },
+        {
+          "index": 51,
+          "mode": "100644",
+          "object": "9edc77ded1cf8140438ff4c727bac387a8bb3d1f",
+          "path": "test/tc-noexcept.bat",
+          "path_bytes_base64": "dGVzdC90Yy1ub2V4Y2VwdC5iYXQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1937,
+          "type": "blob"
+        },
+        {
+          "index": 52,
+          "mode": "100644",
+          "object": "429d08e117e291b73d3ea5ae8f87eb0ff8ae52ce",
+          "path": "test/tc.bat",
+          "path_bytes_base64": "dGVzdC90Yy5iYXQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1940,
+          "type": "blob"
+        },
+        {
+          "index": 53,
+          "mode": "100644",
+          "object": "4b057da8774c1c0824ecf43f50bcce1f92686e2f",
+          "path": "test/tg-all.bat",
+          "path_bytes_base64": "dGVzdC90Zy1hbGwuYmF0",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 73,
+          "type": "blob"
+        },
+        {
+          "index": 54,
+          "mode": "100644",
+          "object": "fd61dc789b1d67ac749d6bcc5fdda382ed6b76ca",
+          "path": "test/tg-noexcept.bat",
+          "path_bytes_base64": "dGVzdC90Zy1ub2V4Y2VwdC5iYXQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1618,
+          "type": "blob"
+        },
+        {
+          "index": 55,
+          "mode": "100644",
+          "object": "fa36aad465e0ec397e6c0ea686dc9cc6b199d584",
+          "path": "test/tg.bat",
+          "path_bytes_base64": "dGVzdC90Zy5iYXQ=",
+          "record": "entry",
+          "repository_id": "repo-001",
+          "size": 1596,
+          "type": "blob"
+        }
+      ],
+      "gitmodules_records": [
+        {
+          "artifact": "repo-000.gitmodules",
+          "blob": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3",
+          "record": "gitmodules-header",
+          "repository_id": "repo-000",
+          "sha256": "fe7aada00d18e6159148e737e3496435c8a1d5a6e933b03666830fb2f9ed7502",
+          "size": 106
+        },
+        {
+          "base64": "W3N1Ym1vZHVsZSAiZXhwZWN0ZWQtbGl0ZSJdCglwYXRoID0gZXhwZWN0ZWQtbGl0ZQoJdXJsID0gaHR0cHM6Ly9naXRodWIuY29tL21hcnRpbm1vZW5lL2V4cGVjdGVkLWxpdGUuZ2l0Cg==",
+          "offset": 0,
+          "record": "gitmodules-content",
+          "repository_id": "repo-000"
+        }
+      ],
+      "readback": {
+        "all_entry_and_edge_stream_digests_match": true,
+        "streams": {
+          "root": {
+            "bytes": 26182,
+            "records": 126,
+            "sha256": "ca7b93baea47c96a852166ecd5a35dcfa4c4d882a4e5ba240d2f103af63ab453"
+          },
+          "expected_lite": {
+            "bytes": 12380,
+            "records": 55,
+            "sha256": "261336a80e0c5aa14cdf18a703ce9ed99dbf76e1b3f3cdeebf5f6a677596f2e6"
+          },
+          "edges": {
+            "bytes": 2638,
+            "records": 4,
+            "sha256": "a109d372e8ba3f8eeed356b89cba618dd66c7f43f9dfa04b58ed1b4e3be7b4c1"
+          }
+        },
+        "method": "Complete job-log entry and edge streams reassembled losslessly; SHA256 compared against exact-H per-repository and final receipts. This is artifact readback, not local product execution."
+      },
+      "artifacts": [
+        {
+          "id": 13119680890,
+          "name": "tdrp-cppgir-original-host-d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+          "size_in_bytes": 56822,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13119680890",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13119680890/zip",
+          "expired": false,
+          "created_at": "2026-11-02T05:46:14Z",
+          "expires_at": "2027-01-31T05:46:03Z",
+          "updated_at": "2026-11-02T05:46:14Z",
+          "digest": "sha256:61c39c84a93982b5788e8dba6c3cf1627ebf85cdabf8c08851537ddfa5b970be",
+          "workflow_run": {
+            "id": 41395923342,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d"
+          }
+        }
+      ]
     }
   },
   "fixed_upstream_message_research": {

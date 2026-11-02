@@ -50572,9 +50572,9 @@
     "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
     "status": "unaccepted-inventory-open",
     "direct_gitlinks_checked": 36,
-    "nested_gitlinks_discovered": 3,
-    "nested_gitlinks_resolved": 2,
-    "nested_gitlinks_blocked": 1,
+    "nested_gitlinks_discovered": 4,
+    "nested_gitlinks_resolved": 4,
+    "nested_gitlinks_blocked": 0,
     "source_responsibility_rows": "56-fixed-U-anchored-41-exact-blob-plus-15-semantic-reread",
     "unknown": null,
     "unread": null,
@@ -50583,8 +50583,8 @@
       "declared_by": "desktop-app/cmake_helpers@7ceca3019b4750d7a5acb2de0faffd523ee14095:.gitmodules#c92fbea3467f72e188cba4cbfe51c8c68a7e2e77",
       "repository": "https://gitlab.com/mnauw/cppgir.git",
       "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
-      "git_tree_verified": false,
-      "reason": "Current parent declaration and gitlink identity are verified from GitHub. On 2026-10-31 the original GitLab API v4 recursive-tree endpoint and the GitLab pinned-commit tree page were retried from this execution environment and both were blocked before repository data could be read; no original-host cppgir tree/blob set was obtained, so recursive cppgir provenance remains fail-closed."
+      "git_tree_verified": true,
+      "reason": "The original-host transport blocker is cleared. GitHub Actions run 41395923342/job 125117103688 at target d00fdb48200b105b7aea9f2cb865cf4e7b482b2d fetched the exact declared GitLab commit and verified cppgir tree b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8 (103 blobs, 22 trees, one gitlink). Its exact .gitmodules blob e0c91502bcb2798a8a57bd85e49c76e0ef7275a3 declares https://github.com/martinmoene/expected-lite.git at 95b9cb015fa17baa749c2b396b335906e1596a9e; that child tree is 5f38901998c76e9c3dcc52bfbbe26877820cbbda (43 blobs, 12 trees, no further gitlinks). All entry and edge JSONL SHA256 digests were remotely read back and matched. Artifact 13119680890 digest sha256:61c39c84a93982b5788e8dba6c3cf1627ebf85cdabf8c08851537ddfa5b970be preserves the evidence; details are in evidence/fbcp-native-message-round3-20261102.json. The four resolved nested Git edges include the previously observed libcbor/doxygen-theme and range-v3/doc/gh-pages trees. Zero blocked here concerns those four Git-tree acquisitions only: canonical fixed-U inventory, build-time/generated-input accounting, legal and semantic review, and product/independent acceptance remain open."
     }
   }
 }

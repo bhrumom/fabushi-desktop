@@ -8,6 +8,7 @@ on:
       - scripts/tdrp-nested-pin-identity*.mjs
       - scripts/validate-tdrp-revision9-authority.mjs
       - projects/telegram-desktop-rust/contracts/parity-ledger.schema.json
+      - projects/telegram-desktop-rust/parity-ledger.json
       - .github/workflows/tdrp-source-review-contract.yml
   workflow_dispatch:
 permissions:
@@ -46,6 +47,28 @@ jobs:
           python -m pip install --disable-pip-version-check 'jsonschema==4.25.1'
           python -m pip freeze > artifacts/source-review/python-dependencies.txt
           python scripts/tdrp-source-review-schema.test.py 2>&1 | tee artifacts/source-review/schema.log
+      - name: Check current ledger shape without granting source acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          root = Path('projects/telegram-desktop-rust')
+          schema = json.loads((root / 'contracts/parity-ledger.schema.json').read_text())
+          ledger = json.loads((root / 'parity-ledger.json').read_text())
+          Draft202012Validator.check_schema(schema)
+          errors = list(Draft202012Validator(schema).iter_errors(ledger))
+          details = [{'path': list(error.absolute_path), 'schema_path': list(error.absolute_schema_path),
+                      'message': error.message} for error in errors]
+          Path('artifacts/source-review/ledger-schema.json').write_text(
+              json.dumps({'valid': not errors, 'source_accepted': False, 'errors': details}, indent=2) + '\n')
+          print(f'Canonical ledger schema errors: {len(errors)}; source acceptance is not granted.')
+          for error in details[:100]:
+              print(json.dumps(error)[:2048])
+          raise SystemExit(1 if errors else 0)
+          PY
       - run: node --check scripts/validate-tdrp-revision9-authority.mjs
       - name: Preserve exact checker evidence
         if: always()
