@@ -1,0 +1,635 @@
+{
+  "format": "ROUND16_FINAL_NATIVE_EXECUTION_V1",
+  "repository": "bhrumom/fabushi-desktop",
+  "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+  "parent_sha": "43dd738ca92965deb109681fdf5d521deae566e4",
+  "tree_sha": "4c1226b037f48d0a219ab71bc5d5333faa8a583c",
+  "workflow": {
+    "path": ".github/workflows/native-service-contracts.yml",
+    "blob": "e60ec6e6f2d5c9e489e8200fa1bda10b3a4f4c1d",
+    "sha256": "b2707b2b26da87d9d17136f5e97b8624aa22c3f7077dd5bf9fe1e2c45e866446"
+  },
+  "workflow_run": 41523624057,
+  "run_attempt": 1,
+  "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523624057",
+  "run_status": "queued",
+  "run_conclusion": null,
+  "observed_at": "2026-11-02 21:05:10 UTC",
+  "overall_native_batch_accepted": false,
+  "all_required_jobs_complete": false,
+  "completed_required_jobs": 5,
+  "completed_job_evidence": [
+    {
+      "name": "retained-direct-ffi-compatibility",
+      "job_id": 125545613103,
+      "status": "completed",
+      "conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523624057/job/125545613103",
+      "full_log": {
+        "job_id": 125545613103,
+        "path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/job-125545613103-full.log",
+        "bytes": 79471,
+        "sha256": "d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233",
+        "api_bytes_match": true,
+        "api_sha256_match": true,
+        "source_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125545613103/logs"
+      },
+      "artifact": {
+        "id": 13179096257,
+        "name": "retained-direct-ffi-compatibility-9329aced33343e8e356ba34dfd0f474f3e767914",
+        "run_id": 41523624057,
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "zip_bytes": 3926,
+        "digest": "sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661",
+        "downloaded_zip_sha256": "c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661",
+        "digest_matches": true,
+        "archive_path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/retained-direct-ffi-compatibility-9329aced33343e8e356ba34dfd0f474f3e767914.zip",
+        "entry_count": 6,
+        "metadata_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179096257"
+      },
+      "target_sha_file_matches": true,
+      "targets": [
+        {
+          "log_file": "runtime-ffi.log",
+          "log_sha256": "028810f3bae0ad0fa830aa9c2952e42ebbb3ed2c72312a4d51b0bf10c8e90e2d",
+          "kind": "rust",
+          "summary": "test result: ok. 15 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+          "actual": {
+            "result": "ok",
+            "passed": 15,
+            "failed": 0,
+            "ignored": 1,
+            "measured": 0,
+            "filtered_out": 0,
+            "duration_seconds": 0.03
+          },
+          "workflow_expected_passed": 15,
+          "actual_matches_exact_workflow_gate": true
+        }
+      ],
+      "all_actual_gate_counts_match": true,
+      "scope": "NMR-39 compatibility retention: direct C wrappers and test-owned temporary encrypted-store reopen only; live DC remains ignored; no final shared/static library, installed consumer, real user data or service acceptance."
+    },
+    {
+      "name": "native-message-reconciliation",
+      "job_id": 125545613305,
+      "status": "completed",
+      "conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523624057/job/125545613305",
+      "full_log": {
+        "job_id": 125545613305,
+        "path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/job-125545613305-full.log",
+        "bytes": 353242,
+        "sha256": "b918f2a677321b8dbbf8e9b85a6831b5637ac1e103bc6ba84ec768287f146a37",
+        "api_bytes_match": true,
+        "api_sha256_match": true,
+        "source_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125545613305/logs"
+      },
+      "artifact": {
+        "id": 13178278016,
+        "name": "native-message-reconciliation-9329aced33343e8e356ba34dfd0f474f3e767914",
+        "run_id": 41523624057,
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "zip_bytes": 35270,
+        "digest": "sha256:1dac1873bb2e0c946cf7272b0c83ab6eaae4bdf4aa2b3a17ccf7a216cc6674da",
+        "downloaded_zip_sha256": "1dac1873bb2e0c946cf7272b0c83ab6eaae4bdf4aa2b3a17ccf7a216cc6674da",
+        "digest_matches": true,
+        "archive_path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/native-message-reconciliation-9329aced33343e8e356ba34dfd0f474f3e767914.zip",
+        "entry_count": 9,
+        "metadata_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178278016"
+      },
+      "target_sha_file_matches": true,
+      "targets": [
+        {
+          "log_file": "agent-send-nonce.log",
+          "log_sha256": "6d6d6dcc4b950619d45184b6381dae50e72fefec91dcd5d27dcda3ba10338110",
+          "kind": "rust",
+          "summary": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "actual": {
+            "result": "ok",
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0,
+            "duration_seconds": 0
+          },
+          "workflow_expected_passed": 4,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "forward-batches.log",
+          "log_sha256": "bbfb45f50756b7d59fbe723d99fe11369a172735ce6ce973c20b55cdb3b43092",
+          "kind": "rust",
+          "summary": "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 127 filtered out; finished in 1.76s",
+          "actual": {
+            "result": "ok",
+            "passed": 12,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 127,
+            "duration_seconds": 1.76
+          },
+          "workflow_expected_passed": 12,
+          "actual_matches_exact_workflow_gate": true,
+          "required_named_cases_observed": [
+            "stale_same_batch_snapshot_cannot_regress_completed_destination",
+            "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover"
+          ]
+        },
+        {
+          "log_file": "forward-http.log",
+          "log_sha256": "ffa51ba53adac0b78ea597396ad6ba56aee6835476f736b8f510c44bdc80a932",
+          "kind": "rust",
+          "summary": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.07s",
+          "actual": {
+            "result": "ok",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 14,
+            "duration_seconds": 0.07
+          },
+          "workflow_expected_passed": 1,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "forward-sharebox.log",
+          "log_sha256": "d65a820f2c8c755bb5712b4df7d04685d95ee3265b4bfb3eb9ca78646fb08650",
+          "kind": "rust",
+          "summary": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 138 filtered out; finished in 0.03s",
+          "actual": {
+            "result": "ok",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 138,
+            "duration_seconds": 0.03
+          },
+          "workflow_expected_passed": 1,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "resource-upload-bounds.log",
+          "log_sha256": "cea74b00b8e524072ff8694d9fca460ffc03f28e307122ee9bd144252aaaaed5",
+          "kind": "rust",
+          "summary": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.21s",
+          "actual": {
+            "result": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 136,
+            "duration_seconds": 0.21
+          },
+          "workflow_expected_passed": 3,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "session-gateway.log",
+          "log_sha256": "bfa677df6435e66fa831e1600dc645932f788e4254976ecb5e70e379973d577c",
+          "kind": "rust",
+          "summary": "test result: ok. 62 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 108.82s",
+          "actual": {
+            "result": "ok",
+            "passed": 62,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 15,
+            "duration_seconds": 108.82
+          },
+          "workflow_expected_passed": 62,
+          "actual_matches_exact_workflow_gate": true,
+          "required_named_cases_observed": [
+            "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+            "shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order",
+            "shipping_human_historical_reply_aliases_require_unique_local_canonical_parent",
+            "shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen"
+          ]
+        },
+        {
+          "log_file": "settlement-credential.log",
+          "log_sha256": "8b89ff007b185801906131b40ffd3bf5220f7564e4b46017adc2184b3faad2c1",
+          "kind": "rust",
+          "summary": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.01s",
+          "actual": {
+            "result": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 136,
+            "duration_seconds": 0.01
+          },
+          "workflow_expected_passed": 3,
+          "actual_matches_exact_workflow_gate": true
+        }
+      ],
+      "all_actual_gate_counts_match": true,
+      "scope": "FBCP-NMR-001; source-informed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; loopback integration only"
+    },
+    {
+      "name": "native-message-ui",
+      "job_id": 125545613328,
+      "status": "completed",
+      "conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523624057/job/125545613328",
+      "full_log": {
+        "job_id": 125545613328,
+        "path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/job-125545613328-full.log",
+        "bytes": 86814,
+        "sha256": "15ad64742596e69da807ebe6ff63203f4de2ed549c46d7cad48ae846ec86909c",
+        "api_bytes_match": true,
+        "api_sha256_match": true,
+        "source_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125545613328/logs"
+      },
+      "artifact": {
+        "id": 13179331029,
+        "name": "native-message-ui-9329aced33343e8e356ba34dfd0f474f3e767914",
+        "run_id": 41523624057,
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "zip_bytes": 229047,
+        "digest": "sha256:c036f8cc701b2aded89dbf23305c0798644308c538de944057aa9322c04d8952",
+        "downloaded_zip_sha256": "c036f8cc701b2aded89dbf23305c0798644308c538de944057aa9322c04d8952",
+        "digest_matches": true,
+        "archive_path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/native-message-ui-9329aced33343e8e356ba34dfd0f474f3e767914.zip",
+        "entry_count": 36,
+        "metadata_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179331029"
+      },
+      "target_sha_file_matches": true,
+      "targets": [
+        {
+          "log_file": "forward-dialog.log",
+          "log_sha256": "87311bd7a0a0b391a93ebe8816b760efccfe6568aabd78e7d0a29e0491a74a16",
+          "kind": "tap",
+          "actual": {
+            "tests": 16,
+            "suites": 0,
+            "pass": 16,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 9555.34636
+          },
+          "workflow_expected_passed": 16,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "forward-settlement.log",
+          "log_sha256": "010c40e22df3baa16719f22f5d8b3ad7575548ab97aa8d573b38996d2677b964",
+          "kind": "tap",
+          "actual": {
+            "tests": 5,
+            "suites": 0,
+            "pass": 5,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 132.740407
+          },
+          "workflow_expected_passed": 5,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "human-cursors.log",
+          "log_sha256": "d62c5f33ef5725d2d4f29f1978dd8be2f8dc603d5c129ae1eb6bdf1415a9f6c9",
+          "kind": "tap",
+          "actual": {
+            "tests": 17,
+            "suites": 0,
+            "pass": 17,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 105.059483
+          },
+          "workflow_expected_passed": 17,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "transcript.log",
+          "log_sha256": "1afbafd39917af1ee31d4fecb3f34cb160b4866e3a1ad120de27c64b95c60559",
+          "kind": "tap",
+          "actual": {
+            "tests": 29,
+            "suites": 0,
+            "pass": 29,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 97.157858
+          },
+          "workflow_expected_passed": 29,
+          "actual_matches_exact_workflow_gate": true
+        }
+      ],
+      "all_actual_gate_counts_match": true,
+      "scope": "FBCP-NMR-001/NMR-26; real projection/pagination modules with controlled bridge; packaged visual/a11y acceptance pending"
+    },
+    {
+      "name": "native-message-electron",
+      "job_id": 125545613591,
+      "status": "completed",
+      "conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523624057/job/125545613591",
+      "full_log": {
+        "job_id": 125545613591,
+        "path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/job-125545613591-full.log",
+        "bytes": 92520,
+        "sha256": "be4bdc99c0366c0b5eb5550b7d44c7a48e091cdb010166eae8c9554678730668",
+        "api_bytes_match": true,
+        "api_sha256_match": true,
+        "source_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125545613591/logs"
+      },
+      "artifact": {
+        "id": 13177669629,
+        "name": "native-message-electron-9329aced33343e8e356ba34dfd0f474f3e767914",
+        "run_id": 41523624057,
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "zip_bytes": 14817,
+        "digest": "sha256:829706a121a7835a56556852553ffe5a302696d5e860f703ecdeddb716255dda",
+        "downloaded_zip_sha256": "829706a121a7835a56556852553ffe5a302696d5e860f703ecdeddb716255dda",
+        "digest_matches": true,
+        "archive_path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/native-message-electron-9329aced33343e8e356ba34dfd0f474f3e767914.zip",
+        "entry_count": 19,
+        "metadata_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177669629"
+      },
+      "target_sha_file_matches": true,
+      "targets": [
+        {
+          "log_file": "carrier.log",
+          "log_sha256": "a2bdabd4b22dc42e9606ac2549fdb84ea8f4cbfceb99ba207b3efe4e437db5d9",
+          "kind": "tap",
+          "actual": {
+            "tests": 10,
+            "suites": 0,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 126.572549
+          },
+          "workflow_expected_passed": 10,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "macos-metadata.log",
+          "log_sha256": "545be3179fefe1c2d7e33328e1cdfe6310f6f8a7175343c065b4af6c4f984104",
+          "kind": "tap",
+          "actual": {
+            "tests": 18,
+            "suites": 0,
+            "pass": 18,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 1711.196285
+          },
+          "workflow_expected_passed": 18,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "native-auth-retention.log",
+          "log_sha256": "5fec00b731c056cfcbfe8db230605cda3c393c09c0061c32a768e187df004ac5",
+          "kind": "tap",
+          "actual": {
+            "tests": 8,
+            "suites": 0,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 236.324322
+          },
+          "workflow_expected_passed": 8,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "package-resources.log",
+          "log_sha256": "df62f4c189e38de4197f2d9092da6ca9f4f4b416450b28be2c5eb08247f41316",
+          "kind": "tap",
+          "actual": {
+            "tests": 3,
+            "suites": 0,
+            "pass": 3,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 222.872742
+          },
+          "workflow_expected_passed": 3,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "package-scope.log",
+          "log_sha256": "cdfcb05268047fcf38d58bf68b6084082ecbcbe5c524f083e15d353b050eed5d",
+          "kind": "tap",
+          "actual": {
+            "tests": 10,
+            "suites": 0,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 409.289419
+          },
+          "workflow_expected_passed": 10,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "promotion-consumer.log",
+          "log_sha256": "2978750a146639a18f5ac132b957776b7d4facce2bf7b105541d5527a4f60d86",
+          "kind": "tap",
+          "actual": {
+            "tests": 7,
+            "suites": 0,
+            "pass": 7,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 60.1039
+          },
+          "workflow_expected_passed": 7,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "update-source.log",
+          "log_sha256": "b5dd51018e5f5257dd532159d06c27b2257892b942feb0a2f5dc40783c5f0bda",
+          "kind": "tap",
+          "actual": {
+            "tests": 16,
+            "suites": 0,
+            "pass": 16,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 202.947677
+          },
+          "workflow_expected_passed": 16,
+          "actual_matches_exact_workflow_gate": true
+        },
+        {
+          "log_file": "windows-publisher.log",
+          "log_sha256": "906e1a27f9c8f137db75a02144e0969a8312282963c358a47b7dcfa840b99ae9",
+          "kind": "tap",
+          "actual": {
+            "tests": 28,
+            "suites": 0,
+            "pass": 28,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 228.548311
+          },
+          "workflow_expected_passed": 28,
+          "actual_matches_exact_workflow_gate": true
+        }
+      ],
+      "all_actual_gate_counts_match": true,
+      "scope": "FBCP-NMR-001/NMR-27/31; actual carrier plus Native auth/secret-store owners with controlled Electron/HTTP boundaries; no live service, OS keychain or packaged acceptance claim"
+    },
+    {
+      "name": "windows-update-publisher",
+      "job_id": 125545613654,
+      "status": "completed",
+      "conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523624057/job/125545613654",
+      "full_log": {
+        "job_id": 125545613654,
+        "path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/job-125545613654-full.log",
+        "bytes": 35918,
+        "sha256": "3a24739e41b734507c7a2af940b6927c4e58c8eb44f802bd8c992f341258021d",
+        "api_bytes_match": true,
+        "api_sha256_match": true,
+        "source_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125545613654/logs"
+      },
+      "artifact": {
+        "id": 13178757035,
+        "name": "windows-update-publisher-9329aced33343e8e356ba34dfd0f474f3e767914",
+        "run_id": 41523624057,
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "zip_bytes": 1827,
+        "digest": "sha256:ccbc8f8ea42d153f7a61b76506c8d3dc1c8e4adb9a6656df7ed803fabb1aac33",
+        "downloaded_zip_sha256": "ccbc8f8ea42d153f7a61b76506c8d3dc1c8e4adb9a6656df7ed803fabb1aac33",
+        "digest_matches": true,
+        "archive_path": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914/windows-update-publisher-9329aced33343e8e356ba34dfd0f474f3e767914.zip",
+        "entry_count": 3,
+        "metadata_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178757035"
+      },
+      "target_sha_file_matches": true,
+      "targets": [
+        {
+          "log_file": "native-publisher.log",
+          "log_sha256": "63da01defc60e34db713071cf8669bdf3fd431aee439ca66075cd521825862e3",
+          "kind": "tap",
+          "actual": {
+            "tests": 11,
+            "suites": 0,
+            "pass": 11,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "duration_ms": 13212.8315
+          },
+          "workflow_expected_passed": 11,
+          "actual_matches_exact_workflow_gate": true
+        }
+      ],
+      "all_actual_gate_counts_match": true,
+      "scope": "EUS-WIN-02/04/06; actual Windows Authenticode with an ephemeral CI-only certificate and inert signed fixture; no installer execution, formal publisher authorization, or package acceptance"
+    }
+  ],
+  "retained_ffi_independent_receipt": {
+    "path": "/workspace/scratch/049bfe5e4966/round16-final-ffi-execution.json",
+    "bytes": 8532,
+    "git_blob": "62ba789e61680d2bd6ac3b00cd80ccffb8164c2c",
+    "sha256": "b0560c2981ebb9e780e24c81a68bf0b0c5991684ddeea7e89ca5f6e5455933ee",
+    "actual_totals": {
+      "passed": 15,
+      "failed": 0,
+      "ignored": 1,
+      "measured": 0,
+      "filtered_out": 0
+    },
+    "new_cases_all_ok": true,
+    "saved_log_matches_api": true,
+    "exact_scope": "15 passed plus the existing1 ignored live-DC test. Five new real exported C-wrapper cases all pass; original encrypted-reader reopen and rejection controls remain. Not AppHost CABI7 or final shared/static library qualification.",
+    "cargo_lock_parent_and_head_blob": "48cbb8ba77def31a44a2bf15582a0b18a655b2ee",
+    "cargo_lock_sha256": "c5a65b866c42c7c324f69df734802cd76da6c7265db609eaec6557886bcbb439",
+    "cargo_lock_unchanged_from_parent": true,
+    "locked_input_and_post_test_git_diff_checked": true
+  },
+  "current_linux_compile_observation": {
+    "job": 125545613305,
+    "full_log_sha256": "b918f2a677321b8dbbf8e9b85a6831b5637ac1e103bc6ba84ec768287f146a37",
+    "selected_session_gateway_target_compiled_and_executed": true,
+    "human_actual_passed": 62,
+    "E0382_marker_in_full_log": false,
+    "qualification": "This exact-H Linux cargo test command compiled and ran the selected62 Human cases. No result is inherited from predecessor runs; macOS shipping compilation remains separately pending."
+  },
+  "pending_required_jobs": [
+    {
+      "name": "native-message-shipping-compile",
+      "job_id": 125545613231,
+      "status": "queued",
+      "conclusion": null,
+      "runner_requirement": "macos-15",
+      "executed_step_count": 0,
+      "full_log_read": false,
+      "artifact_verified": false,
+      "actual_counts": null,
+      "expected_gate_source": "The immutable exact-H workflow above governs the production dependency graph, actual AppHost/CLI/gateway binaries, owner contracts, CABI7, protocol/TCP and actual resource-copy controls.",
+      "qualification": "Queued is neither failure nor success. No shipping count, binary hash, CABI7 or package-copy result is promoted."
+    }
+  ],
+  "intentionally_unselected_jobs": [
+    {
+      "name": "native-auth-and-journal",
+      "job_id": 125545615377,
+      "status": "completed",
+      "conclusion": "skipped",
+      "exact_workflow_condition": "github.event_name != 'push' && !inputs.message_batch",
+      "event": "push",
+      "counts_accepted": false
+    }
+  ],
+  "evidence_integrity": {
+    "all_five_zip_digests_match_api": true,
+    "all_artifact_target_shas_match": true,
+    "all_five_complete_job_logs_preserved_byte_exact": true,
+    "raw_logs_and_archives_embedded_in_report": false,
+    "raw_evidence_directory": "/workspace/scratch/049bfe5e4966/round16-final-native/9329aced33343e8e356ba34dfd0f474f3e767914",
+    "full_logs_fetched_once_each": true
+  },
+  "remaining_acceptance": {
+    "source_review_contract": "Tracked independently by root/source auditor; not inferred from native jobs.",
+    "shipping_job": "pending",
+    "full_source_and_legal_closure": false,
+    "real_service_and_live_DC": false,
+    "signed_supported_platform_packages": false,
+    "complete_visual_accessibility_temporal_acceptance": false,
+    "final_shared_static_library_and_installed_consumers": false,
+    "performance_soak_upgrade_rollback_and_full_Bot_regression": false,
+    "independent_ACCEPT": false
+  },
+  "audit_scope": "Read-only GitHub API/log/artifact acquisition plus byte hashes and JSON/text inspection. No local compiler/test/generator/validator/product execution; no GitHub mutation, retry, dispatch or cancellation."
+}
