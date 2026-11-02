@@ -97,21 +97,28 @@ Inspected base H=`65253740c033508ab08a4b500449a5b56727e940`,
 run41504939510 attempt1. The prior Round27 description of five authored
 integration cases/owner5 and its absent evidence file are withdrawn; the base
 actually has Human33, sharebox1 and journal2. This round authors the five cases.
-New containing-H execution is not-run at preparation; Actions supplies the
-exact target, run/job/artifact binding. Historical passing counts are not new-H evidence.
+Exact H59f5fa24827812f78336c464995d161f403dedfb/run41508537631 is now
+completed/success: Human38/sharebox1/journal3/Agent4/private3/Gateway1,
+renderer/Transcript16/settlement5/Chromium12, actual AppHost/gateway5/library11/
+protocol122/TCP9/copy4 with three refusal controls, Electron and Windows11.
+All five complete logs and four CI theme/viewport images were inspected.
+The same journal test is strengthened on the later e8b48cb owner through
+the actual valid-batch merge/write path, preserving12 cases and all concurrent
+attachment/completion/concurrency changes. That oracle requires containing-H
+Actions; old-H execution is not promoted to later code.
 
 | Requirement / oracle | Existing production owner | Authored check / actual base evidence |
 | --- | --- | --- |
 | NMR-46 / NMR-AC-37 recovery | ForwardMessageDialog fixture using existing runtime theme installer | Base renderer/Transcript16/settlement5 pass; Chromium11/12, missing setTheme. Retain Chromium12, keyboard control and four actual light/dark viewport screenshots. |
-| NMR-47a/b / NMR-AC-38 | Source SandAgentDb journal plus destination Session/Transcript | Five actual HTTP/SQLite/process cases now authored; parent kills and reaps child, reads committed intent independently, resumes untouched target, injects staging/progress SQL errors. Require Human38. |
+| NMR-47a/b / NMR-AC-38 | Source SandAgentDb journal plus destination Session/Transcript | Five actual HTTP/SQLite/process cases passed in H59 Human38; parent kills and reaps child, reads committed intent independently, resumes untouched target, injects staging/progress SQL errors. Require Human38. |
 | NMR-47c/d / NMR-AC-38 | Existing credential/source authorization and ordinary sync | Ambiguous first POST reuses nonce; immutable source snapshot; same/subset/concurrent completed replay; changed source/privacy/expanded-set negatives; source/account/issuer denial; no generic-outbox bypass. |
 | NMR-47e/f / NMR-AC-38 | Existing SandAgentDb expected-value CAS and Session eligibility | Two-handle stale read regression plus typed source denial and unrelated actual history GET; I/O failures still stop. Select sharebox1 and journal3 separately. |
 | Gateway / Human / Agent preservation | Existing authenticated Gateway and Session writers | Base Human33/sharebox1 pass, count assertion fails; Agent4/private3/Gateway1 are skipped after it. All remain required on new H. |
 | Native package / Social / transport | Actual AppHost shipping root and resource-copy owner | Base shipping125481711613 compiled AppHost and passed composition12/Native7/FeatureHost7/Social9/HTTP-owner6/Host6/ABI7/CLI3/gateway5, then stale expected3 count failed. Later library/protocol/TCP/copy checks not run; new H must execute them. |
 | Electron / Windows | Existing carrier/auth/update/publisher owners | Base Electron125481711452 and Windows125481711041 succeed; no formal publisher or signed-package acceptance. |
 
-Source_reviews remains absent; source/product/independent acceptance stay
-false. Backend #137 remains open/draft/unmerged and read-only. Remote
+Source_reviews was absent at65253740; later concurrent records are retained.
+Source/product/independent acceptance remain ungranted. Backend #137 remains open/draft/unmerged and read-only. Remote
 provenance/policy, resource retention, multi-AppHost uniqueness, real service,
 packaged visual/a11y, signed release, Bot and performance/soak remain open.
 

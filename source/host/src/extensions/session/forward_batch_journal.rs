@@ -424,6 +424,15 @@ pub(super) fn store_forward_batch(owner: &SandAgentDb, batch: &HumanForwardBatch
     // observation and this merge; the SandAgentDb conditional CAS detects
     // that interleaving instead of erasing another batch's journal.
     let observed = read_forward_journal_value(owner)?;
+    store_forward_batch_observed(owner, batch, observed)
+}
+
+fn store_forward_batch_observed(
+    owner: &SandAgentDb,
+    batch: &HumanForwardBatch,
+    observed: Option<Value>,
+) -> Result<(), String> {
+    batch.validate(&batch.source_conversation_id)?;
     let mut batches = decode_forward_batches(observed.clone(), &batch.source_conversation_id)?;
     if let Some(existing) = batches.iter_mut().find(|prior|
         prior.account_id == batch.account_id && prior.issuer == batch.issuer && prior.request_id == batch.request_id
@@ -730,48 +739,54 @@ mod tests {
 
     #[test]
     fn stale_forward_metadata_observation_cannot_erase_other_batch() {
-        let dir = std::env::temp_dir().join(format!(
-            "forward-metadata-cas-{}", uuid::Uuid::new_v4()
-        ));
-        std::fs::create_dir_all(&dir).expect("cas fixture dir");
+        let dir = std::env::temp_dir().join(format!("forward-metadata-cas-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
         let db_path = dir.join("store.db");
-        let first = SandAgentDb::open(&db_path, 500).expect("first owner");
-        let second = SandAgentDb::open(&db_path, 500).expect("independent owner");
-        let first_observed = second.get_metadata(FORWARD_BATCHES_KEY).expect("observe absence");
-        assert!(first_observed.is_none(), "absence is not JSON null");
-        let first_value = serde_json::json!([{"requestId": "first"}]);
-        assert!(first.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, first_observed.as_ref(), first_value.clone()
-        ).expect("commit first value"));
-        let stale_second = serde_json::json!([{"requestId": "second"}]);
-        assert!(!second.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, first_observed.as_ref(), stale_second
-        ).expect("reject stale merge"));
-        assert_eq!(first.get_metadata(FORWARD_BATCHES_KEY).unwrap(), Some(first_value.clone()));
+        let first = SandAgentDb::open(&db_path, 2_000).unwrap();
+        let second = SandAgentDb::open(&db_path, 2_000).unwrap();
+        let make_batch = |request: &str| HumanForwardBatch::new(
+            "a".into(), "prod".into(), request.into(), "s".into(), "e".into(),
+            "text".into(), vec![],
+            serde_json::json!({"batchVersion":1,"requestId":request,
+                "sourceConversationId":"s","sourceEntryId":"e",
+                "privacy":{"dropSenderNames":false,"dropCaptions":false}}),
+            &["b".into(), "c".into()],
+        );
+        let mut first_batch = make_batch("first");
+        let second_batch = make_batch("second");
+        store_forward_batch(&first, &first_batch).unwrap();
+        let stale = read_forward_journal_value(&first).unwrap();
+        store_forward_batch(&second, &second_batch).unwrap();
+        let committed = read_forward_journal_value(&second).unwrap();
+        let committed_raw = second.read_kv("metadata").unwrap().unwrap();
 
-        // An unrelated metadata update must not invalidate a journal writer
-        // that has observed the same journal value.
-        assert!(first.set_metadata("unrelated", serde_json::json!(5)).unwrap());
-        let second_value = serde_json::json!([{"requestId": "first"}, {"requestId": "second"}]);
-        assert!(second.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, Some(&first_value), second_value.clone()
-        ).expect("retry from fresh journal"));
-        assert_eq!(first.get_metadata(FORWARD_BATCHES_KEY).unwrap(), Some(second_value.clone()));
+        first_batch.destinations[0].completed = true;
+        assert!(store_forward_batch_observed(&first, &first_batch, stale).is_err(),
+            "a journal writer paused after its read must not erase another committed batch");
+        assert_eq!(first.read_kv("metadata").unwrap().unwrap(), committed_raw);
+        // Expected-value admission must precede even the no-change shortcut.
         assert!(!first.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, None, serde_json::Value::Null
-        ).expect("absent differs from present"));
-        assert!(!first.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, Some(&serde_json::Value::Null), serde_json::Value::Null
-        ).expect("null differs from journal"));
-        assert!(first.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, Some(&second_value), second_value.clone()
-        ).expect("idempotent no-change journal"));
+            FORWARD_BATCHES_KEY, None, committed.clone().unwrap()
+        ).unwrap());
+        assert_eq!(first.read_kv("metadata").unwrap().unwrap(), committed_raw);
+
+        let observed = read_forward_journal_value(&first).unwrap();
+        assert!(second.set_metadata("unrelated", serde_json::json!(5)).unwrap());
+        store_forward_batch_observed(&first, &first_batch, observed).unwrap();
         assert_eq!(first.get_metadata("unrelated").unwrap(), Some(serde_json::json!(5)));
+        assert_eq!(load_forward_batches(&second, "s").unwrap(), vec![first_batch, second_batch]);
+
+        assert!(second.set_metadata(FORWARD_BATCHES_KEY, Value::Null).unwrap());
+        let corrupt_raw = first.read_kv("metadata").unwrap().unwrap();
+        assert!(store_forward_batch(&first, &make_batch("third")).is_err(),
+            "explicit null is corrupt, not an absent journal");
+        assert_eq!(first.read_kv("metadata").unwrap().unwrap(), corrupt_raw);
+        assert_eq!(read_forward_journal_value(&first).unwrap(), Some(Value::Null));
         first.close(false);
         second.close(false);
         drop(first);
         drop(second);
-        std::fs::remove_dir_all(&dir).expect("cleanup fixture");
+        std::fs::remove_dir_all(&dir).unwrap();
     }
     #[test]
     fn bad_forward_journal_versions_and_destinations_fail_closed() {

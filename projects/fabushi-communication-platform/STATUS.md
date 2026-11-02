@@ -130,23 +130,39 @@ The UI fixture installs the existing runtime theme owner and proves actual
 light/dark colors before its four screenshots. No public schema, service API,
 message owner or data migration/deletion is introduced.
 
-Tests are authored, reviewed and **not-run at commit preparation**. Only the
-containing-H Actions logs/artifacts establish execution; no local executable
-validation was performed. Exact predecessor evidence, corrections, review
-findings and scoped case IDs are recorded in
+Execution correction: exact `59f5fa24827812f78336c464995d161f403dedfb`,
+run41508537631 attempt1 is completed/success. All five full job logs were
+read: reconciliation125494011040 passed Human38/sharebox1/journal3/Agent4/
+private3/Gateway1, including the five actual process/SQLite cases. UI125494010641
+passed renderer/Transcript16/settlement5/Chromium12; its four actual light/dark
+wide/narrow images were opened. Shipping125494011097 passed the locked actual
+AppHost build, gateway5/library11, protocol122/TCP9 and actual resource-copy4
+plus all three required refusal controls. Electron125494011030 and
+Windows125494011118 succeeded. These results qualify only that exact source.
+
+After concurrent migration changes, the same existing journal test is now
+strengthened through real valid batches and the actual observed-value
+merge/write path. The reviewed e8b48cb journal keeps12 cases, later attachment
+and completion protections, and the independently strengthened concurrency
+test. The new oracle is not-run at preparation and requires containing-H
+Actions; historical Human38 and journal3 do not qualify later code. No local
+executable validation was performed. Complete IDs, digests and scope are in
 `projects/telegram-desktop-rust/evidence/round28-forward-crash-qualification.json`.
 
-The single inventory/ledger still has6895 root/16381 recursive Git identities
-and184 responsibility rows; source_reviews is absent and unknown/unread are
-undetermined. FMEP-SOURCE-01 schema/checker contracts are present; no source or
+At the inspected65253740 base, inventory recorded6895 root/16381 recursive
+Git identities and184 responsibility rows, with source_reviews absent and
+unknown/unread undetermined. Later concurrent source reviews are preserved;
+these historical counts do not state current semantic coverage. FMEP-SOURCE-01 schema/checker contracts are present; no source or
 acceptance state is promoted. Remote forward provenance/policy, attachment
-retention under cache loss, simultaneous multi-AppHost cross-source uniqueness,
+power-loss/filesystem qualification, simultaneous multi-AppHost cross-source uniqueness,
 real production service/pagination, full source/legal closure, Bot regression,
 signed supported-platform packages, upgrade/rollback, performance/soak and
 independent ACCEPT/release remain open.
 
 Backend PR #137 was read only: open/draft/unmerged,
-H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. No merge or deployment.
+baseline H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`; later readback observed
+H=`52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23`, still open/draft/unmerged.
+This round made no Backend changes, merge or deployment.
 
 ## Historical planning snapshot (2026-10-02)
 
@@ -217,4 +233,3 @@ CAS. Six source reviews/two complete at936 are scoped historical counts; later
 source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
-
