@@ -1669,7 +1669,7 @@ mod authorization_identity_contract_tests {
 mod mtproto_service_builder_contract_tests {
     use super::{
         build_destroy_auth_key, build_destroy_session, build_get_future_salts, build_msg_resend_req, build_msgs_ack,
-        build_msgs_state_req, build_ping, build_ping_delay_disconnect, build_rpc_drop_answer,
+        build_msgs_state_req, build_ping, build_ping_delay_disconnect, build_req_pq, build_rpc_drop_answer,
         parse_bad_msg_notification,
         parse_bad_server_salt,
         parse_future_salts, parse_msg_detailed_info, parse_msg_new_detailed_info, parse_msgs_ack,
@@ -1688,7 +1688,7 @@ mod mtproto_service_builder_contract_tests {
         MSG_NEW_DETAILED_INFO_CONSTRUCTOR, MSGS_ACK_CONSTRUCTOR,
         MSGS_ALL_INFO_CONSTRUCTOR,
         MSGS_STATE_INFO_CONSTRUCTOR, MSGS_STATE_REQ_CONSTRUCTOR, MSG_RESEND_REQ_CONSTRUCTOR,
-        PING_CONSTRUCTOR, PING_DELAY_DISCONNECT_CONSTRUCTOR, PONG_CONSTRUCTOR, RPC_RESULT_CONSTRUCTOR,
+        PING_CONSTRUCTOR, PING_DELAY_DISCONNECT_CONSTRUCTOR, PONG_CONSTRUCTOR, REQ_PQ_CONSTRUCTOR, RPC_RESULT_CONSTRUCTOR,
     };
     use crate::tl::TlWriter;
 
