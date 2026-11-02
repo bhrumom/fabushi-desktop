@@ -10,12 +10,29 @@ use fabushi_telegram_protocol::{
     DcDirectory, ObfuscatedConnectionStart, PlaintextEnvelope, TransportFrameCodec, TransportMode,
 };
 
+const LOOPBACK_IO_TIMEOUT: Duration = Duration::from_secs(10);
+
+fn bounded_loopback_stream(stream: TcpStream) -> TcpStream {
+    stream.set_read_timeout(Some(LOOPBACK_IO_TIMEOUT)).unwrap();
+    stream.set_write_timeout(Some(LOOPBACK_IO_TIMEOUT)).unwrap();
+    stream
+}
+
+fn loopback_network_config() -> NetworkConfig {
+    NetworkConfig {
+        connect_timeout: LOOPBACK_IO_TIMEOUT,
+        read_timeout: LOOPBACK_IO_TIMEOUT,
+        write_timeout: LOOPBACK_IO_TIMEOUT,
+        ..NetworkConfig::default()
+    }
+}
+
 #[test]
 fn abridged_transport_handles_fragmented_tcp_reads_and_writes() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
+        let mut stream = bounded_loopback_stream(listener.accept().unwrap().0);
         let mut header = [0_u8; 1];
         stream.read_exact(&mut header).unwrap();
         assert_eq!(header, [0xef]);
@@ -35,7 +52,7 @@ fn abridged_transport_handles_fragmented_tcp_reads_and_writes() {
         }
     });
 
-    let stream = TcpStream::connect(address).unwrap();
+    let stream = bounded_loopback_stream(TcpStream::connect(address).unwrap());
     let mut transport = TcpTransport::from_stream(stream, TransportMode::Abridged);
     transport.send_payload(&[0x41; 12]).unwrap();
     assert_eq!(transport.receive_payload().unwrap(), vec![0x42; 16]);
@@ -114,7 +131,7 @@ fn obfuscated_tcp_transport_writes_prefix_and_keeps_bidirectional_ctr_streams_co
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
+        let mut stream = bounded_loopback_stream(listener.accept().unwrap().0);
 
         let mut prefix = [0_u8; 64];
         stream.read_exact(&mut prefix).unwrap();
@@ -143,7 +160,7 @@ fn obfuscated_tcp_transport_writes_prefix_and_keeps_bidirectional_ctr_streams_co
         }
     });
 
-    let config = NetworkConfig::default();
+    let config = loopback_network_config();
     let mut transport = TcpTransport::connect_obfuscated(address, &[], 2, &config).unwrap();
     transport.send_payload(&[0x41; 12]).unwrap();
     assert_eq!(transport.receive_payload().unwrap(), vec![0x42; 16]);
@@ -161,15 +178,20 @@ fn connect_directory_uses_bare_media_directory_id_and_negative_protocol_wire_id(
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
+        let mut stream = bounded_loopback_stream(listener.accept().unwrap().0);
         let mut prefix = [0_u8; 64];
         stream.read_exact(&mut prefix).unwrap();
 
         let mut reconstructed_nonce = [0x77_u8; 64];
         reconstructed_nonce[..56].copy_from_slice(&prefix[..56]);
-        let expected =
+        let mut expected =
             ObfuscatedConnectionStart::from_nonce(&[], -2, reconstructed_nonce).unwrap();
         assert_eq!(&prefix[56..62], &expected.prefix()[56..62]);
+        let mut request = [0_u8; 13];
+        stream.read_exact(&mut request).unwrap();
+        expected.encrypt_outbound(&mut request);
+        assert_eq!(request[0], 3);
+        assert_eq!(&request[1..], &[0x41; 12]);
     });
 
     let ip = IpAddr::V4(Ipv4Addr::LOCALHOST);
@@ -184,7 +206,7 @@ fn connect_directory_uses_bare_media_directory_id_and_negative_protocol_wire_id(
     .unwrap();
 
     let (endpoint, mut transport) =
-        connect_directory(&directory, 160_002, DcPurpose::Media, &NetworkConfig::default())
+        connect_directory(&directory, 160_002, DcPurpose::Media, &loopback_network_config())
             .unwrap();
     assert_eq!(endpoint.dc_id, 2);
     transport.send_payload(&[0x41; 12]).unwrap();
@@ -201,15 +223,20 @@ fn connect_directory_normalizes_temporary_id_only_for_the_protocol_wire() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
+        let mut stream = bounded_loopback_stream(listener.accept().unwrap().0);
         let mut prefix = [0_u8; 64];
         stream.read_exact(&mut prefix).unwrap();
 
         let mut reconstructed_nonce = [0x66_u8; 64];
         reconstructed_nonce[..56].copy_from_slice(&prefix[..56]);
-        let expected =
+        let mut expected =
             ObfuscatedConnectionStart::from_nonce(&[], 2, reconstructed_nonce).unwrap();
         assert_eq!(&prefix[56..62], &expected.prefix()[56..62]);
+        let mut request = [0_u8; 13];
+        stream.read_exact(&mut request).unwrap();
+        expected.encrypt_outbound(&mut request);
+        assert_eq!(request[0], 3);
+        assert_eq!(&request[1..], &[0x41; 12]);
     });
 
     let ip = IpAddr::V4(Ipv4Addr::LOCALHOST);
@@ -232,7 +259,7 @@ fn connect_directory_normalizes_temporary_id_only_for_the_protocol_wire() {
     .unwrap();
 
     let (endpoint, mut transport) =
-        connect_directory(&directory, 1_002, DcPurpose::Main, &NetworkConfig::default()).unwrap();
+        connect_directory(&directory, 1_002, DcPurpose::Main, &loopback_network_config()).unwrap();
     assert_eq!(endpoint.dc_id, 1_002);
     transport.send_payload(&[0x41; 12]).unwrap();
     server.join().unwrap();
@@ -244,7 +271,7 @@ fn abridged_shipping_send_keeps_quick_ack_request_bit_clear() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
+        let mut stream = bounded_loopback_stream(listener.accept().unwrap().0);
         let mut initial = [0_u8; 1];
         stream.read_exact(&mut initial).unwrap();
         assert_eq!(initial, [0xef]);
@@ -259,7 +286,7 @@ fn abridged_shipping_send_keeps_quick_ack_request_bit_clear() {
         assert_eq!(payload, [0x41; 12]);
     });
 
-    let stream = TcpStream::connect(address).unwrap();
+    let stream = bounded_loopback_stream(TcpStream::connect(address).unwrap());
     let mut transport = TcpTransport::from_stream(stream, TransportMode::Abridged);
     transport.send_payload(&[0x41; 12]).unwrap();
     server.join().unwrap();
@@ -309,7 +336,7 @@ fn tls_camouflage_shipping_handshake_wraps_obfuscated_transport_without_schedule
     let server_secret = secret.clone();
 
     let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
+        let mut stream = bounded_loopback_stream(listener.accept().unwrap().0);
 
         let mut hello_header = [0_u8; 5];
         stream.read_exact(&mut hello_header).unwrap();
@@ -367,7 +394,7 @@ fn tls_camouflage_shipping_handshake_wraps_obfuscated_transport_without_schedule
         stream.write_all(&response_record).unwrap();
     });
 
-    let config = NetworkConfig::default();
+    let config = loopback_network_config();
     let mut transport =
         TcpTransport::connect_obfuscated(address, &secret, 2, &config).unwrap();
     transport.send_payload(&[0x41; 12]).unwrap();

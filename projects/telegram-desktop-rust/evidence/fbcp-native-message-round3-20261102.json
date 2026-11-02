@@ -119,9 +119,9 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-repaired-head-protocol-and-shipping-actions",
+    "status": "pending-bounded-tcp-fixture-recovery-actions",
     "local_executable_validation": "not-run",
-    "dependent_message_batches": "blocked",
+    "dependent_message_batches": "blocked-until-all-NMR-required-jobs-and-tests-pass",
     "full_product_acceptance": false,
     "independent_acceptance": false
   },
@@ -604,7 +604,30 @@
       "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125118482256/logs",
       "classification": "actual-ledger-contract-drift; canonical-data-and-stage-applicability-review-required",
       "acceptance": false,
-      "notes": "The complete job log was read. It prints the first 100 errors; the full 868-error JSON remains in the pinned artifact. A separate read-only recovery will return the complete JSON, without rerunning validation. No invented case IDs, widened catch-all schema or removed gate is used to make legacy rows appear valid."
+      "notes": "The complete job log was read. It prints the first 100 errors; the full 868-error JSON remains in the pinned artifact. A separate read-only recovery will return the complete JSON, without rerunning validation. No invented case IDs, widened catch-all schema or removed gate is used to make legacy rows appear valid.",
+      "complete_error_report": {
+        "producer_ledger_blob": "bad0d6b64cead0a04354f9d8c95d8e19bc542cfd",
+        "unchanged_at": "5fa9087ae95ab9e9be572181cef07c53d0a94a4f",
+        "bytes": 296208,
+        "sha256": "0ac865abd3a0fc0f99e3bdba64a6f90f198ad5b4b0bb1af17f8043719b571ad8",
+        "recovery_run_id": 41397005651,
+        "recovery_artifact_id": 13119563544,
+        "tests_rerun": false,
+        "errors": {
+          "high_risk_case_references_missing": 140,
+          "enum_drift": 260,
+          "legacy_alias_or_extra_metadata": 115,
+          "semantic_token_usage_string": 45,
+          "required_fields_missing": 286,
+          "novel_owner_proof_missing": 21,
+          "duplicate_production_evidence": 1
+        },
+        "affected_rows": 152,
+        "total_rows": 182,
+        "reported_responsibilities_total": 180,
+        "source_reviews_present": false,
+        "acceptance": false
+      }
     }
   },
   "protocol_test_repair": {
@@ -4382,6 +4405,16 @@
         "projects/telegram-desktop-rust/evidence/expected-lite-exact-license-review-20261102.json"
       ],
       "scope": "Original-host license retention and provenance correction; preserve unchanged in the next CAS child."
+    },
+    {
+      "sha": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
+      "parent": "5fa9087ae95ab9e9be572181cef07c53d0a94a4f",
+      "paths": [
+        ".github/workflows/tdrp-retire-tcp-fixture-run.yml",
+        "projects/telegram-desktop-rust/evidence/fbcp-native-message-round3-20261102.json",
+        "source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs"
+      ],
+      "action": "Re-read complete compare. Retain the existing plaintext/quick-ack fixture fixes and obsolete-run retirement workflow. Apply only the remaining loopback deadline/directory peer changes; merge evidence without replacing any concurrent record."
     }
   ],
   "tcp_fixture_repair": {
@@ -4418,5 +4451,66 @@
       "status": "authored-not-run"
     },
     "validation": "pending-new-exact-H-native-message-reconciliation-and-native-message-shipping-compile; consumers-blocked"
+  },
+  "tcp_fixture_additional_bounds": {
+    "base": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
+    "observed_run_id": 41395923359,
+    "observed_run_head": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+    "classification": "TEST_FLAW",
+    "status": "implemented-pending-exact-head-actions",
+    "scope": [
+      "source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs"
+    ],
+    "retained_positive_evidence": {
+      "human": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "agent_nonce": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      },
+      "app_host_compile": "success"
+    },
+    "changes": [
+      "Preserve b13e3d8d072ef5d58f466c55bb273ff502ca4463's complete plaintext and quick-ack fixture repairs unchanged, including their bilateral five-second deadlines.",
+      "Consume and decrypt complete 13-byte directory requests before the peers close, avoiding prefix/frame shutdown races.",
+      "Bound remaining loopback socket reads/writes and configurations to ten seconds; all timeouts remain failures. Live-session probe is unchanged."
+    ],
+    "production_transport_changed": false,
+    "live_session_case_retained": true,
+    "required_execution": "All 9 TCP cases including the live case, full protocol suite, AppHost check, 10 Human, 4 Agent nonce, 4 proxy and 1 credential cases; no failed or ignored cases on the same frozen H.",
+    "review": {
+      "scope_base": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
+      "verdict": "approved-for-focused-actions",
+      "blocking_findings": [],
+      "method": "Independent re-review of the frozen reduced delta against b13e3d8d072ef5d58f466c55bb273ff502ca4463. Concurrent plaintext/quick-ack functions and the live case remain unchanged; only six other loopback deadlines and complete directory-peer request consumption are added.",
+      "local_execution": false
+    },
+    "retained_concurrent_fix": "b13e3d8d072ef5d58f466c55bb273ff502ca4463"
+  },
+  "inventory_engine_pin_recovery": {
+    "base": "5fa9087ae95ab9e9be572181cef07c53d0a94a4f",
+    "classification": "IMPL_BUG-stale-reviewed-helper-pin",
+    "failed_run_id": 41397148458,
+    "failed_job_id": 125120824171,
+    "failed_stage": "acquisition-engine",
+    "canonical_entries_emitted": 0,
+    "scope": [
+      "scripts/tdrp-collect-fixed-upstream.py"
+    ],
+    "old_engine_blob": "d925d81e4a664a361679b41ef1bd6102898349ac",
+    "new_engine_blob": "0f2b07be4adb31d14838c1ff8a0cdb182041b4ef",
+    "rationale": "The original-host LICENSE byte-retention repair changed the acquisition engine; the caller pin must match that reviewed exact Git object. Preserve the pin check and all fixed U/host/commit/tree/gitlink/deadline and acceptance constraints.",
+    "review": {
+      "verdict": "approved-for-focused-actions",
+      "blocking_findings": [],
+      "method": "Independent exact-commit diff and adjacent acquisition/projection review; no local execution."
+    },
+    "status": "implemented-pending-exact-head-actions",
+    "source_accepted": false,
+    "product_accepted": false
   }
 }
