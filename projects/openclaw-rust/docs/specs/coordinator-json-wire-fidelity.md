@@ -93,3 +93,28 @@ observation. The test change is confined to
 `source/node-agent-coordinator/tests/coordinator_contract.rs`.
 No production manifest/parser change is part of the initial baseline.
 All executable verification remains GitHub Actions only.
+
+## Deciding baseline and conditional correction
+
+CJW-06-FLOAT-01 is **FIX / IMPL_BUG** after Actions `41470485288`, Host job
+`125362470654`, at H `22b10860e909bea9e4ee3840bab310c2d61fcd4d`.
+Both actual HTTP and post-connected SSE probes reached their full-Value
+comparison and failed: the retained wire value `1793000000000.0015` decoded
+as `1793000000000.0017`. Positive and negative expected bits ending `00006`
+became `00007`; the other five finite/zero/integral controls retained their bits.
+The real standalone feature observation resolved `serde_json 1.0.154` with
+`default/std`, without `float_roundtrip`. This is production decoder configuration
+evidence, not a fixture, transport or timeout failure.
+
+Enable only `float_roundtrip` in the existing Coordinator serde_json declaration.
+Keep default features, version constraint, observed lock bytes, production
+parser entrypoints and every independent expectation unchanged. The exact
+[1.0.154 feature contract](https://github.com/serde-rs/json/blob/v1.0.154/Cargo.toml)
+and [selected number conversion paths](https://github.com/serde-rs/json/blob/v1.0.154/src/de.rs)
+support this configuration; they do not establish a measured product cost.
+The baseline's 55 passing Coordinator cases do not include the two later relay
+targets, which Cargo did not reach after this failure. The corrected exact H
+must execute both numerical probes and all three selected targets with `--locked`,
+retain the actual feature graph and pass the shared gates. No corrected result,
+binary carrier coverage, real service compatibility or global acceptance is
+claimed from this source change.
