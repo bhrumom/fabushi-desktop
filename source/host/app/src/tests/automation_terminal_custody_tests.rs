@@ -111,6 +111,7 @@ fn automation_terminal_custody_preserves_safe_outcomes_and_upgrade_annotation() 
         let (cancellation, mut lease) = fixture.admit_with_source("safe-agent", stream_id, "automation");
         assert!(!cancellation.is_cancelled(), "admission must supply a fresh handle");
         assert_eq!(cancellation.reason(), None);
+        assert!(!fixture.registry.is_quiescing_for_upgrade());
         if upgrade {
             fixture.registry.request_quiesce_for_upgrade();
             assert!(cancellation.is_cancelled(), "upgrade owns the first cancellation");
@@ -124,6 +125,10 @@ fn automation_terminal_custody_preserves_safe_outcomes_and_upgrade_annotation() 
             assert_eq!(cancellation.reason().as_deref(), Some("safe terminal cancellation"));
         }
         assert_eq!(fixture.registry.is_quiescing_for_upgrade(), upgrade);
+        assert_eq!(fixture.registry.active_stream_ids_for_agent("safe-agent"), vec![stream_id.to_string()]);
+        assert!(fixture.runtime.is_agent_running("safe-agent"));
+        fixture.runtime.require_routed_turn_lease("safe-agent", stream_id)
+            .expect("cancellation alone must not retire the admitted turn");
         let provider_result = if kind == "failed" {
             Err(crate::ProviderSessionError::Tool("known failure".into()))
         } else { Ok("local result".into()) };

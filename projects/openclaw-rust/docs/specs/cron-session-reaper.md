@@ -788,3 +788,8 @@ return false without changing that reason. Preserve all original terminal kind,
 sent/reacted facts, safe outcomes, upgrade annotation, retained-unsettled and
 real NotStarted assertions. The same exact app selector remains required in
 Actions; this diagnosis and authored repair are not candidate execution evidence.
+
+Cancellation alone must also retain the real registered task and admitted routed
+lease; the fixture checks both owners before terminal publication. The other
+two new app custody cases passed on the failing H; recovery and Coordinator
+checks did not execute. The integrated repair still requires new exact-H Actions.
