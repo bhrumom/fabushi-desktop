@@ -21,7 +21,7 @@ jobs:
           python3 - <<'PY'
           import copy, hashlib, json, os, pathlib, subprocess, urllib.request
           path = "projects/telegram-desktop-rust/parity-ledger.json"
-          expected = "a95d76c46119474e36134456442aebe39f4e9760"
+          expected = "59d18f5de12fe6c4fe72bb110996c0cb0e07e9f4"
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           assert head == os.environ["GITHUB_SHA"]
           actual = subprocess.check_output(["git", "rev-parse", "HEAD:" + path], text=True).strip()
