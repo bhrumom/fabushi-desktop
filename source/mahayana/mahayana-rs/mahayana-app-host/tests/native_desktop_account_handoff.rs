@@ -815,7 +815,7 @@ fn assert_settings_restart_matrix(host: &AppHost, root: &Path, restart: bool) {
     let expected = json!({
         "version":2,
         "network":{"proxy":{
-            "mode":"enabled", "selected":e,
+            "mode":"enabled", "selected":e.clone(),
             "list":[b,c.clone(),c,e],
             "tryIpv6":false, "useProxyForCalls":true, "checkIpWarningShown":true,
             "rotation":{"enabled":true,"timeoutSeconds":42,"preferredIndices":[3,0,2]}
