@@ -47,26 +47,38 @@ fn plaintext_exchange_preserves_wire_envelope() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     let server = thread::spawn(move || {
-        let (stream, _) = listener.accept().unwrap();
-        let mut transport = TcpTransport::from_stream(stream, TransportMode::Intermediate);
-        let payload = transport.receive_payload().unwrap();
+        let (mut stream, _) = listener.accept().unwrap();
+        stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
+        // The fake server consumes the client's one-time mode marker. A
+        // client-role TcpTransport would interpret it as an unsolicited ACK.
+        let mut mode = [0_u8; 4];
+        stream.read_exact(&mut mode).unwrap();
+        assert_eq!(mode, [0xee; 4]);
+        let mut length = [0_u8; 4];
+        stream.read_exact(&mut length).unwrap();
+        let length = u32::from_le_bytes(length) as usize;
+        assert!((24..=20 + 4 + 63 * 4).contains(&length));
+        let mut payload = vec![0_u8; length];
+        stream.read_exact(&mut payload).unwrap();
         let request = PlaintextEnvelope::decode(&payload).unwrap();
         assert!(request.body.starts_with(&[1, 2, 3, 4]));
         assert_eq!(request.body.len() % 4, 0);
         assert!(request.body.len() <= 4 + 63 * 4);
-        transport
-            .send_payload(
-                &PlaintextEnvelope {
-                    message_id: 9,
-                    body: vec![5, 6, 7, 8],
-                }
-                .encode()
-                .unwrap(),
-            )
-            .unwrap();
+        let response = PlaintextEnvelope {
+            message_id: 9,
+            body: vec![5, 6, 7, 8],
+        }
+        .encode()
+        .unwrap();
+        let mut codec = TransportFrameCodec::new(TransportMode::Intermediate);
+        // Server replies are framed payloads, without another client mode marker.
+        stream.write_all(&codec.encode(&response).unwrap()).unwrap();
     });
 
     let stream = TcpStream::connect(address).unwrap();
+    stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+    stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
     let mut transport = TcpTransport::from_stream(stream, TransportMode::Intermediate);
     let response = transport
         .exchange_plaintext(&PlaintextEnvelope {
@@ -259,14 +271,26 @@ fn unsolicited_abridged_quick_ack_fails_closed_without_correlation_owner() {
     let address = listener.local_addr().unwrap();
     let server = thread::spawn(move || {
         let (mut stream, _) = listener.accept().unwrap();
+        stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
         let mut initial = [0_u8; 1];
         stream.read_exact(&mut initial).unwrap();
         assert_eq!(initial, [0xef]);
+        let mut length = [0_u8; 1];
+        stream.read_exact(&mut length).unwrap();
+        // This ordinary request has not asked for a quick ACK.
+        assert_eq!(length, [3]);
+        let mut request = [0_u8; 12];
+        stream.read_exact(&mut request).unwrap();
+        assert_eq!(request, [0x41; 12]);
         stream.write_all(&0x8123_4567_u32.to_be_bytes()).unwrap();
     });
 
     let stream = TcpStream::connect(address).unwrap();
+    stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+    stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
     let mut transport = TcpTransport::from_stream(stream, TransportMode::Abridged);
+    transport.send_payload(&[0x41; 12]).unwrap();
     assert!(matches!(
         transport.receive_payload(),
         Err(NetworkError::UnexpectedQuickAck(0x8123_4567))

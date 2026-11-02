@@ -5,7 +5,7 @@
   "repository": "bhrumom/fabushi-desktop",
   "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
   "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "inspected_target": "3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23",
+  "inspected_target": "5fa9087ae95ab9e9be572181cef07c53d0a94a4f",
   "observed_main": "5528062177e3865eef60a073a066cca144f9e3e8",
   "spec": "docs/specs/fbcp-native-message-reconciliation.md",
   "source_authority_consistency": {
@@ -4298,7 +4298,7 @@
     }
   },
   "ledger_failure_artifact_recovery": {
-    "status": "implemented-pending-exact-head-actions",
+    "status": "completed-success",
     "producer_head": "2fd8d7623a1cfa00b09e90a2d81535c6550425df",
     "run_id": 41396376863,
     "artifact_id": 13119840883,
@@ -4310,10 +4310,35 @@
       "blocking_findings": [],
       "method": "Independent static workflow/CLI/pinned metadata and complete-byte transfer review; no local execution."
     },
-    "local_download_status": "A non-escalated local URL download could not open sockets; automatic approval rejected escalation to the signed external URL. That route was abandoned. Recovery uses the already-authorized GitHub Actions gh api and decoded-log connector path."
+    "local_download_status": "A non-escalated local URL download could not open sockets; automatic approval rejected escalation to the signed external URL. That route was abandoned. Recovery uses the already-authorized GitHub Actions gh api and decoded-log connector path.",
+    "recovery_head": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+    "recovery_run_id": 41397005651,
+    "recovery_job_id": 125120388634,
+    "decoded": {
+      "sha256": "0ac865abd3a0fc0f99e3bdba64a6f90f198ad5b4b0bb1af17f8043719b571ad8",
+      "bytes": 296208,
+      "errors": 868,
+      "groups": {
+        "properties/rows/items/allOf/1/then/properties/property_state_case_ids/minItems": 107,
+        "properties/rows/items/properties/source_kind/enum": 83,
+        "properties/rows/items/properties/coverage_disposition/enum": 81,
+        "properties/rows/items/additionalProperties": 115,
+        "properties/rows/items/properties/production_evidence/uniqueItems": 1,
+        "properties/rows/items/allOf/1/then/properties/fault_recovery_case_ids/minItems": 33,
+        "properties/rows/items/properties/semantic_token_usage/type": 45,
+        "properties/rows/items/allOf/2/then/properties/owner_absence_evidence/minItems": 10,
+        "properties/rows/items/allOf/2/then/properties/new_owner_proposal/type": 1,
+        "properties/rows/items/allOf/2/then/properties/minimal_owner_adr/type": 10,
+        "properties/rows/items/required": 286,
+        "properties/rows/items/properties/flake_status/enum": 43,
+        "properties/rows/items/properties/release_gate_status/enum": 43,
+        "properties/rows/items/properties/coverage_matrix_status/enum": 10
+      }
+    },
+    "all_error_records_read": true
   },
   "fixed_upstream_git_collection": {
-    "status": "implemented-pending-exact-head-actions",
+    "status": "producer-job-success-artifact-retrieval-pending",
     "scope": [
       "scripts/tdrp-collect-fixed-upstream.py",
       ".github/workflows/tdrp-fixed-upstream-inventory.yml"
@@ -4332,7 +4357,14 @@
       "verdict": "approved-for-read-only-focused-actions",
       "blocking_findings": [],
       "method": "Independent static review of helper blob pin, immutable U/tree/gitmodules, original URL edges, root/cppgir record isolation, canonical projection, failure receipts and hosted-runner credential boundaries. No local execution."
-    }
+    },
+    "producer_head": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+    "run_id": 41397005716,
+    "job_id": 125120388601,
+    "artifact_id": 13118749668,
+    "artifact_bytes": 4582365,
+    "artifact_digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+    "decoded_log_status": "A single full decoded-log request returned Transport closed; do not repeat the oversized request. Recover the pinned artifact with bounded lossless output."
   },
   "concurrent_work_preserved": [
     {
@@ -4340,6 +4372,51 @@
       "parent": "2fd8d7623a1cfa00b09e90a2d81535c6550425df",
       "path": "projects/telegram-desktop-rust/evidence/expected-lite-exact-license-review-20261102.json",
       "action": "Read complete compare and retain unchanged as parent. The new file's nonstd-lite source alias is not substituted for the separately observed original martinmoene declaration in canonical acquisition evidence."
+    },
+    {
+      "sha": "5fa9087ae95ab9e9be572181cef07c53d0a94a4f",
+      "parent": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+      "paths": [
+        "scripts/tdrp-acquire-cppgir.py",
+        "docs/specs/fbcp-native-message-reconciliation.md",
+        "projects/telegram-desktop-rust/evidence/expected-lite-exact-license-review-20261102.json"
+      ],
+      "scope": "Original-host license retention and provenance correction; preserve unchanged in the next CAS child."
     }
-  ]
+  ],
+  "tcp_fixture_repair": {
+    "classification": "TEST_BUG",
+    "prior_head": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+    "prior_run_id": 41395923359,
+    "prior_job_id": 125117103899,
+    "prior_state_observed": "in_progress; AppHost compile succeeded; combined protocol/TCP step still running; terminal logs unavailable (404 while running). Source inspection proves a wait cycle in a selected TCP fixture but does not identify a current live stack.",
+    "repairs": [
+      {
+        "test": "plaintext_exchange_preserves_wire_envelope",
+        "problem": "Fake server reused client-role TcpTransport and treated the initial Intermediate marker as frame data.",
+        "fix": "Read and assert the initial 0xeeeeeeee marker, consume a bounded 24..276-byte request envelope, and reply with a frame codec only; preserve request/response oracles and add bilateral 5-second socket I/O timeouts."
+      },
+      {
+        "test": "unsolicited_abridged_quick_ack_fails_closed_without_correlation_owner",
+        "problem": "Fake server awaited the mode marker, but the client only received; from_stream emits no marker until sending.",
+        "fix": "Send an ordinary 12-byte request, fully consume and assert 0xef plus length 3 and the body before the fake ACK; preserve the exact UnexpectedQuickAck(0x81234567) oracle and add bilateral 5-second socket I/O timeouts."
+      }
+    ],
+    "review": {
+      "method": "Independent static review of both full diffs and the old transport role/handshake implementation.",
+      "verdict": "ready-for-exact-H-Actions",
+      "tests_executed_locally": false
+    },
+    "retirement_management": {
+      "path": ".github/workflows/tdrp-retire-tcp-fixture-run.yml",
+      "target_run": 41395923359,
+      "target_head": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+      "expected_attempt": 1,
+      "scope": "Only the fixed obsolete run, after repository/head/branch/workflow/attempt identity checks; no checkout or test rerun. Preserve before, decision, cancel stdout/stderr/exit, after GET stdout/stderr/exit and result even if POST fails.",
+      "atomic_attempt_cas": false,
+      "limitation": "The GET identity precondition and POST cancel are not atomic; a same-run attempt can change between them. After identity is checked again, and no different run ID is ever selected.",
+      "status": "authored-not-run"
+    },
+    "validation": "pending-new-exact-H-native-message-reconciliation-and-native-message-shipping-compile; consumers-blocked"
+  }
 }
