@@ -552,3 +552,38 @@ startup root producer and existing desktop bootstrap root tests. Main,
 large Session/Host files and SDK consumers were read in the cited relevant
 scope, not promoted to complete-file reading. No ledger/RTM/global completion
 flag is changed by this scoped implementation.
+
+### Retained Session mutation oracle repair — 2026-11-02
+
+Decision **PS-LIVE-ORACLE-01 — FIX / TEST_FLAW**, before editing the test.
+At H `f80b4baca00a999659a8ebfe8ebe92e7d27b6018`, Runtime `41434802065`,
+job `125241848734`, the retained Host Runner state-writer test fails after
+archiving a Session and expecting a global workflow-definition edit to be
+refused. The actual callback still delegates to `SandAgentSessionStore` and
+the existing per-agent filesystem mutation owner. That owner checks canonical
+identity and deletion custody; the definition-edit contract at
+`session-lifecycle-delete-fence.md` explicitly specifies deletion-race
+serialization. Workflow definitions use the existing global shared library.
+The fixture constructs retained state surfaces, not an active admitted Runner
+turn with a captured lifecycle generation. PS-LIVE-05 does not add archive
+policy for shared workflow management.
+
+Use the actual `begin_agent_delete`/`end_agent_delete` owner to exercise the
+promised fence. Observe its durable deletion bit through a retained DB handle,
+then clear only the existing process-local fast marker so the negative control
+must still be enforced by durable owner state. Do not remove the agent directory.
+Retain the exact failed-result and unchanged-file assertions while fenced, and
+prove the same retained writer can update the actual workflow after custody is
+cleared. Preserve all plugin denial, failed-publication, publisher, managed
+workflow and live-reader assertions. Existing archive/restore and archived
+turn/transcript controls remain unchanged in their own Session contracts.
+
+Disposition **REJECT**: adding an archive rejection to the shared filesystem
+guard or all workflow-definition APIs solely to satisfy this fixture would
+introduce an unselected management policy and could interfere with lifecycle
+CAS/restore. The earlier broad implementation-defect hypothesis was based on
+the generic new-work requirement; the specific definition-owner contract and
+actual shared-library consumer falsify that inference for this test. This
+oracle repair does not decide a new archive-management policy or close stale
+Runner-generation and full permission/restart responsibilities. Independent
+frozen review and the corrected exact-H Actions gate remain required.

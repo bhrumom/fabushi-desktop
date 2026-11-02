@@ -244,6 +244,34 @@ the test module. Keep both blocked/unblocked fixture branches and their exact
 payloads. Preserve earlier snapshots and review a new complete five-path
 snapshot with its delta; no new execution result is claimed from source review.
 
+## Scoped receipt index repair — 2026-11-02
+
+Decision **CA-APP-INDEX-01 — FIX / TEST_FLAW**, before editing the workflow.
+At `f3b8105864a0e215e7918311b2d39cb789e350a4`, static reconciliation finds
+41 exact shipping app selections but only 34 corresponding receipt labels.
+The seven retained `OCRM-CHANNEL-APPEND-CUSTODY-v1` app cases are selected in
+the actual loop; their names are missing from the generated receipt index.
+Add their full names beside that contract without changing commands, selection,
+assertions or declared acceptance. The omission does not mean zero execution;
+the exact job log remains required, and authored receipt fields do not prove
+that a pending or failed workflow ran these cases. Preserve earlier artifacts
+and inspect the corrected final-H artifact independently.
+
+## Borrowed-image wiring oracle repair — 2026-11-02
+
+Decision **CA-IMAGE-WIRING-01 — FIX / TEST_FLAW**, before editing the oracle.
+Exact H `f80b4baca00a999659a8ebfe8ebe92e7d27b6018`, Runtime `41434802065`,
+job `125241848734`, fails the background-wake source check for the old literal
+`collect_inbound_images(&envelopes)`. The actual retained-append continuation
+now receives `envelopes` as a borrowed slice and calls
+`collect_inbound_images(envelopes)`, projects every image's data and MIME type,
+and passes the result to the existing `BackgroundRevivalContext`. The same
+production path remains at the current `f3b8105864a0e215e7918311b2d39cb789e350a4`.
+Update the obsolete call-spelling observation; retain the required image call,
+context fields, actual two-image payload oracle and all delivery/failure/nonce
+assertions. Do not add an unnecessary production borrow to satisfy stale text.
+This is not an image-loss implementation finding or real-channel acceptance.
+
 ## Fresh Transcript commit — `SESSION-FRESH-APPEND-v1`
 
 Original implementation base: `3761bde297377bca80ad7497d1664f6f3d32bc58`;

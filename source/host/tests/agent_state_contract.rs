@@ -374,15 +374,42 @@ mod live_admission {
         assert_records(supplied_state.workflow_records(), true);
         assert_records(retained_writer.workflow_records(), true);
 
+        let updated = retained_writer.write_workflow(Some(&callback_workflow.id),
+            "Retained callback workflow", None, "CALLBACK_ACTIVE_BODY");
+        assert!(updated.ok, "{}", updated.message);
         let callback_before = fs::read(&callback_workflow.file_path).unwrap();
-        let admission = workers.read_session_work_admission(&agent.id).unwrap().unwrap();
-        workers.transition_session_work_archive(&agent.id, &format!("agent:{}:main", agent.id),
-            &agent.id, Some(&admission.lifecycle_revision), true, Some("contract"),
-            Some("retained-state-fence"), 1_000.0).unwrap();
+        assert!(std::str::from_utf8(&callback_before).unwrap().ends_with("\nCALLBACK_ACTIVE_BODY\n"));
+
+        // Retain an observation handle before deletion custody rejects public
+        // owner opens. Shared workflow edits retain Session's deletion fence.
+        let owner = workers.open_agent_db_owner(&agent.id).unwrap();
+        let admission = owner.read_session_work_admission().unwrap().unwrap();
+        assert_eq!(admission.session_id, agent.id);
+        assert_eq!(admission.session_key, format!("agent:{}:main", agent.id));
+        assert!(!admission.deletion_pending);
+        workers.begin_agent_delete(&agent.id).unwrap();
+        let fenced = owner.read_session_work_admission().unwrap().unwrap();
+        assert!(fenced.deletion_pending);
+        assert_eq!(fenced.session_id, admission.session_id);
+        assert_eq!(fenced.session_key, admission.session_key);
+
+        // Isolate the durable fence: the process-local marker cannot be the
+        // reason this retained production callback refuses the write.
+        workers.clear_agent_delete_fast_path(&agent.id);
+        assert!(!workers.is_agent_being_deleted(&agent.id));
         let refused = retained_writer.write_workflow(Some(&callback_workflow.id),
-            "Retained callback workflow", None, "ARCHIVED_MUST_NOT_WRITE");
+            "Retained callback workflow", None, "DELETION_MUST_NOT_WRITE");
         assert!(!refused.ok, "Runner must retain the Session mutation fence");
         assert_eq!(fs::read(&callback_workflow.file_path).unwrap(), callback_before);
+        assert_eq!(owner.read_session_work_admission().unwrap().unwrap(), fenced);
+
+        workers.end_agent_delete(&agent.id).unwrap();
+        assert!(!owner.read_session_work_admission().unwrap().unwrap().deletion_pending);
+        let resumed = retained_writer.write_workflow(Some(&callback_workflow.id),
+            "Retained callback workflow", None, "CALLBACK_AFTER_DELETION_BODY");
+        assert!(resumed.ok, "{}", resumed.message);
+        assert!(fs::read_to_string(&callback_workflow.file_path).unwrap()
+            .ends_with("\nCALLBACK_AFTER_DELETION_BODY\n"));
         workers.shutdown();
         let _ = fs::remove_dir_all(root);
     }

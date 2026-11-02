@@ -451,6 +451,7 @@ jobs:
               "runner_downstream_custody_contract": "REC-07/08/09",
               "shipping_downstream_custody_tests": ["tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate"],
               "channel_append_custody_contract": "OCRM-CHANNEL-APPEND-CUSTODY-v1",
+              "shipping_channel_append_custody_tests": ["tests::channel_inbound_append_commits_once_before_runner_and_displayed_redrive", "tests::channel_inbound_append_lost_ack_holds_real_commit_without_runner_or_replay", "tests::channel_inbound_append_rollback_retries_same_preparation_before_later_input", "tests::channel_inbound_checked_history_failure_keeps_binding_and_never_dispatches", "tests::channel_inbound_runner_admission_refuses_changed_binding_and_releases_work", "tests::channel_inbound_reply_nudge_keeps_generation_after_real_session_settlement", "tests::channel_inbound_displayed_redrive_refuses_archive_restore_without_rebinding"],
               "channel_append_custody_result": "passed",
               "channel_append_commit_oracle_contract": "CA-COMMIT-ORACLE-01",
               "channel_append_commit_oracle_tests": ["openclaw_sessions_and_config_contract::test_agent_db_has_no_direct_commit_error_propagation", "openclaw_sessions_and_config_contract::test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup"],

@@ -1151,7 +1151,9 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert!(SHIPPING_HOST.contains("tray.title = \"Message not delivered\""));
     assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\""));
     assert!(SHIPPING_HOST.contains("summary.is_group || summary.remote_room.is_some()"));
-    assert!(SHIPPING_HOST.contains("collect_inbound_images(&envelopes)"));
+    // The retained-append continuation already receives a borrowed slice;
+    // all of its envelopes still flow through the existing image projection.
+    assert!(SHIPPING_HOST.contains("collect_inbound_images(envelopes)"));
     assert!(SHIPPING_HOST.contains("collect_unanswered_question_prompts(&agent_id)"));
     assert!(SHIPPING_HOST.contains("\"selectedImages\""));
     assert!(SHIPPING_HOST.contains("\"skippedQuestionPrompts\""));
