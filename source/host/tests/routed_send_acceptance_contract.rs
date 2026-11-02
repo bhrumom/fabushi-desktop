@@ -331,6 +331,98 @@ fn group_member_routed_admission_projects_running_without_user_turn_badge() {
 
 
 #[test]
+fn group_member_routed_admission_refuses_invalid_selectors_before_side_effects() {
+    for (label, selector, reason) in [
+        ("missing", None, "MissingSelector"),
+        ("blank", Some("  "), "MissingSelector"),
+        (
+            "wrong-agent",
+            Some("agent:member-b:group:room-a"),
+            "SelectorAgentMismatch",
+        ),
+        (
+            "harness",
+            Some("agent:member-a:harness:private"),
+            "Public(HarnessNamespaceReserved)",
+        ),
+    ] {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-routed-group-refusal-{label}-{}",
+            uuid::Uuid::new_v4()
+        ));
+        let runtime = ProductionTranscriptRuntime::new(Some(&root));
+        let persists = AtomicUsize::new(0);
+        let lifecycle_events = Arc::new(AtomicUsize::new(0));
+        let observed_lifecycle = Arc::clone(&lifecycle_events);
+        runtime.set_agent_run_lifecycle_observer(Some(Arc::new(move |_, _| {
+            observed_lifecycle.fetch_add(1, Ordering::SeqCst);
+        })));
+        let mut args = serde_json::json!({
+            "agentId": "member-a",
+            "prompt": "hidden group prompt",
+            "clientNonce": "refused-group-nonce",
+            "streamId": "refused-group-stream",
+            "requestSource": "group-member",
+            "groupMemberTurn": true,
+        });
+        if let Some(selector) = selector {
+            args["sessionKey"] = serde_json::Value::String(selector.into());
+        }
+
+        let error = runtime
+            .accept_routed_send(&args, |_| {
+                persists.fetch_add(1, Ordering::SeqCst);
+                Ok::<_, ProductionSendError>(PersistedSendContext::default())
+            })
+            .expect_err("invalid group selector must refuse admission");
+        assert_eq!(
+            error,
+            ProductionSendError::BadRequest(format!(
+                "invalid trusted session route: {reason}"
+            )),
+            "{label} must fail at the existing selector boundary"
+        );
+        assert_eq!(persists.load(Ordering::SeqCst), 0, "{label}");
+        assert_eq!(lifecycle_events.load(Ordering::SeqCst), 0, "{label}");
+        assert_eq!(runtime.current_turn_epoch("member-a"), 0, "{label}");
+        assert_eq!(runtime.in_flight_run_count("member-a"), 0, "{label}");
+        assert_eq!(runtime.queued_turn_count("member-a"), 0, "{label}");
+        assert!(runtime.is_turn_dispatch_idle("member-a"), "{label}");
+        assert_eq!(runtime.active_turn_source("member-a"), None, "{label}");
+        assert!(!runtime.has_routed_turn_lease("member-a", "refused-group-stream"));
+
+        // The refusal must not consume the nonce/stream or manufacture a lease.
+        // This is the explicit-room selector used by the shipping producer.
+        args["sessionKey"] = serde_json::json!("agent:member-a:group:room-a");
+        let accepted = runtime
+            .accept_routed_send(&args, |_| {
+                persists.fetch_add(1, Ordering::SeqCst);
+                Ok::<_, ProductionSendError>(PersistedSendContext::default())
+            })
+            .expect("the same send identity can be admitted with its valid selector");
+        assert!(!accepted.duplicate, "{label}");
+        assert_eq!(persists.load(Ordering::SeqCst), 1, "{label}");
+        assert_eq!(lifecycle_events.load(Ordering::SeqCst), 1, "{label}");
+        assert_eq!(runtime.current_turn_epoch("member-a"), 1, "{label}");
+        assert_eq!(runtime.in_flight_run_count("member-a"), 1, "{label}");
+        assert!(runtime.has_routed_turn_lease("member-a", "refused-group-stream"));
+        assert_eq!(runtime.active_turn_source("member-a").as_deref(), Some("group-member"));
+
+        runtime
+            .settle_routed_turn("member-a", "refused-group-stream", 50_000)
+            .expect("valid group settlement")
+            .expect("valid group lease");
+        assert_eq!(runtime.in_flight_run_count("member-a"), 0, "{label}");
+        assert_eq!(runtime.queued_turn_count("member-a"), 0, "{label}");
+        assert!(runtime.is_turn_dispatch_idle("member-a"), "{label}");
+        assert!(!runtime.has_routed_turn_lease("member-a", "refused-group-stream"));
+        assert_eq!(lifecycle_events.load(Ordering::SeqCst), 2, "{label}");
+        let _ = std::fs::remove_dir_all(root);
+    }
+}
+
+
+#[test]
 fn upgrade_resume_admission_uses_the_background_exclusive_lane() {
     use mahayana_host_runtime::extensions::transcript::production_runtime::classify_send_dispatch;
     use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;

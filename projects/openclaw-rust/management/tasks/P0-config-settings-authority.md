@@ -8,6 +8,56 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Fixed implementation source: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; accepted identity and scoped evidence remain pending. Later discovery candidates do not reopen this fixed subject.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+### Active shared-gate recovery — GROUP-ROUTE-ORACLE-01 (2026-11-02)
+
+Decision **FIX / TEST_FLAW**, recorded before edits. Exact H
+`f2f2ba00d66b3db79f9cd46690b3ce3737fe296b`, Actions `41416993406`, Rust job
+`125184480258` failed only
+`group_member_routed_admission_projects_running_without_user_turn_badge` at
+`routed_send_acceptance_contract.rs:269`: `MissingSelector`. The fixture marks
+itself `group-member` but omits the session selector required by `SKR-12/13`.
+The real `run_local_group_member_turn` supplies an explicit room-derived
+`agent:<member>:group:<room>` selector, or reads the existing admission record.
+The runtime correctly refuses before persistence or queue/lease state changes;
+do not relax that validator or enable a direct-main fallback for group work.
+
+Repair the fixture with the actual room-derived group selector and retain all
+existing running, no-user-turn-badge, source, provider-run and settlement
+assertions. Add missing, blank, wrong-agent and harness-selector refusal
+controls through the real admission entry, proving the persistence callback,
+turn epoch, queue and lease remain untouched and a later valid send with the
+same nonce/stream can be admitted. Only the existing test target changes;
+production and workflow selection stay unchanged. Freeze this scope and get
+independent source review, then use exact-H Actions for the repaired target
+and retained shared gates. The same fixture exists unchanged at
+`6e64f43570932653341a3552a17cc028c2fcf22d`; that H's own runtime is still in
+progress, so the f2 failure is not substituted for its result.
+
+Concurrent parent `dd932d9ea8b98e1191741917bc93aaf5a944c598` supplied the same
+positive fixture correction and two repeated-refusal controls. Adopt those
+exact assertions and its `SWA-GROUP-ORACLE-01` spec. Retain the additional
+blank/harness, epoch/lifecycle and same-nonce-after-refusal controls here;
+their complete two-path integration requires a fresh focused review.
+
+Retained f2 evidence: shipping Host compilation, 119 Settings/inference cases,
+16 app cases, 454 recovery cases, and 83 library cases passed. Total unique
+Rust: 672 passed, one failed, one private restart entry ignored; seven repeated
+child summaries are not extra tests. The composition target passed 11/11 and
+the effect-custody target 10/10; 15 SDK/Host Node cases passed. These results
+belong to f2 only; unknown remote execution, restart and full acceptance remain
+open. No source status, ledger, permission boundary or completion flag changes.
+
+Adjacent production finding **GROUP-OWNER-IDENTITY-01 — FIX / IMPL_BUG**:
+new materialization creates the member's `agent:<member>:main` admission record,
+while the explicit-room shipping group producer supplies
+`agent:<member>:group:<room>` to exact-key admission. That owner rejects the
+mismatch before Runner start; its read facade also rejects a fabricated group
+record. The projection-only oracle repair below does not exercise or repair
+that real Session boundary. Preserve the exact-key/deletion/archive fences and
+private-state isolation while implementing group-scoped admission through the
+existing Session owner in a subsequent production batch. No synthetic record
+or main fallback may be used to declare the actual group chain verified.
+
 ### Active shared-gate recovery — RUNNER-WIRING-ORACLE-01 (2026-11-02)
 
 Decision: **FIX / TEST_FLAW**, recorded before the oracle repair. Exact H
