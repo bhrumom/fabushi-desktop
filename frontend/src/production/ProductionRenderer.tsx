@@ -5,7 +5,8 @@ import { ConversationComposer } from "../recovered/features/conversation/workspa
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
 import type { ComposerDraft, ConversationTranscriptEntry, DraftAttachment, TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { createComposerDraftPersistence, createComposerDraftStateStore } from "../recovered/features/conversation/workspace/draft-state";
-import { createComposerSubmissionQueue, type ComposerSubmission, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
+import { createComposerSubmissionQueue, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
+import { createComposerDispatchOrigin, reactScopedHumanMessage, sendScopedComposerSubmission, type ScopedComposerSubmission } from "./composer-dispatch-scope";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
 import { createTranscriptAcknowledgementController } from "../recovered/features/conversation/workspace/acknowledgement";
 import { createReplyThreadController, type ReplySelection } from "../recovered/features/conversation/workspace/reply-thread-controller";
@@ -230,7 +231,7 @@ type TransportState = "browser" | "connecting" | "connected" | "down";
 
 const EMPTY_DRAFT: ComposerDraft = { prompt: "", attachments: [] };
 type ComposerResendJournalInput = {
-  submission: ComposerSubmission;
+  submission: ScopedComposerSubmission;
   onJournaled?: (event: ComposerJournalEvent) => void;
 };
 type ComposerJournalEvent = { nonce: string };
@@ -945,8 +946,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [computerViewerRetained, setComputerViewerRetained] = useState(false);
   // Frontend 1 owns the windowControls lifecycle through WindowChrome.
   const stagedPaths = useRef(new Set<string>());
-  const composerSubmissionQueueRef = useRef<ComposerSubmissionQueue | null>(null);
-  const resendSubmissionNoncesRef = useRef(new Set<string>());
+  const composerSubmissionQueueRef = useRef<ComposerSubmissionQueue<ScopedComposerSubmission> | null>(null);
+  const resendSubmissionsRef = useRef(new WeakSet<ScopedComposerSubmission>());
   const accountIdentityRef = useRef<string | null>(null);
   const accountScopeGenerationRef = useRef(0);
   const renderedAccountScopeGeneration = accountScopeGenerationRef.current;
@@ -1117,73 +1118,64 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     });
   }, [client, isForwardAccountScopeCurrent, reconcileCompleteRosterSelection]);
 
-  const sendComposerPrompt = async (submission: ComposerSubmission): Promise<void> => {
+  const sendComposerPrompt = async (submission: ScopedComposerSubmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
-    const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
-    if (humanConversation != null) {
-      const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
-      const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
-      for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
-      const result = await client.call("sendHumanMessage", {
-        conversationId: submission.agentId,
-        text: submission.prompt,
-        clientNonce: submission.nonce,
-        composedAtMs: submission.createdAtMs,
-        attachments,
-        ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
-      });
-      const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
-      if (authoritative != null) {
+    await sendScopedComposerSubmission({
+      client,
+      submission,
+      commitAttachments: async (attachments) => bridge == null
+        ? attachments
+        : commitComposerAttachments(bridge, attachments),
+      onAttachmentsCommitted: (currentSubmission, attachments) => {
+        if (!currentSubmission.origin.isCurrent()) return;
+        for (const attachment of currentSubmission.attachments) stagedPaths.current.delete(attachment.path);
+        if (currentSubmission.origin.kind !== "agent") return;
         setEntriesByAgent((current) => {
-          const existing = current[submission.agentId] ?? [];
+          if (!currentSubmission.origin.isCurrent()) return current;
+          return {
+            ...current,
+            [currentSubmission.agentId]: (current[currentSubmission.agentId] ?? []).map((entry) =>
+              entry.kind === "message" && entry.clientNonce === currentSubmission.nonce
+                ? { ...entry, attachments: [...attachments], text: currentSubmission.prompt }
+                : entry)
+          };
+        });
+      },
+      onHumanResult: (currentSubmission, result, humanConversation) => {
+        if (!currentSubmission.origin.isCurrent()) return;
+        const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
+        if (authoritative == null) return;
+        setEntriesByAgent((current) => {
+          if (!currentSubmission.origin.isCurrent()) return current;
+          const existing = current[currentSubmission.agentId] ?? [];
           const correlatedIndex = existing.findIndex((entry) =>
             entry.id === authoritative.id
-            || (entry.kind === "message" && entry.clientNonce === submission.nonce)
+            || (entry.kind === "message" && entry.clientNonce === currentSubmission.nonce)
           );
           return {
             ...current,
-            [submission.agentId]: correlatedIndex < 0
+            [currentSubmission.agentId]: correlatedIndex < 0
               ? [...existing, authoritative]
               : existing.map((entry, index) => index === correlatedIndex ? authoritative : entry)
           };
         });
         acknowledgementController.reconcileEcho({
-          accountSlot: acknowledgementScopeRef.current.accountSlot,
-          agentId: submission.agentId,
-          nonce: submission.nonce,
-          echoedNonce: submission.nonce
+          accountSlot: currentSubmission.origin.accountSlot,
+          agentId: currentSubmission.agentId,
+          nonce: currentSubmission.nonce,
+          echoedNonce: currentSubmission.nonce
         });
+      },
+      onHumanRoster: (currentSubmission, value) => {
+        if (!currentSubmission.origin.isCurrent()) return;
+        const projectedHumans = projectHumanConversations(value);
+        humanConversationsRef.current = projectedHumans;
+        setHumanConversations((current) => currentSubmission.origin.isCurrent() ? projectedHumans : current);
       }
-      const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
-      humanConversationsRef.current = projectedHumans;
-      setHumanConversations(projectedHumans);
-      return;
-    }
-    const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
-    const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
-    for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
-    setEntriesByAgent((current) => ({
-      ...current,
-      [submission.agentId]: (current[submission.agentId] ?? []).map((entry) => entry.kind === "message" && entry.clientNonce === submission.nonce
-        ? { ...entry, attachments, text: submission.prompt }
-        : entry)
-    }));
-    await client.call("sendPrompt", {
-      agentId: submission.agentId,
-      prompt: submission.prompt,
-      directAddressedAcceptance: true,
-      attachmentPaths: attachments.map((attachment) => attachment.path),
-      attachmentNames: attachments.map((attachment) => attachment.name),
-      clientNonce: submission.nonce,
-      enterEpochMs: submission.createdAtMs,
-      composedAtMs: submission.createdAtMs,
-      ...(submission.richText == null ? {} : { richText: submission.richText }),
-      ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
-      ...(submission.isFork === undefined ? {} : { isFork: submission.isFork })
     });
   };
   const [sendJournalApprovalLifecycle] = useState(() => createSendJournalApprovalLifecycle<
-    ComposerSubmission,
+    ScopedComposerSubmission,
     ComposerResendJournalInput,
     string,
     string,
@@ -1198,14 +1190,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       resendFailed: async (input: ComposerResendJournalInput) => {
         const queue = composerSubmissionQueueRef.current;
         if (queue == null) throw new Error("composer submission queue is unavailable");
-        resendSubmissionNoncesRef.current.add(input.submission.nonce);
+        resendSubmissionsRef.current.add(input.submission);
         try {
           const result = queue.submit(input.submission);
           const phase = await result.completion;
-          if (phase === "sent") input.onJournaled?.({ nonce: input.submission.nonce });
+          if (phase === "sent" && input.submission.origin.isCurrent()) input.onJournaled?.({ nonce: input.submission.nonce });
           return phase;
         } finally {
-          resendSubmissionNoncesRef.current.delete(input.submission.nonce);
+          resendSubmissionsRef.current.delete(input.submission);
         }
       },
       deleteFailed: async (nonce: string) => { composerSubmissionQueueRef.current?.discard(nonce); },
@@ -1214,18 +1206,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     { clearApprovals: () => localToolPermissionStore.clearApprovals() }
   ));
   const [composerSubmissionQueue] = useState(() => {
-    const queue = createComposerSubmissionQueue({
+    const queue = createComposerSubmissionQueue<ScopedComposerSubmission>({
       isTransportDown: () => transportRef.current !== "connected",
-      send: (submission) => resendSubmissionNoncesRef.current.has(submission.nonce)
+      send: (submission) => resendSubmissionsRef.current.has(submission)
         ? sendComposerPrompt(submission)
         : sendJournalApprovalLifecycle.sendPrompt(submission),
     onPhase: (submission) => {
-      const scope = acknowledgementScopeRef.current;
+      if (!submission.origin.isCurrent()) return;
+      const scope = submission.origin;
       if (submission.phase === "pending") acknowledgementController.markDispatching(scope.accountSlot, submission.nonce);
       if (submission.phase === "sent") acknowledgementController.markAcceptedAwaitingEcho(scope.accountSlot, submission.nonce);
       if (submission.phase === "failed") acknowledgementController.markFailed(scope.accountSlot, submission.nonce, Date.now());
       if (submission.phase === "cancelled") acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce: submission.nonce });
       setEntriesByAgent((current) => {
+        if (!submission.origin.isCurrent()) return current;
         if (submission.phase === "cancelled") {
           return {
             ...current,
@@ -1246,6 +1240,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (submission.phase === "queued" || submission.phase === "failed" || submission.phase === "sent" || submission.phase === "cancelled") setBusy(false);
     },
     onFailure: (submission, error) => {
+      if (!submission.origin.isCurrent()) return;
       composerDraftStore.recoverDraft(submission.agentId, {
         prompt: submission.prompt,
         attachments: [...submission.attachments]
@@ -1259,6 +1254,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   useStrictModeSafeDisposal(composerSubmissionQueue);
   useStrictModeSafeDisposal(sendJournalApprovalLifecycle);
+  useLayoutEffect(() => () => {
+    composerSubmissionQueue.reset();
+    sendJournalApprovalLifecycle.reset();
+  }, [composerSubmissionQueue, sendJournalApprovalLifecycle]);
   useEffect(() => {
     if (client == null) return;
     return client.subscribeTransport((state) => {
@@ -1312,23 +1311,30 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
   const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
     async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
-      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
+      const conversation = humanConversations.find((candidate) => candidate.id === input.agentId);
       if (conversation == null) throw new Error("Human reaction conversation is unavailable");
-      const value = await client.call("reactHumanMessage", {
-        conversationId: input.agentId,
-        entryId: input.entryId,
-        emoji: input.emoji
+      const origin = createComposerDispatchOrigin({
+        accountScopeGeneration: renderedAccountScopeGeneration,
+        accountSlot: transcriptAccountSlot,
+        humanConversation: conversation,
+        isAccountScopeCurrent: isForwardAccountScopeCurrent
       });
-      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
-      if (projected == null) throw new Error("Human reaction settlement returned an invalid transcript entry");
-      setEntriesByAgent((current) => {
-        const entries = current[input.agentId];
-        if (entries == null) return current;
-        const next = entries.map((entry) => entry.id === input.entryId ? projected : entry);
-        return { ...current, [input.agentId]: next };
+      await reactScopedHumanMessage({
+        client, origin, input,
+        onResult: (value, originalConversation) => {
+          const projected = projectTranscriptEntry(value, 0, originalConversation.name, originalConversation.id);
+          if (projected == null) throw new Error("Human reaction settlement returned an invalid transcript entry");
+          setEntriesByAgent((current) => {
+            if (!origin.isCurrent()) return current;
+            const entries = current[input.agentId];
+            if (entries == null) return current;
+            const next = entries.map((entry) => entry.id === input.entryId ? projected : entry);
+            return { ...current, [input.agentId]: next };
+          });
+        }
       });
     }
-  } : undefined, [activeIsHuman, client]);
+  } : undefined, [activeIsHuman, client, humanConversations, isForwardAccountScopeCurrent, renderedAccountScopeGeneration, transcriptAccountSlot]);
   const reactionScope = useMemo(() => ({
     accountSlot: transcriptAccountSlot,
     agentId: activeIsHuman || activeAgentId.length === 0 ? null : activeAgentId
@@ -3248,6 +3254,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const identityChanged = accountIdentityRef.current != null && accountIdentityRef.current !== identity;
       if (accountIdentityRef.current !== identity) {
         accountScopeGenerationRef.current += 1;
+        composerSubmissionQueue.reset();
+        sendJournalApprovalLifecycle.reset();
+        setBusy(false);
         setForwardTarget(null);
         localToolPermissionScopeGate.reset();
         groupMembersRoot.reset();
@@ -3343,7 +3352,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     applyRootShellTheme(bridge.theme.initial.resolved);
     void bridge.deepLinksReady().catch((error: unknown) => setNotice(error instanceof Error ? error.message : String(error)));
     return () => { active = false; stopAccount(); stopTheme(); themeInstaller?.dispose(); stopWindow(); stopFocus(); stopDeepLink(); stopOnboarding(); stopSkip(); stopFeedback(); stopAbout(); };
-  }, [applyAccountStatus, bridge, client, groupMembersRoot, localToolPermissionScopeGate, openAgent, resolveOnboarding, selectionStore, sharedRoomProvider]);
+  }, [applyAccountStatus, bridge, client, composerSubmissionQueue, groupMembersRoot, localToolPermissionScopeGate, openAgent, resolveOnboarding, selectionStore, sendJournalApprovalLifecycle, sharedRoomProvider]);
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L537
   useEffect(() => {
@@ -3353,9 +3362,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     });
   }, [bridge]);
 
-  useEffect(() => () => {
-    if (bridge != null) for (const path of stagedPaths.current) void bridge.discardStagedAttachment(path).catch(() => {});
-  }, [bridge]);
+  // Staged originals can be referenced by persisted account drafts after root
+  // retirement. Only explicit removal or rejected staging discards those bytes.
 
   useEffect(() => {
     if (activeAgentId) navigationHistoryRef.current = recordRootShellAgentSelection(navigationHistoryRef.current, activeAgentId);
@@ -3496,13 +3504,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [account?.kind, asyncTasksAgentId, closeAsyncTasks, closeFindInChat, commandPaletteOpen, findInChatController, findInChatOpen, globalShortcutController, overlay]);
 
   const stageFiles = async (files: File[]) => {
-    if (activeAgent == null || bridge == null) return;
+    if (activeAgent == null || bridge == null || !isForwardAccountScopeCurrent(renderedAccountScopeGeneration)) return;
     const stagingAgentId = activeAgent.id;
+    const stagingAccountGeneration = renderedAccountScopeGeneration;
     const stagingAccountSlot = acknowledgementScopeRef.current.accountSlot;
     setBusy(true);
     try {
       const result = await stageComposerFiles(bridge, files);
-      if (activeAgentIdRef.current !== stagingAgentId || acknowledgementScopeRef.current.accountSlot !== stagingAccountSlot) {
+      if (!isForwardAccountScopeCurrent(stagingAccountGeneration) || activeAgentIdRef.current !== stagingAgentId || acknowledgementScopeRef.current.accountSlot !== stagingAccountSlot) {
         await Promise.all(result.attachments.map(({ path }) => bridge.discardStagedAttachment(path).catch(() => {})));
         return;
       }
@@ -3511,19 +3520,25 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const currentBaseDraft = currentSnapshot.draft ?? currentSnapshot.recovery ?? EMPTY_DRAFT;
       composerDraftStore.setDraft(stagingAgentId, { ...currentBaseDraft, attachments: [...currentBaseDraft.attachments, ...result.attachments] });
       setNotice(result.notice);
-    } catch (error) { setNotice(error instanceof Error ? error.message : String(error)); }
-    finally { setBusy(false); }
+    } catch (error) {
+      if (isForwardAccountScopeCurrent(stagingAccountGeneration)) setNotice(error instanceof Error ? error.message : String(error));
+    } finally {
+      if (isForwardAccountScopeCurrent(stagingAccountGeneration)) setBusy(false);
+    }
   };
 
   const removeAttachment = async (attachment: DraftAttachment) => {
+    if (!isForwardAccountScopeCurrent(renderedAccountScopeGeneration)) return;
     if (bridge != null && stagedPaths.current.delete(attachment.path)) {
       try { await bridge.discardStagedAttachment(attachment.path); }
-      catch (error) { setNotice(error instanceof Error ? error.message : String(error)); }
+      catch (error) {
+        if (isForwardAccountScopeCurrent(renderedAccountScopeGeneration)) setNotice(error instanceof Error ? error.message : String(error));
+      }
     }
   };
 
   const submit = () => {
-    if (activeAgent == null || client == null) return;
+    if (activeAgent == null || client == null || !isForwardAccountScopeCurrent(renderedAccountScopeGeneration)) return;
     const liveDraftSnapshot = activeDraftSnapshotStore.get();
     const liveBaseDraft = liveDraftSnapshot.draft ?? liveDraftSnapshot.recovery ?? EMPTY_DRAFT;
     const liveDraft = replyThreadController.applyReplyToDraft(liveBaseDraft);
@@ -3532,7 +3547,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const prompt = liveDraft.prompt.trim();
     const attachments = liveDraft.attachments.map(({ path, name }) => ({ path, name }));
     if (prompt.length === 0 && attachments.length === 0) return;
-    const submission = replyThreadController.projectSubmission({
+    const submission: ScopedComposerSubmission = { ...replyThreadController.projectSubmission({
       nonce: clientNonce,
       agentId: activeAgent.id,
       prompt,
@@ -3540,25 +3555,29 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       attachments,
       createdAtMs: enteredAt,
       ...(liveDraft.isFork === undefined ? {} : { isFork: liveDraft.isFork })
-    });
-    const submissionAccountSlot = acknowledgementScopeRef.current.accountSlot;
+    }), origin: createComposerDispatchOrigin({
+      accountScopeGeneration: renderedAccountScopeGeneration,
+      accountSlot: acknowledgementAccountSlot,
+      humanConversation: activeIsHuman ? activeAgent : null,
+      isAccountScopeCurrent: isForwardAccountScopeCurrent
+    }) };
     const draftIdentity = composerDraftStore.identifyDraft({ agentId: activeAgent.id, draft: liveBaseDraft });
     replyThreadController.clearReply();
     acknowledgementController.insertOptimistic({
-      accountSlot: acknowledgementScopeRef.current.accountSlot,
+      accountSlot: submission.origin.accountSlot,
       agentId: activeAgent.id,
       nonce: clientNonce,
       entries: optimisticAcknowledgementEntries(clientNonce, attachments),
       phase: transportRef.current === "connected" ? "pending" : "queued"
     });
-    setEntriesByAgent((current) => ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
+    setEntriesByAgent((current) => !submission.origin.isCurrent() ? current : ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
       kind: "message", id: `pending-${clientNonce}`, role: "user", author: "You", text: prompt, timestampMs: enteredAt, attachments, delivery: "pending", clientNonce,
       ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
     }] }));
     const queuedSubmission = composerSubmissionQueue.submit(submission);
     void queuedSubmission.completion.then((phase) => {
-      if (phase !== "sent") return;
-      if (activeAgentIdRef.current !== submission.agentId || acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
+      if (phase !== "sent" || !submission.origin.isCurrent()) return;
+      if (activeAgentIdRef.current !== submission.agentId) return;
       const cleared = draftIdentity == null
         ? composerDraftStore.clearDraftIfMatches({ agentId: submission.agentId, draft: liveBaseDraft })
         : composerDraftStore.clearDraftIfCurrent(draftIdentity)
@@ -3571,60 +3590,68 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   };
 
   const removeTranscriptMessage = useCallback((entry: TranscriptMessage) => {
-    const agentId = activeAgentIdRef.current;
-    if (!agentId) return;
-    if (entry.clientNonce != null) acknowledgementController.removeOptimistic({ accountSlot: acknowledgementScopeRef.current.accountSlot, nonce: entry.clientNonce });
-    setEntriesByAgent((current) => ({
+    const agentId = activeAgentId;
+    if (!agentId || activeAgentIdRef.current !== agentId || !isForwardAccountScopeCurrent(renderedAccountScopeGeneration)) return;
+    if (entry.clientNonce != null) acknowledgementController.removeOptimistic({ accountSlot: acknowledgementAccountSlot, nonce: entry.clientNonce });
+    setEntriesByAgent((current) => !isForwardAccountScopeCurrent(renderedAccountScopeGeneration) ? current : ({
       ...current,
       [agentId]: (current[agentId] ?? []).filter((candidate) => candidate.kind !== "message" || candidate.id !== entry.id)
     }));
-  }, [acknowledgementController]);
+  }, [acknowledgementAccountSlot, acknowledgementController, activeAgentId, isForwardAccountScopeCurrent, renderedAccountScopeGeneration]);
 
   const resendFailedSend = useCallback(async (entry: TranscriptMessage) => {
-    const agentId = activeAgentIdRef.current;
-    if (client == null || !agentId) return;
+    const agentId = activeAgentId;
+    if (client == null || !agentId || activeAgentIdRef.current !== agentId || !isForwardAccountScopeCurrent(renderedAccountScopeGeneration)) return;
+    const origin = createComposerDispatchOrigin({
+      accountScopeGeneration: renderedAccountScopeGeneration,
+      accountSlot: acknowledgementAccountSlot,
+      humanConversation: humanConversations.find((conversation) => conversation.id === agentId),
+      isAccountScopeCurrent: isForwardAccountScopeCurrent
+    });
     const clientNonce = makeClientNonce();
     const pendingId = `pending-${clientNonce}`;
     const enteredAt = Date.now();
     composerSubmissionQueue.discard(entry.clientNonce ?? "");
     const retryAttachments = (entry.attachments ?? []).map(({ path, name }) => ({ path, name }));
     const retried = entry.clientNonce != null && acknowledgementController.retryFailed({
-      accountSlot: acknowledgementScopeRef.current.accountSlot,
+      accountSlot: origin.accountSlot,
       agentId,
       nonce: entry.clientNonce,
       freshNonce: clientNonce,
       entries: optimisticAcknowledgementEntries(clientNonce, retryAttachments)
     });
     if (!retried) acknowledgementController.insertOptimistic({
-      accountSlot: acknowledgementScopeRef.current.accountSlot,
+      accountSlot: origin.accountSlot,
       agentId,
       nonce: clientNonce,
       entries: optimisticAcknowledgementEntries(clientNonce, retryAttachments),
       phase: "pending"
     });
-    setEntriesByAgent((current) => ({
+    setEntriesByAgent((current) => !origin.isCurrent() ? current : ({
       ...current,
       [agentId]: (current[agentId] ?? []).map((candidate) => candidate.kind === "message" && candidate.id === entry.id
         ? { ...candidate, id: pendingId, clientNonce, delivery: "pending", composedAtMs: undefined }
         : candidate)
     }));
-    const retrySubmission = {
+    const retrySubmission: ScopedComposerSubmission = {
       nonce: clientNonce,
       agentId,
       prompt: entry.text.trim(),
       attachments: retryAttachments,
-      createdAtMs: enteredAt
+      createdAtMs: enteredAt,
+      ...(entry.replyToId == null ? {} : { replyToId: entry.replyToId }),
+      origin
     };
-    const retryAccountSlot = acknowledgementScopeRef.current.accountSlot;
     const journaledRetry = sendJournalApprovalLifecycle.resendFailed({ submission: retrySubmission, onJournaled: () => {} });
     void journaledRetry.then((phase) => {
-      if (phase !== "sent") return;
-      if (activeAgentIdRef.current !== retrySubmission.agentId || acknowledgementScopeRef.current.accountSlot !== retryAccountSlot) return;
+      if (phase !== "sent" || !retrySubmission.origin.isCurrent()) return;
+      if (activeAgentIdRef.current !== retrySubmission.agentId) return;
       composerDraftStore.clearRecovery(retrySubmission.agentId);
     });
-  }, [client, composerDraftStore, composerSubmissionQueue, sendJournalApprovalLifecycle]);
+  }, [acknowledgementAccountSlot, activeAgentId, client, composerDraftStore, composerSubmissionQueue, humanConversations, isForwardAccountScopeCurrent, renderedAccountScopeGeneration, sendJournalApprovalLifecycle]);
 
   const cancelQueuedSend = useCallback((entry: TranscriptMessage) => {
+    if (!isForwardAccountScopeCurrent(renderedAccountScopeGeneration) || activeAgentIdRef.current !== activeAgentId) return;
     if (entry.clientNonce != null && composerSubmissionQueue.cancelQueued(entry.clientNonce)) {
       const agentId = activeAgentIdRef.current;
       acknowledgementController.removeOptimistic({ accountSlot: acknowledgementScopeRef.current.accountSlot, nonce: entry.clientNonce });
@@ -3635,7 +3662,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       return;
     }
     removeTranscriptMessage(entry);
-  }, [acknowledgementController, composerDraftStore, composerSubmissionQueue, removeTranscriptMessage]);
+  }, [acknowledgementController, activeAgentId, composerDraftStore, composerSubmissionQueue, isForwardAccountScopeCurrent, removeTranscriptMessage, renderedAccountScopeGeneration]);
 
   const setAgentHiddenFromSidebar = useCallback((agentId: string, isHidden: boolean) => {
     void hiddenChatsMutationController.setAgentHiddenFromSidebar(agentId, isHidden).catch((error: unknown) => {

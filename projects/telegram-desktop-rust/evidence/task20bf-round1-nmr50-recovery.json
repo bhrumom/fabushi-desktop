@@ -2,7 +2,7 @@
   "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "NMR-50: forward recovery progress and original dispatch scope",
-  "state": "implemented-partial-Actions-pass-Host-and-shipping-queued-follow-up-origin-fix-required",
+  "state": "NMR50a-d-partial-Actions-pass-NMR50e-h-implemented-reviewed-execution-pending",
   "source": {
     "repository": "telegramdesktop/tdesktop",
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
@@ -35,7 +35,11 @@
       "Automatic recovery skips a batch whose mutex is held by an active executor; target and unrelated history can settle while its POST response is delayed.",
       "Top-level roster scans recovery once; direct conversation sync retains one recovery scan.",
       "Roster request binds expected Host user before HTTP and rechecks complete consumed-body credential snapshot.",
-      "Unposted forwards carry the original dialog/account predicate through readiness to the actual frame boundary; retirement rejects without a mutation frame. Already-posted durable requests remain owned by Host."
+      "Unposted forwards carry the original dialog/account predicate through readiness to the actual frame boundary; retirement rejects without a mutation frame. Already-posted durable requests remain owned by Host.",
+      "Normal send/resend admission captures the rendered account generation/slot and Human/Agent lane; the same local origin fences attachment waits, actual frame admission, phase/failure, authoritative result and roster updates.",
+      "Existing queue reset retires only local tracking and approval presentation synchronously on account/root retirement; old same-nonce callbacks cannot affect new-account work and no Host cancellation is sent.",
+      "Human reaction uses the same original account frame predicate while preserving same-account navigation/reconnect.",
+      "Root teardown retains original staged files referenced by persisted drafts; explicit removal and rejected staging cleanup remain."
     ],
     "new_owner": false,
     "schema_migration": false,
@@ -96,10 +100,13 @@
     "source/host/src/extensions/session/native_messaging.rs": "37a216c3a92ffc696a604d0d94260cffb6a92908",
     "source/host/tests/session_gateway_contract.rs": "708d07322029115c8d4da97ec0441f36dde0c449",
     "frontend/src/production/coordinator-client.ts": "3fdd53e62afebcbdda9b9c37514aecdfb8c13fa9",
-    "frontend/src/production/ProductionRenderer.tsx": "1a033034d0acd4c6261d27792e32ac2d372768ea",
+    "frontend/src/production/ProductionRenderer.tsx": "880688acaa84747386c74cda50de0ed903758801",
     "frontend/src/production/ForwardMessageDialog.tsx": "869510a4fda80b6feaa249877918f552d51818e2",
     "frontend/src/production/ForwardMessageDialog.fixture.tsx": "84b7839837550865ac150d455249d137086aac77",
-    "frontend/src/production/ForwardMessageDialog.behavior.test.mjs": "d7b61e5c4b0908be2c53640b6637e48c0c36538c"
+    "frontend/src/production/ForwardMessageDialog.behavior.test.mjs": "d7b61e5c4b0908be2c53640b6637e48c0c36538c",
+    "frontend/src/recovered/features/conversation/workspace/submission.ts": "8b9aadfc6e336b4ff5b2d536a5c997119013d170",
+    "frontend/src/production/composer-dispatch-scope.ts": "9bd07e00d85a175f52d291f48439737a53653531",
+    "frontend/src/production/composer-dispatch-scope.contract.test.ts": "eef32b782bc6f93d29d893de4debe487270d8c38"
   },
   "tests_authored": {
     "host_path": "source/host/tests/session_gateway_contract.rs",
@@ -165,7 +172,21 @@
         "prepared_blob": "70947ab079f93e0ae1e36aab4cc8ff0eebac6489",
         "result": "successful-object-only; not integrated because concurrent76a84 changed the canonical ledger input"
       }
-    ]
+    ],
+    "follow_up": {
+      "preparation_head": "1a531f4ec2598ad432a9996c20d773701756d5fc",
+      "preparation_run": 41520915374,
+      "preparation_job": 125536382871,
+      "base_blob": "cd4de14d4cfb800185a56cf489a16afc9a433b16",
+      "prepared_blob": "4b1dd4c21554bd666157338bbd92b06957d731b7",
+      "changed_rows": [
+        "FBCP-NMR-001"
+      ],
+      "connector_readback": true,
+      "unaffected_fields_preserved": true,
+      "source_reviews_preserved": true,
+      "acceptance_changed": false
+    }
   },
   "source_review_contract": {
     "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
@@ -177,7 +198,17 @@
     "source_review_complete": 2,
     "source_review_pending": 4,
     "global_unknown": null,
-    "global_unread": null
+    "global_unread": null,
+    "additional_mapping": {
+      "path": "projects/telegram-desktop-rust/evidence/task20bf-round1-forward-source-audit.json",
+      "dossier": "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md",
+      "obligation_groups": 13,
+      "complete_body_reads_reused": 4,
+      "new_unique_read_credit": 0,
+      "source_review_status_changes": 0,
+      "state": "draft decomposition with explicit product gaps; four reviews remain pending",
+      "next_behavior": "Whole-intent recipient-aware feedback must retain validated earlier successes across failed-only retry."
+    }
   },
   "execution": {
     "status": "partial-pass-host-and-shipping-queued",
@@ -269,7 +300,17 @@
         "name": "tdrp-source-review-contract-15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
         "digest": "sha256:5b819c60cf389cf8fe44dc5328113bce1cf65dc6ce6c269cdeb039334c439a15"
       }
-    ]
+    ],
+    "code_blobs": {
+      "source/host/src/extensions/session/production.rs": "c2d39cd5e47b5cc9678fc8ae135efb625944288e",
+      "source/host/src/extensions/session/native_messaging.rs": "37a216c3a92ffc696a604d0d94260cffb6a92908",
+      "source/host/tests/session_gateway_contract.rs": "708d07322029115c8d4da97ec0441f36dde0c449",
+      "frontend/src/production/coordinator-client.ts": "3fdd53e62afebcbdda9b9c37514aecdfb8c13fa9",
+      "frontend/src/production/ProductionRenderer.tsx": "1a033034d0acd4c6261d27792e32ac2d372768ea",
+      "frontend/src/production/ForwardMessageDialog.tsx": "869510a4fda80b6feaa249877918f552d51818e2",
+      "frontend/src/production/ForwardMessageDialog.fixture.tsx": "84b7839837550865ac150d455249d137086aac77",
+      "frontend/src/production/ForwardMessageDialog.behavior.test.mjs": "d7b61e5c4b0908be2c53640b6637e48c0c36538c"
+    }
   },
   "requirement_checklist": [
     {
@@ -294,7 +335,7 @@
       "requirement": 4,
       "criterion": "Behavior-based batches include authorization, persistence, service, events, UI and failure/restart",
       "state": "in-progress",
-      "evidence": "NMR50 active-forward history progress, once-per-roster recovery, credential-body fence, delayed request-frame lifetime"
+      "evidence": "NMR50a-d implemented with partial exact15f Actions; NMR50e-h now wired from real submit/resend/reaction through queue/attachment/client/settlement, 18 behavior contracts authored and independently source-reviewed."
     },
     {
       "requirement": 5,
@@ -306,25 +347,25 @@
       "requirement": 6,
       "criterion": "Stable shared contracts, disjoint parallel paths, root public interface and integration",
       "state": "in-progress",
-      "evidence": "root owns optional local CoordinatorCallOptions and ProductionRenderer; worker path boundaries; actual wire payload unchanged"
+      "evidence": "Root owns compatible queue generic/reset and ProductionRenderer/composition/workflow/ledger; private production helper and actual-client tests independently authored/reviewed. Explicit wire arguments remain unchanged."
     },
     {
       "requirement": 7,
       "criterion": "Freeze H; minimal required exact-H Actions only and tests alongside implementation",
       "state": "partial",
-      "evidence": "Exact15f source, renderer/Transcript18/settlement5/Chromium22, Electron and Windows pass. Host52 plus native upload/journal/Agent/private and actual shipping compile jobs remain queued. No local or htch-runtime execution."
+      "evidence": "Exact15f source and renderer/Transcript18/settlement5/Chromium22/Electron/Windows pass. Host52 and complete shipping job still in progress as of preparation. New e-h18 and current renderer require containing-H Actions. No local or htch-runtime execution."
     },
     {
       "requirement": 8,
       "criterion": "Continue independent work while waiting; fix actual failures without rerun-picking",
       "state": "in-progress",
-      "evidence": "During the unchanged macOS runner queue, completed exact-U responsibility audit and identified a separate production Human send/reaction origin P1; spec follow-up required before its implementation. No unchanged job rerun."
+      "evidence": "During original Host/shipping execution, completed exact-U13-group source decomposition and implemented/reviewed confirmed Human mutation origin P1 with real-owner recovery tests. No unchanged job was rerun to pick green."
     },
     {
       "requirement": 9,
       "criterion": "Use unique inventory/ledger/RTM and distinguish implementation/wiring/test/execution/acceptance",
       "state": "in-progress",
-      "evidence": "Canonical two-row append prepared at exactf1c0b36/run41518150463; connector readback proves only declared fields changed, preserves concurrent reply/upload fields and all source reviews/acceptance. Current source gate remains required after integration."
+      "evidence": "Canonical NMR row e-h append prepared at1a531f4/run41520915374 and read back as4b1dd4c21554bd666157338bbd92b06957d731b7; only declared requirement/evidence/notes changed, all source reviews/acceptance preserved. Existing RTM/current status updated, same dossier gains scoped source mapping."
     },
     {
       "requirement": 10,
@@ -365,9 +406,49 @@
     "scope": "NMR-50e-h",
     "classification": "P1 implementation defect",
     "discovery_head": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
-    "state": "specified-not-implemented",
+    "state": "implemented-tests-authored-independent-source-review-complete-execution-pending",
     "entry": "ProductionRenderer submit/resend -> composer queue -> attachment commit -> actual Coordinator frame; Human reaction -> actual Coordinator frame",
     "failure": "An old unposted Human intent and its callbacks can survive account switch, be relabelled by a later roster/Host and mutate new-account projections.",
-    "next_action": "Capture immutable original scope and target lane at admission, retire only local queue presentation on identity change and fence each async/frame/settlement boundary with real queue/client tests."
-  }
+    "spec_checkpoint": "811fe641a8a9ebcd70a4e842792f8d63110c8acb",
+    "code_blobs": {
+      "renderer": "880688acaa84747386c74cda50de0ed903758801",
+      "queue": "8b9aadfc6e336b4ff5b2d536a5c997119013d170",
+      "helper": "9bd07e00d85a175f52d291f48439737a53653531",
+      "tests": "eef32b782bc6f93d29d893de4debe487270d8c38",
+      "workflow": "912aba7b2d0fb7e0570287fce11ebd334cea002e"
+    },
+    "tests": {
+      "path": "frontend/src/production/composer-dispatch-scope.contract.test.ts",
+      "authored": 18,
+      "oracle": "Actual Coordinator client, generic queue/reset, approval lifecycle, draft store and attachment-copy boundary; deterministic promise/port barriers; exact frames/args, origin identity, no stale projection, saved-draft restore and new-account/same-nonce controls.",
+      "execution": "pending-containing-H-Actions"
+    },
+    "review": {
+      "reviewer": "nmr50_origin_independent",
+      "effort": "xhigh",
+      "scope": "complete frozen five code/test/workflow files; full diff and client/draft/approval neighbors; actual renderer admission and lifecycle wiring",
+      "decision": "NO_BLOCKER",
+      "product_acceptance": false,
+      "local_execution": false
+    },
+    "execution": {
+      "head": null,
+      "status": "pending-containing-H-Actions",
+      "workflow": ".github/workflows/native-service-contracts.yml",
+      "required_job": "native-message-ui",
+      "required_contract_tests": 18,
+      "retained_gates": "renderer tsc/build, Transcript18, settlement5, Chromium22; current workflow also retains Host/shipping/Electron/Windows gates"
+    },
+    "evidence_scope": "This is implementation and independent source-review evidence. An already-posted request remains Host-owned. No new message or credential authority, wire schema, data deletion, source-review completion or shipping acceptance is claimed.",
+    "attachment_owner_trace": {
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "paths": [
+        "source/electron-main/attachments/attachments.ts#commitStaged",
+        "source/host/src/extensions/attachments/attachments_service.rs#upload",
+        "source/host/src/extensions/attachments/attachments_service.rs#stage_attachments_into_box"
+      ],
+      "finding": "commitStaged copies original bytes into local content-addressed agent storage and does not delete the staged original; box upload is separate. The existing live main-leg placement boundary is not newly fenced by this renderer patch."
+    }
+  },
+  "frozen_code_blobs_context": "Containing follow-up commit. The execution section records first-batch15f only; new e-h execution is separately pending below."
 }

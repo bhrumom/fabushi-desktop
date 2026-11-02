@@ -18,29 +18,31 @@ export interface ComposerSubmission {
   isFork?: boolean;
 }
 
-export interface ComposerSubmissionRecord extends ComposerSubmission {
+export type ComposerSubmissionRecord<Submission extends ComposerSubmission = ComposerSubmission> = Submission & {
   phase: Exclude<ComposerSubmissionPhase, "cancelled">;
-}
+};
 
-export interface ComposerSubmissionQueue {
-  submit(input: ComposerSubmission): { nonce: string; completion: Promise<ComposerSubmissionPhase> };
+export interface ComposerSubmissionQueue<Submission extends ComposerSubmission = ComposerSubmission> {
+  submit(input: Submission): { nonce: string; completion: Promise<ComposerSubmissionPhase> };
   discard(nonce: string): void;
   cancelQueued(nonce: string): boolean;
   flush(): void;
-  snapshot(): readonly ComposerSubmissionRecord[];
+  snapshot(): readonly ComposerSubmissionRecord<Submission>[];
+  /** Retire renderer tracking without cancelling any request already owned by Host. */
+  reset(): void;
   dispose(): void;
 }
 
-interface QueueOptions {
+interface QueueOptions<Submission extends ComposerSubmission> {
   isTransportDown(): boolean;
-  send(input: ComposerSubmission): Promise<void>;
+  send(input: Submission): Promise<void>;
   now?(): number;
-  onPhase?(input: ComposerSubmission & { phase: ComposerSubmissionPhase }): void;
-  onFailure?(input: ComposerSubmissionRecord, error: unknown): void;
+  onPhase?(input: Submission & { phase: ComposerSubmissionPhase }): void;
+  onFailure?(input: ComposerSubmissionRecord<Submission>, error: unknown): void;
 }
 
-interface PendingRecord {
-  input: ComposerSubmission;
+interface PendingRecord<Submission extends ComposerSubmission> {
+  input: Submission;
   phase: Exclude<ComposerSubmissionPhase, "cancelled">;
   resolve(value: ComposerSubmissionPhase): void;
   completion: Promise<ComposerSubmissionPhase>;
@@ -52,18 +54,18 @@ interface PendingRecord {
  * sends can be cancelled because that is the action exposed by the shipped
  * send journal and the current coordinator contract.
  */
-export function createComposerSubmissionQueue(options: QueueOptions): ComposerSubmissionQueue {
-  const records = new Map<string, PendingRecord>();
+export function createComposerSubmissionQueue<Submission extends ComposerSubmission = ComposerSubmission>(options: QueueOptions<Submission>): ComposerSubmissionQueue<Submission> {
+  const records = new Map<string, PendingRecord<Submission>>();
   const activeByAgent = new Map<string, string>();
   let generation = 0;
   let disposed = false;
 
-  const notify = (record: PendingRecord, phase: PendingRecord["phase"]) => {
+  const notify = (record: PendingRecord<Submission>, phase: PendingRecord<Submission>["phase"]) => {
     record.phase = phase;
     options.onPhase?.({ ...record.input, phase });
   };
 
-  const finish = (record: PendingRecord, phase: ComposerSubmissionPhase) => {
+  const finish = (record: PendingRecord<Submission>, phase: ComposerSubmissionPhase) => {
     if (records.get(record.input.nonce) !== record) return;
     if (phase === "sent" || phase === "cancelled") records.delete(record.input.nonce);
     if (activeByAgent.get(record.input.agentId) === record.input.nonce) activeByAgent.delete(record.input.agentId);
@@ -71,7 +73,7 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
     if (phase !== "cancelled") options.onPhase?.({ ...record.input, phase });
   };
 
-  const run = (record: PendingRecord, runGeneration: number) => {
+  const run = (record: PendingRecord<Submission>, runGeneration: number) => {
     if (disposed || generation !== runGeneration || records.get(record.input.nonce) !== record) return;
     if (options.isTransportDown()) {
       notify(record, "queued");
@@ -106,12 +108,19 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
     }
   };
 
+  const retireTracking = () => {
+    generation += 1;
+    activeByAgent.clear();
+    for (const record of records.values()) record.resolve("cancelled");
+    records.clear();
+  };
+
   return {
     submit(input) {
       if (disposed) return { nonce: input.nonce, completion: Promise.resolve("cancelled") };
       let resolve!: (value: ComposerSubmissionPhase) => void;
       const completion = new Promise<ComposerSubmissionPhase>((done) => { resolve = done; });
-      const record: PendingRecord = { input, phase: "pending", resolve, completion };
+      const record: PendingRecord<Submission> = { input, phase: "pending", resolve, completion };
       records.set(input.nonce, record);
       const queued = options.isTransportDown() || activeByAgent.has(input.agentId);
       if (queued) notify(record, "queued");
@@ -136,13 +145,13 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
     snapshot() {
       return [...records.values()].map((record) => ({ ...record.input, phase: record.phase }));
     },
+    reset() {
+      if (!disposed) retireTracking();
+    },
     dispose() {
       if (disposed) return;
       disposed = true;
-      generation += 1;
-      activeByAgent.clear();
-      for (const record of records.values()) record.resolve("cancelled");
-      records.clear();
+      retireTracking();
     }
   };
 }

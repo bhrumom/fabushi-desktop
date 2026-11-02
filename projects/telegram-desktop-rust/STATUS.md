@@ -15,9 +15,19 @@ request-frame boundary now checks the original picker/account lifetime after
 readiness; retired unposted intent cannot become a new account's request.
 Already posted durable intent remains with the Host.
 
-Four Host regressions (Human52 total, including concurrent NMR-49 and upload bounds) and six actual-client Chromium cases
-(22 total) are authored; independent source review found no remaining blocker.
-Containing-H Actions execution is pending at authoring. Concurrent NMR-49,
+The follow-up NMR-50e–h binds normal Human send/resend and reaction to the
+rendered account before queue admission, attachment waits and the actual frame.
+Local queue/approval retirement preserves Host-owned sends and lets a new account
+use the same conversation; stale phase/failure/result/roster callbacks are fenced.
+Root teardown retains original staged bytes referenced by saved drafts. Existing
+Agent fields and approval behavior remain in the same composer/Session owners.
+
+At exact `15f19c4a16fee39865f74bf6b3aa2bc68fe172f1`, source contract157,
+schema37, fixed-source candidate, renderer build, Transcript18/settlement5,
+Chromium22, Electron and Windows jobs passed. Host52 and the complete shipping
+job remain pending at this update; the actual AppHost build step has passed.
+Eighteen additional real queue/client/approval/draft lifecycle contracts are
+authored for NMR-50e–h and require their containing-H execution. Concurrent NMR-49,
 cached-source/journal and version-preserving diagnostic changes are retained.
 Fixed U, 16381 Git-only identities, two complete/four pending source reviews,
 null unknown/unread and false source/product/independent acceptance remain.
@@ -25,6 +35,11 @@ Full source/legal, remaining product behaviors, real services, signed platforms,
 complete UI/a11y/temporal/Bot/security/performance/soak and upgrade/rollback stay
 open. Evidence and exact execution state:
 `projects/telegram-desktop-rust/evidence/task20bf-round1-nmr50-recovery.json`.
+
+Four pending panel/phrase bodies were decomposed into thirteen source obligation
+groups in the existing forward-options dossier. Their review states stay pending;
+the mapped direct-recipient feedback gap and broader draft/eligibility/self flow
+remain open. This is source evidence, not additional implemented capability.
 
 
 ## Concurrent bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)

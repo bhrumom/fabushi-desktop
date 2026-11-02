@@ -1,0 +1,718 @@
+{
+  "kind": "read-only next-batch source audit draft; not a second ledger or acceptance record",
+  "task": "task20bf9475 round1",
+  "date": "2026-11-02",
+  "effort": {
+    "requested": "xhigh",
+    "reason": "fixed-source responsibility decomposition, caller lifetime, durable delivery and owner boundaries",
+    "actual": "inherited agent/session setting; no per-turn effort override available in this worker"
+  },
+  "production": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+    "branch": "checkpoint/tdrp-nmr50-recovery-20bf9475-r1",
+    "shared_head_chased": false
+  },
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6"
+  },
+  "reading": {
+    "reuse": "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02",
+    "dossier_blob": "7e69ee5bc0261a9812bac252c64fa7a0621c9228",
+    "statement": "Existing full-body reading evidence reused by unchanged exact blob identity; all four bodies inspected against fixed U for this mapping draft. No new unique-read credit and no source_reviews status change.",
+    "identities": [
+      {
+        "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+        "blob": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "lines": null,
+        "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h"
+      },
+      {
+        "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+        "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "lines": null,
+        "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp"
+      },
+      {
+        "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+        "blob": "86865db47439dbce848fc812df2554335d3e004c",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "lines": null,
+        "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h"
+      },
+      {
+        "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+        "blob": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "lines": null,
+        "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp"
+      }
+    ],
+    "source_review_status": "all four remain pending until parent publishes complete responsibility mapping through canonical schema/ledger"
+  },
+  "upstream_scoped_callers": [
+    {
+      "path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "blob": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "lines": [
+        1778,
+        2068
+      ],
+      "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/boxes/share_box.cpp#L1778-L2068",
+      "scope": "CreateForwardedMessagePhraseArgs, ShowForwardedMessageToast, DefaultForwardCallback; additional fast-self path 2193-2225",
+      "complete_file_read_claim": false
+    },
+    {
+      "path": "Telegram/SourceFiles/window/window_peer_menu.cpp",
+      "blob": "864a8103df594c634cb1017c7bf2733da13885f2",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "lines": [
+        4778,
+        4803
+      ],
+      "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/window/window_peer_menu.cpp#L4778-L4803",
+      "scope": "forwardMessages completion uses phrase/icon/filter for self",
+      "complete_file_read_claim": false
+    },
+    {
+      "path": "Telegram/SourceFiles/history/history.cpp",
+      "blob": "27c0d3c3f9f8668a497c5ab638135972380bfd6b",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "lines": [
+        522,
+        575
+      ],
+      "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/history.cpp#L522-L575",
+      "scope": "typed DraftKey lookup; resolve IDs and repair removed IDs; setForwardDraft change notification",
+      "complete_file_read_claim": false
+    },
+    {
+      "path": "Telegram/SourceFiles/history/view/controls/history_view_compose_controls.cpp",
+      "blob": "af3445dd2696c09a635415521f293f0c48b637d6",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "lines": [
+        2941,
+        2975
+      ],
+      "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_compose_controls.cpp#L2941-L2975",
+      "scope": "edit draft options supplies ClearDraftReplyTo equalTo; FieldHeader owns panel at 352-386, cycle at 565, updateForwarding at 6071-6078",
+      "complete_file_read_claim": false
+    },
+    {
+      "path": "Telegram/SourceFiles/history/view/controls/history_view_draft_options.cpp",
+      "blob": "5bdc9891bb130433a30cf4add1c72bb0cfb973b9",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "lines": [
+        1230,
+        1250
+      ],
+      "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_draft_options.cpp#L1230-L1250",
+      "scope": "normalized options and author/caption capability UI; normalization also 363-368, 1109-1117, 1464-1468",
+      "complete_file_read_claim": false
+    }
+  ],
+  "source_responsibility_decomposition": [
+    {
+      "id": "DRAFT-FORWARD-LIFETIME",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "blob": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            35,
+            73
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h#L35-L73"
+        },
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            48,
+            90
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L48-L90"
+        },
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            222,
+            232
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L222-L232"
+        }
+      ],
+      "responsibility": "Destination-typed resolved draft, no-op identical updates, replacement subscription lifetime, nonempty destination invariant, topic/sublist destruction clears draft, item-change notification and canonical accessors.",
+      "existing_owner": [
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "state": "draft mapping; partial generic account/source/dialog lifetime implementation exists",
+      "gap": "Current dialog lifetime has account/source/request identity; no destination thread/topic/sublist draft model or destruction subscription. Preserve accepted Host journal even when UI closes; upstream draft clearing is not cancellation of accepted sends."
+    },
+    {
+      "id": "DRAFT-FORWARD-SOURCE-REMOVAL",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            213,
+            220
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L213-L220"
+        }
+      ],
+      "responsibility": "Remove the exact deleted source item from live draft; refresh preview; notify consumers, including last-item empty state.",
+      "existing_owner": [
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "state": "draft mapping; Host denial implemented, equivalent live presentation invalidation open",
+      "gap": "authorize_forward_source checks existence/settlement/protected content before acceptance and each destination, but captured forwardTarget is not itself a live source-removal subscription. Multi-item draft semantics also remain open."
+    },
+    {
+      "id": "DRAFT-FORWARD-ELIGIBILITY",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "blob": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            81,
+            94
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h#L81-L94"
+        },
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            362,
+            435
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L362-L435"
+        }
+      ],
+      "responsibility": "All-forced attribution, all-dropped attribution (with saved-music exception), any meaningful drop-setting, any rich-page, rich-author capability and premium gate; disallowed privacy normalizes to PreserveInfo. Empty list is hide-author eligible before all-forced predicate.",
+      "existing_owner": [
+        "source/host/src/extensions/session/production.rs",
+        "existing shared fabushi_messaging_core::ForwardPrivacy",
+        "frontend/src/production/ForwardMessageDialog.tsx"
+      ],
+      "state": "draft mapping; only coupled privacy and settled/protected admission implemented",
+      "gap": "Canonical source-policy/capability representation and native revalidation for forced attribution, rich authoring and applicable entitlement remain open. Preserve exact all/any semantics; do not replace all-forced with any-forced without another source authority. Premium is not automatically a Fabushi entitlement decision."
+    },
+    {
+      "id": "DRAFT-FORWARD-OPTION-TRANSITIONS",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            234,
+            267
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L234-L267"
+        }
+      ],
+      "responsibility": "Normalize before mutation and cycling; PreserveInfo -> NoSenderNames -> NoNamesAndCaptions only if captions exist -> PreserveInfo. Persist surviving source IDs/options to the exact topicRootId+monoforumPeerId destination draft.",
+      "existing_owner": [
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "state": "draft mapping; normalized immutable dispatch privacy implemented; caption-sensitive cycle and typed draft persistence open",
+      "gap": "FWD-UI privacy checkboxes are not proof of the whole panel transition/persistence responsibility. Use existing composer state and Session, never add a second forwarding store."
+    },
+    {
+      "id": "DRAFT-FORWARD-SENDER-PREVIEW",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            92,
+            120
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L92-L120"
+        },
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            122,
+            178
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L122-L178"
+        },
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            208,
+            211
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L208-L211"
+        }
+      ],
+      "responsibility": "Refresh on sender name-version changes; deduplicate known senders by peer and hidden senders by name; project zero/one/two/many attribution and explicit removed-names state, including all intrinsically dropped attribution.",
+      "existing_owner": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "existing transcript presentation/model"
+      ],
+      "state": "draft mapping; forwarding preview not implemented by the inspected dialog",
+      "gap": "TranscriptMessage has a projected author string but no equivalent original/hidden sender aggregate contract. Preserve canonical origin identity and privacy before adding preview."
+    },
+    {
+      "id": "DRAFT-FORWARD-CONTENT-PREVIEW",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            180,
+            205
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L180-L205"
+        }
+      ],
+      "responsibility": "Single item preview hides sender, optionally caption, ignores grouping and image generation; dropping origin triggers destination-sensitive disallowed custom-emoji stripping. Multiple source items use message-count summary. Session text context owns repaint.",
+      "existing_owner": [
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "existing transcript/resource presentation",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "state": "draft mapping; source-aware preview/emoji policy open",
+      "gap": "The dialog currently reads message ID only and renders no source preview. Destination-sensitive content policy belongs to existing native permission/resource owners, with React projecting the result."
+    },
+    {
+      "id": "DRAFT-FORWARD-MEDIA-PREVIEW",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            269,
+            333
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L269-L333"
+        }
+      ],
+      "responsibility": "Show reply thumbnail only for one eligible media item; obscure spoilers; discard obsolete spoiler animation; obey inactive/power-saving pause; elide source and preview to bounded layout.",
+      "existing_owner": [
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "existing attachment/resource viewer and semantic UI primitives"
+      ],
+      "state": "draft mapping; applicable preview/spoiler/power/layout behavior open",
+      "gap": "Qt Painter/widgets/animation classes are implementation mechanics; user-visible spoiler, pause and bounded preview behavior needs Fabushi implementation and visual/a11y/motion evidence, not a C++ owner."
+    },
+    {
+      "id": "DRAFT-REPLY-CONDITIONAL-CLEAR",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "blob": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            75,
+            79
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h#L75-L79"
+        },
+        {
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            335,
+            360
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp#L335-L360"
+        }
+      ],
+      "responsibility": "Read exact destination local draft; no-op if absent or a nonempty equalTo differs; retain thread address while clearing reply and suggestion; delete now-null draft or preserve surviving text/content; delayed cloud save only if exact destination thread still exists.",
+      "existing_owner": [
+        "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "state": "draft mapping; local generic reply clear exists, exact behavior open",
+      "gap": "ProductionRenderer clearReplyTarget unconditionally clears current selection; draft-state stores account+agentKey, model lacks suggestion/typed thread fields and its inspected persistence is client-local. Typed address/conditional reply/suggestion/cloud-sync extension requires a coherent native draft contract; cannot count current clearReply as equivalent."
+    },
+    {
+      "id": "FORWARD-RESULT-NAMED-DESTINATIONS",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+          "blob": "86865db47439dbce848fc812df2554335d3e004c",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            20,
+            36
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h#L20-L36"
+        },
+        {
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "blob": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            20,
+            61
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp#L20-L61"
+        }
+      ],
+      "responsibility": "One nonself named destination, exactly two named destinations when both descriptors exist, otherwise count-based many projection; distinguish single-message/plural-message wording. toCount<=1 requires a nonnull to1, not a zero-recipient success.",
+      "existing_owner": [
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "frontend/src/production/forward-settlement.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "state": "draft mapping; generic per-attempt counts implemented; selected next production slice",
+      "gap": "No recipient descriptors reach onSettled/projection; failed-only retry success reports its subset, losing whole-intent result. Current product forwards one source message; multi-message wording remains open."
+    },
+    {
+      "id": "FORWARD-RESULT-SAVED-AND-PREMIUM",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+          "blob": "86865db47439dbce848fc812df2554335d3e004c",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            20,
+            27
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h#L20-L27"
+        },
+        {
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "blob": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            25,
+            35
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp#L25-L35"
+        }
+      ],
+      "responsibility": "Self destination uses linked Saved Messages wording; suppress text only when toSelfWithPremiumIsEmpty is true and destination self is premium. The flag permits explicit callers to opt out of suppression.",
+      "existing_owner": [
+        "source/host/src/extensions/session/production.rs",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/production/forward-settlement.ts",
+        "existing account capability/entitlement owner"
+      ],
+      "state": "draft mapping; native saved/self destination and alternate premium flow unresolved",
+      "gap": "create_human_conversation explicitly rejects same participant at production.rs:2575-2576. Do not infer self from display name or synthesize a fake self conversation. Caller shows premium recent-self-forward path; entitlement/product disposition needs explicit native model."
+    },
+    {
+      "id": "FORWARD-RESULT-ICON",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "blob": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            63,
+            71
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp#L63-L71"
+        }
+      ],
+      "responsibility": "Use saved icon for single self destination, standard forward icon otherwise; presentation variation is independent of phrase suppression.",
+      "existing_owner": [
+        "frontend/src/production/forward-settlement.ts",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "existing semantic UI/icon primitives"
+      ],
+      "state": "draft mapping; equivalent result icon not established",
+      "gap": "Current owner exposes a plain string notice. Reuse canonical notice primitive when icon semantics are added; no need to copy Lottie mechanics."
+    },
+    {
+      "id": "FORWARD-RESULT-SAVED-NAVIGATION",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "blob": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            73,
+            81
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp#L73-L81"
+        }
+      ],
+      "responsibility": "Click resolves window for the originating session at use time and opens its canonical self history; no window yields safe no-op; filter returns false.",
+      "existing_owner": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "existing account-scoped canonical conversation navigation"
+      ],
+      "state": "draft mapping; requires native saved/self identity before implementation",
+      "gap": "Do not capture another account/window or link a fabricated ID. Saved/self identity and actual account navigation contract remain open dependencies."
+    },
+    {
+      "id": "FORWARD-RESULT-SETTLEMENT-LIFETIME",
+      "source": [
+        {
+          "path": "Telegram/SourceFiles/boxes/share_box.cpp",
+          "blob": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            1778,
+            1810
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/boxes/share_box.cpp#L1778-L1810"
+        },
+        {
+          "path": "Telegram/SourceFiles/boxes/share_box.cpp",
+          "blob": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "lines": [
+            1822,
+            2068
+          ],
+          "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/boxes/share_box.cpp#L1822-L2068"
+        }
+      ],
+      "responsibility": "Snapshot phrase arguments from original source/destination selection; duplicate-submit fence; ordinary nonempty request path waits for outstanding request keys to empty and suppresses success if any failed; show/session validity guards delayed toast. Separate immediate no-request branch exists.",
+      "existing_owner": [
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "frontend/src/production/forward-settlement.ts",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/forward_batch_journal.rs"
+      ],
+      "state": "draft mapping; durable delivery and per-attempt strict confirmation implemented; whole-intent feedback proposed",
+      "gap": "Factory alone proves no delivery timing. Do not generalize caller guarantees to remote real-service acceptance or infer crash durability from upstream random IDs. Fabushi should accumulate only validated acknowledgements from current lifetime while Host remains sole delivery authority."
+    }
+  ],
+  "production_anchors": [
+    {
+      "path": "frontend/src/production/ForwardMessageDialog.tsx",
+      "blob": "869510a4fda80b6feaa249877918f552d51818e2",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        10,
+        49
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/production/ForwardMessageDialog.tsx#L10-L49"
+    },
+    {
+      "path": "frontend/src/production/ForwardMessageDialog.tsx",
+      "blob": "869510a4fda80b6feaa249877918f552d51818e2",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        115,
+        182
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/production/ForwardMessageDialog.tsx#L115-L182"
+    },
+    {
+      "path": "frontend/src/production/ForwardMessageDialog.tsx",
+      "blob": "869510a4fda80b6feaa249877918f552d51818e2",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        229,
+        314
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/production/ForwardMessageDialog.tsx#L229-L314"
+    },
+    {
+      "path": "frontend/src/production/forward-settlement.ts",
+      "blob": "0aa58ea90f5d19b5ff37ee2c48943767edfb1943",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        6,
+        28
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/production/forward-settlement.ts#L6-L28"
+    },
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "blob": "1a033034d0acd4c6261d27792e32ac2d372768ea",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        1059,
+        1118
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/production/ProductionRenderer.tsx#L1059-L1118"
+    },
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "blob": "1a033034d0acd4c6261d27792e32ac2d372768ea",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        4177,
+        4219
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/production/ProductionRenderer.tsx#L4177-L4219"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "blob": "c2d39cd5e47b5cc9678fc8ae135efb625944288e",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        2564,
+        2585
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/source/host/src/extensions/session/production.rs#L2564-L2585"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "blob": "c2d39cd5e47b5cc9678fc8ae135efb625944288e",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        2751,
+        2850
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/source/host/src/extensions/session/production.rs#L2751-L2850"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "blob": "c2d39cd5e47b5cc9678fc8ae135efb625944288e",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        2901,
+        3175
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/source/host/src/extensions/session/production.rs#L2901-L3175"
+    },
+    {
+      "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+      "blob": "bbc1b4209a444caf5995d5a3afa6af1535286a42",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        264,
+        284
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/source/host/src/extensions/session/forward_batch_journal.rs#L264-L284"
+    },
+    {
+      "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+      "blob": "bbc1b4209a444caf5995d5a3afa6af1535286a42",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        372,
+        388
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/source/host/src/extensions/session/forward_batch_journal.rs#L372-L388"
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+      "blob": "638a2df9675ec9809ab63c0684222e65f416d0e9",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        17,
+        47
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/recovered/features/conversation/workspace/draft-state.ts#L17-L47"
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+      "blob": "638a2df9675ec9809ab63c0684222e65f416d0e9",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        190,
+        225
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/recovered/features/conversation/workspace/draft-state.ts#L190-L225"
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+      "blob": "99ea6e8a4b88ac21b4d3eddcfbacb73dde835365",
+      "commit": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+      "lines": [
+        136,
+        174
+      ],
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1/frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts#L136-L174"
+    }
+  ],
+  "next_batch": {
+    "name": "Whole-intent, recipient-aware forward settlement feedback for current direct Human destinations",
+    "value": "A user who selects Alice and Bob should get a final result naming Alice and Bob even when Alice confirms on the first attempt and Bob on retry; three or more recipients should use original total. Today the final retry projects only its one-result subset.",
+    "dependency_clear_reason": "The shipping entry, account-lifetime guard, ordered original recipient IDs, authorized recipient names, strict acknowledgement validation, partial retry subset, source journal and existing notice/roster projection already exist. No new protocol, store, service, native self identity or entitlement is needed for this single-message/direct-recipient presentation slice.",
+    "existing_owner": "ForwardMessageDialog UI intent presentation + forward-settlement.ts notice projection + ProductionRenderer wiring; ProductionSessionWorkers/HumanForwardBatch retain all authorization, dispatch, persistence and remote settlement authority.",
+    "candidate_paths": [
+      "frontend/src/production/ForwardMessageDialog.tsx",
+      "frontend/src/production/forward-settlement.ts",
+      "frontend/src/production/ProductionRenderer.tsx",
+      "frontend/src/production/ForwardMessageDialog.fixture.tsx",
+      "frontend/src/production/ForwardMessageDialog.behavior.test.mjs",
+      "frontend/src/production/forward-settlement.contract.test.ts"
+    ],
+    "minimum_design": [
+      "Retain ordered recipient display descriptors for selected IDs across filtered search results; freeze a presentation snapshot alongside the existing immutable request at first dispatch. Names are display-only and cannot enter authorization or alter the wire request.",
+      "Within that dialog lifetime, keep confirmed IDs only after the existing exact-one-result/per-requested-ID validation accepts sent. Merge confirmations monotonically across failed-only retries; missing, duplicate, unexpected or thrown outcomes never fabricate confirmation.",
+      "Pass a presentation context carrying original recipients and cumulative validated confirmation to the existing settlement projection. Emit a partial-progress notice while any original destination remains unconfirmed; emit final single-message one-name/two-name/many-count success only once all original destinations confirm.",
+      "Keep roster refresh independent of phrase generation, preserve failure behavior, and retain account checks before notice/read and after async roster response. Dialog close/reopen/source/account changes retire summary state just like existing intent state.",
+      "Use safe plain-text rendering and count fallback for unavailable descriptors; never show Forwarded to 0 as successful completion. Preserve privacy, target bound, byte snapshot, retry nonce and preframe cancellation behavior."
+    ],
+    "new_oracle_proposal": "ORA-TDRP-FORWARD-RESULT-PROJECTION-001 (draft identifier; parent allocates canonical ID)",
+    "falsifiable_cases": [
+      "One selected Alice: before acknowledgement no success; one validated sent yields Message forwarded to Alice exactly once.",
+      "Exactly two recipients selected across different queries: both sent produces Alice and Bob in original order even if current search shows neither.",
+      "Three-plus recipients: final count is original unique target count, not current filtered result count or retry subset.",
+      "Alice sent/Bob failed then retry Bob sent: first notice remains explicitly partial; retry sends only Bob with original nonce/privacy; final notice names Alice and Bob.",
+      "Missing, duplicate, contradictory or unexpected target rows do not promote any affected ambiguous confirmation; thrown retry leaves previous confirmations but no terminal success.",
+      "Close/reopen/source replacement/account A-B-A/unmount before delayed result produces no old notice or roster and does not affect a new intent.",
+      "Unknown/missing recipient label uses bounded count fallback, and empty original set cannot yield a success notice.",
+      "Stale roster response after account rotation cannot repopulate current roster; roster rejection cannot roll back already valid result."
+    ],
+    "execution": "No tests authored or run in this audit. Extend existing five-case forward-settlement.contract.test.ts and Chromium ForwardMessageDialog fixture/behavior suite, then execute affected typecheck/contract/component/visual checks in existing native-service-contracts Actions at frozen implementing H. Reuse still-valid Host/journal evidence; do not rerun unrelated suites merely for source file count.",
+    "exclusions_remaining_open": [
+      "Saved/self destination, premium suppression and recent-self-forwards alternate UI",
+      "Saved navigation and result icon semantics",
+      "Multiple source message quantity",
+      "Typed topic/sublist forward drafts and cloud save",
+      "Live source removal UI and rich/forced provenance policy",
+      "Full upstream responsibility and source-review closure",
+      "Real-service and signed-package acceptance"
+    ]
+  },
+  "classification": {
+    "source_understood": "Four exact bodies and scoped callers understood at stated depth; prior full-body evidence reused.",
+    "mapped": "This is a responsibility-to-existing-owner draft with explicit gaps. Parent owns canonical mapping/ledger/schema/RTM.",
+    "implemented": "No changes made. Existing normalized immutable dispatch, source/destination reauthorization, durable bytes/targets/journal and per-attempt strict settlement are observations at H, not newly qualified equivalence.",
+    "verified": "Read-only source evidence only; no executable verification, no service calls, no acceptance promotion.",
+    "real_service_blockers": "This UI projection slice can be implemented and contract-tested without a deployed service. Genuine remote send/auth/permission/replay/resource behavior and cross-device/restart/package acceptance still need the existing live-service and signed-product environment. Native self storage, entitlement/rich-author policy and cloud draft endpoint semantics are separate unresolved product/interface dependencies, not passing or N/A."
+  },
+  "mutations": {
+    "production": false,
+    "ledger": false,
+    "schema": false,
+    "rtm": false,
+    "docs": false,
+    "commits": false,
+    "only_artifact": "pending-forward-source-audit.json"
+  },
+  "publication": {
+    "canonical_dossier": "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md",
+    "canonical_ledger": "projects/telegram-desktop-rust/parity-ledger.json",
+    "review_states_changed": false,
+    "production_implementation_changed_by_audit": false
+  }
+}

@@ -18,6 +18,8 @@ on:
       - 'frontend/src/recovered/runtime/coordinator-source.ts'
       - 'source/shared/rpc/coordinator.ts'
       - 'frontend/src/production/coordinator-client.ts'
+      - 'frontend/src/production/composer-dispatch-scope*'
+      - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
       - 'frontend/src/production/transcript-projection*'
       - 'frontend/src/recovered/features/conversation/workspace/pagination*'
       - 'source/electron-main/coordinator/rust-coordinator-carrier*'
@@ -581,6 +583,17 @@ jobs:
         run: |
           set -euo pipefail
           npm run build:renderer 2>&1 | tee ../artifacts/native-message-ui/renderer-build.log
+      - name: Composer and reaction original-account dispatch boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/composer-dispatch-scope.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/composer-dispatch-scope.test.mjs 2>&1 | tee artifacts/native-message-ui/composer-dispatch-scope-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/composer-dispatch-scope.test.mjs 2>&1 | tee artifacts/native-message-ui/composer-dispatch-scope.log
+          grep -Fx '# tests 18' artifacts/native-message-ui/composer-dispatch-scope.log
+          grep -Fx '# pass 18' artifacts/native-message-ui/composer-dispatch-scope.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/composer-dispatch-scope.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/composer-dispatch-scope.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/composer-dispatch-scope.log
       - name: Forward settlement account and roster boundaries
         shell: bash
         run: |

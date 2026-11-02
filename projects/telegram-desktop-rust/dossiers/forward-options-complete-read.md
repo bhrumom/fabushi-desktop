@@ -66,6 +66,46 @@ Execution and remaining gates are recorded in
 `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
 All executable validation is GitHub Actions at the containing H.
 
+## Fixed-U panel and result obligations — task20bf round1
+
+Read-only decomposition at product H `15f19c4a16fee39865f74bf6b3aa2bc68fe172f1`
+reuses the four unchanged complete-body reads recorded above. Exact U remains
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`; no new unique-read credit is taken.
+The full path/blob/line/caller mapping and falsifiable next-behavior proposal are
+saved in `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-source-audit.json`.
+It is supporting evidence for this dossier, not another inventory or ledger.
+
+| Obligation group | Existing owner and open behavior |
+| --- | --- |
+| Destination draft lifetime | Composer draft/picker; typed topic/sublist address and destruction subscription remain open |
+| Source removal | Session reauthorization exists; live picker item removal/empty-state propagation remains open |
+| Forward eligibility | Canonical source policy; forced attribution, rich page, author, music and entitlement rules remain open |
+| Option transition and persistence | Existing privacy normalization is partial; typed destination draft persistence/cycling remains open |
+| Sender preview | Existing transcript/picker; one/two/many attribution and reactive name changes remain open |
+| Content preview | Existing transcript; caption privacy, multi-source count and conditional emoji stripping remain open |
+| Media preview | Existing resource/UI owner; thumbnail/spoiler/motion/power-saving lifecycle remains open |
+| Conditional reply clear and cloud save | Existing draft/reply owner; exact address/reply match, suggestion and thread-aware save remain open |
+| Named destination feedback | Existing dialog/settlement projection; original one/two/many recipient summary across retries remains open |
+| Saved/self and premium feedback | Native self destination and entitlement semantics remain unresolved |
+| Result icon | Existing notice/UI owner; saved/forward icon semantics remain open |
+| Saved navigation | Existing session navigation; requires canonical native self identity |
+| Settlement presentation lifetime | Host journal/current picker already own delivery; whole-intent cumulative result summary remains open |
+
+The bounded next feedback defect is concrete: Alice confirms and Bob fails,
+then Bob-only retry succeeds; current settlement counts the retry subset and
+reports one conversation. The eventual fix must retain original display
+descriptors and merge only strictly validated confirmations while preserving
+the failed-only request subset and nonce. Names are display data, not authority.
+The source factory alone does not prove timing: scoped `share_box.cpp` callers
+snapshot the original selection and guard ordinary delayed success against
+outstanding or failed requests. The separate no-request path is retained in
+the audit instead of being generalized away.
+
+All four canonical `source_reviews` remain pending. This draft does not close
+Saved/self, premium, navigation, multi-source, rich/forced policy, typed drafts
+or cloud-save obligations, and does not promote implementation, execution,
+source-coverage or independent/product acceptance.
+
 ## Historical source review
 
 Status: read-complete / responsibility closure open  
