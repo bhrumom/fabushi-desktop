@@ -1,0 +1,321 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 4,
+  "scope": "Current message-contract gate and dependent Session/Transcript batch; evidence, not release acceptance",
+  "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "initial_requested_head": "606ee80daf10743b79c6c1c43541584a8af2260d",
+  "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "first_live_branch_head": "38271235aa5bcb1f2f6bd2c51926f745af342287",
+  "concurrent_fix": {
+    "commit": "f3b00a552dbc14536a26c7b19492319d3445fd1c",
+    "workflow_blob": "0341842c79225152bccaadbb0eca5d9120c3f3db",
+    "action": "Complete commit diff and workflow content reread; retained identical already-published selector repair, no duplicate implementation or rerun",
+    "new_run": 41400057867,
+    "new_run_state": "in_progress; no acceptance claimed"
+  },
+  "initial_run": {
+    "run_id": 41399722398,
+    "attempt": 1,
+    "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d",
+    "status": "completed",
+    "conclusion": "failure",
+    "updated_at": "2026-11-02T06:27:18Z",
+    "jobs": [
+      {
+        "id": 125128702575,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact shipping source",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "conclusion": "success"
+          },
+          {
+            "name": "Compile actual desktop AppHost entry",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify DNS and special-config response normalization",
+            "conclusion": "failure"
+          },
+          {
+            "name": "Verify protocol and TCP compatibility behavior",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Verify proxy rejection and Native credential boundary",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Diagnose locked AppHost dependency drift (no acceptance)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve shipping compile evidence",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 125128702849,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact source and batch",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "conclusion": "success"
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "conclusion": "success"
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 125128704681,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d",
+        "steps": []
+      }
+    ],
+    "tests": {
+      "human": {
+        "executed": 10,
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 14,
+        "log": "native-message-reconciliation.log",
+        "result_line": 813
+      },
+      "agent_nonce": {
+        "executed": 4,
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 0,
+        "log": "native-message-reconciliation.log",
+        "result_line": 1237
+      },
+      "dns_special_config": {
+        "required": 6,
+        "executed": 4,
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 62,
+        "required_not_run": 2,
+        "log": "native-message-shipping-compile.log",
+        "result_line": 1828
+      },
+      "protocol_contract": {
+        "executed": 0,
+        "status": "skipped",
+        "authored_tests_static_count": 122,
+        "test_blob": "b9e910fdb7d8bf077b4cd3f0f7d06080b48b7a8e"
+      },
+      "tcp_transport": {
+        "executed": 0,
+        "status": "skipped",
+        "authored_tests_static_count": 9,
+        "live_service_test": "live_session_exchanges_encrypted_ping_and_service_rpc",
+        "live_service_status": "not-run",
+        "test_blob": "bb3af3f4dc124a9841a17b9daab10eca72d83da1"
+      },
+      "proxy": {
+        "required": 4,
+        "executed": 0,
+        "status": "skipped"
+      },
+      "native_credential": {
+        "required": 1,
+        "executed": 0,
+        "status": "skipped"
+      }
+    },
+    "failure": {
+      "classification": "TEST_SELECTION_BUG",
+      "command_filter": "response_normalization::tests::",
+      "asserted_pass_count": 6,
+      "actual_pass_count": 4,
+      "exit_code": 1,
+      "result_line": 1828,
+      "error_line": 1830,
+      "source_blob": "84b70541cce725aac67b0aacc277090475e44e91",
+      "omitted_tests": [
+        "response_normalization::http_date_tests::http_date_parser_matches_fixed_u_shape_without_clock_mutation",
+        "response_normalization::http_date_tests::http_date_parser_rejects_invalid_month_date_and_time"
+      ],
+      "minimal_fix": "Change filter to response_normalization::; keep exact 6 passed / 0 failed / 0 ignored assertion."
+    },
+    "app_host_compile": {
+      "status": "success",
+      "log": "native-message-shipping-compile.log",
+      "result_line": 1737
+    },
+    "artifacts": [
+      {
+        "id": 13121266760,
+        "name": "native-message-shipping-compile-606ee80daf10743b79c6c1c43541584a8af2260d",
+        "size_in_bytes": 12733,
+        "digest": "sha256:bc61552e864f7583d964f1f96714a5016c6f340c0dab6337cd021c38302deedc",
+        "expired": false,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121266760",
+        "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d"
+      },
+      {
+        "id": 13120103821,
+        "name": "native-message-reconciliation-606ee80daf10743b79c6c1c43541584a8af2260d",
+        "size_in_bytes": 10026,
+        "digest": "sha256:a7db7d1d9396c40f821d0dc8233d86fde348715560f4e913a7b8bf4771eace47",
+        "expired": false,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13120103821",
+        "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d"
+      }
+    ],
+    "source_preservation": {
+      "live_at_start": "38271235aa5bcb1f2f6bd2c51926f745af342287",
+      "parent": "606ee80daf10743b79c6c1c43541584a8af2260d",
+      "same_normalization_blob": true
+    },
+    "local_executable_validation": "not-run",
+    "dependent_message_batch_gate": "blocked",
+    "log_hashes": {
+      "native-message-reconciliation.log": {
+        "bytes": 116340,
+        "sha256": "0b7f8a71755ecbcaa560231de3101663016c26b7ed20a0ec9477e5bf3eaa350c"
+      },
+      "native-message-shipping-compile.log": {
+        "bytes": 183466,
+        "sha256": "ae7977485dd70b6a9f60b973557dfe16f2f1c484d7be7618044499c02075d11d"
+      }
+    }
+  },
+  "governing_inputs": [
+    "AGENTS.md",
+    "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+    "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+    "docs/specs/fabushi-bot-communication-platform.md",
+    "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+    "docs/specs/fabushi-deferred-ci-migration.md",
+    "docs/specs/fbcp-native-message-reconciliation.md"
+  ],
+  "current_source_findings": {
+    "source_review_contract_run": 41399820681,
+    "source_review_contract_head": "38271235aa5bcb1f2f6bd2c51926f745af342287",
+    "source_review_contract_state": "completed/success; shape/checker evidence only",
+    "source_acceptance": false,
+    "identity_gap": "Unaccepted lock/inventory-index candidate 351204f3695b4a39bc3f4d2f230c061b9a01fe2a differs from the fixed-U f985723b552b30fe1c17d377d57f44e61a15a8c4 ledger candidate; historical accepted evidence is preserved, not promoted",
+    "source_reviews_gap": "Canonical ledger lacks complete exact-member source_reviews; recursive enumeration is not semantic review"
+  },
+  "production_findings": [
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "blob": "948db9d624ebc7ad492d962e8f66e006323e60b5",
+      "symbol": "sync_human_conversation",
+      "finding": "Suffix after newest known message discards known-row refresh and unseen rows preceding a settled outgoing ID; ID membership is not interval coverage"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "symbol": "toggle_human_message_reaction / materialize_remote_human_message",
+      "finding": "HTTP snapshot and mutation settlement lack shared freshness fencing; a broadened refresh must preserve settled reactions and read state, bound reaction expansion, retain admission before side effects"
+    },
+    {
+      "repository": "bhrumom/fabushi",
+      "commit": "edde714def34e6eb5ae133dba20790c80a355c85",
+      "path": "fabushi/web/src/handlers/friends.js",
+      "blob": "e3c6461a01181eb66f1dccbb3845fea530ec072e",
+      "symbol": "handleListDirectMessages",
+      "finding": "before uses created_at only while ordering uses effective delivered/created time plus id; no composite cursor or revision; deployment identity not verified"
+    }
+  ],
+  "requirements_review": {
+    "read_exact_run_complete_logs_counts": "done; initial gate failed; later suites not run",
+    "retain_concurrent_work": "done; no implementation hunk overwritten",
+    "fixed_upstream_no_floating_rebaseline": "retained; source completeness open",
+    "existing_owner_production_chain": "read-only audit in progress; no new owner",
+    "dependent_production_batch": "not started; prerequisite run still in progress",
+    "actions_only": "no local or htch executable validation",
+    "unique_inventory_ledger_rtm": "retained; NMR traceability and source-identity closure gaps remain",
+    "full_functional_and_shipping_acceptance": "not complete; real Fabushi service/package/UI/platform/Bot/independent ACCEPT remain required"
+  },
+  "full_product_acceptance": false,
+  "independent_release_acceptance": false,
+  "local_executable_validation": "not-run",
+  "next_boundary": "Obtain terminal exact-H 41400057867 logs and all required test counts before dependent production implementation"
+}
