@@ -280,6 +280,22 @@
       "refs_updated_by_job": false,
       "product_validation": false,
       "disposition": "Real owner objects transferred and receipt read back. Preserve later78c artifact-only package policy in workflow/spec before root CAS; no gate or full service acceptance removed."
+    },
+    {
+      "commit": "93bde9cfa8a51f969809238137c357318599fa02",
+      "parent": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+      "tree": "0d5a7c64150a313a5f84dc18f98f051e092d37f2",
+      "run": 41527346887,
+      "job": 125558390297,
+      "conclusion": "success",
+      "input_blob": "2364fe3b43be1d07fbf576e674191044397bbcb2",
+      "ledger_blob": "487726a12ff3e8c9643e804fe11c2f100e8bed04",
+      "artifact": 13179104452,
+      "artifact_digest": "sha256:dbc0f5bdba2d1787bb041234e1ce2a89517ec0b54e59287825d2045ed4d54e10",
+      "remote_full_commit_and_three_contents_verified": true,
+      "root_full_objects_read_and_reviewed_append_matched": true,
+      "product_validation": false,
+      "disposition": "Not installed: canonical ledger advanced to240a31aed59e8db794a9d54532831349d965b8da before root CAS. Preserve all concurrent ledger changes; refresh the pinned input at job execution and append current execution evidence."
     }
   ],
   "publication": {
@@ -520,6 +536,97 @@
       "reviewed_helper_blob": "37f11c75c4269fe66b65a541ba895f293d74968e",
       "reviewed_tests_blob": "837a9aa9fa898e3bf5d850649506f5b8756f07e4",
       "integration": "Same reviewed three-file delta applied cleanly over5e141b; later ee60 spec only appends unrelated retained-transport qualification and is preserved. Current containing-H execution remains pending."
+    },
+    "publication": {
+      "parent": "c13f0cbbe56c516e4ddb8154ec63e9010d93aa4d",
+      "tree": "661d2ca9dff31f539e6affb90a4b0a1554b6b2d1",
+      "sha": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+      "checks": [
+        {
+          "path": "docs/specs/fbcp-native-message-reconciliation.md",
+          "sha": "bd545bf38a7577a55ff0fecece1932a44df30ada",
+          "contents_match": true,
+          "characters": 148235
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "sha": "1ab341949c21cc20b2c6c9ee03b7140535ba7bd7",
+          "contents_match": true,
+          "characters": 213696
+        },
+        {
+          "path": "source/host/tests/session_gateway_contract.rs",
+          "sha": "6fdeb88fc7d0ec4c7cd52db72b6212518bd93a20",
+          "contents_match": true,
+          "characters": 416588
+        },
+        {
+          "path": "projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json",
+          "sha": "8b7228d190b7b9ee79f57b12e45473bae4620042",
+          "contents_match": true,
+          "characters": 30040
+        }
+      ],
+      "verified": true,
+      "ref_update": {
+        "force": false,
+        "expected_sha": "c13f0cbbe56c516e4ddb8154ec63e9010d93aa4d"
+      }
+    },
+    "execution": {
+      "head": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+      "run": 41527025791,
+      "attempt": 1,
+      "human_job": 125557283962,
+      "conclusion": "failure",
+      "full_log_characters": 230972,
+      "actual_suites": [
+        {
+          "name": "transcript recovery",
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        {
+          "name": "Human",
+          "passed": 63,
+          "failed": 0,
+          "ignored": 0
+        },
+        {
+          "name": "resource bounds",
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        {
+          "name": "Human creation",
+          "passed": 11,
+          "failed": 1,
+          "ignored": 0
+        }
+      ],
+      "reaction_three_tables": "All three actual named test functions passed; their authored loops exercised71 scenarios (69negative/2positive).",
+      "failure": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings: store.db-journal/store.db-shm/store.db-wal missing after refused initializer; root-cause review required, no weakened assertion or rerun.",
+      "later_steps": "creation storage/sharebox/journal/Agent/settlement credential/forward HTTP skipped",
+      "social": {
+        "job": 125557283685,
+        "conclusion": "failure",
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "full_log_characters": 207467,
+        "classification": "TEST_FLAW",
+        "cause": "Intentional poison panic interleaves the named test prefix and separate ok; strict contiguous name+ok grep fails after aggregate10/0/0 success.",
+        "later_steps": "SQLite recovery and product HTTP skipped",
+        "concurrent_fix_observed_at": "cbb531552160f8ba5f098be50318b4c8739f86d7",
+        "workflow_blob": "cf888c52e7860a766d8f41caaada3338e8fc1dbf"
+      },
+      "shipping": {
+        "job": 125557283811,
+        "status": "queued",
+        "accepted": false
+      }
     }
   },
   "artifact_visual_inspection": {
@@ -556,5 +663,17 @@
     "artifact_id": 13179232191,
     "artifact_digest": "sha256:5dafe0189e0182af6c524ca3d0d6bb2ddacd344c6442238bd804160a2875c4dd",
     "scope": "Inherited Plugins preservation evidence, not a new R7 product feature or qualification of later changed inputs."
+  },
+  "fixed_u_sparse_history_review": {
+    "dossier": "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review",
+    "dossier_published_commit": "93bde9cfa8a51f969809238137c357318599fa02",
+    "dossier_blob": "b3b6a7183ce6186d0bc84c6c166f46ae9aa4eb27",
+    "full_texts": 8,
+    "new_relative_to_dossier": 6,
+    "repeated_full_reads": 2,
+    "source_review_disposition": "pending; complete responsibility mapping/implementation/acceptance unfinished",
+    "canonical_ledger_append": "prepared but not yet published; do not count as installed source_reviews",
+    "target_gap_observation": "35fe95331cdb67eb32430e03043ab9246b9b1453: complete=false has no consumer continuation under the precisely stated no-independent-trigger conditions; static finding, no browser reproduction",
+    "overall_source_acceptance": false
   }
 }

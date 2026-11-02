@@ -46,8 +46,25 @@ jobs:
           const git = (...args) => execFileSync('git', args, {encoding:'utf8'}).trim();
           const head = git('rev-parse', 'HEAD');
           assert.equal(head, process.env.GITHUB_SHA);
-          const inputBlob = git('rev-parse', 'HEAD:' + path);
-          const ledger = JSON.parse(readFileSync(path, 'utf8'));
+          // The object is prepared from one freshly pinned canonical input,
+          // not a checkout snapshot that can age while the runner is queued.
+          // Root still checks inputBlob against live head before its own CAS.
+          const get = async resource => {
+            const response = await fetch('https://api.github.com/repos/' + repository + resource, {
+              signal:AbortSignal.timeout(60000),
+              headers:{Authorization:'Bearer ' + process.env.R7_OBJECT_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+            });
+            if (!response.ok) throw new Error('Pinned canonical input read failed with status ' + response.status);
+            return await response.json();
+          };
+          const inputCommit = (await get('/git/ref/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1')).object.sha;
+          assert(/^[a-f0-9]{40}$/.test(inputCommit));
+          const inputBlob = (await get('/contents/' + path + '?ref=' + inputCommit)).sha;
+          const inputObject = await get('/git/blobs/' + inputBlob);
+          assert.equal(inputObject.encoding, 'base64');
+          const inputBytes = Buffer.from(inputObject.content, 'base64');
+          assert.equal(createHash('sha1').update(Buffer.from('blob ' + inputBytes.length + '\\0')).update(inputBytes).digest('hex'), inputBlob);
+          const ledger = JSON.parse(inputBytes.toString('utf8'));
           const before = structuredClone(ledger);
           assert(Array.isArray(ledger.source_reviews));
           assert.equal(operation.source_reviews.length, 8);
@@ -109,7 +126,7 @@ jobs:
           if (!response.ok) throw new Error('Git blob storage failed with status ' + response.status);
           const result = await response.json();
           assert.equal(result.sha,blob);
-          const receipt = {source_sha:head,input_blob:inputBlob,ledger_blob:blob,bytes:output.length,
+          const receipt = {source_sha:head,input_commit:inputCommit,input_blob:inputBlob,ledger_blob:blob,bytes:output.length,
             operations_blob:git('rev-parse','HEAD:' + manifestPath),operations_sha256:createHash('sha256').update(bytes).digest('hex'),
             added_reviews:additions,existing_reviews_preserved:existing,
             refs_updated:false,commits_created:false,product_validation:false,source_acceptance:false};
