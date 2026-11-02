@@ -1243,3 +1243,260 @@ fn manager_owns_box_handoff_state_and_handback_settlement() {
     manager.dispose();
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn manager_secret_write_refusal_is_redacted_and_does_not_resume_before_repair() {
+    use std::collections::{BTreeMap, BTreeSet};
+    use mahayana_host_runtime::extensions::attachments::attachments_service::{
+        AttachmentsBox, AttachmentsService,
+    };
+    use mahayana_host_runtime::extensions::attachments::generate_image_service::GenerateImageAuth;
+    use mahayana_host_runtime::extensions::content_search::extension::{
+        GLOBAL_SEARCH_GATE, start_production_content_search_extension_with_paths,
+    };
+    use mahayana_host_runtime::extensions::experiments::{HostExperimentsExtension, HostExperimentsOptions};
+    use mahayana_host_runtime::extensions::memory::extension::start_memory_extension;
+    use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
+    use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManagerServices;
+    use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
+    use mahayana_host_runtime::extensions::trays::trays_service::TrayEvent;
+
+    // These unrelated attachment ports must never be consumed by this path.
+    // Credential storage, Session, Memory, manager and trays are real owners.
+    struct UnusedAttachmentPorts;
+    impl GenerateImageAuth for UnusedAttachmentPorts {
+        fn get_access_token(&self) -> Result<String, String> {
+            panic!("secret submission must not request attachment authentication")
+        }
+        fn get_machine_id(&self) -> Result<String, String> {
+            panic!("secret submission must not request attachment machine identity")
+        }
+    }
+    impl AttachmentsBox for UnusedAttachmentPorts {
+        fn run_state(&self, _: &str) -> Result<String, String> {
+            panic!("secret submission must not inspect an attachment box")
+        }
+        fn upload_file(&self, _: &str, _: &str, _: &[u8]) -> Result<(), String> {
+            panic!("secret submission must not upload an attachment")
+        }
+    }
+
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("credential manager root");
+    let memory = start_memory_extension(root.join("agents"));
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root_and_dependencies(
+        root.join("agents"), 500, Arc::new(|| None), memory.service(),
+    ));
+    assert!(Arc::ptr_eq(&sessions.memory_service(), &memory.service()), "fixture must share the actual Memory owner");
+    let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+    let telemetry = Arc::new(HostTelemetryService::open_with_identity_tags(
+        root.join("credential-events.jsonl"), BTreeMap::new(),
+    ).expect("real file-backed telemetry"));
+    let experiments = Arc::new(HostExperimentsExtension::new(HostExperimentsOptions {
+        is_dev_build: false, env_gate_overrides: None,
+    }));
+    experiments.replace_feature_flag_overrides(BTreeMap::from([(GLOBAL_SEARCH_GATE.to_string(), false)]));
+    let content_search = Arc::new(start_production_content_search_extension_with_paths(
+        &root, &root.join("agents"), experiments, Arc::new(|_| {}),
+    ));
+    let trays = Arc::new(HostTraysExtension::default());
+    manager.set_production_services(TranscriptManagerServices {
+        telemetry: Arc::clone(&telemetry.brain),
+        product_analytics: telemetry.analytics.clone(),
+        trace_flusher: telemetry.api(),
+        memory: memory.clone(),
+        content_search,
+        attachments: Arc::new(AttachmentsService::new(
+            &root, Arc::new(UnusedAttachmentPorts), Arc::new(UnusedAttachmentPorts), None,
+        )),
+        trays: Arc::clone(&trays),
+    }).expect("bind actual manager services");
+    assert!(Arc::ptr_eq(&manager.production_services().expect("bound services").trays, &trays),
+        "manager must publish to the observed real tray owner");
+    let tray_events = Arc::new(Mutex::new(Vec::<TrayEvent>::new()));
+    let tray_events_capture = Arc::clone(&tray_events);
+    let tray_subscription = trays.subscribe(Arc::new(move |event| {
+        tray_events_capture.lock().expect("tray delivery events").push(event);
+    }));
+    let changed = Arc::new(AtomicU64::new(0));
+    let changed_capture = Arc::clone(&changed);
+    manager.set_channel_config_changed_observer(Some(Arc::new(move || {
+        changed_capture.fetch_add(1, Ordering::SeqCst);
+    })));
+    let resumed = Arc::new(Mutex::new(Vec::<String>::new()));
+    let agent = sessions.materialize_new_session(None, "user", None).expect("credential agent");
+    let other = sessions.materialize_new_session(None, "user", None).expect("other credential agent");
+    for (owner, platform) in [
+        (agent.id.as_str(), "slack"),
+        (agent.id.as_str(), "discord"),
+        (other.id.as_str(), "slack"),
+    ] {
+        assert!(sessions.store_connector_credential(owner, platform, "token", "CCWA-EXISTING")
+            .expect("seed real credential owner"), "valid credential fixture must be admitted");
+    }
+    sessions.append_agent_transcript_entries(&agent.id, &[json!({
+        "id":"manager-checked-secret",
+        "kind":"send-message",
+        "message":{
+            "type":"secret-request",
+            "secretRequest":{
+                "label":"Manager checked token",
+                "target":{"kind":"channel-credential","platform":"slack","field":"token"}
+            }
+        }
+    })]).expect("persist manager credential request");
+    manager.switch_agent(&agent.id, 10.0).expect("stabilize active Agent before refusal baseline");
+    assert!(sessions.memory_service().active_agent_id().as_deref() == Some(agent.id.as_str()),
+        "manager must activate the shared Memory owner");
+    let transcript_before = sessions.read_agent_transcript_entries(&agent.id).expect("request baseline");
+    let obligations_before = manager.ack_obligations().pending_obligations();
+    let store = sessions.connector_secret_store();
+    let path = store.file_path(&agent.id, "slack");
+    let untouched_paths = [
+        sessions.open_channel_store(&agent.id).expect("target channel owner").config_path("slack"),
+        store.file_path(&agent.id, "discord"),
+        sessions.open_channel_store(&agent.id).expect("other platform owner").config_path("discord"),
+        store.file_path(&other.id, "slack"),
+        sessions.open_channel_store(&other.id).expect("other Agent channel owner").config_path("slack"),
+    ];
+    let untouched = untouched_paths.iter().map(|path| {
+        (path.clone(), fs::read(path).expect("snapshot metadata and unrelated credential bytes"))
+    }).collect::<Vec<_>>();
+    let submitted = "  CCWA-MANAGER-SUBMITTED-SECRET  ";
+    let faults: [Option<&[u8]>; 4] = [
+        Some(br#""CCWA-MANAGER-STORED-SENTINEL""#),
+        Some(br#"{"token":"CCWA-MANAGER-STORED-SENTINEL",broken}"#),
+        Some(b"\xffCCWA-MANAGER-STORED-SENTINEL"),
+        None,
+    ];
+    for (index, damaged) in faults.into_iter().enumerate() {
+        if let Some(bytes) = damaged {
+            fs::write(&path, bytes).expect("install real unreadable credential");
+        } else {
+            fs::remove_file(&path).expect("replace fixture file for real read error");
+            fs::create_dir(&path).expect("credential read-error directory");
+            fs::write(path.join("sentinel"), b"CCWA-MANAGER-DIRECTORY-SENTINEL")
+                .expect("read-error directory contents");
+        }
+        let names_before = fs::read_dir(path.parent().expect("credential parent"))
+            .expect("credential neighbors before refusal")
+            .map(|entry| entry.expect("credential neighbor").file_name()).collect::<BTreeSet<_>>();
+        let resumed_capture = Arc::clone(&resumed);
+        let result = manager.submit_secret_with(
+            "manager-checked-secret", submitted, &agent.id, 11.0,
+            move |prompt| {
+                resumed_capture.lock().expect("actual resume calls").push(prompt);
+                Ok(())
+            },
+        );
+        assert!(matches!(result, Ok(false)), "store refusal must preserve the manager accepted=false result");
+        assert!(resumed.lock().expect("actual resume calls").is_empty(), "refusal must not resume or deliver an acknowledgement");
+        assert_eq!(changed.load(Ordering::SeqCst), 0);
+        assert!(sessions.read_agent_transcript_entries(&agent.id).expect("request after refusal") == transcript_before,
+            "refusal must leave the real persisted request incomplete");
+        assert!(manager.ack_obligations().pending_obligations() == obligations_before,
+            "refusal must not create an acknowledgement obligation");
+        if let Some(bytes) = damaged {
+            assert!(fs::read(&path).expect("credential after refusal").as_slice() == bytes,
+                "manager refusal must preserve exact credential bytes");
+        } else {
+            assert!(path.is_dir(), "manager refusal must preserve the read-error directory");
+            assert!(fs::read(path.join("sentinel")).expect("read-error sentinel") == b"CCWA-MANAGER-DIRECTORY-SENTINEL",
+                "manager refusal must preserve directory contents");
+        }
+        let names_after = fs::read_dir(path.parent().expect("credential parent"))
+            .expect("credential neighbors after refusal")
+            .map(|entry| entry.expect("credential neighbor").file_name()).collect::<BTreeSet<_>>();
+        assert!(names_after == names_before, "manager refusal must leave no temporary credential entry");
+        for (unchanged_path, bytes) in &untouched {
+            assert!(fs::read(unchanged_path).expect("unchanged owner bytes") == *bytes,
+                "manager refusal must preserve metadata and other Agent/platform state");
+        }
+        let current_trays = trays.list();
+        assert_eq!(current_trays.len(), 1);
+        let tray = &current_trays[0];
+        assert!(tray.kind == "error" && tray.title == "Could not store the secret",
+            "manager must use its fixed secret-write error tray");
+        assert!(tray.detail == "The secure input could not write the credential to its store.",
+            "manager must use the fixed redacted error detail");
+        assert!(tray.agent_id.as_deref() == Some(agent.id.as_str()), "tray must identify the request's Agent");
+        let dedupe_key = format!("transcript-secret-store:{}:manager-checked-secret", agent.id);
+        assert!(tray.dedupe_key.as_deref() == Some(dedupe_key.as_str()), "tray must use existing request deduplication");
+        assert_eq!(tray.count, Some((index + 1) as u64));
+        assert!(tray.raw_detail.is_none() && tray.error_kind.is_none() && tray.request_id.is_none() && tray.actions.is_none(),
+            "fixed refusal tray must not carry raw error payloads");
+        let serialized = serde_json::to_string(tray).expect("serialize actual error tray");
+        let root_text = root.to_string_lossy();
+        for forbidden in [submitted.trim(), "CCWA-MANAGER-STORED-SENTINEL", "CCWA-MANAGER-DIRECTORY-SENTINEL", root_text.as_ref()] {
+            assert!(!serialized.contains(forbidden), "error tray must not disclose stored/submitted secrets or paths");
+        }
+        let delivered = tray_events.lock().expect("tray delivery events");
+        assert_eq!(delivered.len(), index + 1);
+        assert!(matches!(delivered.last(), Some(TrayEvent::Pushed(delivered_tray)) if delivered_tray == tray),
+            "the real tray owner must publish the same redacted error");
+    }
+
+    fs::remove_dir_all(&path).expect("explicitly repair final directory fault");
+    fs::write(&path, br#"{"token":"CCWA-OLD","nested":{"keep":true},"number":7,"nullable":null}"#)
+        .expect("repair the same credential path without altering the request");
+    let trays_before_success = trays.list();
+    let resumed_capture = Arc::clone(&resumed);
+    let result = manager.submit_secret_with(
+        "manager-checked-secret", submitted, &agent.id, 12.0,
+        move |prompt| {
+            resumed_capture.lock().expect("actual resume calls").push(prompt);
+            Ok(())
+        },
+    );
+    assert!(matches!(result, Ok(true)), "same manager request must succeed after explicit repair");
+    assert_eq!(changed.load(Ordering::SeqCst), 1);
+    {
+        let prompts = resumed.lock().expect("actual resume calls");
+        assert_eq!(prompts.len(), 1);
+        assert!(prompts[0].contains("Manager checked token") && prompts[0].contains("channel-credential"),
+            "resume must receive the actual successful request acknowledgement");
+        assert!(!prompts[0].contains(submitted.trim()) && !prompts[0].contains(root.to_string_lossy().as_ref()),
+            "successful acknowledgement must not expose secret value or path");
+    }
+    let committed_bytes = fs::read(&path).expect("committed manager credential");
+    let committed: Value = serde_json::from_slice(&committed_bytes).expect("valid committed credential object");
+    assert!(committed == json!({"token":"CCWA-MANAGER-SUBMITTED-SECRET","nested":{"keep":true},"number":7,"nullable":null}),
+        "manager repair must merge the trimmed credential and preserve unrelated values");
+    let committed_entries = sessions.read_agent_transcript_entries(&agent.id).expect("committed manager request");
+    assert!(committed_entries.iter().any(|entry| entry["id"] == "manager-checked-secret" && entry["secretProvided"] == true),
+        "successful manager request must durably record its provided flag");
+    let repeated = manager.submit_secret_with(
+        "manager-checked-secret", "CCWA-REPEATED-SECRET", &agent.id, 13.0,
+        |_| panic!("completed secret request must not resume again"),
+    );
+    assert!(matches!(repeated, Ok(false)), "completed request must retain its existing ignored result");
+    assert_eq!(changed.load(Ordering::SeqCst), 1);
+    assert_eq!(resumed.lock().expect("actual resume calls").len(), 1);
+    assert!(trays.list() == trays_before_success, "success and duplicate suppression must not emit a failure tray");
+    assert_eq!(tray_events.lock().expect("tray delivery events").len(), 4);
+    assert!(fs::read(&path).expect("credential after duplicate suppression") == committed_bytes,
+        "completed request must not overwrite the credential again");
+    for (unchanged_path, bytes) in &untouched {
+        assert!(fs::read(unchanged_path).expect("unaffected owner bytes after repair") == *bytes,
+            "successful repair must preserve metadata and unrelated owner state");
+    }
+
+    manager.dispose();
+    drop(manager);
+    drop(sessions);
+    drop(memory);
+    telemetry.dispose().expect("close file-backed telemetry");
+    drop(telemetry);
+    drop(tray_subscription);
+    drop(trays);
+    let reopened = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    assert!(reopened.get_connector_secret(&agent.id, "slack", "token").expect("reopened manager credential").as_deref()
+        == Some("CCWA-MANAGER-SUBMITTED-SECRET"), "fresh owner must observe the repaired credential");
+    assert!(reopened.read_agent_transcript_entries(&agent.id).expect("reopened manager request") == committed_entries,
+        "fresh owner must observe the committed request flag");
+    assert!(fs::read(&path).expect("reopened raw credential") == committed_bytes,
+        "reopening must preserve committed credential bytes");
+    reopened.shutdown();
+    drop(reopened);
+    fs::remove_dir_all(root).expect("remove closed manager credential fixture");
+}

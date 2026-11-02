@@ -239,6 +239,115 @@ fn production_gateway_composes_channel_metadata_and_secrets() {
 }
 
 #[test]
+fn production_gateway_refuses_unreadable_channel_credentials_without_metadata_changes() {
+    fn optional_bytes(path: &std::path::Path) -> Option<Vec<u8>> {
+        match fs::read(path) {
+            Ok(bytes) => Some(bytes),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(_) => panic!("fixture metadata must be readable or absent"),
+        }
+    }
+
+    let old_secret = "stored-credential-sentinel-ccwa";
+    let submitted_secret = "submitted-credential-sentinel-ccwa";
+    let fixtures = [
+        ("truncated", format!("{{\"token\":\"{old_secret}\", ").into_bytes(), true),
+        ("scalar", serde_json::to_vec(old_secret).expect("encode fixture"), false),
+        ("invalid-utf8", vec![0xff, 0xfe, 0xfd], true),
+        ("null", b"null".to_vec(), false),
+    ];
+    for (case, corrupt, existing_metadata) in fixtures {
+        let root = temp_root(&format!("channel-write-admission-{case}"));
+        let agents = root.join("agents");
+        let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+        let record = runtime.materialize_new_session(None, "user", None).expect("agent");
+        let other = runtime.materialize_new_session(None, "user", None).expect("other agent");
+        for (agent_id, platform) in [(&record.id, "discord"), (&other.id, "slack")] {
+            assert!(runtime.store_connector_credential(agent_id, platform, "token", "unrelated-value")
+                .expect("seed unrelated credential"));
+        }
+        let secret_store = runtime.connector_secret_store();
+        let secret_path = secret_store.file_path(&record.id, "slack");
+        fs::create_dir_all(secret_path.parent().expect("credential parent")).expect("create fixture parent");
+        fs::write(&secret_path, &corrupt).expect("seed rejected input");
+        let channel_store = runtime.open_channel_store(&record.id).expect("channel owner");
+        let metadata_path = channel_store.config_path("slack");
+        if existing_metadata {
+            assert!(channel_store.write_metadata("slack", "Preserve this label").expect("seed metadata"));
+        }
+        let metadata_before = optional_bytes(&metadata_path);
+        assert_eq!(metadata_before.is_some(), existing_metadata);
+        let unrelated_paths = [
+            secret_store.file_path(&record.id, "discord"),
+            channel_store.config_path("discord"),
+            secret_store.file_path(&other.id, "slack"),
+            runtime.open_channel_store(&other.id).expect("other channel owner").config_path("slack"),
+        ];
+        let unrelated_before: Vec<_> = unrelated_paths.iter()
+            .map(|path| fs::read(path).expect("read unrelated fixture")).collect();
+        let args = json!({"id":record.id,"platform":"slack","token":submitted_secret});
+        let result = dispatch_production_session_gateway_call(&runtime, "connectChannel", &args)
+            .expect("registered channel method");
+        match result {
+            Err(SessionGatewayError::Internal(message)) => {
+                assert!(!message.contains(old_secret) && !message.contains(submitted_secret),
+                    "credential refusal must be redacted");
+            }
+            _ => panic!("unreadable credential input must refuse the gateway write"),
+        }
+        assert!(fs::read(&secret_path).expect("read rejected input") == corrupt,
+            "refusal must preserve original credential bytes");
+        assert!(optional_bytes(&metadata_path) == metadata_before,
+            "refusal must preserve existing or absent metadata");
+        for (path, before) in unrelated_paths.iter().zip(&unrelated_before) {
+            assert!(fs::read(path).expect("read unrelated fixture") == *before,
+                "refusal must not modify another Agent or platform");
+        }
+        runtime.shutdown();
+        drop(runtime);
+
+        let reopened = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+        match dispatch_production_session_gateway_call(&reopened, "connectChannel", &args)
+            .expect("registered reopened channel method")
+        {
+            Err(SessionGatewayError::Internal(message)) => {
+                assert!(!message.contains(old_secret) && !message.contains(submitted_secret),
+                    "reopened refusal must be redacted");
+            }
+            _ => panic!("reopened owner must refuse the same unreadable input"),
+        }
+        assert!(fs::read(&secret_path).expect("read reopened rejected input") == corrupt,
+            "reopened refusal must preserve original credential bytes");
+        assert!(optional_bytes(&metadata_path) == metadata_before,
+            "reopened refusal must preserve metadata");
+
+        let repaired = json!({"workspace":{"name":"retained"},"quota":3});
+        fs::write(&secret_path, serde_json::to_vec(&repaired).expect("encode repair"))
+            .expect("explicitly repair fixture");
+        let connected = dispatch(&reopened, "connectChannel", args);
+        let reply = connected.to_string();
+        assert!(!reply.contains(old_secret) && !reply.contains(submitted_secret),
+            "successful channel projection must not expose credentials");
+        let persisted: serde_json::Value = serde_json::from_slice(
+            &fs::read(&secret_path).expect("read admitted credential"),
+        ).expect("valid admitted credential record");
+        assert!(persisted["token"] == submitted_secret, "repair must admit the requested credential");
+        assert!(persisted["workspace"] == repaired["workspace"] && persisted["quota"] == repaired["quota"],
+            "admitted write must preserve unrelated structured values");
+        assert!(metadata_path.is_file(), "admitted connection must persist channel metadata");
+        for (path, before) in unrelated_paths.iter().zip(&unrelated_before) {
+            assert!(fs::read(path).expect("read unrelated fixture after repair") == *before,
+                "repair must not modify another Agent or platform");
+        }
+        dispatch(&reopened, "disconnectChannel", json!({"id":record.id,"platform":"slack"}));
+        assert!(!secret_path.exists() && !metadata_path.exists(), "explicit disconnect remains available");
+        reopened.shutdown();
+        drop(reopened);
+        fs::remove_dir_all(root).expect("remove owned fixture");
+    }
+}
+
+#[test]
 fn production_gateway_creates_a_real_session_record_for_the_shipping_new_chat_path() {
     let root = temp_root("create-agent");
     let agents = root.join("agents");

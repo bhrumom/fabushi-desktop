@@ -329,3 +329,158 @@ fn dismiss_on_move_on_blocks_stale_main_surface_response_and_secret_emits_channe
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn secret_submission_refuses_unreadable_credentials_without_signalling_and_recovers_in_place() {
+    use std::collections::BTreeSet;
+
+    // All failures enter the actual Session writer. The directory case also
+    // covers a real read error; malformed regular files expose the historical
+    // destructive replacement which a directory-only oracle would miss.
+    let faults: [(&str, Option<&[u8]>); 7] = [
+        ("malformed", Some(br#"{"token":"CCWA-STORED-SENTINEL",broken}"#)),
+        ("truncated", Some(br#"{"token":"CCWA-STORED-SENTINEL""#)),
+        ("empty", Some(b"")),
+        ("scalar", Some(br#""CCWA-STORED-SENTINEL""#)),
+        ("array", Some(br#"["CCWA-STORED-SENTINEL"]"#)),
+        ("invalid-utf8", Some(b"\xffCCWA-STORED-SENTINEL")),
+        ("directory", None),
+    ];
+    for (label, damaged) in faults {
+        let (root, workers, runtime, widgets, events, agent_id) = setup(label);
+        let other = workers.materialize_new_session(None, "user", None).expect("other agent");
+        for (owner, platform) in [
+            (agent_id.as_str(), "slack"),
+            (agent_id.as_str(), "discord"),
+            (other.id.as_str(), "slack"),
+        ] {
+            assert!(workers.store_connector_credential(owner, platform, "token", "CCWA-EXISTING")
+                .expect("seed actual credential owner"), "valid credential fixture must be admitted");
+        }
+        workers.append_agent_transcript_entries(&agent_id, &[json!({
+            "id":"checked-secret",
+            "kind":"send-message",
+            "message":{
+                "type":"secret-request",
+                "secretRequest":{
+                    "label":"Checked Slack token",
+                    "target":{"kind":"channel-credential","platform":"slack","field":"token"}
+                }
+            }
+        })]).expect("persist actual secret request");
+        runtime.switch_agent(&workers, &agent_id, 11.0)
+            .expect("stabilize the request Agent before the refusal baseline");
+
+        let changed = Arc::new(Mutex::new(0usize));
+        let changed_capture = Arc::clone(&changed);
+        widgets.bind_channel_config_changed(Arc::new(move || {
+            *changed_capture.lock().expect("channel callback count") += 1;
+        })).expect("bind actual widget channel callback");
+        let secret_store = workers.connector_secret_store();
+        let secret_path = secret_store.file_path(&agent_id, "slack");
+        let metadata = workers.open_channel_store(&agent_id).expect("channel owner").config_path("slack");
+        let untouched_paths = [
+            metadata,
+            secret_store.file_path(&agent_id, "discord"),
+            workers.open_channel_store(&agent_id).expect("channel owner").config_path("discord"),
+            secret_store.file_path(&other.id, "slack"),
+            workers.open_channel_store(&other.id).expect("other channel owner").config_path("slack"),
+        ];
+        let untouched = untouched_paths.iter().map(|path| {
+            (path.clone(), fs::read(path).expect("snapshot unaffected owner bytes"))
+        }).collect::<Vec<_>>();
+        let transcript_before = workers.read_agent_transcript_entries(&agent_id).expect("snapshot request");
+        let projections_before = events.lock().expect("projection events").clone();
+        if let Some(bytes) = damaged {
+            fs::write(&secret_path, bytes).expect("install unreadable credential fixture");
+        } else {
+            fs::remove_file(&secret_path).expect("replace fixture file with directory");
+            fs::create_dir(&secret_path).expect("install read-error directory");
+            fs::write(secret_path.join("sentinel"), b"CCWA-DIRECTORY-SENTINEL")
+                .expect("preserve directory contents");
+        }
+        let neighbor_names = || {
+            fs::read_dir(secret_path.parent().expect("credential parent"))
+                .expect("list credential neighbors")
+                .map(|entry| entry.expect("credential neighbor").file_name())
+                .collect::<BTreeSet<_>>()
+        };
+        let neighbors_before = neighbor_names();
+        let submitted = "  CCWA-NEW-WIDGET-SECRET  ";
+        let refused = widgets.submit_secret("checked-secret", submitted, &agent_id);
+        assert!(refused.is_err(), "unreadable credential must not produce an acknowledgement");
+        let error = refused.err().expect("refusal error");
+        assert!(!error.contains("CCWA-STORED-SENTINEL") && !error.contains(submitted.trim())
+                && !error.contains("CCWA-DIRECTORY-SENTINEL") && !error.contains(root.to_string_lossy().as_ref()),
+            "credential refusal must not disclose stored/submitted values or paths");
+        assert_eq!(*changed.lock().expect("channel callback count"), 0);
+        assert!(workers.read_agent_transcript_entries(&agent_id).expect("request after refusal") == transcript_before,
+            "refusal must preserve the persisted request without a provided flag");
+        assert!(*events.lock().expect("projection events") == projections_before,
+            "refusal must not publish a widget update");
+        if let Some(bytes) = damaged {
+            assert!(fs::read(&secret_path).expect("rejected credential bytes").as_slice() == bytes,
+                "rejection must preserve exact credential bytes");
+        } else {
+            assert!(secret_path.is_dir(), "read-error directory must remain intact");
+            assert!(fs::read(secret_path.join("sentinel")).expect("directory sentinel") == b"CCWA-DIRECTORY-SENTINEL",
+                "rejection must preserve the read-error directory contents");
+        }
+        assert!(neighbor_names() == neighbors_before, "rejection must leave no temporary credential entry");
+        for (path, bytes) in &untouched {
+            assert!(fs::read(path).expect("unchanged owner bytes") == *bytes,
+                "rejection must preserve metadata and unrelated Agent/platform state");
+        }
+
+        if damaged.is_none() {
+            fs::remove_dir_all(&secret_path).expect("explicitly repair directory fault");
+        }
+        fs::write(&secret_path, br#"{"token":"CCWA-OLD","nested":{"keep":true},"array":[1,"keep"],"nullable":null}"#)
+            .expect("explicitly repair the same credential path");
+        let acknowledgement = widgets.submit_secret("checked-secret", submitted, &agent_id)
+            .expect("same request succeeds after explicit repair").expect("success acknowledgement");
+        assert!(acknowledgement.contains("Checked Slack token") && acknowledgement.contains("channel-credential"),
+            "success must identify the actual request and destination");
+        assert!(!acknowledgement.contains(submitted.trim()) && !acknowledgement.contains(root.to_string_lossy().as_ref()),
+            "acknowledgement must not expose credential value or filesystem path");
+        assert_eq!(*changed.lock().expect("channel callback count"), 1);
+        let committed_bytes = fs::read(&secret_path).expect("committed credential bytes");
+        let committed: Value = serde_json::from_slice(&committed_bytes).expect("valid committed credential object");
+        assert!(committed == json!({
+            "token":"CCWA-NEW-WIDGET-SECRET", "nested":{"keep":true}, "array":[1,"keep"], "nullable":null
+        }), "successful repair must preserve unrelated values and trim the submitted credential");
+        let committed_entries = workers.read_agent_transcript_entries(&agent_id).expect("committed request");
+        assert!(committed_entries.iter().any(|entry| entry["id"] == "checked-secret" && entry["secretProvided"] == true),
+            "success must durably mark the actual request");
+        assert!(events.lock().expect("projection events").iter().any(|event| {
+            event["channel"] == "transcript" && event["payload"]["type"] == "updated"
+                && event["payload"]["entry"]["id"] == "checked-secret"
+                && event["payload"]["entry"]["secretProvided"] == true
+        }), "success must project the committed request through the existing roster");
+        assert!(widgets.submit_secret("checked-secret", "CCWA-REPEATED-SECRET", &agent_id)
+            .expect("completed request is ignored").is_none(), "completed request must not acknowledge again");
+        assert_eq!(*changed.lock().expect("channel callback count"), 1);
+        assert!(fs::read(&secret_path).expect("credential after repeated request") == committed_bytes,
+            "completed request must not overwrite the credential again");
+        for (path, bytes) in &untouched {
+            assert!(fs::read(path).expect("unaffected owner after repair") == *bytes,
+                "repair must preserve existing metadata and unrelated owner state");
+        }
+
+        runtime.dispose();
+        workers.shutdown_with_checkpoint();
+        drop(widgets);
+        drop(runtime);
+        drop(workers);
+        let reopened = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        assert!(reopened.get_connector_secret(&agent_id, "slack", "token").expect("reopened credential").as_deref()
+            == Some("CCWA-NEW-WIDGET-SECRET"), "fresh owner must observe the repaired credential");
+        assert!(reopened.read_agent_transcript_entries(&agent_id).expect("reopened request") == committed_entries,
+            "fresh owner must observe the same persisted provided flag");
+        assert!(fs::read(&secret_path).expect("reopened credential bytes") == committed_bytes,
+            "owner reopening must preserve committed credential bytes");
+        reopened.shutdown();
+        drop(reopened);
+        fs::remove_dir_all(root).expect("remove closed credential fixture");
+    }
+}
