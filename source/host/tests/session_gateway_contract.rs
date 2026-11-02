@@ -5876,6 +5876,55 @@ fn shipping_human_historical_reply_aliases_require_unique_local_canonical_parent
 }
 
 #[test]
+fn shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging() {
+    for variant in ["canonical-non-message","canonical-agent","canonical-pending","canonical-no-remote","canonical-conflicting-remote","canonical-missing-author","canonical-empty-author","canonical-corrupt-remote","local-non-message","local-agent","local-peer-author","local-mismatched-nonce","local-empty-nonce","local-has-remote","local-failed","local-missing-author-kind","local-unsupported-delivery"] {
+        let root = temp_root(&format!("nmr49-direct-{variant}"));
+        let (url, server) = spawn_human_message_fixture(vec![]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").unwrap()["id"].as_str().unwrap().to_owned();
+        let nonce = format!("nmr49-parent-{variant}");
+        let mut parent = if variant.starts_with("canonical-") {
+            settled_reply_fixture_row(&nonce, "parent", 895701)
+        } else { pending_reply_fixture_row(&nonce, "parent", None) };
+        match variant {
+            "canonical-non-message" | "local-non-message" => parent["kind"] = json!("event"),
+            "canonical-agent" | "local-agent" => parent["authorKind"] = json!("agent"),
+            "canonical-pending" => parent["delivery"] = json!("pending"),
+            "canonical-no-remote" => { parent.as_object_mut().unwrap().remove("remoteMessageId"); }
+            "canonical-conflicting-remote" => parent["remoteMessageId"] = json!("895702"),
+            "canonical-missing-author" => { parent.as_object_mut().unwrap().remove("authorId"); }
+            "canonical-empty-author" => parent["authorId"] = json!(""),
+            "canonical-corrupt-remote" => parent["remoteMessageId"] = json!({"unexpected":1}),
+            "local-peer-author" => parent["authorId"] = json!("2"),
+            "local-mismatched-nonce" => parent["clientNonce"] = json!("different"),
+            "local-empty-nonce" => parent["clientNonce"] = json!(""),
+            "local-has-remote" => parent["remoteMessageId"] = json!("895701"),
+            "local-failed" => parent["delivery"] = json!("failed"),
+            "local-missing-author-kind" => { parent.as_object_mut().unwrap().remove("authorKind"); }
+            "local-unsupported-delivery" => parent["delivery"] = json!("queued"),
+            _ => unreachable!(),
+        }
+        let reply_id = parent["id"].as_str().unwrap().to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        assert!(owner.append_transcript_entry(&parent).unwrap());
+        let before = owner.get_transcript_entries().unwrap();
+        let result = dispatch_production_session_gateway_call(&runtime, "sendHumanMessage", &json!({
+            "conversationId":id,"text":"child","clientNonce":format!("child-{variant}"),
+            "replyToId":reply_id,"attachments":[],"composedAtMs":1234.0
+        })).expect("registered Human gateway");
+        assert!(matches!(result, Err(SessionGatewayError::Internal(message)) if message.contains("reply")),
+            "{variant}: invalid parent must be rejected");
+        assert_eq!(owner.get_transcript_entries().unwrap(), before, "{variant}: no child staged");
+        drop(owner); runtime.shutdown(); drop(runtime);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reopened.read_human_conversation_transcript(&id).unwrap(), before);
+        reopened.shutdown(); drop(reopened);
+        assert!(server.join().expect("unexpected HTTP fixture").is_empty());
+        fs::remove_dir_all(root).expect("cleanup direct identity fixture");
+    }
+}
+
+#[test]
 fn shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen() {
     let root = temp_root("nmr49-reply-atomicity");
     let mut parent = fixture_remote_human_message(896001, 1, 2, "atomic parent", Some("nmr49-atomic-a"), json!([]));

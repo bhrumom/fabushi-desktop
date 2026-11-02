@@ -3257,13 +3257,32 @@ impl ProductionSessionWorkers {
         if let Some(target) = existing.iter().find(|row| {
             row.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
         }) {
-            if local_nonce.is_some_and(|nonce| {
-                nonce.is_empty()
+            if let Some(nonce) = local_nonce {
+                if nonce.is_empty()
+                    || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
                     || target.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id)
                     || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
                     || target.get("clientNonce").and_then(serde_json::Value::as_str) != Some(nonce)
-            }) {
-                return Err("sendHumanMessage local reply identity conflicts with its author or nonce".into());
+                    || target.get("remoteMessageId").is_some()
+                    || !matches!(target.get("delivery").and_then(serde_json::Value::as_str),
+                        Some("pending" | "dispatching" | "sent"))
+                {
+                    return Err("sendHumanMessage local reply identity conflicts with its author, nonce or settlement".into());
+                }
+                return Ok(Some(reply_id.to_string()));
+            }
+            let remote_id = target.get("remoteMessageId")
+                .map(fabushi_identity_text).transpose()
+                .map_err(|error| format!("sendHumanMessage reply remote identity is invalid: {error}"))?
+                .ok_or_else(|| "sendHumanMessage reply has no canonical remote identity".to_string())?;
+            if reply_id != format!("human-server-message:{remote_id}")
+                || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+                || target.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
+                || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+                || !target.get("authorId").and_then(serde_json::Value::as_str)
+                    .is_some_and(|author| !author.trim().is_empty())
+            {
+                return Err("sendHumanMessage reply canonical identity is inconsistent".into());
             }
             return Ok(Some(reply_id.to_string()));
         }
@@ -3286,6 +3305,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "sendHumanMessage local reply has no canonical remote identity".to_string())?;
         let canonical_id = format!("human-server-message:{remote_id}");
         if target.get("id").and_then(serde_json::Value::as_str) != Some(canonical_id.as_str())
+            || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
             || target.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
             || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
         {
