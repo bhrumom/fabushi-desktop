@@ -1,0 +1,490 @@
+{
+  "format": "FBCP_ROUND20_PEER_LEDGER_PUBLICATION_V1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 20,
+  "repository": "bhrumom/fabushi-desktop",
+  "checkpoint": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "production_delivery": {
+    "sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+    "parent": "d81f749bb15ad5983f0daecd52688ad21135ef58",
+    "tree": "368398aa7675455479700b7740468e7e0ef42034",
+    "force": false,
+    "expected_sha": "d81f749bb15ad5983f0daecd52688ad21135ef58",
+    "remoteVerified": true,
+    "files": [
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "sha": "f467018b45c9dc699dfacdf64c58f182d142d8f9",
+        "expectedSha": "f467018b45c9dc699dfacdf64c58f182d142d8f9",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 74289
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/Cargo.toml",
+        "sha": "da5b1e098fd582714e91ab6fc31885600f0abe72",
+        "expectedSha": "da5b1e098fd582714e91ab6fc31885600f0abe72",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 402
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway/Cargo.toml",
+        "sha": "7192a22c6127c5d1929226541544006030a8f69c",
+        "expectedSha": "7192a22c6127c5d1929226541544006030a8f69c",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 359
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs",
+        "sha": "39cf3f07dd2d79e5e6a71fbaa542b2e4d501e47a",
+        "expectedSha": "39cf3f07dd2d79e5e6a71fbaa542b2e4d501e47a",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 19875
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs",
+        "sha": "b996054d584aaa26e757330e856e928e815373ba",
+        "expectedSha": "b996054d584aaa26e757330e856e928e815373ba",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 20902
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs",
+        "sha": "e7338a96323b7ccafe5e7ab1c45609c0b150ad87",
+        "expectedSha": "e7338a96323b7ccafe5e7ab1c45609c0b150ad87",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 32755
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway/src/lib_v2.rs",
+        "sha": "c826e6f52091d7727a3815edbfa5e76e2eb4a54c",
+        "expectedSha": "c826e6f52091d7727a3815edbfa5e76e2eb4a54c",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 28678
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+        "sha": "f68aa7371113ec78d0997f46b087d5dbd314e574",
+        "expectedSha": "f68aa7371113ec78d0997f46b087d5dbd314e574",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 32662
+      },
+      {
+        "path": "projects/telegram-desktop-rust/STATUS.md",
+        "sha": "ea7c2d548ab1d72664fdc3144e4703d6cde00c30",
+        "expectedSha": "ea7c2d548ab1d72664fdc3144e4703d6cde00c30",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 28990
+      },
+      {
+        "path": "projects/fabushi-communication-platform/STATUS.md",
+        "sha": "338e1eb430e7eb065c913204c291b88ee02a574d",
+        "expectedSha": "338e1eb430e7eb065c913204c291b88ee02a574d",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 17931
+      },
+      {
+        "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "sha": "3876af107746e6acbd7161537c7b21b7ede80f3f",
+        "expectedSha": "3876af107746e6acbd7161537c7b21b7ede80f3f",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 76080
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json",
+        "sha": "ac48f25e78b0f42e6b84550eea5c944d9dabffd9",
+        "expectedSha": "ac48f25e78b0f42e6b84550eea5c944d9dabffd9",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 113490
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/Cargo.lock",
+        "sha": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+        "expectedSha": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 386573,
+        "bytes": 386573,
+        "sha256": "c6aa705678efab0841897dd58ecc30378aab565ff9b9c5dec2ad9c2bd27fb3da"
+      }
+    ],
+    "run": 41528207637,
+    "ledgerPhaseComplete": false,
+    "localExecutableValidation": false
+  },
+  "ledger_input": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+  "ledger_output": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+  "object_audit_original_sha256": "2eaa995ef3ee35dc1c4f4140ce35c5cf7f6795aac96a5c7987c27d32d07814ae",
+  "complete_object_audit": {
+    "format": "FBCP-PEER-OBJECT-READONLY-AUDIT-V1",
+    "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 20,
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "producer": {
+      "head_sha": "6f692309387aa549d98740968997d70e1f48011d",
+      "run_id": 41528778136,
+      "job_id": 125563297964,
+      "status": "completed",
+      "conclusion": "success",
+      "automatic_event": "push",
+      "artifact": {
+        "id": 13181915243,
+        "name": "peer-durability-objects-6f692309387aa549d98740968997d70e1f48011d",
+        "size_in_bytes": 1289544,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181915243",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181915243/zip",
+        "expired": false,
+        "created_at": "2026-11-02T21:31:10Z",
+        "expires_at": "2027-01-31T21:29:18Z",
+        "updated_at": "2026-11-02T21:31:10Z",
+        "digest": "sha256:a0fa57cef74f8b9138c2e0b8d39ac86dfed31e9357ebead709f3b0a8595a8c45",
+        "workflow_run": {
+          "id": 41528778136,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "6f692309387aa549d98740968997d70e1f48011d"
+        }
+      },
+      "source_blobs": {
+        "workflow": "f0203774516b1be5b0eb402f0c10a9521eb10024",
+        "script": "7405b65bec66526fd05bd296d304ab28d423feed",
+        "ops": "6631537725a2196ebf623bc3a3ecb5c5c4fc8609"
+      },
+      "source_blob_identity_rechecked_at_producer_sha": true
+    },
+    "full_log": {
+      "path": "/workspace/scratch/b725a2794b30/peer-object-audit-6f69230/job-125563297964.log",
+      "bytes": 19675,
+      "sha256": "c53b070d9146100c3728e7434881d4d18d24d61d7107881056d9079a7d1a00ca",
+      "blob": "50a9ca7e4fa458f0bc15290146881801e0985053"
+    },
+    "content_audit": {
+      "path": "/workspace/scratch/b725a2794b30/peer-object-audit-6f69230/content-audit.json",
+      "bytes": 15339,
+      "sha256": "4877527f40beba0962cc1995cf16e43aad26ae29e22e8a990d32e79661959dd7",
+      "git_blob": "bb2866c268b21d899f9b9bcf36a28fccc025dc52",
+      "ledger_input": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+      "ledger_output": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+      "cargo_output": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+      "row_count": 184,
+      "source_reviews": 14,
+      "unchanged_other_rows": 183,
+      "exact_reviewed_values_match": true,
+      "two_existing_fs2_edges_only": false,
+      "cargo_idempotent_bytes": true
+    },
+    "input_observation": {
+      "checkpoint_head": "9d669a964825ceff655e59c2d9288e239a2fb3ae",
+      "ledger": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+      "cargo_input_output": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+      "method": "GitHub connector exact-H fetch_file ledger blob metadata; complete artifact Cargo bytes identity",
+      "production_published": {
+        "H": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+        "parent": "d81f749bb15ad5983f0daecd52688ad21135ef58",
+        "tree": "368398aa7675455479700b7740468e7e0ef42034",
+        "source": "root confirmed CAS/API full readback"
+      }
+    },
+    "integration_condition": "Use the prepared ledger output independently when latest ledger input blob still equals fb32a0e0a86ce5226e20ddd5a668a30429bb68c2. Cargo b7f496064ca6ab758c6a2d325dfb96031776e5f4 is already in production and this producer preserved its complete input/output bytes. Subsequent ledger-only and owned-helper-removal commit must preserve Cargo and all concurrent files. Freeze current ref and use force=false expected_sha CAS plus complete API readback.",
+    "auditor_actions": {
+      "remote_write": false,
+      "rerun": false,
+      "dispatch": false,
+      "local_helper_execution": false,
+      "local_product_execution": false,
+      "local_validator_execution": false
+    },
+    "scope_limits": {
+      "product_validation": false,
+      "independent_acceptance": false,
+      "producer_permission": "Reviewed program only creates/reads unattached git blobs; contents:write token permission is broader, so no capability-level claim is made."
+    },
+    "independent_content_review": {
+      "format": "peer-durability-produced-object-byte-audit-v1",
+      "archive": {
+        "path": "/workspace/scratch/b725a2794b30/peer-durability-objects-6f69230.zip",
+        "bytes": 1289544,
+        "sha256": "a0fa57cef74f8b9138c2e0b8d39ac86dfed31e9357ebead709f3b0a8595a8c45",
+        "github_metadata_digest_match": true
+      },
+      "receipt": {
+        "harness_sha": "6f692309387aa549d98740968997d70e1f48011d",
+        "operations_blob": "6631537725a2196ebf623bc3a3ecb5c5c4fc8609",
+        "objects": [
+          {
+            "path": "projects/telegram-desktop-rust/parity-ledger.json",
+            "input_blob": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+            "output_blob": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+            "sha256": "cfd35f2a7da0f3a30d8d6ee8c73c2d51e2efc0836a2474bd97f41152a5a01678",
+            "sha": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+            "bytes": 3671837,
+            "api_content_readback": true
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/Cargo.lock",
+            "input_blob": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+            "output_blob": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+            "sha256": "c6aa705678efab0841897dd58ecc30378aab565ff9b9c5dec2ad9c2bd27fb3da",
+            "sha": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+            "bytes": 386573,
+            "api_content_readback": true
+          }
+        ],
+        "ledger_scope": "append-only existing FBCP-NMR-001; all source_reviews and other fields preserved",
+        "commit_created": false,
+        "ref_updated": false,
+        "product_validation": false,
+        "acceptance_changed": false,
+        "integration_condition": "Root independently reads bytes, requires current input identity equality and uses force=false expected_sha CAS."
+      },
+      "members": [
+        {
+          "name": "cargo-lock-input.txt",
+          "bytes": 386573,
+          "blob": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+          "sha256": "c6aa705678efab0841897dd58ecc30378aab565ff9b9c5dec2ad9c2bd27fb3da"
+        },
+        {
+          "name": "cargo-lock-output.txt",
+          "bytes": 386573,
+          "blob": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+          "sha256": "c6aa705678efab0841897dd58ecc30378aab565ff9b9c5dec2ad9c2bd27fb3da"
+        },
+        {
+          "name": "ledger-input.txt",
+          "bytes": 3662326,
+          "blob": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+          "sha256": "b278c3ed185ee2f0656fd9796ecb87eb3d5b85ff4fe5f4aedd043284141e49db"
+        },
+        {
+          "name": "ledger-output.txt",
+          "bytes": 3671837,
+          "blob": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+          "sha256": "cfd35f2a7da0f3a30d8d6ee8c73c2d51e2efc0836a2474bd97f41152a5a01678"
+        },
+        {
+          "name": "receipt.json",
+          "bytes": 1311,
+          "blob": "7445d1dede5d10a949b164a0fd93f6eb2c70c3f2",
+          "sha256": "0c5b14d03363882c2ed1ca1477417bfb09d41f8cbfad0ee53352a0453a821cc4"
+        }
+      ],
+      "operations_blob": "6631537725a2196ebf623bc3a3ecb5c5c4fc8609",
+      "ledger": {
+        "row_count": 184,
+        "only_changed_row_index": 182,
+        "only_changed_responsibility": "FBCP-NMR-001",
+        "exact_reviewed_append_values_match": true,
+        "unchanged_other_rows": 183,
+        "all_top_level_source_fields_unchanged": true,
+        "source_reviews_before": 14,
+        "source_reviews_after": 14,
+        "source_reviews_unchanged": true,
+        "source_reviews_canonical_sha256": "5dc8f3b3194a2d366e698579465176e282f2671d3f76832322fc5d5d2388d91c",
+        "changed_fields": [
+          {
+            "field": "fabushi_target_paths",
+            "old_count": 35,
+            "new_count": 40,
+            "appended": [
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs",
+              "source/mahayana/mahayana-rs/mahayana-gateway/src/lib_v2.rs",
+              "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs"
+            ]
+          },
+          {
+            "field": "blockers",
+            "old_count": 15,
+            "new_count": 17,
+            "appended": [
+              "NMR-PEER-DURABILITY-01 containing-H peer23 on macOS/Linux/Windows and CLI9/gateway13 must execute; predecessor builds did not run the peer library.",
+              "Peer-to-Host commit/effect crash handoff, replay persistence/publication and cross-writer epochs, same-question clarify API conflict semantics, power-loss and mixed old/new binaries remain separate unqualified contracts."
+            ]
+          },
+          {
+            "field": "production_entrypoints",
+            "old_count": 7,
+            "new_count": 8,
+            "appended": [
+              "Existing stdio mahayana-gateway run -> publish_projected_events -> PersistentServerRequestRegistry::issue_approval_request -> commit -> event/srq output; actual response route -> resolve_peer_response -> committed peer result -> Host; existing dispatch_request canonical parser -> PeerGuardedRuntime -> committed peer compatibility settlement -> underlying Host."
+            ]
+          },
+          {
+            "field": "production_evidence",
+            "old_count": 43,
+            "new_count": 47,
+            "appended": [
+              "authored-existing-owner:source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs@b996054d584aaa26e757330e856e928e815373ba#PersistentServerRequestRegistry::mutate; containing-H execution pending; complete Host/replay recovery remains open",
+              "authored-existing-owner:source/mahayana/mahayana-rs/mahayana-gateway/src/lib_v2.rs@c826e6f52091d7727a3815edbfa5e76e2eb4a54c#acquire_state_lock; containing-H execution pending; complete Host/replay recovery remains open",
+              "authored-existing-owner:source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs@f68aa7371113ec78d0997f46b087d5dbd314e574#run/publish_projected_events/resolve_peer_response/PeerGuardedRuntime; containing-H execution pending; complete Host/replay recovery remains open",
+              "path:docs/specs/fbcp-gateway-peer-durability.md#NMR-PEER-DURABILITY-01"
+            ]
+          },
+          {
+            "field": "test_evidence",
+            "old_count": 93,
+            "new_count": 94,
+            "appended": [
+              "NMR-AC-PEER-DURABILITY-01: authored peer23, CLI executable9 and full gateway library13; real filesystem failure/reopen, independent stale instances, killed OS-lock holder and actual Host-facing zero-call observations. Source review is not execution; exact containing-H Actions required. Receipt projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json."
+            ]
+          },
+          {
+            "field": "requirement_ids",
+            "old_count": 98,
+            "new_count": 104,
+            "appended": [
+              "NMR-PEER-DURABILITY-01",
+              "NMR-PEER-DURABILITY-01a",
+              "NMR-PEER-DURABILITY-01b",
+              "NMR-PEER-DURABILITY-01c",
+              "NMR-PEER-DURABILITY-01d",
+              "NMR-AC-PEER-DURABILITY-01"
+            ]
+          },
+          {
+            "field": "oracle_ids",
+            "old_count": 12,
+            "new_count": 13,
+            "appended": [
+              "NMR-AC-PEER-DURABILITY-01"
+            ]
+          },
+          {
+            "field": "invariant_ids",
+            "old_count": 17,
+            "new_count": 21,
+            "appended": [
+              "Peer mutation commits before live snapshot or success/frame publication",
+              "Latest-disk approval identity admission under the same shared lock",
+              "Stable advisory lock inode without timestamp stealing",
+              "Storage errors cannot become healthy absence or reach Host-facing approval dispatch"
+            ]
+          },
+          {
+            "field": "unit_case_ids",
+            "old_count": 18,
+            "new_count": 41,
+            "appended": [
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#server_request_uses_peer_json_rpc_and_stable_request_id",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#response_resolves_only_the_matching_open_request",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#cancel_emits_one_shared_request_cancel_notification",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#reconnect_replays_unanswered_request_and_locked_clarify_answers",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#last_clarify_lock_resolves_with_full_answer_set",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#locked_clarify_answer_wins_over_stale_client_response",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#exported_state_round_trips_for_future_canonical_restart_store",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#pending_request_survives_process_style_reopen",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#resolving_request_is_durable_and_preserves_replay_section",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_issue_retains_live_state_then_repairs_and_reopens",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_response_keeps_pending_and_stable_id_until_repaired",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_clarify_lock_and_completion_preserve_answers_before_retry",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_cancel_has_no_notifications_and_preserves_other_sessions",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#real_temp_creation_failure_rolls_back_every_mutation_then_reopens",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#malformed_state_import_is_atomic_and_never_overwrites_inputs",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#stale_instances_merge_changes_without_resurrecting_resolved_requests",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#approval_issue_and_response_lookup_use_latest_transaction",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#only_backup_survives_failed_mutation_then_commits_on_repair",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#nonregular_and_legacy_inputs_fail_closed_without_touching_targets",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#memory_only_registry_preserves_behavior_without_filesystem",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#held_old_lock_cannot_be_stolen_and_killed_child_releases_it",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#business_errors_and_noops_leave_committed_state_unchanged",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#stale_clarify_writers_preserve_other_committed_answers"
+            ]
+          },
+          {
+            "field": "fault_recovery_case_ids",
+            "old_count": 50,
+            "new_count": 63,
+            "appended": [
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_issue_retains_live_state_then_repairs_and_reopens",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_response_keeps_pending_and_stable_id_until_repaired",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_clarify_lock_and_completion_preserve_answers_before_retry",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_cancel_has_no_notifications_and_preserves_other_sessions",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#real_temp_creation_failure_rolls_back_every_mutation_then_reopens",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#malformed_state_import_is_atomic_and_never_overwrites_inputs",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#only_backup_survives_failed_mutation_then_commits_on_repair",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#nonregular_and_legacy_inputs_fail_closed_without_touching_targets",
+              "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#held_old_lock_cannot_be_stolen_and_killed_child_releases_it",
+              "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#failed_peer_commit_publishes_no_approval_event_or_frame_and_recovers",
+              "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#response_storage_failure_preserves_pending_and_never_calls_host",
+              "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#compatibility_approval_validates_then_commits_before_host",
+              "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#compatibility_approval_distinguishes_healthy_absence_from_broken_storage"
+            ]
+          },
+          {
+            "field": "release_gate_ids",
+            "old_count": 16,
+            "new_count": 17,
+            "appended": [
+              "NMR-AC-PEER-DURABILITY-01"
+            ]
+          },
+          {
+            "field": "test_environment_ids",
+            "old_count": 5,
+            "new_count": 8,
+            "appended": [
+              ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:macos-15:Rust1.97.1:complete-peer23-real-files-and-process-lock:GitHub-hosted-only",
+              ".github/workflows/native-service-contracts.yml#gateway-peer-durability:ubuntu-24.04:Rust1.97.1:complete-peer23-real-files-and-process-lock:GitHub-hosted-only",
+              ".github/workflows/native-service-contracts.yml#gateway-peer-durability:windows-2025:Rust1.97.1:complete-peer23-real-files-and-process-lock:GitHub-hosted-only"
+            ]
+          },
+          {
+            "field": "notes",
+            "old_count": null,
+            "new_count": null,
+            "appended": "\nTask20bf round20 peer durability: unique NMR-PEER-DURABILITY-01/NMR-AC-PEER-DURABILITY-01 avoids the concurrent NMR48 forwarding-attachment contract. Existing peer pending requests and shared replay-file owners remain; temporary latest-disk mutation commits before live success, approval dedup/lookup shares that transaction, and the actual stdio publisher plus direct/compatibility response calls propagate storage failures before outputs or Host. Peer23/gateway13/CLI9 are authored and require the containing exact-H Actions. Frozen independent source reviews do not grant execution or ACCEPT. Preserve all concurrent source_reviews, source/legal identities, owners, acceptance fields, latest Human/Agent/UI/CLI/package gates and historical execution; no whole approval recovery or migration acceptance. See projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json."
+          }
+        ],
+        "acceptance_reviewer_unchanged": true,
+        "release_gate_status": "blocked"
+      },
+      "cargo": {
+        "package_count": 1437,
+        "changes": [],
+        "all_other_packages_metadata_and_versions_unchanged": true,
+        "existing_fs2_package": [
+          {
+            "name": "fs2",
+            "version": "0.4.3",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "checksum": "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213",
+            "dependencies": [
+              "libc",
+              "winapi"
+            ]
+          }
+        ]
+      },
+      "local_helper_or_project_execution": false,
+      "product_acceptance": false
+    }
+  },
+  "ledger_scope": "Only existing FBCP-NMR-001 append; all183 other rows, every top-level field and all14 current source_reviews preserved. Six source reviews in older receipts remain historical counts. Cargo b7 unchanged.",
+  "temporary_files_removed_in_this_tree": [
+    ".github/workflows/peer-durability-object-prepare.yml",
+    ".github/scripts/prepare-peer-durability-objects.py",
+    ".github/peer-durability-object-ops.json"
+  ],
+  "publication_condition": "Use this tree only when current ledger and all three helper source identities match, under force=false expected_sha CAS; remote ref/commit/full files must be read after update.",
+  "proof_scope": "Full producer log plus actual ZIP/member/input/output bytes; source transport is not product execution. Exact production9bb/run41528207637 execution is qualified separately.",
+  "no_local_project_execution": true,
+  "complete_migration": false,
+  "independent_ACCEPT": false
+}
