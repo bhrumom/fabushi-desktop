@@ -2,7 +2,7 @@
   "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "immutable shipping forward intent, persisted privacy recovery and canonical Settings proxy settlement",
-  "status_at_authoring": "forward-reconciliation-and-renderer-gates-passed-settings-extension-frozen-Actions-pending-final-acceptance-open",
+  "status_at_authoring": "Settings18-and-integrated-reconciliation80-passed-renderer-loader-and-fixed-U-source-contract-repairs-authored-final-acceptance-open",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
@@ -101,7 +101,7 @@
     "scope": "Remote run/jobs reread; predecessor evidence only, not execution of this extension."
   },
   "execution": {
-    "status": "H531-reconciliation74-UI39-Electron89-Windows11-passed-shipping-cleanup-in-progress-Hbeb-renderer127-and-strict-architecture-passed-Settings18-new-H-pending",
+    "status": "H2ac-UI76-Electron89-Windows11-reconciliation80-source157-schema37-candidate-passed-shipping-queued-renderer-loader-repair-new-H-pending",
     "runner": "GitHub Actions only",
     "target_identity": "Exact containing github.sha asserted by workflow and stored in artifact target-sha.txt; no self-referential future SHA is invented.",
     "workflows": [
@@ -145,17 +145,17 @@
     },
     {
       "id": 7,
-      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification. H73 source157/schema37/candidate and UI16/Transcript16/settlement5/Electron83/Windows11 succeeded; six UI screenshots actually reviewed. H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1. H531UI39/Electron89/Windows11 and H124source157/schema37/candidate now passed with API-read job/artifact identities. No local or htch validation was executed. H531 reconciliation74 now passed including Human49/journal13; Hbeb original renderer127 and both strict architecture checks passed. Settings18 remains unexecuted at its freeze.",
-      "open": "Exact containing-H Settings18/renderer and current integrated Human55/shipping gates; H531 shipping was still in cleanup at 20:59:03 UTC. Full-product gates remain open."
+      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification. H73 source157/schema37/candidate and UI16/Transcript16/settlement5/Electron83/Windows11 succeeded; six UI screenshots actually reviewed. H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1. H531UI39/Electron89/Windows11 and H124source157/schema37/candidate now passed with API-read job/artifact identities. No local or htch validation was executed. H531 reconciliation74 now passed including Human49/journal13; Hbeb original renderer127 and both strict architecture checks passed. Settings18 remains unexecuted at its freeze. ExactH2ac UI76 includes18 actual Settings cases, Electron89/Windows11/reconciliation80 passed; exactH531 shipping has now completed successfully.",
+      "open": "H2ac shipping queued; renderer loader repair and source Qt contract13 require exact containing-H Actions. Full-product gates remain open."
     },
     {
       "id": 8,
-      "done": "Continued independent source and product review; repaired actual pending-schema compatibility defect before dependent candidate use. While macOS jobs waited, independent current-source review identified and implemented the persisted privacy P2; prior passing checks are retained with their exact H. H531candidate skip classified TEST_FLAW and fixed atH124; actual H124candidate passed. Full-source authority failure remains an unmet source-closure gate. Actual architecture registration drift was reviewed and repaired without changing frozen reference identities or deleting the gate.",
+      "done": "Continued independent source and product review; repaired actual pending-schema compatibility defect before dependent candidate use. While macOS jobs waited, independent current-source review identified and implemented the persisted privacy P2; prior passing checks are retained with their exact H. H531candidate skip classified TEST_FLAW and fixed atH124; actual H124candidate passed. Full-source authority failure remains an unmet source-closure gate. Actual architecture registration drift was reviewed and repaired without changing frozen reference identities or deleting the gate. H2ac renderer failure classified from complete log as a raw Node test-loader defect; its actual selected dependency graph is now bundled with no deleted test or gate. Independent source review identified and repaired stale-U Qt identities in the real validator.",
       "open": "Classify any actual Actions failure and proceed only after repair; external service/publisher prerequisites remain."
     },
     {
       "id": 9,
-      "done": "Updated unique ledger/dossier/RTM and active checker, kept source review/implementation/authoring/execution/acceptance separate. Existing architecture overlay now records reviewed semantic changes and separates production consumers from test evidence in touched records; current execution evidence stays in this existing task receipt. Unique existing proxy responsibility and RTM now bind PS-UI-01..05, authored tests and exact production entry; source counts and acceptance remain unchanged.",
+      "done": "Updated unique ledger/dossier/RTM and active checker, kept source review/implementation/authoring/execution/acceptance separate. Existing architecture overlay now records reviewed semantic changes and separates production consumers from test evidence in touched records; current execution evidence stays in this existing task receipt. Unique existing proxy responsibility and RTM now bind PS-UI-01..05, authored tests and exact production entry; source counts and acceptance remain unchanged. Current Settings18 execution is recorded in the same proxy responsibility. FMEP-SOURCE-01 risk rules already match schema/helper; the separate fixed-U source-input checker defect is repaired with13 authored positive/negative contracts and no acceptance promotion.",
       "open": "Complete source disposition, production responsibility and independent acceptance."
     },
     {
@@ -834,17 +834,28 @@
       "accepted": false
     },
     "execution": {
-      "status": "not-run-at-freeze",
-      "required_head": "Exact containing github.sha; bind commit, logs, artifacts and case totals after push",
+      "status": "completed-success-for-controlled-bridge-UI-scope",
+      "head": "2ac00f98ad7831f351ad2de986abca91bceee2b0",
+      "run": 41524706583,
+      "attempt": 1,
+      "job": 125549341413,
+      "cases": 18,
+      "full_selected_UI_cases": 76,
+      "renderer_build": "Actual production renderer compiled in native-message-ui; separate strict architecture renderer failure remains separately recorded.",
+      "artifact_id": 13179691132,
+      "artifact_digest": "sha256:cae41fe54ca7ff72d6bdbc6d2c48aaf040c0f96fe04a632be7051e43c734620a",
+      "artifact_bytes": 1177633,
+      "log_and_metadata_readback": true,
+      "screenshots": "Produced by Actions; not independently visually inspected in this checkpoint. No full visual/a11y acceptance.",
       "local_or_htch_validation": false
     },
     "source_accounting": "Current-owner defect repair only. Existing fixed-U proxy responsibility/source identities retained; no new upstream full-read, source count or acceptance claim.",
     "rollback": "Revert the scoped renderer/adapter extension normally without touching product-settings.json or cancelling an accepted Host write. Existing canonical Settings owner remains available; full upgrade/rollback qualification is open.",
     "remaining": [
-      "Containing-H 18 Chromium cases and production renderer compilation",
-      "Current integrated Host55 and shipping gates after concurrent222 changes",
-      "Native proxy/rotation transport; controlled UI persistence results do not prove routing",
-      "Full supported-platform, real-service, visual/accessibility, security/secret-at-rest, migration/rollback and independent ACCEPT"
+      "Repaired strict renderer gate on a new exact H; no Settings production input changed by that repair",
+      "H2ac integrated shipping job remains queued; reconciliation80 passed",
+      "Native proxy/rotation transport and real-service persistence beyond controlled bridge",
+      "Full supported-platform, visual/accessibility, security/secret-at-rest, migration/rollback and independent ACCEPT"
     ]
   },
   "current_222_integration": {
@@ -908,7 +919,20 @@
     "artifact_bytes": 37562,
     "api_job_and_artifact_readback": true,
     "log_readback": "Complete terminal log read by independent read-only agent; each selected group 0 failed/ignored, filtered-out tests not counted.",
-    "shipping_status_at_2026_11_02_205903_UTC": "in_progress; post-cache cleanup remained. Artifact13178163829 exists, but no completed shipping pass is claimed at this observation."
+    "shipping_status_at_2026_11_02_205903_UTC": "in_progress; post-cache cleanup remained. Artifact13178163829 exists, but no completed shipping pass is claimed at this observation.",
+    "shipping_terminal_supersedes_prior_observation": {
+      "job": 125528855821,
+      "conclusion": "success",
+      "completed_at": "2026-11-02T21:00:28Z",
+      "selected_Rust_cases": 217,
+      "package_resource_cases": 4,
+      "actual_CLI_gateway_process_controls": 4,
+      "cargo_inputs": "All selected Cargo commands used --locked; actual production binaries use --profile ci.",
+      "artifact_id": 13178163829,
+      "artifact_digest": "sha256:ee2996f94d63318e8bb5494ba8fc108464aa97978deb7441ecb95b216632a6f9",
+      "artifact_bytes": 115684343,
+      "scope": "Full terminal log and metadata read, no independent binary-hash extraction, signed-package, deployed-service or complete Bot acceptance."
+    }
   },
   "checkpoint_8778_source_execution": {
     "head": "8778c9eb7ca6ac9ab7c670f277b156aea2908015",
@@ -936,5 +960,182 @@
       }
     ],
     "scope": "Two actual jobs, no skip. Fixed inputs reused with their originating SHA. Git-only entries16381/rows184/reviews6/complete2, unknown/unread null and all acceptance false. Python top-level jsonschema pin does not establish locked transitive packages. No source or product acceptance."
+  },
+  "checkpoint_2ac_execution": {
+    "head": "2ac00f98ad7831f351ad2de986abca91bceee2b0",
+    "native_run": 41524706583,
+    "attempt": 1,
+    "jobs": {
+      "ui": {
+        "id": 125549341413,
+        "conclusion": "success",
+        "selected": {
+          "Transcript": 20,
+          "HumanCursor": 17,
+          "ForwardSettlement": 5,
+          "ForwardChromium": 16,
+          "SettingsChromium": 18,
+          "total": 76
+        },
+        "artifact": 13179691132,
+        "digest": "sha256:cae41fe54ca7ff72d6bdbc6d2c48aaf040c0f96fe04a632be7051e43c734620a"
+      },
+      "electron": {
+        "id": 125549342129,
+        "conclusion": "success",
+        "selected": 89,
+        "artifact": 13180110445,
+        "digest": "sha256:eea014e8d9cf4b135c6940b6637c81a043c046bc891a3deccac089669c0b6119"
+      },
+      "windows": {
+        "id": 125549341725,
+        "conclusion": "success",
+        "selected": 11,
+        "executed_fixture_executables": 0,
+        "owned_certificates_after_cleanup": 0,
+        "artifact": 13180215173,
+        "digest": "sha256:16d292bbc2817641c41696df6f743ec9aa5086c8c005bf7d072f04a00a36ec8e"
+      },
+      "reconciliation": {
+        "id": 125549342047,
+        "conclusion": "success",
+        "selected": {
+          "Human": 55,
+          "resource": 3,
+          "sharebox": 1,
+          "journal": 13,
+          "Agent": 4,
+          "credential": 3,
+          "gateway": 1,
+          "total": 80
+        },
+        "locked": true,
+        "artifact": 13178244177,
+        "digest": "sha256:bf8c90ad3cadf72b515a626a8f771f4fc963d331f70139d7bdb198c0e680c0d6"
+      },
+      "shipping": {
+        "id": 125549342176,
+        "status_at_readback": "queued",
+        "runner_id": 0,
+        "steps": [],
+        "accepted": false
+      }
+    },
+    "source": {
+      "run": 41524706733,
+      "contract_job": 125549341272,
+      "candidate_job": 125549521879,
+      "conclusion": "success",
+      "Node_cases": 157,
+      "Python_cases": 37,
+      "ledger_schema_errors": 0,
+      "candidate": "consistent-unaccepted; accepted mode rejects rebaseline candidate",
+      "artifacts": [
+        {
+          "id": 13179661067,
+          "digest": "sha256:73ba3bfe230a5572db9b0616921aabaa7b2c1f91949652d43373d801f48a6851"
+        },
+        {
+          "id": 13178962935,
+          "digest": "sha256:26b6a9484996cffbd697c2f726e7d86ab1ad7c502bc84ed147dcd526ae3c6f3d"
+        }
+      ]
+    },
+    "delivery": {
+      "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/2ac00f98ad7831f351ad2de986abca91bceee2b0",
+      "tree": "bdf92a3308b2f2773488bbb8bdc4a2acd2bbcbff",
+      "parents": [
+        "beb72d82e8bc74751e1667fa7a4cfd1f7c651f67",
+        "222371af3d0c2241697c5a57b0160ecb336edbab"
+      ],
+      "api_commit_ref_tree_readback": true,
+      "nontruncated_tree_entries": 9892,
+      "changed_tree_entries_verified": 74,
+      "newly_combined_file_bodies_compared_to_frozen_index": 19,
+      "ledger_full_blob_readback": "6cf30e86c00e8ef5a780d389003b883384d24331",
+      "draft_PR": 189
+    },
+    "scope": "Every passing group is exact H2ac; no filtered-out/skipped job is a pass. Separate strict renderer failure and queued shipping are open. Source/product/independent ACCEPT remain false.",
+    "ledger_object_transport": {
+      "head": "1490f81ff1b057bc02cd110ea4d1b9b8c97b7716",
+      "run": 41525900611,
+      "job": 125553425229,
+      "conclusion": "success",
+      "input_blob": "6cf30e86c00e8ef5a780d389003b883384d24331",
+      "output_blob": "9855272e8d385d6d90b7d0c024025a16a9b87af9",
+      "artifact_id": 13180360984,
+      "artifact_digest": "sha256:3052650800afa8152572ed3db8a4a3c966a0bf50344adad90d72ec822a6d6645",
+      "api_full_blob_readback": true,
+      "scope": "Git object transport only; not test/source/product acceptance."
+    }
+  },
+  "renderer_loader_repair": {
+    "failed_head": "2ac00f98ad7831f351ad2de986abca91bceee2b0",
+    "run": 41524706593,
+    "job": 125549341566,
+    "classification": "TEST_HARNESS_LOADER_DEFECT",
+    "observed": "Node24.22.1 raw strip-types loader failed ERR_MODULE_NOT_FOUND for extensionless transcript-card/protocol imported by the newly consumed production/model.ts; Electron56/product14 passed, recovered group50 passed plus one file-load failure. Later renderer gates skipped.",
+    "actual_fix": ".github/workflows/rust-desktop-runtime.yml bundles only recovered-conversation-infra.contract.test.ts and its actual production graph with the existing locked esbuild dependency, then executes that result alongside the unchanged other16 selected test files. No filter, skip, oracle removal or continue-on-error. All original architecture/build/co-stage/bundle/strict steps retained.",
+    "expected_recovered_cases": 62,
+    "expected_is_not_execution": true,
+    "independent_static_review": "actions_audit compared all17 original entrypoints, found none omitted; no file-location/import.meta dependency in the selected graph.",
+    "execution": "Pending exact containing-H Actions; do not rerun the unchanged H2ac failure."
+  },
+  "source_authority_qt_contract_repair": {
+    "classification": "Current fixed-U source-governance validator defect, not product feature progress",
+    "requirement": "FMEP-SOURCE-01 and exact frozen-U authority; no rebaseline or source acceptance",
+    "problem": "Final authority gate still required three historical source blobs and bf64e7264237ffd371493f1780ef71d3f41373c9 Qt Windows patch while current U contains the different immutable identities below. The existing candidate stops earlier and therefore could not cover this later contract.",
+    "fixed_upstream": {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+      "changed": false
+    },
+    "source_API_readback": [
+      {
+        "path": "Telegram/build/prepare/prepare.py",
+        "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b",
+        "scope": "Qt5/Qt6 module selection and Windows patch acquisition/consumer contract"
+      },
+      {
+        "path": "Telegram/build/docker/centos_env/Dockerfile",
+        "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2",
+        "scope": "Qt stage selection contract"
+      },
+      {
+        "path": "snap/snapcraft.yaml",
+        "blob": "a181d828f25d901303f7221824ac30b0ff5e773a",
+        "scope": "Qt source-submodules contract"
+      }
+    ],
+    "windows_patch_pin": "9ce1ffe051161a22f7e78f715b042c773f868e59",
+    "actual_wiring": "validate-tdrp-revision9-authority.mjs -> assertFixedQtSourceContract in existing tdrp-source-review.mjs; actual frozen tree and source texts/evidence are passed by the original gate.",
+    "tests": {
+      "path": "scripts/tdrp-source-review.test.mjs",
+      "new_cases": 13,
+      "execution": "not-run-at-freeze",
+      "coverage": "Current fixed-U positive; old evidence and mismatching/missing/duplicate/conflicting tree identities; wrong/truncated tree/U; missing texts; stale/cross-stage Windows pin; every required module and qttools exclusion; helper success cannot close candidate/acquisition/generated/LFS/legal obligations"
+    },
+    "preserved": "No schema, lock, inventory or acceptance flags changed. Null coverage, complete acquisition, candidate, source review mapping and full acceptance guards remain. No additional source fully-read/complete record is claimed.",
+    "blobs": {
+      "scripts/tdrp-source-review.mjs": "d27c366a4407db935bbc50cdfa07d01969a0c0e9",
+      "scripts/tdrp-source-review.test.mjs": "96700adbd0f5751f2a1bbbd713eb28983059b8a7",
+      "scripts/validate-tdrp-revision9-authority.mjs": "99f8506be44a8ad2f2da75a21ad929c070e7020b"
+    },
+    "independent_static_review": "source_contract_current_gap re-read current fixed tree and three source identities, then reviewed actual helper/caller/tests; no identified P1/P2 within bounded scope, no execution or ACCEPT."
+  },
+  "next_dependency_gated_gap": {
+    "implemented": false,
+    "gate": "NMR-AC-06: require H2ac reconciliation and shipping both successful before dependent message implementation; reconciliation80 passed, shipping queued at last read.",
+    "current_paths": [
+      "frontend/src/production/ProductionRenderer.tsx#resendFailedSend",
+      "frontend/src/production/coordinator-client.ts#call",
+      "frontend/src/production/model.ts#transcriptDelivery",
+      "source/host/src/extensions/session/production.rs#append_human_message_with_context",
+      "source/host/src/extensions/session/production.rs#pending_human_forward_is_batch_owned",
+      "source/host/src/extensions/session/agent_db.rs"
+    ],
+    "confirmed_gap": "Ordinary Human Retry still makes a fresh nonce, loses reply, and re-enters staging for committed resources; persisted lastDispatchError is not yet an eligible ordinary retry projection. No new retry API or consumer was implemented.",
+    "required_constraints": "Existing Session/SandAgentDb must own identity-only recovery of a unique local author+nonce; use current full forward ownership helper, strict lookup errors, same-account/lifetime ready-before-post fences and unchanged staging boundary. Unknown or corrupt intent never falls back to new send; sync_human_conversation cannot serve as target retry because it swallows per-row failure and replays unrelated work."
   }
 }

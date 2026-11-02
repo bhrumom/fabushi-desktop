@@ -294,25 +294,30 @@ jobs:
       - name: Test Fabushi product policy contract
         run: node --test desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-account-service.contract.test.js
       - name: Test recovered window chrome contracts
-        run: >-
-          node --experimental-strip-types --test
-          frontend/src/recovered/features/window-chrome/app-alert/controller.contract.test.ts
-          frontend/src/recovered/features/window-chrome/model.contract.test.ts
-          frontend/src/recovered/features/recovered-foundations.contract.test.ts
-          frontend/src/recovered/features/recovered-runtime-models.contract.test.ts
-          frontend/src/recovered/features/access-cover.contract.test.ts
-          frontend/src/recovered/features/recovered-configuration-models.contract.test.ts
-          frontend/src/recovered/features/recovered-navigation.contract.test.ts
-          frontend/src/recovered/features/reaction-system.contract.test.ts
-          frontend/src/recovered/features/agent-info-members.contract.test.ts
-          frontend/src/recovered/features/shared-room.contract.test.ts
-          frontend/src/recovered/features/recovered-owner-utilities.contract.test.ts
-          frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts
-          frontend/src/recovered/features/access-roster-state.contract.test.ts
-          frontend/src/recovered/features/recovered-state-models.contract.test.ts
-          frontend/src/recovered/features/recovered-shell-models.contract.test.ts
-          frontend/src/recovered/contracts/desktop-bridge.contract.test.ts
-          frontend/src/recovered/runtime/runtime-foundations.contract.test.ts
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This contract now consumes production model imports resolved by the
+          # renderer bundler. Bundle that same graph; retain every selected test.
+          ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts --bundle --platform=node --target=node24 --packages=external --format=esm --outfile=desktop/.tmp-recovered-contracts/recovered-conversation-infra.test.mjs
+          node --experimental-strip-types --test \
+            frontend/src/recovered/features/window-chrome/app-alert/controller.contract.test.ts \
+            frontend/src/recovered/features/window-chrome/model.contract.test.ts \
+            frontend/src/recovered/features/recovered-foundations.contract.test.ts \
+            frontend/src/recovered/features/recovered-runtime-models.contract.test.ts \
+            frontend/src/recovered/features/access-cover.contract.test.ts \
+            frontend/src/recovered/features/recovered-configuration-models.contract.test.ts \
+            frontend/src/recovered/features/recovered-navigation.contract.test.ts \
+            frontend/src/recovered/features/reaction-system.contract.test.ts \
+            frontend/src/recovered/features/agent-info-members.contract.test.ts \
+            frontend/src/recovered/features/shared-room.contract.test.ts \
+            frontend/src/recovered/features/recovered-owner-utilities.contract.test.ts \
+            desktop/.tmp-recovered-contracts/recovered-conversation-infra.test.mjs \
+            frontend/src/recovered/features/access-roster-state.contract.test.ts \
+            frontend/src/recovered/features/recovered-state-models.contract.test.ts \
+            frontend/src/recovered/features/recovered-shell-models.contract.test.ts \
+            frontend/src/recovered/contracts/desktop-bridge.contract.test.ts \
+            frontend/src/recovered/runtime/runtime-foundations.contract.test.ts
       - name: Check Agent workspace architecture boundary
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Check Grok architecture inventory

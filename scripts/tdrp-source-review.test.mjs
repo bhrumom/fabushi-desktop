@@ -8,6 +8,7 @@ import {readRecoveredCandidateDocuments, main as sourceCandidateMain} from './va
 import {
   assertNoOpenSourceCandidate,
   assertSourceAcquisitionClosure,
+  assertFixedQtSourceContract,
   validateSourceCandidate,
   validateResponsibilitySources,
   readFrozenUpstreamCommit,
@@ -975,4 +976,160 @@ test('focused candidate CLI rejects local execution before reading inputs', asyn
   t.after(() => { if (before === undefined) delete process.env.GITHUB_ACTIONS; else process.env.GITHUB_ACTIONS = before; });
   process.env.GITHUB_ACTIONS = 'false';
   await assert.rejects(sourceCandidateMain([]), /only in GitHub Actions/);
+});
+
+// These command selections and identities are from the three fixed-U inputs,
+// not from the historical acquisition root. The fixture is a bounded contract
+// vector, not a claim to contain or review their complete source bodies.
+function fixedQtContractFixture() {
+  const upstream = {
+    repository: 'telegramdesktop/tdesktop',
+    commit: 'f985723b552b30fe1c17d377d57f44e61a15a8c4',
+    tree: '91f2b083ab2877c0a17d07868eabec362a5cfca6',
+    accepted: false,
+  };
+  const evidence = [
+    {path: 'Telegram/build/prepare/prepare.py', blob: 'a9f3dd2d9e4020df958ab5af942376177d66c78b'},
+    {path: 'Telegram/build/docker/centos_env/Dockerfile', blob: '3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2'},
+    {path: 'snap/snapcraft.yaml', blob: 'a181d828f25d901303f7221824ac30b0ff5e773a'},
+  ];
+  return {
+    upstream,
+    evidence,
+    tree: {sha: upstream.tree, truncated: false, tree: evidence.map(({path, blob}) => ({path, sha: blob, type: 'blob', mode: '100644'}))},
+    prepare: [
+      'git submodule update --init --recursive --progress qtbase qtimageformats qtsvg',
+      'git submodule update --init --recursive --progress qtbase qtimageformats qtshadertools qtsvg',
+      "stage('qt6_windows7', \"\"\"",
+      'win32_win64:',
+      '    git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7',
+      '    cd qt6_windows7',
+      '    git checkout 9ce1ffe051161a22f7e78f715b042c773f868e59',
+      '""")',
+    ].join('\n'),
+    docker: 'qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools',
+    snap: ['qtbase', 'qtdeclarative', 'qtimageformats', 'qtshadertools', 'qtsvg', 'qtwayland'].map(module => '      - ' + module).join('\n'),
+  };
+}
+
+test('fixed Qt contract admits the current exact U inputs without granting acceptance or mutating evidence', () => {
+  const f = fixedQtContractFixture();
+  const before = structuredClone(f);
+  assert.equal(assertFixedQtSourceContract(f), undefined);
+  assert.deepEqual(f, before);
+  assert.equal(f.upstream.accepted, false);
+});
+
+test('fixed Qt contract rejects each historical evidence blob under current U', () => {
+  const stale = ['4063cc766ffb60c018b7a6ad456453ec585d5566', 'f72162089985263493c6e3f7e23b566f5df8e454', '38f0eb362832c3623b868c9aa90c03bc4f426d01'];
+  for (let index = 0; index < stale.length; index++) {
+    const f = fixedQtContractFixture();
+    f.evidence[index].blob = stale[index];
+    assert.throws(() => assertFixedQtSourceContract(f), /stale evidence/);
+  }
+});
+
+test('fixed Qt contract checks actual source objects even when evidence claims the right blobs', () => {
+  for (let index = 0; index < 3; index++) {
+    for (const [field, value] of [['sha', 'e'.repeat(40)], ['type', 'commit'], ['mode', '120000']]) {
+      const f = fixedQtContractFixture();
+      f.tree.tree[index][field] = value;
+      assert.throws(() => assertFixedQtSourceContract(f), /changed source blob/);
+    }
+  }
+});
+
+test('fixed Qt contract rejects missing duplicate and conflicting required identities', () => {
+  for (const owner of ['evidence', 'tree']) {
+    for (let index = 0; index < 3; index++) {
+      for (const mode of ['missing', 'duplicate', 'conflicting']) {
+        const f = fixedQtContractFixture();
+        const entries = owner === 'evidence' ? f.evidence : f.tree.tree;
+        if (mode === 'missing') entries.splice(index, 1);
+        else entries.push({...entries[index], ...(mode === 'conflicting' ? {[owner === 'evidence' ? 'blob' : 'sha']: 'e'.repeat(40)} : {})});
+        assert.throws(() => assertFixedQtSourceContract(f), /missing, duplicate or/);
+      }
+    }
+  }
+});
+
+test('fixed Qt contract refuses truncated missing or differently bound trees', () => {
+  for (const value of [true, null, undefined]) {
+    const f = fixedQtContractFixture();
+    f.tree.truncated = value;
+    assert.throws(() => assertFixedQtSourceContract(f), /complete frozen source tree required/);
+  }
+  for (const change of [f => { f.tree.sha = 'a'.repeat(40); }, f => { f.tree.tree = null; }, f => { f.tree = null; }]) {
+    const f = fixedQtContractFixture(); change(f);
+    assert.throws(() => assertFixedQtSourceContract(f), /complete frozen source tree required/);
+  }
+});
+
+test('fixed Qt contract cannot follow another upstream repository commit or tree implicitly', () => {
+  for (const [field, value] of [['repository', 'owner/other'], ['commit', '351204f3695b4a39bc3f4d2f230c061b9a01fe2a'], ['tree', '5151db79560ed40bf3802482fcfb74b950be6c40']]) {
+    const f = fixedQtContractFixture(); f.upstream[field] = value;
+    assert.throws(() => assertFixedQtSourceContract(f), /reviewed upstream identity mismatch/);
+  }
+});
+
+test('fixed Qt contract requires text inputs and an evidence collection', () => {
+  for (const field of ['prepare', 'docker', 'snap']) {
+    for (const value of [null, undefined, {}]) {
+      const f = fixedQtContractFixture(); f[field] = value;
+      assert.throws(() => assertFixedQtSourceContract(f), /source text required/);
+    }
+  }
+  const f = fixedQtContractFixture(); f.evidence = null;
+  assert.throws(() => assertFixedQtSourceContract(f), /source evidence array required/);
+});
+
+test('fixed Qt contract rejects the old Windows patch pin including a current pin in an unrelated stage', () => {
+  const f = fixedQtContractFixture();
+  f.prepare = f.prepare.replace('9ce1ffe051161a22f7e78f715b042c773f868e59', 'bf64e7264237ffd371493f1780ef71d3f41373c9');
+  assert.throws(() => assertFixedQtSourceContract(f), /Windows compatibility pin drift/);
+  f.prepare += '\ngit checkout 9ce1ffe051161a22f7e78f715b042c773f868e59\n';
+  assert.throws(() => assertFixedQtSourceContract(f), /Windows compatibility pin drift/);
+  const wrongRepository = fixedQtContractFixture();
+  wrongRepository.prepare = wrongRepository.prepare.replace('desktop-app/qt6_windows7_patches.git', 'owner/unreviewed-patches.git');
+  assert.throws(() => assertFixedQtSourceContract(wrongRepository), /Windows compatibility acquisition drift/);
+});
+
+test('fixed Qt contract retains both Qt5 and Qt6 prepare selections', () => {
+  for (const selected of ['qtbase qtimageformats qtsvg', 'qtbase qtimageformats qtshadertools qtsvg']) {
+    const f = fixedQtContractFixture();
+    f.prepare = f.prepare.replace(selected, 'qtbase');
+    assert.throws(() => assertFixedQtSourceContract(f), /prepare Qt submodule selection drift/);
+  }
+});
+
+test('fixed Qt contract retains every required Docker module', () => {
+  for (const module of ['qtbase', 'qtdeclarative', 'qtwayland', 'qtimageformats', 'qtsvg', 'qtshadertools']) {
+    const f = fixedQtContractFixture(); f.docker = f.docker.replace(module, '');
+    assert.throws(() => assertFixedQtSourceContract(f), /Docker Qt submodule selection drift/);
+  }
+});
+
+test('fixed Qt contract retains every required Snap module', () => {
+  for (const module of ['qtbase', 'qtdeclarative', 'qtimageformats', 'qtshadertools', 'qtsvg', 'qtwayland']) {
+    const f = fixedQtContractFixture(); f.snap = f.snap.replace('      - ' + module, '');
+    assert.throws(() => assertFixedQtSourceContract(f), /Snap Qt submodule selection missing/);
+  }
+});
+
+test('fixed Qt contract preserves the qttools non-reachability boundary in all three consumers', () => {
+  for (const field of ['prepare', 'docker', 'snap']) {
+    const f = fixedQtContractFixture(); f[field] += field === 'snap' ? '\n      - qttools' : '\ngit submodule update --init qttools';
+    assert.throws(() => assertFixedQtSourceContract(f), /unexpectedly initializes qttools/);
+  }
+});
+
+test('passing the local Qt contract cannot close a source candidate or unresolved acquisition obligations', () => {
+  assert.equal(assertFixedQtSourceContract(fixedQtContractFixture()), undefined);
+  assert.throws(() => assertNoOpenSourceCandidate({rebaseline_candidate: {status: 'unaccepted'}}), /rebaseline candidate/);
+  for (const field of ['build_time_acquisitions_complete', 'generated_inputs_complete', 'lfs_object_closure_complete', 'legal_review_performed']) {
+    const f = closedAcquisitionFixture(); f.lock.acceptance[field] = false;
+    assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /remains unresolved/);
+  }
+  const f = closedAcquisitionFixture(); f.lock.build_time_acquisition_inventory.closure_status = 'open';
+  assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /must be explicitly complete/);
 });

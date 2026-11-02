@@ -23,6 +23,53 @@ export async function readFrozenUpstreamCommit(upstream, getJson) {
   return commit;
 }
 
+// Reviewed build-input contract for the one frozen U. This is a local identity
+// and consumer guard, not acquisition closure, a source-read claim or acceptance.
+export function assertFixedQtSourceContract({upstream, tree, evidence, prepare, docker, snap}) {
+  const check = (ok, message) => {
+    if (!ok) throw Error('fixed-U Qt source contract: ' + message);
+  };
+  check(upstream?.repository === 'telegramdesktop/tdesktop' &&
+    upstream.commit === 'f985723b552b30fe1c17d377d57f44e61a15a8c4' &&
+    upstream.tree === '91f2b083ab2877c0a17d07868eabec362a5cfca6',
+  'reviewed upstream identity mismatch');
+  check(tree?.truncated === false && tree.sha === upstream.tree && Array.isArray(tree.tree),
+    'complete frozen source tree required');
+  check(Array.isArray(evidence), 'source evidence array required');
+  const required = [
+    ['Telegram/build/prepare/prepare.py', 'a9f3dd2d9e4020df958ab5af942376177d66c78b'],
+    ['Telegram/build/docker/centos_env/Dockerfile', '3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2'],
+    ['snap/snapcraft.yaml', 'a181d828f25d901303f7221824ac30b0ff5e773a'],
+  ];
+  for (const [sourcePath, blob] of required) {
+    const recorded = evidence.filter(item => item?.path === sourcePath);
+    check(recorded.length === 1 && recorded[0].blob === blob,
+      'missing, duplicate or stale evidence: ' + sourcePath);
+    const actual = tree.tree.filter(item => item?.path === sourcePath);
+    check(actual.length === 1 && actual[0].type === 'blob' &&
+      actual[0].mode === '100644' && actual[0].sha === blob,
+    'missing, duplicate or changed source blob: ' + sourcePath);
+  }
+  check([prepare, docker, snap].every(value => typeof value === 'string'), 'source text required');
+  for (const exact of [
+    'git submodule update --init --recursive --progress qtbase qtimageformats qtsvg',
+    'git submodule update --init --recursive --progress qtbase qtimageformats qtshadertools qtsvg',
+  ]) check(prepare.includes(exact), 'prepare Qt submodule selection drift: ' + exact);
+  check(docker.includes('qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools'),
+    'Docker Qt submodule selection drift');
+  for (const module of ['qtbase', 'qtdeclarative', 'qtimageformats', 'qtshadertools', 'qtsvg', 'qtwayland']) {
+    check(snap.includes('      - ' + module), 'Snap Qt submodule selection missing ' + module);
+  }
+  const windowsStage = prepare.match(/stage\('qt6_windows7',\s*"""[\s\S]*?\n"""\)/)?.[0] ?? '';
+  check(windowsStage.includes('git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7'),
+    'Windows compatibility acquisition drift');
+  check(windowsStage.includes('git checkout 9ce1ffe051161a22f7e78f715b042c773f868e59'),
+    'Windows compatibility pin drift');
+  check(!prepare.includes('qttools'), 'prepare unexpectedly initializes qttools');
+  check(!docker.includes('qttools'), 'Docker unexpectedly initializes qttools');
+  check(!snap.includes('      - qttools'), 'Snap unexpectedly initializes qttools');
+}
+
 export function assertNoOpenSourceCandidate(ledger) {
   if (!ledger || typeof ledger !== 'object' || Array.isArray(ledger)) {
     throw Error('source ledger object required');

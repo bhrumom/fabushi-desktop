@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { validateResponsibilitySources, validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate, assertSourceAcquisitionClosure } from './tdrp-source-review.mjs';
+import { validateResponsibilitySources, validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate, assertSourceAcquisitionClosure, assertFixedQtSourceContract } from './tdrp-source-review.mjs';
 import { canonicalNestedRepository, assertNestedGitlinkPins } from './tdrp-nested-pin-identity.mjs';
 
 const root = process.cwd();
@@ -154,35 +154,16 @@ if (!requireAccepted) fail(recursiveReachability?.status==='partial-audited-disp
 fail(recursiveReachability.accepted_upstream_commit===lock.upstream.commit,'recursive build reachability upstream commit drift');
 const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
-const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
-const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','4063cc766ffb60c018b7a6ad456453ec585d5566'],
-  ['Telegram/build/docker/centos_env/Dockerfile','f72162089985263493c6e3f7e23b566f5df8e454'],
-  ['snap/snapcraft.yaml','38f0eb362832c3623b868c9aa90c03bc4f426d01']
-];
-for (const [sourcePath,blob] of expectedQtEvidence) {
-  const evidence=qtEvidenceByPath.get(sourcePath);
-  fail(evidence?.blob===blob,'Qt reachability evidence blob drift: '+sourcePath);
-  const tree=await ghTree(lock.upstream.repository,lock.upstream.commit);
-  const sourceEntry=(tree.tree||[]).find(item=>item.path===sourcePath);
-  fail(sourceEntry?.sha===blob,'Qt reachability source blob does not match accepted upstream: '+sourcePath);
-}
+const qtSourceTree=await ghTree(lock.upstream.repository,lock.upstream.tree);
 const prepareQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/Telegram/build/prepare/prepare.py`,false);
 const dockerQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/Telegram/build/docker/centos_env/Dockerfile`,false);
 const snapQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/snap/snapcraft.yaml`,false);
-for (const exact of [
-  'git submodule update --init --recursive --progress qtbase qtimageformats qtsvg',
-  'git submodule update --init --recursive --progress qtbase qtimageformats qtshadertools qtsvg'
-]) fail(prepareQt.includes(exact),'accepted prepare.py Qt submodule selection drift: '+exact);
-fail(dockerQt.includes('qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools'),'accepted Docker Qt submodule selection drift');
-for (const module of ['qtbase','qtdeclarative','qtimageformats','qtshadertools','qtsvg','qtwayland']) {
-  fail(snapQt.includes('      - '+module),'accepted Snap Qt submodule selection missing '+module);
-}
-fail(prepareQt.includes('git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7'),'accepted prepare.py Qt 6 Windows compatibility acquisition drift');
-fail(prepareQt.includes('git checkout bf64e7264237ffd371493f1780ef71d3f41373c9'),'accepted prepare.py Qt 6 Windows compatibility pin drift');
-fail(!prepareQt.includes('qttools'),'prepare.py unexpectedly initializes qttools');
-fail(!dockerQt.includes('qttools'),'Docker Qt build unexpectedly initializes qttools');
-fail(!snapQt.includes('      - qttools'),'Snap Qt build unexpectedly initializes qttools');
+assertFixedQtSourceContract({
+  upstream: lock.upstream,
+  tree: qtSourceTree,
+  evidence: qtReachability.accepted_upstream_evidence,
+  prepare: prepareQt, docker: dockerQt, snap: snapQt,
+});
 const nonReachable=qtReachability.explicitly_non_reachable_dispositions||[];
 const byRepo=new Map(nonReachable.map(item=>[item.repository,item]));
 fail(byRepo.get('https://github.com/qt/qttools')?.disposition==='not-reachable-from-accepted-tdesktop-qt-build','qttools reachability disposition missing');
