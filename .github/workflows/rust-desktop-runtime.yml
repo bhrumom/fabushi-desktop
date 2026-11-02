@@ -313,6 +313,7 @@ jobs:
               "source/host/tests/safe_link_preview_fetch_contract.rs",
               "source/host/tests/attachments_service_contract.rs",
               "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
+              "projects/openclaw-rust/docs/specs/media-input-url-admission.md",
               "source/host/src/extensions/attachments/media_fetch.rs",
               "source/host/src/extensions/attachments/media_store.rs",
               "source/host/tests/openclaw_media_fetch_contract.rs",
@@ -372,22 +373,27 @@ jobs:
             --test runner_production_bridge_contract \
             --test fabushi_model_identity_production_contract \
             --test fabushi_responses_credential_context_contract
-      - name: Test media input, preview admission and HTTP failure diagnostics through existing attachment owners
+      - name: Test media input, preview and URL admission, and HTTP failure diagnostics through existing attachment owners
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
+        env:
+          NO_PROXY: 127.0.0.1,localhost,::1
+          no_proxy: 127.0.0.1,localhost,::1
         run: |
           set -euo pipefail
           source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
           run_recovery_check media-input-policy cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract
+          run_recovery_check media-input-url-projection cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust -- --exact
           python3 - <<'PY'
           import hashlib, json, os, re, subprocess, sys
           from pathlib import Path
           root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
           subject = json.loads((root / "subject.json").read_text())
           log = (root / "media-input-policy.log").read_bytes()
+          projection_log = (root / "media-input-url-projection.log").read_bytes()
           command = (root / "media-input-policy.command.txt").read_text().strip()
           exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
-                   if line.split("\t")[0] == "media-input-policy"]
+                   if line.split("\t")[0] in ("media-input-policy", "media-input-url-projection")]
           required = [
               "gateway_file_extraction_rejects_every_malformed_explicit_policy",
               "gateway_file_policy_errors_precede_base64_and_url_processing",
@@ -411,21 +417,35 @@ jobs:
               "media_http_error_gateway_read_failure_preserves_status",
               "media_http_error_gateway_empty_and_whitespace_omit_body",
               "media_http_error_gateway_success_and_default_guard_controls",
+              "media_fetch_hostname_allowlist_matches_normalized_patterns",
+              "media_fetch_hostname_allowlist_does_not_override_private_trust",
+              "media_fetch_url_admission_enforces_http_and_https_requirements",
+              "gateway_media_fetch_trusted_origin_preserves_body_and_byte_bounds",
+              "gateway_media_fetch_checks_relative_and_off_list_redirects",
+              "gateway_media_fetch_applies_explicit_and_default_redirect_caps",
+              "gateway_input_url_allowlist_refuses_other_hosts_without_side_effects",
+              "gateway_input_url_allowlist_never_grants_private_access",
           ]
           passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
+          projection_name = "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust"
+          projection_passed = re.findall(r"^test (\S+) \.\.\. ok$", projection_log.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
+          missing += [] if projection_passed.count(projection_name) == 1 else [projection_name]
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          accepted = (exits == [["media-input-policy", "0"]] and not missing
+          accepted = (exits == [["media-input-policy", "0"], ["media-input-url-projection", "0"]] and not missing
                       and head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"])
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
           receipt.update({
-              "contract": "MIP-v1/LPIP-v1/MHE-v1", "command": command, "command_exit_records": exits,
+              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1", "command": command, "command_exit_records": exits,
               "required_tests": required, "observed_passed_test_names": passed,
+              "projection_command": (root / "media-input-url-projection.command.txt").read_text().strip(),
+              "projection_required_test": projection_name, "projection_observed_passed_test_names": projection_passed,
+              "projection_log_sha256": hashlib.sha256(projection_log).hexdigest(),
               "missing_or_nonunique_positive_results": missing,
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Named input policy, mapped-IP preview admission and bounded HTTP failure diagnostics through actual attachment service dispatch and controlled response fixtures only; not outer Host HTTP registration, full media, network, platform or OCRM acceptance.",
+              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
           })
           (root / "media-input-policy.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
@@ -947,6 +967,11 @@ jobs:
               "link_preview_ip_contract": "LPIP-v1",
               "link_preview_ip_targets": ["safe_link_preview_fetch_contract", "attachments_service_contract"],
               "link_preview_ip_result": "passed",
+              "media_input_url_contract": "MURL-v1",
+              "media_input_url_targets": ["openclaw_media_fetch_contract", "openclaw_input_files_contract"],
+              "media_input_url_projection_test": "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust",
+              "media_input_url_result": "passed",
+              "media_input_url_scope": "Existing input reader forwards restrictive hostname policy and explicit redirect caps to the current fetch owner; real generic owned HTTP request controls cover initial/per-hop admission, typed refusals, exact caps and byte bounds. Input projection is a separate typed boundary check. Outer Host HTTP registration, DNS/IP/proxy/cancellation, actual TLS downgrade transport, accepted-turn extraction and real service acceptance remain open.",
               "link_preview_ip_scope": "Existing Fabushi preview owner applies its IPv4 rules to mapped IPv6 in literal, DNS-answer and redirect admission, and the real metadata gateway checks policy before using fresh cache entries. Public mapped and native controls remain. This is not real HTTP-loop/pinning execution, general-media or OpenClaw link-understanding equivalence, or platform acceptance.",
               "media_http_error_contract": "MHE-v1",
               "media_http_error_target": "openclaw_media_fetch_contract",
@@ -1364,22 +1389,30 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
           PY
-      - name: Test media input, preview policy and HTTP failure diagnostics on the existing Linux Host cache
+      - name: Test media input, preview and URL policy, and HTTP failure diagnostics on the existing Linux Host cache
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
+        env:
+          NO_PROXY: 127.0.0.1,localhost,::1
+          no_proxy: 127.0.0.1,localhost,::1
         run: |
           set -euo pipefail
           mkdir -p .evidence/sqlite-native-path/media-input-policy
           command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract)
+          projection_command=(cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust -- --exact)
           set +e
           "${command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/tests.log
           pipeline_status=("${PIPESTATUS[@]}")
+          "${projection_command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/projection.log
+          projection_status=("${PIPESTATUS[@]}")
           set -e
-          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${command[@]}" <<'PY'
+          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${projection_status[0]}" "${projection_status[1]}" "${command[@]}" --projection-command "${projection_command[@]}" <<'PY'
           import hashlib, json, os, pathlib, re, subprocess, sys
           root = pathlib.Path(".evidence/sqlite-native-path/media-input-policy")
           log = (root / "tests.log").read_bytes()
-          cargo_exit, capture_exit = map(int, sys.argv[1:3])
+          projection_log = (root / "projection.log").read_bytes()
+          cargo_exit, capture_exit, projection_exit, projection_capture_exit = map(int, sys.argv[1:5])
+          separator = sys.argv.index("--projection-command", 5)
           required = [
               "gateway_file_extraction_rejects_every_malformed_explicit_policy",
               "gateway_file_policy_errors_precede_base64_and_url_processing",
@@ -1403,11 +1436,22 @@ jobs:
               "media_http_error_gateway_read_failure_preserves_status",
               "media_http_error_gateway_empty_and_whitespace_omit_body",
               "media_http_error_gateway_success_and_default_guard_controls",
+              "media_fetch_hostname_allowlist_matches_normalized_patterns",
+              "media_fetch_hostname_allowlist_does_not_override_private_trust",
+              "media_fetch_url_admission_enforces_http_and_https_requirements",
+              "gateway_media_fetch_trusted_origin_preserves_body_and_byte_bounds",
+              "gateway_media_fetch_checks_relative_and_off_list_redirects",
+              "gateway_media_fetch_applies_explicit_and_default_redirect_caps",
+              "gateway_input_url_allowlist_refuses_other_hosts_without_side_effects",
+              "gateway_input_url_allowlist_never_grants_private_access",
           ]
           passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
+          projection_name = "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust"
+          projection_passed = re.findall(r"^test (\S+) \.\.\. ok$", projection_log.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
+          missing += [] if projection_passed.count(projection_name) == 1 else [projection_name]
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and head == os.environ["FABUSHI_TARGET_SHA"]
+          accepted = cargo_exit == capture_exit == projection_exit == projection_capture_exit == 0 and not missing and head == os.environ["FABUSHI_TARGET_SHA"]
           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
           inputs = [
               ".github/workflows/rust-desktop-runtime.yml",
@@ -1421,27 +1465,31 @@ jobs:
               "source/host/tests/safe_link_preview_fetch_contract.rs",
               "source/host/tests/attachments_service_contract.rs",
               "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
+              "projects/openclaw-rust/docs/specs/media-input-url-admission.md",
               "source/host/src/extensions/attachments/media_fetch.rs",
               "source/host/src/extensions/attachments/media_store.rs",
               "source/host/tests/openclaw_media_fetch_contract.rs",
           ]
           receipt = {
-              "contract": "MIP-v1/LPIP-v1/MHE-v1", "subject_commit": head,
+              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
-              "command": sys.argv[3:], "cargo_exit": cargo_exit, "capture_exit": capture_exit,
+              "command": sys.argv[5:separator], "cargo_exit": cargo_exit, "capture_exit": capture_exit,
+              "projection_command": sys.argv[separator+1:], "projection_exit": projection_exit, "projection_capture_exit": projection_capture_exit,
+              "projection_required_test": projection_name, "projection_observed_passed_test_names": projection_passed,
+              "projection_log_sha256": hashlib.sha256(projection_log).hexdigest(),
               "required_tests": required, "missing_or_nonunique_positive_results": missing,
               "observed_passed_test_names": passed,
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Linux execution of existing attachment owners: strict input policy and defaults/limits; mapped-IP literal/DNS/redirect preview policy and cached-metadata service; bounded HTTP failure diagnostics through actual buffer/save service dispatch with held-tail fixtures, Unicode/status/redaction/no-store controls. Not outer Host HTTP registration, macOS Host, preview HTTP-loop/pinning execution, general SSRF/redirect/proxy/idle-timeout/redaction/chat wiring, full URL/PDF/HEIC/multimodal/link-understanding parity, real provider or whole-platform acceptance.",
+              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
           }
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
-          sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
+          sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or 1)
           PY
       - name: Test portable pending-failure recovery on the existing Linux Host cache
         id: channel_pending_recovery

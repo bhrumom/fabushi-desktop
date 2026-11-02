@@ -5,7 +5,7 @@
 //! - `src/media/fetch.ts`
 //! - `src/media/fetch.read-scope.ts`
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::fmt;
 use std::io::Read;
 use std::path::PathBuf;
@@ -258,6 +258,11 @@ pub struct FetchMediaOptions {
     pub allowed_origins: Option<Vec<String>>,
     #[serde(default)]
     pub allowed_hostnames: Option<Vec<String>>,
+    /// Restrictive destination patterns; unlike allowed_hostnames, this grants no private trust.
+    #[serde(default)]
+    pub hostname_allowlist: Option<Vec<String>>,
+    #[serde(default)]
+    pub max_redirects: Option<usize>,
     #[serde(default)]
     pub allow_rfc2544_benchmark_range: Option<bool>,
     #[serde(default)]
@@ -702,6 +707,69 @@ pub fn check_ssrf_allowed(
     Ok(())
 }
 
+fn normalize_fetch_hostname(value: &str) -> String {
+    let lower = value.trim().to_lowercase();
+    let normalized = lower.trim_end_matches('.');
+    normalized
+        .strip_prefix('[')
+        .and_then(|value| value.strip_suffix(']'))
+        .unwrap_or(normalized)
+        .to_string()
+}
+
+/// Applies the reader's destination policy before initial and redirected requests.
+/// A matching restrictive list never substitutes for existing private-host checks.
+pub fn check_media_fetch_url(
+    url_str: &str,
+    options: &FetchMediaOptions,
+) -> Result<(), MediaFetchError> {
+    let parsed = url::Url::parse(url_str)
+        .map_err(|error| MediaFetchError::fetch_failed(url_str, format!("Invalid URL: {error}")))?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err(MediaFetchError::fetch_failed(url_str, "HTTP or HTTPS required"));
+    }
+    if options.require_https.unwrap_or(false) && parsed.scheme() != "https" {
+        return Err(MediaFetchError::fetch_failed(url_str, "HTTPS required"));
+    }
+    let hostname = parsed.host_str().map(normalize_fetch_hostname)
+        .filter(|hostname| !hostname.is_empty())
+        .ok_or_else(|| MediaFetchError::fetch_failed(url_str, "Invalid hostname"))?;
+    let patterns: HashSet<String> = options.hostname_allowlist.as_deref().unwrap_or_default()
+        .iter().map(|entry| normalize_fetch_hostname(entry).trim().to_string())
+        .filter(|pattern| !pattern.is_empty() && pattern != "*" && pattern != "*.")
+        .collect();
+    let allowed = patterns.is_empty() || patterns.iter().any(|pattern| {
+        if let Some(suffix) = pattern.strip_prefix("*.") {
+            !suffix.is_empty() && hostname != suffix && hostname.ends_with(&format!(".{suffix}"))
+        } else {
+            hostname == *pattern
+        }
+    });
+    if !allowed {
+        return Err(MediaFetchError::fetch_failed(
+            url_str,
+            format!("Domain policy: Blocked hostname (not in allowlist): {hostname}"),
+        ));
+    }
+    check_ssrf_allowed(
+        url_str,
+        options.allowed_origins.as_deref(),
+        options.allowed_hostnames.as_deref(),
+        options.allow_rfc2544_benchmark_range.unwrap_or(false),
+    )
+}
+
+fn media_request_error(source_url: &str, error: reqwest::Error) -> MediaFetchError {
+    let mut source = std::error::Error::source(&error);
+    while let Some(cause) = source {
+        if let Some(policy_error) = cause.downcast_ref::<MediaFetchError>() {
+            return policy_error.clone();
+        }
+        source = cause.source();
+    }
+    MediaFetchError::fetch_failed(source_url, error.to_string())
+}
+
 /// Fetches media through SSRF guards and returns the bounded response body as a buffer.
 pub fn read_remote_media_buffer_with_headers(
     options: &FetchMediaOptions,
@@ -709,27 +777,31 @@ pub fn read_remote_media_buffer_with_headers(
     let effective_max_bytes = options.max_bytes.unwrap_or(MAX_DOCUMENT_BYTES);
     let source_url = &options.url;
 
-    check_ssrf_allowed(
-        source_url,
-        options.allowed_origins.as_deref(),
-        options.allowed_hostnames.as_deref(),
-        options.allow_rfc2544_benchmark_range.unwrap_or(false),
-    )?;
+    check_media_fetch_url(source_url, options)?;
 
-    if options.require_https.unwrap_or(false) && !source_url.starts_with("https://") {
-        return Err(MediaFetchError::fetch_failed(source_url, "HTTPS required"));
-    }
-
+    let redirect_options = options.clone();
+    let max_redirects = options.max_redirects.unwrap_or(5);
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_millis(options.timeout_ms.unwrap_or(30_000)))
-        .redirect(reqwest::redirect::Policy::limited(5))
+        .redirect(reqwest::redirect::Policy::custom(move |attempt| {
+            if attempt.previous().len() > max_redirects {
+                return attempt.error(MediaFetchError::fetch_failed(
+                    &redirect_options.url,
+                    format!("Too many redirects (limit: {max_redirects})"),
+                ));
+            }
+            match check_media_fetch_url(attempt.url().as_str(), &redirect_options) {
+                Ok(()) => attempt.follow(),
+                Err(error) => attempt.error(error),
+            }
+        }))
         .build()
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
 
     let mut res = client
         .get(source_url)
         .send()
-        .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
+        .map_err(|error| media_request_error(source_url, error))?;
 
     let status = res.status().as_u16();
     let final_url = res.url().as_str().to_string();

@@ -10638,7 +10638,8 @@
       "evidence_refs": [
         "source/host/tests/openclaw_media_fetch_contract.rs",
         "projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md",
-        "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md"
+        "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
+        "projects/openclaw-rust/docs/specs/media-input-url-admission.md"
       ],
       "existing_owner_candidates": [
         {
@@ -10661,7 +10662,9 @@
         "Payload exceeding maxBytes must reject with MaxBytes and abort without persisting corrupt partial files",
         "Failed remote responses consume at most 8192 diagnostic bytes without waiting for EOF after that budget; diagnostics retain at most 200 UTF-16 units without splitting a scalar and never publish store files",
         "Diagnostic body read failure preserves the known HTTP status and omits unavailable body detail",
-        "Telegram bot tokens in URLs and error messages must be redacted with 6-char prefix and 4-char suffix separated by ellipsis"
+        "Telegram bot tokens in URLs and error messages must be redacted with 6-char prefix and 4-char suffix separated by ellipsis",
+        "MURL-v1: restrictive hostname patterns are conjunctive with private trust and apply before the initial and every followed request; matching the list never grants private access",
+        "MURL-v1: explicit zero/custom redirect caps and typed redirect-policy errors survive the existing reader and actual gateway boundary; full DNS/IP/proxy/cancellation parity is not established"
       ],
       "migration_rollback": "Reject remote media fetch requests and return MediaFetchError::fetch_failed",
       "oracle_ids": [
@@ -10690,7 +10693,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "High; external untrusted response bodies affect resource bounds, HTTP failure recovery, diagnostic secrecy and store publication",
+      "risk": "High; untrusted destinations, private-network trust and redirect effects; external response resource bounds, HTTP failure recovery, diagnostic secrecy and store publication. Full DNS/IP/proxy/cancellation, consumer wiring and acceptance remain open.",
       "selected_owner": "source/host/src/extensions/attachments/media_fetch.rs",
       "source_refs": [
         {
@@ -10731,13 +10734,20 @@
         "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_prioritizes_status_and_redacts",
         "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_read_failure_preserves_status",
         "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_empty_and_whitespace_omit_body",
-        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_success_and_default_guard_controls"
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_success_and_default_guard_controls",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_fetch_hostname_allowlist_matches_normalized_patterns",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_fetch_hostname_allowlist_does_not_override_private_trust",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_fetch_url_admission_enforces_http_and_https_requirements",
+        "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_trusted_origin_preserves_body_and_byte_bounds",
+        "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_checks_relative_and_off_list_redirects",
+        "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_applies_explicit_and_default_redirect_caps"
       ],
       "typed_contracts": [
         "read_remote_media_buffer(options: &FetchMediaOptions) -> Result<FetchMediaResult, MediaFetchError>",
         "read_remote_media_buffer_with_headers(options: &FetchMediaOptions) -> Result<FetchMediaResultWithHeaders, MediaFetchError>",
         "save_response_media(bytes: &[u8], headers: &BTreeMap<String, String>, status: u16, options: &SaveResponseMediaOptions) -> Result<SavedRemoteMedia, MediaFetchError>",
-        "save_remote_media(options: &SaveRemoteMediaOptions) -> Result<SavedRemoteMedia, MediaFetchError>"
+        "save_remote_media(options: &SaveRemoteMediaOptions) -> Result<SavedRemoteMedia, MediaFetchError>",
+        "MURL-v1: FetchMediaOptions.hostname_allowlist is restrictive; allowed_hostnames/allowed_origins retain separate trust semantics; max_redirects defaults to five and preserves explicit zero"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-012"
     },
@@ -17565,7 +17575,8 @@
       "evidence_refs": [
         "source/host/tests/openclaw_input_files_contract.rs",
         "projects/openclaw-rust/dossiers/media-input-files-staged-inputs-scoped.md",
-        "projects/openclaw-rust/docs/specs/media-input-policy-admission.md"
+        "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
+        "projects/openclaw-rust/docs/specs/media-input-url-admission.md"
       ],
       "existing_owner_candidates": [
         {
@@ -17598,7 +17609,8 @@
         "WHATWG charsets decoded with state retention across chunks and truncated safely at UTF-16 surrogate edges",
         "HEIC/HEIF images converted to JPEG with bounded buffer limits",
         "MIP-v1: omitted/null file RPC limits retain defaults; explicit non-object or incomplete resolved policy is refused before payload decoding or URL processing",
-        "MIP-v1: valid false/zero/empty resolved restrictions pass unchanged; '='/'==' file/image source data returns invalid-data failure without unsigned underflow while longer malformed data retains size-before-validation precedence"
+        "MIP-v1: valid false/zero/empty resolved restrictions pass unchanged; '='/'==' file/image source data returns invalid-data failure without unsigned underflow while longer malformed data retains size-before-validation precedence",
+        "MURL-v1: shared file/image source reads forward urlAllowlist as a restriction, never as private-host trust, and preserve zero/default/custom maxRedirects at the existing fetch boundary"
       ],
       "migration_rollback": "Reject remote URL sources and fallback to raw UTF-8 decoding",
       "oracle_ids": [
@@ -17652,7 +17664,10 @@
         "source/host/tests/openclaw_input_files_contract.rs::gateway_file_extraction_preserves_resolved_restrictive_policies",
         "source/host/tests/openclaw_input_files_contract.rs::gateway_partial_file_policy_is_resolved_before_extraction",
         "source/host/tests/openclaw_input_files_contract.rs::gateway_padding_only_sources_preserve_upstream_error_precedence",
-        "source/host/tests/openclaw_input_files_contract.rs::gateway_valid_padded_file_and_image_sources_preserve_byte_caps"
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_valid_padded_file_and_image_sources_preserve_byte_caps",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_input_url_allowlist_refuses_other_hosts_without_side_effects",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_input_url_allowlist_never_grants_private_access",
+        "source/host/src/extensions/attachments/input_files.rs::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust"
       ],
       "typed_contracts": [
         "extract_file_content_from_buffer(buffer: &[u8], filename: Option<&str>, mime_type: Option<&str>, charset: Option<&str>, limits: &InputFileLimits, classification: Option<&AttachmentClassification>) -> Result<InputFileExtractResult, String>",

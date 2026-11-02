@@ -10,28 +10,32 @@
 //! - Empty body / 204 rejection without disk pollution.
 //! - Gateway dispatch integration for `readRemoteMediaBuffer` and `saveRemoteMedia`.
 //! - Bounded non-2xx diagnostics through real HTTP responses and Gateway calls.
+//! - Restrictive hostname admission, private-origin trust, and per-hop redirect policy.
+//! - Real loopback response bodies, byte bounds, and explicit/default redirect caps.
 
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::{self, Read, Write};
-use std::net::TcpListener;
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc};
-use std::thread;
-use std::time::Duration;
+use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant};
 
 use mahayana_host_runtime::extensions::attachments::attachments_service::{
     AttachmentsBox, AttachmentsService,
 };
 use mahayana_host_runtime::extensions::attachments::generate_image_service::GenerateImageAuth;
 use mahayana_host_runtime::extensions::attachments::media_fetch::{
-    check_ssrf_allowed, is_generic_response_content_type,
+    check_media_fetch_url, check_ssrf_allowed, is_generic_response_content_type,
     parse_content_disposition_file_name, parse_media_content_length,
-    redact_sensitive_text, resolve_remote_file_name,
+    read_remote_media_buffer, redact_sensitive_text, resolve_remote_file_name,
     resolve_response_content_type, retain_charset_parameter,
-    save_response_media, MediaFetchErrorCode, SaveResponseMediaOptions,
+    save_response_media, FetchMediaOptions, MediaFetchErrorCode, SaveResponseMediaOptions,
 };
+
+use serde_json::Value;
 
 const MEDIA_FETCH_SOURCE: &str = include_str!("../src/extensions/attachments/media_fetch.rs");
 
@@ -720,5 +724,498 @@ fn media_http_error_gateway_success_and_default_guard_controls() {
             assert_eq!(fs::read(saved_path).unwrap(), body);
         }
         assert_eq!(fs::read(temp.path.join("keep.bin")).unwrap(), b"existing media");
+    }
+}
+
+#[test]
+fn media_fetch_hostname_allowlist_matches_normalized_patterns() {
+    // These controls exercise the production admission owner without DNS or HTTP.
+    let cases: &[(&str, &str, Option<&[&str]>, bool)] = &[
+        ("absent list", "https://other.example.com/file", None, true),
+        ("empty list", "https://other.example.com/file", Some(&[]), true),
+        ("effectively empty list", "https://other.example.com/file",
+            Some(&["", " \t ", ".", "...", "*", " *. "]), true),
+        ("exact normalized names", "https://API.Example.COM.../file",
+            Some(&[" API.EXAMPLE.COM... ", "api.example.com", "", "*"]), true),
+        ("policy entry trims again after trailing dots", "https://api.example.com/file",
+            Some(&[" API.EXAMPLE.COM ... "]), true),
+        ("final policy trim discards bare wildcard", "https://api.example.com/file",
+            Some(&[" * ... "]), true),
+        ("port does not change hostname", "https://api.example.com:8443/file",
+            Some(&["api.example.com"]), true),
+        ("exact excludes subdomain", "https://sub.api.example.com/file",
+            Some(&["api.example.com"]), false),
+        ("exact excludes suffix", "https://api.example.com.attacker.test/file",
+            Some(&["api.example.com"]), false),
+        ("one wildcard label", "https://files.example.com/file",
+            Some(&[" *.EXAMPLE.COM... "]), true),
+        ("deep wildcard labels", "https://a.b.example.com../file",
+            Some(&["*.example.com"]), true),
+        ("wildcard excludes apex", "https://example.com/file",
+            Some(&["*.example.com"]), false),
+        ("wildcard excludes deceptive suffix", "https://badexample.com/file",
+            Some(&["*.example.com"]), false),
+        ("wildcard excludes appended domain", "https://example.com.attacker.test/file",
+            Some(&["*.example.com"]), false),
+        ("wildcard is not an interior glob", "https://images.eu.example.com/file",
+            Some(&["images.*.example.com"]), false),
+        ("discarded entries do not broaden a restrictive list", "https://other.example.com/file",
+            Some(&["*", "", "api.example.com", " API.EXAMPLE.COM. "]), false),
+        ("IPv4 exact hostname", "https://8.8.8.8/file", Some(&[" 8.8.8.8... "]), true),
+        ("bracketed IPv6 pattern", "https://[2606:4700:4700::1111]/file",
+            Some(&[" [2606:4700:4700::1111]... "]), true),
+        ("unbracketed IPv6 pattern", "https://[2606:4700:4700::1111]/file",
+            Some(&["2606:4700:4700::1111"]), true),
+        ("different IPv6 host", "https://[2606:4700:4700::1001]/file",
+            Some(&["[2606:4700:4700::1111]"]), false),
+    ];
+
+    for &(label, url, patterns, allowed) in cases {
+        let options = FetchMediaOptions {
+            url: url.to_string(),
+            hostname_allowlist: patterns.map(|entries| {
+                entries.iter().map(|entry| (*entry).to_string()).collect()
+            }),
+            ..Default::default()
+        };
+        let result = check_media_fetch_url(url, &options);
+        if allowed {
+            assert!(result.is_ok(), "{label}: {result:?}");
+        } else {
+            let error = result.expect_err(label);
+            assert_eq!(error.code, MediaFetchErrorCode::FetchFailed, "{label}");
+            assert_eq!(error.status, None, "{label}");
+            assert!(error.message.contains("Domain policy: Blocked hostname (not in allowlist):"),
+                "{label}: {}", error.message);
+        }
+    }
+}
+
+#[test]
+fn media_fetch_hostname_allowlist_does_not_override_private_trust() {
+    for (url, pattern) in [
+        ("http://127.0.0.1:8123/private", " 127.0.0.1... "),
+        ("http://localhost:8123/private", " LOCALHOST... "),
+    ] {
+        let options = FetchMediaOptions {
+            url: url.to_string(),
+            hostname_allowlist: Some(vec![pattern.to_string()]),
+            ..Default::default()
+        };
+        let error = check_media_fetch_url(url, &options)
+            .expect_err("matching the restrictive list must not grant private access");
+        assert_eq!(error.code, MediaFetchErrorCode::FetchFailed);
+        assert!(error.message.contains("Blocked hostname or private/internal/special-use IP address"),
+            "{url}: {}", error.message);
+    }
+
+    let url = "http://127.0.0.1:8123/private";
+    let mut options = FetchMediaOptions {
+        url: url.to_string(),
+        hostname_allowlist: Some(vec!["127.0.0.1".into()]),
+        allowed_origins: Some(vec!["http://127.0.0.1:8123".into()]),
+        ..Default::default()
+    };
+    assert!(check_media_fetch_url(url, &options).is_ok(), "separate explicit origin trust");
+
+    options.hostname_allowlist = Some(vec!["files.example.com".into()]);
+    let error = check_media_fetch_url(url, &options)
+        .expect_err("origin trust cannot bypass a restrictive list");
+    assert!(error.message.contains("Domain policy: Blocked hostname (not in allowlist): 127.0.0.1"));
+
+    options.allowed_origins = None;
+    options.allowed_hostnames = Some(vec!["127.0.0.1".into()]);
+    let error = check_media_fetch_url(url, &options)
+        .expect_err("legacy hostname trust cannot bypass a restrictive list");
+    assert!(error.message.contains("Domain policy: Blocked hostname (not in allowlist): 127.0.0.1"));
+
+    options.hostname_allowlist = Some(vec!["127.0.0.1".into()]);
+    assert!(check_media_fetch_url(url, &options).is_ok(), "legacy explicit trust remains separate");
+    options.allowed_hostnames = None;
+    options.allowed_origins = Some(vec!["http://127.0.0.1:8124".into()]);
+    let error = check_media_fetch_url(url, &options)
+        .expect_err("trust for a different port is not trust for this origin");
+    assert!(error.message.contains("Blocked hostname or private/internal/special-use IP address"));
+
+    options.allowed_origins = None;
+    options.hostname_allowlist = Some(vec!["*".into(), " ".into()]);
+    let error = check_media_fetch_url(url, &options)
+        .expect_err("an effectively empty list still grants no private trust");
+    assert!(error.message.contains("Blocked hostname or private/internal/special-use IP address"));
+}
+
+#[test]
+fn media_fetch_url_admission_enforces_http_and_https_requirements() {
+    for (url, require_https, expected_cause) in [
+        ("http://example.com/media", None, None),
+        ("http://example.com/media", Some(false), None),
+        ("HTTPS://EXAMPLE.COM/media", Some(true), None),
+        ("http://example.com/media", Some(true), Some("HTTPS required")),
+        ("ftp://example.com/media", None, Some("HTTP or HTTPS required")),
+        ("file:///tmp/media", None, Some("HTTP or HTTPS required")),
+        ("data:text/plain,media", None, Some("HTTP or HTTPS required")),
+        ("https://[", None, Some("Invalid URL:")),
+    ] {
+        let options = FetchMediaOptions {
+            url: url.to_string(),
+            require_https,
+            // Existing trust is deliberately present and must not bypass the
+            // URL scheme or HTTPS requirement at this shared admission seam.
+            allowed_origins: Some(vec![url.to_string()]),
+            ..Default::default()
+        };
+        let result = check_media_fetch_url(url, &options);
+        match expected_cause {
+            None => assert!(result.is_ok(), "{url}: {result:?}"),
+            Some(cause) => {
+                let error = result.expect_err("scheme policy must be enforced");
+                assert_eq!(error.code, MediaFetchErrorCode::FetchFailed);
+                assert_eq!(error.status, None);
+                assert!(error.message.contains(cause), "{url}: {}", error.message);
+            }
+        }
+    }
+}
+
+// This transport is owned by each test. Production admission, reqwest redirects,
+// response reading and AttachmentsService dispatch are never mocked. A fixture
+// deadline/read error is a test failure; stopping drains queued connections and
+// joins the worker before assertions about the complete request log.
+struct LoopbackMediaServer {
+    address: SocketAddr,
+    stop: mpsc::Sender<()>,
+    worker: Option<JoinHandle<Result<Vec<String>, String>>>,
+}
+
+impl LoopbackMediaServer {
+    fn new(make_routes: impl FnOnce(SocketAddr) -> BTreeMap<String, Vec<u8>>) -> Self {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind owned loopback HTTP fixture");
+        let address = listener.local_addr().expect("loopback fixture address");
+        listener.set_nonblocking(true).expect("bound fixture accept wait");
+        let routes = make_routes(address);
+        let (stop, stopping) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(20);
+            let mut requests = Vec::new();
+            loop {
+                if Instant::now() >= deadline {
+                    return Err("owned HTTP fixture exceeded its deadline".into());
+                }
+                match listener.accept() {
+                    Ok((mut stream, _)) => {
+                        if requests.len() >= 64 {
+                            return Err("owned HTTP fixture exceeded its request budget".into());
+                        }
+                        stream.set_nonblocking(false).map_err(|error| error.to_string())?;
+                        stream.set_write_timeout(Some(Duration::from_secs(2)))
+                            .map_err(|error| error.to_string())?;
+                        let path = read_fixture_request(&mut stream)?;
+                        requests.push(path.clone());
+                        let response = routes.get(&path)
+                            .ok_or_else(|| format!("unexpected loopback request: {path}"))?;
+                        stream.write_all(response)
+                            .map_err(|error| format!("respond to {path}: {error}"))?;
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        match stopping.try_recv() {
+                            Ok(()) | Err(mpsc::TryRecvError::Disconnected) => return Ok(requests),
+                            Err(mpsc::TryRecvError::Empty) => thread::sleep(Duration::from_millis(2)),
+                        }
+                    }
+                    Err(error) => return Err(format!("accept loopback request: {error}")),
+                }
+            }
+        });
+        Self { address, stop, worker: Some(worker) }
+    }
+
+    fn options(&self, path: &str) -> FetchMediaOptions {
+        FetchMediaOptions {
+            url: format!("http://{}{path}", self.address),
+            max_bytes: Some(1024),
+            timeout_ms: Some(5_000),
+            hostname_allowlist: Some(vec!["127.0.0.1".into()]),
+            allowed_origins: Some(vec![format!("http://{}", self.address)]),
+            ..Default::default()
+        }
+    }
+
+    fn stop_and_join(&mut self) -> Result<Vec<String>, String> {
+        let _ = self.stop.send(());
+        self.worker.take().expect("owned fixture worker exists")
+            .join().map_err(|_| "owned HTTP fixture worker panicked".to_string())?
+    }
+
+    fn finish(mut self) -> Vec<String> {
+        self.stop_and_join().expect("owned HTTP fixture completed without timeout or I/O failure")
+    }
+}
+
+impl Drop for LoopbackMediaServer {
+    fn drop(&mut self) {
+        if self.worker.is_some() {
+            let result = self.stop_and_join();
+            if !thread::panicking() {
+                result.expect("owned HTTP fixture teardown must succeed");
+            }
+        }
+    }
+}
+
+fn read_fixture_request(stream: &mut TcpStream) -> Result<String, String> {
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let mut request = Vec::new();
+    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+        if request.len() >= 16 * 1024 {
+            return Err("loopback request headers exceeded fixture bound".into());
+        }
+        let remaining = deadline.checked_duration_since(Instant::now())
+            .filter(|duration| !duration.is_zero())
+            .ok_or_else(|| "loopback request header deadline expired".to_string())?;
+        stream.set_read_timeout(Some(remaining)).map_err(|error| error.to_string())?;
+        let mut chunk = [0; 1024];
+        let count = stream.read(&mut chunk)
+            .map_err(|error| format!("read loopback request headers: {error}"))?;
+        if count == 0 {
+            return Err("loopback client closed before completing request headers".into());
+        }
+        request.extend_from_slice(&chunk[..count]);
+    }
+    let header = std::str::from_utf8(&request).map_err(|error| error.to_string())?;
+    let mut fields = header.lines().next().unwrap_or_default().split_whitespace();
+    if fields.next() != Some("GET") {
+        return Err("loopback fixture expected a real GET request".into());
+    }
+    let path = fields.next().ok_or_else(|| "loopback request omitted its target".to_string())?;
+    if fields.next() != Some("HTTP/1.1") || fields.next().is_some() {
+        return Err("unexpected loopback HTTP request line".into());
+    }
+    Ok(path.to_string())
+}
+
+fn fixture_response(body: &[u8], content_type: &str, disposition: Option<&str>) -> Vec<u8> {
+    let mut headers = format!(
+        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: {content_type}\r\nConnection: close\r\n",
+        body.len(),
+    );
+    if let Some(disposition) = disposition {
+        headers.push_str(&format!("Content-Disposition: {disposition}\r\n"));
+    }
+    headers.push_str("\r\n");
+    let mut response = headers.into_bytes();
+    response.extend_from_slice(body);
+    response
+}
+
+fn fixture_chunked_response(body: &[u8]) -> Vec<u8> {
+    let mut response = format!(
+        "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nContent-Type: application/octet-stream\r\nConnection: close\r\n\r\n{:x}\r\n",
+        body.len(),
+    ).into_bytes();
+    response.extend_from_slice(body);
+    response.extend_from_slice(b"\r\n0\r\n\r\n");
+    response
+}
+
+fn fixture_redirect(location: &str) -> Vec<u8> {
+    format!(
+        "HTTP/1.1 302 Found\r\nLocation: {location}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    ).into_bytes()
+}
+
+fn gateway_media_read(service: &AttachmentsService, options: &FetchMediaOptions) -> Result<Value, String> {
+    let args = serde_json::to_value(options).expect("serialize the real media fetch options");
+    service.dispatch_gateway("readRemoteMediaBuffer", &args)
+        .expect("actual media reader RPC dispatch")
+}
+
+#[test]
+fn gateway_media_fetch_trusted_origin_preserves_body_and_byte_bounds() {
+    const BODY: &[u8] = b"MURL-v1 loopback body";
+    const CONTENT_TYPE: &str = "application/x-openclaw-loopback-proof; charset=utf-8";
+    let temp = TempTestDir::new("trusted-loopback-body");
+    let service = AttachmentsService::new(&temp.path, Arc::new(MockAuth), Arc::new(MockBox), None);
+    let server = LoopbackMediaServer::new(|_| BTreeMap::from([
+        ("/body".into(), fixture_response(BODY, CONTENT_TYPE,
+            Some("attachment; filename*=UTF-8''loopback%20proof.dat"))),
+        ("/stream".into(), fixture_chunked_response(BODY)),
+    ]));
+    let mut known_length = server.options("/body");
+    known_length.max_bytes = Some(BODY.len());
+    let result = gateway_media_read(&service, &known_length).expect("trusted loopback body at exact cap");
+    assert_eq!(result["buffer"], serde_json::json!(BODY));
+    assert_eq!(result["content_type"], CONTENT_TYPE);
+    assert_eq!(result["file_name"], "loopback proof.dat");
+
+    let mut untrusted = known_length.clone();
+    untrusted.allowed_origins = None;
+    let error = gateway_media_read(&service, &untrusted)
+        .expect_err("a matching list alone cannot admit the initial private request");
+    assert_eq!(error, format!(
+        "MediaFetchError: Failed to fetch media from {}: Blocked hostname or private/internal/special-use IP address",
+        untrusted.url,
+    ));
+    let mut off_list = known_length.clone();
+    off_list.hostname_allowlist = Some(vec!["files.example.com".into()]);
+    let error = gateway_media_read(&service, &off_list)
+        .expect_err("explicit origin trust cannot bypass the initial restrictive list");
+    assert_eq!(error, format!(
+        "MediaFetchError: Failed to fetch media from {}: Domain policy: Blocked hostname (not in allowlist): 127.0.0.1",
+        off_list.url,
+    ));
+
+    let mut streamed = server.options("/stream");
+    streamed.max_bytes = Some(BODY.len());
+    let result = gateway_media_read(&service, &streamed).expect("chunked loopback body at exact cap");
+    assert_eq!(result["buffer"], serde_json::json!(BODY));
+
+    for (mut options, cause) in [
+        (known_length, format!("content length {} exceeds maxBytes {}", BODY.len(), BODY.len() - 1)),
+        (streamed, format!("payload exceeds maxBytes {}", BODY.len() - 1)),
+    ] {
+        options.max_bytes = Some(BODY.len() - 1);
+        let typed = read_remote_media_buffer(&options).expect_err("actual response exceeds the byte cap");
+        assert_eq!(typed.code, MediaFetchErrorCode::MaxBytes);
+        assert_eq!(typed.status, None);
+        assert!(typed.message.contains(&cause), "{}", typed.message);
+        let error = gateway_media_read(&service, &options).expect_err("gateway retains the byte refusal");
+        assert_eq!(error, typed.to_string());
+    }
+
+    let requests = server.finish();
+    assert_eq!(requests, ["/body", "/stream", "/body", "/body", "/stream", "/stream"]);
+    assert_eq!(fs::read_dir(&temp.path).expect("inspect reader root").count(), 0,
+        "buffer reads must not save or stage media");
+}
+
+#[test]
+fn gateway_media_fetch_checks_relative_and_off_list_redirects() {
+    const BODY: &[u8] = b"redirect reached the owned response";
+    let temp = TempTestDir::new("loopback-redirect-policy");
+    let service = AttachmentsService::new(&temp.path, Arc::new(MockAuth), Arc::new(MockBox), None);
+    let server = LoopbackMediaServer::new(|address| BTreeMap::from([
+        ("/dir/start".into(), fixture_redirect("next")),
+        ("/dir/next".into(), fixture_response(BODY, "text/plain", None)),
+        ("/off-list/control".into(), fixture_response(BODY, "text/plain", None)),
+        ("/off-list/start".into(), fixture_redirect(&format!(
+            "http://localhost:{}/off-list/blocked", address.port(),
+        ))),
+        ("/off-list/blocked".into(), fixture_response(BODY, "text/plain", None)),
+        ("/private/start".into(), fixture_redirect(&format!(
+            "http://localhost:{}/private/blocked", address.port(),
+        ))),
+        ("/private/blocked".into(), fixture_response(BODY, "text/plain", None)),
+        ("/scheme/start".into(), fixture_redirect(&format!(
+            "ftp://127.0.0.1:{}/scheme/blocked", address.port(),
+        ))),
+    ]));
+    let localhost_origin = format!("http://localhost:{}", server.address.port());
+
+    // Prove that the next-hop host has a live route before using its absence
+    // as evidence. Only the generic reader receives explicit private trust.
+    let mut control = server.options("/off-list/control");
+    control.url = format!("{localhost_origin}/off-list/control");
+    control.hostname_allowlist = Some(vec!["localhost".into()]);
+    control.allowed_origins = Some(vec![localhost_origin.clone()]);
+    let result = gateway_media_read(&service, &control).expect("owned localhost control must succeed");
+    assert_eq!(result["buffer"], serde_json::json!(BODY));
+
+    let mut relative = server.options("/dir/start");
+    relative.max_redirects = Some(1);
+    let result = gateway_media_read(&service, &relative).expect("one allowed relative redirect");
+    assert_eq!(result["buffer"], serde_json::json!(BODY));
+
+    let mut off_list = server.options("/off-list/start");
+    off_list.allowed_origins.as_mut().unwrap().push(localhost_origin.clone());
+    let denied_url = format!("{localhost_origin}/off-list/blocked");
+    let expected_message = format!(
+        "Failed to fetch media from {denied_url}: Domain policy: Blocked hostname (not in allowlist): localhost",
+    );
+    let typed = read_remote_media_buffer(&off_list).expect_err("restrictive list applies at the next hop");
+    assert_eq!(typed.code, MediaFetchErrorCode::FetchFailed);
+    assert_eq!(typed.status, None);
+    assert_eq!(typed.message, expected_message, "reqwest must preserve the typed policy cause");
+    let error = gateway_media_read(&service, &off_list).expect_err("gateway refuses an off-list next hop");
+    assert_eq!(error, format!("MediaFetchError: {expected_message}"));
+
+    let mut private_hop = server.options("/private/start");
+    private_hop.hostname_allowlist = Some(vec!["127.0.0.1".into(), "localhost".into()]);
+    let error = gateway_media_read(&service, &private_hop)
+        .expect_err("an allowlisted next hop still needs its own private-origin trust");
+    assert_eq!(error, format!(
+        "MediaFetchError: Failed to fetch media from {localhost_origin}/private/blocked: Blocked hostname or private/internal/special-use IP address",
+    ));
+
+    let invalid_scheme = server.options("/scheme/start");
+    let error = gateway_media_read(&service, &invalid_scheme)
+        .expect_err("redirect admission must reapply the HTTP(S) requirement");
+    assert_eq!(error, format!(
+        "MediaFetchError: Failed to fetch media from ftp://127.0.0.1:{}/scheme/blocked: HTTP or HTTPS required",
+        server.address.port(),
+    ));
+
+    relative.require_https = Some(true);
+    let error = gateway_media_read(&service, &relative)
+        .expect_err("explicit origin trust cannot bypass HTTPS admission");
+    assert_eq!(error, format!("MediaFetchError: Failed to fetch media from {}: HTTPS required", relative.url));
+
+    let requests = server.finish();
+    assert_eq!(requests, [
+        "/off-list/control", "/dir/start", "/dir/next", "/off-list/start", "/off-list/start",
+        "/private/start", "/scheme/start",
+    ], "neither the off-list nor the untrusted private next hop may be requested");
+    assert_eq!(fs::read_dir(&temp.path).expect("inspect reader root").count(), 0);
+}
+
+#[test]
+fn gateway_media_fetch_applies_explicit_and_default_redirect_caps() {
+    const BODY: &[u8] = b"terminal redirect body";
+    let temp = TempTestDir::new("loopback-redirect-caps");
+    let service = AttachmentsService::new(&temp.path, Arc::new(MockAuth), Arc::new(MockBox), None);
+    for (label, cap, hops, omit_cap, succeeds) in [
+        ("zero permits the initial response", Some(0), 0, false, true),
+        ("zero refuses the first follow-up", Some(0), 1, false, false),
+        ("one permits one follow-up", Some(1), 1, false, true),
+        ("one refuses two follow-ups", Some(1), 2, false, false),
+        ("N permits exactly N follow-ups", Some(3), 3, false, true),
+        ("N refuses N plus one", Some(3), 4, false, false),
+        ("omitted default permits five", None, 5, true, true),
+        ("omitted default refuses six", None, 6, true, false),
+        ("null default permits five", None, 5, false, true),
+        ("null default refuses six", None, 6, false, false),
+    ] {
+        let server = LoopbackMediaServer::new(|_| {
+            (0..=hops).map(|index| {
+                let response = if index == hops {
+                    fixture_response(BODY, "text/plain", None)
+                } else {
+                    fixture_redirect(&format!("/hop/{}", index + 1))
+                };
+                (format!("/hop/{index}"), response)
+            }).collect()
+        });
+        let mut options = server.options("/hop/0");
+        options.max_redirects = cap;
+        let mut args = serde_json::to_value(&options).expect("serialize real redirect options");
+        if omit_cap {
+            args.as_object_mut().unwrap().remove("max_redirects");
+        }
+        let result = service.dispatch_gateway("readRemoteMediaBuffer", &args)
+            .expect("actual media reader RPC dispatch");
+        let effective_cap = cap.unwrap_or(5);
+        if succeeds {
+            let value = result.unwrap_or_else(|error| panic!("{label}: {error}"));
+            assert_eq!(value["buffer"], serde_json::json!(BODY), "{label}");
+        } else {
+            let error = result.expect_err(label);
+            assert_eq!(error, format!(
+                "MediaFetchError: Failed to fetch media from {}: Too many redirects (limit: {effective_cap})",
+                options.url,
+            ), "{label}: a stopped redirect or unrelated network error is not a policy refusal");
+        }
+        let requested_hops = if succeeds { hops } else { effective_cap };
+        let expected: Vec<String> = (0..=requested_hops).map(|index| format!("/hop/{index}")).collect();
+        assert_eq!(server.finish(), expected, "{label}: exact initial and follow-up request count");
+        assert_eq!(fs::read_dir(&temp.path).expect("inspect reader root").count(), 0, "{label}");
     }
 }

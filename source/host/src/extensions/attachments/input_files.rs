@@ -722,6 +722,17 @@ fn estimate_base64_decoded_bytes(data: &str) -> usize {
     decoded.saturating_sub(padding)
 }
 
+fn input_url_fetch_options(url: &str, limits: &InputSourceLimits) -> FetchMediaOptions {
+    FetchMediaOptions {
+        url: url.to_string(),
+        max_bytes: Some(limits.max_bytes),
+        timeout_ms: Some(limits.timeout_ms),
+        hostname_allowlist: limits.url_allowlist.clone(),
+        max_redirects: Some(limits.max_redirects),
+        ..Default::default()
+    }
+}
+
 pub fn read_input_source(
     source: &InputFileSource,
     limits: &InputSourceLimits,
@@ -742,20 +753,7 @@ pub fn read_input_source(
             if !limits.allow_url {
                 return Err(format!("{kind} URL sources are disabled by config"));
             }
-            let fetch_opts = FetchMediaOptions {
-                url: url.clone(),
-                file_path_hint: None,
-                max_bytes: Some(limits.max_bytes),
-                fallback_content_type: None,
-                require_https: None,
-                timeout_ms: Some(limits.timeout_ms),
-                response_header_timeout_ms: None,
-                read_idle_timeout_ms: None,
-                allowed_origins: None,
-                allowed_hostnames: limits.url_allowlist.clone(),
-                allow_rfc2544_benchmark_range: None,
-                trust_explicit_proxy_dns: None,
-            };
+            let fetch_opts = input_url_fetch_options(url, limits);
             let fetched = read_remote_media_buffer(&fetch_opts)
                 .map_err(|e| e.to_string())?;
 
@@ -1006,6 +1004,38 @@ pub fn extract_file_content_from_source(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn input_url_policy_projection_preserves_zero_caps_without_private_trust() {
+        let default_cap = resolve_input_file_limits(None).max_redirects;
+        assert_eq!(default_cap, 3);
+        for max_redirects in [0, default_cap, 7] {
+            let limits = InputSourceLimits {
+                allow_url: true,
+                url_allowlist: Some(vec!["127.0.0.1".to_string()]),
+                allowed_mimes: HashSet::from(["text/plain".to_string()]),
+                max_bytes: 64,
+                max_redirects,
+                timeout_ms: 250,
+            };
+            let options = input_url_fetch_options("http://127.0.0.1/input.txt", &limits);
+            assert_eq!(options.max_redirects, Some(max_redirects));
+            let matched_private = crate::extensions::attachments::media_fetch::check_media_fetch_url(
+                &options.url, &options,
+            ).expect_err("a matching input list must not grant private-host trust");
+            assert!(matched_private.message.contains("Blocked hostname or private/internal/special-use IP address"));
+            let off_list = crate::extensions::attachments::media_fetch::check_media_fetch_url(
+                "https://8.8.8.8/input.txt", &options,
+            ).expect_err("the projected list must restrict an otherwise admitted public host");
+            assert!(off_list.message.contains("not in allowlist"));
+
+            let unrestricted = InputSourceLimits { url_allowlist: None, ..limits };
+            let options = input_url_fetch_options("https://8.8.8.8/input.txt", &unrestricted);
+            crate::extensions::attachments::media_fetch::check_media_fetch_url(&options.url, &options)
+                .expect("omitted input list retains public-host admission");
+            assert_eq!(options.max_redirects, Some(max_redirects));
+        }
+    }
 
     #[test]
     fn test_truncate_utf16_safe() {

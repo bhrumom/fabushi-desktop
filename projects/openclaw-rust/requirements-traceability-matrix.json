@@ -1091,7 +1091,8 @@
         "projects/openclaw-rust/docs/specs/link-preview-mapped-ip-admission.md",
         "source/host/tests/safe_link_preview_fetch_contract.rs",
         "source/host/tests/attachments_service_contract.rs",
-        "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md"
+        "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
+        "projects/openclaw-rust/docs/specs/media-input-url-admission.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2148,7 +2149,8 @@
         "projects/openclaw-rust/docs/specs/link-preview-mapped-ip-admission.md",
         "source/host/tests/safe_link_preview_fetch_contract.rs",
         "source/host/tests/attachments_service_contract.rs",
-        "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md"
+        "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
+        "projects/openclaw-rust/docs/specs/media-input-url-admission.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

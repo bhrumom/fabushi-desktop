@@ -10,9 +10,11 @@
 //! - Video byte classification and image allowlist rejection (AVI -> video/x-msvideo).
 //! - HEIC / HEIF image normalization to JPEG.
 //! - Gateway dispatch integration for input file and staged input methods.
+//! - Restrictive URL hostname admission without granting private-host access.
 
 use std::collections::HashSet;
 use std::fs;
+use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -780,4 +782,95 @@ fn gateway_valid_padded_file_and_image_sources_preserve_byte_caps() {
         .expect("actual image RPC dispatch").expect_err("valid padded image exceeds cap");
     assert_eq!(error, format!("Image too large: {} bytes (limit: {cap} bytes)", png_bytes.len()));
     assert_extraction_left_root_empty(&tmp.path);
+}
+
+fn input_url_admission_listener() -> (TcpListener, String) {
+    // Keep ownership of a real endpoint for the duration of the synchronous
+    // RPC. No worker or idle wait is needed: a refused initial request must
+    // leave no connection in the listener's queue.
+    let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind owned input admission endpoint");
+    listener.set_nonblocking(true).expect("input admission observation must not wait");
+    let url = format!("http://{}/input-source", listener.local_addr().unwrap());
+    (listener, url)
+}
+
+fn assert_no_input_url_connection(listener: &TcpListener) {
+    match listener.accept() {
+        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {}
+        Ok(_) => panic!("refused input source attempted a connection to the owned endpoint"),
+        Err(error) => panic!("cannot observe the owned input endpoint: {error}"),
+    }
+}
+
+fn gateway_url_source_limits(service: &AttachmentsService, method: &str, allowlist: Value) -> Value {
+    let mut limits = if method == "extractFileContentFromSource" {
+        gateway_file_limits(service, serde_json::json!({"allowUrl": true, "timeoutMs": 1000}))
+    } else {
+        assert_eq!(method, "extractImageContentFromSource");
+        serde_json::json!({
+            "allowUrl": true, "allowedMimes": ["image/png"],
+            "maxBytes": 1024, "maxRedirects": 0, "timeoutMs": 1000,
+        })
+    };
+    // urlAllowlist belongs to the complete resolved policy, not the partial
+    // InputFileLimitsConfig accepted by resolveInputFileLimits.
+    limits["urlAllowlist"] = allowlist;
+    limits
+}
+
+#[test]
+fn gateway_input_url_allowlist_refuses_other_hosts_without_side_effects() {
+    let temp = TempTestDir::new("url-off-list-admission");
+    let service = create_input_admission_service(temp.path.clone());
+    let (listener, url) = input_url_admission_listener();
+
+    for method in ["extractFileContentFromSource", "extractImageContentFromSource"] {
+        for allowlist in [
+            serde_json::json!(["files.example.com"]),
+            serde_json::json!([" *.EXAMPLE.COM... ", "", "*", "*.example.com"]),
+        ] {
+            let limits = gateway_url_source_limits(&service, method, allowlist);
+            let error = service.dispatch_gateway(method, &serde_json::json!({
+                "source": {"type": "url", "url": url, "filename": "policy.txt"},
+                "limits": limits,
+            })).expect("actual file/image source RPC dispatch")
+                .expect_err("off-list source must be rejected before fetching");
+            // The exact domain-policy cause proves that an ignored allowlist,
+            // a later private-host refusal, or a network timeout cannot pass.
+            assert_eq!(error, format!(
+                "MediaFetchError: Failed to fetch media from {url}: Domain policy: Blocked hostname (not in allowlist): 127.0.0.1",
+            ), "{method}");
+            assert_no_input_url_connection(&listener);
+            assert_extraction_left_root_empty(&temp.path);
+        }
+    }
+}
+
+#[test]
+fn gateway_input_url_allowlist_never_grants_private_access() {
+    let temp = TempTestDir::new("url-private-trust-separation");
+    let service = create_input_admission_service(temp.path.clone());
+    let (listener, url) = input_url_admission_listener();
+
+    for method in ["extractFileContentFromSource", "extractImageContentFromSource"] {
+        for allowlist in [
+            serde_json::json!(["127.0.0.1"]),
+            serde_json::json!([" 127.0.0.1... ", "127.0.0.1", "", "*"]),
+            serde_json::json!([]),
+            serde_json::json!(["", " ", "*", "*."]),
+            Value::Null,
+        ] {
+            let limits = gateway_url_source_limits(&service, method, allowlist);
+            let error = service.dispatch_gateway(method, &serde_json::json!({
+                "source": {"type": "url", "url": url, "filename": "policy.txt"},
+                "limits": limits,
+            })).expect("actual file/image source RPC dispatch")
+                .expect_err("matching or unrestricted hostname policy must not grant private trust");
+            assert_eq!(error, format!(
+                "MediaFetchError: Failed to fetch media from {url}: Blocked hostname or private/internal/special-use IP address",
+            ), "{method}: a timeout or unrelated failure is not private-host refusal");
+            assert_no_input_url_connection(&listener);
+            assert_extraction_left_root_empty(&temp.path);
+        }
+    }
 }

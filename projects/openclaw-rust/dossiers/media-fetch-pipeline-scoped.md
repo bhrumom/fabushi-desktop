@@ -123,3 +123,35 @@ It records fixed U `1440bb1771372334bea23d7642bb52deb7db1845`, exact reviewed
 inputs and real service contract oracles. Current-H Actions remain required;
 no whole-unit verification, acceptance, source closure or global flag changes
 follow from this batch.
+
+## 7. Restrictive input URL admission — MURL-v1
+
+At target `6e336ff101f1545455cfb250adca70952c59e73f`, the actual input reader
+passes `urlAllowlist` into the private-host exception field and discards
+`maxRedirects`. The reader checks only the initial URL before reqwest's fixed
+five-redirect policy. The bounded correction is specified in
+[`media-input-url-admission.md`](../docs/specs/media-input-url-admission.md):
+separate restrictive host patterns from private trust, check the initial and
+every followed URL, preserve explicit zero/custom caps, and recover the typed
+policy cause at the real attachment RPC boundary. All logic stays in the
+existing Rust input/fetch owners; no transport or permission owner is added.
+
+That spec records exact fixed-U implementation, normalization and redirect
+input identities, plus the locked reqwest/tower-http/url API, configuration
+and license review. This is bounded source/consumer review, not a claim that
+every file or dependency archive was read or verified. Historical read facts
+and OCRM review/verification/acceptance states are not upgraded.
+
+Oracles use the actual service and policy helper, plus owned HTTP listeners
+with the generic reader's existing explicit origin trust. Request paths/counts
+distinguish allowed hops from prevented next-hop requests. Input extraction
+never receives that trust. The producer-options control covers redirect-cap
+forwarding separately from real generic HTTP execution. All executable
+evidence must come from exact-H Actions.
+
+Still open: complete private/special-use IP classification, DNS pinning,
+proxy policy, caller cancellation/revocation, full redirect-loop/malformed
+Location behavior, deadlines, read scope, generic save/media-store downloads,
+accepted-turn composition and real channel/provider acceptance. In particular,
+the old `"::1"` comparison does not handle URL's bracketed IPv6 representation;
+MURL does not claim to repair that wider classifier.

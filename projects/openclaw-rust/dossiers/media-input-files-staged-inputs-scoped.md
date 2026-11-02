@@ -42,7 +42,7 @@ The audited sources were mapped to 2 discrete Rust runtime responsibilities regi
    - **Behavior**: Input file and image extraction, MIME classification, WHATWG charset normalization, surrogate-safe UTF-16 truncation, and SSRF guard pipeline. Validates buffer size and image dimensions, detects and verifies container formats, decodes multi-byte charsets with streaming chunk state preservation, truncates safely at UTF-16 surrogate boundaries, converts HEIC/HEIF images to JPEG, and enforces network SSRF policies on remote input sources.
    - **Rust Owner**: `source/host/src/extensions/attachments/input_files.rs`.
    - **Production Call Chain**: `AttachmentsService::dispatch_gateway("extractFileContent"|"extractImageContent")` → Owner `input_files`; `input_files::read_input_source` also calls the live `media_fetch` owner for URL sources.
-   - **Wiring boundary**: Gateway extraction and URL-source paths are live; complete user-turn multimodal prompt composition is still pending.
+   - **Wiring boundary (rechecked during MURL-v1)**: The inner service extraction and URL-source calls exist, but the outer Host HTTP registry omits the extraction methods. Service dispatch does not prove shipping HTTP/desktop reachability; registration/authorization and complete user-turn multimodal prompt composition remain pending.
    - **Oracle**: `OCRM-INPUT-FILES-O01`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-INPUT-FILES-CHAT-WIRING-001"]`.
 
@@ -161,3 +161,17 @@ hostname-allowlist/redirect/cancellation policy; and broader base64 dialect
 differences. Existing staged-input tests and dummy HEIC success are not real
 format or live-channel compatibility acceptance. These observations retain
 the existing chat-wiring blocker and do not reduce the full media obligation.
+
+## 6. Fixed-U URL policy handoff — MURL-v1
+
+The next bounded contract is
+[`media-input-url-admission.md`](../docs/specs/media-input-url-admission.md).
+It corrects the actual shared file/image reader's restrictive-hostname versus
+private-trust handoff and forwards the resolved redirect cap, including zero,
+to the existing Rust media-fetch owner. The spec records fixed-U hostname,
+redirect and dependency API review; earlier read facts remain historical.
+Actual gateway refusals, a typed producer-options control and real generic
+HTTP redirect/request-count controls have separate evidence scopes. Successful
+private-network input extraction is not simulated or granted for testing.
+The full URL/DNS/proxy/cancellation, format and accepted-turn obligations
+remain open; no responsibility or global completion state is promoted.
