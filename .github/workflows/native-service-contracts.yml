@@ -1,7 +1,7 @@
 name: Native service contracts
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8]
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/tests/session_gateway_contract.rs'
@@ -157,7 +157,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 48 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 50 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
@@ -193,7 +193,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib shipping_human_settlement_credential_ -- --nocapture 2>&1 | tee artifacts/native-message/settlement-credential.log
-          grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
+          grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
       - name: Authenticated forward recipient gateway HTTP contract
         shell: bash
         run: |

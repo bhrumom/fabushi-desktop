@@ -5,6 +5,34 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
+## Current round5 reaction recovery qualification — NMR-R5-01/02
+
+Existing Session/Transcript remains the only Human message owner. This batch
+atomically settles an acknowledged reaction and its exact durable intent,
+checks the full Native credential fingerprint after SQLite write-lock
+acquisition, and publishes only changed committed rows. It also shares the
+existing persisted-journal directory scan and propagates non-NotFound errors.
+Current known-message refresh/history coverage, reaction serialization,
+current94 attachment snapshots/journal12, concurrent forward UI and six source
+review records, and NMR-49 pending-parent reply work are preserved.
+
+Two real HTTP/SQLite/restart cases, one private SQLite wait/credential case and
+stronger ordinary-sync permission assertions are authored. Required gates are
+Human50, journal12 and private credential4; new containing-H execution is
+pending at preparation. Exact68/run41402071662 and exact59/run41508537631 are
+actually passed prerequisites, not evidence for unrun changes. Receipt:
+projects/telegram-desktop-rust/evidence/round5-recovery-resume-20261102.json.
+
+No user data was deleted and no local executable validation was run. Full
+fixed-U source/legal and product closure, deployed authenticated service,
+original-byte legacy recovery, power-loss and multi-AppHost qualification,
+signed platforms, full UI/a11y/security/performance/soak/upgrade/Bot and
+independent ACCEPT remain open. Backend PR137 remains read-only.
+
+Concurrent936 parent/child reply repair and dispatching projection remain intact, including all three added Human cases and Transcript18. This batch adds only its two Human reaction cases.
+
+Qualification branch: checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8. Parent exact76a84e8 retains current service25MiB resource bounds/resource3 and real CLI/gateway process4. Shared checkpoint integration is pending; existing workflows qualify this frozen branch without disabling any gate.
+
 ## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
 
 Observed 2026-11-02. Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.

@@ -1,0 +1,1153 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 5,
+  "scope": "NMR-R5-01/02 atomic reaction settlement and persisted journal discovery in existing Session/Transcript owner",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "base": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+  "live_main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "resumption": "Original uncommitted history design was preserved outside this checkout and was not published over later production work. Preserve message base59 and source-only descendant593; apply only the confirmed remaining recovery defects.",
+  "changes": {
+    "reaction": "Existing SandAgentDb BEGIN IMMEDIATE compares target row and observed durable intent, atomically updates/clears and publishes only changed committed rows; rollback retains both and equal-row legacy replay avoids a duplicate event. Full existing Native credential fingerprint is captured before HTTP and rechecked after SQLite write-lock acquisition and before first write.",
+    "forward": "Current94 already scans membership-hidden persisted sources; this batch factors one shared existing-directory helper and propagates non-NotFound IO errors, retaining account/issuer and authorization/journal owner. The existing permission case is strengthened before explicit retry.",
+    "authored_test_cases": [
+      "shipping_human_reaction_atomic_cleanup_failure_and_legacy_half_settlement_recover_after_restart",
+      "shipping_human_reaction_stale_acknowledgement_preserves_replaced_intent_after_restart"
+    ],
+    "strengthened_test_case": "shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope",
+    "required_Human_count": 50,
+    "blobs": {
+      "source/host/src/extensions/session/production.rs": "436f5170d6aa47318390ed8666f394d0cc81eb65",
+      "source/host/src/extensions/session/agent_db.rs": "64e70d0781ea1ffbce48bc68fd54c065bee17236",
+      "source/host/src/extensions/session/native_messaging.rs": "076908cd55c104a3251c6e0613dfeec66094922b",
+      "source/host/tests/session_gateway_contract.rs": "26b8103c46044158507e232f248455720e8ec158",
+      "docs/specs/fbcp-native-message-reconciliation.md": "54dd31f6c27d7c7c6f33b30d9739947c5e318c96",
+      ".github/workflows/native-service-contracts.yml": "69910124b2e581d13cb4c58bf239b0bdb6cc2fda",
+      ".github/workflows/tdrp-source-review-contract.yml": "03acb38e204fd0d27bfeec73637838910916ce04"
+    },
+    "execution_at_freeze": "not-run; containing exact-H Actions required",
+    "local_executable_validation": "not-run",
+    "required_journal_count": 12,
+    "completion_regression": "Static06 defect was independently repaired locally, then concurrent94 published its own equivalent completed-regression guard and strict metadata checks. Preserve the complete current94 journal owner and all12 tests; no older journal file is replayed.",
+    "spec_ids": [
+      "NMR-R5-01",
+      "NMR-R5-02",
+      "NMR-AC-R5-01",
+      "NMR-AC-R5-02"
+    ],
+    "preserved_concurrent_blobs": {
+      "source/host/src/extensions/session/forward_batch_journal.rs": "bbc1b4209a444caf5995d5a3afa6af1535286a42"
+    },
+    "required_settlement_credential_count": 4,
+    "private_authored_test_case": "shipping_human_settlement_credential_reaction_sqlite_write_wait_fences_rotation_and_revocation",
+    "native_boundary": "Current94 native same-buffer attachment upload is unchanged; only the complete credential fingerprint assertion helper is added.",
+    "preserved_cached_source_scope": "Current c438/ff6 cached/cold Human source conversation kind/id checks and valid-JSON corrupted-journal matrix remain unchanged; Human46/journal12 counts preserved.",
+    "preserved_concurrent_diagnostics": "b37 preserves lock-error-only metadata diagnostics and native CLI/installer requirements; all existing versions/checksums and acceptance --locked commands are unchanged.",
+    "preserved_reply_batch": "Current936 parent/child atomic identity repair, current persisted reply replay, historical same-author/same-conversation alias checks and dispatching-as-pending projection are preserved. Human47 plus this batch2 is49; renderer18 and Chromium16 remain required.",
+    "required_resource_upload_count": 3,
+    "preserved_latest_resource_cli": "Current76a service25MiB upload/snapshot limits, bounded regular readers/buffer checks, resource3 and same-nonce recovery test remain intact; current CLI real production builds/process4 and promotion6 remain required."
+  },
+  "original_prerequisite": {
+    "run_id": 41402071662,
+    "head_sha": "68d4f07688741e8f54b35f3746a087f7fdd12108",
+    "run_attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "tests": {
+      "human": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 14
+      },
+      "agent_nonce": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 0
+      },
+      "dns_special_config": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 60
+      },
+      "future_salts_parser": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 64
+      },
+      "protocol": {
+        "passed": 122,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 0
+      },
+      "tcp": {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 0,
+        "real_service_test": "live_session_exchanges_encrypted_ping_and_service_rpc"
+      },
+      "proxy": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 18
+      },
+      "native_credential": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 25
+      },
+      "apphost": {
+        "command": "cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml",
+        "success": true
+      }
+    },
+    "artifacts": [
+      {
+        "id": 13122201285,
+        "name": "native-message-shipping-compile-68d4f07688741e8f54b35f3746a087f7fdd12108",
+        "digest": "sha256:90ad15f97a4f6f1906b05cb4f7f0f9351ee9f6dbe93888c03e132809baf3e162",
+        "size_in_bytes": 21856,
+        "expired": false,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13122201285",
+        "head_sha": "68d4f07688741e8f54b35f3746a087f7fdd12108"
+      },
+      {
+        "id": 13122181591,
+        "name": "native-message-reconciliation-68d4f07688741e8f54b35f3746a087f7fdd12108",
+        "digest": "sha256:efb9a58757f0f56291f93a0d11c0bf062e5e718dada4028ddd92aa389b3a647b",
+        "size_in_bytes": 10028,
+        "expired": false,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13122181591",
+        "head_sha": "68d4f07688741e8f54b35f3746a087f7fdd12108"
+      }
+    ],
+    "raw_decoded_log_files": [
+      {
+        "job_id": 125135845372,
+        "path": "ci-evidence/run-41402071662-job-125135845372.log",
+        "sha256": "3c0795faf161c5ece2a6224cd6a7f6cb67fa1ec86df47a56caef7989d8b4c83f"
+      },
+      {
+        "job_id": 125135845319,
+        "path": "ci-evidence/run-41402071662-job-125135845319.log",
+        "sha256": "04338317ccbbbfa1d0fcdac4376030c23cdeeed5e30c44ca8d47ed50edd0054a"
+      }
+    ],
+    "real_service_scope": "Source test at exact H calls DcDirectory::telegram_defaults(false, 2), establish_auth_key, encrypted ping, and get_future_salts, asserting future_salts constructor 0xae500895. --include-ignored executes it; no early skip exists in body. This is Telegram DC network compatibility evidence, not deployed Fabushi messaging or authenticated user acceptance."
+  },
+  "current_message_prerequisite": {
+    "run_id": 41508537631,
+    "head_sha": "59f5fa24827812f78336c464995d161f403dedfb",
+    "run_attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 125494010641,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125494011030,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125494011040,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125494011097,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125494011118,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125494013875,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13173116303,
+        "name": "native-message-reconciliation-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22"
+      },
+      {
+        "id": 13173112803,
+        "name": "native-message-shipping-compile-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f"
+      },
+      {
+        "id": 13172586742,
+        "name": "native-message-electron-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:e0e79f55e371aea4c35b813fb6f828a1c2d4017e8664ed05d9b7baa4207881b1"
+      },
+      {
+        "id": 13172281518,
+        "name": "native-message-ui-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:0d4273fe211f1cac1b64cc55b4c991274d6b9f586bf228685ac7651113ae0998"
+      },
+      {
+        "id": 13171043513,
+        "name": "windows-update-publisher-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:fff7082f8e3fdcc907bf379d978b4b2f17dbd0511079d57797b86e9203024f25"
+      }
+    ],
+    "full_logs": [
+      {
+        "job_id": 125494010641,
+        "bytes": 69086,
+        "sha256": "472c3b7d59e0b9202c366e88f9189d88af4ea21009d98b27eb874cecdec1c78b",
+        "lines": 789
+      },
+      {
+        "job_id": 125494011030,
+        "bytes": 82405,
+        "sha256": "50678cdd57b33e6ba796311b4146262c54e75cdeea3e33aad69f35c34491d6e2",
+        "lines": 1067
+      },
+      {
+        "job_id": 125494011040,
+        "bytes": 272150,
+        "sha256": "2738f30344ec997b7abf6e7ab00e150e5fab774d040651e52eaa0da0d632fd54",
+        "lines": 3019
+      },
+      {
+        "job_id": 125494011097,
+        "bytes": 931369,
+        "sha256": "421d8b8bd330b4da20dad67d03445a937e065cbe6d3fd535c45d38d61886d624",
+        "lines": 8418
+      },
+      {
+        "job_id": 125494011118,
+        "bytes": 35809,
+        "sha256": "07001aaf04170f84499e6fc0740cf4abbfe34d11546a65b2179564538dac457a",
+        "lines": 406
+      }
+    ],
+    "actual_counts": "Human38/sharebox1/journalCAS3/Agent4/settlementcredential3/forwardHTTP1; actual AppHost build; native12/7 FeatureHost7 Social9/6 Host6/FFI7 CLI3 gateway5/lib11 DNS6 future_salts2 protocol122 TCP9 including live proxy4 credential1 actual packagecopy4; UI16/5/12; Electron10/8/3/16/28/18; Windows actualAPI11. All required suites zero failed/ignored; intentional package invalid-hash negative is not a gate failure.",
+    "limits": [
+      "Loopback/native API harnesses do not prove deployed Fabushi service or complete signed-package acceptance.",
+      "No independent ACCEPT or complete source/legal/product migration claimed.",
+      "Native-auth-and-journal is conditionally skipped on message-batch push, not an executed gate."
+    ]
+  },
+  "source_contract_prerequisite": {
+    "head_sha": "43d70a62d6fd47785f15b85a70e9e3350a17cef4",
+    "run_id": 41511543050,
+    "run_attempt": 1,
+    "conclusion": "success",
+    "Node": 150,
+    "schema": 37,
+    "canonical_ledger_schema_errors": 0,
+    "candidate": "unaccepted; expected --require-accepted rejection; not acceptance"
+  },
+  "static_review": "Independent source review of atomic transaction, changed-row events, exact intent/row CAS, credential admission after SQLite lock and complete preservation of concurrent attachments/journal/UI/source work. No local executable validation.",
+  "source_accounting": "Sole fixed-U inventory/ledger/RTM retained:6895 root/16381 recursive identities,184 responsibilities. Current b25/d3 source_reviews contains6 records:2 complete and4 pending; no new source review or acceptance promotion in this batch. Unknown/unread remains null/unestablished, not zero. FMEP schema/checker is present; full source/legal closure remains open.",
+  "acceptance": false,
+  "remaining": [
+    "Containing-H Human50/journal12/private4 and all affected current message/shipping/UI/Electron/Windows, canonical ledger/source and applicable staged-runtime source gates",
+    "CAS integration of the qualified R5 branch into the current shared checkpoint, followed by necessary exact combined-H validation",
+    "Authenticated active native service and backend afterId=0 multi-page acceptance; backend PR137 remains read-only",
+    "Remote forwarding provenance/policy, original-byte legacy recovery, power-loss/filesystem qualification and simultaneous multi-AppHost cross-source uniqueness",
+    "Full source/generated/external/LFS/legal closure, all applicable product duties, signed platforms, visual/a11y, security/performance/soak, upgrade/rollback, full Bot regression and independent ACCEPT",
+    "Fixed-U forward_options_box.cpp captionsCount==0 has no caption control and emits dropCaptions=false; current ForwardMessageDialog shows Hide media caption for the pure-text/no-attachment fixture and can consequently hide sender origin. Explicit product disposition and plain-text versus captioned-media behavioral closure remain pending; source full-read records are not feature acceptance."
+  ],
+  "preserved_concurrent_source_commits": [
+    "59308cf3cee48213278c52e4ad60bfd9250fb545",
+    "43d70a62d6fd47785f15b85a70e9e3350a17cef4",
+    "4f1070d73958a1275160c2590d31fbe6507008ee",
+    "77d8a251eb453eb0c7260717f576c20fecc6fd8a",
+    "06fb24c4963f35d1450c122e7222ee39e21b4192",
+    "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+    "b25c2003a8e76779f2535fc3dfa90e4fe5bde149",
+    "d3d28ac4dba2d288d8c7146265e498f042f82ab3",
+    "c438df8390f60c044afbd37f511d35bbc0fdb58e",
+    "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+    "3c9995a97c59d89824b2f6e0e49e72cef4825439",
+    "1b0116fe9609f54f6a0581d26791d5e98bbe43b9",
+    "b37eeea1a905773c382a416d9e0e8b91a34d7618",
+    "936115b0aa578c340c74dd6aa7c71c362572bd72",
+    "2e436318f4d06bccb3bee462beee7e96e554aa3f",
+    "1b0e674b3e39292ae715a3eb50435d83e2cb8577",
+    "76a84e8a9ff8867a076edd0c89f913a58cdb2806"
+  ],
+  "publication_transport": "Large ledger GitHub blob call did not return; tree API confirmed object absent, and CLI Git transfer failed before authentication/ref creation. A narrowly scoped temporary Actions job applies the reviewed one-file diff, checks base and final blob SHA plus byte size, and uploads only that frozen ledger blob. No migration ref is modified by the job; root uses GitHub update_ref force=false/expected_sha and remote reread. The temporary ref is retained rather than deleted through a non-atomic GET/DELETE sequence.",
+  "concurrent_base_observation": {
+    "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+    "run_id": 41512635210,
+    "run_attempt": 1,
+    "reconciliation": "queued, steps null; no journal5 execution evidence",
+    "shipping": "queued, steps null",
+    "UI_Electron_Windows": "terminal success; complete logs read",
+    "qualification": "New reaction, completion-guard and filesystem error changes still require their own exact-H execution.",
+    "scope": "Historical observation before completed current94 qualification; retained for provenance."
+  },
+  "publication_transport_history": [
+    {
+      "head_sha": "6fb3c727530046be94d574ecddf343b5564f5f86",
+      "run_id": 41513529073,
+      "run_attempt": 1,
+      "job_id": 125511119931,
+      "conclusion": "success",
+      "blob": "b8877c68a007b369c66104d62ee72a3b8eba5bcd",
+      "bytes": 3539330,
+      "artifact_id": 13173392776,
+      "artifact_digest": "sha256:4c7fc431509d30f1a29344548c7a2c277d6c0c37b3199776c146e04c4af6d539",
+      "artifact_downloaded_and_read": true,
+      "migration_ref_modified": false,
+      "scope": "First integrated ledger transfer; superseded content after preserving current94 requires another exact frozen blob transfer."
+    },
+    {
+      "head_sha": "3b65f04b4a1736c86b4c3beea11361507284d92f",
+      "run_id": 41514537512,
+      "job_id": 125514577762,
+      "run_attempt": 1,
+      "conclusion": "success",
+      "blob": "b7f5215d20068e83dd8d8d4dd2aba6d627ddee0d",
+      "bytes": 3541710,
+      "artifact_id": 13174497727,
+      "artifact_digest": "sha256:e7d9abe921bcdf5ab50c7521676bc48e6f9472ffcbaeaff32a58c158ab015696",
+      "artifact_downloaded_and_read": true,
+      "migration_ref_modified": false,
+      "scope": "Superseded object transport, not product validation."
+    },
+    {
+      "head_sha": "97ca48439efd090c9f13485138741505afd283db",
+      "run_id": 41517125108,
+      "job_id": 125523407075,
+      "conclusion": "success",
+      "blob": "fa81a573e68b64a1a191886b3f0837c2ef32d917",
+      "bytes": 3551218,
+      "artifact_id": 13174694656,
+      "artifact_digest": "sha256:e18d8ab6bbe6cee9486be22a18cd0b2773a7e6610a1f857579ef72867f5d6f80",
+      "migration_ref_modified": false,
+      "scope": "Superseded after concurrent936 appended its own NMR row evidence; final merged ledger requires a new exact object."
+    }
+  ],
+  "additional_qualified_prerequisite": {
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+    "run_id": 41513767498,
+    "run_attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498",
+    "jobs": [
+      {
+        "id": 125511938976,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 41513767498,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact Electron carrier source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Native carrier command, event and disposal contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Native auth lifecycle and retained legacy secret behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Native package resources exclude retained FFI libraries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Explicit approved update source and recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Windows publisher authorization and candidate recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Final macOS update metadata and blockmap behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Reconcile immutable historical installer metadata without changing package bytes",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Compile actual Electron main, preload and carrier",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Preserve exact Electron evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 27
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 28
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 29
+          }
+        ]
+      },
+      {
+        "id": 125511939226,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 41513767498,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact Windows publisher source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Actual Windows signature and Unicode publisher contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Preserve native API evidence only",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15
+          }
+        ]
+      },
+      {
+        "id": 125511939353,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 41513767498,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact renderer source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Transcript pagination and refresh behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Compile actual production renderer",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Forward settlement account and roster boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Install locked Chromium for actual forward dialog",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Actual forward dialog account and lifetime behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Preserve exact renderer evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 22
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 23
+          }
+        ]
+      },
+      {
+        "id": 125511939405,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 41513767498,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact shipping source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Build actual desktop AppHost entry and inspect its legacy boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Native startup, desktop messaging boundary and account restart",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Retained messaging stores and Agent automation boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Retained Social recovery and desktop HTTP ownership",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Direct Host and C ABI reject legacy handoff before storage",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Native CLI/gateway direct Host and approval boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Verify generic Host has no direct Telegram adapter dependency",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Verify DNS and special-config response normalization",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Verify bare future-salts parser against fixed-U wire",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14
+          },
+          {
+            "name": "Verify protocol and TCP compatibility behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15
+          },
+          {
+            "name": "Verify proxy rejection and Native credential boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17
+          },
+          {
+            "name": "Install locked resource-copy implementation",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18
+          },
+          {
+            "name": "Copy the actual AppHost into its package resource slot",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          },
+          {
+            "name": "Diagnose locked AppHost dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 20
+          },
+          {
+            "name": "Preserve shipping compile evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 40
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 41
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 42
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 43
+          }
+        ]
+      },
+      {
+        "id": 125511939428,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 41513767498,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Durable forwarding sharebox owner contract",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Durable forwarding journal and stale-write CAS contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Authenticated forward recipient gateway HTTP contract",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 12
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 25
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 26
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 27
+          }
+        ]
+      },
+      {
+        "id": 125511942030,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 41513767498,
+        "logs_url": null,
+        "steps": null
+      }
+    ],
+    "actual_gates": {
+      "reconciliation": {
+        "human": 44,
+        "sharebox": 1,
+        "forward_journal": 12,
+        "agent_nonce": 4,
+        "settlement_credential": 3,
+        "authenticated_forward_http": 1,
+        "all_failed": 0,
+        "all_ignored": 0
+      },
+      "shipping": {
+        "actual_apphost_build": true,
+        "normal_build_dependency_and_symbol_boundaries": true,
+        "native_composition": 12,
+        "native_startup": 7,
+        "proxy_preference_matrix": {
+          "orders": 16,
+          "removals": 48,
+          "repeated_no_ops": 48,
+          "complete_permutations": 6,
+          "complete_permutation_removals": 18
+        },
+        "featurehost_messaging": 7,
+        "social_recovery": 9,
+        "desktop_http_owner": 6,
+        "host_legacy_refusal": 6,
+        "ffi_legacy_refusal": 7,
+        "cli": 3,
+        "gateway_executable": 5,
+        "gateway_library": 11,
+        "dns_special_config": 6,
+        "future_salts": 2,
+        "protocol": 122,
+        "tcp": 9,
+        "tcp_ignored": 0,
+        "real_tcp_case": "live_session_exchanges_encrypted_ping_and_service_rpc ... ok",
+        "proxy": 4,
+        "native_credential": 1,
+        "actual_apphost_resource_copy": 4,
+        "positive_suite_failures": 0,
+        "positive_suite_ignored": 0,
+        "negative_controls": "missing/invalid/mismatched package inputs rejected; expected mismatched hash subcall 1 failed is asserted by the workflow"
+      },
+      "ui": {
+        "transcript": 16,
+        "forward_projection": 5,
+        "chromium_forward_dialog": 12,
+        "renderer_build": true,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "electron": {
+        "carrier": 10,
+        "auth_retention": 8,
+        "package_boundary": 3,
+        "approved_update_source": 16,
+        "windows_publisher": 28,
+        "macos_metadata": 18,
+        "build": true,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "windows": {
+        "native_api": 11,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "remaining_owned_certificates": 0,
+        "executed_fixture_executables": 0,
+        "scope": "CI-only inert fixture; no production signing/package/install acceptance"
+      }
+    },
+    "artifacts": [
+      {
+        "id": 13175452350,
+        "name": "native-message-shipping-compile-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+        "size_in_bytes": 81491108,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13175452350",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13175452350/zip",
+        "expired": false,
+        "created_at": "2026-11-02T20:04:04Z",
+        "expires_at": "2027-01-31T19:51:10Z",
+        "updated_at": "2026-11-02T20:04:04Z",
+        "digest": "sha256:612ff0e24e7f3bb83ba5a7b68c9a5da9e09236ad787582edf0d00249ff177953",
+        "workflow_run": {
+          "id": 41513767498,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7"
+        }
+      },
+      {
+        "id": 13174787047,
+        "name": "native-message-reconciliation-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+        "size_in_bytes": 29308,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13174787047",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13174787047/zip",
+        "expired": false,
+        "created_at": "2026-11-02T19:57:51Z",
+        "expires_at": "2027-01-31T19:51:10Z",
+        "updated_at": "2026-11-02T19:57:51Z",
+        "digest": "sha256:afe4bce96fa0acfaddea9f4c634186a16ed4b02dc64b85747d2d2cbf2b67f5df",
+        "workflow_run": {
+          "id": 41513767498,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7"
+        }
+      },
+      {
+        "id": 13174018193,
+        "name": "windows-update-publisher-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+        "size_in_bytes": 1825,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13174018193",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13174018193/zip",
+        "expired": false,
+        "created_at": "2026-11-02T19:52:31Z",
+        "expires_at": "2027-01-31T19:51:10Z",
+        "updated_at": "2026-11-02T19:52:31Z",
+        "digest": "sha256:07d1bc9e00d13584c449a4c670301acf7606499b058fce2730a61c154aaa8a1c",
+        "workflow_run": {
+          "id": 41513767498,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7"
+        }
+      },
+      {
+        "id": 13173602759,
+        "name": "native-message-ui-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+        "size_in_bytes": 110471,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13173602759",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13173602759/zip",
+        "expired": false,
+        "created_at": "2026-11-02T19:52:07Z",
+        "expires_at": "2027-01-31T19:51:10Z",
+        "updated_at": "2026-11-02T19:52:07Z",
+        "digest": "sha256:0cf51ee47519896bd0854efd8fa466ea52cae853eff51463e62a5680415c53ef",
+        "workflow_run": {
+          "id": 41513767498,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7"
+        }
+      },
+      {
+        "id": 13173338903,
+        "name": "native-message-electron-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+        "size_in_bytes": 13407,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13173338903",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13173338903/zip",
+        "expired": false,
+        "created_at": "2026-11-02T19:53:00Z",
+        "expires_at": "2027-01-31T19:51:10Z",
+        "updated_at": "2026-11-02T19:53:00Z",
+        "digest": "sha256:74d55b79059c3c163a94ad30cd17b3569180bb889fd9aff7967c0e5dfdaf33f5",
+        "workflow_run": {
+          "id": 41513767498,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7"
+        }
+      }
+    ],
+    "full_logs_available": true,
+    "limitations": [
+      "94 is historical prerequisite evidence, not execution evidence for newly authored Human46 / private4 changes",
+      "No source/product/independent final ACCEPT granted"
+    ],
+    "log_manifest": [
+      {
+        "job_id": 125511938976,
+        "path": "/workspace/scratch/5bb122104626/ci-evidence/current94/job-125511938976.log",
+        "bytes": 82466,
+        "lines": 1068,
+        "sha256": "833f68fa428bc50a4a7ff320d22753b164b2d65a267756f13718847fe5b6c0d4"
+      },
+      {
+        "job_id": 125511939226,
+        "path": "/workspace/scratch/5bb122104626/ci-evidence/current94/job-125511939226.log",
+        "bytes": 35974,
+        "lines": 409,
+        "sha256": "f3c45b9467065c7cba4a64cc1fcb7aeedb68ed01b1075a63f6097abda086cae9"
+      },
+      {
+        "job_id": 125511939353,
+        "path": "/workspace/scratch/5bb122104626/ci-evidence/current94/job-125511939353.log",
+        "bytes": 69150,
+        "lines": 790,
+        "sha256": "05c8d13df6cf0bdaa2834be58d7a11a217f8a177d02fbf13bb83530d93d7f93c"
+      },
+      {
+        "job_id": 125511939405,
+        "path": "/workspace/scratch/5bb122104626/ci-evidence/current94/job-125511939405.log",
+        "bytes": 928722,
+        "lines": 8381,
+        "sha256": "bfa58ad1a0e02db95ebf8339168fb9a6746854b475f1e147a7d768bdb8c57cbc"
+      },
+      {
+        "job_id": 125511939428,
+        "path": "/workspace/scratch/5bb122104626/ci-evidence/current94/job-125511939428.log",
+        "bytes": 274778,
+        "lines": 3038,
+        "sha256": "27678cd44349f70b84ae138d373a0a68f1f9f1ecc6601e52774b9f55130e9f66"
+      }
+    ]
+  },
+  "integration_destination": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "shared_checkpoint_integration": "pending; preserve latest concurrent work, use force=false/expected_sha and qualify the combined exact H",
+  "source_review_followup": {
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "identities": {
+      "forward_options_box.h": "65db5fbe067e340e0259a23ae57cda59096ccda0",
+      "forward_options_box.cpp": "708ae65e92dc435bf798f8c0220b0547f35ab2bf"
+    },
+    "source_read": "both existing complete records independently cross-checked against full fixed-U contents",
+    "product_gap": "Fixed-U forward_options_box.cpp captionsCount==0 has no caption control and emits dropCaptions=false; current ForwardMessageDialog shows Hide media caption for the pure-text/no-attachment fixture and can consequently hide sender origin. Explicit product disposition and plain-text versus captioned-media behavioral closure remain pending; source full-read records are not feature acceptance.",
+    "acceptance": false
+  },
+  "publication_transport_evidence": {
+    "head_sha": "173bdaa025e1a62283e1979b461691fa2ceab50d",
+    "run_id": 41518596759,
+    "run_attempt": 1,
+    "job_id": 125528468932,
+    "conclusion": "success",
+    "blob": "d921747f51cedcd68d4170e4a0d65d5e8f9b648a",
+    "bytes": 3564935,
+    "artifact_id": 13176147271,
+    "artifact_digest": "sha256:c0a77407d47a0f6b32f70dfea43b01ecdb67a54ec6046e68df9f043097cfeaab",
+    "complete_log_read": true,
+    "log_sha256": "a5868593ddf3be4133c63e6435dce2c8e52ee4d1621c50bf3c080d376932036e",
+    "migration_ref_modified": false,
+    "scope": "Object transport only; not product execution or acceptance."
+  }
+}

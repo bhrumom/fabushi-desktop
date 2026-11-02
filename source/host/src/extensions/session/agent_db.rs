@@ -42,6 +42,8 @@ pub enum AgentDbProjectionError {
     Recovery(#[from] AgentDbRecoveryError),
     #[error("agent session sqlite error: {0}")]
     Sqlite(#[from] rusqlite::Error),
+    #[error("agent database admission rejected: {0}")]
+    AdmissionRejected(String),
     #[error("agent metadata hex is invalid: {0}")]
     MetadataHex(String),
     #[error("agent metadata json is invalid utf-8: {0}")]
@@ -1330,6 +1332,126 @@ impl SandAgentDb {
             publish_entries_upserted(&self.db_path, vec![entry.clone()]);
         }
         Ok(updated)
+    }
+
+    /// Settle one acknowledged Human reaction and retire only its observed
+    /// durable intent in the same transaction. A replay of an already settled
+    /// row clears the matching intent without publishing the row again.
+    pub fn settle_human_reaction_if_unchanged(
+        &self,
+        entry_id: &str,
+        expected_entry: &serde_json::Value,
+        expected_intent: &serde_json::Value,
+        next: &serde_json::Value,
+        before_write: impl FnOnce() -> Result<(), String>,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed()
+            || entry_id.is_empty()
+            || expected_entry.get("id").and_then(serde_json::Value::as_str) != Some(entry_id)
+            || next.get("id").and_then(serde_json::Value::as_str) != Some(entry_id)
+        {
+            return Ok(None);
+        }
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        if self.is_closed() {
+            return Ok(None);
+        }
+        let Some(db) = guard.as_mut() else {
+            return Ok(None);
+        };
+        let result = (|| -> Result<Option<(bool, bool)>, AgentDbProjectionError> {
+            // The transaction owns rollback on every early return, write error
+            // and failed commit, including a failure after the row update.
+            let transaction =
+                db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+            let raw_entry = transaction
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?;
+            let Some(raw_entry) = raw_entry else {
+                return Ok(None);
+            };
+            let current: serde_json::Value = serde_json::from_str(&raw_entry)?;
+            if &current != expected_entry {
+                return Ok(None);
+            }
+
+            let raw_metadata = transaction
+                .query_row(GET_KV_SQL, params!["metadata"], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?;
+            let Some(raw_metadata) = raw_metadata else {
+                return Ok(None);
+            };
+            let bytes = decode_hex(&raw_metadata).map_err(AgentDbProjectionError::MetadataHex)?;
+            let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+            let Some(object) = metadata.as_object_mut() else {
+                return Ok(None);
+            };
+            if object.get("humanReactionIntent") != Some(expected_intent) {
+                return Ok(None);
+            }
+            // Credential admission must follow acquisition of SQLite's write
+            // lock: waiting for another writer may outlive the HTTP response.
+            before_write().map_err(AgentDbProjectionError::AdmissionRejected)?;
+            let row_changed = &current != next;
+            let metadata_changed = !expected_intent.is_null();
+            if row_changed
+                && transaction.execute(
+                    UPDATE_TRANSCRIPT_ENTRY_SQL,
+                    params![next.to_string(), entry_id],
+                )? != 1
+            {
+                return Ok(None);
+            }
+            if metadata_changed {
+                object.insert("humanReactionIntent".into(), serde_json::Value::Null);
+                let next_metadata = encode_hex(&serde_json::to_vec(&metadata)?);
+                if transaction.execute(
+                    COMPARE_AND_SET_KV_SQL,
+                    params![next_metadata, "metadata", raw_metadata],
+                )? != 1
+                {
+                    return Ok(None);
+                }
+            }
+            transaction.commit()?;
+            Ok(Some((row_changed, metadata_changed)))
+        })();
+        drop(guard);
+        let Some((row_changed, metadata_changed)) = (match result {
+            Ok(settled) => settled,
+            Err(error) => {
+                if let AgentDbProjectionError::Sqlite(sqlite) = &error {
+                    if is_sqlite_busy_error(sqlite) {
+                        if let Some(callback) = self.options.on_busy_error.as_ref() {
+                            callback("settleHumanReactionIfUnchanged", &sqlite.to_string());
+                        }
+                    }
+                }
+                return Err(error);
+            }
+        }) else {
+            return Ok(None);
+        };
+        if row_changed || metadata_changed {
+            bump_db_write_generation(&self.db_path);
+        }
+        if row_changed {
+            publish_entries_upserted(&self.db_path, vec![next.clone()]);
+        }
+        if metadata_changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata("humanReactionIntent".into()),
+            );
+        }
+        Ok(Some(next.clone()))
     }
 
     pub fn settle_transcript_entry_identity(

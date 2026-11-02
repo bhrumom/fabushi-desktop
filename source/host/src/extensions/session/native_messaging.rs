@@ -1224,6 +1224,13 @@ impl FabushiNativeMessagingClient {
         Ok(sha256_hex(snapshot.to_string().as_bytes()))
     }
 
+    pub(super) fn ensure_request_credential_fingerprint(&self, expected: &str) -> Result<(), String> {
+        if self.request_credential_fingerprint()? != expected {
+            return Err("Fabushi native messaging credential changed before Human settlement".into());
+        }
+        Ok(())
+    }
+
     fn ensure_request_credential_stable(&self, original: &CredentialFile) -> Result<(), String> {
         let current = self.read_bound_credentials()?;
         if current.user_id != original.user_id

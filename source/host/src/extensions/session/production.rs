@@ -2854,18 +2854,16 @@ impl ProductionSessionWorkers {
         Ok((account, issuer))
     }
 
-    /// Scan even now-ineligible source records, so removing a conversation
-    /// cannot free its old request ID for another source under one account.
-    fn find_forward_request(
-        &self, account: &str, issuer: &str, request_id: &str,
-    ) -> Result<Option<HumanForwardBatch>, String> {
+    /// Internal recovery must retain sources hidden from the authorized UI
+    /// list, so their pending journals can record a durable policy refusal.
+    fn persisted_human_conversation_ids(&self) -> Result<Vec<String>, String> {
         let root = get_native_conversations_root(&self.agents_root);
         let entries = match fs::read_dir(root) {
             Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
             Err(error) => return Err(error.to_string()),
         };
-        let mut matched: Option<HumanForwardBatch> = None;
+        let mut ids = Vec::new();
         for entry in entries {
             let entry = entry.map_err(|error| error.to_string())?;
             if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
@@ -2874,7 +2872,24 @@ impl ProductionSessionWorkers {
             let id = entry.file_name().to_string_lossy().into_owned();
             let db_path = get_native_conversation_db_path(&self.agents_root, &id)
                 .map_err(|error| error.to_string())?;
-            if !db_path.is_file() { continue; }
+            match fs::metadata(&db_path) {
+                Ok(metadata) if metadata.is_file() => ids.push(id),
+                Ok(_) => {},
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+                Err(error) => return Err(error.to_string()),
+            }
+        }
+        ids.sort();
+        Ok(ids)
+    }
+
+    /// Scan even now-ineligible source records, so removing a conversation
+    /// cannot free its old request ID for another source under one account.
+    fn find_forward_request(
+        &self, account: &str, issuer: &str, request_id: &str,
+    ) -> Result<Option<HumanForwardBatch>, String> {
+        let mut matched: Option<HumanForwardBatch> = None;
+        for id in self.persisted_human_conversation_ids()? {
             let owner = self.open_human_conversation_db_owner(&id)?;
             for batch in load_forward_batches(&owner, &id)? {
                 if batch.account_id == account && batch.issuer == issuer && batch.request_id == request_id {
@@ -3014,23 +3029,9 @@ impl ProductionSessionWorkers {
         if self.shipping_native_messaging()?.is_none() { return Ok(()); }
         let (account, issuer) = self.human_forward_scope()?;
         // Unlike the visible roster, recovery cannot omit revoked sources or
-        // silently skip corrupt stored metadata. Reuse the strict source scan
-        // semantics of find_forward_request, without filtering by request ID.
-        let root = get_native_conversations_root(&self.agents_root);
-        let entries = match fs::read_dir(root) {
-            Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-            Err(error) => return Err(error.to_string()),
-        };
-        for entry in entries {
-            let entry = entry.map_err(|error| error.to_string())?;
-            if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
-                continue;
-            }
-            let source_id = entry.file_name().to_string_lossy().into_owned();
-            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
-                .map_err(|error| error.to_string())?;
-            if !db_path.is_file() { continue; }
+        // silently skip corrupt stored metadata. Share the strict source scan
+        // with find_forward_request, without filtering by request ID.
+        for source_id in self.persisted_human_conversation_ids()? {
             let owner = self.open_human_conversation_db_owner(&source_id)?;
             for batch in load_forward_batches(&owner, &source_id)? {
                 if batch.account_id != account || batch.issuer != issuer
@@ -3743,6 +3744,9 @@ impl ProductionSessionWorkers {
             .as_deref() != Some(remote_id) {
             return Err("persisted Human reaction remote identity changed".into());
         }
+        // Keep the original dispatch credential through any later SQLite
+        // owner/write-lock wait, rather than adopting a post-response refresh.
+        let request_credential_fingerprint = client.request_credential_fingerprint()?;
         let remote = client.set_direct_message_reaction_for_user(remote_id, emoji, active, author)?;
         Self::validate_remote_human_reactions(&remote)?;
         // HTTP success is not settlement: the service must confirm the requested
@@ -3754,9 +3758,18 @@ impl ProductionSessionWorkers {
         if observed_active != active {
             return Err("Fabushi Human reaction response did not confirm the desired state".into());
         }
+        // Retain any unrelated fields written while HTTP was in flight. The
+        // database commit below compares this exact row and the original intent.
+        let current = owner.get_transcript_entry_by_id(entry_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
+        if current.get("remoteMessageId").map(fabushi_identity_text).transpose()?
+            .as_deref() != Some(remote_id) {
+            return Err("Human reaction target identity changed before durable settlement".into());
+        }
         let peer = self.peer_human_id_from_metadata(metadata)?;
         let projected = Self::project_remote_human_reactions(&remote, &peer);
-        let mut next = current;
+        let mut next = current.clone();
         let is_peer = next.get("authorId").and_then(serde_json::Value::as_str) != Some(author);
         let object = next.as_object_mut()
             .ok_or_else(|| "Human reaction target is not a message object".to_string())?;
@@ -3768,14 +3781,13 @@ impl ProductionSessionWorkers {
         object.insert("remoteReactions".into(), serde_json::to_value(&remote)
             .map_err(|error| format!("remote Human reactions could not be projected: {error}"))?);
         object.insert("reactions".into(), serde_json::Value::Array(projected));
-        let settled = owner.update_transcript_entry(entry_id, &next)
+        owner.settle_human_reaction_if_unchanged(
+            entry_id, &current, &intent, &next,
+            || client.ensure_request_credential_fingerprint(&request_credential_fingerprint),
+        )
             .map_err(|error| error.to_string())?
-            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
-        if !owner.set_metadata("humanReactionIntent", serde_json::Value::Null)
-            .map_err(|error| error.to_string())? {
-            return Err("Human reaction intent could not be durably acknowledged".into());
-        }
-        Ok(Some(settled))
+            .map(Some)
+            .ok_or_else(|| "Human reaction settlement lost its durable intent or target".to_string())
     }
 
     pub fn toggle_human_message_reaction(
@@ -4294,6 +4306,143 @@ mod human_send_settlement_credential_tests {
             worker.join().expect("settlement worker");
             server.join().expect("settlement HTTP fixture");
             fs::remove_dir_all(root).expect("remove settlement fixture");
+        }
+    }
+
+    #[test]
+    fn shipping_human_settlement_credential_reaction_sqlite_write_wait_fences_rotation_and_revocation() {
+        for change in ["rotated", "removed", "unchanged"] {
+            let root = std::env::temp_dir().join(format!("fabushi-reaction-admission-{}", Uuid::new_v4()));
+            fs::create_dir_all(&root).expect("reaction admission fixture directory");
+            let credential_path = root.join("credential.json");
+            let db_path = root.join("store.db");
+            let issuer = "http://127.0.0.1:4200";
+            write_credential(&credential_path, issuer, "reaction-dispatch-token");
+            let client = FabushiNativeMessagingClient::new(issuer, &credential_path)
+                .expect("real Native credential owner");
+            let fingerprint = client.request_credential_fingerprint().expect("dispatch fingerprint");
+            let owner = Arc::new(SandAgentDb::open(&db_path, 15_000).expect("reaction SQLite owner"));
+            let entry_id = format!("human-server-message:{}", Uuid::new_v4());
+            let original = serde_json::json!({
+                "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+                "authorId":"2","content":"retain the whole reaction target","timestampMs":1000.0,
+                "delivery":"sent","remoteMessageId":"890351","remoteReactions":[],"reactions":[],
+                "remoteReadAt":"2026-10-05T01:00:18Z","retainedLocalMetadata":{"keep":true}
+            });
+            let intent = serde_json::json!({
+                "entryId":entry_id,"remoteMessageId":"890351","emoji":"👍",
+                "active":true,"localHumanId":"1"
+            });
+            let mut next = original.clone();
+            next["remoteReactions"] = serde_json::json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
+            next["reactions"] = serde_json::json!([{"emoji":"👍","by":"me"}]);
+            assert!(owner.append_transcript_entry(&original).expect("persist reaction target"));
+            assert!(owner.set_metadata("humanReactionIntent", intent.clone()).expect("persist reaction intent"));
+            assert!(owner.set_metadata("retainedAdmissionMetadata", serde_json::json!({"keep":true}))
+                .expect("persist unrelated metadata"));
+            let original_metadata = owner.read_metadata().expect("read original complete metadata");
+            let mut settled_metadata = original_metadata.clone();
+            settled_metadata["humanReactionIntent"] = serde_json::Value::Null;
+
+            let events = Arc::new(Mutex::new(Vec::new()));
+            let captured = Arc::clone(&events);
+            let observed_entry = entry_id.clone();
+            let subscription = crate::transcript_mutation_events::subscribe_transcript_mutations(move |mutation| {
+                let target = mutation.get("entryId").and_then(serde_json::Value::as_str) == Some(observed_entry.as_str())
+                    || mutation.get("entries").and_then(serde_json::Value::as_array)
+                        .is_some_and(|entries| entries.iter().any(|entry| entry["id"].as_str() == Some(observed_entry.as_str())));
+                if target {
+                    captured.lock().expect("capture reaction admission event")
+                        .push(serde_json::Value::Object(mutation.clone()));
+                }
+            });
+
+            // The full HTTP/body boundary is covered by the shipping Human
+            // reaction cases. This case controls the later real SQLite writer
+            // wait with the same credential guard used by production replay.
+            let competing_writer = rusqlite::Connection::open(&db_path).expect("independent SQLite writer");
+            competing_writer.execute_batch("BEGIN IMMEDIATE").expect("hold SQLite write reservation");
+            let (started, wait_started) = mpsc::sync_channel(1);
+            let (admitted, wait_admitted) = mpsc::sync_channel(1);
+            let (finished, wait_finished) = mpsc::sync_channel(1);
+            let worker_owner = Arc::clone(&owner);
+            let worker_entry_id = entry_id.clone();
+            let worker_original = original.clone();
+            let worker_intent = intent.clone();
+            let worker_next = next.clone();
+            let probe_path = db_path.clone();
+            let worker = thread::spawn(move || {
+                started.send(()).expect("announce real SQLite settlement attempt");
+                let result = worker_owner.settle_human_reaction_if_unchanged(
+                    &worker_entry_id, &worker_original, &worker_intent, &worker_next,
+                    || {
+                        admitted.send(()).expect("observe credential admission after the write lock");
+                        // With the competing writer released, this failed probe
+                        // proves that settlement itself already owns the write
+                        // reservation when it admits the original credential.
+                        let probe = rusqlite::Connection::open(&probe_path).expect("independent admission probe");
+                        probe.busy_timeout(Duration::from_millis(0)).expect("nonblocking admission probe");
+                        let busy = probe.execute_batch("BEGIN IMMEDIATE")
+                            .expect_err("credential admission must run inside the write transaction");
+                        assert!(crate::storage::sqlite_busy::is_sqlite_busy_error(&busy));
+                        client.ensure_request_credential_fingerprint(&fingerprint)
+                    },
+                ).map_err(|error| error.to_string());
+                finished.send(result).expect("observe SQLite settlement outcome");
+            });
+            wait_started.recv_timeout(Duration::from_secs(15)).expect("settlement worker started");
+            assert!(matches!(wait_admitted.recv_timeout(Duration::from_millis(100)), Err(mpsc::RecvTimeoutError::Timeout)),
+                "credential admission cannot precede acquisition of the held SQLite write lock");
+            match change {
+                "rotated" => write_credential(&credential_path, issuer, "rotated-during-sqlite-wait"),
+                "removed" => fs::remove_file(&credential_path).expect("revoke credential during SQLite wait"),
+                "unchanged" => (),
+                _ => unreachable!(),
+            }
+            competing_writer.execute_batch("ROLLBACK").expect("release competing SQLite writer");
+            wait_admitted.recv_timeout(Duration::from_secs(15)).expect("admission follows acquired SQLite write lock");
+            let result = wait_finished.recv_timeout(Duration::from_secs(15)).expect("bounded reaction settlement result");
+            worker.join().expect("reaction settlement worker");
+            drop(competing_writer);
+
+            if change == "unchanged" {
+                assert_eq!(result.expect("unchanged credential can settle after the write wait"), Some(next.clone()));
+                assert_eq!(owner.get_transcript_entry_by_id(&entry_id).expect("settled reaction row"), Some(next.clone()));
+                assert_eq!(owner.read_metadata().expect("settled complete metadata"), settled_metadata);
+            } else {
+                let error = result.expect_err("obsolete dispatch credential must not settle after the write wait");
+                assert!(error.starts_with("agent database admission rejected:"), "wrong admission error: {error}");
+                assert!(error.contains("credential"), "credential cause must survive admission: {error}");
+                assert_eq!(owner.get_transcript_entry_by_id(&entry_id).expect("unmodified complete reaction row"), Some(original.clone()));
+                assert_eq!(owner.read_metadata().expect("unmodified complete metadata"), original_metadata);
+                assert!(events.lock().expect("reaction events").is_empty(), "rejected admission publishes no target mutation");
+            }
+            owner.close(false);
+            drop(owner);
+
+            let reopened = SandAgentDb::open(&db_path, 15_000).expect("reopen reaction owner");
+            if change != "unchanged" {
+                assert_eq!(reopened.get_transcript_entry_by_id(&entry_id).expect("reopened untouched row"), Some(original.clone()));
+                assert_eq!(reopened.read_metadata().expect("reopened outstanding intent and metadata"), original_metadata);
+                write_credential(&credential_path, issuer, "fresh-recovery-token");
+                let recovered_client = FabushiNativeMessagingClient::new(issuer, &credential_path)
+                    .expect("reopened Native credential owner");
+                let recovered_fingerprint = recovered_client.request_credential_fingerprint().expect("new dispatch fingerprint");
+                assert_eq!(reopened.settle_human_reaction_if_unchanged(
+                    &entry_id, &original, &intent, &next,
+                    || recovered_client.ensure_request_credential_fingerprint(&recovered_fingerprint),
+                ).expect("current credential can recover the same desired reaction"), Some(next.clone()));
+            }
+            assert_eq!(reopened.get_transcript_entry_by_id(&entry_id).expect("durable settled reaction row"), Some(next.clone()));
+            assert_eq!(reopened.read_metadata().expect("durable settled metadata"), settled_metadata);
+            let target_events = events.lock().expect("settled reaction events").clone();
+            assert_eq!(target_events.len(), 1, "only successful current-credential settlement publishes the row");
+            assert_eq!(target_events[0]["kind"], "entries-upserted");
+            assert_eq!(target_events[0]["entries"], serde_json::json!([next]));
+            reopened.close(false);
+            drop(reopened);
+            subscription.unsubscribe();
+            fs::remove_dir_all(root).expect("remove reaction admission fixture");
         }
     }
 

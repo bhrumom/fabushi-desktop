@@ -3585,6 +3585,249 @@ fn shipping_human_reaction_intent_survives_failed_http_and_replays_once_after_re
     let _ = fs::remove_dir_all(root);
 }
 
+fn observe_human_target_mutations(
+    conversation_id: &str,
+    entry_id: &str,
+) -> (
+    Arc<std::sync::Mutex<Vec<serde_json::Value>>>,
+    mahayana_host_runtime::transcript_mutation_events::TranscriptMutationSubscription,
+) {
+    let events = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let captured = Arc::clone(&events);
+    let conversation_id = conversation_id.to_string();
+    let entry_id = entry_id.to_string();
+    let subscription = mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations(
+        move |mutation| {
+            if mutation.get("agentId").and_then(serde_json::Value::as_str) != Some(conversation_id.as_str()) {
+                return;
+            }
+            // Conversation IDs repeat across isolated roots, so each case
+            // also uses a distinct target ID to exclude parallel test events.
+            let target = mutation.get("entryId").and_then(serde_json::Value::as_str) == Some(entry_id.as_str())
+                || mutation.get("entries").and_then(serde_json::Value::as_array)
+                    .is_some_and(|entries| entries.iter().any(|entry| entry["id"].as_str() == Some(entry_id.as_str())));
+            if target {
+                captured.lock().expect("capture target mutation").push(serde_json::Value::Object(mutation.clone()));
+            }
+        },
+    );
+    (events, subscription)
+}
+
+#[test]
+fn shipping_human_reaction_atomic_cleanup_failure_and_legacy_half_settlement_recover_after_restart() {
+    for legacy_half_settled in [false, true] {
+        let root = temp_root(if legacy_half_settled { "reaction-legacy-half-settled" } else { "reaction-atomic-cleanup" });
+        let remote_id = if legacy_half_settled { 890349_u64 } else { 890348_u64 };
+        let entry_id = format!("human-server-message:{remote_id}");
+        let summary = json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
+        let success = json!({"success":true,"messageId":remote_id,"reactions":summary});
+        let (request_seen, wait_for_request) = std::sync::mpsc::channel();
+        let (release_response, wait_for_release) = std::sync::mpsc::channel();
+        let replies = if legacy_half_settled {
+            vec![HumanMessageFixtureReply::Json(200, success)]
+        } else {
+            vec![
+                HumanMessageFixtureReply::Deferred(
+                    Box::new(HumanMessageFixtureReply::Json(200, success.clone())),
+                    request_seen, wait_for_release,
+                ),
+                HumanMessageFixtureReply::Json(200, success),
+            ]
+        };
+        let (url, server) = spawn_human_message_fixture(replies);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+            .as_str().expect("conversation id").to_string();
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("reaction owner");
+        let mut original = json!({
+            "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+            "authorId":"2","content":"retain the complete reaction target","timestampMs":1000.0,
+            "delivery":"sent","remoteMessageId":remote_id.to_string(),
+            "remoteCreatedAt":"2026-10-05T01:00:17Z","remoteReadAt":"2026-10-05T01:00:18Z",
+            "retainedLocalMetadata":{"keep":true},"remoteReactions":[],"reactions":[]
+        });
+        if legacy_half_settled {
+            original["remoteReactions"] = summary.clone();
+            original["reactions"] = json!([{"emoji":"👍","by":"me"}]);
+        }
+        let intent = json!({
+            "entryId":entry_id,"remoteMessageId":remote_id.to_string(),
+            "emoji":"👍","active":true,"localHumanId":"1"
+        });
+        assert!(owner.append_transcript_entry(&original).expect("persist reaction target"));
+        if legacy_half_settled {
+            // A previous binary could commit the row and fail its separate
+            // intent cleanup. Seed that actual durable state before restart.
+            assert!(owner.set_metadata("humanReactionIntent", intent.clone()).expect("persist legacy outstanding intent"));
+        }
+        let (events, subscription) = observe_human_target_mutations(&id, &entry_id);
+        if !legacy_half_settled {
+            let (finished, completion) = std::sync::mpsc::channel();
+            let running = {
+                let runtime = Arc::clone(&runtime);
+                let id = id.clone();
+                let entry_id = entry_id.clone();
+                thread::spawn(move || {
+                    finished.send(runtime.toggle_human_message_reaction(&id, &entry_id, "👍"))
+                        .expect("report failed cleanup result");
+                })
+            };
+            wait_for_request.recv_timeout(std::time::Duration::from_secs(15))
+                .expect("reaction intent was staged and its POST reached HTTP");
+            assert_eq!(owner.get_metadata("humanReactionIntent").expect("staged intent"), Some(intent.clone()));
+            let before = read_forward_metadata_from_disk(&root, &id);
+            let db = rusqlite::Connection::open(forward_db_path(&root, &id)).expect("independent SQLite fault injector");
+            db.busy_timeout(std::time::Duration::from_secs(5)).expect("bound fault injector");
+            // Install only after dispatch: staging has already committed, and
+            // the valid acknowledgement can reach the cleanup write itself.
+            db.execute_batch("CREATE TRIGGER reject_reaction_intent_cleanup BEFORE UPDATE OF value ON kv
+                WHEN NEW.key = 'metadata' BEGIN SELECT RAISE(ABORT, 'NMR-R5-01 injected intent cleanup failure'); END;")
+                .expect("install metadata-only write fault");
+            release_response.send(()).expect("release valid reaction acknowledgement");
+            let error = completion.recv_timeout(std::time::Duration::from_secs(15))
+                .expect("reaction settlement terminates after SQLite failure")
+                .expect_err("intent cleanup failure rejects the entire settlement");
+            running.join().expect("reaction settlement thread");
+            assert!(error.contains("NMR-R5-01 injected intent cleanup failure"), "{error}");
+            assert_eq!(owner.get_transcript_entries().expect("rolled-back target"), vec![original.clone()]);
+            assert_eq!(owner.get_metadata("humanReactionIntent").expect("retained intent"), Some(intent.clone()));
+            assert_eq!(read_forward_metadata_from_disk(&root, &id), before, "failed transaction preserves committed metadata");
+            assert!(events.lock().expect("target events").is_empty(), "rollback cannot publish target settlement");
+            db.execute_batch("DROP TRIGGER reject_reaction_intent_cleanup;").expect("remove injected cleanup fault");
+            drop(db);
+        }
+        runtime.shutdown(); drop(owner); drop(runtime);
+
+        let restarted = human_message_fixture_runtime(&root, &url);
+        let owner = restarted.open_human_conversation_db_owner(&id).expect("reopened owner");
+        assert_eq!(owner.get_transcript_entries().expect("durable pre-recovery row"), vec![original.clone()]);
+        assert_eq!(owner.get_metadata("humanReactionIntent").expect("durable desired state"), Some(intent));
+        assert!(events.lock().expect("target events").is_empty());
+        let settled = restarted.toggle_human_message_reaction(&id, &entry_id, "👍")
+            .expect("restart retries the original desired state");
+        let mut expected = original;
+        expected["remoteReactions"] = summary;
+        expected["reactions"] = json!([{"emoji":"👍","by":"me"}]);
+        assert_eq!(settled, expected);
+        assert_eq!(owner.get_transcript_entries().expect("single durable settlement"), vec![expected.clone()]);
+        assert_eq!(owner.get_metadata("humanReactionIntent").expect("retired exact intent"), Some(serde_json::Value::Null));
+        assert_eq!(read_forward_metadata_from_disk(&root, &id)["humanReactionIntent"], serde_json::Value::Null);
+        let expected_events = usize::from(!legacy_half_settled);
+        let published = events.lock().expect("target events").clone();
+        assert_eq!(published.len(), expected_events, "equal legacy row must retire intent without republishing");
+        if !legacy_half_settled {
+            assert_eq!(published[0]["kind"], "entries-upserted");
+            assert_eq!(published[0]["agentId"], id);
+            assert_eq!(published[0]["entries"], json!([expected.clone()]));
+        }
+        restarted.shutdown(); drop(owner); drop(restarted);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reopened.read_human_conversation_transcript(&id).expect("pure reopen after settlement"), vec![expected]);
+        assert_eq!(events.lock().expect("target events").len(), expected_events);
+        reopened.shutdown(); drop(reopened);
+        subscription.unsubscribe();
+        let requests = server.join().expect("bounded reaction recovery HTTP");
+        assert_eq!(requests.len(), if legacy_half_settled { 1 } else { 2 });
+        for request in requests {
+            assert!(request.starts_with(&format!("POST /api/social/messages/{remote_id}/reactions ")));
+            assert_eq!(fixture_request_json(&request), json!({"emoji":"👍","active":true}));
+        }
+        fs::remove_dir_all(root).expect("remove reaction cleanup fixture");
+    }
+}
+
+#[test]
+fn shipping_human_reaction_stale_acknowledgement_preserves_replaced_intent_after_restart() {
+    let root = temp_root("reaction-replaced-intent");
+    let entry_id = "human-server-message:890350";
+    let (request_seen, wait_for_request) = std::sync::mpsc::channel();
+    let (release_response, wait_for_release) = std::sync::mpsc::channel();
+    let replacement_summary = json!([{"emoji":"🔥","count":1,"reactedByMe":true}]);
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Deferred(
+            Box::new(HumanMessageFixtureReply::Json(200, json!({
+                "success":true,"messageId":890350,
+                "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
+            }))),
+            request_seen, wait_for_release,
+        ),
+        HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":890350,"reactions":replacement_summary
+        })),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("reaction owner");
+    let original = json!({
+        "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+        "authorId":"2","content":"do not settle a superseded reaction","timestampMs":1000.0,
+        "delivery":"sent","remoteMessageId":"890350","retainedLocalMetadata":{"keep":true},
+        "remoteReactions":[],"reactions":[]
+    });
+    assert!(owner.append_transcript_entry(&original).expect("persist unchanged target"));
+    let (events, subscription) = observe_human_target_mutations(&id, entry_id);
+    let (finished, completion) = std::sync::mpsc::channel();
+    let running = {
+        let runtime = Arc::clone(&runtime);
+        let id = id.clone();
+        thread::spawn(move || {
+            finished.send(runtime.toggle_human_message_reaction(&id, entry_id, "👍"))
+                .expect("report stale acknowledgement result");
+        })
+    };
+    wait_for_request.recv_timeout(std::time::Duration::from_secs(15))
+        .expect("first desired state reached the actual HTTP boundary");
+    let independent = mahayana_host_runtime::extensions::session::agent_db::SandAgentDb::open_conversation_store(
+        forward_db_path(&root, &id), 500,
+    ).expect("independent SQLite owner for competing intent");
+    assert_eq!(independent.get_metadata("humanReactionIntent").expect("observed old intent"), Some(json!({
+        "entryId":entry_id,"remoteMessageId":"890350","emoji":"👍","active":true,"localHumanId":"1"
+    })));
+    let replacement = json!({
+        "entryId":entry_id,"remoteMessageId":"890350","emoji":"🔥","active":true,"localHumanId":"1"
+    });
+    assert!(independent.set_metadata("humanReactionIntent", replacement.clone()).expect("durably replace the in-flight intent"));
+    release_response.send(()).expect("release obsolete acknowledgement");
+    completion.recv_timeout(std::time::Duration::from_secs(15))
+        .expect("stale acknowledgement terminates")
+        .expect_err("old acknowledgement cannot retire a competing desired state");
+    running.join().expect("stale reaction thread");
+    assert_eq!(owner.get_transcript_entries().expect("unchanged target"), vec![original.clone()]);
+    assert_eq!(independent.get_transcript_entries().expect("independently read unchanged target"), vec![original.clone()]);
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("preserved newer intent"), Some(replacement.clone()));
+    assert_eq!(read_forward_metadata_from_disk(&root, &id)["humanReactionIntent"], replacement);
+    assert!(events.lock().expect("target events").is_empty(), "superseded success cannot publish");
+    independent.close(false); drop(independent);
+    runtime.shutdown(); drop(owner); drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &url);
+    let owner = restarted.open_human_conversation_db_owner(&id).expect("reopened reaction owner");
+    assert_eq!(owner.get_transcript_entries().expect("durable unchanged target"), vec![original.clone()]);
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("durable replacement"), Some(replacement));
+    let settled = restarted.toggle_human_message_reaction(&id, entry_id, "🔥")
+        .expect("restart replays only the new desired state");
+    let mut expected = original;
+    expected["remoteReactions"] = replacement_summary;
+    expected["reactions"] = json!([{"emoji":"🔥","by":"me"}]);
+    assert_eq!(settled, expected);
+    assert_eq!(owner.get_transcript_entries().expect("durable replacement settlement"), vec![expected.clone()]);
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("replacement acknowledged"), Some(serde_json::Value::Null));
+    let published = events.lock().expect("target events").clone();
+    assert_eq!(published.len(), 1, "only the current durable settlement publishes");
+    assert_eq!(published[0]["kind"], "entries-upserted");
+    assert_eq!(published[0]["entries"], json!([expected]));
+    restarted.shutdown(); drop(owner); drop(restarted);
+    subscription.unsubscribe();
+    let requests = server.join().expect("both bounded reaction POSTs");
+    assert_eq!(requests.len(), 2);
+    assert!(requests.iter().all(|request| request.starts_with("POST /api/social/messages/890350/reactions ")));
+    assert_eq!(fixture_request_json(&requests[0]), json!({"emoji":"👍","active":true}));
+    assert_eq!(fixture_request_json(&requests[1]), json!({"emoji":"🔥","active":true}));
+    fs::remove_dir_all(root).expect("remove replaced-intent fixture");
+}
+
 
 #[test]
 fn shipping_human_history_rejects_oversized_page_before_persisting_coverage() {
@@ -5064,6 +5307,16 @@ fn shipping_human_forward_restart_rechecks_source_permissions_and_credential_sco
     assert_eq!(server.history_count(), 3, "removed membership cannot starve target history");
     assert_eq!(server.post_count(), 1, "generic outbox must not resend the revoked-source forward");
     assert_eq!(runtime.read_human_conversation_transcript(first).unwrap(), pending_before);
+    // Inspect ordinary-sync recovery itself, before the direct retry below
+    // could repair a skipped journal and hide missing internal discovery.
+    let denied_by_sync = read_forward_metadata_from_disk(&root, source)["humanForwardBatches"].clone();
+    for target in denied_by_sync[0]["destinations"].as_array().expect("persisted denied destinations") {
+        assert_eq!(target["completed"], false);
+        assert!(target["error"].as_str().expect("ordinary sync persists source denial").contains("participant"));
+    }
+    assert!(!runtime.list_human_conversations().expect("authorized UI conversations").iter()
+        .any(|conversation| conversation["id"].as_str() == Some(source)),
+        "internal recovery cannot expose the revoked source in the UI list");
     let removed_result = forward_gateway_result(&runtime, &args).expect("removed membership failure envelope");
     assert_eq!(removed_result["destinations"][0]["status"], "failed");
     assert!(removed_result["destinations"][0]["error"].as_str().unwrap().contains("participant"));
@@ -5096,6 +5349,17 @@ fn shipping_human_forward_restart_rechecks_source_permissions_and_credential_sco
     dispatch(&recovered, "syncHumanConversation", json!({"conversationId":second}));
     assert_forward_settled(&recovered, &args);
     assert_eq!(server.post_count(), 3);
+    // A genuine completed batch is a separate recovery control. Revocation
+    // must preserve its successful targets and never resend either one.
+    let completed_owner = recovered.open_human_conversation_db_owner(source).expect("completed source owner");
+    let completed_journal = completed_owner.get_metadata("humanForwardBatches").expect("completed journal");
+    assert!(completed_owner.set_metadata("participantIds", json!(["2", "9"])).expect("revoke completed source membership"));
+    recovered.sync_human_conversation(second).expect("completed batch cannot starve authorized target sync");
+    assert_eq!(completed_owner.get_metadata("humanForwardBatches").expect("preserved completed journal"), completed_journal);
+    assert_eq!(server.post_count(), 3, "completed targets stay settled after source revocation");
+    assert!(!recovered.list_human_conversations().expect("authorized conversations after completed revocation").iter()
+        .any(|conversation| conversation["id"].as_str() == Some(source)));
+    drop(completed_owner);
     recovered.shutdown(); drop(recovered);
     server.finish(); fs::remove_dir_all(root).expect("remove permission fixture");
 }
