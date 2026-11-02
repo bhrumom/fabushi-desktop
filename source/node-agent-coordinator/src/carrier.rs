@@ -73,6 +73,12 @@ impl CarrierChannel {
     }
 }
 
+/// Electron's URL-only preview bridge selects the cache directory on MainData.
+/// Raw renderer/control RPCs cannot claim that native filesystem authority.
+pub fn native_attachment_carrier_allowed(method: &str, channel: CarrierChannel) -> bool {
+    method != "fetchLinkMetadata" || channel == CarrierChannel::MainData
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CarrierEnvelope {
     pub channel: String,

@@ -1,11 +1,18 @@
+use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use flate2::read::GzDecoder;
 use mahayana_host_runtime::device_pairing_owner::{DevicePairingOwner, DeviceTokenAuthorization};
+use mahayana_host_runtime::extensions::attachments::attachments_service::{
+    AttachmentsBox, AttachmentsService, LINK_CACHE_DIRNAME, LINK_CACHE_TTL_MS,
+    LINK_CACHE_VERSION, LinkMetadata,
+};
+use mahayana_host_runtime::extensions::attachments::generate_image_service::GenerateImageAuth;
 use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
     CoordinatorMcpLifecycleRelay, CoordinatorMcpManagerBackend,
     HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_AUTHENTICATE_SERVER_METHOD,
@@ -26,6 +33,7 @@ use rcgen::generate_simple_self_signed;
 use rustls::pki_types::ServerName;
 use rustls::{ClientConfig, ClientConnection, RootCertStore, StreamOwned};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 #[derive(Debug)]
 struct TestApi;
@@ -993,6 +1001,566 @@ fn native_box_mcp_owner_errors_keep_status_message_and_single_dispatch() {
             }
             server.close();
             assert_eq!(api.recorded_calls(), expected_calls);
+        }
+    }
+}
+
+// LPG-v1: exercise the real HTTP registry/authority and AttachmentsService.
+// Only unrelated image-generation/Box dependencies and the ordinary-route
+// control are inert. Preview results always come from the actual service;
+// these fresh-cache fixtures do not establish internet or desktop UI parity.
+struct LinkPreviewUnusedDependencies;
+
+impl GenerateImageAuth for LinkPreviewUnusedDependencies {
+    fn get_access_token(&self) -> Result<String, String> {
+        panic!("cached link preview must not request image-generation credentials")
+    }
+
+    fn get_machine_id(&self) -> Result<String, String> {
+        panic!("cached link preview must not request an image-generation machine id")
+    }
+}
+
+impl AttachmentsBox for LinkPreviewUnusedDependencies {
+    fn run_state(&self, _agent_id: &str) -> Result<String, String> {
+        panic!("cached link preview must not inspect a Box")
+    }
+
+    fn upload_file(&self, _agent_id: &str, _path: &str, _data: &[u8]) -> Result<(), String> {
+        panic!("cached link preview must not upload to a Box")
+    }
+}
+
+struct LinkPreviewCacheRecord {
+    label: &'static str,
+    raw_url: &'static str,
+    blocked: bool,
+    metadata: LinkMetadata,
+    path: PathBuf,
+    bytes: Vec<u8>,
+}
+
+struct LinkPreviewCache {
+    root: PathBuf,
+    directory: PathBuf,
+    records: Vec<LinkPreviewCacheRecord>,
+}
+
+impl LinkPreviewCache {
+    fn new() -> Self {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-native-link-preview-{}", uuid::Uuid::new_v4(),
+        ));
+        // Establish ownership before installing the cleanup guard. A failed
+        // create must never authorize removal of an existing directory.
+        fs::create_dir(&root).expect("create owned link-preview fixture directory");
+        let mut cache = Self {
+            directory: root.join("desktop-user-data/link-preview-cache"),
+            root,
+            records: Vec::new(),
+        };
+        let records_dir = cache.directory.join(LINK_CACHE_DIRNAME);
+        fs::create_dir_all(&records_dir).expect("create preview records directory");
+        for (label, raw_url, blocked) in [
+            (
+                "public-host",
+                "https://PREVIEW.example.test:443/a/../public?fixture=host",
+                false,
+            ),
+            (
+                "public-mapped",
+                "https://[::ffff:1.1.1.1]:443/a/../public?fixture=mapped",
+                false,
+            ),
+            (
+                "private-dotted",
+                "https://[::ffff:127.0.0.1]/private?fixture=dotted",
+                true,
+            ),
+            (
+                "private-hex",
+                "https://[::ffff:7f00:1]/private?fixture=hex",
+                true,
+            ),
+            (
+                "private-lan",
+                "https://[::ffff:10.1.2.3]/private?fixture=lan",
+                true,
+            ),
+        ] {
+            // Canonicalize with ordinary URL parsing, independently of the
+            // admission predicate whose private-cache refusal is under test.
+            let canonical = url::Url::parse(raw_url).expect("preview fixture URL");
+            let fetched_at = u64::try_from(
+                SystemTime::now().duration_since(UNIX_EPOCH).expect("fixture clock").as_millis(),
+            ).expect("fixture timestamp");
+            let metadata = LinkMetadata {
+                url: canonical.to_string(),
+                canonical_url: format!("{}#canonical-{label}", canonical.as_str()),
+                title: format!("LPG cached title {label}"),
+                description: format!("Distinct cached description for {label} ☃"),
+                site_name: format!("LPG site {label}"),
+                hostname: canonical.host_str().expect("fixture hostname").to_string(),
+                image_data_url: Some(concat!(
+                    "data:image/png;base64,",
+                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8",
+                    "AAwMCAO+aVBEAAAAASUVORK5CYII=",
+                ).to_string()),
+                favicon_data_url: None,
+                fetched_at,
+            };
+            let mut record = serde_json::to_value(&metadata).expect("typed preview metadata");
+            record.as_object_mut().expect("metadata object")
+                .insert("cacheVersion".into(), json!(LINK_CACHE_VERSION));
+            let bytes = serde_json::to_vec_pretty(&record).expect("preview cache bytes");
+            let path = records_dir.join(format!(
+                "{:x}.json", Sha256::digest(canonical.as_str().as_bytes()),
+            ));
+            fs::write(&path, &bytes).expect("seed fresh preview cache");
+            cache.records.push(LinkPreviewCacheRecord {
+                label, raw_url, blocked, metadata, path, bytes,
+            });
+        }
+        cache.assert_unchanged_and_fresh();
+        cache
+    }
+
+    fn args(&self, record: &LinkPreviewCacheRecord) -> Value {
+        json!({"cacheDir": self.directory.to_string_lossy(), "url": record.raw_url})
+    }
+
+    fn assert_unchanged_and_fresh(&self) {
+        let records_dir = self.directory.join(LINK_CACHE_DIRNAME);
+        let cache_children = fs::read_dir(&self.directory).expect("preview cache directory")
+            .map(|entry| entry.expect("cache directory entry").path()).collect::<Vec<_>>();
+        assert_eq!(cache_children, vec![records_dir.clone()], "unexpected cache sibling");
+        let mut actual_paths = fs::read_dir(&records_dir).expect("preview records directory")
+            .map(|entry| entry.expect("preview record entry").path()).collect::<Vec<_>>();
+        let mut expected_paths = self.records.iter().map(|record| record.path.clone())
+            .collect::<Vec<_>>();
+        actual_paths.sort();
+        expected_paths.sort();
+        assert_eq!(actual_paths, expected_paths, "preview must not add or delete cache records");
+        let now = u64::try_from(
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("cache check clock").as_millis(),
+        ).expect("cache check timestamp");
+        for record in &self.records {
+            let bytes = fs::read(&record.path).expect("preview cache remains readable");
+            assert_eq!(bytes, record.bytes, "{} cache bytes changed", record.label);
+            let saved: Value = serde_json::from_slice(&bytes).expect("valid cache JSON");
+            assert_eq!(saved["cacheVersion"], json!(LINK_CACHE_VERSION));
+            let saved_metadata: LinkMetadata = serde_json::from_slice(&bytes)
+                .expect("complete typed cache metadata");
+            assert_eq!(saved_metadata, record.metadata, "{} metadata", record.label);
+            let age = now.checked_sub(saved_metadata.fetched_at)
+                .expect("cache timestamp must not be in the future");
+            assert!(age < LINK_CACHE_TTL_MS, "{} fixture must remain fresh", record.label);
+        }
+    }
+}
+
+impl Drop for LinkPreviewCache {
+    fn drop(&mut self) {
+        let cleanup = fs::remove_dir_all(&self.root);
+        if !thread::panicking() {
+            cleanup.expect("remove owned link-preview fixture directory");
+        }
+    }
+}
+
+struct LinkPreviewApi {
+    attachments: AttachmentsService,
+    calls: Mutex<Vec<(String, Value)>>,
+    pairing_owner: Option<Arc<DevicePairingOwner>>,
+    device_authorizations: Mutex<Vec<DeviceTokenAuthorization>>,
+    // Keep owned files alive with the actual service, including a connection
+    // unwinding after a failed client assertion.
+    _cache: Arc<LinkPreviewCache>,
+}
+
+impl LinkPreviewApi {
+    fn recorded_calls(&self) -> Vec<(String, Value)> {
+        self.calls.lock().expect("preview owner calls").clone()
+    }
+
+    fn recorded_device_authorizations(&self) -> Vec<DeviceTokenAuthorization> {
+        self.device_authorizations.lock().expect("preview device authorizations").clone()
+    }
+}
+
+impl GatewayApi for LinkPreviewApi {
+    fn authenticate_device_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
+        let Some(owner) = self.pairing_owner.as_ref() else {
+            return Ok(None);
+        };
+        let authorization = owner.authenticate_device_token(token)?;
+        if let Some(authorization) = authorization.as_ref() {
+            self.device_authorizations.lock().expect("record preview device authorization")
+                .push(authorization.clone());
+        }
+        Ok(authorization)
+    }
+
+    fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
+        self.calls.lock().expect("record preview owner dispatch")
+            .push((method.to_string(), args.clone()));
+        if method == "getTranscript" {
+            return Ok(args);
+        }
+        // Match the actual Host app's dispatch_gateway_call composition,
+        // including its existing String -> Internal error classification.
+        match self.attachments.dispatch_gateway(method, &args) {
+            Some(result) => result.map_err(GatewayCommandError::Internal),
+            None => Err(GatewayCommandError::UnknownMethod(method.to_string())),
+        }
+    }
+}
+
+struct LinkPreviewGateway {
+    // GatewayServer owns listener shutdown/join. Drop it before the service and
+    // cache guard, including during unwinding. The existing HTTP helper drains
+    // each connection to EOF; this fixture starts no additional worker threads.
+    server: GatewayServer,
+    api: Arc<LinkPreviewApi>,
+    cache: Arc<LinkPreviewCache>,
+}
+
+impl LinkPreviewGateway {
+    fn new(
+        cache: Arc<LinkPreviewCache>,
+        gateway_config: GatewayServerConfig,
+        pairing_owner: Option<Arc<DevicePairingOwner>>,
+    ) -> Self {
+        let api = Arc::new(LinkPreviewApi {
+            attachments: AttachmentsService::new(
+                cache.root.clone(),
+                Arc::new(LinkPreviewUnusedDependencies),
+                Arc::new(LinkPreviewUnusedDependencies),
+                None,
+            ),
+            calls: Mutex::new(Vec::new()),
+            pairing_owner,
+            device_authorizations: Mutex::new(Vec::new()),
+            _cache: cache.clone(),
+        });
+        Self::with_api(cache, gateway_config, api)
+    }
+
+    fn with_api(
+        cache: Arc<LinkPreviewCache>,
+        gateway_config: GatewayServerConfig,
+        api: Arc<LinkPreviewApi>,
+    ) -> Self {
+        let server = start_gateway_server(GatewayServerDeps {
+            api: api.clone(),
+            events: GatewayEventHub::default(),
+            local_exec: None,
+            webauthn: None,
+            config: gateway_config,
+            started_at: 1,
+        }).expect("real link-preview GatewayServer");
+        Self { server, api, cache }
+    }
+
+    fn assert_preview(
+        &self,
+        record: &LinkPreviewCacheRecord,
+        bearer: Option<&str>,
+        headers: &str,
+    ) {
+        self.cache.assert_unchanged_and_fresh();
+        let args = self.cache.args(record);
+        let mut expected_calls = self.api.recorded_calls();
+        let response = box_mcp_post(
+            self.server.port(), "fetchLinkMetadata", bearer, headers, &args.to_string(),
+        );
+        assert!(response.starts_with("HTTP/1.1 200 OK"), "{}: {response}", record.label);
+        let expected = if record.blocked {
+            Value::Null
+        } else {
+            serde_json::to_value(&record.metadata).expect("expected preview metadata")
+        };
+        assert_eq!(json_body(&response), expected, "{} preview result", record.label);
+        expected_calls.push(("fetchLinkMetadata".to_string(), args));
+        assert_eq!(self.api.recorded_calls(), expected_calls, "preview must dispatch exactly once");
+        self.cache.assert_unchanged_and_fresh();
+    }
+
+    fn assert_native_control(&self, bearer: Option<&str>) {
+        self.assert_preview(&self.cache.records[0], bearer, "");
+    }
+
+    fn assert_ordinary_control(&self, bearer: Option<&str>, args: Value) {
+        let mut expected_calls = self.api.recorded_calls();
+        let response = box_mcp_post(
+            self.server.port(), "getTranscript", bearer, "", &args.to_string(),
+        );
+        assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
+        assert_eq!(json_body(&response), args);
+        expected_calls.push(("getTranscript".to_string(), args));
+        assert_eq!(self.api.recorded_calls(), expected_calls, "ordinary-route control dispatch");
+        self.cache.assert_unchanged_and_fresh();
+    }
+
+    fn assert_no_dispatch(
+        &self,
+        method: &str,
+        bearer: Option<&str>,
+        headers: &str,
+        body: &str,
+        status: &str,
+    ) -> Value {
+        self.cache.assert_unchanged_and_fresh();
+        let before = self.api.recorded_calls();
+        let response = box_mcp_post(self.server.port(), method, bearer, headers, body);
+        assert!(response.starts_with(status), "{method}: {response}");
+        assert_eq!(self.api.recorded_calls(), before, "refusal must precede owner access");
+        self.cache.assert_unchanged_and_fresh();
+        json_body(&response)
+    }
+}
+
+fn assert_link_preview_native_only(error: Value) {
+    assert_eq!(error, json!({
+        "error": "ATTACHMENTS_NATIVE_ONLY: Link preview requires the native control-plane gateway",
+    }));
+}
+
+#[test]
+fn native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission() {
+    for token in [None, Some("preview-native-shared-secret")] {
+        let cache = Arc::new(LinkPreviewCache::new());
+        let gateway = LinkPreviewGateway::new(cache.clone(), config(token), None);
+        for record in &cache.records {
+            for headers in [
+                "",
+                "x-sand-role: operator\r\n",
+                "x-sand-scope: operator.write\r\n",
+                "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n",
+            ] {
+                gateway.assert_preview(record, token, headers);
+                if record.blocked {
+                    gateway.assert_native_control(token);
+                }
+            }
+        }
+        // A new HTTP server and a new actual service reuse the same disk
+        // records; no accepted-job state or policy memo survives the restart.
+        drop(gateway);
+        cache.assert_unchanged_and_fresh();
+        let restarted = LinkPreviewGateway::new(cache.clone(), config(token), None);
+        for record in &cache.records {
+            restarted.assert_preview(record, token, "");
+            if record.blocked {
+                restarted.assert_native_control(token);
+            }
+        }
+    }
+}
+
+#[test]
+fn native_link_preview_configured_secret_cannot_be_replaced_by_headers() {
+    let secret = "preview-native-shared-secret";
+    let cache = Arc::new(LinkPreviewCache::new());
+    let gateway = LinkPreviewGateway::new(cache.clone(), config(Some(secret)), None);
+    let valid_body = cache.args(&cache.records[0]).to_string();
+    for bearer in [None, Some("wrong-preview-native-secret")] {
+        for headers in ["", "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n"] {
+            for body in [valid_body.as_str(), "{"] {
+                let error = gateway.assert_no_dispatch(
+                    "fetchLinkMetadata", bearer, headers, body, "HTTP/1.1 401 Unauthorized",
+                );
+                assert_eq!(error, json!({"error": "unauthorized"}));
+                gateway.assert_native_control(Some(secret));
+            }
+        }
+    }
+}
+
+#[test]
+fn native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner() {
+    for token in [None, Some("preview-native-shared-secret")] {
+        let cache = Arc::new(LinkPreviewCache::new());
+        let gateway = LinkPreviewGateway::new(cache.clone(), config(token), None);
+        let valid_body = cache.args(&cache.records[0]).to_string();
+        for headers in [
+            "x-sand-role: node\r\n",
+            "x-sand-role: unknown-role\r\n",
+            "x-sand-role: Operator\r\n",
+            "x-sand-role: \r\n",
+            "x-sand-role: operator\r\nx-sand-scope: operator.read\r\n",
+            "x-sand-scope: operator.read\r\n",
+            "x-sand-scope: unknown-scope\r\n",
+            "x-sand-scope: operator.write operator.read\r\n",
+            "x-sand-scope: \r\n",
+        ] {
+            for body in [valid_body.as_str(), "{"] {
+                assert_link_preview_native_only(gateway.assert_no_dispatch(
+                    "fetchLinkMetadata", token, headers, body, "HTTP/1.1 403 Forbidden",
+                ));
+                gateway.assert_native_control(token);
+            }
+        }
+    }
+}
+
+#[test]
+fn native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner() {
+    for configured_token in [None, Some("preview-native-shared-secret")] {
+        let cache = Arc::new(LinkPreviewCache::new());
+        let owner = Arc::new(DevicePairingOwner::in_memory().expect("preview pairing owner"));
+        let tokens = [
+            issue_gateway_device_token(
+                &owner, "preview-node", "preview-node-public-key", "node", &[],
+            ),
+            issue_gateway_device_token(
+                &owner, "preview-operator", "preview-operator-public-key", "operator",
+                &["operator.read", "operator.write"],
+            ),
+        ];
+        let gateway = LinkPreviewGateway::new(cache.clone(), config(configured_token), Some(owner));
+        let valid_body = cache.args(&cache.records[0]).to_string();
+        for (device_token, authorization) in tokens {
+            // This issued token is live and accepted on an ordinary route;
+            // preview denial must not be caused by a fabricated/bad token.
+            gateway.assert_ordinary_control(
+                Some(&device_token), json!({"pairedDeviceControl": authorization.device_id}),
+            );
+            for headers in ["", "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n"] {
+                for body in [valid_body.as_str(), "{"] {
+                    let mut expected_authorizations = gateway.api.recorded_device_authorizations();
+                    assert_link_preview_native_only(gateway.assert_no_dispatch(
+                        "fetchLinkMetadata", Some(&device_token), headers, body,
+                        "HTTP/1.1 403 Forbidden",
+                    ));
+                    expected_authorizations.push(authorization.clone());
+                    assert_eq!(
+                        gateway.api.recorded_device_authorizations(), expected_authorizations,
+                        "refusal must consume actual pairing-owner authorization",
+                    );
+                    gateway.assert_native_control(configured_token);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn native_link_preview_retains_origin_and_unauthenticated_host_checks() {
+    for token in [None, Some("preview-native-shared-secret")] {
+        let cache = Arc::new(LinkPreviewCache::new());
+        let gateway = LinkPreviewGateway::new(cache.clone(), config(token), None);
+        let body = cache.args(&cache.records[0]).to_string();
+        let error = gateway.assert_no_dispatch(
+            "fetchLinkMetadata", token, "Origin: https://untrusted.example\r\n", &body,
+            "HTTP/1.1 403 Forbidden",
+        );
+        assert_eq!(error, json!({"error": "browser-origin gateway requests are not allowed"}));
+        gateway.assert_native_control(token);
+        if token.is_none() {
+            let before = gateway.api.recorded_calls();
+            let untrusted = request(gateway.server.port(), &format!(
+                "POST /api/fetchLinkMetadata HTTP/1.1\r\nHost: untrusted.example\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len(),
+            ));
+            assert!(untrusted.starts_with("HTTP/1.1 403 Forbidden"), "{untrusted}");
+            assert_eq!(json_body(&untrusted), json!({"error": "untrusted gateway host"}));
+            assert_eq!(gateway.api.recorded_calls(), before, "untrusted Host reached owner");
+            cache.assert_unchanged_and_fresh();
+            gateway.assert_native_control(token);
+        }
+    }
+}
+
+#[test]
+fn native_link_preview_nonloopback_configuration_requires_authentication() {
+    for token in [None, Some("preview-native-shared-secret")] {
+        let cache = Arc::new(LinkPreviewCache::new());
+        let mut gateway_config = config(token);
+        gateway_config.host = "0.0.0.0".to_string();
+        let gateway = LinkPreviewGateway::new(cache.clone(), gateway_config, None);
+        if token.is_some() {
+            gateway.assert_native_control(token);
+        } else {
+            let body = cache.args(&cache.records[0]).to_string();
+            assert_link_preview_native_only(gateway.assert_no_dispatch(
+                "fetchLinkMetadata", None,
+                "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n", &body,
+                "HTTP/1.1 403 Forbidden",
+            ));
+            // The same wildcard listener remains alive for an ordinary method.
+            gateway.assert_ordinary_control(None, json!({"listenerControl": true}));
+            let api = gateway.api.clone();
+            drop(gateway);
+            // Restore a trusted listener around the same actual service, so
+            // the native positive control is not a replacement owner.
+            let native = LinkPreviewGateway::with_api(cache.clone(), config(None), api);
+            native.assert_native_control(None);
+        }
+    }
+}
+
+#[test]
+fn native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner() {
+    for token in [None, Some("preview-native-shared-secret")] {
+        let cache = Arc::new(LinkPreviewCache::new());
+        let gateway = LinkPreviewGateway::new(cache.clone(), config(token), None);
+        let malformed = gateway.assert_no_dispatch(
+            "fetchLinkMetadata", token, "", "{", "HTTP/1.1 400 Bad Request",
+        );
+        assert!(
+            malformed["error"].as_str().expect("JSON error").starts_with("invalid JSON body:"),
+            "{malformed}",
+        );
+        gateway.assert_native_control(token);
+        for neighbor in [
+            "fetchLinkMetadataExtra", "fetchLinkMetadata.raw", "getLinkMetadata",
+            "readRemoteMediaBuffer", "saveRemoteMedia", "saveMediaSource",
+        ] {
+            let error = gateway.assert_no_dispatch(
+                neighbor, token, "", "{}", "HTTP/1.1 404 Not Found",
+            );
+            assert_eq!(error, json!({"error": format!("unknown gateway method: {neighbor}")}));
+            gateway.assert_native_control(token);
+        }
+    }
+}
+
+#[test]
+fn native_link_preview_service_argument_errors_keep_status_and_single_dispatch() {
+    for token in [None, Some("preview-native-shared-secret")] {
+        let cache = Arc::new(LinkPreviewCache::new());
+        let gateway = LinkPreviewGateway::new(cache.clone(), config(token), None);
+        let valid = cache.args(&cache.records[0]);
+        for (args, message) in [
+            (Value::Null, "fetchLinkMetadata.cacheDir must be a string"),
+            (json!({}), "fetchLinkMetadata.cacheDir must be a string"),
+            (
+                json!({"cacheDir": 7, "url": valid["url"]}),
+                "fetchLinkMetadata.cacheDir must be a string",
+            ),
+            (
+                json!({"cacheDir": valid["cacheDir"]}),
+                "fetchLinkMetadata.url must be a string",
+            ),
+            (
+                json!({"cacheDir": valid["cacheDir"], "url": false}),
+                "fetchLinkMetadata.url must be a string",
+            ),
+        ] {
+            let mut expected_calls = gateway.api.recorded_calls();
+            let response = box_mcp_post(
+                gateway.server.port(), "fetchLinkMetadata", token, "", &args.to_string(),
+            );
+            assert!(response.starts_with("HTTP/1.1 500 Internal Server Error"), "{response}");
+            assert_eq!(json_body(&response), json!({"error": message}));
+            expected_calls.push(("fetchLinkMetadata".to_string(), args));
+            assert_eq!(gateway.api.recorded_calls(), expected_calls, "service error must not replay");
+            cache.assert_unchanged_and_fresh();
+            gateway.assert_native_control(token);
         }
     }
 }

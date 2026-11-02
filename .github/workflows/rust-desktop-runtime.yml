@@ -319,6 +319,18 @@ jobs:
               "source/host/src/extensions/attachments/media_fetch.rs",
               "source/host/src/extensions/attachments/media_store.rs",
               "source/host/tests/openclaw_media_fetch_contract.rs",
+              "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
+              "source/host/app/src/tests/link_preview_gateway_tests.rs",
+              "source/host/src/host_gateway_api.rs",
+              "source/host/tests/gateway_protocol_contract.rs",
+              "source/node-agent-coordinator/src/carrier.rs",
+              "source/node-agent-coordinator/src/main.rs",
+              "source/node-agent-coordinator/tests/coordinator_contract.rs",
+              "source/node-agent-coordinator/tests/production_protocol.rs",
+              "source/electron-main/adapters/attachment-gateway.ts",
+              "source/electron-main/attachments/attachments.ts",
+              "source/electron-main/coordinator/coordinator-main-port-client.ts",
+              "source/shared/rpc/coordinator-main.ts",
           ]
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
@@ -466,6 +478,9 @@ jobs:
           admission_status=0
           if test -x "$FABUSHI_ORIGINAL_TURN_APP_TEST_EXECUTABLE"; then
             for admission_test in \
+              tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane \
+              tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract \
+              tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply \
               tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests \
               tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization \
               tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers \
@@ -872,6 +887,9 @@ jobs:
                   path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in (
                       ".github/workflows/rust-desktop-runtime.yml",
                       "source/node-agent-coordinator/src/main.rs",
+                      "source/node-agent-coordinator/src/carrier.rs",
+                      "source/node-agent-coordinator/tests/coordinator_contract.rs",
+                      "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
                       "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs",
                       "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
                       "source/node-agent-coordinator/tests/production_protocol.rs",
@@ -902,6 +920,82 @@ jobs:
           with (evidence / "coordinator-inputs.json").open("x", encoding="utf-8") as target:
               target.write(json.dumps(receipt, sort_keys=True, indent=2) + "\n")
           PY
+      - name: Require native preview HTTP, carrier and app-lane positives from existing macOS commands
+        if: ${{ always() && steps.coordinator_inputs.outcome == 'success' && ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, re, subprocess
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = json.loads((root / "subject.json").read_text())
+          coordinator = json.loads(Path(".evidence/coordinator-inputs.json").read_text())
+          all_exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()]
+          exits = [row for row in all_exits if row[0] == "integration-contracts"]
+          required_host = [
+              "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+              "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation",
+              "native_link_preview_registration_keeps_inventory_and_owner",
+              "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
+              "native_link_preview_configured_secret_cannot_be_replaced_by_headers",
+              "native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+              "native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner",
+              "native_link_preview_retains_origin_and_unauthenticated_host_checks",
+              "native_link_preview_nonloopback_configuration_requires_authentication",
+              "native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner",
+              "native_link_preview_service_argument_errors_keep_status_and_single_dispatch",
+          ]
+          required_coordinator = [
+              "native_link_preview_carrier_reserves_cache_paths_for_main_data",
+              "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash",
+          ]
+          required_app = [
+              "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+              "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+              "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply",
+          ]
+          executions = []
+          for label, log_path, required in [
+              ("host", root / "integration-contracts.log", required_host),
+              ("coordinator", Path(".evidence/coordinator-command.log"), required_coordinator),
+          ]:
+              raw = log_path.read_bytes() if log_path.is_file() else b""
+              passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
+              missing = [name for name in required if passed.count(name) != 1]
+              executions.append({"case": label, "required_positive_names": required,
+                  "observed_passed_test_names": passed, "missing_or_nonunique_positive_results": missing,
+                  "log": str(log_path), "log_sha256": hashlib.sha256(raw).hexdigest()})
+          app_commands_accepted = True
+          for name in required_app:
+              label = "app-" + name.replace("::", "_")
+              log_path = root / (label + ".log")
+              command_path = root / (label + ".command.txt")
+              raw = log_path.read_bytes() if log_path.is_file() else b""
+              passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
+              app_exits = [row for row in all_exits if row[0] == label]
+              app_commands_accepted = app_commands_accepted and app_exits == [[label, "0"]] and command_path.is_file()
+              executions.append({"case": label, "required_positive_names": [name],
+                  "command": command_path.read_text().strip() if command_path.is_file() else None,
+                  "command_exit_records": app_exits, "observed_passed_test_names": passed,
+                  "missing_or_nonunique_positive_results": [] if passed.count(name) == 1 else [name],
+                  "log": str(log_path), "log_sha256": hashlib.sha256(raw).hexdigest()})
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          accepted = (head == subject["subject_commit"] == coordinator["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+              and exits == [["integration-contracts", "0"]] and coordinator["command"]["exit_code"] == 0
+              and app_commands_accepted
+              and all(not case["missing_or_nonunique_positive_results"] for case in executions))
+          receipt = {key: subject[key] for key in (
+              "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+          receipt.update({"contract": "LPG-v1", "executions": executions,
+              "host_command": (root / "integration-contracts.command.txt").read_text().strip(),
+              "host_exit_records": exits, "coordinator_command": coordinator["command"],
+              "result": "passed" if accepted else "failed",
+              "scope": "Existing native HTTP permission and real AttachmentsService cache path, shipping Coordinator carrier decisions against a controlled peer, and actual app helper controls with a closed Host lane plus preserved ordinary lane replies. Source anchors only establish shared-Arc/API composition. Not full UI, cold internet fetch/pinning, concurrency soak, media parity or platform acceptance."})
+          Path(".evidence/link-preview-native-gateway.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          raise SystemExit(0 if accepted else 1)
+          PY
       - name: Upload exact Coordinator dependency inputs
         if: ${{ always() && steps.coordinator_inputs.outcome == 'success' }}
         uses: actions/upload-artifact@v4
@@ -911,6 +1005,7 @@ jobs:
             .evidence/coordinator-Cargo.lock
             .evidence/coordinator-inputs.json
             .evidence/coordinator-command.log
+            .evidence/link-preview-native-gateway.receipt.json
           if-no-files-found: error
           retention-days: 90
       - name: Record actual Coordinator JSON feature graph
@@ -980,6 +1075,10 @@ jobs:
               "media_input_url_result": "passed",
               "media_input_url_scope": "Existing input reader forwards restrictive hostname policy and explicit redirect caps to the current fetch owner; real generic owned HTTP request controls cover initial/per-hop admission, typed refusals, exact caps and byte bounds. Input projection is a separate typed boundary check. Outer Host HTTP registration, DNS/IP/proxy/cancellation, actual TLS downgrade transport, accepted-turn extraction and real service acceptance remain open.",
               "link_preview_ip_scope": "Existing Fabushi preview owner applies its IPv4 rules to mapped IPv6 in literal, DNS-answer and redirect admission, and the real metadata gateway checks policy before using fresh cache entries. Public mapped and native controls remain. This is not real HTTP-loop/pinning execution, general-media or OpenClaw link-understanding equivalence, or platform acceptance.",
+              "link_preview_native_gateway_contract": "LPG-v1",
+              "link_preview_native_gateway_result": "passed",
+              "link_preview_native_gateway_receipt": "link-preview-native-gateway.receipt.json in the exact-subject Coordinator artifact",
+              "link_preview_native_gateway_scope": "Only fetchLinkMetadata joins the native Attachments registry; actual HTTP native authority/service-cache cases, shipping Coordinator MainData/Data routing against a controlled peer, and three app helper controls with closed Host lane and preserved ordinary replies. Source anchors establish shared service composition. No full UI/cold network timing, concurrency soak, remote-host path portability or platform acceptance is established.",
               "media_http_error_contract": "MHE-v1",
               "media_http_error_target": "openclaw_media_fetch_contract",
               "media_http_error_result": "passed",
@@ -1837,8 +1936,149 @@ jobs:
               print(json.dumps(receipt, indent=2), flush=True)
           sys.exit(0 if receipt["result"] == "passed" else 1)
           PY
+      - name: Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache
+        id: link_preview_gateway
+        if: ${{ always() && steps.native_paths.outcome == 'success' && ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) }}
+        timeout-minutes: 20
+        env:
+          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess
+          root = pathlib.Path(".evidence/sqlite-native-path/link-preview-native-gateway")
+          root.mkdir(parents=True, exist_ok=True)
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"], "Exact LPG execution subject mismatch"
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          inputs = [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
+              "projects/openclaw-rust/upstream.lock.json",
+              "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
+              "source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml",
+              "source/node-agent-coordinator/Cargo.toml", "source/node-agent-coordinator/Cargo.lock",
+              "source/host/src/host_gateway_api.rs", "source/host/src/gateway_server.rs",
+              "source/host/src/gateway_protocol.rs", "source/host/app/src/main.rs",
+              "source/host/app/src/tests/link_preview_gateway_tests.rs",
+              "source/host/src/extensions/attachments/attachments_service.rs",
+              "source/host/src/extensions/attachments/safe_link_preview_fetch.rs",
+              "source/host/tests/gateway_protocol_contract.rs", "source/host/tests/gateway_server_contract.rs",
+              "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+              "source/node-agent-coordinator/src/carrier.rs", "source/node-agent-coordinator/src/main.rs",
+              "source/node-agent-coordinator/tests/coordinator_contract.rs",
+              "source/node-agent-coordinator/tests/production_protocol.rs",
+              "source/shared/rpc/coordinator-main.ts",
+              "source/electron-main/attachments/attachments.ts",
+              "source/electron-main/adapters/attachment-gateway.ts",
+              "source/electron-main/coordinator/coordinator-main-port-client.ts",
+          ]
+          host_names = [
+              "native_link_preview_registration_keeps_inventory_and_owner",
+              "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
+              "native_link_preview_configured_secret_cannot_be_replaced_by_headers",
+              "native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+              "native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner",
+              "native_link_preview_retains_origin_and_unauthenticated_host_checks",
+              "native_link_preview_nonloopback_configuration_requires_authentication",
+              "native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner",
+              "native_link_preview_service_argument_errors_keep_status_and_single_dispatch",
+          ]
+          coordinator_names = [
+              "native_link_preview_carrier_reserves_cache_paths_for_main_data",
+              "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash",
+          ]
+          app_names = [
+              "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+              "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+              "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply",
+          ]
+          cases = [
+              ("host", ["cargo", "test", "--locked", "--no-fail-fast", "--manifest-path", "source/host/Cargo.toml",
+                        "--test", "gateway_protocol_contract", "--test", "gateway_server_contract"], host_names),
+              ("coordinator", ["cargo", "test", "--locked", "--no-fail-fast", "--target-dir", "source/host/target",
+                        "--manifest-path", "source/node-agent-coordinator/Cargo.toml",
+                        "--test", "coordinator_contract", "--test", "production_protocol"], coordinator_names),
+              ("app", ["cargo", "test", "--locked", "--target-dir", "source/host/target",
+                        "--manifest-path", "source/host/app/Cargo.toml", "--bin", "mahayana-app-host",
+                        "tests::link_preview_gateway_tests::"], app_names),
+          ]
+          digest_inputs = lambda: {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs}
+          receipt = {
+              "contract": "LPG-v1", "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
+              "inputs_before_sha256": digest_inputs(),
+              "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
+              "executions": [], "result": "failed-or-incomplete",
+              "scope": "Actual native HTTP authentication/permissions and AttachmentsService fresh-cache success/refusal; shipping Coordinator binary carrier/forwarding against a controlled peer; actual Linux app helper with closed Host lane and preserved ordinary lane replies, plus source-only shared-Arc/API anchors. Not macOS, cold internet fetch/pinning, concurrency soak, desktop UI/timing, remote-host path portability, full media/platform or OCRM acceptance.",
+          }
+          for label, command, required in cases:
+              receipt["active_case"] = label
+              (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+              log_path = root / (label + ".log")
+              cargo_exit, capture_exit, execution_error, raw = None, 0, None, b""
+              try:
+                  with log_path.open("wb") as output:
+                      completed = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)
+                  cargo_exit = completed.returncode
+                  raw = log_path.read_bytes()
+              except OSError as error:
+                  capture_exit, execution_error = 1, str(error)
+              text = raw.decode("utf-8", errors="replace")
+              print(text, flush=True)
+              passed = re.findall(r"^test (\S+) \.\.\. ok$", text, re.MULTILINE)
+              missing = [name for name in required if passed.count(name) != 1]
+              accepted = cargo_exit == 0 and capture_exit == 0 and not missing
+              receipt["executions"].append({"case": label, "command": command,
+                  "cargo_exit": cargo_exit, "capture_exit": capture_exit, "execution_error": execution_error,
+                  "required_positive_names": required, "observed_passed_test_names": passed,
+                  "missing_or_nonunique_positive_results": missing, "oracle_accepted": accepted,
+                  "log": log_path.name, "log_sha256": hashlib.sha256(raw).hexdigest()})
+              (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          receipt.pop("active_case", None)
+          # The incoming Automation command already runs the composition
+          # target. Reuse its same-H evidence instead of executing it twice.
+          shared_root = pathlib.Path(".evidence/sqlite-native-path/automation-admission")
+          shared_log = shared_root / "tests.log"
+          shared_receipt_path = shared_root / "receipt.json"
+          shared_raw = shared_log.read_bytes() if shared_log.is_file() else b""
+          shared_required = [
+              "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+              "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation",
+          ]
+          shared_passed = re.findall(r"^test (\S+) \.\.\. ok$", shared_raw.decode("utf-8", errors="replace"), re.MULTILINE)
+          shared_missing = [name for name in shared_required if shared_passed.count(name) != 1]
+          shared_error = None
+          try:
+              shared = json.loads(shared_receipt_path.read_text())
+          except (OSError, ValueError) as error:
+              shared, shared_error = {}, str(error)
+          shared_digest = hashlib.sha256(shared_raw).hexdigest()
+          shared_accepted = (not shared_missing and shared.get("subject_commit") == head
+              and shared.get("subject_tree") == receipt["subject_tree"] and shared.get("upstream") == receipt["upstream"]
+              and shared.get("cargo_exit") == 0 and shared.get("capture_exit") == 0
+              and shared.get("log_sha256") == shared_digest and shared.get("result") == "passed")
+          receipt["executions"].append({"case": "reused-mcp-composition", "command": shared.get("command"),
+              "cargo_exit": shared.get("cargo_exit"), "capture_exit": shared.get("capture_exit"),
+              "execution_error": shared_error, "reused_receipt": str(shared_receipt_path),
+              "required_positive_names": shared_required, "observed_passed_test_names": shared_passed,
+              "missing_or_nonunique_positive_results": shared_missing, "oracle_accepted": shared_accepted,
+              "log": str(shared_log), "log_sha256": shared_digest})
+          receipt["inputs_after_sha256"] = digest_inputs()
+          unchanged = receipt["inputs_before_sha256"] == receipt["inputs_after_sha256"]
+          accepted = unchanged and len(receipt["executions"]) == len(cases) + 1 and all(case["oracle_accepted"] for case in receipt["executions"])
+          receipt["result"] = "passed" if accepted else "failed-or-incomplete"
+          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2), flush=True)
+          raise SystemExit(0 if accepted else 1)
+          PY
       - name: Preserve failed owned native-path and Automation fixtures
-        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure') }}
+        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail

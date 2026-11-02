@@ -1243,3 +1243,22 @@ cleanup uncertainty, event loss, real external backend compatibility, full
 reaper and all final OCRM gates remain separate open work. This batch earns no
 new upstream reading credit or global flag promotion.
 
+### AUTO-ADMISSION-ERROR-ORACLE-01 — trigger-specific reader diagnostics
+
+Decision **FIX / TEST_FLAW**, from exact H
+`f890002148f122aacdfc78fe39530a7e9c1bef6e`, runtime run `41527502935`, Linux
+job `125558911916`: the nine-target command has 114 passed and two failed
+outer tests, Cargo exit 101/capture exit 0. Scheduled/event pre-admission
+controls stop at the MixedRows error assertion. The existing background
+precheck already uses `read_run_for_delivery`, which reports invalid delivery
+custody and competing row identity; the manual fresh-history mutation reader
+reports an invalid row and duplicate IDs. These distinct readers and the stale
+shared expectation also exist in parent `1b9803de2283322a7809dc626a5ca35a52eb834e`.
+Keep both production contracts unchanged. Correct only the pre-admission
+fixture's trigger-specific MixedRows/DuplicateIds messages and include the
+actual error in assertion diagnostics. Preserve all zero-execution, unchanged
+bytes, no-observer/no-cron, released-occupancy and explicit-repair positives,
+all corrupt-JSON cases, and the settlement helper's original mutation-reader
+expectations. Fresh focused source review and new exact-H execution remain
+required; the skipped actual-App step is not evidence of compilation or pass.
+

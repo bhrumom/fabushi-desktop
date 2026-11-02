@@ -1600,6 +1600,7 @@ fn dispatch_public_settings_command(
 
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
+    attachments: Arc<AttachmentsService>,
     auth: Arc<HostAuthExtension>,
     experiments: Arc<HostExperimentsExtension>,
     settings: Arc<SettingsService>,
@@ -7810,6 +7811,23 @@ fn required_box_agent_id<'a>(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| GatewayCommandError::BadRequest(format!("{method} requires id")))
+}
+
+// Preview IO belongs to the existing connection worker, not the single Host
+// owner lane. Keep the same AttachmentsService instance and ordinary fallback.
+fn call_native_attachments_or_host_lane(
+    host_tx: &mpsc::Sender<HostLaneRequest>,
+    attachments: &AttachmentsService,
+    method: &str,
+    args: serde_json::Value,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    if method == "fetchLinkMetadata" {
+        return match attachments.dispatch_gateway(method, &args) {
+            Some(result) => result.map_err(GatewayCommandError::Internal),
+            None => Err(GatewayCommandError::UnknownMethod(method.to_string())),
+        };
+    }
+    call_host_lane(host_tx, method, args)
 }
 
 fn call_host_lane(
@@ -14172,7 +14190,7 @@ impl GatewayApi for UnifiedGatewayApi {
         if let Some(result) = self.mcp_service.dispatch_desktop_command(method, &args) {
             return result.map_err(GatewayCommandError::Internal);
         }
-        call_host_lane(&self.host_tx, method, args)
+        call_native_attachments_or_host_lane(&self.host_tx, &self.attachments, method, args)
     }
 
     fn health(&self) -> GatewayHealth {
@@ -16797,6 +16815,7 @@ fn main() {
 
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
+            attachments: Arc::clone(&attachments_service),
             auth: Arc::clone(&production_extensions.auth),
             experiments: Arc::clone(&production_extensions.experiments),
             settings: Arc::clone(&settings_extension),
@@ -17381,6 +17400,8 @@ mod tests {
     mod original_turn_recovery_tests;
     #[path = "channel_host_lane_tests.rs"]
     mod channel_host_lane_tests;
+    #[path = "link_preview_gateway_tests.rs"]
+    mod link_preview_gateway_tests;
     #[path = "channel_failure_handoff_tests.rs"]
     mod channel_failure_handoff_tests;
     #[path = "automation_terminal_custody_tests.rs"]

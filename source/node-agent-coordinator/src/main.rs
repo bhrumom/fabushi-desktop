@@ -1,7 +1,8 @@
 use chrono::{SecondsFormat, Utc};
 use mahayana_node_agent_coordinator::miniapp_management_relay::miniapp_carrier_allowed;
 use mahayana_node_agent_coordinator::carrier::{
-    parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
+    native_attachment_carrier_allowed, parse_bootstrap_argument,
+    CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
 use mahayana_node_agent_coordinator::control_port_client::{
     ClientAction, ControlPortClient, ControlPortPhase, call_control_command,
@@ -2697,6 +2698,16 @@ fn execute_actions(
                 method,
                 args,
             } => {
+                if !native_attachment_carrier_allowed(&method, channel) {
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Failed {
+                            failure: Failure::new("ATTACHMENTS_NATIVE_ONLY", "link preview requires native main-data carrier"),
+                        },
+                    );
+                    continue;
+                }
                 if !miniapp_carrier_allowed(&method, channel) {
                     state.complete_request(
                         channel,

@@ -435,20 +435,23 @@ fn history_admission_failure_then_independent_run(
         executed += 1;
         Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
     }).expect_err("pre-existing invalid history must refuse the actual production executor");
-    match fault {
-        HistoryFault::CorruptJson => assert!(error.contains("automation store json error")),
-        HistoryFault::MixedRows => assert!(error.contains("history contains an invalid row")),
-        HistoryFault::DuplicateIds => assert!(error.contains("history contains duplicate run IDs")),
+    let expected_error = match fault {
+        HistoryFault::CorruptJson => "automation store json error",
+        HistoryFault::MixedRows if trigger.is_background() => "history contains invalid delivery custody",
+        HistoryFault::MixedRows => "history contains an invalid row",
+        HistoryFault::DuplicateIds if trigger.is_background() => "run identity is claimed by different history rows",
+        HistoryFault::DuplicateIds => "history contains duplicate run IDs",
         _ => panic!("unsupported history-admission control"),
-    }
+    };
+    assert!(error.contains(expected_error), "{trigger:?}/{fault:?}: expected {expected_error:?}, got {error:?}");
     assert_eq!(executed, 0, "{trigger:?}/{fault:?}");
     assert_eq!(fs::read(&runs_path).unwrap(), refused_bytes, "{trigger:?}/{fault:?}");
     assert!(fixture.observed.lock().unwrap().is_empty());
     assert!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap().is_empty(),
         "history refusal must precede real cron registration");
     assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
-    // Notice/lastRunAt bookkeeping still precedes history admission. This
-    // test does not mislabel that existing order as a cross-file rollback.
+    // Background identity precheck precedes bookkeeping; manual fresh-history
+    // admission follows it. Neither path claims cross-file rollback.
 
     fs::write(&runs_path, prior_history).expect("explicitly repair the invalid stored input");
     let repaired = fixture.run(trigger, "admission-repaired", |_| {

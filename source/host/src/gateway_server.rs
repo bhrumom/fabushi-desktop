@@ -24,7 +24,9 @@ use crate::gateway_protocol::{
     GATEWAY_PREPARE_UPGRADE_PATH, is_grok_gateway_command, parse_command_args,
     slim_command_result, slim_event,
 };
-use crate::host_gateway_api::FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS;
+use crate::host_gateway_api::{
+    FABUSHI_NATIVE_ATTACHMENTS_GATEWAY_METHODS, FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS,
+};
 use crate::extensions::mcp::coordinator_relay::{
     HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
 };
@@ -1362,6 +1364,16 @@ fn handle_connection(
             &mut stream,
             403,
             "MCP_BOX_NATIVE_ONLY: Box MCP requires the native control-plane gateway",
+        );
+    }
+    // The desktop preview leg carries a native-selected cache directory.
+    // Reuse the same existing control-plane authority as native Box routes;
+    // a paired operator token must not turn this into an arbitrary-path RPC.
+    if FABUSHI_NATIVE_ATTACHMENTS_GATEWAY_METHODS.contains(&method) && !native_mcp_control {
+        return respond_error(
+            &mut stream,
+            403,
+            "ATTACHMENTS_NATIVE_ONLY: Link preview requires the native control-plane gateway",
         );
     }
     if let Some(authorization) = device_authorization.as_ref() {

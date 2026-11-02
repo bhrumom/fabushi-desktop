@@ -808,10 +808,19 @@ fn desktop_mcp_dispatch_precedes_host_fallback(source: &str) -> bool {
     if methods.next().is_some() { return false; }
     let Some((fallback, before)) = method.block.stmts.split_last() else { return false; };
     let syn::Stmt::Expr(syn::Expr::Call(fallback), None) = fallback else { return false; };
-    if !named(&fallback.func, "call_host_lane") || fallback.args.len() != 3
+    let method_index = if named(&fallback.func, "call_host_lane") {
+        1
+    } else if named(&fallback.func, "call_native_attachments_or_host_lane") {
+        2
+    } else {
+        return false;
+    };
+    if fallback.args.len() != method_index + 2
         || !matches!(fallback.args.first(), Some(syn::Expr::Reference(reference))
             if reference.mutability.is_none() && self_field(&reference.expr, "host_tx"))
-        || !fallback.args.iter().nth(1).is_some_and(|expr| named(expr, "method"))
+        || (method_index == 2 && !matches!(fallback.args.iter().nth(1), Some(syn::Expr::Reference(reference))
+            if reference.mutability.is_none() && self_field(&reference.expr, "attachments")))
+        || !fallback.args.iter().nth(method_index).is_some_and(|expr| named(expr, "method"))
         || !fallback.args.last().is_some_and(|expr| named(expr, "args"))
     {
         return false;
@@ -1099,25 +1108,44 @@ fn shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallba
 #[test]
 fn desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation() {
     let delegate = "if let Some(result) = self.mcp_service.dispatch_desktop_command(method, &args) { return result.map_err(GatewayCommandError::Internal); }";
-    let fallback = "call_host_lane(&self.host_tx, method, args)";
+    let native_fallback = "call_native_attachments_or_host_lane(&self.host_tx, &self.attachments, method, args)";
     let fixture = |body: &str| format!(
         "fn main() {{}}\nimpl GatewayApi for UnifiedGatewayApi {{ fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {{ {body} }} }}\n#[cfg(test)]\nmod tests {{}}\n"
     );
-    assert!(desktop_mcp_dispatch_precedes_host_fallback(&fixture(&format!("{delegate} {fallback}"))));
-    for body in [
-        format!("{} {fallback}", delegate.replace("self.mcp_service", "self.other_service")),
-        format!("if let Some(result) = self.mcp_service.dispatch_desktop_command(method, &args) {{ let _ = result; }} {fallback}"),
-        format!("let _unused = || {{ {delegate} }}; {fallback}"),
-        format!("let early = {fallback}; {delegate} early"),
-        format!("// {delegate}\n{fallback}"),
+    for fallback in ["call_host_lane(&self.host_tx, method, args)", native_fallback] {
+        assert!(desktop_mcp_dispatch_precedes_host_fallback(&fixture(&format!("{delegate} {fallback}"))));
+        for body in [
+            format!("{} {fallback}", delegate.replace("self.mcp_service", "self.other_service")),
+            format!("if let Some(result) = self.mcp_service.dispatch_desktop_command(method, &args) {{ let _ = result; }} {fallback}"),
+            format!("let _unused = || {{ {delegate} }}; {fallback}"),
+            format!("let early = {fallback}; {delegate} early"),
+            format!("// {delegate}\n{fallback}"),
+        ] {
+            let source = fixture(&body);
+            assert!(syn::parse_file(&source).is_ok(), "negative control must remain syntactically valid");
+            assert!(!desktop_mcp_dispatch_precedes_host_fallback(&source),
+                "non-delegating production shape passed: {source}");
+        }
+        let test_only = fixture(fallback).replace("mod tests {}", &format!("mod tests {{ fn fixture() {{ {delegate} }} }}"));
+        assert!(!desktop_mcp_dispatch_precedes_host_fallback(&test_only));
+    }
+    for wrong in [
+        native_fallback.replace("call_native_attachments_or_host_lane", "unbound_fallback"),
+        native_fallback.replace("&self.host_tx", "&self.other_host_tx"),
+        native_fallback.replace("&self.host_tx", "&mut self.host_tx"),
+        native_fallback.replace("&self.attachments", "&self.other_attachments"),
+        native_fallback.replace("&self.attachments", "self.attachments"),
+        native_fallback.replace("&self.attachments", "&mut self.attachments"),
+        native_fallback.replace("method, args", "other_method, args"),
+        native_fallback.replace("method, args", "method, other_args"),
+        native_fallback.replace("&self.attachments, ", ""),
+        native_fallback.replace("method, args", "method, args, extra"),
     ] {
-        let source = fixture(&body);
+        let source = fixture(&format!("{delegate} {wrong}"));
         assert!(syn::parse_file(&source).is_ok(), "negative control must remain syntactically valid");
         assert!(!desktop_mcp_dispatch_precedes_host_fallback(&source),
-            "non-delegating production shape passed: {source}");
+            "unbound preview-or-lane fallback passed: {source}");
     }
-    let test_only = fixture(fallback).replace("mod tests {}", &format!("mod tests {{ fn fixture() {{ {delegate} }} }}"));
-    assert!(!desktop_mcp_dispatch_precedes_host_fallback(&test_only));
 }
 
 #[test]

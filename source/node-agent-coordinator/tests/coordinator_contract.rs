@@ -757,6 +757,21 @@ fn carrier_bootstrap_and_channels_preserve_grok_process_boundaries() {
     assert!(carrier.post(CarrierChannel::Data, json!({})).is_err());
 }
 
+#[test]
+fn native_link_preview_carrier_reserves_cache_paths_for_main_data() {
+    use mahayana_node_agent_coordinator::carrier::{
+        native_attachment_carrier_allowed, CarrierChannel,
+    };
+    assert!(!native_attachment_carrier_allowed("fetchLinkMetadata", CarrierChannel::Data));
+    assert!(!native_attachment_carrier_allowed("fetchLinkMetadata", CarrierChannel::Control));
+    assert!(native_attachment_carrier_allowed("fetchLinkMetadata", CarrierChannel::MainData));
+    for method in ["readAttachmentText", "uploadAttachment", "fetchLinkMetadata.extra"] {
+        for channel in [CarrierChannel::Data, CarrierChannel::Control, CarrierChannel::MainData] {
+            assert!(native_attachment_carrier_allowed(method, channel), "{method}/{channel:?}");
+        }
+    }
+}
+
 
 #[test]
 fn client_side_tool_v2_relay_fences_epochs_sequences_and_replays_wire_payloads() {

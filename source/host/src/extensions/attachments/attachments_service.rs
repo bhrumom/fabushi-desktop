@@ -1343,6 +1343,7 @@ pub struct AttachmentsService {
     box_: Arc<dyn AttachmentsBox>,
     report: Option<AttachmentDiagnosticReporter>,
     fallback_agent_id: Mutex<Option<String>>,
+    link_preview_lock: Mutex<()>,
 }
 
 impl AttachmentsService {
@@ -1358,6 +1359,7 @@ impl AttachmentsService {
             box_,
             report,
             fallback_agent_id: Mutex::new(None),
+            link_preview_lock: Mutex::new(()),
         }
     }
 
@@ -1582,7 +1584,17 @@ impl AttachmentsService {
     pub fn fetch_link_metadata(&self, agent_id: &str, raw_url: &str) -> Option<LinkMetadata> {
         self.resolve_dir(Some(agent_id))
             .ok()
-            .and_then(|dir| fetch_link_metadata(&dir, raw_url))
+            .and_then(|dir| self.fetch_link_metadata_in_cache(&dir, raw_url))
+    }
+
+    fn fetch_link_metadata_in_cache(&self, cache_dir: &Path, raw_url: &str) -> Option<LinkMetadata> {
+        // HTTP workers share this service. Keep cache reads and publication
+        // serial without holding the Host lane or unrelated attachment calls.
+        let _preview_guard = self
+            .link_preview_lock
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        fetch_link_metadata(cache_dir, raw_url)
     }
 
     pub fn read_image_dimensions(&self, path: &Path) -> Option<ImageSize> {
@@ -1713,7 +1725,7 @@ impl AttachmentsService {
                     .ok_or_else(|| "fetchLinkMetadata.url must be a string".to_string());
                 cache_dir.and_then(|cache_dir| {
                     url.map(|url| {
-                        fetch_link_metadata(Path::new(cache_dir), url)
+                        self.fetch_link_metadata_in_cache(Path::new(cache_dir), url)
                             .and_then(|metadata| serde_json::to_value(metadata).ok())
                             .unwrap_or(Value::Null)
                     })

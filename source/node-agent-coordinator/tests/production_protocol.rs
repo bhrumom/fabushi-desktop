@@ -414,6 +414,19 @@ mod unix {
                 200,
                 r#"{"accepted":true}"#,
             ),
+            ("POST", "/api/fetchLinkMetadata") => {
+                let args: Value = serde_json::from_slice(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if args["url"] == "https://example.com/refused" {
+                    return write_fake_response(
+                        &mut stream, 400, r#"{"error":"original preview refusal"}"#,
+                    );
+                }
+                write_fake_response(
+                    &mut stream, 200,
+                    r#"{"url":"https://example.com/a?b=1","title":"native preview","future":{"opaque":[null,7]}}"#,
+                )
+            }
             ("POST", "/api/uninstallMcpPlugin") => {
                 let args: Value = serde_json::from_slice(&request[header_end..total])
                     .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
@@ -910,6 +923,63 @@ mod unix {
         expected
     }
 
+    fn assert_link_preview_http_requests(requests: &[GatewayApiRequest], expected: &[(&str, Value)]) {
+        let observed: Vec<_> = requests.iter().filter(|request| matches!(
+            request.path.as_str(), "/api/fetchLinkMetadata" | "/api/fetchLinkMetadata.extra"
+        )).collect();
+        assert_eq!(observed.len(), expected.len(), "denied or repeated preview forwarding: {observed:?}");
+        for (request, (method, args)) in observed.iter().zip(expected) {
+            assert_eq!(request.http_method, "POST");
+            assert_eq!(request.path, format!("/api/{method}"));
+            let body: Value = serde_json::from_slice(
+                request.body.as_deref().expect("complete preview HTTP body"),
+            ).expect("preview HTTP JSON");
+            assert_eq!(&body, args, "preview arguments must preserve native path and URL");
+        }
+    }
+
+    fn exercise_link_preview_native_routing(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+    ) -> Vec<(&'static str, Value)> {
+        send(stdin, CarrierChannel::Data, &CoordinatorFrame::Request {
+            request_id: "r-preview-denied".into(), method: "fetchLinkMetadata".into(),
+            args: json!({"url":"https://example.com/renderer","cacheDir":"/renderer-chosen-path"}),
+        });
+        match recv_request_reply(rx, stdin, seen_control_methods, CarrierChannel::Data, "r-preview-denied") {
+            ReplyOutcome::Failed { failure } => assert_eq!(failure.code, "ATTACHMENTS_NATIVE_ONLY"),
+            other => panic!("renderer preview RPC acquired native authority: {other:?}"),
+        }
+        let mut expected = Vec::new();
+        for (channel, method, args, reply) in [
+            (CarrierChannel::MainData, "fetchLinkMetadata",
+                json!({"url":"https://example.com/a?b=1","cacheDir":"/native/cache with spaces","futureInput":[null,9]}),
+                ReplyOutcome::Ok { value: json!({
+                    "url":"https://example.com/a?b=1","title":"native preview","future":{"opaque":[null,7]},
+                }) }),
+            (CarrierChannel::MainData, "fetchLinkMetadata",
+                json!({"url":"https://example.com/refused","cacheDir":"/native/cache"}),
+                ReplyOutcome::Failed { failure: Failure::new("gateway-command-failed", "original preview refusal") }),
+            (CarrierChannel::Data, "fetchLinkMetadata.extra",
+                json!({"url":"https://example.com/unknown","cacheDir":"/unknown-neighbor"}),
+                ReplyOutcome::Failed { failure: Failure::new(
+                    "gateway-command-failed", "gateway fetchLinkMetadata.extra failed with HTTP 404",
+                ) }),
+        ] {
+            let request_id = format!("r-preview-allowed-{}", expected.len());
+            send(stdin, channel, &CoordinatorFrame::Request {
+                request_id: request_id.clone(), method: method.into(), args: args.clone(),
+            });
+            assert_eq!(
+                recv_request_reply(rx, stdin, seen_control_methods, channel, &request_id), reply,
+                "{method} must preserve the original HTTP result",
+            );
+            expected.push((method, args));
+        }
+        expected
+    }
+
     fn pump_control_until_webauthn_result(
         rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
         stdin: &mut impl Write,
@@ -1302,6 +1372,9 @@ exit 17
         let expected_desktop_mcp_requests = exercise_desktop_mcp_native_routing(
             &rx, &mut stdin, &mut seen_control_methods,
         );
+        let expected_link_preview_requests = exercise_link_preview_native_routing(
+            &rx, &mut stdin, &mut seen_control_methods,
+        );
 
         send(
             &mut stdin,
@@ -1437,6 +1510,7 @@ exit 17
         // failure reached HTTP exactly once without a transport retry.
         assert_box_mcp_http_requests(&gateway.api_requests(), &expected_box_mcp_requests);
         assert_desktop_mcp_http_requests(&gateway.api_requests(), &expected_desktop_mcp_requests);
+        assert_link_preview_http_requests(&gateway.api_requests(), &expected_link_preview_requests);
         drop(gateway);
         let _ = fs::remove_dir_all(data_dir);
     }

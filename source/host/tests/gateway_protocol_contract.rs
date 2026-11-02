@@ -5,9 +5,31 @@ use mahayana_host_runtime::gateway_protocol::{
 };
 use serde_json::json;
 use mahayana_host_runtime::host_gateway_api::{
-    FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS, FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS,
+    FABUSHI_NATIVE_ATTACHMENTS_GATEWAY_METHODS, FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS,
+    FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS,
     FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS, HostGatewayOwner, host_gateway_owner,
 };
+
+#[test]
+fn native_link_preview_registration_keeps_inventory_and_owner() {
+    assert_eq!(FABUSHI_NATIVE_ATTACHMENTS_GATEWAY_METHODS, &["fetchLinkMetadata"]);
+    assert_eq!(host_gateway_owner("fetchLinkMetadata"), Some(HostGatewayOwner::Attachments));
+    assert!(is_grok_gateway_command("fetchLinkMetadata"));
+    assert!(!GROK_GATEWAY_COMMANDS.contains(&"fetchLinkMetadata"));
+    assert!(!is_openclaw_gateway_command("fetchLinkMetadata"));
+    assert!(!FABUSHI_GATEWAY_COMPAT_COMMANDS.contains(&"fetchLinkMetadata"));
+    for unknown in [
+        "fetchLinkMetadata.extra", "FetchLinkMetadata", "attachments.fetchLinkMetadata",
+        "readRemoteMediaBuffer", "saveRemoteMedia",
+    ] {
+        assert_eq!(host_gateway_owner(unknown), None, "{unknown}");
+        assert!(!is_grok_gateway_command(unknown), "{unknown}");
+    }
+    for existing in ["uploadAttachment", "readAttachmentImage", "readAttachmentText", "readAttachmentChunk"] {
+        assert_eq!(host_gateway_owner(existing), Some(HostGatewayOwner::Attachments));
+        assert!(GROK_GATEWAY_COMMANDS.contains(&existing));
+    }
+}
 
 #[test]
 fn native_box_mcp_extensions_are_exact_and_resolve_only_to_mcp() {
