@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
+use std::time::Duration;
 
 use mahayana_host_runtime::connectors::channel_delivery::{
     ChannelDeliveryPort, ChannelOutboundMessage, HostChannelDelivery,
@@ -9,7 +10,8 @@ use mahayana_host_runtime::extensions::session::agent_db::{
     ChannelInboundAppendOutcome,
 };
 use mahayana_host_runtime::extensions::transcript::background_wakes::{
-    BackgroundWakes, InboundAppendState, CHANNEL_DELIVERY_FAILED_WAKE_CUE,
+    BackgroundWakes, InboundAppendAction, InboundAppendState, InboundAppendWork,
+    CHANNEL_DELIVERY_FAILED_WAKE_CUE,
     build_channel_delivery_failure_wake_prompt, build_channel_outbound_message,
     humanize_channel_delivery_failure, redrivable_inbound_envelopes,
 };
@@ -377,6 +379,283 @@ fn inbound_append_failure_fixture(
     }
 }
 
+fn one_inbound_readiness_ticket(wakes: &mut BackgroundWakes<Value>, agent_id: &str) -> InboundAppendWork<Value> {
+    let mut tickets = wakes.request_inbound_readiness();
+    assert_eq!(tickets.len(), 1, "one retained head owns one launch ticket");
+    let (claimed_agent, work) = tickets.pop().unwrap();
+    assert_eq!(claimed_agent, agent_id);
+    assert!(wakes.owns_inbound_append(agent_id, &work));
+    work
+}
+
+fn inbound_retry(action: InboundAppendAction<Value>) -> InboundAppendWork<Value> {
+    match action {
+        InboundAppendAction::Retry(work) => work,
+        other => panic!("expected a retained-head Retry, got {other:?}"),
+    }
+}
+
+#[test]
+fn inbound_readiness_on_either_side_of_pause_reacquires_the_same_head_once() {
+    for signal_before_pause in [true, false] {
+        let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
+        let envelope = json!({"text":"paused without new inbound input"});
+        let original = wakes.lock().unwrap().enqueue_inbound_and_claim("agent-a", envelope.clone())
+            .unwrap().expect("ingress reserves the actual head before launch");
+        let (pause_tx, pause_rx) = mpsc::channel();
+        let worker_wakes = Arc::clone(&wakes);
+        let worker_ticket = original.clone();
+        let worker = thread::spawn(move || {
+            pause_rx.recv_timeout(Duration::from_secs(5)).expect("release exact worker to pause");
+            worker_wakes.lock().unwrap().pause_inbound_append("agent-a", &worker_ticket)
+        });
+        if signal_before_pause {
+            let mut state = wakes.lock().unwrap();
+            for _ in 0..3 {
+                assert!(state.request_inbound_readiness().is_empty(), "active signals coalesce without another launch");
+            }
+            assert!(state.owns_inbound_append("agent-a", &original));
+        }
+        pause_tx.send(()).unwrap();
+        let action = worker.join().expect("bounded pause worker");
+        let mut state = wakes.lock().unwrap();
+        let retry = if signal_before_pause {
+            inbound_retry(action)
+        } else {
+            assert_eq!(action, InboundAppendAction::Held);
+            assert!(!state.reviving_inbound_agent_ids.contains("agent-a"));
+            assert_eq!(state.take_inbound_append_or_end_revival("agent-a"), None);
+            one_inbound_readiness_ticket(&mut state, "agent-a")
+        };
+        assert_eq!(retry.claim_id, original.claim_id);
+        assert_ne!(retry.worker_token, original.worker_token);
+        assert_eq!(retry.envelopes, vec![envelope]);
+        assert_eq!(retry.attempt, None);
+        assert!(!state.owns_inbound_append("agent-a", &original));
+        assert!(state.owns_inbound_append("agent-a", &retry));
+        assert_eq!(state.pause_inbound_append("agent-a", &original), InboundAppendAction::Stale);
+        // No new signal arrived after acquisition: even three coalesced hints
+        // permit only one recheck, never a spin while the gate stays closed.
+        assert_eq!(state.pause_inbound_append("agent-a", &retry), InboundAppendAction::Held);
+        assert_eq!(state.inbound_append_state("agent-a"), Some(InboundAppendState::NotWritten));
+        assert!(!state.reviving_inbound_agent_ids.contains("agent-a"));
+        assert_eq!(state.take_inbound_append_or_end_revival("agent-a"), None);
+        assert!(!state.pending_inbound.contains_key("agent-a"));
+    }
+}
+
+#[test]
+fn inbound_readiness_rollback_retry_uses_the_latest_binding_and_prepared_entries() {
+    let mut wakes = BackgroundWakes::<Value>::default();
+    let envelopes = inbound_append_envelopes_fixture();
+    for envelope in &envelopes {
+        BackgroundWakes::enqueue(&mut wakes.pending_inbound, "agent-a", envelope.clone());
+    }
+    let original = one_inbound_readiness_ticket(&mut wakes, "agent-a");
+    assert_eq!(original.attempt, None);
+    assert!(wakes.request_inbound_readiness().is_empty());
+    let mut binding = inbound_append_attempt_fixture();
+    binding.entries = None;
+    let rollback = ChannelInboundAppendOutcome::NotWritten(inbound_append_failure_fixture(
+        ChannelInboundAppendFailureKind::Storage,
+    ));
+    let preparing = inbound_retry(wakes.record_inbound_append_outcome(
+        "agent-a", &original, Some(binding.clone()), &rollback,
+    ));
+    assert_eq!(preparing.attempt, Some(binding));
+    assert_eq!(preparing.claim_id, original.claim_id);
+    assert_ne!(preparing.worker_token, original.worker_token);
+    let tail = json!({"text":"new input signals readiness but stays behind preparation"});
+    assert_eq!(wakes.enqueue_inbound_and_claim("agent-a", tail.clone()).unwrap(), None);
+    assert!(wakes.request_inbound_readiness().is_empty(), "ingress and Settings hints share one latch");
+    let prepared = inbound_append_attempt_fixture();
+    let retry = inbound_retry(wakes.record_inbound_append_outcome(
+        "agent-a", &preparing, Some(prepared.clone()), &rollback,
+    ));
+    assert_eq!(retry.attempt, Some(prepared.clone()), "use the just-recorded preparation, not the worker's older snapshot");
+    assert_eq!(retry.envelopes, envelopes);
+    assert_eq!(retry.claim_id, original.claim_id);
+    assert_ne!(retry.worker_token, preparing.worker_token);
+    assert_eq!(wakes.inbound_append_attempt("agent-a"), Some(&prepared));
+    assert_eq!(wakes.pending_inbound.get("agent-a"), Some(&vec![tail]));
+    assert_eq!(wakes.record_inbound_append_outcome("agent-a", &preparing, None, &rollback), InboundAppendAction::Stale);
+    assert_eq!(wakes.pause_inbound_append("agent-a", &retry), InboundAppendAction::Held);
+    assert_eq!(wakes.inbound_append_attempt("agent-a"), Some(&prepared));
+    assert_eq!(wakes.take_inbound_append_or_end_revival("agent-a"), None);
+}
+
+#[test]
+fn inbound_launch_failure_preserves_preparation_and_delayed_release_cannot_clear_successor() {
+    let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
+    let prepared = inbound_append_attempt_fixture();
+    let failed_launch = {
+        let mut state = wakes.lock().unwrap();
+        let original = state.enqueue_inbound_and_claim("agent-a", json!({"text":"retained head"}))
+            .unwrap().unwrap();
+        assert_eq!(state.record_inbound_append_outcome(
+            "agent-a", &original, Some(prepared.clone()),
+            &ChannelInboundAppendOutcome::NotWritten(inbound_append_failure_fixture(ChannelInboundAppendFailureKind::Storage)),
+        ), InboundAppendAction::Held);
+        let failed = one_inbound_readiness_ticket(&mut state, "agent-a");
+        assert!(state.release_inbound_launch("agent-a", &failed));
+        assert!(!state.release_inbound_launch("agent-a", &failed));
+        assert_eq!(state.inbound_append_state("agent-a"), Some(InboundAppendState::NotWritten));
+        assert_eq!(state.inbound_append_attempt("agent-a"), Some(&prepared));
+        assert!(!state.reviving_inbound_agent_ids.contains("agent-a"));
+        assert_eq!(state.take_inbound_append_or_end_revival("agent-a"), None);
+        failed
+    };
+    let (release_tx, release_rx) = mpsc::channel();
+    let delayed_wakes = Arc::clone(&wakes);
+    let delayed_ticket = failed_launch.clone();
+    let delayed_error = thread::spawn(move || {
+        release_rx.recv_timeout(Duration::from_secs(5)).expect("successor before delayed launch error");
+        let mut state = delayed_wakes.lock().unwrap();
+        (
+            state.release_inbound_launch("agent-a", &delayed_ticket),
+            state.pause_inbound_append("agent-a", &delayed_ticket),
+            state.record_inbound_append_outcome("agent-a", &delayed_ticket, None,
+                &ChannelInboundAppendOutcome::Unknown(inbound_append_failure_fixture(ChannelInboundAppendFailureKind::Storage))),
+        )
+    });
+    let successor = one_inbound_readiness_ticket(&mut wakes.lock().unwrap(), "agent-a");
+    assert_eq!(successor.claim_id, failed_launch.claim_id);
+    assert_ne!(successor.worker_token, failed_launch.worker_token);
+    assert_eq!(successor.envelopes, failed_launch.envelopes);
+    assert_eq!(successor.attempt, Some(prepared.clone()));
+    release_tx.send(()).unwrap();
+    assert_eq!(delayed_error.join().unwrap(), (false, InboundAppendAction::Stale, InboundAppendAction::Stale));
+    let mut state = wakes.lock().unwrap();
+    assert!(!state.release_inbound_launch("agent-b", &successor));
+    let mut wrong_claim = successor.clone();
+    wrong_claim.claim_id.push_str("-foreign");
+    assert!(!state.release_inbound_launch("agent-a", &wrong_claim));
+    assert!(state.owns_inbound_append("agent-a", &successor));
+    assert!(state.reviving_inbound_agent_ids.contains("agent-a"));
+    assert_eq!(state.inbound_append_attempt("agent-a"), Some(&prepared));
+}
+
+#[test]
+fn inbound_unknown_discards_active_readiness_and_blocks_signals_and_new_tail_only_for_its_agent() {
+    let mut wakes = BackgroundWakes::<Value>::default();
+    let unknown = wakes.enqueue_inbound_and_claim("agent-a", json!({"text":"possibly committed"})).unwrap().unwrap();
+    assert!(wakes.request_inbound_readiness().is_empty());
+    let prepared = inbound_append_attempt_fixture();
+    assert_eq!(wakes.record_inbound_append_outcome(
+        "agent-a", &unknown, Some(prepared.clone()),
+        &ChannelInboundAppendOutcome::Unknown(inbound_append_failure_fixture(ChannelInboundAppendFailureKind::RollbackUnconfirmed)),
+    ), InboundAppendAction::Held);
+    let tail = vec![json!({"text":"later first"}), json!({"text":"later second"})];
+    for envelope in &tail {
+        assert_eq!(wakes.enqueue_inbound_and_claim("agent-a", envelope.clone()).unwrap(), None);
+        assert!(wakes.request_inbound_readiness().is_empty());
+    }
+    BackgroundWakes::enqueue(&mut wakes.pending_event_wakes, "agent-a", json!({"event":"unchanged"}));
+    wakes.reviving_event_agent_ids.insert("agent-a".into());
+    BackgroundWakes::enqueue(&mut wakes.pending_inbound, "agent-b", json!({"text":"independent"}));
+    let other = one_inbound_readiness_ticket(&mut wakes, "agent-b");
+    assert!(wakes.owns_inbound_append("agent-b", &other));
+    assert_eq!(wakes.inbound_append_state("agent-a"), Some(InboundAppendState::Unknown));
+    assert_eq!(wakes.inbound_append_attempt("agent-a"), Some(&prepared));
+    assert_eq!(wakes.pending_inbound.get("agent-a"), Some(&tail));
+    assert!(!wakes.reviving_inbound_agent_ids.contains("agent-a"));
+    assert!(!wakes.release_inbound_launch("agent-a", &unknown));
+    assert_eq!(wakes.pause_inbound_append("agent-a", &unknown), InboundAppendAction::Stale);
+    assert_eq!(wakes.pending_event_wakes["agent-a"], vec![json!({"event":"unchanged"})]);
+    assert!(wakes.reviving_event_agent_ids.contains("agent-a"));
+}
+
+#[test]
+fn inbound_readiness_cannot_steal_committed_drain_or_generation_bound_displayed_redrive() {
+    let mut wakes = BackgroundWakes::<Value>::default();
+    let original = wakes.enqueue_inbound_and_claim("agent-a", inbound_append_envelopes_fixture()[0].clone())
+        .unwrap().unwrap();
+    assert!(wakes.request_inbound_readiness().is_empty());
+    let prepared = inbound_append_attempt_fixture();
+    assert_eq!(wakes.record_inbound_append_outcome(
+        "agent-a", &original, Some(prepared.clone()),
+        &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
+    ), InboundAppendAction::Committed);
+    let tail = json!({"text":"tail after the displayed continuation"});
+    assert_eq!(wakes.enqueue_inbound_and_claim("agent-a", tail.clone()).unwrap(), None);
+    assert!(wakes.request_inbound_readiness().is_empty());
+    let displayed = redrivable_inbound_envelopes(&original.envelopes);
+    assert!(wakes.finish_inbound_append_with_redrive("agent-a", &original, Some(displayed.clone())));
+    assert!(wakes.request_inbound_readiness().is_empty(), "current drain owns the finish-to-take gap");
+    let redrive = wakes.take_inbound_append_or_end_revival("agent-a").unwrap();
+    let mut bound_empty = prepared;
+    bound_empty.entries = Some(Vec::new());
+    assert_eq!(redrive.envelopes, displayed);
+    assert_eq!(redrive.attempt, Some(bound_empty.clone()));
+    assert_ne!(redrive.claim_id, original.claim_id);
+    assert_eq!(wakes.pause_inbound_append("agent-a", &redrive), InboundAppendAction::Held,
+        "readiness on the old committed head cannot become a latch on its continuation");
+    let resumed = one_inbound_readiness_ticket(&mut wakes, "agent-a");
+    assert_eq!(resumed.claim_id, redrive.claim_id);
+    assert_ne!(resumed.worker_token, redrive.worker_token);
+    assert_eq!(resumed.attempt, Some(bound_empty));
+    assert_eq!(wakes.record_inbound_append_outcome(
+        "agent-a", &resumed, resumed.attempt.clone(),
+        &ChannelInboundAppendOutcome::Committed { inserted_count: 0 },
+    ), InboundAppendAction::Committed);
+    assert!(wakes.finish_inbound_append("agent-a", &resumed));
+    assert!(wakes.request_inbound_readiness().is_empty(), "raw tail still belongs to this drain");
+    let next = wakes.take_inbound_append_or_end_revival("agent-a").unwrap();
+    assert_eq!(next.envelopes, vec![tail]);
+    assert_eq!(next.attempt, None);
+    assert_ne!(next.claim_id, resumed.claim_id);
+}
+
+#[test]
+fn inbound_close_permanently_revokes_all_states_and_late_tickets_without_reopening() {
+    let mut wakes = BackgroundWakes::<Value>::default();
+    let mut tickets = Vec::new();
+    for agent in ["active", "paused", "unknown", "committed"] {
+        let work = wakes.enqueue_inbound_and_claim(agent, json!({"agent":agent})).unwrap().unwrap();
+        match agent {
+            "paused" => assert_eq!(wakes.pause_inbound_append(agent, &work), InboundAppendAction::Held),
+            "unknown" => assert_eq!(wakes.record_inbound_append_outcome(agent, &work, Some(inbound_append_attempt_fixture()),
+                &ChannelInboundAppendOutcome::Unknown(inbound_append_failure_fixture(ChannelInboundAppendFailureKind::Storage))), InboundAppendAction::Held),
+            "committed" => assert_eq!(wakes.record_inbound_append_outcome(agent, &work, Some(inbound_append_attempt_fixture()),
+                &ChannelInboundAppendOutcome::Committed { inserted_count: 2 }), InboundAppendAction::Committed),
+            _ => {}
+        }
+        BackgroundWakes::enqueue(&mut wakes.pending_inbound, agent, json!({"tail":agent}));
+        tickets.push((agent, work));
+    }
+    BackgroundWakes::enqueue(&mut wakes.pending_channel_failures, "active", json!({"failure":true}));
+    BackgroundWakes::enqueue(&mut wakes.pending_event_wakes, "active", json!({"event":true}));
+    wakes.reviving_channel_failure_agent_ids.insert("active".into());
+    wakes.reviving_event_agent_ids.insert("active".into());
+    wakes.dm_preempted_wake_agent_ids.insert("active".into());
+    wakes.close();
+    assert!(wakes.is_closed());
+    assert!(wakes.request_inbound_readiness().is_empty());
+    for (agent, work) in &tickets {
+        assert_eq!(wakes.inbound_append_state(agent), None);
+        assert_eq!(wakes.inbound_append_attempt(agent), None);
+        assert!(!wakes.owns_inbound_append(agent, work));
+        assert!(!wakes.release_inbound_launch(agent, work));
+        assert_eq!(wakes.pause_inbound_append(agent, work), InboundAppendAction::Stale);
+        assert_eq!(wakes.record_inbound_append_outcome(agent, work, Some(inbound_append_attempt_fixture()),
+            &ChannelInboundAppendOutcome::Committed { inserted_count: 2 }), InboundAppendAction::Stale);
+        assert!(!wakes.finish_inbound_append(agent, work));
+        assert!(!wakes.finish_inbound_append_with_redrive(agent, work, Some(work.envelopes.clone())));
+        assert_eq!(wakes.take_inbound_append_or_end_revival(agent), None);
+        assert_eq!(wakes.take_pending_inbound_or_end_revival(agent), None);
+        assert!(wakes.enqueue_inbound_and_claim(agent, json!({"late":true})).is_err());
+    }
+    wakes.close();
+    assert!(wakes.is_closed());
+    assert!(wakes.pending_inbound.is_empty());
+    assert!(wakes.reviving_inbound_agent_ids.is_empty());
+    assert!(wakes.pending_channel_failures.is_empty());
+    assert!(wakes.reviving_channel_failure_agent_ids.is_empty());
+    assert!(wakes.pending_event_wakes.is_empty());
+    assert!(wakes.reviving_event_agent_ids.is_empty());
+    assert!(wakes.dm_preempted_wake_agent_ids.is_empty());
+}
+
 #[test]
 fn inbound_append_enqueue_before_idle_retains_current_worker_and_claims_ordered_head_once() {
     let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
@@ -508,14 +787,14 @@ fn inbound_append_not_written_retry_keeps_original_preparation_ahead_of_tail_and
     let old_worker = thread::spawn(move || {
         {
             let mut state = old_wakes.lock().expect("old worker queue");
-            assert!(!state.record_inbound_append_outcome(
+            assert_eq!(state.record_inbound_append_outcome(
                 "agent-a",
                 &old_work,
                 Some(prepared.clone()),
                 &ChannelInboundAppendOutcome::NotWritten(inbound_append_failure_fixture(
                     ChannelInboundAppendFailureKind::Storage,
                 )),
-            ));
+            ), InboundAppendAction::Held);
         }
         paused_tx.send(()).expect("head retained and revival released");
         resume_rx.recv().expect("successor acquired before old callback");
@@ -560,7 +839,9 @@ fn inbound_append_not_written_retry_keeps_original_preparation_ahead_of_tail_and
         retry
     };
     resume_tx.send(()).expect("release delayed old callback");
-    assert_eq!(old_worker.join().expect("old worker"), (false, false, false));
+    assert_eq!(old_worker.join().expect("old worker"), (
+        InboundAppendAction::Stale, InboundAppendAction::Stale, false,
+    ));
 
     let mut state = wakes.lock().expect("queue after stale callback");
     assert_eq!(state.inbound_append_state("agent-a"), Some(InboundAppendState::Active));
@@ -569,10 +850,10 @@ fn inbound_append_not_written_retry_keeps_original_preparation_ahead_of_tail_and
     assert!(state.owns_inbound_append("agent-a", &retry));
     assert!(!state.owns_inbound_append("agent-a", &original));
     assert_eq!(state.pending_inbound.get("agent-a"), Some(&tail));
-    assert!(state.record_inbound_append_outcome(
+    assert_eq!(state.record_inbound_append_outcome(
         "agent-a", &retry, retry.attempt.clone(),
         &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
-    ));
+    ), InboundAppendAction::Committed);
     assert!(!state.finish_inbound_append("agent-a", &original));
     assert_eq!(state.inbound_append_state("agent-a"), Some(InboundAppendState::Committed));
     assert!(state.reviving_inbound_agent_ids.contains("agent-a"));
@@ -591,7 +872,7 @@ fn inbound_append_pause_and_binding_without_entries_survive_later_wake() {
     BackgroundWakes::enqueue(&mut wakes.pending_inbound, "agent-a", envelope.clone());
     assert!(BackgroundWakes::<Value>::begin_revival(&mut wakes.reviving_inbound_agent_ids, "agent-a"));
     let first = wakes.take_inbound_append_or_end_revival("agent-a").expect("unprepared head");
-    assert!(wakes.pause_inbound_append("agent-a", &first));
+    assert_eq!(wakes.pause_inbound_append("agent-a", &first), InboundAppendAction::Held);
     assert_eq!(wakes.inbound_append_state("agent-a"), Some(InboundAppendState::NotWritten));
     assert_eq!(wakes.inbound_append_attempt("agent-a"), None);
     assert!(!wakes.owns_inbound_append("agent-a", &first));
@@ -606,12 +887,12 @@ fn inbound_append_pause_and_binding_without_entries_survive_later_wake() {
     assert_eq!(preparing.attempt, None);
     let mut bound = inbound_append_attempt_fixture();
     bound.entries = None;
-    assert!(!wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-a", &preparing, Some(bound.clone()),
         &ChannelInboundAppendOutcome::NotWritten(inbound_append_failure_fixture(
             ChannelInboundAppendFailureKind::Storage,
         )),
-    ));
+    ), InboundAppendAction::Held);
     let tail = json!({"text":"new history cannot replace the captured lifecycle"});
     BackgroundWakes::enqueue(&mut wakes.pending_inbound, "agent-a", tail.clone());
     assert!(BackgroundWakes::<Value>::begin_revival(&mut wakes.reviving_inbound_agent_ids, "agent-a"));
@@ -624,7 +905,7 @@ fn inbound_append_pause_and_binding_without_entries_survive_later_wake() {
     assert!(wakes.owns_inbound_append("agent-a", &retry));
     assert!(!wakes.owns_inbound_append("agent-a", &preparing));
     assert_eq!(wakes.pending_inbound.get("agent-a"), Some(&vec![tail]));
-    assert!(!wakes.pause_inbound_append("agent-a", &first));
+    assert_eq!(wakes.pause_inbound_append("agent-a", &first), InboundAppendAction::Stale);
     assert!(wakes.reviving_inbound_agent_ids.contains("agent-a"));
 }
 
@@ -637,12 +918,12 @@ fn inbound_append_unknown_is_sticky_with_no_pending_input_later_arrivals_and_lat
     assert!(BackgroundWakes::<Value>::begin_revival(&mut wakes.reviving_inbound_agent_ids, "agent-a"));
     let work = wakes.take_inbound_append_or_end_revival("agent-a").expect("head before unknown");
     let attempt = inbound_append_attempt_fixture();
-    assert!(!wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-a", &work, Some(attempt.clone()),
         &ChannelInboundAppendOutcome::Unknown(inbound_append_failure_fixture(
             ChannelInboundAppendFailureKind::RollbackUnconfirmed,
         )),
-    ));
+    ), InboundAppendAction::Held);
     assert!(!wakes.pending_inbound.contains_key("agent-a"));
     assert_eq!(wakes.inbound_append_state("agent-a"), Some(InboundAppendState::Unknown));
     assert_eq!(wakes.inbound_append_attempt("agent-a"), Some(&attempt));
@@ -661,21 +942,21 @@ fn inbound_append_unknown_is_sticky_with_no_pending_input_later_arrivals_and_lat
     }
     let mut late_attempt = attempt.clone();
     late_attempt.lifecycle_revision = "late-binding-must-not-replace-unknown".into();
-    assert!(!wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-a", &work, Some(late_attempt),
         &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
-    ));
-    assert!(!wakes.pause_inbound_append("agent-a", &work));
+    ), InboundAppendAction::Stale);
+    assert_eq!(wakes.pause_inbound_append("agent-a", &work), InboundAppendAction::Stale);
     assert!(!wakes.finish_inbound_append("agent-a", &work));
     assert!(!wakes.finish_inbound_append_with_redrive(
         "agent-a", &work, Some(redrivable_inbound_envelopes(&work.envelopes)),
     ));
-    assert!(!wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-a", &work, None,
         &ChannelInboundAppendOutcome::NotWritten(inbound_append_failure_fixture(
             ChannelInboundAppendFailureKind::Storage,
         )),
-    ));
+    ), InboundAppendAction::Stale);
     assert!(wakes.reviving_inbound_agent_ids.contains("agent-a"));
     assert_eq!(wakes.take_inbound_append_or_end_revival("agent-a"), None);
     assert!(!wakes.reviving_inbound_agent_ids.contains("agent-a"));
@@ -695,22 +976,22 @@ fn inbound_append_committed_head_grants_one_handoff_permission_and_one_finish_be
     assert!(!wakes.finish_inbound_append("agent-a", &first));
     let attempt = inbound_append_attempt_fixture();
     let committed = ChannelInboundAppendOutcome::Committed { inserted_count: 2 };
-    assert!(wakes.record_inbound_append_outcome("agent-a", &first, Some(attempt.clone()), &committed));
+    assert_eq!(wakes.record_inbound_append_outcome("agent-a", &first, Some(attempt.clone()), &committed), InboundAppendAction::Committed);
     assert!(!wakes.owns_inbound_append("agent-a", &first));
-    assert!(!wakes.record_inbound_append_outcome("agent-a", &first, Some(attempt.clone()), &committed));
+    assert_eq!(wakes.record_inbound_append_outcome("agent-a", &first, Some(attempt.clone()), &committed), InboundAppendAction::Stale);
     let tail = vec![json!({"text":"next batch first"}), json!({"text":"next batch second"})];
     for envelope in &tail {
         BackgroundWakes::enqueue(&mut wakes.pending_inbound, "agent-a", envelope.clone());
         assert!(!BackgroundWakes::<Value>::begin_revival(&mut wakes.reviving_inbound_agent_ids, "agent-a"));
     }
     assert_eq!(wakes.take_inbound_append_or_end_revival("agent-a"), None);
-    assert!(!wakes.pause_inbound_append("agent-a", &first));
-    assert!(!wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.pause_inbound_append("agent-a", &first), InboundAppendAction::Stale);
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-a", &first, None,
         &ChannelInboundAppendOutcome::Unknown(inbound_append_failure_fixture(
             ChannelInboundAppendFailureKind::Storage,
         )),
-    ));
+    ), InboundAppendAction::Stale);
     assert_eq!(wakes.inbound_append_state("agent-a"), Some(InboundAppendState::Committed));
     assert_eq!(wakes.inbound_append_attempt("agent-a"), Some(&attempt));
     assert!(wakes.reviving_inbound_agent_ids.contains("agent-a"));
@@ -728,8 +1009,8 @@ fn inbound_append_committed_head_grants_one_handoff_permission_and_one_finish_be
     assert!(wakes.owns_inbound_append("agent-a", &next));
     assert!(!wakes.owns_inbound_append("agent-a", &first));
     assert!(!wakes.finish_inbound_append("agent-a", &first));
-    assert!(!wakes.record_inbound_append_outcome("agent-a", &first, Some(attempt), &committed));
-    assert!(!wakes.pause_inbound_append("agent-a", &first));
+    assert_eq!(wakes.record_inbound_append_outcome("agent-a", &first, Some(attempt), &committed), InboundAppendAction::Stale);
+    assert_eq!(wakes.pause_inbound_append("agent-a", &first), InboundAppendAction::Stale);
     assert_eq!(wakes.take_inbound_append_or_end_revival("agent-a"), None);
     assert_eq!(wakes.inbound_append_state("agent-a"), Some(InboundAppendState::Active));
     assert!(wakes.reviving_inbound_agent_ids.contains("agent-a"));
@@ -762,8 +1043,7 @@ fn inbound_append_old_worker_cannot_update_or_clear_replacement_owner_with_same_
                 "agent-a", &stale, Some(inbound_append_attempt_fixture()), &outcome,
             ));
         }
-        results.push(state.finish_inbound_append("agent-a", &stale));
-        results
+        (results, state.finish_inbound_append("agent-a", &stale))
     });
 
     let replacement = {
@@ -779,7 +1059,9 @@ fn inbound_append_old_worker_cannot_update_or_clear_replacement_owner_with_same_
     assert_ne!(replacement.worker_token, old.worker_token);
     assert_eq!(replacement.envelopes, old.envelopes);
     resume_tx.send(()).expect("release stale callbacks");
-    assert_eq!(old_worker.join().expect("old worker"), vec![false; 5]);
+    assert_eq!(old_worker.join().expect("old worker"), (
+        vec![InboundAppendAction::Stale; 4], false,
+    ));
     let mut state = wakes.lock().expect("replacement after stale callbacks");
     assert!(state.owns_inbound_append("agent-a", &replacement));
     assert!(!state.owns_inbound_append("agent-a", &old));
@@ -790,13 +1072,13 @@ fn inbound_append_old_worker_cannot_update_or_clear_replacement_owner_with_same_
     let mut mismatched_claim = replacement.clone();
     mismatched_claim.claim_id = old.claim_id.clone();
     assert!(!state.owns_inbound_append("agent-a", &mismatched_claim));
-    assert!(!state.pause_inbound_append("agent-a", &mismatched_claim));
-    assert!(!state.record_inbound_append_outcome(
+    assert_eq!(state.pause_inbound_append("agent-a", &mismatched_claim), InboundAppendAction::Stale);
+    assert_eq!(state.record_inbound_append_outcome(
         "agent-a", &mismatched_claim, Some(inbound_append_attempt_fixture()),
         &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
-    ));
+    ), InboundAppendAction::Stale);
     assert!(state.owns_inbound_append("agent-a", &replacement));
-    assert!(state.pause_inbound_append("agent-a", &replacement));
+    assert_eq!(state.pause_inbound_append("agent-a", &replacement), InboundAppendAction::Held);
     assert_eq!(state.inbound_append_state("agent-a"), Some(InboundAppendState::NotWritten));
 }
 
@@ -829,16 +1111,16 @@ fn inbound_append_unknown_agent_does_not_block_other_agents_or_change_other_wake
     assert!(!wakes.owns_inbound_append("agent-b", &work_a));
     assert!(!wakes.owns_inbound_append("agent-a", &work_b));
     let attempt_a = inbound_append_attempt_fixture();
-    assert!(!wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-a", &work_a, Some(attempt_a.clone()),
         &ChannelInboundAppendOutcome::Unknown(inbound_append_failure_fixture(ChannelInboundAppendFailureKind::Storage)),
-    ));
-    assert!(!wakes.pause_inbound_append("agent-b", &work_a));
+    ), InboundAppendAction::Held);
+    assert_eq!(wakes.pause_inbound_append("agent-b", &work_a), InboundAppendAction::Stale);
     assert!(!wakes.finish_inbound_append("agent-b", &work_a));
-    assert!(!wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-b", &work_a, Some(attempt_a.clone()),
         &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
-    ));
+    ), InboundAppendAction::Stale);
     assert_eq!(wakes.inbound_append_state("agent-b"), Some(InboundAppendState::Active));
     assert_eq!(wakes.inbound_append_attempt("agent-b"), None);
     assert!(wakes.reviving_inbound_agent_ids.contains("agent-b"));
@@ -859,10 +1141,10 @@ fn inbound_append_unknown_agent_does_not_block_other_agents_or_change_other_wake
     for entry in attempt_b.entries.as_mut().expect("prepared B entries") {
         entry["sessionKey"] = json!("session-key-b");
     }
-    assert!(wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-b", &work_b, Some(attempt_b),
         &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
-    ));
+    ), InboundAppendAction::Committed);
     assert!(wakes.finish_inbound_append("agent-b", &work_b));
     let next_b = wakes.take_inbound_append_or_end_revival("agent-b").expect("agent B progresses independently");
     assert_eq!(next_b.envelopes, vec![tail_b]);
@@ -886,10 +1168,10 @@ fn inbound_append_displayed_dm_redrive_keeps_empty_preparation_and_grants_zero_r
     assert!(BackgroundWakes::<Value>::begin_revival(&mut wakes.reviving_inbound_agent_ids, "agent-a"));
     let original = wakes.take_inbound_append_or_end_revival("agent-a").expect("original input head");
     assert_eq!(original.attempt, None);
-    assert!(wakes.record_inbound_append_outcome(
+    assert_eq!(wakes.record_inbound_append_outcome(
         "agent-a", &original, Some(inbound_append_attempt_fixture()),
         &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
-    ));
+    ), InboundAppendAction::Committed);
     assert!(wakes.finish_inbound_append_with_redrive("agent-a", &original, Some(redriven.clone())));
     assert_eq!(wakes.inbound_append_state("agent-a"), Some(InboundAppendState::NotWritten));
     assert!(wakes.reviving_inbound_agent_ids.contains("agent-a"));
@@ -902,11 +1184,11 @@ fn inbound_append_displayed_dm_redrive_keeps_empty_preparation_and_grants_zero_r
     attempt.entries = Some(Vec::new());
     assert_eq!(work.attempt, Some(attempt.clone()));
     let committed = ChannelInboundAppendOutcome::Committed { inserted_count: 0 };
-    assert!(wakes.record_inbound_append_outcome("agent-a", &work, Some(attempt.clone()), &committed));
+    assert_eq!(wakes.record_inbound_append_outcome("agent-a", &work, Some(attempt.clone()), &committed), InboundAppendAction::Committed);
     assert_eq!(wakes.inbound_append_attempt("agent-a"), Some(&attempt));
     assert_eq!(wakes.inbound_append_state("agent-a"), Some(InboundAppendState::Committed));
     assert!(!wakes.owns_inbound_append("agent-a", &work));
-    assert!(!wakes.record_inbound_append_outcome("agent-a", &work, Some(attempt), &committed));
+    assert_eq!(wakes.record_inbound_append_outcome("agent-a", &work, Some(attempt), &committed), InboundAppendAction::Stale);
     assert_eq!(wakes.take_inbound_append_or_end_revival("agent-a"), None);
     assert!(wakes.reviving_inbound_agent_ids.contains("agent-a"));
     assert!(wakes.finish_inbound_append("agent-a", &work));
@@ -932,10 +1214,10 @@ fn inbound_append_bound_redrive_precedes_raw_tail_and_rejects_delayed_original_w
             &mut state.reviving_inbound_agent_ids, "agent-a",
         ));
         let work = state.take_inbound_append_or_end_revival("agent-a").expect("original head");
-        assert!(state.record_inbound_append_outcome(
+        assert_eq!(state.record_inbound_append_outcome(
             "agent-a", &work, Some(prepared.clone()),
             &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
-        ));
+        ), InboundAppendAction::Committed);
         work
     };
     let (resume_tx, resume_rx) = mpsc::channel();
@@ -999,7 +1281,9 @@ fn inbound_append_bound_redrive_precedes_raw_tail_and_rejects_delayed_original_w
         next
     };
     resume_tx.send(()).expect("release original worker after continuation acquisition");
-    assert_eq!(old_worker.join().expect("original worker"), (false, false, false, false));
+    assert_eq!(old_worker.join().expect("original worker"), (
+        InboundAppendAction::Stale, InboundAppendAction::Stale, false, false,
+    ));
 
     let mut state = wakes.lock().expect("continuation after delayed original worker");
     assert!(state.owns_inbound_append("agent-a", &continuation));
@@ -1007,10 +1291,10 @@ fn inbound_append_bound_redrive_precedes_raw_tail_and_rejects_delayed_original_w
     assert_eq!(state.inbound_append_attempt("agent-a"), Some(&continuation_attempt));
     assert_eq!(state.pending_inbound.get("agent-a"), Some(&tail));
     assert!(state.reviving_inbound_agent_ids.contains("agent-a"));
-    assert!(state.record_inbound_append_outcome(
+    assert_eq!(state.record_inbound_append_outcome(
         "agent-a", &continuation, continuation.attempt.clone(),
         &ChannelInboundAppendOutcome::Committed { inserted_count: 0 },
-    ));
+    ), InboundAppendAction::Committed);
     assert!(!state.finish_inbound_append_with_redrive(
         "agent-a", &original, Some(redriven),
     ));
@@ -1059,10 +1343,10 @@ fn inbound_append_redrive_refuses_missing_preparation_or_binding_and_retains_ori
             "agent-a", &work, Some(redriven.clone()),
         ), "Active input cannot redrive: {label}");
         assert!(wakes.owns_inbound_append("agent-a", &work));
-        assert!(wakes.record_inbound_append_outcome(
+        assert_eq!(wakes.record_inbound_append_outcome(
             "agent-a", &work, captured.clone(),
             &ChannelInboundAppendOutcome::Committed { inserted_count: 2 },
-        ));
+        ), InboundAppendAction::Committed);
         let tail = vec![json!({"text":"later raw input stays behind held head"})];
         BackgroundWakes::enqueue(&mut wakes.pending_inbound, "agent-a", tail[0].clone());
         assert!(!wakes.finish_inbound_append_with_redrive(
@@ -1095,6 +1379,131 @@ fn inbound_image_projection_preserves_all_frozen_image_payloads() {
     assert_eq!(images[0].data, "aGVsbG8=");
     assert_eq!(images[0].mime_type, "image/png");
     assert_eq!(images[1].data, "d29ybGQ=");
+}
+
+// A bounded source-wiring supplement to the actual image projection controls.
+// Parse the named shipping function so a fixture, comment or unrelated worker
+// cannot satisfy this check. Borrowing an already borrowed slice is equivalent.
+fn shipping_inbound_worker_collects_envelope_images(source: &str) -> bool {
+    fn is_unconditional(attributes: &[syn::Attribute]) -> bool {
+        !attributes.iter().any(|attr| {
+            attr.path().is_ident("cfg") || attr.path().is_ident("cfg_attr")
+        })
+    }
+    fn expression_is_unconditional(expression: &syn::Expr) -> bool {
+        let attributes = match expression {
+            syn::Expr::Path(value) => &value.attrs,
+            syn::Expr::Call(value) => &value.attrs,
+            syn::Expr::MethodCall(value) => &value.attrs,
+            syn::Expr::Closure(value) => &value.attrs,
+            syn::Expr::Block(value) => &value.attrs,
+            syn::Expr::If(value) => &value.attrs,
+            syn::Expr::Match(value) => &value.attrs,
+            syn::Expr::Paren(value) => &value.attrs,
+            syn::Expr::Group(value) => &value.attrs,
+            syn::Expr::Try(value) => &value.attrs,
+            syn::Expr::Await(value) => &value.attrs,
+            syn::Expr::Reference(value) => &value.attrs,
+            _ => return false,
+        };
+        is_unconditional(attributes)
+    }
+    let Ok(file) = syn::parse_file(source) else { return false; };
+    let mut workers = file.items.iter().filter_map(|item| match item {
+        syn::Item::Fn(function) if function.sig.ident == "run_channel_inbound_revival_worker" => Some(function),
+        _ => None,
+    });
+    let Some(worker) = workers.next() else { return false; };
+    if workers.next().is_some() || !is_unconditional(&worker.attrs) {
+        return false;
+    }
+
+    fn envelopes(expression: &syn::Expr) -> bool {
+        if !expression_is_unconditional(expression) {
+            return false;
+        }
+        match expression {
+            syn::Expr::Path(path) => path.qself.is_none() && path.path.is_ident("envelopes"),
+            syn::Expr::Reference(reference) if reference.mutability.is_none() => envelopes(&reference.expr),
+            syn::Expr::Paren(paren) => envelopes(&paren.expr),
+            _ => false,
+        }
+    }
+    fn block_has_projection(block: &syn::Block) -> bool {
+        block.stmts.iter().any(|statement| match statement {
+            syn::Stmt::Local(local) if is_unconditional(&local.attrs) =>
+                local.init.as_ref().is_some_and(|init| expression_has_projection(&init.expr)),
+            syn::Stmt::Expr(expression, _) => expression_has_projection(expression),
+            _ => false,
+        })
+    }
+    fn expression_has_projection(expression: &syn::Expr) -> bool {
+        if !expression_is_unconditional(expression) {
+            return false;
+        }
+        match expression {
+            syn::Expr::Call(call) => {
+                let is_projection = matches!(call.func.as_ref(), syn::Expr::Path(path)
+                    if is_unconditional(&path.attrs) && path.qself.is_none()
+                        && path.path.is_ident("collect_inbound_images"));
+                (is_projection && call.args.len() == 1 && envelopes(&call.args[0]))
+                    || call.args.iter().any(expression_has_projection)
+            }
+            syn::Expr::MethodCall(call) => expression_has_projection(&call.receiver)
+                || call.args.iter().any(expression_has_projection),
+            syn::Expr::Closure(closure) => expression_has_projection(&closure.body),
+            syn::Expr::Block(block) => block_has_projection(&block.block),
+            syn::Expr::If(branch) => block_has_projection(&branch.then_branch)
+                || branch.else_branch.as_ref().is_some_and(|(_, expression)| expression_has_projection(expression)),
+            syn::Expr::Match(branch) => branch.arms.iter().any(|arm|
+                is_unconditional(&arm.attrs) && expression_has_projection(&arm.body)),
+            syn::Expr::Paren(paren) => expression_has_projection(&paren.expr),
+            syn::Expr::Group(group) => expression_has_projection(&group.expr),
+            syn::Expr::Try(attempt) => expression_has_projection(&attempt.expr),
+            syn::Expr::Await(awaited) => expression_has_projection(&awaited.base),
+            syn::Expr::Reference(reference) => expression_has_projection(&reference.expr),
+            _ => false,
+        }
+    }
+    block_has_projection(&worker.block)
+}
+
+#[test]
+fn inbound_image_wiring_oracle_accepts_slice_calls_and_rejects_missing_or_wrong_inputs() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    assert!(shipping_inbound_worker_collects_envelope_images(SHIPPING_HOST));
+    for expression in ["collect_inbound_images(envelopes)", "collect_inbound_images(&envelopes)",
+        "collect_inbound_images(\n  & (envelopes),\n)"] {
+        let source = format!("fn run_channel_inbound_revival_worker() {{ let selected_images = {expression}; }}");
+        assert!(syn::parse_file(&source).is_ok(), "control must parse");
+        assert!(shipping_inbound_worker_collects_envelope_images(&source));
+    }
+    for expression in ["Vec::<InboundImage>::new()", "collect_inbound_images(&[])", "collect_inbound_images(other_envelopes)"] {
+        let source = format!("fn run_channel_inbound_revival_worker() {{ let selected_images = {expression}; }}");
+        assert!(syn::parse_file(&source).is_ok(), "control must parse");
+        assert!(!shipping_inbound_worker_collects_envelope_images(&source),
+            "missing or wrong-input projection must fail: {expression}");
+    }
+    for body in [
+        "#[cfg(test)] { let _ = collect_inbound_images(envelopes); } let selected_images = Vec::new();",
+        "#[cfg(test)] collect_inbound_images(envelopes); let selected_images = Vec::new();",
+        "#[cfg_attr(test, allow(unused))] { collect_inbound_images(envelopes); }",
+        "match value { #[cfg(test)] Some(_) => collect_inbound_images(envelopes), _ => Vec::new() };",
+    ] {
+        let source = format!("fn run_channel_inbound_revival_worker() {{ {body} }}");
+        assert!(syn::parse_file(&source).is_ok(), "cfg control must parse: {body}");
+        assert!(!shipping_inbound_worker_collects_envelope_images(&source),
+            "conditional expression cannot provide shipping evidence: {body}");
+    }
+    assert!(!shipping_inbound_worker_collects_envelope_images(r#"
+        fn run_channel_inbound_revival_worker() { let _ = "collect_inbound_images(envelopes)"; }
+        #[cfg(test)] mod tests {
+            fn fixture() { collect_inbound_images(envelopes); }
+        }
+    "#));
+    assert!(!shipping_inbound_worker_collects_envelope_images(
+        "#[cfg(test)] fn run_channel_inbound_revival_worker() { collect_inbound_images(envelopes); }",
+    ));
 }
 
 #[test]
@@ -1151,9 +1560,7 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert!(SHIPPING_HOST.contains("tray.title = \"Message not delivered\""));
     assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\""));
     assert!(SHIPPING_HOST.contains("summary.is_group || summary.remote_room.is_some()"));
-    // The retained-append continuation already receives a borrowed slice;
-    // all of its envelopes still flow through the existing image projection.
-    assert!(SHIPPING_HOST.contains("collect_inbound_images(envelopes)"));
+    assert!(shipping_inbound_worker_collects_envelope_images(SHIPPING_HOST));
     assert!(SHIPPING_HOST.contains("collect_unanswered_question_prompts(&agent_id)"));
     assert!(SHIPPING_HOST.contains("\"selectedImages\""));
     assert!(SHIPPING_HOST.contains("\"skippedQuestionPrompts\""));

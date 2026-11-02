@@ -2,8 +2,9 @@ use std::fs;
 use std::future::{ready, Future};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Mutex, mpsc};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 static NEXT_TEMP_ROOT: AtomicU64 = AtomicU64::new(0);
 
@@ -12,6 +13,10 @@ use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::AgentDeletionRuntimeDeps;
+use mahayana_host_runtime::extensions::session::agent_db::ChannelInboundAppendOutcome;
+use mahayana_host_runtime::extensions::transcript::background_wakes::{
+    BackgroundWakes, InboundAppendAction,
+};
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
     HandoffTelemetry, HandoffTrigger,
@@ -312,6 +317,7 @@ fn manager_is_the_single_production_composition_owner() {
     assert!(ack_a.redrive_schedule(&agent.id).is_none());
     {
         let wakes = wakes_a.lock().expect("background wakes after dispose");
+        assert!(wakes.is_closed());
         assert!(wakes.pending_inbound.is_empty());
         assert!(wakes.pending_channel_failures.is_empty());
         assert!(wakes.pending_event_wakes.is_empty());
@@ -326,6 +332,101 @@ fn manager_is_the_single_production_composition_owner() {
     assert_eq!(sessions.active_agent_db_owner_count(), 0);
     assert_eq!(sessions.active_worker_count(), 0);
 
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn manager_dispose_closes_original_queue_before_cleanup_and_rejects_snapshotted_callback_and_ticket() {
+    // Dropping the real registered observer during dispose can run captured
+    // cleanup code. Observe that exact teardown boundary, not just its return.
+    struct CleanupReadinessProbe {
+        wakes: Arc<Mutex<BackgroundWakes<Value>>>,
+        observed: Arc<Mutex<Vec<(bool, usize, bool)>>>,
+    }
+    impl Drop for CleanupReadinessProbe {
+        fn drop(&mut self) {
+            let mut wakes = self.wakes.lock().unwrap();
+            let closed = wakes.is_closed();
+            let tickets = wakes.request_inbound_readiness().len();
+            let rejected = wakes.enqueue_inbound_and_claim("cleanup-agent", json!({"late":"cleanup"})).is_err();
+            self.observed.lock().unwrap().push((closed, tickets, rejected));
+        }
+    }
+
+    let root = temp_root();
+    fs::create_dir_all(&root).unwrap();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let manager = Arc::new(TranscriptManager::new(&root, sessions));
+    let queue = manager.background_wakes();
+    let reserved = queue.lock().unwrap().enqueue_inbound_and_claim("agent-a", json!({"text":"reserved before spawn"}))
+        .unwrap().unwrap();
+    let cleanup_observed = Arc::new(Mutex::new(Vec::new()));
+    let cleanup_probe = CleanupReadinessProbe { wakes: Arc::clone(&queue), observed: Arc::clone(&cleanup_observed) };
+    manager.set_agent_run_lifecycle_observer(Some(Arc::new(move |_, _| {
+        let _retained_for_observer_lifetime = &cleanup_probe;
+    })));
+
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    let release_rx = Mutex::new(release_rx);
+    let (observed_tx, observed_rx) = mpsc::channel();
+    let callback_queue = Arc::clone(&queue);
+    manager.set_channel_config_changed_observer(Some(Arc::new(move || {
+        entered_tx.send(()).unwrap();
+        release_rx.lock().unwrap().recv_timeout(Duration::from_secs(10)).expect("dispose before snapshotted callback resumes");
+        let mut wakes = callback_queue.lock().unwrap();
+        let closed = wakes.is_closed();
+        let tickets = wakes.request_inbound_readiness().len();
+        let rejected = wakes.enqueue_inbound_and_claim("agent-a", json!({"late":"snapshotted callback"})).is_err();
+        observed_tx.send((closed, tickets, rejected)).unwrap();
+    })));
+    let emitting_manager = Arc::clone(&manager);
+    let emitter = thread::spawn(move || emitting_manager.emit_channel_config_changed());
+    entered_rx.recv_timeout(Duration::from_secs(5)).expect("real manager emitter has snapshotted its callback");
+    manager.dispose();
+    assert!(manager.is_disposed());
+    assert!(Arc::ptr_eq(&queue, &manager.background_wakes()), "disposal retains the permanently closed queue object");
+    assert_eq!(*cleanup_observed.lock().unwrap(), vec![(true, 0, true)], "closure precedes downstream observer teardown");
+    release_tx.send(()).unwrap();
+    assert_eq!(observed_rx.recv_timeout(Duration::from_secs(5)).unwrap(), (true, 0, true));
+    emitter.join().expect("snapshotted real-manager callback returns");
+
+    // A successful resume call and repeated disposal cannot replace the queue
+    // with Default or grant the previously reserved ticket append permission.
+    manager.resume_after_recreate().unwrap();
+    manager.dispose();
+    {
+        let mut wakes = queue.lock().unwrap();
+        assert!(wakes.is_closed());
+        assert!(!wakes.owns_inbound_append("agent-a", &reserved));
+        assert!(!wakes.release_inbound_launch("agent-a", &reserved));
+        assert_eq!(wakes.pause_inbound_append("agent-a", &reserved), InboundAppendAction::Stale);
+        assert_eq!(wakes.record_inbound_append_outcome("agent-a", &reserved, None,
+            &ChannelInboundAppendOutcome::Committed { inserted_count: 1 }), InboundAppendAction::Stale);
+        assert!(!wakes.finish_inbound_append("agent-a", &reserved));
+        assert!(wakes.request_inbound_readiness().is_empty());
+        assert_eq!(wakes.take_inbound_append_or_end_revival("agent-a"), None);
+        assert!(wakes.pending_inbound.is_empty());
+        assert!(wakes.reviving_inbound_agent_ids.is_empty());
+    }
+
+    let next_root = root.join("replacement");
+    fs::create_dir_all(&next_root).unwrap();
+    let next_sessions = Arc::new(ProductionSessionWorkers::with_agents_root(next_root.join("agents"), 500));
+    let next_manager = TranscriptManager::new(&next_root, next_sessions);
+    let next_queue = next_manager.background_wakes();
+    assert!(!Arc::ptr_eq(&queue, &next_queue));
+    {
+        let mut wakes = next_queue.lock().unwrap();
+        assert!(!wakes.is_closed(), "only a newly constructed manager owns a fresh open queue");
+        let next = wakes.enqueue_inbound_and_claim("agent-a", reserved.envelopes[0].clone()).unwrap().unwrap();
+        assert_ne!(next.claim_id, reserved.claim_id);
+        assert_ne!(next.worker_token, reserved.worker_token);
+        assert!(wakes.owns_inbound_append("agent-a", &next));
+        assert!(!wakes.owns_inbound_append("agent-a", &reserved));
+    }
+    next_manager.dispose();
+    assert!(queue.lock().unwrap().is_closed());
     let _ = fs::remove_dir_all(root);
 }
 

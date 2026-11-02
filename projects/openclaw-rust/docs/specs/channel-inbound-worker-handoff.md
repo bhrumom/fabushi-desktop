@@ -318,6 +318,16 @@ context fields, actual two-image payload oracle and all delivery/failure/nonce
 assertions. Do not add an unnecessary production borrow to satisfy stale text.
 This is not an image-loss implementation finding or real-channel acceptance.
 
+CA-IMAGE-WIRING-02 retains that actual projection requirement using the already
+locked test-only parser and the uniquely named unconditional shipping worker.
+A test fixture, literal, or cfg/cfg_attr function, local, expression or match arm
+must not supply shipping evidence. Independent syntax controls accept slice
+borrowing and whitespace variants and refuse missing/wrong input; no fixed
+production spelling is required to select a mutation target. Decisions
+WF-GEN-02/03 are FIX / TEST_FLAW before correcting this unpublished oracle.
+Keep actual image payload, continuation and delivery assertions unchanged.
+This remains a bounded syntactic supplement, not a dataflow or provider proof.
+
 ## Fresh Transcript commit — `SESSION-FRESH-APPEND-v1`
 
 Original implementation base: `3761bde297377bca80ad7497d1664f6f3d32bc58`;
@@ -495,7 +505,6 @@ equality; the feature declaration in `Cargo.toml` blob
 round trips from arbitrary-precision JSON preservation and documents its
 float-parsing cost. No unobserved timing or performance claim follows.
 
-
 ### Exact committed JSON image — `SESSION-JSON-ROUNDTRIP-v1`
 
 Decision `SESSION-JSON-01` — **FIX / production configuration gap**, at
@@ -605,3 +614,98 @@ outcome to be retained before publication of this repair, followed by unchanged
 controls and affected shipping/contracts on the resulting exact H. Source
 review or the earlier integral/clock-dependent passes cannot substitute for
 that execution, and no performance or full-migration acceptance is implied.
+## Live inbound readiness — `OCRM-CHANNEL-INBOUND-REARM-v1`
+
+Implementation base: `0ac0a8030dc74bbd0d9832fea684458b4e52da0e`.
+Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`. The CA-v1 queue
+already retains a paused or confirmed-not-written head, but provider-setting
+and successful upgrade-resume changes do not wake it. A signal arriving while
+the worker is about to pause also needs to survive that exact transition.
+Extend the existing `BackgroundWakes` claim; do not add a queue, scheduler,
+permission owner or another recovery registry.
+
+- CR-01: supported signals are a committed Settings notification for
+  `inferenceProvider`, `inference_provider` or `router`, successful existing
+  `TranscriptManager::resume_after_recreate`, and newly enqueued channel input.
+  These request a fresh gate check; they do not certify credentials, network
+  health or permission. Failed Settings CAS/persistence and unrelated fields
+  must not request readiness. A retained head precedes all later raw input.
+- CR-02: claim the real existing head and worker token under its mutex before
+  spawning a thread. One common shipping launch adapter serves ingress and
+  readiness. A launch failure releases only its exact current Active token,
+  preserving envelopes and prepared attempt. A later supported signal can
+  reacquire it; no timer or no-signal eventual recovery is promised.
+- CR-03: a signal observed while a head is Active sets one coalesced latch.
+  Pausing or recording NotWritten atomically either consumes the latch and
+  returns the latest claim-owned Work with a new token, or releases the old
+  token and revival ownership together. A signal after release acquires one
+  successor. Retry carries the just-recorded attempt, original IDs, timestamp
+  and Session generation; it never reuses an earlier unprepared snapshot.
+  If the gate stays closed without a new signal, stop after consuming the latch.
+- CR-04: typed transition results distinguish Committed dispatch permission,
+  Retry(work), Held and Stale. Unknown clears readiness and remains held;
+  neither new input, Settings nor resume may retry its append or dispatch it.
+  Committed continues the existing single Runner handoff and generation-bound
+  displayed redrive. Readiness must never become Runner permission by boolean
+  overloading, and no queue mutex may cover Session I/O or Runner callbacks.
+- CR-05: disposal closes this `BackgroundWakes` instance permanently before
+  downstream cleanup callbacks. Clear existing pending/held/revival collections
+  while retaining the closed fact; do not reset it to an open Default. Late
+  callbacks, tickets and old-token cleanup cannot reopen or populate executable
+  inbound work. A new manager owns a separate fresh object. This does not join
+  workers or retract an append/dispatch that already crossed its last check.
+- CR-06: retain exactly one Settings subscription in shipping composition;
+  capture a Weak Gateway and reread the actual provider/upgrade gates in the
+  worker. Unsubscription cannot retract a snapshotted callback, so the queue's
+  closed check under its mutex is authoritative. Emit resume readiness directly
+  after manager resume succeeds, before later fallible restoration/recovery.
+  Launch failure diagnostics cannot reverse an already committed Settings write.
+- CR-07: preserve CA/IH/FC assertions and the original Session generation,
+  connector lane/permission policy, Unknown isolation, head/tail ordering,
+  displayed redrive and independent agents/wake families. Do not add an active
+  user preflight or change provider selection/Settings persistence ownership.
+- CR-08: use real BackgroundWakes, Session/SQLite, SettingsService and manager
+  entry points with deterministic I/O or launch boundaries. Cover both sides of
+  pause, a signal during real confirmed rollback, Unknown plus later signals,
+  stale launch failure, actual subscription delivery and failed writes, actual
+  resume, disposal versus snapshotted callback and a reserved ticket, and fresh
+  successful append/handoff. Downstream counters prove ordering only, not real
+  provider execution or external channel delivery. Execute only in Actions.
+
+### Shared Rust interface and composition
+
+The existing owner adds `InboundAppendAction<T>` with `Committed`,
+`Retry(InboundAppendWork<T>)`, `Held` and `Stale`. The current
+`pause_inbound_append` and `record_inbound_append_outcome` return this type;
+production callers must handle it explicitly. Existing negative and positive
+assertions are adapted to the same state meanings, not removed.
+
+`enqueue_inbound_and_claim(agent_id, envelope)` returns
+`Result<Option<InboundAppendWork<T>>, String>` and rejects a closed object.
+`request_inbound_readiness()` returns current `(agent_id, Work)` launch tickets
+and coalesces Active heads. `release_inbound_launch(agent_id, work)` retires only
+that exact Active ticket after a spawn error. `close()` permanently closes and
+clears the existing object; `is_closed()` observes that fact. All are operations
+of the existing owner, serialized by its already-held mutex. Readiness inspects
+retained claims as well as raw pending input. Reuse the existing atomic
+take/idle handoff between successful batches; do not clear a successor's bit.
+
+Allowed implementation paths are `background_wakes.rs`, `transcript_manager.rs`,
+their existing production contracts, shipping Host `main.rs`, this existing
+specification, a private shipping-app test module at
+`source/host/app/src/tests/channel_inbound_readiness_tests.rs`, and existing
+Actions/ledger/RTM references. The new module exercises the same shipping
+launch, Settings-subscription, readiness gate, append and resume adapters with
+real Session/SQLite and TranscriptManager owners; it adds no runtime module.
+No Settings storage,
+provider policy, wire schema, lockfile or new runtime module changes are needed.
+Root integrates composition and shared selectors serially. Revert this bounded
+change without deleting durable transcript; volatile ingress and unknown-state
+reconciliation are not migration or restart acceptance claims.
+
+The fixed-U ingress monitor/admission/tasks and drain/state source identities
+already recorded in the bounded channel dossier support request coalescing,
+final owner release and Unknown custody. Reuse only those read extents. The
+upstream recovery sweep, provider-health events, joined shutdown, durable
+ingress/reconciliation and full delivery remain open. Final-H source authority,
+scoped contracts and full G01–G12/AC01–AC24 remain required; no global flag moves.
