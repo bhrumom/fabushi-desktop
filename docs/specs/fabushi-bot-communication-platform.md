@@ -1,5 +1,7 @@
 # Fabushi Bot 全量通信能力等价重写与统一产品 Spec
 
+Execution amendment: 2026-11-02 / FMEP-001 Revision 2 — batch feedback supersedes development-wide zero CI; all product and final acceptance requirements remain applicable.
+
 Status: active  
 Spec ID: FBCP-001  
 Revision: 8
@@ -294,7 +296,7 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 **FBCP-QA-16 — Escaped defect feedback loop.** 人工后来发现但自动测试没发现的问题必须形成 gap analysis：为什么现有 oracle/case/gate 没抓到、在哪一层补 test、是否扩大同类风险扫描；不能只补当前单点。
 **FBCP-QA-17 — Test data/environment are controlled.** 关键测试使用版本化 fixture/seed/locale/theme/viewport/network/fault profile，避免随机时间/头像/账号数据让测试失去可重复性；真实 protected account 另按秘密与清理合同管理。
 **FBCP-QA-18 — All executable verification GitHub Actions only.** 对 FBCP/TDRP，unit/property/state-machine/contract/integration/E2E/visual/a11y/performance/soak/fault/package/acceptance 全部只在 GitHub Actions 运行。
-**FBCP-QA-19 — Development-first verification timing.** 开发期先完成全部适用能力的源责任闭包、现有 owner 下的实现与生产接线、UI/服务/数据/平台/包体路径，以及可证伪的正反测试和 oracle；此阶段不触发、等待或重复 FBCP/TDRP CI，不推送实现分支或更新迁移 PR head，不运行本机测试。全部开发闭包后冻结同一确切提交 H，集中执行适用 Actions、真实服务/设备/平台/安装包及独立验收。失败则修复并重新冻结；开发期和旧 H 的结果不能标为当前 H verified。
+**FBCP-QA-19 — 批次及时验证。** 按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 ## 9. 品牌、命名与来源记录
 
@@ -321,7 +323,7 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 
 本项目所有 build/test/lint/generator/schema/benchmark/fuzz/package/acceptance 等可执行验证只在 **GitHub Actions** 进行；本 Revision 对 FBCP/TDRP 的要求替代旧文档中允许 htch-runtime 验证的口径。不要在用户 Mac、bhrum2 或 assistant container 跑这些任务。只读调查、文档编辑及 Git/API 操作允许；非必要不占用用户设备存储，必要临时改动提交云端后清理。
 
-开发阶段依 TDRP-EXEC-01 只做源码审读、分流、实现、生产接线、测试/验收方案编写、静态审查及隔离分支本地提交；不触发或等待迁移 CI，不推送实现分支/更新迁移 PR head。全部适用功能与源责任闭包后才冻结 H 集中执行下列验证。任何未运行项保持 `not-run`/`pending`/false，不能把延后验证解释为降低最终验收标准。
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 验证包括：完整 source-tree/recursive dependency 闭合、逐文件/责任覆盖、语言与 owner 约束、真实 shipping wiring、module contract/行为对照、Unit/integration/property/fuzz、顺序/重复/恢复/取消、权限和安全、服务端 E2E、既有 Bot 回归、UI/可访问性、性能/功耗/磁盘增长、签名安装包与升级回滚。
 

@@ -1,3 +1,5 @@
+> Historical / superseded 2026-11-02：本文保留历史要求；零 CI 与禁止 push/PR 条款不再有效。当前执行依据为 FMEP-001 Revision 2（批次及时验证、最终完整验收）。
+
 # 2026-10-31 — 全量开发零 CI 与集中验证执行补充
 
 Type: user-directed specification/prompt update  

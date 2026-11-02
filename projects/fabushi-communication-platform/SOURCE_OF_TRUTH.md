@@ -4,7 +4,7 @@ Status: active
 Project ID: FBCP-001  
 Revision: 8
 Date: 2026-10-31
-Execution addendum: FMEP-001 Revision 1 (2026-10-31)
+Execution addendum: FMEP-001 Revision 2 (2026-11-02)
 Repository: `bhrumom/fabushi-desktop`
 
 ## Canonical statement
@@ -16,7 +16,7 @@ Repository: `bhrumom/fabushi-desktop`
 ## Normative documents
 
 - root `AGENTS.md`
-- `docs/specs/fabushi-deferred-ci-migration.md` — FMEP-001 Revision 1；本迁移执行时机、并行批次、零 CI 保存及集中验证的权威补充
+- `docs/specs/fabushi-deferred-ci-migration.md` — FMEP-001 Revision 2；本迁移执行时机、并行批次、及时验证及集中验收的权威补充
 - `docs/specs/fabushi-bot-communication-platform.md` — FBCP-001 Revision 8
 - `docs/specs/telegram-desktop-rust-equivalence-migration.md` — TDRP-001 Revision 10
 - current canonical Bot architecture/spec and exact-head implementation
@@ -34,11 +34,7 @@ Repository: `bhrumom/fabushi-desktop`
 
 ## Execution timing authority
 
-FMEP-001 细化 FBCP-QA-19/TDRP-EXEC-01，并优先解释所有关联任务、质量计划与旧提示词的验证时机。阶段 A 全量实现与融合期间不进行任何迁移 CI，不做本机验证；测试代码、oracles、fixtures、workflow 可编写但不执行。完整实现闭合后冻结 H，阶段 B 才集中验证、修复与重验；阶段 C 独立接受后发布。
-
-FBCP §2 中“在 GitHub Actions 确认基线”是阶段 B 的正式证据，不是阶段 A 获取源码或开始实现的前置条件。阶段 A 以只读 Git/API 锁定 U、枚举并理解来源，最终机器验证不提前运行。P0 的可执行 gate 也依此延期，不以尚无 CI 结果阻塞无依赖实现。
-
-实现/测试源码检查点应通过已证明不会触发 CI 的持久云端保存机制保留；未证明无触发前禁止更新实现 ref/PR。不能仅靠 `[skip ci]` 假定所有事件已隔离，也不能长期只存本机。具体约束按 FMEP-001 §5；本次只更新文档，未宣称已改好 workflow 触发配置。
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 ## Hard rules
 
@@ -56,14 +52,14 @@ FBCP §2 中“在 GitHub Actions 确认基线”是阶段 B 的正式证据，�
 - Search 只有一个 canonical owner：入口内、对象内、Universal Search 与所有 Participant/member/admin picker 复用 typed query/result/provider/permission 合同；本地/远端索引位于同一 owner 后。
 - UI 必须使用 Fabushi semantic design tokens、canonical components 与 canonical screen patterns；AI/开发者不得按模块自由发明新的 visual grammar。
 - 当前 recovered `sand-*` / `cursor-*` 可作为兼容实现细节，但新迁移 UI 不直接把来源命名当公共 API；目标层为 Fabushi-owned semantic aliases/wrappers。
-- 核心 UI 变更的 current-head GitHub Actions visual regression、light/dark、locale、responsive、keyboard/a11y、reduced-motion 和状态矩阵证据在阶段 B 取得。
+- 核心 UI 变更的 current-head GitHub Actions visual regression、light/dark、locale、responsive、keyboard/a11y、reduced-motion 和状态矩阵受影响证据在阶段 A 及时取得，阶段 B 补齐完整矩阵。
 - 功能/QA 使用 requirement→oracle/invariant→test case→execution evidence→independent verdict 的双向 RTM；没有 traceability 不得 verified。
-- 动态 Agent/消息/UI 行为必须在阶段 B 做 temporal acceptance；final/terminal 在 settlement、切换、reconnect、reload、restart 后不可消失/回滚/被 intermediate 替代。
+- 动态 Agent/消息/UI 行为在阶段 A 做受影响时序验证、阶段 B 做完整 temporal acceptance；final/terminal 在 settlement、切换、reconnect、reload、restart 后不可消失/回滚/被 intermediate 替代。
 - 人工/后阶段发现的 defect 必须形成永久 regression case 和 gap analysis；flaky/skipped/blocked/not-run 不算 pass。
 - release candidate 必须由独立验收者复核 packaged timeline/screenshots/video/evidence，0 open P0/P1/blocker 才可 ACCEPT。
 - 产品名/图标/窗口/文案/安装更新全部 Fabushi；无 Telegram/Grok Bot/Gok Bot 产品品牌；必要法律声明和 provenance 保留。
 - 所有可执行验证仅 GitHub Actions，不沿用本项目旧 htch-runtime allowance。
-- 阶段 A 按固定 U、现有 owner 与依赖图成批并行实现，变更范围增量审读，单一集成人合入公共接口和账本；不重复开修复线，不等待 CI。
+- 阶段 A 按固定 U、现有 owner 与依赖图成批并行实现，变更范围增量审读，单一集成人合入公共接口和账本；不重复开修复线，验证期间推进无依赖工作。
 - 完整迁移需要 0 in-scope open blockers、0 omitted/unmapped、0 stub/fake fallback 和最终冻结候选的生产/发布证据。
 
 ## Snapshot, not live truth
