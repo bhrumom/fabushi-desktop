@@ -1072,7 +1072,9 @@
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
         "source/node-agent-coordinator/tests/production_protocol.rs",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
+        "source/host/tests/openclaw_input_files_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2112,7 +2114,9 @@
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
         "source/node-agent-coordinator/tests/production_protocol.rs",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
+        "source/host/tests/openclaw_input_files_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

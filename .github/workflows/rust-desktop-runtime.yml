@@ -291,6 +291,10 @@ jobs:
               "source/host/tests/mcp_coordinator_relay_contract.rs",
               "source/host/tests/gateway_server_contract.rs",
               "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+              "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
+              "source/host/src/extensions/attachments/attachments_service.rs",
+              "source/host/src/extensions/attachments/input_files.rs",
+              "source/host/tests/openclaw_input_files_contract.rs",
           ]
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
@@ -347,6 +351,13 @@ jobs:
             --test runner_production_bridge_contract \
             --test fabushi_model_identity_production_contract \
             --test fabushi_responses_credential_context_contract
+      - name: Test media input policy admission through existing attachment owner
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
+          run_recovery_check media-input-policy cargo test --locked --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract
       - name: Test shipping model, channel, compaction cancellation and Runner terminal contracts
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
@@ -849,6 +860,10 @@ jobs:
               "native_workspace_lock_check": "cargo check --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib; committed lock unchanged",
               "owner_contract_targets": ["host_secret_store_contract", "host_foundation_contract", "box_store_download_frozen_parity_contract", "settings_service_contract", "openclaw_sessions_and_config_contract", "inference_extension_composition_contract", "settings_extension_contract", "production_settings_single_owner_contract", "gateway_command_error_contract", "openclaw_agent_roster_contract", "extensions_auth_service_contract", "extensions_auth_credential_renewer_contract", "extensions_auth_extension_contract", "inference_codex_direct_contract", "inference_provider_session_contract", "runner_production_bridge_contract", "fabushi_model_identity_production_contract", "fabushi_responses_credential_context_contract"],
               "owner_contract_result": "passed",
+              "media_input_policy_contract": "MIP-v1",
+              "media_input_policy_target": "openclaw_input_files_contract",
+              "media_input_policy_result": "passed",
+              "media_input_policy_scope": "Actual AttachmentsService file RPCs reject malformed explicit resolved policy before decoding or URL processing, preserve omitted/null defaults and valid restrictive limits, and shared file/image source handling rejects '=' and '==' without arithmetic panic or underflow-generated size errors. Longer malformed input retains upstream size-before-validation precedence. This does not establish URL allowlist/redirect/cancellation parity, real PDF or HEIC behavior, accepted-turn multimodal composition, or real service acceptance.",
               "config_public_secret_contract": "OCRM-CONFIG-PUBLIC-SECRET-v1",
               "config_public_secret_app_tests": ["tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization", "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests", "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers", "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry", "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret", "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization"],
               "config_public_secret_library_filters": ["extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
@@ -1239,6 +1254,62 @@ jobs:
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
               "scope": "Actual Linux native-byte fixtures and existing three recovery targets only; not all-filesystem, power-loss or whole-platform acceptance.",
+          }
+          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
+          PY
+      - name: Test media input policy on the existing Linux Host cache
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/sqlite-native-path/media-input-policy
+          command=(cargo test --locked --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract)
+          set +e
+          "${command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/tests.log
+          pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${command[@]}" <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess, sys
+          root = pathlib.Path(".evidence/sqlite-native-path/media-input-policy")
+          log = (root / "tests.log").read_bytes()
+          cargo_exit, capture_exit = map(int, sys.argv[1:3])
+          required = [
+              "gateway_file_extraction_rejects_every_malformed_explicit_policy",
+              "gateway_file_policy_errors_precede_base64_and_url_processing",
+              "gateway_file_extraction_preserves_omitted_and_null_default_policies",
+              "gateway_file_extraction_preserves_resolved_restrictive_policies",
+              "gateway_partial_file_policy_is_resolved_before_extraction",
+              "gateway_padding_only_sources_preserve_upstream_error_precedence",
+              "gateway_valid_padded_file_and_image_sources_preserve_byte_caps",
+          ]
+          passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
+          missing = [name for name in required if passed.count(name) != 1]
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and head == os.environ["FABUSHI_TARGET_SHA"]
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          inputs = [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
+              "source/host/src/extensions/attachments/attachments_service.rs",
+              "source/host/src/extensions/attachments/input_files.rs",
+              "source/host/tests/openclaw_input_files_contract.rs",
+          ]
+          receipt = {
+              "contract": "MIP-v1", "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
+              "command": sys.argv[3:], "cargo_exit": cargo_exit, "capture_exit": capture_exit,
+              "required_tests": required, "missing_or_nonunique_positive_results": missing,
+              "observed_passed_test_names": passed,
+              "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
+              "log_sha256": hashlib.sha256(log).hexdigest(),
+              "result": "passed" if accepted else "failed",
+              "scope": "Linux execution of the existing attachment owner: strict explicit policy admission, default/restrictive controls, one-/two-padding underflow refusal and retained size-before-validation precedence. Not macOS Host, full URL/PDF/HEIC/multimodal parity, real service or whole-platform acceptance.",
           }
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))

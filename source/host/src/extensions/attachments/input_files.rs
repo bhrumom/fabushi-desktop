@@ -1,6 +1,6 @@
-//! Input file and image extraction, MIME classification, charset normalization, and SSRF guard pipeline.
+//! Input file and image extraction, MIME classification, charset handling, and source limits.
 //!
-//! Ported with 100% behavioral equivalence from OpenClaw:
+//! Source-informed owner based on OpenClaw:
 //! - `src/media/input-files.ts`
 //! - `src/media/input-files.extract.test.ts`
 //! - `src/media/input-files.fetch-guard.test.ts`
@@ -718,7 +718,8 @@ fn estimate_base64_decoded_bytes(data: &str) -> usize {
         return 0;
     }
     let padding = clean.chars().rev().take(2).filter(|&c| c == '=').count();
-    (clean.len() * 3) / 4 - padding
+    let decoded = (clean.len() / 4) * 3 + (clean.len() % 4) * 3 / 4;
+    decoded.saturating_sub(padding)
 }
 
 pub fn read_input_source(

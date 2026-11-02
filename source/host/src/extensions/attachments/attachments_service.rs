@@ -27,6 +27,7 @@ use crate::extensions::attachments::generate_image_service::{
     CursorGenerateImageOptions, GenerateImageAuth, GenerateImageRequestIdObserver,
     PersistGeneratedImage, SandGenerateImageService, create_cursor_generate_image_backend,
 };
+use crate::extensions::attachments::input_files::{InputFileLimits, resolve_input_file_limits};
 use crate::extensions::attachments::link_preview_image_bounds::{
     ImageSize, read_encoded_image_size,
 };
@@ -175,6 +176,16 @@ struct BoxStateAdapter<'a>(&'a dyn AttachmentsBox);
 impl BoxStagingBox for BoxStateAdapter<'_> {
     fn run_state(&self, agent_id: &str) -> Result<String, String> {
         self.0.run_state(agent_id)
+    }
+}
+
+/// Validate explicit resolved policy before decoding or fetching input.
+fn resolve_gateway_input_file_limits(value: Option<&Value>) -> Result<InputFileLimits, String> {
+    match value {
+        None | Some(Value::Null) => Ok(resolve_input_file_limits(None)),
+        Some(value) if value.is_object() => serde_json::from_value(value.clone())
+            .map_err(|error| format!("Invalid InputFileLimits: {error}")),
+        Some(_) => Err("Invalid InputFileLimits: expected a JSON object".into()),
     }
 }
 
@@ -2099,17 +2110,13 @@ impl AttachmentsService {
                 Ok(serde_json::to_value(limits).unwrap_or(Value::Null))
             })(),
             "extractFileContentFromBuffer" => (|| {
+                let limits = resolve_gateway_input_file_limits(args.get("limits"))?;
                 let b64 = args.get("bufferBase64").and_then(Value::as_str)
                     .ok_or_else(|| "extractFileContentFromBuffer requires bufferBase64".to_string())?;
                 let buf = STANDARD.decode(b64).map_err(|e| format!("Invalid base64: {e}"))?;
                 let filename = args.get("filename").and_then(Value::as_str);
                 let mime_type = args.get("mimeType").and_then(Value::as_str);
                 let charset = args.get("charset").and_then(Value::as_str);
-                let limits_val = args.get("limits").cloned().unwrap_or(Value::Null);
-                let limits: crate::extensions::attachments::input_files::InputFileLimits =
-                    serde_json::from_value(limits_val).unwrap_or_else(|_| {
-                        crate::extensions::attachments::input_files::resolve_input_file_limits(None)
-                    });
                 let result = crate::extensions::attachments::input_files::extract_file_content_from_buffer(
                     &buf,
                     filename,
@@ -2121,14 +2128,10 @@ impl AttachmentsService {
                 Ok(serde_json::to_value(result).unwrap_or(Value::Null))
             })(),
             "extractFileContentFromSource" => (|| {
+                let limits = resolve_gateway_input_file_limits(args.get("limits"))?;
                 let source_val = args.get("source").cloned().ok_or_else(|| "extractFileContentFromSource requires source".to_string())?;
                 let source: crate::extensions::attachments::input_files::InputFileSource =
                     serde_json::from_value(source_val).map_err(|e| format!("Invalid InputFileSource: {e}"))?;
-                let limits_val = args.get("limits").cloned().unwrap_or(Value::Null);
-                let limits: crate::extensions::attachments::input_files::InputFileLimits =
-                    serde_json::from_value(limits_val).unwrap_or_else(|_| {
-                        crate::extensions::attachments::input_files::resolve_input_file_limits(None)
-                    });
                 let result = crate::extensions::attachments::input_files::extract_file_content_from_source(&source, &limits)?;
                 Ok(serde_json::to_value(result).unwrap_or(Value::Null))
             })(),

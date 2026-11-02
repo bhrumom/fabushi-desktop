@@ -105,3 +105,59 @@ pipeline acceptance evidence remain pending:
   4. `test_input_file_limits_and_truncation`: Verifies `maxChars` clamping with surrogate pair safety and `textTruncated` metadata tagging.
   5. `test_input_source_and_image_validation`: Verifies `allowUrl=false` rejection, payload size limit enforcement, AVI video byte classification (`video/x-msvideo`) and rejection from image allowlist, and HEIC image normalization to JPEG.
   6. `test_gateway_dispatch_input_files_and_staged_inputs`: Verifies dynamic gateway RPC methods `resolveInputFileLimits`, `extractFileContentFromBuffer`, `stagedInputPathDirectory`, `isStagedInputPath`, and `ensureStagedInputDirectory`.
+
+## 5. Fixed-U policy admission correction — MIP-v1
+
+This entry uses current U `1440bb1771372334bea23d7642bb52deb7db1845`
+(tree `90c8aab39972da11cfad220361781d49e1bc6700`) and target baseline
+`3c4bf6963cb30ecf01eb34b905315074886e1972`. Sections 1–4 retain their
+historical source/read/count facts; their old identities are not current-U
+full-read evidence. The bounded contract is
+[`media-input-policy-admission.md`](../docs/specs/media-input-policy-admission.md).
+
+| Current-U input | Exact blob | Review applied in this batch |
+| --- | --- | --- |
+| `src/media/input-files.ts` | `64bca417aa7b46c02d11d81f1b8a5b6f906137cd` | Implementation/call-chain review of typed limits, resolver, shared source reads and extraction consumers; independent reader also read the full file. |
+| `packages/media-core/src/base64.ts` | `31eead019c4aeecd081ba7836e7ec408a367ae1c` | Full helper read; size arithmetic, canonical validation, allocation and error ordering. |
+| `packages/media-core/package.json` | `88490cbd64f5cddd4181f053bb029da78d272885` | Package export contract review. |
+| `packages/media-core/src/base64.test.ts` | `337c775bd1723f7bfba87e3d0275a81798857fe9` | Independent full test-file read; invalid dialect and estimator controls. |
+| `src/media/input-files.extract.test.ts` | `02cd69d091e93a585a31703a9872e670488d65f1` | Bounded allowlist and truncation oracle review. |
+| `src/media/input-files.fetch-guard.test.ts` | `645719e0cc5822b85f4431f1ef55899e2aafb0c2` | Bounded size/validation controls, including base64 lines 612–675. |
+
+The real entrypoints are `AttachmentsService::dispatch_gateway` methods
+`extractFileContentFromBuffer`, `extractFileContentFromSource`, and
+`extractImageContentFromSource`, reached by the existing generic Host-lane
+dispatcher. The earlier `extractFileContent`/`extractImageContent` wording is
+shorthand, not a separate implemented method. File RPC admission now shares
+one Rust helper: omitted/null policy retains default behavior; explicit
+policy must be a complete object or return an error before decoding/source
+processing. Valid false/zero/empty restrictions pass unchanged. The existing
+file/image decoder clamps the `=`/`==` underflow before normal base64
+rejection while preserving size-before-validation for longer malformed data.
+Existing serde/base64 dependencies are reused; no new owner or
+dependency is introduced.
+
+The existing Host/App manifests select `base64 = "0.22"` with default features;
+both locks bind the runtime to registry `base64 0.22.1`, checksum
+`72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6`.
+The inspected manifests contain no base64 patch/path/git replacement. Its
+official manifest at `marshallpierce/rust-base64@e14400697453bcc85997119b874bc03d9601d0af`
+(blob `ea2d4050388e30d6d49e24ef09fee6460fa50997`) declares `MIT OR Apache-2.0`,
+default `std`/`alloc`, and no runtime dependencies. The actual consumer keeps
+the existing standard decoder and error result; this change neither replaces
+the decoder nor establishes broader dialect parity. This is manifest/usage
+review, not a claimed download or complete archive/legal-source closure.
+
+Actual-dispatch controls extend `openclaw_input_files_contract` and its full
+target is selected in the existing scoped Actions workflow, with source
+hashes, command log, exit status and subject receipt. Source-only review is
+not execution evidence. At authoring, exact-H Actions for this correction
+remain pending; responsibility verification/acceptance and all eight global
+flags are not promoted.
+
+Open scope remains concrete: no accepted-turn extractor consumer; placeholder
+PDF text and placeholder HEIC image conversion; incomplete URL
+hostname-allowlist/redirect/cancellation policy; and broader base64 dialect
+differences. Existing staged-input tests and dummy HEIC success are not real
+format or live-channel compatibility acceptance. These observations retain
+the existing chat-wiring blocker and do not reduce the full media obligation.

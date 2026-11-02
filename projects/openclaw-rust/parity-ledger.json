@@ -17536,7 +17536,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_input_files_contract.rs",
-        "projects/openclaw-rust/dossiers/media-input-files-staged-inputs-scoped.md"
+        "projects/openclaw-rust/dossiers/media-input-files-staged-inputs-scoped.md",
+        "projects/openclaw-rust/docs/specs/media-input-policy-admission.md"
       ],
       "existing_owner_candidates": [
         {
@@ -17557,17 +17558,19 @@
       ],
       "id": "OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(extractFileContent/extractImageContent); source/host/src/extensions/attachments/input_files.rs::read_input_source",
-        "entrypoint": "AttachmentsService::dispatch_gateway -> input_files::extract_file_content_from_source/extract_image_content_from_source; input_files::read_input_source -> media_fetch",
+        "consumer": "AttachmentsService RPC result; input_files extraction and media_fetch URL acquisition. Accepted-turn multimodal composition remains blocked.",
+        "entrypoint": "Host generic dispatch -> AttachmentsService::dispatch_gateway(extractFileContentFromBuffer/extractFileContentFromSource/extractImageContentFromSource) -> input_files; file RPC policy admission precedes source decoding or URL processing",
         "owner": "source/host/src/extensions/attachments/input_files.rs",
-        "producer": "attachment gateway and user-input source callers"
+        "producer": "existing attachment gateway callers; no accepted-turn extraction caller yet"
       },
       "invariants": [
         "URL sources rejected when allowUrl is false",
         "File and image buffers exceeding maxBytes rejected with explicit limit errors",
         "Container MIME formats (AVI, PDF, ZIP) arbitrated by byte classification over declared headers",
         "WHATWG charsets decoded with state retention across chunks and truncated safely at UTF-16 surrogate edges",
-        "HEIC/HEIF images converted to JPEG with bounded buffer limits"
+        "HEIC/HEIF images converted to JPEG with bounded buffer limits",
+        "MIP-v1: omitted/null file RPC limits retain defaults; explicit non-object or incomplete resolved policy is refused before payload decoding or URL processing",
+        "MIP-v1: valid false/zero/empty resolved restrictions pass unchanged; '='/'==' file/image source data returns invalid-data failure without unsigned underflow while longer malformed data retains size-before-validation precedence"
       ],
       "migration_rollback": "Reject remote URL sources and fallback to raw UTF-8 decoding",
       "oracle_ids": [
@@ -17595,7 +17598,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Medium; handles untrusted multi-modal inputs, memory decoding bounds, and network SSRF boundaries",
+      "risk": "High; untrusted multi-modal policy admission, memory decoding bounds and remote URL security. MIP-v1 is a bounded admission/arithmetic correction; full media and network parity remain open.",
       "selected_owner": "source/host/src/extensions/attachments/input_files.rs",
       "source_refs": [],
       "status": {
@@ -17614,13 +17617,21 @@
       "tests": [
         "source/host/tests/openclaw_input_files_contract.rs::test_named_attachment_decoding_and_charsets",
         "source/host/tests/openclaw_input_files_contract.rs::test_input_file_limits_and_truncation",
-        "source/host/tests/openclaw_input_files_contract.rs::test_input_source_and_image_validation"
+        "source/host/tests/openclaw_input_files_contract.rs::test_input_source_and_image_validation",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_file_extraction_rejects_every_malformed_explicit_policy",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_file_policy_errors_precede_base64_and_url_processing",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_file_extraction_preserves_omitted_and_null_default_policies",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_file_extraction_preserves_resolved_restrictive_policies",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_partial_file_policy_is_resolved_before_extraction",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_padding_only_sources_preserve_upstream_error_precedence",
+        "source/host/tests/openclaw_input_files_contract.rs::gateway_valid_padded_file_and_image_sources_preserve_byte_caps"
       ],
       "typed_contracts": [
         "extract_file_content_from_buffer(buffer: &[u8], filename: Option<&str>, mime_type: Option<&str>, charset: Option<&str>, limits: &InputFileLimits, classification: Option<&AttachmentClassification>) -> Result<InputFileExtractResult, String>",
         "extract_file_content_from_source(source: &InputFileSource, limits: &InputFileLimits) -> Result<InputFileExtractResult, String>",
         "extract_image_content_from_source(source: &InputImageSource, limits: &InputImageLimits) -> Result<PdfExtractedImage, String>",
-        "resolve_input_file_limits(config: Option<&InputFileLimitsConfig>) -> InputFileLimits"
+        "resolve_input_file_limits(config: Option<&InputFileLimitsConfig>) -> InputFileLimits",
+        "MIP-v1 existing Rust attachment RPC policy admission and shared file/image base64 arithmetic; source authority, full media composition and real compatibility acceptance remain pending"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-014"
     },

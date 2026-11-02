@@ -13,7 +13,7 @@
 
 use std::collections::HashSet;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use base64::prelude::BASE64_STANDARD;
@@ -83,6 +83,76 @@ fn create_test_service(root: PathBuf) -> AttachmentsService {
         Arc::new(MockBox),
         None,
     )
+}
+
+// These ports observe forbidden external work only. Policy admission, limits
+// resolution, decoding and extraction still run through AttachmentsService.
+struct NoExtractionSideEffects;
+
+impl GenerateImageAuth for NoExtractionSideEffects {
+    fn get_access_token(&self) -> Result<String, String> {
+        panic!("input extraction must not request provider credentials");
+    }
+
+    fn get_machine_id(&self) -> Result<String, String> {
+        panic!("input extraction must not request provider identity");
+    }
+}
+
+impl AttachmentsBox for NoExtractionSideEffects {
+    fn run_state(&self, _agent_id: &str) -> Result<String, String> {
+        panic!("input extraction must not invoke the Box owner");
+    }
+
+    fn upload_file(&self, _agent_id: &str, _path: &str, _data: &[u8]) -> Result<(), String> {
+        panic!("input extraction must not upload or stage a file");
+    }
+}
+
+fn create_input_admission_service(root: PathBuf) -> AttachmentsService {
+    AttachmentsService::new(
+        root,
+        Arc::new(NoExtractionSideEffects),
+        Arc::new(NoExtractionSideEffects),
+        None,
+    )
+}
+
+const FILE_EXTRACTION_METHODS: [&str; 2] = [
+    "extractFileContentFromBuffer",
+    "extractFileContentFromSource",
+];
+
+// URL parsing fails before client construction, even if a regressed policy
+// unexpectedly enables URL access. No test can reach a live network endpoint.
+const INVALID_INPUT_URL: &str = "https://[";
+
+fn file_extraction_args(method: &str, data: &str) -> Value {
+    match method {
+        "extractFileContentFromBuffer" => serde_json::json!({
+            "bufferBase64": data,
+            "filename": "policy.txt",
+            "mimeType": "text/plain",
+        }),
+        "extractFileContentFromSource" => serde_json::json!({
+            "source": {
+                "type": "base64", "data": data,
+                "filename": "policy.txt", "mediaType": "text/plain",
+            },
+        }),
+        _ => panic!("unexpected file extraction method: {method}"),
+    }
+}
+
+fn gateway_file_limits(service: &AttachmentsService, config: Value) -> Value {
+    service.dispatch_gateway("resolveInputFileLimits", &config)
+        .expect("actual limits resolver dispatch")
+        .expect("resolved complete InputFileLimits")
+}
+
+fn assert_extraction_left_root_empty(root: &Path) {
+    assert_eq!(fs::read_dir(root).expect("inspect extraction fixture").count(), 0,
+        "pure input extraction must not create files or staging directories");
 }
 
 #[test]
@@ -403,4 +473,311 @@ fn test_gateway_dispatch_input_files_and_staged_inputs() {
         }),
     ).expect("ensureStagedInputDirectory dispatch").expect("success result");
     assert_eq!(ensure_res.get("success").and_then(Value::as_bool), Some(true));
+}
+
+#[test]
+fn gateway_file_extraction_rejects_every_malformed_explicit_policy() {
+    let tmp = TempTestDir::new("malformed-file-policy");
+    let service = create_input_admission_service(tmp.path.clone());
+    let complete = gateway_file_limits(&service, Value::Null);
+    let data = BASE64_STANDARD.encode(b"policy must not silently fall back");
+
+    let mut missing_field = complete.clone();
+    missing_field.as_object_mut().expect("resolved policy object").remove("maxBytes");
+    let mut incomplete_pdf = complete.clone();
+    incomplete_pdf["pdf"].as_object_mut().expect("resolved PDF policy").remove("maxPixels");
+    let mut mistyped_mime = complete.clone();
+    mistyped_mime["allowedMimes"] = serde_json::json!(["text/plain", 7]);
+    let mut mistyped_allowlist = complete.clone();
+    mistyped_allowlist["urlAllowlist"] = serde_json::json!(false);
+    let mut mistyped_byte_cap = complete.clone();
+    mistyped_byte_cap["maxBytes"] = serde_json::json!(-1);
+    let mut null_pdf = complete.clone();
+    null_pdf["pdf"] = Value::Null;
+    let mut restrictive_with_bad_pdf = gateway_file_limits(&service, serde_json::json!({
+        "allowUrl": false, "maxBytes": 1, "maxChars": 0,
+    }));
+    restrictive_with_bad_pdf["allowedMimes"] = serde_json::json!([]);
+    restrictive_with_bad_pdf["pdf"]["maxPages"] = serde_json::json!("invalid");
+
+    // This is the complete positional shape accepted by Serde's struct
+    // deserializer. The RPC contract requires an object, even for this shape.
+    let positional_policy = serde_json::json!([
+        complete["allowUrl"], Value::Null, complete["allowedMimes"],
+        complete["maxBytes"], complete["maxChars"], complete["maxRedirects"],
+        complete["timeoutMs"], complete["pdf"],
+    ]);
+    let malformed = [
+        ("boolean", serde_json::json!(false)),
+        ("number", serde_json::json!(7)),
+        ("string", serde_json::json!("default")),
+        ("empty sequence", serde_json::json!([])),
+        ("complete positional sequence", positional_policy),
+        ("empty object", serde_json::json!({})),
+        ("partial config", serde_json::json!({"allowUrl": false, "maxChars": 0})),
+        ("missing required field", missing_field),
+        ("incomplete nested PDF policy", incomplete_pdf),
+        ("mistyped MIME member", mistyped_mime),
+        ("mistyped URL allowlist", mistyped_allowlist),
+        ("negative byte cap", mistyped_byte_cap),
+        ("null nested PDF policy", null_pdf),
+        ("restrictive policy with invalid PDF field", restrictive_with_bad_pdf),
+    ];
+
+    for method in FILE_EXTRACTION_METHODS {
+        for (label, limits) in &malformed {
+            let mut args = file_extraction_args(method, &data);
+            args["limits"] = limits.clone();
+            let error = service.dispatch_gateway(method, &args)
+                .expect("actual file RPC dispatch")
+                .expect_err("malformed explicit policy must not become default extraction");
+            assert!(error.starts_with("Invalid InputFileLimits"),
+                "{method}, {label}: {error}");
+            assert_extraction_left_root_empty(&tmp.path);
+        }
+    }
+}
+
+#[test]
+fn gateway_file_policy_errors_precede_base64_and_url_processing() {
+    let tmp = TempTestDir::new("file-policy-precedence");
+    let service = create_input_admission_service(tmp.path.clone());
+    let complete = gateway_file_limits(&service, Value::Null);
+    let mut malformed = complete.clone();
+    malformed["pdf"]["minTextChars"] = serde_json::json!("invalid");
+
+    for method in FILE_EXTRACTION_METHODS {
+        let mut args = file_extraction_args(method, "%%%invalid-base64%%%");
+        args["limits"] = complete.clone();
+        let payload_error = service.dispatch_gateway(method, &args)
+            .expect("actual file RPC dispatch").expect_err("invalid base64 control");
+        if method == "extractFileContentFromBuffer" {
+            assert!(payload_error.starts_with("Invalid base64:"), "{payload_error}");
+        } else {
+            assert_eq!(payload_error, "input_file base64 source has invalid 'data' field");
+        }
+
+        args["limits"] = malformed.clone();
+        let policy_error = service.dispatch_gateway(method, &args)
+            .expect("actual file RPC dispatch").expect_err("policy must be checked first");
+        assert!(policy_error.starts_with("Invalid InputFileLimits"),
+            "{method}: policy refusal must precede {payload_error:?}, got {policy_error:?}");
+    }
+
+    let mut url_args = serde_json::json!({
+        "source": {"type": "url", "url": INVALID_INPUT_URL, "filename": "policy.txt"},
+        "limits": complete,
+    });
+    let url_error = service.dispatch_gateway("extractFileContentFromSource", &url_args)
+        .expect("actual source RPC dispatch").expect_err("invalid URL control");
+    assert!(url_error.contains("Invalid URL:"), "{url_error}");
+    url_args["limits"] = malformed;
+    let policy_error = service.dispatch_gateway("extractFileContentFromSource", &url_args)
+        .expect("actual source RPC dispatch").expect_err("policy precedes URL processing");
+    assert!(policy_error.starts_with("Invalid InputFileLimits"), "{policy_error}");
+    assert_extraction_left_root_empty(&tmp.path);
+}
+
+#[test]
+fn gateway_file_extraction_preserves_omitted_and_null_default_policies() {
+    let tmp = TempTestDir::new("default-file-policy");
+    let service = create_input_admission_service(tmp.path.clone());
+    let text = "omitted and null limits preserve the default extraction policy";
+    let data = BASE64_STANDARD.encode(text);
+
+    for method in FILE_EXTRACTION_METHODS {
+        for explicit_null in [false, true] {
+            let mut args = file_extraction_args(method, &data);
+            if explicit_null {
+                args["limits"] = Value::Null;
+            }
+            let result = service.dispatch_gateway(method, &args)
+                .expect("actual file RPC dispatch").expect("default policy extraction");
+            assert_eq!(result["filename"], "policy.txt");
+            assert_eq!(result["text"], text, "{method}, explicit null: {explicit_null}");
+            assert!(result.get("metadata").is_none());
+        }
+    }
+
+    for explicit_null in [false, true] {
+        let mut args = serde_json::json!({
+            "source": {"type": "url", "url": INVALID_INPUT_URL},
+        });
+        if explicit_null {
+            args["limits"] = Value::Null;
+        }
+        let error = service.dispatch_gateway("extractFileContentFromSource", &args)
+            .expect("actual source RPC dispatch").expect_err("invalid URL control");
+        assert!(error.contains("Invalid URL:"),
+            "default URL policy must reach syntax validation: {error}");
+    }
+    assert_extraction_left_root_empty(&tmp.path);
+}
+
+#[test]
+fn gateway_file_extraction_preserves_resolved_restrictive_policies() {
+    let tmp = TempTestDir::new("restrictive-file-policy");
+    let service = create_input_admission_service(tmp.path.clone());
+    let complete = gateway_file_limits(&service, Value::Null);
+    let data = BASE64_STANDARD.encode(b"abc");
+
+    for method in FILE_EXTRACTION_METHODS {
+        let mut args = file_extraction_args(method, &data);
+        let mut empty_mimes = complete.clone();
+        empty_mimes["allowedMimes"] = serde_json::json!([]);
+        args["limits"] = empty_mimes;
+        let error = service.dispatch_gateway(method, &args)
+            .expect("actual file RPC dispatch").expect_err("empty MIME set must remain empty");
+        assert_eq!(error, "Unsupported file MIME type: text/plain", "{method}");
+
+        args["limits"] = gateway_file_limits(&service, serde_json::json!({"maxBytes": 2}));
+        let error = service.dispatch_gateway(method, &args)
+            .expect("actual file RPC dispatch").expect_err("resolved byte cap must be enforced");
+        assert_eq!(error, "File too large: 3 bytes (limit: 2 bytes)", "{method}");
+
+        args["limits"] = gateway_file_limits(&service, serde_json::json!({"maxChars": 0}));
+        let result = service.dispatch_gateway(method, &args)
+            .expect("actual file RPC dispatch").expect("zero-character policy is valid");
+        assert_eq!(result["text"], "", "{method}");
+        assert_eq!(result["metadata"]["textTruncated"], true);
+        assert_eq!(result["metadata"]["imagesTruncated"], false);
+    }
+
+    let no_urls = gateway_file_limits(&service, serde_json::json!({"allowUrl": false}));
+    let error = service.dispatch_gateway("extractFileContentFromSource", &serde_json::json!({
+        "source": {"type": "url", "url": INVALID_INPUT_URL},
+        "limits": no_urls,
+    })).expect("actual source RPC dispatch").expect_err("URL denial must remain effective");
+    assert_eq!(error, "input_file URL sources are disabled by config");
+    assert_extraction_left_root_empty(&tmp.path);
+}
+
+#[test]
+fn gateway_partial_file_policy_is_resolved_before_extraction() {
+    let tmp = TempTestDir::new("resolved-partial-file-policy");
+    let service = create_input_admission_service(tmp.path.clone());
+    let partial = serde_json::json!({
+        "allowUrl": false, "maxBytes": 2, "maxChars": 1, "pdf": {"maxPages": 1},
+    });
+    let resolved = gateway_file_limits(&service, partial.clone());
+    assert_eq!(resolved["allowUrl"], false);
+    assert_eq!(resolved["maxBytes"], 2);
+    assert_eq!(resolved["maxChars"], 1);
+    assert_eq!(resolved["pdf"]["maxPages"], 1);
+    assert!(resolved["pdf"]["maxPixels"].as_u64().is_some_and(|value| value > 0));
+    let data = BASE64_STANDARD.encode(b"AB");
+
+    for method in FILE_EXTRACTION_METHODS {
+        let mut args = file_extraction_args(method, &data);
+        args["limits"] = partial.clone();
+        let error = service.dispatch_gateway(method, &args)
+            .expect("actual file RPC dispatch").expect_err("partial config is not resolved limits");
+        assert!(error.starts_with("Invalid InputFileLimits"), "{method}: {error}");
+
+        args["limits"] = resolved.clone();
+        let result = service.dispatch_gateway(method, &args)
+            .expect("actual file RPC dispatch").expect("actual resolver output is admitted");
+        assert_eq!(result["text"], "A", "{method}");
+        assert_eq!(result["metadata"]["textTruncated"], true);
+    }
+    assert_extraction_left_root_empty(&tmp.path);
+}
+
+#[test]
+fn gateway_padding_only_sources_preserve_upstream_error_precedence() {
+    let tmp = TempTestDir::new("padding-only-sources");
+    let service = create_input_admission_service(tmp.path.clone());
+    let file_limits = gateway_file_limits(&service, serde_json::json!({"maxBytes": 0}));
+    let image_limits = serde_json::json!({
+        "allowUrl": false, "allowedMimes": ["image/png"],
+        "maxBytes": 0, "maxRedirects": 0, "timeoutMs": 1,
+    });
+
+    for data in ["=", "==", " \t=\r\n", " \n==\t "] {
+        for (method, limits, kind) in [
+            ("extractFileContentFromSource", &file_limits, "input_file"),
+            ("extractImageContentFromSource", &image_limits, "input_image"),
+        ] {
+            let args = serde_json::json!({
+                "source": {"type": "base64", "data": data}, "limits": limits,
+            });
+            // A panic fails this case directly; an oversized error also fails
+            // the exact assertion. Zero-byte policy must reach invalid data.
+            let error = service.dispatch_gateway(method, &args)
+                .expect("actual source RPC dispatch").expect_err("padding-only data is invalid");
+            assert_eq!(error, format!("{kind} base64 source has invalid 'data' field"),
+                "{method}, data: {data:?}");
+            assert_extraction_left_root_empty(&tmp.path);
+        }
+    }
+
+    // Fixed U checks the byte budget before canonical base64 validation.
+    // Clamping the one-/two-padding underflow must not replace that ordering
+    // with a blanket validation-first rule for longer malformed sources.
+    for (data, estimated) in [("====", 1), ("========", 4), (" \t====\r\n", 1)] {
+        for (method, limits, label) in [
+            ("extractFileContentFromSource", &file_limits, "File"),
+            ("extractImageContentFromSource", &image_limits, "Image"),
+        ] {
+            let args = serde_json::json!({
+                "source": {"type": "base64", "data": data}, "limits": limits,
+            });
+            let error = service.dispatch_gateway(method, &args)
+                .expect("actual source RPC dispatch").expect_err("zero-byte budget rejects estimate");
+            assert_eq!(error, format!("{label} too large: {estimated} bytes (limit: 0 bytes)"),
+                "{method}, data: {data:?}");
+            assert_extraction_left_root_empty(&tmp.path);
+        }
+    }
+}
+
+#[test]
+fn gateway_valid_padded_file_and_image_sources_preserve_byte_caps() {
+    let tmp = TempTestDir::new("valid-padded-sources");
+    let service = create_input_admission_service(tmp.path.clone());
+
+    for (text, encoded) in [("A", "QQ=="), ("AB", "QUI=")] {
+        assert_eq!(BASE64_STANDARD.encode(text), encoded, "valid padded control");
+        for method in FILE_EXTRACTION_METHODS {
+            let mut args = file_extraction_args(method, encoded);
+            for cap in [text.len(), text.len() + 1] {
+                args["limits"] = gateway_file_limits(&service, serde_json::json!({"maxBytes": cap}));
+                let result = service.dispatch_gateway(method, &args)
+                    .expect("actual file RPC dispatch").expect("valid padded data fits the cap");
+                assert_eq!(result["text"], text, "{method}, cap: {cap}");
+            }
+            let cap = text.len() - 1;
+            args["limits"] = gateway_file_limits(&service, serde_json::json!({"maxBytes": cap}));
+            let error = service.dispatch_gateway(method, &args)
+                .expect("actual file RPC dispatch").expect_err("valid padded data exceeds cap");
+            assert_eq!(error, format!("File too large: {} bytes (limit: {cap} bytes)", text.len()));
+        }
+    }
+
+    // A small PNG exercises the real image path without depending on the
+    // unrelated HEIC conversion placeholder or any external image provider.
+    const PNG: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVBEAAAAASUVORK5CYII=";
+    let png_bytes = BASE64_STANDARD.decode(PNG).expect("valid padded PNG source");
+    assert!(PNG.ends_with('='));
+    let mut args = serde_json::json!({
+        "source": {"type": "base64", "data": format!(" \t{PNG}\r\n"), "mediaType": "image/png"},
+        "limits": {
+            "allowUrl": false, "allowedMimes": ["image/png"],
+            "maxBytes": png_bytes.len(), "maxRedirects": 0, "timeoutMs": 1,
+        },
+    });
+    for cap in [png_bytes.len(), png_bytes.len() + 1] {
+        args["limits"]["maxBytes"] = serde_json::json!(cap);
+        let result = service.dispatch_gateway("extractImageContentFromSource", &args)
+            .expect("actual image RPC dispatch").expect("valid padded image fits the cap");
+        assert_eq!(result["type"], "image");
+        assert_eq!(result["mimeType"], "image/png");
+        assert_eq!(result["data"], PNG, "image data is canonicalized after surrounding whitespace");
+    }
+    let cap = png_bytes.len() - 1;
+    args["limits"]["maxBytes"] = serde_json::json!(cap);
+    let error = service.dispatch_gateway("extractImageContentFromSource", &args)
+        .expect("actual image RPC dispatch").expect_err("valid padded image exceeds cap");
+    assert_eq!(error, format!("Image too large: {} bytes (limit: {cap} bytes)", png_bytes.len()));
+    assert_extraction_left_root_empty(&tmp.path);
 }
