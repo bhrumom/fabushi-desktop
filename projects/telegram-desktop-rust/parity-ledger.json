@@ -50157,7 +50157,11 @@
         "source/host/tests/session_gateway_contract.rs",
         "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
         "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
-        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs"
+        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs",
+        "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs"
       ],
       "fabushi_target_symbols": [
         "validate_remote_human_message",
@@ -50171,7 +50175,12 @@
         "publish_transcript_mutation",
         "sendComposerPrompt",
         "validate_remote_human_reactions",
-        "project_remote_human_reactions"
+        "project_remote_human_reactions",
+        "ensure_native_host_handoff",
+        "MahayanaHost::create",
+        "MahayanaHost::create_with_engine_backend_for_test",
+        "mahayana_runtime_create",
+        "mahayana_runtime_last_error"
       ],
       "target_language": "Rust Host/service boundary with existing TypeScript renderer projection",
       "language_rationale": "Extend the existing production owners in their current implementation languages; no upstream C++ runtime copy, alternate message engine or new owner is introduced.",
@@ -50185,7 +50194,7 @@
       "lifecycle_owner": "Existing Host Session production lifecycle; existing account binding and private native credential lifecycle supply the local identity and issuer-bound HTTP client. No additional process or persistent owner.",
       "persistence_and_restart": "Persist pending before dispatch, persist dispatch resource identities before send, and settle through the existing transcript identity mutation. Ambiguous dispatch and resource failures retain retryable state; current authored reopen cases verify recovery without a second upload and byte preservation. Known-ID presence is not yet durable evidence of a completely synchronized history interval.",
       "concurrency_and_cancellation": "Existing DB writes serialize per owner; this does not serialize the preceding HTTP read/modify/write interval. This batch preserves existing cancellation boundaries and does not close stale refresh versus local reaction races, rapid supersession, arbitrary pending-send concurrency or cancellation recovery.",
-      "security_boundary": "Authenticated local identity and selected conversation participant metadata constrain ingress; request nonces are author-scoped correlation values, never authorization credentials. Reject mismatched acknowledgements before downloading untrusted attachments. Private bearer/device credentials remain inside the native client, and this row grants no permission to log credentials or message bodies. Untrusted reaction counts are validated before any count expansion; each admitted summary item projects at most the authenticated local and selected peer actor. This does not establish a whole-payload or distinct-emoji bound.",
+      "security_boundary": "Authenticated local identity and selected conversation participant metadata constrain ingress; request nonces are author-scoped correlation values, never authorization credentials. Reject mismatched acknowledgements before downloading untrusted attachments. Private bearer/device credentials remain inside the native client, and this row grants no permission to log credentials or message bodies. Untrusted reaction counts are validated before any count expansion; each admitted summary item projects at most the authenticated local and selected peer actor. This does not establish a whole-payload or distinct-emoji bound. Production Electron FeatureHost's separate MessagingService execution, blob and access issuance refuse before IO; direct Host/FFI injected legacy clients reject before origin/credential or store access. Other platform features and legacy direct C exports are still unqualified.",
       "network_service_dependencies": [
         "Existing authenticated /api/social/messages GET/POST contract",
         "Existing /api/social/message-resources upload/download contract",
@@ -50200,12 +50209,13 @@
         "The bounded NMR-18/19/20 Host gates passed at exact95/run41403643662; full product/independent acceptance and the open behaviors below remain unqualified. Evidence for later code must be bound to its own H.",
         "Known-overlap refresh/coverage, snapshot-versus-mutation freshness, monotonic receipt semantics, distinct-emoji/whole-payload bounds and read-receipt UI remain separate open work.",
         "Full source/legal closure, legacy caller/data-safe retirement, live native-service acceptance, packages, UI/a11y, performance/soak, complete Bot regression and independent ACCEPT remain open.",
-        "NMR-34/35 production edge and rollback protections authored in current batch; require exact containing-H GitHub Actions with owner7 and real AppHost6 plus Human33/Agent4/private3/composition11/protocol122/TCP9 and UI/Electron. Previous macOS jobs cancelled without assigned runner; not product failure evidence, no tests executed."
+        "NMR-34/35 bounded production boundary passed 98e51b31b5a296065190f665696b2ffe11a3efe1/run41443460672; NMR-36 Host/FFI explicit legacy-handoff refusal and tests are authored but require exact containing-H Actions with Host6/ABI7 and all retained gates."
       ],
       "production_entrypoints": [
         "frontend/src/production/ProductionRenderer.tsx#sendComposerPrompt -> source/host/src/extensions/session/gateway.rs#sendHumanMessage -> ProductionSessionWorkers::append_human_message_with_context -> FabushiNativeMessagingClient::send_direct_message -> /api/social/messages -> validate_remote_human_message/materialize_remote_human_message -> SandAgentDb::settle_transcript_entry_identity -> existing transcript mutation/renderer projection.",
         "ProductionRenderer reconnect/open -> syncHumanConversation(s) -> ProductionSessionWorkers::sync_human_conversation -> FabushiNativeMessagingClient::list_direct_messages -> per-row admission -> ordered materialization -> existing SandAgentDb update/append.",
-        "Existing Human reaction action -> reactHumanMessage -> toggle_human_message_reaction -> service response -> same transcript row; legacy peer nonce metadata is separated without changing stored content."
+        "Existing Human reaction action -> reactHumanMessage -> toggle_human_message_reaction -> service response -> same transcript row; legacy peer nonce metadata is separated without changing stored content.",
+        "mahayana-ffi::mahayana_runtime_create (legacy JSON) -> MahayanaHost::create -> ensure_native_host_handoff returns explicit error before origin, file or runtime access; direct Rust Host and test-support constructor share same guard."
       ],
       "production_evidence": [
         "path:source/host/src/extensions/session/production.rs@c9a486af86b252ca4c7a025452928caf66439563#validate_remote_human_message",
@@ -50220,7 +50230,9 @@
         "path:source/host/src/extensions/session/production.rs@c9a486af86b252ca4c7a025452928caf66439563#validate_remote_human_reactions",
         "path:source/host/src/extensions/session/production.rs@c9a486af86b252ca4c7a025452928caf66439563#project_remote_human_reactions",
         "backend-source:bhrumom/fabushi@edde714def34e6eb5ae133dba20790c80a355c85:fabushi/web/src/handlers/friends.js@e3c6461a01181eb66f1dccbb3845fea530ec072e#loadReactionMap-and-POST-participant-check",
-        "backend-source:bhrumom/fabushi@edde714def34e6eb5ae133dba20790c80a355c85:fabushi/web/migrations/20261005_direct_message_remote_semantics.sql@048c6f922b726460ba7eea8c4ef5551b62b2a4ca#message-user-emoji-primary-key; normal-route invariant, not a database participant CHECK or deployed-backend attestation"
+        "backend-source:bhrumom/fabushi@edde714def34e6eb5ae133dba20790c80a355c85:fabushi/web/migrations/20261005_direct_message_remote_semantics.sql@048c6f922b726460ba7eea8c4ef5551b62b2a4ca#message-user-emoji-primary-key; normal-route invariant, not a database participant CHECK or deployed-backend attestation",
+        "authored-new-host-blob:17270f232b05445ba5dcd049d80c08a4880e8b08:source/mahayana/mahayana-rs/mahayana-host/src/lib.rs#ensure_native_host_handoff",
+        "authored-new-ffi-blob:1fd7fa7d8881477de368172af73f7210e09c060c:source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs#mahayana_runtime_create"
       ],
       "test_evidence": [
         "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50237,7 +50249,9 @@
         "authored-frozen-target-blob:127700079e9ae9d5c2155cd1d8a218a47f2f8075:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce; published in1cd; executed successfully in exact68 run41402071662",
         "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart; published/read-back and actually passed at95/run41403643662",
         "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap; published/read-back and actually passed at95/run41403643662",
-        "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart; published/read-back and actually passed at95/run41403643662"
+        "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart; published/read-back and actually passed at95/run41403643662",
+        "authored-not-run:source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs@f222df5d3b7b9be0f65324b15998541a11140076:6 selected cases pending same-H Actions",
+        "authored-not-run:source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs@9c9fd7da789bc84450653bc9e207e721d1f4246b:4 new cases plus 3 existing = 7 pending same-H Actions"
       ],
       "target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
       "workflow_run": 41403643662,
@@ -50264,7 +50278,7 @@
         "Existing transcript mutation publication",
         "Existing Composer acknowledgement and reaction projection"
       ],
-      "duplicate_root_check": "Read shipping Human send/sync/reaction paths at 6cf. They use existing Session/SandAgentDb and Fabushi native HTTP; no new root/store is introduced. Shared forwarding/recipient policy functions are reused separately; full MessagingService dispatch and legacy-runtime retirement are not claimed. Round15: explicit FeatureHost MessagingService and generic typed route were callable in Production Electron but not selected by the Human Composer; both now fail closed at the existing FeatureHost owner, with old bytes retained and no new store. Old FFI explicit non-desktop injection is still unresolved.",
+      "duplicate_root_check": "Read shipping Human send/sync/reaction paths at 6cf. They use existing Session/SandAgentDb and Fabushi native HTTP; no new root/store is introduced. Shared forwarding/recipient policy functions are reused separately; full MessagingService dispatch and legacy-runtime retirement are not claimed. Round15: explicit FeatureHost MessagingService and generic typed route were callable in Production Electron but not selected by the Human Composer; both now fail closed at the existing FeatureHost owner, with old bytes retained and no new store. Old FFI explicit non-desktop injection is still unresolved. NMR-36 also rejects explicit direct Host and C ABI provider injection before storage, retains old encrypted data and readers, and leaves direct Telegram C ABI exports/dependencies for later caller-safe retirement.",
       "novel_capability": false,
       "owner_absence_evidence": [],
       "minimal_owner_adr": null,
@@ -50352,7 +50366,10 @@
         "NMR-AC-23",
         "NMR-AC-24",
         "NMR-AC-25",
-        "NMR-AC-26"
+        "NMR-AC-26",
+        "NMR-36",
+        "NMR-36a",
+        "NMR-AC-27"
       ],
       "oracle_ids": [
         "NMR-AC-01",
@@ -50364,7 +50381,8 @@
         "NMR-AC-23",
         "NMR-AC-24",
         "NMR-AC-25",
-        "NMR-AC-26"
+        "NMR-AC-26",
+        "NMR-AC-27"
       ],
       "invariant_ids": [
         "NMR-01",
@@ -50380,7 +50398,9 @@
         "NMR-32",
         "NMR-33",
         "NMR-34",
-        "NMR-35"
+        "NMR-35",
+        "NMR-36",
+        "NMR-36a"
       ],
       "unit_case_ids": [],
       "property_state_case_ids": [
@@ -50406,7 +50426,17 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
         "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#legacy_json_handoff_value_matrix_is_rejected",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#absent_storage_roots_remain_absent_on_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#rejected_handoffs_preserve_existing_opaque_and_corrupt_files",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#native_configuration_keeps_status_ready_and_durable_state",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#test_support_constructor_rejects_handoff_before_backend_use",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#native_agent_lifecycle_survives_rejected_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejects_legacy_value_matrix_before_creating_any_storage",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_preserves_existing_opaque_data_and_open_native_handle",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#null_legacy_fields_allow_native_creation_and_clear_previous_error",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_error_is_owned_by_the_calling_thread"
       ],
       "integration_case_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50424,7 +50454,17 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
         "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs#desktop_entries_refuse_before_auth_parse_io_and_event_publication",
         "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs#automation_store_preserves_reserved_messaging_tree_and_normal_agent_lifecycle",
-        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_standalone_messaging_preserves_snapshot_blob_access_and_other_accounts"
+        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_standalone_messaging_preserves_snapshot_blob_access_and_other_accounts",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#legacy_json_handoff_value_matrix_is_rejected",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#absent_storage_roots_remain_absent_on_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#rejected_handoffs_preserve_existing_opaque_and_corrupt_files",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#native_configuration_keeps_status_ready_and_durable_state",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#test_support_constructor_rejects_handoff_before_backend_use",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#native_agent_lifecycle_survives_rejected_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejects_legacy_value_matrix_before_creating_any_storage",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_preserves_existing_opaque_data_and_open_native_handle",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#null_legacy_fields_allow_native_creation_and_clear_previous_error",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_error_is_owned_by_the_calling_thread"
       ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [
@@ -50434,7 +50474,11 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
         "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#native_configuration_keeps_status_ready_and_durable_state",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#native_agent_lifecycle_survives_rejected_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_preserves_existing_opaque_data_and_open_native_handle",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#null_legacy_fields_allow_native_creation_and_clear_previous_error"
       ],
       "fault_recovery_case_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
@@ -50444,7 +50488,12 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
         "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#absent_storage_roots_remain_absent_on_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#rejected_handoffs_preserve_existing_opaque_and_corrupt_files",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#test_support_constructor_rejects_handoff_before_backend_use",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_preserves_existing_opaque_data_and_open_native_handle",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#null_legacy_fields_allow_native_creation_and_clear_previous_error"
       ],
       "ui_functional_case_ids": [],
       "visual_case_ids": [],
@@ -50461,7 +50510,14 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
         "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs#desktop_entries_refuse_before_auth_parse_io_and_event_publication",
         "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs#automation_store_preserves_reserved_messaging_tree_and_normal_agent_lifecycle",
-        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_standalone_messaging_preserves_snapshot_blob_access_and_other_accounts"
+        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_standalone_messaging_preserves_snapshot_blob_access_and_other_accounts",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#legacy_json_handoff_value_matrix_is_rejected",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#absent_storage_roots_remain_absent_on_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#rejected_handoffs_preserve_existing_opaque_and_corrupt_files",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#test_support_constructor_rejects_handoff_before_backend_use",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejects_legacy_value_matrix_before_creating_any_storage",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_preserves_existing_opaque_data_and_open_native_handle",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_error_is_owned_by_the_calling_thread"
       ],
       "regression_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50476,7 +50532,17 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
         "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#legacy_json_handoff_value_matrix_is_rejected",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#absent_storage_roots_remain_absent_on_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#rejected_handoffs_preserve_existing_opaque_and_corrupt_files",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#native_configuration_keeps_status_ready_and_durable_state",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#test_support_constructor_rejects_handoff_before_backend_use",
+        "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs#native_agent_lifecycle_survives_rejected_legacy_handoff",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejects_legacy_value_matrix_before_creating_any_storage",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_preserves_existing_opaque_data_and_open_native_handle",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#null_legacy_fields_allow_native_creation_and_clear_previous_error",
+        "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs#rejection_error_is_owned_by_the_calling_thread"
       ],
       "exploratory_charter_ids": [],
       "release_gate_ids": [
@@ -50494,12 +50560,14 @@
         "source/host/tests/session_gateway_contract.rs#human_message_fixture_runtime",
         "source/host/tests/session_gateway_contract.rs#fixture_remote_human_message",
         "source/host/tests/session_gateway_contract.rs#spawn_ambiguous_human_send_server",
-        "NMR-34/35: synthetic Native credential, original MessagingSnapshot/Blob/Access readers, legacy archive, reserved automation marker and corrupt/partial account fixtures"
+        "NMR-34/35: synthetic Native credential, original MessagingSnapshot/Blob/Access readers, legacy archive, reserved automation marker and corrupt/partial account fixtures",
+        "NMR-36: synthetic opaque/corrupt account, runtime, SQLite/sidecar and secure-key markers; absent roots; persisted native workspace state; isolated C ABI handles"
       ],
       "test_environment_ids": [
         ".github/workflows/native-service-contracts.yml#native-message-reconciliation:macos-15:Rust-stable-as-selected-by-workflow:loopback HTTP and real Host/SQLite",
         ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:exact-H locked AppHost/protocol/TCP/live/normalization/proxy/credential checks",
-        ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:exact-H:feature-host owner7/AppHost6/locked AppHost/real TCP selected; GitHub-hosted only"
+        ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:exact-H:feature-host owner7/AppHost6/locked AppHost/real TCP selected; GitHub-hosted only",
+        ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:exact-H:mahayana-host legacy_handoff_tests6 and mahayana-ffi full-lib7; GitHub-hosted only"
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "unknown",
@@ -50508,13 +50576,15 @@
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41402071662@68d4f07688741e8f54b35f3746a087f7fdd12108:attempt1:job125135845319:completed/success:locked AppHost and normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1, zero failed/ignored; artifact13122201285 sha256:90ad15f97a4f6f1906b05cb4f7f0f9351ee9f6dbe93888c03e132809baf3e162; original prerequisite only, not new reaction batch",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41403643662@95b29df688f718a35574fa36ef4ca75df437ed30:attempt1:job125140696528:completed/success:Human13 including all three new NMR-AC-12 cases and AgentNonce4, zero failed/ignored; artifact13122423309 sha256:7a05891c6594b2fcfb66bb80847cfd8dca2349af4e842dbc9128267968dba41d",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41403643662@95b29df688f718a35574fa36ef4ca75df437ed30:attempt1:job125140696373:completed/success:locked AppHost and normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1, zero failed/ignored; artifact13122264126 sha256:ced74e3a058e43ea6925483413d0f6c7bc149b23d3f37b789a19fdc4d9108b9e",
-        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41438907013@c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:attempt1:completed/failure; native-message-electron carrier10/auth8 and native-message-ui transcript16 passed; macos native-message-reconciliation job125255547398 and native-message-shipping-compile job125255547295 cancelled before runner assignment; steps empty; no Rust test count/acceptance"
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41438907013@c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:attempt1:completed/failure; native-message-electron carrier10/auth8 and native-message-ui transcript16 passed; macos native-message-reconciliation job125255547398 and native-message-shipping-compile job125255547295 cancelled before runner assignment; steps empty; no Rust test count/acceptance",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672@98e51b31b5a296065190f665696b2ffe11a3efe1:attempt1:completed/success:Human33 Agent4 private-settlement3 composition11 Native-startup6 FeatureHost7 normalization6 future-salts2 protocol122 TCP9 proxy4 credential1 UI16 Electron-carrier10 auth8; artifacts 13142310484 sha256:3854e658b5c87380cf4054445cd13262e2926adb52fa046346a00b64ed821789 and 13141765312 sha256:48e4d99053a1a804cb2f1f060f16ff6baaf5a25f16e9a4f92ee8f13632f5c9d5",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460908@98e51b31b5a296065190f665696b2ffe11a3efe1:attempt1:completed/success:source checker136/schema37 and negative accepted-source-mode; full source/legal/product acceptance remains false"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Behavioral references are selected source sections at frozen U recorded in the existing known-overlap research dossier. Primary api_updates.cpp and additional data_session.cpp/history_item.cpp are only partially read as explicitly documented. Upstream LEGAL references are retained; no code-copy or full legal approval is asserted. Exact Fabushi target blobs and authored cases are independent implementation evidence. This responsibility mapping does not modify source_reviews, unknown/unread, source acceptance or inventory closure.",
       "reviewer": null,
-      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance."
+      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance.\nNMR-36: Host first-statement admission rejects either explicit legacy client/self-id (including zero) before file/network/runtime effects, removes old provider registration; original camelCase fields and C ABI symbols/errors remain. Four new FFI tests plus six Host tests are authored, not yet executed at containing H. No user data migration/deletion and no claim about unconditional Telegram dependencies, direct old-client FFI exports or packaged external callers. Round15 NMR-34/35 have successful exact98/run41443460672 evidence; any future-H code requires its own test execution."
     }
   ],
   "rebaseline_candidate": {

@@ -6,7 +6,7 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Current bounded batch: desktop standalone-messaging boundary
+## Current bounded batch: desktop messaging and direct Host boundary
 
 Inspected checkpoint base `c15dfbd9631f8b9fb6920cb5f80b9aea35210d07` and
 live main `5528062177e3865eef60a073a066cca144f9e3e8`. Fixed upstream remains
@@ -20,6 +20,21 @@ the reserved `_messaging` namespace from loading, owner overrides, writes and
 cleanup, preserving unknown/corrupt files during account changes. Test mode and
 selected non-Electron surfaces retain existing behavior; their acceptance and
 legacy FFI/default dependencies remain open.
+
+Recovery confirmed the containing commit `98e51b31b5a296065190f665696b2ffe11a3efe1`
+and successful run `41443460672`: Human33/Agent4/private3, composition11,
+AppHost6/FeatureHost7, protocol122/TCP9, UI16 and Electron10+8 actually passed.
+Run `41443460908` also passed the source checker, while all source/product
+acceptance flags remain false. These results supersede the pending preparation
+statement below only for that exact H.
+
+NMR-36 extends the existing Host admission boundary: either explicit legacy
+client or self-id is rejected before origin/credential/storage/runtime access,
+and this Host no longer registers the old Telegram provider. The C ABI retains
+zero-handle/last-error behavior and native host lifecycle. Six direct Host and
+four new C ABI cases are authored; the full ABI target retains three existing
+controls. This extension requires its own containing-H Actions; default Cargo
+dependencies, direct legacy-client exports and platform packages remain open.
 
 Preparation/audit evidence is in
 `projects/telegram-desktop-rust/evidence/round15-desktop-messaging-boundary.json`.
@@ -72,5 +87,6 @@ independent ACCEPT remain open.
 8. Human + Agent unified UX
 9. full capability acceptance
 10. packaged/release acceptance
+
 
 

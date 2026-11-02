@@ -2006,8 +2006,8 @@ fn create_feature_host(
         use_codex_account: std::env::var("MAHAYANA_USE_CODEX_ACCOUNT").as_deref() == Ok("1"),
         codex_home: std::env::var_os("MAHAYANA_CODEX_HOME").map(PathBuf::from),
         product_storage_passphrase: storage_passphrase,
-        // Host supports explicit legacy callers outside this composition, but
-        // the shipping Native path must never register that provider.
+        // Native identity never activates the retained legacy authority.
+        // MahayanaHost also rejects explicit handoffs at its public boundary.
         telegram_client_id: None,
         telegram_self_user_id: None,
         model_bearer_token: None,
@@ -2374,4 +2374,5 @@ mod telegram_composition_contract_tests {
     }
 
 }
+
 

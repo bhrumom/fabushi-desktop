@@ -110,11 +110,641 @@
   },
   "acceptance": {
     "stage": "A product batch candidate",
-    "source_closure": "not accepted",
-    "production_feature_gate": "not run at new H",
+    "source_closure": "candidate checker passed; full source/legal acceptance false",
+    "production_feature_gate": "NMR-34/35 passed at 98e51b31b5a296065190f665696b2ffe11a3efe1; NMR-36 awaits containing-H Actions",
     "real_service": "not accepted",
     "full_platform_package": "not accepted",
     "bot_regression": "not accepted",
     "independent_ACCEPT": "not accepted"
+  },
+  "recovery": {
+    "committed_before_interruption": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+    "parent": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+    "tree": "b19f6b6e376659bc70f632642dc35e28b940992d",
+    "remote_readback": true,
+    "duplicate_implementation_commit_created": false,
+    "readback_scope": "Live ref, commit parent/tree and exact-H source blobs were re-read through the GitHub API."
+  },
+  "execution_at_recovered_head": {
+    "run_id": 41443460672,
+    "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672",
+    "actual_counts": {
+      "human": {
+        "passed": 33,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 14
+      },
+      "agent_nonce": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "settlement_credential": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 121
+      },
+      "apphost_composition": {
+        "passed": 11,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "native_startup_retention": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 0,
+        "note": "Six top-level tests. Child-process single-test results are not added again. Includes the earlier three startup/retention contracts and three new standalone-messaging boundary cases."
+      },
+      "featurehost_messaging_boundary": {
+        "passed": 7,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 35,
+        "note": "Intentional fixture state poison panic is caught and its negative test returns ok; not a failure."
+      },
+      "dns_special_config": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 60
+      },
+      "future_salts": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 64
+      },
+      "protocol": {
+        "passed": 122,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "tcp": {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 0,
+        "live_case": "live_session_exchanges_encrypted_ping_and_service_rpc ... ok",
+        "note": "Invoked with --include-ignored; this proves this TCP live service test only, not authenticated backend production paging.",
+        "source_inspection": {
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/98e51b31b5a296065190f665696b2ffe11a3efe1/source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs",
+          "function": "live_session_exchanges_encrypted_ping_and_service_rpc",
+          "behavior": "Uses DcDirectory::telegram_defaults(false, 2), establishes auth key, encrypted ping and invokes service RPC; no missing-credential early-return. --include-ignored executes the normally ignored production-data-center test."
+        }
+      },
+      "proxy": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 18
+      },
+      "native_credential": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 25
+      },
+      "electron_carrier": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "native_auth_retention": {
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "transcript": {
+        "passed": 16,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      }
+    },
+    "compilation": {
+      "apphost": "cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml: success",
+      "renderer": "npm run build:renderer: success",
+      "electron": "npm run build:electron: success"
+    },
+    "artifacts": [
+      {
+        "id": 13142310484,
+        "name": "native-message-shipping-compile-98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "digest": "sha256:3854e658b5c87380cf4054445cd13262e2926adb52fa046346a00b64ed821789",
+        "size_in_bytes": 34879,
+        "expired": false,
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/artifacts/13142310484"
+      },
+      {
+        "id": 13141765312,
+        "name": "native-message-reconciliation-98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "digest": "sha256:48e4d99053a1a804cb2f1f060f16ff6baaf5a25f16e9a4f92ee8f13632f5c9d5",
+        "size_in_bytes": 15158,
+        "expired": false,
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/artifacts/13141765312"
+      },
+      {
+        "id": 13140974161,
+        "name": "native-message-electron-98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "digest": "sha256:e70845ad41f9aef83ee57a3b220010e9facf6cfe1f12cd14f3e707e2e534452d",
+        "size_in_bytes": 2704,
+        "expired": false,
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/artifacts/13140974161"
+      },
+      {
+        "id": 13139144992,
+        "name": "native-message-ui-98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "digest": "sha256:924e37da8ec42e578b13612c21aa10a41b58f5f5cd704bc849085527267fbbad",
+        "size_in_bytes": 3024,
+        "expired": false,
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/artifacts/13139144992"
+      }
+    ],
+    "jobs": [
+      {
+        "id": 125270726917,
+        "name": "native-message-shipping-compile",
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/job/125270726917"
+      },
+      {
+        "id": 125270727427,
+        "name": "native-message-reconciliation",
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/job/125270727427"
+      },
+      {
+        "id": 125270727445,
+        "name": "native-message-electron",
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/job/125270727445"
+      },
+      {
+        "id": 125270727635,
+        "name": "native-message-ui",
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/job/125270727635"
+      },
+      {
+        "id": 125270729398,
+        "name": "native-auth-and-journal",
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460672/job/125270729398"
+      }
+    ]
+  },
+  "complete_log_receipts": [
+    {
+      "job_id": 125255546900,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125255546900/logs",
+      "bytes": 38059,
+      "sha256": "38c731eb3b26dce38bbb3bcfb73cf3d16d609a0ff8680a018edb6a7296c97b0a",
+      "kind": "complete-decoded-job-log"
+    },
+    {
+      "job_id": 125255547292,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125255547292/logs",
+      "bytes": 37425,
+      "sha256": "c597f6ccbcb44946b7445e16ef98ceb441aecdd695b017b54de2590ef0c2efa6",
+      "kind": "complete-decoded-job-log"
+    },
+    {
+      "job_id": 125255547295,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125255547295/logs",
+      "bytes": 238,
+      "sha256": "af7eedfea77c2d3190acc53701e5f617f9ee96f5246c95e75d60e5b79aa2e0ab",
+      "kind": "unavailable-log-error"
+    },
+    {
+      "job_id": 125255547398,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125255547398/logs",
+      "bytes": 238,
+      "sha256": "7b61b78d96cd4a865d651f03c991ce485dbece1f803d0959decf2bef8d687684",
+      "kind": "unavailable-log-error"
+    },
+    {
+      "job_id": 125270726917,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125270726917/logs",
+      "bytes": 349365,
+      "sha256": "5b025e220445296f11f230376d6945e24bf81bbb71541476252811cd2240d068",
+      "kind": "complete-decoded-job-log"
+    },
+    {
+      "job_id": 125270727083,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125270727083/logs",
+      "bytes": 81579,
+      "sha256": "54a357f0e7ba46a06dc38e86fcf8b0a26e280b697fe3c4a506b4e690c861ade6",
+      "kind": "complete-decoded-job-log"
+    },
+    {
+      "job_id": 125270727427,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125270727427/logs",
+      "bytes": 157502,
+      "sha256": "697bb81e1520cba165e442bc4387e7c3c379430345e30b4d506407aff0272a7c",
+      "kind": "complete-decoded-job-log"
+    },
+    {
+      "job_id": 125270727445,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125270727445/logs",
+      "bytes": 37988,
+      "sha256": "5a6591344d80055d7d81d52f25257d049bf9660a2fa49261ef889c44d3695003",
+      "kind": "complete-decoded-job-log"
+    },
+    {
+      "job_id": 125270727635,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125270727635/logs",
+      "bytes": 37439,
+      "sha256": "e5262d2bc00a6936909a870d112a801f0e55f0a132ec2533949bd8d6e632eac5",
+      "kind": "complete-decoded-job-log"
+    },
+    {
+      "job_id": 125270914076,
+      "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125270914076/logs",
+      "bytes": 145995,
+      "sha256": "49f43b99db928a5d3fa545774d06de6d12465393438f0e9c4eff54b7b03642f6",
+      "kind": "complete-decoded-job-log"
+    }
+  ],
+  "source_checker_at_recovered_head": {
+    "run_id": 41443460908,
+    "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460908",
+    "contracts": {
+      "node_passed": 136,
+      "node_failed": 0,
+      "schema_passed": 37,
+      "ledger_schema_errors": 0
+    },
+    "candidate": {
+      "status": "unaccepted-candidate-consistent",
+      "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_entries_total": 16381,
+      "root_source_entries_total": 6895,
+      "responsibility_rows": 183,
+      "unknown": null,
+      "unread": null,
+      "lexical_observations": 333,
+      "counts_by_scope": {
+        "pinned-cmake-component": 2,
+        "legacy-root-paths": 331
+      },
+      "text_files_read": 203,
+      "opaque_inputs_unread": 2,
+      "unresolved_ref_observations": 76,
+      "baseline_accepted": false,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false,
+      "target_commit": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+      "reused_git_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+        "artifact_id": 13118749668,
+        "run_id": 41397005716,
+        "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+      },
+      "reused_build_input_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+        "artifact_id": 13121721589,
+        "run_id": 41401970993,
+        "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+      }
+    },
+    "accepted_mode_negative_proof": "Error: accepted source accounting cannot contain a rebaseline candidate",
+    "artifacts": [
+      {
+        "id": 13141410194,
+        "name": "tdrp-source-review-contract-98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "digest": "sha256:e6f129993db3025b960cd437850db639282b1d7bc60ca6a99d2ba203f53a6e03",
+        "size_in_bytes": 6023,
+        "expired": false,
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460908/artifacts/13141410194"
+      },
+      {
+        "id": 13141193550,
+        "name": "tdrp-source-candidate-98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "digest": "sha256:796cdbcb18497e88baa46fb43a7801e63e4b2dd14a381e9bbf239df6a7ca96d7",
+        "size_in_bytes": 79083,
+        "expired": false,
+        "head_sha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41443460908/artifacts/13141193550"
+      }
+    ],
+    "note": "Success is checker/consistency and expected rejection evidence. All acceptance flags remain false."
+  },
+  "backend_recheck": {
+    "observed_at_utc": "2026-11-02 12:25:14 UTC",
+    "pull_request": {
+      "number": 137,
+      "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergedAt": null,
+      "headSha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "headRef": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "baseSha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "baseRef": "main",
+      "updatedAt": "2026-11-02T10:14:47Z",
+      "reviews": [],
+      "reviewThreads": [],
+      "comments": [],
+      "formalMergeOrDeploymentAuthorizationObserved": false,
+      "authorizationEvidenceScope": "PR body, PR discussion/reviews/threads and explicit current task authorization. Empty PR records do not prove absence of an authorization outside inspected sources; no such authorization was supplied."
+    },
+    "exact_head_verification": {
+      "sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "runs": [
+        {
+          "id": 41427242843,
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427242843",
+          "headSha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 41427235133,
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427235133",
+          "headSha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+          "event": "push",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviewedFullLog": {
+        "jobId": 125216707135,
+        "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427242843/job/125216707135",
+        "checkoutShaVerified": true,
+        "file": "backend-audit-evidence/backend-head-125216707135.log",
+        "lineCount": 484,
+        "bytes": 35245,
+        "sha256": "e4a58b5be67321ce84d94f1bd3b462ac315386f2d4a55e4477a4ab3db1229fa5"
+      },
+      "actualTestResults": [
+        {
+          "name": "existing messaging/call and handler D1/R2 mock contracts",
+          "tests": 29,
+          "passed": 29,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "limitation": "Includes five source-marker mutation contracts; not all 29 are mutation behavior proof."
+        },
+        {
+          "name": "real local SQLite mutation/migration/restart contracts in GitHub Actions",
+          "tests": 10,
+          "passed": 10,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "limitation": "SQLite adapter is not deployed Cloudflare D1 evidence."
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13131943502,
+          "name": "human-messaging-contracts-06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+          "bytes": 3515,
+          "expired": false,
+          "digest": "sha256:80f1e5a3ee86ec2c069c195238700fdfaac5b68e16bfa66f28e80bfe8945080f",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427242843/artifacts/13131943502",
+          "headSha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007"
+        }
+      ]
+    },
+    "production_evidence": {
+      "latestObservedCanonicalDelivery": {
+        "runId": 40047409890,
+        "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890",
+        "headSha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "status": "completed",
+        "conclusion": "success",
+        "createdAt": "2026-10-24T00:56:05Z",
+        "updatedAt": "2026-10-24T00:56:50Z",
+        "jobId": 120732189309,
+        "jobUrl": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890/job/120732189309",
+        "fullLogFile": "backend-audit-evidence/backend-worker-120732189309.log",
+        "worker": "fabushi-flutter-web-prod",
+        "workerVersionAtDeployment": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+        "migrationsObserved": "No migrations to apply",
+        "healthStep": "success",
+        "publicEnrollmentDenialStep": "success",
+        "artifacts": [
+          {
+            "id": 12542105783,
+            "name": "gateway-account-recovery-33a26692ce2f74e3fdca3940dfc4cbfb3ede151b-40047409890",
+            "bytes": 244,
+            "expired": false,
+            "digest": "sha256:9b6e7cf63c49d7db8aed6120df9ee0cc3dcfdec33c5d03ae063a4861538799fb",
+            "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890/artifacts/12542105783",
+            "headSha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b"
+          },
+          {
+            "id": 12542026010,
+            "name": "production-worker-delivery-33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+            "bytes": 1062,
+            "expired": false,
+            "digest": "sha256:ba90289cbeae90d7bacca69050147717d3256a7574b1289632cfdd3bf8edae18",
+            "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890/artifacts/12542026010",
+            "headSha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b"
+          }
+        ],
+        "artifactPayloadInspected": false,
+        "artifactPayloadLimitation": "GitHub download tool returned a file reference, but local download was blocked by workspace network restriction (PermissionError: Operation not permitted). No claim is made about artifact payload contents; source/version are independently present in complete job logs.",
+        "fullLogDigest": {
+          "bytes": 30460,
+          "sha256": "1d3fec62bc6056c3f05961750b92d8df9e4a39ad5763bed21571bbfcc41a4b04"
+        }
+      },
+      "runEnumeration": {
+        "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs?per_page=100",
+        "returned": 100,
+        "totalCount": 986,
+        "latestCreatedAt": "2026-11-02T10:14:51Z",
+        "oldestCreatedAt": "2026-10-22T09:52:28Z",
+        "observedLaterCanonicalWorkerDeliveries": 0
+      },
+      "laterOfficialMcpDelivery": {
+        "lastRunId": 40104992740,
+        "worker": "mahayana-platform",
+        "sameSocialWorker": false,
+        "evidence": "https://github.com/bhrumom/fabushi-backend/blob/687718ce9e0083aa124d29005bcce4051d357919/.github/workflows/official-mcp-platform-delivery.yml",
+        "note": "Later official MCP platform delivery targets separate mahayana-platform Worker and is not social afterId=0 deployment evidence."
+      },
+      "currentCanonicalMain": {
+        "sha": "687718ce9e0083aa124d29005bcce4051d357919",
+        "sourceUrl": "https://github.com/bhrumom/fabushi-backend/blob/687718ce9e0083aa124d29005bcce4051d357919/fabushi/web/src/handlers/friends.js",
+        "afterIdZeroAdmission": "rejects",
+        "evidence": "getMessages handler: afterRaw && (!Number.isSafeInteger(afterId) || afterId <= 0) returns HTTP 400"
+      },
+      "activeWorkerVersionCurrentlyVerified": false,
+      "authenticatedAfterIdZeroProductionPaginationVerified": false,
+      "authenticatedEmptyPageVerified": false,
+      "crossAccountDenialVerified": false,
+      "remoteRecoveryVerified": false,
+      "productionAcceptance": "blocked",
+      "limitations": [
+        "Historical successful deployment and version do not establish current active Cloudflare Worker source.",
+        "PR CI 29+10 passing does not establish deployed compatibility.",
+        "No authorized production account/peer fixtures, credentialed service evidence or current Cloudflare source/version observation was available in inspected sources.",
+        "No remote restore or data-recovery operation was performed."
+      ]
+    },
+    "scope": "Read-only PR, source, Actions, log and artifact metadata audit. No backend GitHub writes, review submissions, merge, dispatch, deployment, migration or production mutations."
+  },
+  "next_production_extension": {
+    "requirement": "NMR-36/NMR-36a/NMR-AC-27",
+    "base": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+    "owner": "MahayanaHost::create and create_with_engine_backend_for_test",
+    "reachable_caller": "mahayana-ffi::mahayana_runtime_create -> HostCreateConfig -> MahayanaHost::create",
+    "behavior": "Reject either explicit legacy client or self id before product-origin resolution, client/storage/runtime construction; remove this Host old-provider registration. Preserve camelCase config and ABI error contract.",
+    "data": "No format conversion, key derivation, cleanup or deletion. Opaque/corrupt existing files and absent roots remain untouched; original runtime/storage readers retained for reviewed rollback.",
+    "authored_tests": {
+      "host": 6,
+      "ffi_new": 4,
+      "ffi_existing": 3
+    },
+    "execution_status_at_preparation": "not-run; requires subsequent exact containing-H Actions",
+    "remaining_boundaries": [
+      "unconditional Host/AppHost/default Telegram dependencies",
+      "force-linked direct legacy client C exports",
+      "external caller completeness",
+      "platform package symbols",
+      "non-Electron FeatureHost message authority"
+    ]
+  },
+  "caller_review": {
+    "base": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+    "scope": "Direct Host, FFI, desktop staging, UnifiedAppHost, mobile create/JNI and CLI constructor",
+    "mobile_and_cli": "Inspected constructors supply no legacy handoff; external caller absence and packaged acceptance are not inferred.",
+    "evidence_path": "projects/telegram-desktop-rust/evidence/round15-host-ffi-callers.md",
+    "search_limitation": "GitHub code search incomplete_results=true was not treated as negative caller evidence."
+  },
+  "nmr36_static_review": {
+    "reviewKind": "Independent read-only source/spec/oracle review; no local build, compile, test or validator executed",
+    "candidateBaseSha": "98e51b31b5a296065190f665696b2ffe11a3efe1",
+    "unresolvedBlockingFindings": [],
+    "resolvedFindings": [
+      {
+        "id": "NMR36-REVIEW-01",
+        "severity": "blocking",
+        "issue": "FixtureBackend::interrupt initially selected mahayana_core::OperationId through super::* but EngineBackend requires the distinct mahayana_kernel::OperationId newtype.",
+        "resolution": "Owner changed the parameter to explicit &mahayana_kernel::OperationId; latest file was read and confirmed.",
+        "status": "resolved-by-source-review; Actions execution pending"
+      },
+      {
+        "id": "NMR36-REVIEW-02",
+        "severity": "oracle-gap",
+        "issue": "Initial C ABI preservation check compared only six named files and would miss new files/directories in retained storage.",
+        "resolution": "Final version captures and compares the complete recursive tree of directory paths and file bytes before/after rejection.",
+        "status": "resolved-by-source-review; Actions execution pending"
+      }
+    ],
+    "checks": [
+      {
+        "requirement": "Host admission before origin/client/filesystem/backend work",
+        "result": "passed-static-review",
+        "evidence": "ensure_native_host_handoff is the first statement in both create and create_with_engine_backend_for_test; helper reads only the two Option fields."
+      },
+      {
+        "requirement": "No Telegram provider injected into Host runtime",
+        "result": "passed-static-review",
+        "evidence": "TelegramConversationProvider import and build_runtime registration removed. Optional camelCase handoff fields are retained and rejected when Some, including zero/extreme/self-only values."
+      },
+      {
+        "requirement": "C ABI zero handle and thread-local error on rejection",
+        "result": "passed-static-review",
+        "evidence": "mahayana_runtime_create propagates HostError before NEXT_RUNTIME_ID.fetch_add and RUNTIMES.insert. LAST_ERROR remains thread-local, last_error allocates an independently freeable JSON string, and success clears the prior creation error."
+      },
+      {
+        "requirement": "Existing native handle survival",
+        "result": "authored-behavior-proof-not-run",
+        "evidence": "FFI test compares existing native status before/after rejection, then consumes Ready; separate test proves successful native creation after a rejected attempt."
+      },
+      {
+        "requirement": "Data preservation/no implicit import or cleanup",
+        "result": "passed-static-review-and-authored-tests-not-run",
+        "evidence": "No retained data IO occurs before rejection; Host tests compare complete recursive directory/file snapshots after client-only/self-only/both attempts; FFI matrix checks absent roots and retained snapshot equality."
+      },
+      {
+        "requirement": "Positive controls and feature/profile selection",
+        "result": "passed-static-review",
+        "evidence": "FFI command preserves its default desktop-full/local-only features. Direct Host command enables test-support with the existing local-only default; RuntimeBuilder does not require the desktop-full feature for status/store operations and the explicit FixtureBackend supplies Agent lifecycle. Host native status/Ready/durable state and injected Agent completion/history controls are authored."
+      },
+      {
+        "requirement": "Fixture backend capability/event contracts",
+        "result": "passed-static-review",
+        "evidence": "EngineBackend signatures match kernel types after correction. Required Model capability matches KernelConversationProvider. MessageCompleted persists and forwards assistant history; Runtime send success emits OperationCompleted, matching the loop oracle."
+      },
+      {
+        "requirement": "CI selected counts",
+        "result": "passed-static-review",
+        "evidence": "Host has six selected tests with test-support enabled. FFI has four new and three existing controls, matching exact 7 expected by the unfiltered lib gate. All runtime execution remains pending exact-H GitHub Actions."
+      }
+    ],
+    "limits": [
+      "This source review is not a test pass or independent product ACCEPT.",
+      "No global registry-count assertion was added: code order proves rejection cannot reach allocation, while runtime handle survival is exercised by authored tests; avoiding shared-count assertions prevents parallel-test interference.",
+      "Snapshots prove paths and file bytes for regular-file/directory fixtures, not original encrypted storage-reader compatibility or filesystem metadata. Prior startup/retention reader tests remain required.",
+      "Injected FixtureBackend lifecycle is controlled runtime/Agent wiring evidence, not real model inference or remote service acceptance.",
+      "Legacy force-linked exports, unconditional dependencies, external caller completeness, supported platform packaging and full migration acceptance remain open as the Spec states."
+    ],
+    "changed_code_sha256": [
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+        "bytes": 31652,
+        "sha256": "6e06bea4b6aea6b50fc15e53cad268b29c8cffaf0dc5780bcd3c8277682b58ea"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs",
+        "bytes": 14513,
+        "sha256": "964b9b2dc1102c8d495c122c7a776479687e31dfbd4ae752934d9349adb48524"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+        "bytes": 13001,
+        "sha256": "76af5c7a1f099377aa5b0db784c0bf78b3bdd7f2659b2fdd6de9033b43aae656"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs",
+        "bytes": 7198,
+        "sha256": "0a3e5360f9c8420f6d73b5fc016468f835208b4f462183b17a4f2c5e52018300"
+      }
+    ]
   }
 }

@@ -20,6 +20,7 @@ on:
       - 'desktop/scripts/build-electron-runtime.mjs'
       - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-feature-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-ffi/**'
       - 'source/mahayana/mahayana-rs/mahayana-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
       - 'source/mahayana/mahayana-rs/providers/telegram-protocol/**'
@@ -208,6 +209,14 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/featurehost-messaging-boundary.log
           grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/featurehost-messaging-boundary.log
+      - name: Direct Host and C ABI reject legacy handoff before storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-host --features test-support --lib legacy_handoff_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/host-legacy-handoff.log
+          grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/host-legacy-handoff.log
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-ffi --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/ffi-legacy-handoff.log
+          grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/ffi-legacy-handoff.log
       - name: Verify DNS and special-config response normalization
         shell: bash
         run: |
@@ -355,6 +364,7 @@ jobs:
           name: native-message-electron-${{ github.sha }}
           path: artifacts/native-message-electron
           if-no-files-found: error
+
 
 
 

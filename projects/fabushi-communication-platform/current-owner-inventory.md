@@ -40,12 +40,21 @@ The actual Human Composer does not select them. Retained account-scoped
 `runtime/accounts/<account-hash>/agents/_messaging/{snapshot.json,blobs}` and
 unscoped `runtime/agents/_messaging/access.json` remain byte-preserved. Automation
 discovery/override/write/cleanup excludes `_messaging`; it is not an Agent owner.
-Legacy `mahayana-ffi` still force-links C ABI and accepts explicit
-`telegramClientId`; Host's explicit injection/default dependencies remain.
+NMR-36 removes Host's explicit legacy provider injection: direct Rust and
+`mahayana-ffi::mahayana_runtime_create` reject either legacy client or self-id
+before product configuration, storage or runtime construction. Compatibility
+fields remain decodable; the C ABI returns its existing zero/error result.
+Legacy `mahayana-ffi` still force-links the direct Telegram C client APIs,
+and unconditional Host/AppHost/default dependencies remain unretired.
 Current Electron `build:host`/stage-host selects `source/host/app`, not that FFI
 crate; external/mobile callers are unqualified, not presumed absent. NMR-34–35 /
 AC-25–26 require owner7 and actual AppHost6 Actions cases at the containing H.
 Source review, execution and final acceptance remain separate.
+
+The containing H `98e51b31b5a296065190f665696b2ffe11a3efe1` passed NMR-34/35 in
+run `41443460672`. The subsequent NMR-36 Host6/ABI7 cases must execute on their
+own H. Inspected mobile AppHost and CLI constructors supply no legacy handoff;
+external caller coverage and supported-platform package evidence remain open.
 
 The inventory was built from the exact PR #20 HEAD, starting at shipping entrypoints and following the production composition paths. Directory/name similarity by itself is not evidence. The paths below are the current owners or production seams that are actually composed by the renderer, Electron main, Coordinator, Host, and Runner.
 
@@ -118,5 +127,6 @@ The existing channel connector path models outside platforms and delivery addres
 Before using this inventory for implementation, compare the live PR #20 head to `a538679392bc09531041030a98fa0880107e7d40`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
 
 PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected file-by-file at the ownership boundary. It advances send-pipeline/send-turn dispatch, workflow commands, runner registry/turn shell, Coordinator inference routing, and Session runtime behavior inside the same canonical Host Transcript/Runner/Coordinator architecture. `session-runtime.ts` now has a production Rust owner with focus/contact freshness, live-session ownership, deferred bounded-open activation/catch-up, snapshot/roster activation wiring, boot fallback ordering evidence, and focused contracts; `a5386793` is the first head that marks that row implemented, and only its own Actions may accept it. No FBCP product owner root moved in this delta.
+
 
 

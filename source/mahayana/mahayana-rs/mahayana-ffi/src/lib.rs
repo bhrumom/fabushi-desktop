@@ -299,6 +299,9 @@ fn set_last_error(error: String) {
 }
 
 #[cfg(test)]
+mod legacy_handoff_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -353,3 +356,4 @@ mod tests {
         assert!(response["message"].as_str().unwrap().contains("not found"));
     }
 }
+

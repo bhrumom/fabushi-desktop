@@ -35,6 +35,18 @@ FFI/default-link paths still require caller/data disposition. Backend #137 remai
 no review/production authorization, and production `afterId=0` evidence is
 missing. Full migration and independent ACCEPT remain blocked.
 
+Recovery readback: NMR-34/35 were committed as
+`98e51b31b5a296065190f665696b2ffe11a3efe1`, run `41443460672` completed success
+with all four message jobs, owner7/AppHost6 and the retained Human33/Agent4/
+private3/composition11/protocol122/TCP9/UI16/Electron10+8 cases. Source run
+`41443460908` passed checker136/schema37 and ledger-schema validation, while
+source closure and independent/product acceptance remain false.
+NMR-36 now rejects explicit legacy Host/FFI handoff before data access and
+removes this Host's old provider registration. Original fields/data/readers
+remain for explicit refusal and reviewed rollback. Host6 and full ABI7 cases
+are authored and require the new containing-H Actions result. No dependency,
+direct legacy-client export, platform-package or full-migration closure is claimed.
+
 ## Historical planning snapshot (2026-10-19)
 
 | Area | Status | Note |
@@ -78,5 +90,6 @@ Report separately:
 - independent release acceptance.
 
 Do not report Telegram-provider, Telegram-network, survey, document count, or vertical-slice progress as migration completion.
+
 
 

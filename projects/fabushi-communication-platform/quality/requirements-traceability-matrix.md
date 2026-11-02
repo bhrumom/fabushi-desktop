@@ -146,12 +146,20 @@ ended failure with verified Electron carrier10/auth8 and UI16. Both Rust jobs
 were cancelled without runner assignment/steps; logs return BlobNotFound.
 No Rust count is accepted and the exact scheduling cause remains unverified.
 
+Recovery binds NMR-34/35 to `98e51b31b5a296065190f665696b2ffe11a3efe1`:
+run `41443460672` completed success with every selected actual count below;
+source checker run `41443460908` also passed while source/product acceptance
+remained false. NMR-36 is a subsequent production extension, not covered by
+those earlier executions.
+
 | Requirement / oracle | Existing owner and executable case | Execution / acceptance boundary |
 | --- | --- | --- |
 | NMR-34 / NMR-AC-25 | `FeatureHostController` guard at sync execution, blob read and access issuance; `desktop_messaging_boundary_tests` covers direct and typed routes, malformed inner payloads, absent roots, poisoned state and immediate event non-publication | 7 authored owner cases; actual Production AppHost separately exercised. Test/non-Electron positives prevent a blanket disable. |
 | NMR-35 / NMR-AC-25 | Original snapshot/blob/access writer-reader compatibility; nested `_messaging` automation discovery/override/write/cleanup exclusion and normal Agent create/update/delete | Real data/byte and negative authorization oracles; no import, cleanup or mobile acceptance claim. |
 | NMR-AC-25 | Existing `native_desktop_account_handoff` target: 3 previous cases plus missing/retained/corrupt standalone store cases; explicit routes and generic wrapped/unwrapped dispatch in actual Production subprocesses | 6 authored tests; production/isolated issuers, A/B/logout/relogin/restart, immediate real event drain, Native and Agent positives. |
 | NMR-AC-26 | Existing `native-service-contracts.yml`, plus unchanged `tdrp-source-review-contract.yml` for the canonical ledger | Exact containing H must execute owner7/AppHost6 and all prior Human33/Agent4/private3/composition11/UI16/Electron10+8/protocol/TCP gates. No queue or authored count is a pass. |
+| NMR-36 / NMR-AC-27 | `MahayanaHost::create` and test-support constructor; `mahayana-host/src/legacy_handoff_tests.rs` | Six authored public-constructor cases: value/serde matrix, absent and existing data, restart, forbidden backend use, and native Agent completion. Subsequent exact-H execution required. |
+| NMR-36a / NMR-AC-27 | `mahayana_runtime_create` and actual exported status/receive/last-error/free/close; `mahayana-ffi/src/legacy_handoff_tests.rs` | Four new C ABI behaviors plus three existing lifecycle/error controls; original data/ABI/readers retained. Default dependencies and direct old-client exports are not retired. |
 
 `evidence/round15-desktop-messaging-boundary.json` records exact read identities,
 backend read-only audit, predecessor execution, design finding R15-D1 and its
@@ -217,5 +225,6 @@ Authorship/evidence boundary: the original strengthened ten-case blob `127700079
 The bounded Host gate passed at exact95/run41403643662. Every subsequent message change remains gated by NMR-AC-06/07/08/09/10/11/12: both named message jobs on one exact H, actual thirteen Human and four Agent nonce cases, locked AppHost compilation, response normalization, both bare future-salts library fixtures, full protocol/TCP including its live case, proxy rejection and credential-schema cases. A skipped step, diagnostic lock generation, test authorship or old-H result is not a pass. Use the existing round3 evidence receipt for execution records; no second result ledger.
 
 Fixed-U mapping uses only the explicitly read peer-scoped dispatch, existing-message application and identity-transition sections recorded in `research/native-message-known-overlap-fixed-u.md`. It does not close whole upstream files or change inventory/source_reviews/unknown/unread/source acceptance. Known-message refresh, durable history-range coverage, read-state/visible receipt behavior, distinct-emoji/whole-payload bounds and stale mutation/refresh ordering remain separate open work. Full native-service, UI/package/platform, performance/soak, complete Bot regression and independent ACCEPT remain open.
+
 
 

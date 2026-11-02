@@ -56,7 +56,6 @@ pub use mahayana_runtime_core::{MiniAppRuntimeStorePort, RuntimeStoreError};
 use mahayana_runtime_core::RuntimeBuilder;
 use mahayana_runtime_core::RuntimeError;
 use mahayana_social::MahayanaSocialConversationProvider;
-use mahayana_telegram::TelegramConversationProvider;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::BTreeSet;
@@ -91,8 +90,10 @@ pub struct HostCreateConfig {
     /// Optional Mahayana CLI used only for desktop argv helper dispatch.
     pub codex_executable_path: Option<PathBuf>,
     pub cwd: Option<PathBuf>,
-    /// Existing embedded Telegram client created by the platform login flow.
+    /// Retained for legacy camelCase JSON decoding. Native Host admission
+    /// rejects any supplied value before client, runtime or storage access.
     pub telegram_client_id: Option<u64>,
+    /// Retained with the client id so self-only legacy handoffs fail explicitly.
     pub telegram_self_user_id: Option<i64>,
     pub host_platform: Option<HostPlatform>,
     pub mini_apps: Vec<MiniAppDefinition>,
@@ -140,6 +141,15 @@ impl From<RuntimeError> for HostError {
     }
 }
 
+fn ensure_native_host_handoff(config: &HostCreateConfig) -> Result<(), HostError> {
+    if config.telegram_client_id.is_some() || config.telegram_self_user_id.is_some() {
+        return Err(HostError::new(
+            "legacy Telegram handoff is unavailable in the Fabushi host; use the native Session/Transcript owner",
+        ));
+    }
+    Ok(())
+}
+
 fn configured_product_api_base_url() -> Result<String, HostError> {
     if mahayana_product::native_desktop_session::enabled() {
         return mahayana_product::native_desktop_session::target_origin(None)
@@ -167,6 +177,7 @@ impl MahayanaHost {
     }
 
     pub fn create(config: HostCreateConfig) -> Result<Self, HostError> {
+        ensure_native_host_handoff(&config)?;
         let api_base_url = configured_product_api_base_url()?;
         let product_client = match (
             config.product_session_path.clone(),
@@ -211,6 +222,7 @@ impl MahayanaHost {
         config: HostCreateConfig,
         backend: Arc<dyn EngineBackend>,
     ) -> Result<Self, HostError> {
+        ensure_native_host_handoff(&config)?;
         let api_base_url = configured_product_api_base_url()?;
         let product_client = match (
             config.product_session_path.clone(),
@@ -404,17 +416,6 @@ fn build_runtime(
             .push(Arc::clone(&provider) as Arc<dyn ConversationProvider>);
         builder = builder.with_provider(provider)?;
     }
-    if let Some(telegram_client_id) = create.telegram_client_id {
-        let provider = Arc::new(TelegramConversationProvider::from_client_id(
-            telegram_client_id,
-            create.telegram_self_user_id,
-        ));
-        #[cfg(feature = "codex-compat")]
-        compatibility_conversation_providers
-            .push(Arc::clone(&provider) as Arc<dyn ConversationProvider>);
-        builder = builder.with_provider(provider)?;
-    }
-
     #[cfg(any(feature = "desktop-full", feature = "mobile-embedded"))]
     if matches!(
         runtime_config.build_profile,
@@ -751,6 +752,9 @@ impl EntitlementChecker for PlatformEntitlementChecker {
 }
 
 #[cfg(test)]
+mod legacy_handoff_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -809,3 +813,4 @@ mod tests {
         assert!(error.to_string().contains("remote Agent"));
     }
 }
+

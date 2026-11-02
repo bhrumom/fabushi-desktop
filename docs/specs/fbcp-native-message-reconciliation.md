@@ -503,6 +503,59 @@ AppHost/Host and non-desktop callers are not declared retired. No backend
 mutation, merge or deployment is part of this batch. Full FBCP/TDRP source,
 service, platform/package, Bot, migration and independent acceptance stay open.
 
+### Round 15 recovery extension — direct Host and C ABI handoff (NMR-36)
+
+At `98e51b31b5a296065190f665696b2ffe11a3efe1`, run `41443460672`
+completed successfully. Human33, Agent nonce4, settlement credential3,
+composition11, startup/retention6, FeatureHost boundary7, normalization6,
+future-salts2, protocol122, TCP9, proxy4, Native credential1, UI16 and
+Electron carrier10/auth8 actually ran. These results qualify that bounded
+candidate only. The old `41438907013` Rust jobs remain cancelled/not-run.
+
+The next proven entry is `mahayana-ffi::mahayana_runtime_create` decoding
+arbitrary JSON into `HostCreateConfig`, then `MahayanaHost::create` registering
+`TelegramConversationProvider` in `build_runtime`. Direct Rust callers have
+the same injection path. Current Electron and mobile AppHost construction
+already supply neither legacy field; the inspected CLI constructor also uses
+the default empty handoff. External caller completeness and platform package
+acceptance remain open, rather than inferred from these inspected consumers.
+
+- NMR-36: The existing `MahayanaHost::create` must reject either non-null
+  `telegramClientId` or `telegramSelfUserId` before product-origin resolution,
+  credential/client construction, filesystem access, plugin discovery or
+  runtime initialization. Zero, maximum and self-only values are legacy
+  handoff attempts too; do not silently ignore them or synthesize a Native
+  identity. Preserve both optional fields and camelCase JSON compatibility
+  so old callers receive an explicit error:
+  `legacy Telegram handoff is unavailable in the Fabushi host; use the native Session/Transcript owner`.
+  Remove the old provider registration from this Host composition. The
+  test-support constructor must enforce the same refusal before its injected
+  engine is used. Configurations without either field retain their existing
+  Agent, social, Mini App, model, approval and runtime behavior.
+- NMR-36a: The C ABI keeps its symbols and existing creation failure contract
+  (zero handle and thread-local last-error). A rejected legacy handoff must
+  not allocate or invalidate a runtime handle, damage a previously created
+  native host, or touch provided absent/existing data/session/surface paths.
+  Retain original Telegram client/storage APIs, encrypted databases, sidecars,
+  credentials, unknown files and readers for a reviewed code rollback. This
+  change performs no data conversion, cleanup, replacement login or automatic
+  fallback. Unconditional Cargo dependencies and force-linked legacy client
+  exports are explicitly still open; refusal is not dependency retirement.
+
+NMR-AC-27: Direct Host behavior tests cover the handoff value matrix, absent
+roots, existing opaque/corrupt data byte preservation, compatibility decoding,
+test-support refusal and native status/ready/Agent lifecycle positive controls.
+C ABI tests exercise real exported functions for rejection, error ownership,
+success after a prior error and survival of an existing native handle. Include
+the existing unknown-handle/error and remote-Agent refusal controls. Run both
+test targets and the actual desktop AppHost compile in the existing exact-H
+Actions gate, retaining all NMR-AC-26 gates. The source schema/validator must
+continue accepting the single candidate ledger without promoting source or
+product acceptance. Record unchanged old data and a normal reviewed code
+revert as the rollback boundary; real platform/package and deployment evidence
+remain separate final gates.
+
+
 
 
 

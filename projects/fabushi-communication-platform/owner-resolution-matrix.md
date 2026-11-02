@@ -85,8 +85,12 @@ existing FeatureHost owner, before its separate MessagingService execute,
 blob-read and access-write boundaries, covering both explicit and typed routes.
 The Automation owner skips reserved `_messaging` discovery/override/write/cleanup
 so login cannot reinterpret or remove retained unknown message data. Normal
-Agent automation persistence is a positive control. Non-desktop state, legacy
-default dependencies/direct Host injection and old FFI exports remain open;
+Agent automation persistence is a positive control. NMR-36 rejects direct Host
+and C ABI handoffs before origin/client/storage/runtime creation and removes
+this Host's old provider registration. Native Agent/status/restart and ABI
+error/lifecycle cases are positive controls; optional legacy fields remain
+decodable for explicit refusal. Non-desktop state, legacy default dependencies
+and direct old-client FFI exports remain open;
 current Electron packaging selects the standalone AppHost binary. No new owner,
 canonical data import, public schema or dependency is introduced.
 
@@ -104,6 +108,7 @@ packaged/real-service/full Bot/independent ACCEPT are not claimed.
 - Infrastructure may be added only below those owners and may not become a second product model.
 - Agent-native typed events remain typed and coexist with Human communication in the same transcript/workspace.
 - An owner-resolution row is not accepted until production wiring, focused contracts, integration/E2E and applicable packaged evidence exist.
+
 
 
 
