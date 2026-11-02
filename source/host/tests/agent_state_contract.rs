@@ -207,7 +207,7 @@ mod live_admission {
     use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
     use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
     use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
-    use mahayana_host_runtime::workflows::workflow_library::LEGACY_WORKFLOW_FILENAME;
+    use mahayana_host_runtime::workflows::workflow_library::{LEGACY_WORKFLOW_FILENAME, WorkflowSpec};
     use mahayana_host_runtime::workflows::workflow_store::{FileWorkflowStore, WorkflowRecord};
 
     struct Loader(Mutex<LoadedPlugins>);
@@ -410,6 +410,181 @@ mod live_admission {
         assert!(resumed.ok, "{}", resumed.message);
         assert!(fs::read_to_string(&callback_workflow.file_path).unwrap()
             .ends_with("\nCALLBACK_AFTER_DELETION_BODY\n"));
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn production_runner_workflow_generation_is_fenced_across_archive_and_restore() {
+        let root = temp_root("runner-workflow-generation");
+        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let session = SandAgentSessionStore::new(Arc::clone(&workers));
+        let agent = session.create_session(None, "user", None).unwrap();
+        let unaffected = session.create_session(None, "user", None).unwrap();
+        let controller = Arc::new(SandLocalToolPermissionController::production(Arc::new(
+            SettingsService::new(root.join("settings.json")),
+        )));
+        let composition = HostRunnerComposition::production(controller, Arc::clone(&workers));
+        let retained_writer = composition.compose_turn_state_surfaces(
+            Arc::clone(&workers), &agent.id, false, true, None,
+        ).unwrap().state_writer.unwrap();
+        let unaffected_writer = composition.compose_turn_state_surfaces(
+            Arc::clone(&workers), &unaffected.id, false, false, None,
+        ).unwrap().state_writer.unwrap();
+        assert!(retained_writer.write_workflow(None, "Retained callback workflow", None,
+            "CALLBACK_ORIGINAL_BODY").ok);
+        let callback_workflow = session.list_agent_workflows(&agent.id).unwrap().into_iter()
+            .find(|row| row.name == "Retained callback workflow").unwrap();
+        let callback_before = fs::read(&callback_workflow.file_path).unwrap();
+        let legacy = root.join("agents").join(&agent.id).join("workflows/unmigrated-generation");
+        fs::create_dir_all(&legacy).unwrap();
+        let legacy_file = legacy.join(LEGACY_WORKFLOW_FILENAME);
+        let legacy_before = "---\nname: Unmigrated generation\n---\nLEGACY_MUST_STAY\n";
+        fs::write(&legacy_file, legacy_before).unwrap();
+        let admission = workers.read_session_work_admission(&agent.id).unwrap().unwrap();
+        let archived = workers.transition_session_work_archive(&agent.id, &admission.session_key,
+            &agent.id, Some(&admission.lifecycle_revision), true, Some("contract"),
+            Some("runner-generation-fence"), 1_000.0).unwrap();
+        let refused = retained_writer.write_workflow(Some(&callback_workflow.id),
+            "Retained callback workflow", None, "ARCHIVED_MUST_NOT_WRITE");
+        assert!(!refused.ok, "Runner must retain the Session mutation fence");
+        assert_eq!(fs::read(&callback_workflow.file_path).unwrap(), callback_before);
+        let archived_records = retained_writer.workflow_records();
+        assert!(!retained_writer.write_workflow(None, "Archived retained create", None,
+            "ARCHIVED_CREATE_MUST_NOT_WRITE").ok);
+        assert!(!retained_writer.delete_workflow(&callback_workflow.id).ok);
+        assert_eq!(fs::read(&callback_workflow.file_path).unwrap(), callback_before);
+        assert_eq!(retained_writer.workflow_records(), archived_records);
+        assert!(!root.join("workflows/archived-retained-create").exists());
+        assert_eq!(fs::read_to_string(&legacy_file).unwrap(), legacy_before);
+        assert!(!root.join("workflows/unmigrated-generation").exists());
+        assert!(composition.compose_turn_state_surfaces(
+            Arc::clone(&workers), &agent.id, false, true, None,
+        ).is_err());
+
+        let unaffected_created = unaffected_writer.write_workflow(None,
+            "Unaffected session workflow", None, "UNAFFECTED_BODY");
+        assert!(unaffected_created.ok, "{}", unaffected_created.message);
+        let unaffected_workflow = session.list_agent_workflows(&unaffected.id).unwrap()
+            .into_iter().find(|row| row.name == "Unaffected session workflow").unwrap();
+        assert!(fs::read_to_string(&unaffected_workflow.file_path).unwrap().contains("UNAFFECTED_BODY"));
+
+        let restored = workers.transition_session_work_archive(&agent.id, &admission.session_key,
+            &agent.id, Some(&archived.lifecycle_revision), false, None, None, 2_000.0).unwrap();
+        assert_ne!(restored.lifecycle_revision, admission.lifecycle_revision);
+        assert_ne!(restored.lifecycle_revision, archived.lifecycle_revision);
+        let restored_records = retained_writer.workflow_records();
+        assert!(!retained_writer.write_workflow(None, "Stale retained create", None,
+            "STALE_CREATE_MUST_NOT_WRITE").ok);
+        assert!(!retained_writer.write_workflow(Some(&callback_workflow.id),
+            "Retained callback workflow", None, "STALE_UPDATE_MUST_NOT_WRITE").ok);
+        assert!(!retained_writer.delete_workflow(&callback_workflow.id).ok);
+        assert_eq!(fs::read(&callback_workflow.file_path).unwrap(), callback_before);
+        assert_eq!(retained_writer.workflow_records(), restored_records);
+        assert!(!root.join("workflows/stale-retained-create").exists());
+        assert_eq!(fs::read_to_string(&legacy_file).unwrap(), legacy_before);
+        assert!(!root.join("workflows/unmigrated-generation").exists());
+
+        let fresh_writer = composition.compose_turn_state_surfaces(
+            Arc::clone(&workers), &agent.id, false, true, None,
+        ).unwrap().state_writer.unwrap();
+        assert!(!legacy.exists(), "a fresh admitted store may perform its legacy migration");
+        assert!(fresh_writer.workflow_records().iter().any(|row| row.name == "Unmigrated generation"));
+        let fresh_update = fresh_writer.write_workflow(Some(&callback_workflow.id),
+            "Retained callback workflow", None, "RESTORED_FRESH_BODY");
+        assert!(fresh_update.ok, "{}", fresh_update.message);
+        assert!(fs::read_to_string(&callback_workflow.file_path).unwrap().contains("RESTORED_FRESH_BODY"));
+        let fresh_create = fresh_writer.write_workflow(None, "Fresh restored workflow", None,
+            "FRESH_RESTORED_CREATE_BODY");
+        assert!(fresh_create.ok, "{}", fresh_create.message);
+        let fresh_workflow = fresh_writer.workflow_records().into_iter()
+            .find(|row| row.name == "Fresh restored workflow").unwrap();
+        assert!(fs::read_to_string(&fresh_workflow.file_path).unwrap().contains("FRESH_RESTORED_CREATE_BODY"));
+        assert!(fresh_writer.delete_workflow(&fresh_workflow.id).ok);
+        assert!(!fresh_workflow.file_path.exists());
+        assert!(unaffected_writer.write_workflow(Some(&unaffected_workflow.id),
+            "Unaffected session workflow", None, "UNAFFECTED_AFTER_RESTORE").ok);
+        assert!(fs::read_to_string(&unaffected_workflow.file_path).unwrap().contains("UNAFFECTED_AFTER_RESTORE"));
+
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn bound_runner_workflow_mutations_refuse_missing_and_malformed_admission() {
+        let root = temp_root("runner-workflow-admission-identity");
+        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let session = SandAgentSessionStore::new(Arc::clone(&workers));
+        let agent = session.create_session(None, "user", None).unwrap();
+        let controller = Arc::new(SandLocalToolPermissionController::production(Arc::new(
+            SettingsService::new(root.join("settings.json")),
+        )));
+        let composition = HostRunnerComposition::production(controller, Arc::clone(&workers));
+        let writer = composition.compose_turn_state_surfaces(
+            Arc::clone(&workers), &agent.id, false, false, None,
+        ).unwrap().state_writer.unwrap();
+        assert!(writer.write_workflow(None, "Bound workflow", None, "BOUND_ORIGINAL_BODY").ok);
+        let records_before = writer.workflow_records();
+        let workflow = records_before.iter().find(|row| row.name == "Bound workflow").unwrap();
+        let bytes_before = fs::read(&workflow.file_path).unwrap();
+        let admission = workers.read_session_work_admission(&agent.id).unwrap().unwrap();
+        let legacy = root.join("agents").join(&agent.id).join("workflows/unmigrated-bound");
+        fs::create_dir_all(&legacy).unwrap();
+        let legacy_file = legacy.join(LEGACY_WORKFLOW_FILENAME);
+        let legacy_before = "---\nname: Unmigrated bound\n---\nLEGACY_MUST_STAY\n";
+        fs::write(&legacy_file, legacy_before).unwrap();
+
+        // Corrupt the actual durable authority; no alternate admission model is used.
+        let control = rusqlite::Connection::open(workers.session_db_path(&agent.id).unwrap()).unwrap();
+        let mut faults: Vec<(&str, Option<String>)> = vec![
+            ("missing", None),
+            ("invalid JSON", Some("not-json".into())),
+        ];
+        for (field, value) in [
+            ("sessionId", "another-agent"),
+            ("sessionKey", "agent:another-agent:main"),
+            ("sessionKey", ""),
+            ("lifecycleRevision", ""),
+        ] {
+            let mut malformed = serde_json::to_value(&admission).unwrap();
+            malformed[field] = json!(value);
+            faults.push((field, Some(malformed.to_string())));
+        }
+        for (label, raw) in faults {
+            control.execute("DELETE FROM kv WHERE key = 'sessionWorkAdmission'", []).unwrap();
+            if let Some(raw) = raw {
+                control.execute("INSERT INTO kv (key, value) VALUES ('sessionWorkAdmission', ?1)",
+                    rusqlite::params![raw]).unwrap();
+            }
+            assert!(!writer.write_workflow(None, "Invalid admission create", None,
+                "INVALID_CREATE_MUST_NOT_WRITE").ok, "{label}");
+            assert!(!writer.write_workflow(Some(&workflow.id), "Bound workflow", None,
+                "INVALID_UPDATE_MUST_NOT_WRITE").ok, "{label}");
+            assert!(!writer.delete_workflow(&workflow.id).ok, "{label}");
+            assert!(composition.compose_turn_state_surfaces(
+                Arc::clone(&workers), &agent.id, false, false, None,
+            ).is_err(), "{label}");
+            assert_eq!(fs::read(&workflow.file_path).unwrap(), bytes_before, "{label}");
+            assert_eq!(writer.workflow_records(), records_before, "{label}");
+            assert_eq!(fs::read_to_string(&legacy_file).unwrap(), legacy_before, "{label}");
+            assert!(!root.join("workflows/unmigrated-bound").exists(), "{label}");
+            assert!(!root.join("workflows/invalid-admission-create").exists(), "{label}");
+        }
+
+        // Missing admission stays compatible only for the unbound Session facade.
+        control.execute("DELETE FROM kv WHERE key = 'sessionWorkAdmission'", []).unwrap();
+        let legacy_result = session.create_agent_workflow(&agent.id, &WorkflowSpec {
+            name: "Unbound legacy workflow".into(), description: String::new(),
+            body: "LEGACY_COMPATIBLE_BODY".into(), trigger: None, source_ref: None,
+        }).unwrap();
+        let legacy_workflow = legacy_result.iter()
+            .find(|row| row.name == "Unbound legacy workflow").unwrap();
+        assert!(fs::read_to_string(&legacy_workflow.file_path).unwrap().contains("LEGACY_COMPATIBLE_BODY"));
+        assert!(workers.read_session_work_admission(&agent.id).unwrap().is_none());
+        assert!(!writer.write_workflow(Some(&workflow.id), "Bound workflow", None,
+            "STILL_BOUND_MUST_NOT_WRITE").ok);
+        assert_eq!(fs::read(&workflow.file_path).unwrap(), bytes_before);
+        drop(control);
         workers.shutdown();
         let _ = fs::remove_dir_all(root);
     }

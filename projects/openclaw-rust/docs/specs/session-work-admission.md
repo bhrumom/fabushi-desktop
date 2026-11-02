@@ -1315,6 +1315,65 @@ through the existing migration/transaction owner. Rollback removes the new
 producer bindings while retaining readable state; no rollback may delete an
 outcome-unknown transcript or result.
 
+## Workflow mutation recovery — SWA-WORKFLOW-GENERATION-v1
+
+Decision `SWA-WORKFLOW-01 — FIX / IMPL_BUG` selects the missing Runner
+generation contract below. The failure at `f80b4baca00a999659a8ebfe8ebe92e7d27b6018`,
+Actions `41434802065`, job `125241848734`, first prompted a broader archive-gate
+hypothesis. Contract reinspection rejects that extension: SLD explicitly
+promises deletion-race serialization for shared definition management, and
+PS-LIVE-05 does not add archive policy. Its live-plugin fixture needs the
+promised deletion negative (`TEST_FLAW`); that correction does not close the
+separate retained Runner generation gap. The original archive-refusal and
+unchanged-byte assertions are preserved in an explicit Runner-generation case.
+Implementation base is `f3b8105864a0e215e7918311b2d39cb789e350a4`; fixed U is
+unchanged. This refinement is recorded before revising implementation.
+
+- WFM-01: existing unbound Session workflow definition create/update/remove,
+  enable/disable and import management paths retain their current canonical
+  identity/deletion gate, archive-management behavior, legacy missing-record
+  compatibility, plugin permissions and return shapes. Only a Runner-bound
+  workflow mutation requires a complete captured identity/generation and a
+  current nonarchived record inside the same filesystem/DB boundary before
+  opening a store that can migrate files or entering a mutation.
+- WFM-02: the production non-group Runner state surface obtains the current
+  validated main-session key, lifecycle revision and actual Session-opened
+  workflow store in one existing Session filesystem/DB boundary. Separate
+  admission preflights followed by an unlocked legacy-migrating constructor
+  leave an archive/restore race and are insufficient. Return only immutable
+  identity values and the existing store, not a retained raw DB capability.
+  Its workflow mutator carries those values into the same Session mutation
+  owner, which checks them while holding that boundary. Missing, malformed,
+  archived or replaced admission refuses without entering the store mutation.
+  Archive followed by restore cannot authorize an old retained Runner handle;
+  a freshly composed handle for the restored generation remains usable.
+- WFM-03: reuse `with_agent_admitted_db_mutation` to read the existing SQLite
+  authority while the filesystem boundary is held. Do not recursively call
+  the public Session admission facade, retain a raw DB in the Runner, add a
+  permission map, or broaden the generic gate used by completion/ACK/cleanup.
+  Archive/restore authority itself must remain callable. Group-member turns
+  retain their existing no-state-surface behavior.
+- WFM-04: preserve the original archive-refusal and unchanged-byte assertions
+  in the explicit Runner case, plus the live-plugin fixture's durable deletion
+  fence. Add real-owner controls for stale retained Runner create/update/remove
+  after restore, fresh restored-generation success, missing/malformed bound
+  admission and an unaffected session. Verify refused mutations preserve files.
+  Positive direct-Session management controls remain usable while archived;
+  plugin admission and legacy management controls remain unchanged.
+- WFM-05: freeze the five-path spec/Session facade/Host composition/AgentState
+  and Session contract scope plus the existing shared Host wiring oracle for
+  independent review, then execute the existing
+  locked shipping and selected recovery targets in GitHub Actions only.
+  No schema or dependency changes are required. Rollback restores the known
+  Runner-generation gap; this batch does not claim all other state surfaces, Automation
+  settlement, durable restart or full OCRM acceptance are closed.
+
+`WFM-WIRING-01 — FIX / TEST_FLAW`: the shared source oracle must observe the
+new Session-owned constructor and its existing admission boundary, retaining
+the actual injected-store consumer. It must not require the old unlocked Host
+call spelling or accept a comment-only substitute. This follows the constructor
+repair above and is not an independently observed Actions failure.
+
 ## References
 
 - `projects/openclaw-rust/decisions/2026-11-01-session-work-admission-owner-contract.md`

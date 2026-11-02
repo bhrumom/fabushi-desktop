@@ -1454,6 +1454,126 @@ fn session_facade_delegates_interaction_state_memory_capacity_and_time_zone() {
 }
 
 #[test]
+fn archived_workflow_management_remains_available_under_the_deletion_gate() {
+    fn files_under(path: &std::path::Path) -> std::collections::BTreeMap<std::path::PathBuf, Option<Vec<u8>>> {
+        let mut files = std::collections::BTreeMap::new();
+        if path.is_dir() {
+            files.insert(path.to_path_buf(), None);
+            for entry in fs::read_dir(path).unwrap() {
+                files.extend(files_under(&entry.unwrap().path()));
+            }
+        } else {
+            files.insert(path.to_path_buf(), Some(fs::read(path).unwrap()));
+        }
+        files
+    }
+
+    let root = temp_root("workflow-archive-fence");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let agent = store.create_session(None, "user", None).unwrap();
+    let unaffected = store.create_session(None, "user", None).unwrap();
+    let original = WorkflowSpec {
+        name: "Archived workflow".into(), description: "Original description".into(),
+        body: "ORIGINAL_WORKFLOW_BODY".into(), trigger: None, source_ref: None,
+    };
+    let workflow = store.create_agent_workflow(&agent.id, &original).unwrap()
+        .into_iter().find(|row| row.name == original.name).unwrap();
+    let disabled_spec = WorkflowSpec { name: "Disabled workflow".into(), ..original.clone() };
+    let disabled = store.create_agent_workflow(&agent.id, &disabled_spec).unwrap()
+        .into_iter().find(|row| row.name == disabled_spec.name).unwrap();
+    store.set_agent_workflow_enabled(&agent.id, &disabled.id, false).unwrap();
+    // Unbound management retains its existing migration and shared-definition behavior.
+    let legacy = root.join("agents").join(&agent.id).join("workflows/archived-legacy");
+    fs::create_dir_all(&legacy).unwrap();
+    fs::write(legacy.join("workflow.md"), "---\nname: Archived legacy\n---\nMANAGEMENT_LEGACY_BODY\n").unwrap();
+    let home = root.join("home");
+    let cwd = root.join("cwd");
+    fs::create_dir_all(&home).unwrap();
+    fs::create_dir_all(&cwd).unwrap();
+    fs::write(home.join("CLAUDE.md"), "# Local skill\nLOCAL_MANAGEMENT_BODY\n").unwrap();
+    let admission = production.read_session_work_admission(&agent.id).unwrap().unwrap();
+    let archived = production.transition_session_work_archive(
+        &agent.id, &admission.session_key, &agent.id, Some(&admission.lifecycle_revision),
+        true, Some("contract"), Some("workflow-management-control"), 1_000.0,
+    ).unwrap();
+    let replacement = WorkflowSpec {
+        name: "Archived management".into(), body: "ARCHIVED_MANAGEMENT_BODY".into(),
+        ..original.clone()
+    };
+    let created = store.create_agent_workflow(&agent.id, &replacement).unwrap()
+        .into_iter().find(|row| row.name == replacement.name).unwrap();
+    assert!(fs::read_to_string(&created.file_path).unwrap().contains("ARCHIVED_MANAGEMENT_BODY"));
+    assert!(!legacy.exists());
+    assert!(fs::read_to_string(root.join("workflows/archived-legacy/SKILL.md")).unwrap()
+        .contains("MANAGEMENT_LEGACY_BODY"));
+    store.update_agent_workflow(&agent.id, &workflow.id, &replacement).unwrap();
+    assert!(fs::read_to_string(&workflow.file_path).unwrap().contains("ARCHIVED_MANAGEMENT_BODY"));
+    assert_eq!(store.get_agent_workflow(&unaffected.id, &workflow.id).unwrap().unwrap().body,
+        "ARCHIVED_MANAGEMENT_BODY", "the managed definition is shared across sessions");
+    let disabled_records = store.set_agent_workflow_enabled(&agent.id, &workflow.id, false).unwrap();
+    assert!(!disabled_records.iter().find(|row| row.id == workflow.id).unwrap().is_enabled_for_agent);
+    let enabled_records = store.set_agent_workflow_enabled(&agent.id, &disabled.id, true).unwrap();
+    assert!(enabled_records.iter().find(|row| row.id == disabled.id).unwrap().is_enabled_for_agent);
+    let markdown = store.import_agent_workflow_markdown(&agent.id,
+        "---\nname: Archived import\n---\nMARKDOWN_MANAGEMENT_BODY\n", None).unwrap();
+    assert_eq!(markdown.result.imported.len(), 1);
+    let imported = markdown.workflows.iter()
+        .find(|row| row.id == markdown.result.imported[0].id).unwrap();
+    assert!(fs::read_to_string(&imported.file_path).unwrap().contains("MARKDOWN_MANAGEMENT_BODY"));
+    let source = store.import_agent_workflow_source(&agent.id,
+        "https://example.test/SKILL.md", Some("Archived source")).unwrap();
+    assert_eq!(source.result.imported.len(), 1);
+    assert!(source.workflows.iter()
+        .any(|row| row.source_ref.as_deref() == Some("https://example.test/SKILL.md")));
+    let ported = store.port_agent_local_skills_from(&agent.id, &home, &cwd).unwrap();
+    assert_eq!(ported.result.imported.len(), 1);
+    assert!(ported.result.skipped.is_empty());
+    store.remove_agent_workflow(&agent.id, &created.id).unwrap();
+    assert!(!created.file_path.exists());
+    assert_eq!(production.read_session_work_admission(&agent.id).unwrap(), Some(archived.clone()));
+
+    let unaffected_spec = WorkflowSpec { name: "Unaffected workflow".into(), ..original.clone() };
+    let unaffected_workflow = store.create_agent_workflow(&unaffected.id, &unaffected_spec).unwrap()
+        .into_iter().find(|row| row.name == unaffected_spec.name).unwrap();
+    assert!(fs::read_to_string(&unaffected_workflow.file_path).unwrap().contains("ORIGINAL_WORKFLOW_BODY"));
+    let restored = production.transition_session_work_archive(
+        &agent.id, &admission.session_key, &agent.id, Some(&archived.lifecycle_revision),
+        false, None, None, 2_000.0,
+    ).unwrap();
+    assert_ne!(restored.lifecycle_revision, admission.lifecycle_revision);
+    let workflow_store = store.workflow_store_for(&agent.id).unwrap();
+    let definitions_before = files_under(workflow_store.get_location());
+    let enablement_path = workflow_store.enablement.path();
+    let enablement_before = fs::read(&enablement_path).unwrap();
+    let records_before = workflow_store.list_all();
+    production.begin_agent_delete(&agent.id).unwrap();
+    production.clear_agent_delete_fast_path(&agent.id);
+    let assert_refused = |result: Result<(), String>| {
+        let error = result.expect_err("durable deletion must still refuse workflow management");
+        assert!(error.contains("deletion cleanup"), "{error}");
+        assert_eq!(files_under(workflow_store.get_location()), definitions_before);
+        assert_eq!(fs::read(&enablement_path).unwrap(), enablement_before);
+        assert_eq!(workflow_store.list_all(), records_before);
+    };
+    assert_refused(store.create_agent_workflow(&agent.id, &original).map(|_| ()));
+    assert_refused(store.update_agent_workflow(&agent.id, &workflow.id, &original).map(|_| ()));
+    assert_refused(store.remove_agent_workflow(&agent.id, &workflow.id).map(|_| ()));
+    assert_refused(store.set_agent_workflow_enabled(&agent.id, &workflow.id, true).map(|_| ()));
+    assert_refused(store.import_agent_workflow_markdown(&agent.id,
+        "---\nname: Deleted import\n---\nDELETION_MUST_NOT_WRITE\n", None).map(|_| ()));
+    assert_refused(store.import_agent_workflow_source(&agent.id,
+        "https://example.test/deleted.md", Some("Deleted source")).map(|_| ()));
+    assert_refused(store.port_agent_local_skills_from(&agent.id, &home, &cwd).map(|_| ()));
+    assert_refused(store.port_agent_local_skills(&agent.id).map(|_| ()));
+    production.end_agent_delete(&agent.id).unwrap();
+    store.remove_agent_workflow(&agent.id, &workflow.id).unwrap();
+    assert!(!workflow.file_path.exists());
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn session_facade_delegates_automation_workflow_and_channel_stores() {
     let root = temp_root("stores");
     let production = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));

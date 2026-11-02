@@ -3,6 +3,7 @@ const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 const GENERATED_STREAM: &str = include_str!("../src/runner/generated_agent_turn_stream.rs");
 const TURN_OWNER: &str = include_str!("../src/runner/production_turn_agent_owner.rs");
 const MULTITASK_STATE: &str = include_str!("../src/runner/tools/sand_multitask_todo_tool.rs");
+const SESSION_FACADE: &str = include_str!("../src/extensions/session/agent_session.rs");
 
 fn production_host_source(source: &str) -> Option<&str> {
     const TEST_MODULE: &str = "\n#[cfg(test)]\nmod tests {";
@@ -191,6 +192,50 @@ fn host_runner_composition_owns_transcript_checkpoint_wiring() {
     }
 }
 
+fn runner_workflow_constructor_uses_session_boundary(source: &str) -> bool {
+    let Ok(file) = syn::parse_file(source) else { return false; };
+    let mut methods = file.items.iter().filter_map(|item| {
+        let syn::Item::Impl(item) = item else { return None; };
+        let syn::Type::Path(owner) = item.self_ty.as_ref() else { return None; };
+        (item.trait_.is_none() && owner.path.is_ident("SandAgentSessionStore"))
+            .then_some(item)
+    }).flat_map(|owner| owner.items.iter()).filter_map(|item| {
+        let syn::ImplItem::Fn(method) = item else { return None; };
+        (method.sig.ident == "with_runner_workflow_store").then_some(method)
+    });
+    let Some(method) = methods.next() else { return false; };
+    if methods.next().is_some() { return false; }
+    let [syn::Stmt::Expr(syn::Expr::MethodCall(gate), None)] = method.block.stmts.as_slice()
+        else { return false; };
+    if gate.method != "with_agent_admitted_db_mutation" || gate.args.len() != 2 {
+        return false;
+    }
+    let syn::Expr::Field(receiver) = gate.receiver.as_ref() else { return false; };
+    let syn::Expr::Path(receiver_owner) = receiver.base.as_ref() else { return false; };
+    if !receiver_owner.path.is_ident("self")
+        || !matches!(&receiver.member, syn::Member::Named(name) if name == "production")
+    {
+        return false;
+    }
+    let Some(syn::Expr::Closure(operation)) = gate.args.last() else { return false; };
+    let syn::Expr::Block(body) = operation.body.as_ref() else { return false; };
+    let constructed_inside = body.block.stmts.iter().any(|statement| {
+        let syn::Stmt::Local(local) = statement else { return false; };
+        let syn::Pat::Ident(name) = &local.pat else { return false; };
+        if name.ident != "store" { return false; }
+        let Some(initializer) = &local.init else { return false; };
+        let syn::Expr::Try(initializer) = initializer.expr.as_ref() else { return false; };
+        let syn::Expr::MethodCall(constructor) = initializer.expr.as_ref() else { return false; };
+        let syn::Expr::Path(owner) = constructor.receiver.as_ref() else { return false; };
+        constructor.method == "workflow_store_for" && owner.path.is_ident("self")
+    });
+    let Some(syn::Stmt::Expr(syn::Expr::Call(consume), None)) = body.block.stmts.last()
+        else { return false; };
+    constructed_inside
+        && matches!(consume.func.as_ref(), syn::Expr::Path(path) if path.path.is_ident("operation"))
+        && matches!(consume.args.last(), Some(syn::Expr::Path(path)) if path.path.is_ident("store"))
+}
+
 #[test]
 fn host_runner_composition_owns_turn_state_surface_wiring() {
     for needle in [
@@ -201,7 +246,9 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "group_member_turn: bool",
         "state_writer: None",
         "SandAgentState::new_with_workflow_store(",
-        "sessions.open_workflow_store(agent_id)?",
+        "session_store.open_workflow_store_for_runner(agent_id)?",
+        "&workflow_session_key,",
+        "&workflow_lifecycle_revision,",
         "avatar_box_file_reader: Option<AvatarBoxFileReader>",
         "state = state.with_box_file_reader(reader)",
         "state = state.with_agent_memory_remover(Arc::new(move |memory_id|",
@@ -216,6 +263,18 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
             "HostRunnerComposition missing state-surface responsibility: {needle}"
         );
     }
+    assert!(runner_workflow_constructor_uses_session_boundary(SESSION_FACADE),
+        "Runner workflow construction must execute inside the actual Session admission boundary");
+    let wrong_gate = SESSION_FACADE.replacen(
+        "self.production.with_agent_admitted_db_mutation(agent_id, |owner| {",
+        "self.production.with_agent_filesystem_mutation(agent_id, |owner| {", 1,
+    );
+    assert_ne!(wrong_gate, SESSION_FACADE, "constructor gate counterfactual must change the source");
+    let comment_only = format!(
+        "// self.production.with_agent_admitted_db_mutation(agent_id, |owner| {{\n{wrong_gate}"
+    );
+    assert!(!runner_workflow_constructor_uses_session_boundary(&comment_only),
+        "a comment cannot replace the actual admitted DB boundary");
     // Session admission owns every todo mutation. The production adapter must
     // retain that facade, rather than opening a raw DB for the turn lifetime.
     for needle in [

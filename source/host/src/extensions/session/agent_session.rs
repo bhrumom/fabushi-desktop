@@ -12,6 +12,7 @@ use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::store_db::delete_sand_agent_db_write_generation;
 use crate::storage::folder_id::is_safe_folder_id;
 use crate::transcript_mutation_events::publish_transcript_mutation;
+use crate::extensions::memory::agent_state::AgentWorkflowMutation;
 use crate::extensions::memory::memory_service::FileMemoryStore;
 use crate::extensions::memory::memory_service::{get_project_dir, project_dir_exists};
 use crate::extensions::inference::model_picker_service::{
@@ -1037,16 +1038,108 @@ impl SandAgentSessionStore {
         Ok(self.workflow_store_for(agent_id)?.get(workflow_id))
     }
 
+    /// Capture or recheck Runner admission and construct its actual workflow
+    /// store under the same boundary as archive/restore and directory deletion.
+    /// Store construction may migrate legacy files, so it belongs inside this
+    /// boundary even before the Runner's first explicit mutation.
+    fn with_runner_workflow_store<T>(
+        &self,
+        agent_id: &str,
+        expected_generation: Option<(&str, &str)>,
+        operation: impl FnOnce(String, String, FileWorkflowStore) -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.production.with_agent_admitted_db_mutation(agent_id, |owner| {
+            let record = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "Runner workflow session admission is unavailable".to_string())?;
+            if record.archived_at_ms.is_some() {
+                return Err(format!(
+                    "agent {agent_id} session is archived; Runner workflow mutations are not admitted"
+                ));
+            }
+            if let Some((session_key, lifecycle_revision)) = expected_generation {
+                if record.session_key != session_key
+                    || record.lifecycle_revision != lifecycle_revision
+                {
+                    return Err(format!(
+                        "workflow mutation session admission generation changed for {session_key}"
+                    ));
+                }
+            }
+            let store = self.workflow_store_for(agent_id)?;
+            operation(record.session_key, record.lifecycle_revision, store)
+        })
+    }
+
+    pub(crate) fn open_workflow_store_for_runner(
+        &self,
+        agent_id: &str,
+    ) -> Result<(String, String, FileWorkflowStore), String> {
+        self.with_runner_workflow_store(agent_id, None, |session_key, lifecycle_revision, store| {
+            Ok((session_key, lifecycle_revision, store))
+        })
+    }
+
+    /// Unbound definition management retains its original deletion gate,
+    /// including archived and legacy sessions, without an extra owner read.
+    fn with_admitted_workflow_mutation<T>(
+        &self,
+        agent_id: &str,
+        expected_generation: Option<(&str, &str)>,
+        operation: impl FnOnce(&FileWorkflowStore) -> Result<T, String>,
+    ) -> Result<T, String> {
+        match expected_generation {
+            Some(expected) => self.with_runner_workflow_store(agent_id, Some(expected), |_, _, store| {
+                operation(&store)
+            }),
+            None => self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+                let store = self.workflow_store_for(agent_id)?;
+                operation(&store)
+            }),
+        }
+    }
+
+    fn upsert_agent_workflow(
+        &self,
+        agent_id: &str,
+        workflow_id: Option<&str>,
+        spec: &WorkflowSpec,
+        expected_generation: Option<(&str, &str)>,
+    ) -> Result<Vec<WorkflowRecord>, String> {
+        self.with_admitted_workflow_mutation(agent_id, expected_generation, |store| {
+            let _ = match workflow_id {
+                Some(id) => store.update(id, spec)?,
+                None => store.create(spec)?,
+            };
+            Ok(surface_workflows(store))
+        })
+    }
+
+    pub(crate) fn mutate_agent_workflow_if_generation(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        lifecycle_revision: &str,
+        mutation: &AgentWorkflowMutation,
+    ) -> Result<Vec<WorkflowRecord>, String> {
+        let expected_generation = Some((session_key, lifecycle_revision));
+        match mutation {
+            AgentWorkflowMutation::Upsert { id, spec } => {
+                self.upsert_agent_workflow(agent_id, id.as_deref(), spec, expected_generation)
+            }
+            AgentWorkflowMutation::Remove { id } => {
+                self.remove_agent_workflow_with_generation(agent_id, id, expected_generation)
+            }
+        }
+    }
+
     pub fn create_agent_workflow(
         &self,
         agent_id: &str,
         spec: &WorkflowSpec,
     ) -> Result<Vec<WorkflowRecord>, String> {
-        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
-            let store = self.workflow_store_for(agent_id)?;
-            let _ = store.create(spec)?;
-            Ok(surface_workflows(&store))
-        })
+        self.upsert_agent_workflow(agent_id, None, spec, None)
     }
 
     pub fn update_agent_workflow(
@@ -1055,11 +1148,7 @@ impl SandAgentSessionStore {
         workflow_id: &str,
         spec: &WorkflowSpec,
     ) -> Result<Vec<WorkflowRecord>, String> {
-        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
-            let store = self.workflow_store_for(agent_id)?;
-            let _ = store.update(workflow_id, spec)?;
-            Ok(surface_workflows(&store))
-        })
+        self.upsert_agent_workflow(agent_id, Some(workflow_id), spec, None)
     }
 
     pub fn set_agent_workflow_enabled(
@@ -1080,10 +1169,18 @@ impl SandAgentSessionStore {
         agent_id: &str,
         workflow_id: &str,
     ) -> Result<Vec<WorkflowRecord>, String> {
-        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
-            let store = self.workflow_store_for(agent_id)?;
+        self.remove_agent_workflow_with_generation(agent_id, workflow_id, None)
+    }
+
+    fn remove_agent_workflow_with_generation(
+        &self,
+        agent_id: &str,
+        workflow_id: &str,
+        expected_generation: Option<(&str, &str)>,
+    ) -> Result<Vec<WorkflowRecord>, String> {
+        self.with_admitted_workflow_mutation(agent_id, expected_generation, |store| {
             let _ = store.remove(workflow_id)?;
-            Ok(surface_workflows(&store))
+            Ok(surface_workflows(store))
         })
     }
 

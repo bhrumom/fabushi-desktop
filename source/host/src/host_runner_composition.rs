@@ -133,7 +133,9 @@ impl HostRunnerComposition {
             .parent()
             .map(Path::to_path_buf)
             .ok_or_else(|| "production memory agents root has no sand root parent".to_string())?;
-        let workflows = sessions.open_workflow_store(agent_id)?;
+        let session_store = SandAgentSessionStore::new(Arc::clone(&sessions));
+        let (workflow_session_key, workflow_lifecycle_revision, workflows) =
+            session_store.open_workflow_store_for_runner(agent_id)?;
         let mut state = SandAgentState::new_with_workflow_store(
             sand_root, agent_id.to_string(), workflows,
         )?;
@@ -224,24 +226,18 @@ impl HostRunnerComposition {
         let workflow_agent_id = agent_id.to_string();
         state = state.with_agent_workflow_mutator(Arc::new(move |mutation| {
             let session_store = SandAgentSessionStore::new(Arc::clone(&workflow_sessions));
-            let result = match mutation {
-                AgentWorkflowMutation::Upsert { id, spec } => {
-                    if let Some(id) = id {
-                        session_store
-                            .update_agent_workflow(&workflow_agent_id, &id, &spec)
-                            .map(|_| "Updated workflow.")
-                    } else {
-                        session_store
-                            .create_agent_workflow(&workflow_agent_id, &spec)
-                            .map(|_| "Saved workflow.")
-                    }
-                }
-                AgentWorkflowMutation::Remove { id } => session_store
-                    .remove_agent_workflow(&workflow_agent_id, &id)
-                    .map(|_| "Deleted workflow."),
+            let message = match &mutation {
+                AgentWorkflowMutation::Upsert { id: Some(_), .. } => "Updated workflow.",
+                AgentWorkflowMutation::Upsert { id: None, .. } => "Saved workflow.",
+                AgentWorkflowMutation::Remove { .. } => "Deleted workflow.",
             };
-            match result {
-                Ok(message) => StateWriteResult::success(message),
+            match session_store.mutate_agent_workflow_if_generation(
+                &workflow_agent_id,
+                &workflow_session_key,
+                &workflow_lifecycle_revision,
+                &mutation,
+            ) {
+                Ok(_) => StateWriteResult::success(message),
                 Err(error) => StateWriteResult::failure(format!(
                     "could not update workflow: {error}"
                 )),
