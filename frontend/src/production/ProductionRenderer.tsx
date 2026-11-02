@@ -4267,7 +4267,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
                 entries={entries}
-                hasOlder={transcriptPaginationSnapshot.hasOlder}
+                hasOlder={transcriptPaginationSnapshot.cursor.kind === "more"}
                 isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
                 olderLoadFailed={transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot && transcriptPaginationSnapshot.olderFailure != null}
                 onViewportChanged={bindTranscriptViewport}
