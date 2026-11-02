@@ -99,7 +99,7 @@ import { WindowStatusBadge } from "../recovered/features/window-chrome/status-ba
 import { RootShellNotificationHost } from "../recovered/features/window-chrome/notification-host";
 import { AppAlertHost } from "../recovered/features/window-chrome/app-alert/view";
 import { WorkspaceIndicator } from "../recovered/features/window-chrome/workspace-indicator";
-import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus } from "../recovered/features/window-chrome/model";
+import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus, WINDOW_CHROME_METRICS } from "../recovered/features/window-chrome/model";
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
 import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
@@ -356,6 +356,17 @@ const OVERLAY_FRAME_STYLE = {
   placeItems: "center",
   position: "fixed",
   zIndex: 100
+} as const;
+
+// Plugins must escape the workspace stacking context while leaving the native
+// 52px window-control band reachable. Its old z=100 frame put Close underneath
+// WindowChrome's drag carrier (4999) and the chat header (5000) in short windows.
+const PLUGINS_OVERLAY_FRAME_STYLE = {
+  ...OVERLAY_FRAME_STYLE,
+  inset: `${WINDOW_CHROME_METRICS.controlsBlock}px 0 0`,
+  zIndex: 5002,
+  WebkitAppRegion: "no-drag",
+  "--fabushi-plugins-chrome-block": `${WINDOW_CHROME_METRICS.controlsBlock}px`
 } as const;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2726844-2728320 (Nmt info-pane header)
@@ -4391,7 +4402,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
       {overlay === "hidden-chats" ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={null}><HiddenChatsDialog hiddenAgents={hiddenAgents} isOpen onClose={() => setOverlay(null)} onOpenAgent={(id) => void openAgent(id)} onUnhide={(id) => void unhide(id)} /></Suspense></div> : null}
       {overlay === "settings" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.settings)}><SettingsOverlayErrorBoundary onClose={() => setOverlay(null)}><SettingsDesktopSurface bridge={bridge} computer={settingsComputerMount} coordinatorClient={client} initialSection={settingsSection} isOpen onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} /></SettingsOverlayErrorBoundary></Suspense></div> : null}
-      {overlay === "plugins" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeIsHuman ? null : activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
+      {overlay === "plugins" && bridge != null ? <div style={PLUGINS_OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeIsHuman ? null : activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
       {overlay === "about" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><RecoveredAboutDialog
         bridge={bridge}
         labels={{ copied: UI_TEXT.copied, copyVersionInfo: UI_TEXT.copyVersionInfo, copyright: UI_TEXT.copyright, title: UI_TEXT.title }}

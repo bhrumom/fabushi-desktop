@@ -1180,5 +1180,675 @@
     "complete_product_migration": false,
     "final_shipping_candidate": false,
     "independent_ACCEPT": false
+  },
+  "authority_review": {
+    "kind": "read-only-authority-audit",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 19,
+    "repository": "bhrumom/fabushi-desktop",
+    "fixed_audit_head": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "final_ref_observation_utc": "2026-11-02 20:32:15 UTC",
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "initial_checkpoint": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+    "final_checkpoint": "59b0351133d487ded771f0e23dcecf480813f721",
+    "source_identities": [
+      {
+        "path": "AGENTS.md",
+        "blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+        "blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+        "blob": "da3455bff35978b41027d940213bf3fc6d9a496a",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "docs/specs/fabushi-bot-communication-platform.md",
+        "blob": "93c543fafda43a0f84ecc13808dba9dd2ef71b42",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "blob": "2b3873eb34a5e31ed2460c1a9f6b72df51583694",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "docs/specs/fabushi-deferred-ci-migration.md",
+        "blob": "51b7fbd535fc3e72a9fb2f046214c689506b56c1",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/upstream.lock.json",
+        "blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/inventory/index.json",
+        "blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+        "blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "scripts/tdrp-source-review.mjs",
+        "blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "scripts/validate-tdrp-source-candidate.mjs",
+        "blob": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "scripts/validate-tdrp-revision9-authority.mjs",
+        "blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "scripts/tdrp-nested-pin-identity.mjs",
+        "blob": "175400b628fe02f4a4d73f18ac6af5dc7a631bc3",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": ".github/workflows/tdrp-source-review-contract.yml",
+        "blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+        "blob": "d37247e17c2e965e3116ce3721f79d81da50dd6c",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/inventory/root-mutable-authorities.json",
+        "blob": "cf010d245bdba0bd04090bde807a8f551f4e1f23",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/inventory/root-tool-authorities.json",
+        "blob": "86f6becac9dd094e93181c3a3810eea7ae71539c",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md",
+        "blob": "7e69ee5bc0261a9812bac252c64fa7a0621c9228",
+        "read_at": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+        "unchanged_at_final_checkpoint": true
+      }
+    ],
+    "ledger_read": {
+      "path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "fixed_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+      "final_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
+      "method": "GitHub fetch_file returned empty content for this large file; full exact blobs were then fetched with github_fetch_blob. Counts below come from those full JSON objects.",
+      "source_review_records_unchanged": true,
+      "candidate_record_unchanged": true
+    },
+    "authority": {
+      "normative": "Latest explicit user requirements; FMEP-001 Revision2 sections3-7/12/13; FBCP-001 Revision8 and TDRP-001 Revision10 with their execution and source-review amendments.",
+      "batch_execution": "Coherent production batches are implemented and minimally verified only in GitHub Actions; valid exact-H evidence is reused; final full-scope gates and independent ACCEPT remain separate.",
+      "source_review": "Every frozen source identity needs a disposition; product/mixed/high-risk and uncertain logic requires deep review, generated/dependency inputs and interfaces may use contract review, resources/documentation/tooling use evidenced disposition. Enumeration is not reading or product implementation.",
+      "old_text_precedence": "Historical discovery refs, blanket per-file equal-depth/unread=0 prose and zero-CI Stage-A prose do not override the later FMEP amendment or the user's frozen-U instruction.",
+      "unique_source_authority": {
+        "lock": "projects/telegram-desktop-rust/upstream.lock.json",
+        "inventory": "projects/telegram-desktop-rust/inventory/index.json",
+        "ledger": "projects/telegram-desktop-rust/parity-ledger.json",
+        "rtm": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "build_input_pointer": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json#/rebaseline_candidate",
+        "historical_boundaries": "Old acquisition/mutable/tool root records retain their old upstream and historical-pending-fixed-u-revalidation status; the lock explicitly selects the fixed-U candidate. They are not current closure authorities."
+      },
+      "existing_product_owner_record": "FBCP-NMR-001 and forwarding row record existing ProductionRenderer/ForwardMessageDialog -> Session gateway -> ProductionSessionWorkers -> source-conversation HumanForwardBatch / SandAgentDb transcript-outbox -> authenticated Fabushi service -> same projection. Remote message/resource identity and authorization belong to the service; canonical local state belongs to SandAgentDb; renderer is a projection. FeatureHost and old Telegram paths are not this desktop forwarding authority.",
+      "product_owner_limit": "This task reads authoritative contracts and ledger/dossier ownership records; it does not newly qualify every shipping composition or prove full-product owner uniqueness by runtime execution."
+    },
+    "fixed_source": {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+      "policy": "Frozen exact commit; no floating-upstream reopen.",
+      "root_non_directory_identities": 6895,
+      "recursive_non_directory_identities": 16381,
+      "acquisition_repository_nodes": 41,
+      "acquisition_edges": 40,
+      "direct_gitlinks": 36,
+      "nested_gitlinks_discovered": 4,
+      "nested_gitlinks_resolved": 4,
+      "nested_gitlinks_blocked": 0,
+      "limitation": "These are registered Git-only acquisition facts. External/build/generated/LFS/legal, semantic review and product acceptance remain unclosed. This audit did not rerun acquisition or download its historical artifact.",
+      "inventory_producer": {
+        "head": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+        "run": 41397005716,
+        "artifact": 13118749668,
+        "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+      }
+    },
+    "source_review_state": {
+      "registered": 6,
+      "complete": 2,
+      "pending": 4,
+      "unknown": null,
+      "unread": null,
+      "known_omitted": 0,
+      "responsibility_rows": 184,
+      "unique_responsibility_ids": 184,
+      "recorded_unmapped_responsibilities": 0,
+      "interpretation": "The6/2 counts are actual source_reviews records; complete2 does not mean complete product migration. Four registered pending records have been read according to their dossier but still lack complete responsibility decomposition. Global unknown/unread are unestablished, not zero. Zero mapped-row omissions or unmapped IDs does not prove all16381 source responsibilities exist in the184-row ledger.",
+      "records": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/ui/chat/forward_options_box.h",
+          "object": "65db5fbe067e340e0259a23ae57cda59096ccda0",
+          "category": "mixed-ui",
+          "risk": "high",
+          "review_depth": "deep",
+          "status": "complete",
+          "rationale": "Entire declaration read: coupled sender/caption option state, shared callback and supplied lifetime; mapped to the existing canonical forward privacy responsibility.",
+          "evidence": [
+            "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+          ],
+          "responsibility_ids": [
+            "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+          ]
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
+          "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf",
+          "category": "mixed-ui",
+          "risk": "high",
+          "review_depth": "deep",
+          "status": "complete",
+          "rationale": "Entire implementation and scoped callers read: hiding captions hides names; showing names restores captions; one emitted snapshot and lifetime. Shipping picker and Session policy reuse are recorded separately from test execution and product acceptance.",
+          "evidence": [
+            "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+          ],
+          "responsibility_ids": [
+            "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+          ]
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+          "category": "mixed-ui",
+          "risk": "high",
+          "review_depth": "deep",
+          "status": "pending",
+          "rationale": "Entire file read at fixed U. Full forward/reply draft, destination lifetime and source eligibility obligations still require decomposition and exact responsibility mapping; not credited as complete.",
+          "evidence": [
+            "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+          ],
+          "responsibility_ids": []
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "category": "mixed-ui",
+          "risk": "high",
+          "review_depth": "deep",
+          "status": "pending",
+          "rationale": "Entire file and scoped consumers read. Forced provenance/rich-page eligibility, source removal, typed destination destruction, matching reply/suggestion clearing and delayed cloud-save obligations remain open; source reading alone does not close these mappings.",
+          "evidence": [
+            "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+          ],
+          "responsibility_ids": []
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+          "object": "86865db47439dbce848fc812df2554335d3e004c",
+          "category": "mixed-ui",
+          "risk": "medium",
+          "review_depth": "deep",
+          "status": "pending",
+          "rationale": "Entire declaration read. Complete destination/self/premium-aware terminal feedback and navigation responsibility mapping remains open.",
+          "evidence": [
+            "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+          ],
+          "responsibility_ids": []
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+          "category": "mixed-ui",
+          "risk": "medium",
+          "review_depth": "deep",
+          "status": "pending",
+          "rationale": "Entire implementation read. Saved/self/premium, one/two/many destination feedback and session-window navigation exceed the existing generic settlement count; decomposition and production closure remain open.",
+          "evidence": [
+            "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+          ],
+          "responsibility_ids": []
+        }
+      ]
+    },
+    "build_inputs": {
+      "status": "unaccepted-build-input-observations",
+      "classification_status": "pending-source-review",
+      "lexical_candidate_lines": 333,
+      "text_files_read": 203,
+      "opaque_inputs_unread": 2,
+      "context_observations": 508,
+      "unresolved_ref_observations": 76,
+      "build_time_acquisitions_complete": false,
+      "generated_inputs_complete": false,
+      "lfs_object_closure_complete": false,
+      "legal_review_performed": false,
+      "note": "The2 opaque unread inputs are unrelated to the2 complete source-review records. Lexical export is not semantic classification or current build-source/legal closure."
+    },
+    "schema_and_validator_contract": {
+      "integrated": true,
+      "schema": "source_reviews exact fields/categories/risk/depth/status; complete requires evidence; product/mixed complete requires deep+responsibility links; high risk requires deep; generated/dependency cannot close using disposition alone; candidates explicitly retain null unknown/unread.",
+      "exact_relations": "tdrp-source-review.mjs matches repository/commit/path/object against actual recursive inventory, rejects stale/duplicate records and duplicate IDs/evidence, verifies primary/additional responsibility relations and requires every inventory identity at accepted coverage.",
+      "immutable_upstream": "readFrozenUpstreamCommit uses exact Git commit/tree, not moving branch lookup; nested-pin helper verifies parent/path/repository/commit, so same commit in a different fork is not equivalent provenance.",
+      "candidate": "validate-tdrp-source-candidate.mjs restricts executable verification to GitHub Actions and exact repository/H; verifies pinned artifact metadata, full ZIP/member sizes and digests, complete recursive graph and current source records; output is explicitly unaccepted-candidate-consistent with false product/independent flags.",
+      "accepted": "--require-accepted first rejects any rebaseline_candidate property, including null/false. Acquisition closure requires explicit complete statuses, current root authority, matching fixed U and integer-zero pending counts; false generated/LFS/legal claims remain rejecting. Full review set, zero known omissions/unmapped and exact ledger target-H remain necessary.",
+      "compatibility": "Machine schema remains format_version3/spec_revision9 while normative product TDRP is Revision10. The FMEP-SOURCE-01 fields and gates are present. UI/design fields remain mandatory in the existing schema as FMEP compatibility requires until applicability conditions are implemented; no gate was removed.",
+      "residual_acceptance_work": "The legacy full authority validator still contains historical build-reachability input pins, while current candidate deliberately retains historical roots and open fixed-U observations. Future source acceptance requires actual fixed-U external/build classification and corresponding exact evidence/gate reconciliation; simply deleting candidate markers or setting booleans is insufficient.",
+      "execution_claim": "Source/code inspection only. No validator, schema check or test was executed in this audit."
+    },
+    "current_acceptance": {
+      "baseline_ready": false,
+      "accepted": false,
+      "independent_acceptance": false,
+      "ledger_root_target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
+      "row_execution_scope": "FBCP-NMR-001 scalar execution remains59f5/run41508537631 historical scope; forwarding row remains implemented/pending with no acceptance reviewer. Neither represents H29 full acceptance.",
+      "required_open_work": [
+        "Four registered forward-draft/eligibility/lifecycle/terminal-feedback source mappings",
+        "All other required exact-source dispositions and review depth",
+        "Current external/build/generated/LFS/legal closure",
+        "Full production and real-service scope",
+        "Supported signed packages, installation/update/rollback and full Bot regression",
+        "Final frozen candidate and independent ACCEPT"
+      ]
+    },
+    "concurrent_changes": [
+      {
+        "path": ".github/checkpoint-ledger-ops-round27.json",
+        "before": "75a644d8a58f1e45f97b5ff5ff09572cc653c1a9",
+        "after": "742f7db99e61684df676482d71c4d177dfa8f308"
+      },
+      {
+        "path": ".github/nmr48-ledger-ops.json",
+        "before": "c5d6ac1095eab649c91f844c954c4f1452c439fb",
+        "after": "1bece71443ce187a7d86e7950faf9d09bd45e896"
+      },
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "before": "bdecb7c643330c95a47023c7780573af2c2abc61",
+        "after": "1c2a0ecff28dd998f1ac57a014af6594dc84130b"
+      },
+      {
+        "path": ".github/workflows/nmr48-ledger-object.yml",
+        "before": "847ae9b614f78579cc58601bf2c231243a1ede4b",
+        "after": "964942d70e918cb89a38a0397f065ca4bc974c8a"
+      },
+      {
+        "path": "docs/specs/fbcp-native-message-reconciliation.md",
+        "before": "ed49d6777722882823b260f8cc7bfacfd855511b",
+        "after": "6b1b6822e1501538cff8d465820f0e188527eb5b"
+      },
+      {
+        "path": "frontend/src/recovered/runtime/coordinator-source.ts",
+        "before": "fa5483cc5f6785ab0bfb375f96dd57180b44ac6a",
+        "after": "cfd9d10bfad7db64f41f0bda2bbc0db597c06dbe"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/STATUS.md",
+        "before": "ab8b9e8d98efd259c72dd64f369b6c8fc889874c",
+        "after": "be174f96cdddd60a1fed4199966e71771dc2bebc"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "before": "1e05184dac53648d48e91bc3c507ce223d3469de",
+        "after": "20de1e16a8885af61f6ddf7269b6331416204f74"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/STATUS.md",
+        "before": "1577e226b4fb095decd307ac43c11ad705417e2c",
+        "after": "d4328b1dd8c2531a2ba51fbe4d7631584794c514"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+        "before": "6eef1eac6e2b5fd093d4490357a9b9c262fd49d3",
+        "after": "c018d1208714e9bcb837b756bef2ec86d017c7d8"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json",
+        "before": null,
+        "after": "1c0000437aa79d8194e3f9656b21da78e258b945"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/task20bf-round6-resumed-stable-pagination.json",
+        "before": "cb32ae34f147cc2a3c984e327d4e239fb5687437",
+        "after": "c4b2ded2016a4f30641f601b5e91b0c332c03da5"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/parity-ledger.json",
+        "before": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+        "after": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a"
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "before": "2f322b242605e10b411c14ef768798138b578703",
+        "after": "3a7b85fb2b9079d3bf917dc4bc630290fbe31162"
+      },
+      {
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "before": "60ec639c89373810c3aa46d88dec50c20c18a61a",
+        "after": "f63f3861b8089d75d019d1a65a597ae38abd942c"
+      },
+      {
+        "path": ".github/checkpoint-ledger-ops-round19.json",
+        "before": "5880db4da28c67ffa2d2d9a1405b72e431148853",
+        "after": null
+      },
+      {
+        "path": ".github/workflows/round19-ledger-evidence-object.yml",
+        "before": "b66608c8641a75bf4edaca047e4a65f43131a08c",
+        "after": null
+      }
+    ],
+    "concurrency_effect": "Main stayed unchanged. Checkpoint advanced with production.rs/session integration tests/renderer coordinator/native workflow/RTM/ledger/batch-spec changes. All authority sources listed above stayed identical, and current ledger6/2/null records stayed identical. H29 test evidence does not automatically qualify these newer production changes.",
+    "mutations": {
+      "code": false,
+      "ledger": false,
+      "rtm": false,
+      "remote": false,
+      "new_governance_files": false,
+      "local_executable_validation": false
+    },
+    "artifact_purpose": "Small task-local read receipt for root to incorporate into the existing round receipt; no second progress ledger or normative document."
+  },
+  "coordinator_reply_recovery": {
+    "record": "R19 exact-H renderer reply-kind wiring failure and observed concurrent repair",
+    "repository": "bhrumom/fabushi-desktop",
+    "observed_at": "2026-11-02 20:31:16 UTC",
+    "failed_head": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+    "failed_run_id": 41519648699,
+    "failed_job_id": 125532062536,
+    "failed_job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41519648699/job/125532062536",
+    "classification": "Production schema-to-renderer wiring defect; not an environment cancellation and not a test-count oracle defect.",
+    "actual_results": {
+      "transcript": {
+        "tests": 20,
+        "passed": 20,
+        "failed": 0
+      },
+      "human_cursor": {
+        "tests": 17,
+        "passed": 17,
+        "failed": 0
+      },
+      "production_renderer_compile": "failed TS2741",
+      "forward_settlement_5": "not-run; blocked by compile",
+      "chromium_forward_dialog_16": "not-run; blocked by compile"
+    },
+    "error": "frontend/src/recovered/runtime/coordinator-source.ts(188,7): TS2741; REPLY_CONVERTERS lacks required human-transcript-page key",
+    "contract": {
+      "path": "source/shared/rpc/coordinator.ts",
+      "blob_sha": "231aa38463524e9caab891b26917a454f4eaa248",
+      "response_interface_line": 26,
+      "parser_line": 207,
+      "method_table_line": 293,
+      "parser": "parseCoordinatorHumanTranscriptPageResponse",
+      "method": "getHumanConversationTranscriptTail",
+      "reply_kind": "human-transcript-page"
+    },
+    "failed_mapping": {
+      "path": "frontend/src/recovered/runtime/coordinator-source.ts",
+      "blob_sha": "fa5483cc5f6785ab0bfb375f96dd57180b44ac6a",
+      "map_line": 188
+    },
+    "observed_repair": {
+      "exact_head": "97710c1ba96134a381a020dcdd3ed0e48b9f0f2c",
+      "path": "frontend/src/recovered/runtime/coordinator-source.ts",
+      "blob_sha": "cfd9d10bfad7db64f41f0bda2bbc0db597c06dbe",
+      "import_line": 7,
+      "import": "parseCoordinatorHumanTranscriptPageResponse",
+      "converter_line": 207,
+      "converter": "\"human-transcript-page\": (value) => parseCoordinatorHumanTranscriptPageResponse(value) ?? MALFORMED_REPLY",
+      "validation_run_id": 41519887810,
+      "validation_observed_status": "queued",
+      "validation_conclusion": null,
+      "note": "Already present in live checkpoint from another concurrent writer; auditor and integrator must preserve this change rather than repeat or overwrite it."
+    },
+    "journal": {
+      "exact_head": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+      "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+      "observed_blob_sha": "ad000f575f846d612485aff645f7a1af69eb8424",
+      "expected_blob_match": true,
+      "reconciliation_job_id": 125532062574,
+      "observed_status": "queued",
+      "actual_Human52_and_journal12": "not-run"
+    },
+    "workflow": {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob_sha": "bdecb7c643330c95a47023c7780573af2c2abc61"
+    },
+    "full_failure_log": {
+      "path": "audit-r19/journal29-actions/job-125532062536.log",
+      "decoded_utf8_bytes": 43671,
+      "sha256": "f7cbf99ebc471d288c219f91f87d85cb0a84272aeda197b2ee2582c971559c0f"
+    },
+    "no_old_head_rerun": true,
+    "acceptance": false,
+    "followup_execution": {
+      "source_sha": "97710c1ba96134a381a020dcdd3ed0e48b9f0f2c",
+      "run_id": 41519887810,
+      "job_id": 125532868889,
+      "status": "completed",
+      "conclusion": "success",
+      "actual_counts": {
+        "transcript": 20,
+        "human_cursor": 17,
+        "forward_settlement": 5,
+        "chromium_forward_dialog": 16
+      },
+      "renderer_build": "success",
+      "log_identity": {
+        "key": "recovery-ui",
+        "path": "audit-r19/post29/recovery-ui.log",
+        "bytes": 83212,
+        "sha256": "879622177e8eed9cc1264a21e3653ce5710a24c756a55c4583aefd6f12394660",
+        "git_blob": "e98153a498a46a12211eb9afef04e40c45af6c87"
+      },
+      "limit": "Does not qualify other jobs or later production changes."
+    }
+  },
+  "canonical_ledger_execution": {
+    "source_sha": "59b0351133d487ded771f0e23dcecf480813f721",
+    "ledger_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
+    "run_id": 41520011826,
+    "jobs": [
+      125533295942,
+      125533613718
+    ],
+    "conclusions": [
+      "success",
+      "success"
+    ],
+    "checker_tests": 157,
+    "schema_tests": 37,
+    "candidate": {
+      "status": "unaccepted-candidate-consistent",
+      "source_entries": 16381,
+      "root_entries": 6895,
+      "responsibilities": 184,
+      "source_reviews": 6,
+      "completed_source_reviews": 2,
+      "unknown": null,
+      "unread": null,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false
+    },
+    "log_identities": [
+      {
+        "key": "source-candidate",
+        "path": "audit-r19/post29/source-candidate.log",
+        "bytes": 146051,
+        "sha256": "8f1a47f9b48b4a833c334ded19f29c636ccb9e48b38f0d9255eb4f9b7adff8b9",
+        "git_blob": "75b36d180485f3f890133b941245ebf6450ba4a8"
+      },
+      {
+        "key": "source-contract",
+        "path": "audit-r19/post29/source-contract.log",
+        "bytes": 89829,
+        "sha256": "2d8ac45600f7eb2c0eda82aae17583afdfb03f8951aaf3a2fab5ba1a547210c6",
+        "git_blob": "96490a76c3488439cb0f26e88d5176277d431c83"
+      }
+    ]
+  },
+  "backend_latest_read_only": {
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "main": "687718ce9e0083aa124d29005bcce4051d357919",
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "change_since_013c546": "Only evidence document and specification; no production code changes in compare.",
+    "runs": [
+      {
+        "run_id": 41510852280,
+        "job_id": 125502003031,
+        "actual_counts": {
+          "contracts": 29,
+          "sqlite": 10,
+          "injected_fetch_readiness": 24
+        },
+        "production_job": 125502117517,
+        "production_conclusion": "skipped"
+      },
+      {
+        "run_id": 41510861859,
+        "job_id": 125502035909,
+        "actual_counts": {
+          "contracts": 29,
+          "sqlite": 10,
+          "injected_fetch_readiness": 24
+        },
+        "production_job": 125502139541,
+        "production_conclusion": "skipped"
+      }
+    ],
+    "full_log_identities": [
+      {
+        "key": "backend-pr",
+        "path": "audit-r19/post29/backend-pr.log",
+        "bytes": 46992,
+        "sha256": "89b5ac4190089eeaff01b560272a35152032d063292175755180489a4257fd70",
+        "git_blob": "ddc8e2116ecaf9065878d7f5e3d3203a4a797a74"
+      },
+      {
+        "key": "backend-push",
+        "path": "audit-r19/post29/backend-push.log",
+        "bytes": 46999,
+        "sha256": "95f49070a756522978b0faa78ff4ced42ad1f28ccea8a87c5d8928e2803d2da9",
+        "git_blob": "99d03a716251a51b837a3f7c5218be13f08ef9c2"
+      }
+    ],
+    "writes_merges_deployments_or_real_service_probes_performed": false,
+    "production_qualification": false
+  },
+  "plugins_close_batch": {
+    "requirement": "FPM-UI-CLOSE-01",
+    "problem": "Plugins fixed parent z100 lay below WindowChrome drag z4999 and chat header z5000; historical real package Close awaited the whole test deadline.",
+    "historical_failure_source": "6f770fb00e9f74f787a49a05b82eadebe585d75b",
+    "historical_failure_run": 41365802839,
+    "historical_failure_job": 125025586976,
+    "causality_limit": "Confirmed static stacking/drag boundary conflict; historical capture lacks a hit-test or trace proving sole timeout cause.",
+    "existing_owner": "ProductionRenderer overlay state -> PluginsDesktopSurface synchronous onClose; no new state, permissions or service owner.",
+    "implementation": [
+      "Plugins-only frame begins below WINDOW_CHROME_METRICS.controlsBlock, z5002, explicit no-drag; other overlays preserved.",
+      "Dialog height accounts for reserved window band; Close no-drag.",
+      "Two real Electron pointer cases at1024x684 and1280x900 verify close/reopen with geometry, hit-test, screenshots and bounded failure evidence.",
+      "Packaged Close retains fatal real pointer assertion with10s action timeout and12s Node deadline; flush failure identity before bounded trace/screenshot; persist trace-error and final runtime log.",
+      "Focused checkpoint push workflow runs only two cases with retries0 and enforces2 passed/0 failed/0 skipped/0 flaky."
+    ],
+    "files": [
+      {
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "base_blob": "1f46fbaa9d75e4375298b144f7c505e3f83aa9f5",
+        "authored_blob": "1c527e9f1bf25001eaa000db7b9a1736341f4344"
+      },
+      {
+        "path": "frontend/src/recovered/features/plugins/overlay/browser.css",
+        "base_blob": "2bf5345b56700c8c4c1d890155f0a9d1c7890812",
+        "authored_blob": "1590e2dccf7a1158f102a8433554da1bf8f7ff9f"
+      },
+      {
+        "path": "desktop/e2e/agent-network-responsive.spec.ts",
+        "base_blob": "0954a11147b77275e1dc2043921141f6d397ed3c",
+        "authored_blob": "77f3e036ad582881cc8b1819d4d9402d6456a7e8"
+      },
+      {
+        "path": "desktop/e2e/openbot-packaged-acceptance.spec.ts",
+        "base_blob": "4075f76ec7e4b74e2e219cb3f49e984bd96132a6",
+        "authored_blob": "968c74e42785c492cd90c7b88ec6f99e5f37194b"
+      },
+      {
+        "path": "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md",
+        "base_blob": "325de5754ef1cb2667365447a4ec189a1dcc5bf3",
+        "authored_blob": "b45cbf781bbdb428648f94a23e3c9cc2f96de227"
+      },
+      {
+        "path": ".github/workflows/plugins-window-close.yml",
+        "base_blob": null,
+        "authored_blob": "4f9eb1703e9a85f530777c42c32c96fd755ac8d4"
+      }
+    ],
+    "base_head": "59b0351133d487ded771f0e23dcecf480813f721",
+    "concurrent_renderer_changes_preserved": [
+      "beforeCursor transcript pagination",
+      "transcriptEntriesCorrelate nonce correlation"
+    ],
+    "authored_top_level_tests": 2,
+    "selected_expected_cases": 2,
+    "agent_network_file_total_cases": 3,
+    "packaged_file_total_cases": 1,
+    "local_executable_validation": false,
+    "execution": "pending containing-commit Actions",
+    "signed_package_acceptance": false,
+    "macos_window_controls_limit": "When controls are native and absent from DOM, report reserved-band-geometry-only and nativeButtonActionsExecuted=0; no native button click claim.",
+    "static_review": {
+      "root_review": "no remaining blocking static findings",
+      "independent_review": "no blocking static findings in six files and actual build-host/stage-host dependency chain",
+      "execution_performed": false
+    },
+    "ledger_anchor": "Existing FBCP-NMR-001 test evidence already references this same receipt; this is release regression evidence, not new source-review completion.",
+    "independent_ACCEPT": false
   }
 }
