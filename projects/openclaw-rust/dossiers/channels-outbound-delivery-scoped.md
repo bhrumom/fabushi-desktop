@@ -134,6 +134,34 @@ opaque `wakeForInbound` boundary without a provider-owned thread identity,
 conversation selection contract, and persistence owner would guess the
 missing interface and create an unreviewed routing authority.
 
+### Current internal outbound route — 2026-11-02
+
+At target `e70a72574c108f8b7704eb45e5109875a24eddb9`, direct source tracing
+finds that the real Runner `ProductionSendMessageSink` appends through Session/
+Transcript and sends `deliverToChannel` through `call_host_lane`, while the main
+receiver calls a generic dispatcher without that route. The external Gateway
+handler exists but is not reached by this internal path. The older textual
+presence checks therefore do not establish this shipping Sink-to-delivery edge.
+The bounded repair is specified in
+`docs/specs/channel-outbound-host-lane.md` (`OCRM-CHANNEL-HOST-LANE-DELIVERY-v1`).
+Preserve the existing delivery/router, failure tray and durable wake owners;
+queued acknowledgement is not an accepted transport result. The shared concrete
+handler, internal main receive-arm wiring and five real-owner oracles are now
+authored on integration base `7a0254d4133080877cbfb2d9d4831acb231e673f`, retaining
+incoming atomic Gateway/A2A append, the separate test-compilation repair and
+the existing MCP account-listing retirement work.
+Independent source review and this batch's exact-H execution remain pending.
+
+Fixed-U source for this boundary: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845`,
+`src/infra/outbound/message.ts`, blob
+`5032acef657250cbce6b85435f5215237825163b`, read in full at lines 1–567. Its
+Gateway-owned direct branch avoids re-entering Gateway dispatch, and its result
+types distinguish delivery outcomes. Its idempotent timeout reattachment does
+not authorize replay of the target's String-error transport. This exact file
+read does not upgrade the six historical rows above or imported durable-runtime
+dependencies to current complete review. Those dependencies, real provider
+registration, channel protocols and full acceptance remain open.
+
 ### Inbound debounce implementation slice — 2026-10-31
 
 The existing connector owner now also contains

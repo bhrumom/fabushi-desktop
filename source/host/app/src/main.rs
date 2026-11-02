@@ -1577,6 +1577,23 @@ struct LocalRoutedRunnerDeps {
 }
 
 #[derive(Clone)]
+struct ChannelDeliveryDispatchDeps {
+    delivery: HostChannelDelivery,
+    runner: LocalRoutedRunnerDeps,
+    roster: Arc<ProductionRosterEmit>,
+    wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    #[cfg(test)]
+    completion: Option<mpsc::Sender<ChannelDeliveryWorkerFinished>>,
+}
+
+#[cfg(test)]
+#[derive(Debug)]
+enum ChannelDeliveryWorkerFinished {
+    Delivery { agent_id: String, operation_id: Option<String> },
+    FailureRevival { agent_id: String },
+}
+
+#[derive(Clone)]
 struct ProductionCreatedAgentKickstartRuntime {
     deps: LocalRoutedRunnerDeps,
     roster: Arc<ProductionRosterEmit>,
@@ -2445,6 +2462,8 @@ impl UnifiedGatewayApi {
             marker.delivery_operation_id.clone(),
             marker.session_key.clone(),
             reason,
+            #[cfg(test)]
+            None,
         );
         Ok(())
     }
@@ -3125,6 +3144,17 @@ impl UnifiedGatewayApi {
             eprintln!(
                 "mahayana-host windowed_activation_worker_spawn_failed agent={spawn_agent_id} error={error}"
             );
+        }
+    }
+
+    fn channel_delivery_dispatch_deps(&self) -> ChannelDeliveryDispatchDeps {
+        ChannelDeliveryDispatchDeps {
+            delivery: self.channel_delivery.clone(),
+            runner: self.local_routed_runner_deps(),
+            roster: Arc::clone(&self.roster_emit),
+            wakes: Arc::clone(&self.background_wakes),
+            #[cfg(test)]
+            completion: None,
         }
     }
 
@@ -7314,6 +7344,7 @@ fn queue_channel_delivery_failure(
     delivery_operation_id: Option<String>,
     session_key: Option<String>,
     reason: String,
+    #[cfg(test)] completion: Option<mpsc::Sender<ChannelDeliveryWorkerFinished>>,
 ) {
     let marked_at_ms = started_at_ms() as f64;
     if let Some(operation_id) = delivery_operation_id.as_deref() {
@@ -7368,7 +7399,15 @@ fn queue_channel_delivery_failure(
     if let Err(error) = thread::Builder::new()
         .name(format!("mahayana-channel-failure-{agent_id}"))
         .spawn(move || {
+            #[cfg(test)]
+            let completed_agent_id = worker_agent_id.clone();
             run_channel_failure_revival_worker(deps, roster, worker_wakes, worker_agent_id);
+            #[cfg(test)]
+            if let Some(completion) = completion {
+                let _ = completion.send(ChannelDeliveryWorkerFinished::FailureRevival {
+                    agent_id: completed_agent_id,
+                });
+            }
         })
     {
         let mut state = wakes
@@ -12403,6 +12442,123 @@ fn start_routed_provider_task(
     }))
 }
 
+// The same concrete delivery path serves external Gateway calls and the
+// internal Host lane. This projection carries existing owners only.
+fn dispatch_channel_delivery(
+    dispatch: &ChannelDeliveryDispatchDeps,
+    args: serde_json::Value,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    let agent_id = args
+        .get("agentId")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| GatewayCommandError::BadRequest(
+            "deliverToChannel requires agentId".into(),
+        ))?
+        .to_string();
+    let address_token = args
+        .get("addressToken")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| GatewayCommandError::BadRequest(
+            "deliverToChannel requires addressToken".into(),
+        ))?
+        .to_string();
+    let message = args
+        .get("message")
+        .ok_or_else(|| GatewayCommandError::BadRequest(
+            "deliverToChannel requires message".into(),
+        ))?;
+    let delivery_session_key = args
+        .get("sessionKey")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    let Some(outbound) = build_channel_outbound_message(message) else {
+        return Ok(serde_json::json!({"queued": false}));
+    };
+    let delivery = dispatch.delivery.clone();
+    let deps = dispatch.runner.clone();
+    let roster = Arc::clone(&dispatch.roster);
+    let wakes = Arc::clone(&dispatch.wakes);
+    let worker_agent_id = agent_id.clone();
+    let worker_address = address_token.clone();
+    let delivery_operation_id = outbound.operation_id().map(ToOwned::to_owned);
+    let worker_session_key = delivery_session_key.clone();
+    #[cfg(test)]
+    let completion = dispatch.completion.clone();
+    if let Err(error) = thread::Builder::new()
+        .name(format!("mahayana-channel-delivery-{agent_id}"))
+        .spawn(move || {
+            #[cfg(test)]
+            let completed_agent_id = worker_agent_id.clone();
+            #[cfg(test)]
+            let completed_operation_id = delivery_operation_id.clone();
+            let admission_result = match worker_session_key.as_deref() {
+                Some(session_key) => match deps
+                    .session_workers
+                    .read_session_work_admission(&worker_agent_id)
+                {
+                    Ok(Some(record)) if record.session_key == session_key => deps
+                        .session_workers
+                        .assert_session_work_admission(
+                            &worker_agent_id,
+                            Some(session_key),
+                        ),
+                    Ok(Some(_)) => Err(
+                        "channel delivery session identity changed before dispatch".into(),
+                    ),
+                    Ok(None) => {
+                        Err("channel delivery session admission unavailable".into())
+                    }
+                    Err(error) => Err(error),
+                },
+                None => Ok(()),
+            };
+            if let Err(error) = admission_result
+                .and_then(|_| delivery.deliver(&worker_agent_id, &worker_address, &outbound))
+            {
+                let reason =
+                    humanize_channel_delivery_failure(&worker_address, &error);
+                let mut tray = provider_failure_tray(
+                    &worker_agent_id,
+                    &reason,
+                    started_at_ms() as i64,
+                );
+                tray.title = "Message not delivered".into();
+                deps.trays.push_error(tray);
+                queue_channel_delivery_failure(
+                    deps,
+                    roster,
+                    wakes,
+                    worker_agent_id,
+                    worker_address,
+                    delivery_operation_id,
+                    worker_session_key,
+                    reason,
+                    #[cfg(test)]
+                    completion.clone(),
+                );
+            }
+            #[cfg(test)]
+            if let Some(completion) = completion {
+                let _ = completion.send(ChannelDeliveryWorkerFinished::Delivery {
+                    agent_id: completed_agent_id,
+                    operation_id: completed_operation_id,
+                });
+            }
+        })
+    {
+        return Err(GatewayCommandError::Internal(format!(
+            "could not start channel delivery worker: {error}"
+        )));
+    }
+    return Ok(serde_json::json!({"queued": true}));
+}
+
 impl GatewayApi for UnifiedGatewayApi {
     fn authenticate_device_token(
         &self,
@@ -12470,100 +12626,7 @@ impl GatewayApi for UnifiedGatewayApi {
             return self.call_openclaw_gateway_command(method, args);
         }
         if method == "deliverToChannel" {
-            let agent_id = args
-                .get("agentId")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .ok_or_else(|| GatewayCommandError::BadRequest(
-                    "deliverToChannel requires agentId".into(),
-                ))?
-                .to_string();
-            let address_token = args
-                .get("addressToken")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .ok_or_else(|| GatewayCommandError::BadRequest(
-                    "deliverToChannel requires addressToken".into(),
-                ))?
-                .to_string();
-            let message = args
-                .get("message")
-                .ok_or_else(|| GatewayCommandError::BadRequest(
-                    "deliverToChannel requires message".into(),
-                ))?;
-            let delivery_session_key = args
-                .get("sessionKey")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(ToOwned::to_owned);
-            let Some(outbound) = build_channel_outbound_message(message) else {
-                return Ok(serde_json::json!({"queued": false}));
-            };
-            let delivery = self.channel_delivery.clone();
-            let deps = self.local_routed_runner_deps();
-            let roster = Arc::clone(&self.roster_emit);
-            let wakes = Arc::clone(&self.background_wakes);
-            let worker_agent_id = agent_id.clone();
-            let worker_address = address_token.clone();
-            let delivery_operation_id = outbound.operation_id().map(ToOwned::to_owned);
-            let worker_session_key = delivery_session_key.clone();
-            if let Err(error) = thread::Builder::new()
-                .name(format!("mahayana-channel-delivery-{agent_id}"))
-                .spawn(move || {
-                    let admission_result = match worker_session_key.as_deref() {
-                        Some(session_key) => match deps
-                            .session_workers
-                            .read_session_work_admission(&worker_agent_id)
-                        {
-                            Ok(Some(record)) if record.session_key == session_key => deps
-                                .session_workers
-                                .assert_session_work_admission(
-                                    &worker_agent_id,
-                                    Some(session_key),
-                                ),
-                            Ok(Some(_)) => Err(
-                                "channel delivery session identity changed before dispatch".into(),
-                            ),
-                            Ok(None) => {
-                                Err("channel delivery session admission unavailable".into())
-                            }
-                            Err(error) => Err(error),
-                        },
-                        None => Ok(()),
-                    };
-                    if let Err(error) = admission_result
-                        .and_then(|_| delivery.deliver(&worker_agent_id, &worker_address, &outbound))
-                    {
-                        let reason =
-                            humanize_channel_delivery_failure(&worker_address, &error);
-                        let mut tray = provider_failure_tray(
-                            &worker_agent_id,
-                            &reason,
-                            started_at_ms() as i64,
-                        );
-                        tray.title = "Message not delivered".into();
-                        deps.trays.push_error(tray);
-                        queue_channel_delivery_failure(
-                            deps,
-                            roster,
-                            wakes,
-                            worker_agent_id,
-                            worker_address,
-                            delivery_operation_id,
-                            worker_session_key,
-                            reason,
-                        );
-                    }
-                })
-            {
-                return Err(GatewayCommandError::Internal(format!(
-                    "could not start channel delivery worker: {error}"
-                )));
-            }
-            return Ok(serde_json::json!({"queued": true}));
+            return dispatch_channel_delivery(&self.channel_delivery_dispatch_deps(), args);
         }
 
         if method == "resumeAfterRecreate" {
@@ -14295,9 +14358,13 @@ fn dispatch_gateway_call(
     host: &UnifiedAppHost,
     forever_box: &ForeverBoxService,
     attachments: &AttachmentsService,
+    channel_delivery: &ChannelDeliveryDispatchDeps,
     method: &str,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
+    if method == "deliverToChannel" {
+        return dispatch_channel_delivery(channel_delivery, args);
+    }
     if let Some(result) = dispatch_mini_app_management(host, method, &args) {
         return result;
     }
@@ -17023,10 +17090,12 @@ fn main() {
     });
     drop(host_tx);
 
+    let channel_delivery_dispatch = gateway_api.channel_delivery_dispatch_deps();
+
     while let Ok(request) = host_rx.recv() {
         match request {
             HostLaneRequest::Gateway { method, args, reply } => {
-                let _ = reply.send(dispatch_gateway_call(&host, &forever_box, &attachments_service, &method, args));
+                let _ = reply.send(dispatch_gateway_call(&host, &forever_box, &attachments_service, &channel_delivery_dispatch, &method, args));
             }
             HostLaneRequest::StdinClosed => break,
             HostLaneRequest::Stdin(line) => {
@@ -17118,6 +17187,9 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    #[path = "channel_host_lane_tests.rs"]
+    mod channel_host_lane_tests;
+
     use super::{
         BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBrowserUaLog,
         ProductionHostExtensions, ProductionRunnerRequestContextSource, UnifiedGatewayApi,

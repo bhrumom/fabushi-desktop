@@ -208,6 +208,11 @@ jobs:
               tests::channel_inbound_runner_admission_refuses_changed_binding_and_releases_work \
               tests::channel_inbound_reply_nudge_keeps_generation_after_real_session_settlement \
               tests::channel_inbound_displayed_redrive_refuses_archive_restore_without_rebinding \
+              tests::channel_host_lane_tests::channel_send_host_lane_reaches_existing_delivery_owner_once \
+              tests::channel_host_lane_tests::channel_send_host_lane_failure_reaches_tray_and_pending_wake \
+              tests::channel_host_lane_tests::channel_send_host_lane_unregistered_provider_uses_existing_failure_owner \
+              tests::channel_host_lane_tests::channel_send_host_lane_returns_before_transport_and_preserves_fallback \
+              tests::channel_host_lane_tests::channel_send_host_lane_preserves_projection_noop_and_no_retry \
               tests::post_turn_compaction_cancelled_summaries_preserve_session \
               tests::post_turn_compaction_cancellation_between_phases_and_before_commit_preserves_session \
               tests::post_turn_compaction_provider_failures_commit_fitted_degraded_fallback \
@@ -402,6 +407,10 @@ jobs:
               "channel_idle_handoff_contract": "OCRM-CHANNEL-IDLE-HANDOFF-v1",
               "shipping_channel_handoff_tests": ["tests::channel_inbound_drain_idle_predecessor_preserves_successor_ownership", "tests::channel_inbound_drain_nonempty_pause_keeps_existing_cleanup_and_queue_order"],
               "channel_idle_handoff_result": "passed",
+              "channel_host_lane_delivery_contract": "OCRM-CHANNEL-HOST-LANE-DELIVERY-v1",
+              "channel_host_lane_delivery_tests": ["tests::channel_host_lane_tests::channel_send_host_lane_reaches_existing_delivery_owner_once", "tests::channel_host_lane_tests::channel_send_host_lane_failure_reaches_tray_and_pending_wake", "tests::channel_host_lane_tests::channel_send_host_lane_unregistered_provider_uses_existing_failure_owner", "tests::channel_host_lane_tests::channel_send_host_lane_returns_before_transport_and_preserves_fallback", "tests::channel_host_lane_tests::channel_send_host_lane_preserves_projection_noop_and_no_retry"],
+              "channel_host_lane_delivery_result": "passed",
+              "channel_host_lane_delivery_scope": "Real SendMessage/Session SQLite, Host lane and concrete shipping dispatcher reach the existing delivery/router and failure owners. Controlled external transport covers exact identity, lane availability, durable failure retention and no blind retry. Queued acknowledgment is not transport delivery. Real provider registration, services, restart reconciliation and full channel acceptance remain open.",
               "fresh_transcript_append_contract": "SESSION-FRESH-APPEND-v1",
               "shipping_channel_commit_tests": ["tests::channel_inbound_commit_preserves_all_messages_before_continuation", "tests::channel_inbound_commit_failure_never_enters_continuation"],
               "fresh_transcript_append_result": "passed",
