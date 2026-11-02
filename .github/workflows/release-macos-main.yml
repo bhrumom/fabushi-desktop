@@ -418,16 +418,18 @@ jobs:
           node .github/scripts/validate-apple-ticket.mjs "$app"
           spctl --assess --type execute --verbose=4 "$app"
 
-      - name: Verify desktop updater metadata
+      - name: Reconcile and verify final stapled update metadata
         shell: bash
         env:
           VERSION: ${{ steps.source.outputs.version }}
+          TARGET_SHA: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
-          metadata="desktop/release/latest-mac.yml"
-          test -s "$metadata"
-          grep -F "fabushi-${VERSION}-macos-arm64.zip" "$metadata"
-          find desktop/release -maxdepth 1 -type f -name '*.blockmap' -size +0c -print -quit | grep -q .
+          node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory desktop/release --version "$VERSION" --target-sha "$TARGET_SHA" \
+            --receipt "$RUNNER_TEMP/fabushi-final-macos-metadata.json"
+          node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory desktop/release --version "$VERSION" --target-sha "$TARGET_SHA" --verify
 
       - name: Bind packaged candidate executable
         id: candidate
@@ -668,6 +670,7 @@ jobs:
             desktop/release/*.zip
             desktop/release/*.blockmap
             desktop/release/latest-mac.yml
+            ${{ runner.temp }}/fabushi-final-macos-metadata.json
             desktop/release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 90

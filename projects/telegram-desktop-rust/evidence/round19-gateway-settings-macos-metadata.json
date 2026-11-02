@@ -1,0 +1,410 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 19,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "accepted": false
+  },
+  "base_sha": "5281b87d878c9223dc9cd1c100c0f56186c81173",
+  "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "execution_environment": "GitHub Actions only; no local build/test/lint/generator/schema/package execution",
+  "initial_workspace": "No pre-existing source checkout or tracked work was present. Exact-H files were acquired through GitHub; original snapshots retained. No other session work overwritten.",
+  "prior_exact_head": {
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "5281b87d878c9223dc9cd1c100c0f56186c81173",
+    "run_id": 41460570824,
+    "final_status_pending": false,
+    "complete_logs": {
+      "reconciliation": {
+        "job_id": 125328236617,
+        "status": "completed",
+        "conclusion": "success",
+        "file": "reconciliation-125328236617.log",
+        "sha256": "8c6bbc790d1bceb23bd4b0c8ddb5c4de6a21a71a31e99f4c596d4dbf90e07aea",
+        "tests": [
+          {
+            "suite": "Human",
+            "passed": 33,
+            "failed": 0,
+            "ignored": 0,
+            "summary_line": 871
+          },
+          {
+            "suite": "Agent nonce",
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "summary_line": 1295
+          },
+          {
+            "suite": "private credential settlement",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "summary_line": 1702
+          }
+        ],
+        "complete_log_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125328236617/logs",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41460570824/job/125328236617"
+      },
+      "ui": {
+        "job_id": 125328237237,
+        "status": "completed",
+        "conclusion": "success",
+        "file": "ui-125328237237.log",
+        "sha256": "2d6ceaa4918e3d977cedb5cfccfafc006dfd57cffcb97ab1642413838a995c36",
+        "tests": 16,
+        "passed": 16,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summary_line": 306,
+        "renderer_build": "success; boundary passed across 45 emitted text assets",
+        "complete_log_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125328237237/logs",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41460570824/job/125328237237"
+      },
+      "electron": {
+        "job_id": 125328236895,
+        "status": "completed",
+        "conclusion": "success",
+        "file": "electron-125328236895.log",
+        "sha256": "1cbea42f217bbb5b8f533d6fab5b43311dcfa803ce3b96d3f252ed541644b9c6",
+        "tests": [
+          {
+            "suite": "carrier",
+            "passed": 10,
+            "failed": 0,
+            "skipped": 0
+          },
+          {
+            "suite": "Native auth retention",
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0
+          },
+          {
+            "suite": "resource fixtures",
+            "passed": 3,
+            "failed": 0,
+            "skipped": 0
+          }
+        ],
+        "main_preload_carrier_build": "success",
+        "complete_log_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125328236895/logs",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41460570824/job/125328236895"
+      },
+      "shipping": {
+        "job_id": 125328237120,
+        "status": "completed",
+        "conclusion": "failure",
+        "file": "shipping-125328237120.log",
+        "sha256": "626d835be2fa5ae93ed682a058f1357837b62e72643b29f338627dd026d8aada",
+        "failure": {
+          "classification": "IMPL_BUG",
+          "step": 10,
+          "code": "E0004",
+          "path": "source/mahayana/mahayana-rs/mahayana-gateway/src/lib.rs",
+          "source_line": 290,
+          "description": "RuntimeProjection::project is not exhaustive for RuntimeEvent::TurnStateChanged",
+          "log_lines": [
+            6533,
+            6557
+          ],
+          "exit_code": 101
+        },
+        "tests": [
+          {
+            "suite": "AppHost composition",
+            "passed": 12,
+            "failed": 0,
+            "ignored": 0,
+            "summary_line": 2672
+          },
+          {
+            "suite": "Native process harness",
+            "passed": 6,
+            "failed": 0,
+            "ignored": 0,
+            "summary_line": 3280,
+            "child_subprocess_summaries": 16,
+            "note": "Do not add child invocations to the six top-level tests."
+          },
+          {
+            "suite": "FeatureHost messaging",
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0,
+            "summary_line": 3947,
+            "note": "Expected poisoned-owner panic at line3938 is caught by the successful test."
+          },
+          {
+            "suite": "Host legacy handoff",
+            "passed": 6,
+            "failed": 0,
+            "ignored": 0,
+            "summary_line": 4504
+          },
+          {
+            "suite": "C ABI legacy handoff",
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0,
+            "summary_line": 5014
+          }
+        ],
+        "executed_negatives": [
+          "AppHost normal/build dependency exclusion",
+          "AppHost legacy defined symbol exclusion",
+          "AppHost linked legacy library exclusion",
+          "CLI/gateway normal/build dependency exclusion before CLI compilation"
+        ],
+        "not_executed": [
+          "CLI three direct Host tests",
+          "gateway executable five tests",
+          "gateway approval two tests",
+          "generic Host direct dependency gate (step11 skipped)",
+          "DNS/special-config six tests",
+          "future-salts two tests",
+          "protocol122",
+          "TCP9 including live service",
+          "proxy4",
+          "Native credential1",
+          "NMR-40 actual binary resource copy four tests and two negative inputs"
+        ],
+        "diagnostic_lock_update_applied": false,
+        "complete_log_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125328237120/logs",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41460570824/job/125328237120"
+      }
+    },
+    "artifact_metadata": {
+      "total_count": 4,
+      "artifacts": [
+        {
+          "id": 13150530268,
+          "name": "native-message-shipping-compile-5281b87d878c9223dc9cd1c100c0f56186c81173",
+          "digest": "sha256:0dda5e4ba10a7951338aeca89fca100f7010208dbbedf497fa00cf8d0f600cc0",
+          "size_in_bytes": 40658313,
+          "expired": false,
+          "head_sha": "5281b87d878c9223dc9cd1c100c0f56186c81173",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41460570824/artifacts/13150530268"
+        },
+        {
+          "id": 13149935385,
+          "name": "native-message-reconciliation-5281b87d878c9223dc9cd1c100c0f56186c81173",
+          "digest": "sha256:3e95dfd6b4b9bae9b043d0ef77212f2543a7ff99d3336cdd10324b36096928af",
+          "size_in_bytes": 15161,
+          "expired": false,
+          "head_sha": "5281b87d878c9223dc9cd1c100c0f56186c81173",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41460570824/artifacts/13149935385"
+        },
+        {
+          "id": 13149041096,
+          "name": "native-message-ui-5281b87d878c9223dc9cd1c100c0f56186c81173",
+          "digest": "sha256:f8ece42edd4fbf0a24f24ef85b13af97b7e36c2de6353231ace4464131c111a7",
+          "size_in_bytes": 3021,
+          "expired": false,
+          "head_sha": "5281b87d878c9223dc9cd1c100c0f56186c81173",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41460570824/artifacts/13149041096"
+        },
+        {
+          "id": 13148178628,
+          "name": "native-message-electron-5281b87d878c9223dc9cd1c100c0f56186c81173",
+          "digest": "sha256:a25720c2c5acb6d22f2bd6e0424fb7ddfba1b94a80db56311303b137a2a9c21a",
+          "size_in_bytes": 3365,
+          "expired": false,
+          "head_sha": "5281b87d878c9223dc9cd1c100c0f56186c81173",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41460570824/artifacts/13148178628"
+        }
+      ]
+    },
+    "source_review": {
+      "classification": "TEST_FLAW",
+      "path": "source/mahayana/mahayana-rs/mahayana-gateway/src/lib.rs",
+      "base_blob": "64db21de9b900d021b34e3dc97d60f9e0a3a26be",
+      "problem": "Unknown-decision test inspected ordinary execute commands but resolve_approval calls were not recorded.",
+      "remedy": "Record approval_calls and assert exact single canonical call for eight supported inputs and zero approval/ordinary calls for nine invalid/missing inputs.",
+      "spec": "NMR-42 / NMR-AC-33",
+      "production_change": false,
+      "local_test_execution": false,
+      "validation_status": "not-run until parent exact-H Actions",
+      "diff": "gateway-oracle.patch"
+    },
+    "status": "completed",
+    "conclusion": "failure",
+    "completed_at": "2026-11-02T14:25:13Z"
+  },
+  "changes": {
+    "NMR-41": {
+      "owner": "existing ProductProxySettings / ProductSettingsOwner",
+      "test": "product_proxy_remove_preserves_surviving_preference_identity_and_order",
+      "ordered_subsets": 16,
+      "complete_permutations": 6,
+      "removal_cases": 48,
+      "complete_permutation_removals": 18,
+      "repeated_no_ops": 48,
+      "oracle": "surviving endpoint identities and priority, whole repeated-removal state, selection and mode; not a reproduction of index arithmetic",
+      "expected_composition_tests": 12,
+      "validation_status_at_preparation": "not-run"
+    },
+    "NMR-42": {
+      "classification": "TEST_FLAW",
+      "owner": "existing gateway dispatcher",
+      "positive_input_variants": 8,
+      "negative_input_variants": 9,
+      "oracle": "independent resolve_approval call trace; exact one valid call / zero invalid calls and no ordinary execute",
+      "validation_status_at_preparation": "not-run"
+    },
+    "NMR-43": {
+      "classification": "IMPL_BUG",
+      "owner": "existing desktop packaging scripts and release-macos-main workflow",
+      "problem": "post-staple metadata and blockmaps described pre-staple bytes",
+      "implementation": "locked external blockmap generator, complete preflight, final SHA512/size and top-level ZIP metadata, atomic per-file replacement, final reread/rebuild verification, separate receipt, unchanged package bytes",
+      "synthetic_behavior_tests": 15,
+      "real_historical_archive_experiment": "digest-bound temporary copy; reject stale asset metadata, reconcile and verify without installer execution or publication",
+      "validation_status_at_preparation": "not-run"
+    },
+    "NMR-44": {
+      "classification": "IMPL_BUG",
+      "owner": "existing RuntimeProjection::project",
+      "failure": "E0004 for TurnStateChanged",
+      "implementation": "explicit lifecycle arm preserves existing gateway wire with no fabricated semantic events, replay increment, cleanup or mapping resurrection; canonical raw RuntimeEvent remains authority",
+      "new_behavior_tests": 3,
+      "lifecycle_states": 11,
+      "expected_gateway_library_tests": 11,
+      "full_native_lifecycle_wire": "not implemented by this compatibility recovery",
+      "validation_status_at_preparation": "not-run"
+    }
+  },
+  "historical_package": {
+    "run_id": 41327420143,
+    "job_id": 124910185631,
+    "workflow_head_sha": "9993ca8e107f7e019a8201e5ab74fa54e82159f2",
+    "actual_package_source_sha_from_full_log": "9d16483f70df9af06db97b17bb02a24dc507e459",
+    "artifact_id": 13093546572,
+    "artifact_size": 349512885,
+    "artifact_digest": "sha256:f17fc29681164e69507d24201c57a58c84651d66a65cc3d0ebf1faeeee0be225",
+    "archive_observation": {
+      "artifact_id": 13093546572,
+      "entries": [
+        {
+          "filename": "fabushi-1.2.78-macos-arm64.dmg",
+          "size": 174156394,
+          "compressed_size": 174156394
+        },
+        {
+          "filename": "fabushi-1.2.78-macos-arm64.dmg.blockmap",
+          "size": 181899,
+          "compressed_size": 181899
+        },
+        {
+          "filename": "fabushi-1.2.78-macos-arm64.zip",
+          "size": 174991227,
+          "compressed_size": 174991227
+        },
+        {
+          "filename": "fabushi-1.2.78-macos-arm64.zip.blockmap",
+          "size": 182060,
+          "compressed_size": 182060
+        },
+        {
+          "filename": "latest-mac.yml",
+          "size": 519,
+          "compressed_size": 519
+        }
+      ],
+      "text": {
+        "latest-mac.yml": "version: 1.2.78\nfiles:\n  - url: fabushi-1.2.78-macos-arm64.zip\n    sha512: yAF7LZoQUvWk5V4vbEkziyHgnzVdtvhX8X3fUB02daJjzivzeWIy8/mF3y3PlR7UF7JEN+OVpo8vdsOrcaC3nQ==\n    size: 174991227\n  - url: fabushi-1.2.78-macos-arm64.dmg\n    sha512: tDMCHpbD7ywDZibx3fI8B8L6CLoHmkYXNvKKDEhuae06vW1ajhp6wvhfdKAugEQs2JwGd8WKGk5KQ3QRKVDreg==\n    size: 174154251\npath: fabushi-1.2.78-macos-arm64.zip\nsha512: yAF7LZoQUvWk5V4vbEkziyHgnzVdtvhX8X3fUB02daJjzivzeWIy8/mF3y3PlR7UF7JEN+OVpo8vdsOrcaC3nQ==\nreleaseDate: '2026-11-01T17:00:02.582Z'\n"
+      }
+    },
+    "observed_dmg_size_difference": 2143,
+    "sign_notarize_staple_steps": "success in historical run",
+    "packaged_acceptance": "1 failed; 1200000ms timeout; root cause not fully established",
+    "checksums": "step skipped; SHA256SUMS.txt absent from artifact",
+    "shared_package_lock_blob": "1655189b893de0d2d09648bdd37a176cc90a5c8d",
+    "generator_version": "app-builder-lib 26.15.3",
+    "generator_source_commit_read": "512a57ec9bcda593d3e0970bd2b9a33a63beeb57",
+    "current_head_installer": "not present in inspected exact-H Actions collection; not accepted",
+    "newest_public_release_observed": "macos-main-v1.2.77-dc81eac2df50; source dc81eac2df50f6c08ae4daf98988076bfdc956d9; historical only"
+  },
+  "owner_wiring": {
+    "identity": "Fabushi service identity / Native credential; AppHost session is a read-only account projection",
+    "message": "ProductionRenderer -> Session gateway/ProductionSessionWorkers -> FabushiNativeMessagingClient -> authenticated social service -> existing SandAgentDb transcript/outbox -> event/UI projection",
+    "resource_permission_search": "same authorized Session and native service; desktop FeatureHost standalone messaging/blob/access refused before I/O; retained stores are rollback inputs",
+    "cli_gateway": "mahayana-cli main and stdio gateway -> existing MahayanaHost directly; retained C ABI is not their normal/build dependency",
+    "settings": "one ProductSettingsOwner at AppHost; atomic product-settings.json v2 persistence before unavailable carrier publication; no Native proxy transport claim",
+    "packages": "existing release owner after final DMG staple; actual AppHost resource-copy gate still required after previous-H skip",
+    "updater_gap": "entry.ts -> production-binding-providers -> update-wiring -> SandUpdateService; default https://api2.cursor.sh/updates unless explicit override; current darwin path uses Squirrel rather than latest-mac.yml",
+    "external_ffi": "compatibility C ABI and five direct Telegram exports retained; indexed organization searches are incomplete coverage, not absence-of-callers proof; no user data or reader removed"
+  },
+  "backend_read_only": {
+    "repository": "bhrumom/fabushi-backend",
+    "pr": 137,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+    "reviews": 0,
+    "issue_comments": 0,
+    "inline_review_comments": 0,
+    "head_ci": {
+      "runs": [
+        41427235133,
+        41427242843
+      ],
+      "status": "completed/success",
+      "contract_tests": 29,
+      "sqlite_tests": 10,
+      "production_pagination": false
+    },
+    "main_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+    "main_after_id_zero": "handler still rejects afterId <= 0",
+    "latest_observed_formal_deploy": {
+      "run_id": 40047409890,
+      "job_id": 120732189309,
+      "artifact_id": 12542026010,
+      "source_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "worker_version": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "time": "2026-10-24T00:56:44Z",
+      "scope": "historical provenance only, not current live Worker attestation"
+    },
+    "merge_or_deployment_performed": false,
+    "formal_authorization_observed": false,
+    "live_authenticated_pagination": "unverified; requires authorized production accounts, live Worker source/version and multi-page/empty/denial/recovery evidence"
+  },
+  "source_contract": {
+    "inventory_count": 16381,
+    "responsibilities": 183,
+    "source_reviews_present": false,
+    "unknown": null,
+    "unread": null,
+    "acceptance": false,
+    "schema_validator": "FMEP-SOURCE-01 source_reviews and risk/depth gates already supported by canonical schema and validate-tdrp-revision9-authority.mjs; optional for an unaccepted candidate, mandatory at accepted mode. No new review state introduced. Existing Actions source-contract workflow will recheck canonical ledger shape and fail-closed accepted mode."
+  },
+  "independent_source_review": "Second source reviewer inspected helper/tests/workflow paths, generator external-output, receipt and input/harness provenance; no blocking issue identified. This is not executable validation or ACCEPT.",
+  "required_containing_commit_verification": [
+    "native-message-reconciliation: Human33 Agent4 credential3",
+    "native-message-shipping-compile: composition12 with48cases, Native6, FeatureHost7, Host6, C ABI7, CLI3, gateway executable5, full gateway library11, dependency/build/symbol negatives, DNS6, salts2, protocol122, TCP9 including live, proxy4, Native credential1, actual AppHost copy4 and two input-negative controls",
+    "native-message-electron: carrier10/auth8/resources3, metadata15, historical real-package negative/reconciliation, actual Electron build",
+    "native-message-ui: transcript16 and renderer build",
+    "tdrp-source-review-contract: unchanged checker/schema and current ledger/candidate validation"
+  ],
+  "containing_commit_execution": "pending at commit preparation; exact-H Actions artifacts/logs are the execution authority, not authored counts",
+  "remaining_gates": [
+    "full source and legal closure",
+    "all applicable product responsibilities and production wiring",
+    "actual native updater/service integration",
+    "full gateway lifecycle wire where required",
+    "current signed supported-platform installers and installation",
+    "live backend authorization/pagination",
+    "external FFI callers and safe data retirement",
+    "UI/visual/a11y",
+    "complete Bot regression",
+    "upgrade/rollback",
+    "performance/soak",
+    "independent ACCEPT"
+  ],
+  "accepted": false
+}

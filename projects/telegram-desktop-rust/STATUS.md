@@ -5,42 +5,43 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## Current bounded batch (round 16): AppHost dependency and package boundary
+## Current bounded batch (round 19): gateway, proxy preferences and macOS metadata
 
-Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; inspected base
-`adf15caadac5775fdd8582227cad3bbf9c93cf0f` and live main
-`5528062177e3865eef60a073a066cca144f9e3e8`. Main and backend are unchanged.
-Run `41447812811` finished success: complete logs confirm Human33, Agent4,
-private credential3, AppHost composition11, Native6, FeatureHost7, Host6,
-C ABI7, Host direct-dependency negative, normalization6, future-salts2,
-protocol122, TCP9 including live, proxy4, Native credential1, UI16 and
-Electron carrier10/auth8. These qualify that exact base only.
+Fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; inspected checkpoint
+H=5281b87d878c9223dc9cd1c100c0f56186c81173 and live main
+5528062177e3865eef60a073a066cca144f9e3e8. Main and backend are unchanged.
+Run41460570824 completed failure: reconciliation Human33/Agent4/private3,
+UI16, Electron carrier10/auth8/copy3, shipping composition12/Native6/
+FeatureHost7/Host6/ABI7 passed. Shipping then failed at gateway E0004 for
+RuntimeEvent::TurnStateChanged. CLI/gateway executable/approval tests and
+all subsequent shipping gates did not execute.
 
-NMR-38 removes the impossible AppHost Telegram lease and unreachable forwards,
-retaining all twelve explicit refusal routes, registration validation order,
-Native auth/Agent state and Settings persistence/publication semantics. The
-legacy proxy projection dependency is test-only; the independent shipping lock
-prunes only the eight packages made unreachable, with no version upgrades.
-NMR-39 restricts Electron `resources/bin` to its four canonical executable
-names and Windows forms, with nested-file exclusion. Staging files, original
-SQLite/sidecars/keys, retained FeatureHost files and rollback readers are kept.
-The CLI is a real generic C ABI consumer; FFI/direct Telegram exports are not
-deleted or declared globally retired.
+NMR-44 fixes the exhaustive lifecycle match in the existing v1 projection,
+with3 behavioral cases in full gateway lib11. NMR-42 approval tests now
+record real calls:8 valid inputs/four canonical values,9 invalid inputs.
+The existing proxy test covers16 ordered subsets,48 deletions/48 repeated
+no-ops including all6 full permutations. NMR-43 reconciles final post-staple
+ZIP/DMG hashes, sizes and external blockmaps using the locked builder.
+Metadata15 behavior tests and a digest-pinned historical installer-copy
+experiment are authored. Containing-H Actions execution remains pending.
 
-Expanded Native6 behavior tests, three actual locked packager-copy cases and
-the shipping dependency/build/symbol gates are authored. Execution at the
-containing commit is pending at preparation; no local executable validation
-was performed. The single ledger row, owner inventory and RTM retain separate
-implementation, execution and final acceptance states. Preparation and prior-H
-results are in `projects/telegram-desktop-rust/evidence/round16-apphost-package-boundary.json`.
+Historical package source9d16483f70df9af06db97b17bb02a24dc507e459 has a2143-byte
+DMG metadata size discrepancy and failed20-minute packaged acceptance.
+Current-H signed installer acceptance, production updater feed/consumer and
+external C ABI callers remain open. Full evidence and log digests:
+projects/telegram-desktop-rust/evidence/round19-gateway-settings-macos-metadata.json.
+No local executable validation ran. Fixed-U inventory remains16381 identities/
+183 responsibilities, unknown/unread unestablished, source_reviews absent and
+acceptance false. Existing schema/validator enforces FMEP-SOURCE-01, including
+negative accepted mode.
 
-Backend Draft PR #137 remains open/draft at
-`06047d3ea69313ec4cfec58bbee36a7afc9cf007`, without review or formal deployment
-authorization. Its handler29/SQLite10 CI passed, but current production Worker
-SHA/version and real authenticated afterId=0 pagination/empty/denial/recovery
-are unverified. Full source/legal, product scope, supported-platform packages,
-UI/a11y, Native proxy support, complete Bot regression, upgrade/rollback, soak
-and independent ACCEPT remain open. Complete remains false.
+Backend PR137 remains open/draft/unmerged at
+06047d3ea69313ec4cfec58bbee36a7afc9cf007; handler29/SQLite10 CI passed.
+Latest observed formal deployment has historical source33a26692ce2f74e3fdca3940dfc4cbfb3ede151b
+and Worker version3ad1a889-4c28-4344-8472-8c8adc225a3c, not proven live now.
+Live identity/authenticated afterId=0 behavior remain open; no merge/deploy.
+Full source/legal and functional closure, supported platforms, UI/a11y, Bot
+regression, upgrade/rollback, soak and independent ACCEPT remain incomplete.
 
 ## Historical planning snapshot (2026-10-19)
 

@@ -5,6 +5,19 @@ Matrix ID: FQT-RTM-001
 Parent: FBCP-001 Revision 7  
 Updated: 2026-10-07
 
+## Round 19 bounded oracle/execution refresh
+
+Evidence: projects/telegram-desktop-rust/evidence/round19-gateway-settings-macos-metadata.json.
+Base5281/run41460570824 failed at gateway E0004. New containing-H execution and
+independent ACCEPT remain pending; old execution rows below are historical.
+
+| Requirement | Existing owner and oracle | Authored execution gate | Verdict |
+| --- | --- | --- | --- |
+| NMR-41 / AC-32 | ProductSettingsOwner endpoint identity/order, selected/mode, repeat stability |16 orders/48 deletions/48 repeats; all6 permutations within composition12 | Expanded matrix pending |
+| NMR-42 / AC-33 | Direct MahayanaHost and actual approval calls without ordinary dispatch | CLI3, executable5, full lib11;8 positive/9 negative approval inputs | Base compile failed; new execution pending |
+| NMR-43 / AC-34 | Release metadata after stapling agrees with bytes/hash/size/external blockmaps | Metadata15 plus digest-pinned artifact13093546572 copy experiment | Authored; signed candidate acceptance open |
+| NMR-44 / AC-35 | Runtime lifecycle owner; v1 cannot revive interrupted runs/duplicate terminals |3 new lifecycle cases in full lib11 | E0004 repaired; execution pending |
+
 ## Rule
 
 每个 applicable requirement/AC 必须追到 oracle/invariant、test case IDs、execution evidence 与 verdict；test 也必须反查 requirement。`TBD` 仅可 planning，不能 verified/release。

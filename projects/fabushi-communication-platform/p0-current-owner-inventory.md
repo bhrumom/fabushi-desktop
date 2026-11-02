@@ -3,7 +3,7 @@
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Status: evidence snapshot; P0 not yet passed
-Current bounded refresh: round 17, inspected base `23f737faba69b4f60eecb6ec1a031602f87f60dc`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older capture below is historical.
+Current bounded refresh: round19, base5281b87d878c9223dc9cd1c100c0f56186c81173; FBCP r8/TDRP r10/FMEP r2. Older captures below are historical.
 Project: FBCP-001 Revision 2
 Captured: 2026-10-03
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
@@ -50,32 +50,24 @@ projection types are only test inputs. Production Normal/Build graph and actual
 executable symbols must be qualified at the containing commit. The twelve
 legacy auth routes retain explicit errors and do not become another writer.
 
-`mahayana-ffi` still force-links direct Telegram C APIs. Both
-`mahayana-cli/src/main.rs` and `mahayana-cli/src/bin/mahayana-gateway.rs`
-actually consume its generic RuntimeHandle ABI (create/execute/receive,
-interrupt/approval, close/free). Electron launches `source/host/app` through
-process IPC. NMR-39 restricts `resources/bin` to four executable names and
-Windows forms, excluding nested files while preserving original staging.
-External/static/mobile consumers and signed-package acceptance remain open.
+mahayana-ffi retains direct Telegram C exports; external callers remain open.
+Current mahayana-cli/gateway use MahayanaHost directly (NMR-42). The previous
+generic C ABI consumer statement is historical. Electron launches source/host/app
+through process IPC. NMR-39/40 limit copies to canonical binaries; staging,
+data and rollback readers are retained. Base5281/run41460570824 passed
+composition12/Native6/FeatureHost7/Host6/ABI7 but stopped at gateway E0004 before
+CLI/gateway tests and later shipping gates. NMR-44 fixes the v1 lifecycle match
+without introducing a second owner or lifecycle wire frames. Runtime remains
+lifecycle authority; NMR-42 tests now observe actual approval calls.
 
-Settings authority remains `ProductSettingsOwner` and its one
-`product-settings.json` document, reached by the existing Settings/Main/
-Coordinator/AppHost dispatch. No Telegram lease is constructed: the four
-publication-producing operations persist then return the explicit unavailable
-envelope. NMR-41 corrects inherited removal ordering in `ProductProxySettings`
-so removal drops only that endpoint's preference and preserves surviving
-priority. The Native descriptor remains read-only account authority; Settings
-mutations and refusals cannot activate a provider or credential writer.
-
-Base `23f737faba69b4f60eecb6ec1a031602f87f60dc` passed run `41451598911`,
-including all required message, Native6, composition11, FeatureHost7, Host6/
-C ABI7 and package-copy3 gates. Downloaded shipping bytes, normal/build graph,
-C symbols and linked libraries were inspected. NMR-AC-28's expanded matrices,
-NMR-40 actual AppHost resource copy and NMR-41 correction are authored in this
-containing commit and require their own exact-H Actions (composition12,
-Native6, actual-copy4 plus missing-input/hash negatives). Original storage
-open is not forensic read-only: rollback checks use synthetic/authorized
-copies. See `projects/telegram-desktop-rust/evidence/round17-auth-settings-actual-package.json`.
+Proxy preferences remain ProductSettingsOwner state through the existing
+Settings surface/AppHost. Round19 adds all6 permutations to the existing test;
+Native carrier consumption remains open. Final macOS metadata remains owned by
+release-macos-main after stapling. Electron uses SandUpdateService/native binding;
+update-feed.ts defaults to api2.cursor.sh unless explicitly overridden.
+latest-mac.yml generation does not establish production updater/feed closure.
+Round19 receipt: projects/telegram-desktop-rust/evidence/round19-gateway-settings-macos-metadata.json.
+New gates require containing-H Actions; full acceptance remains open.
 
 The inventory was built from the exact PR #20 HEAD, starting at shipping entrypoints and following the production composition paths. Directory/name similarity by itself is not evidence. The paths below are the current owners or production seams that are actually composed by the renderer, Electron main, Coordinator, Host, and Runner.
 

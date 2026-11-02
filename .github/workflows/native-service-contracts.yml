@@ -19,10 +19,13 @@ on:
       - 'desktop/package-lock.json'
       - 'desktop/scripts/build-electron-runtime.mjs'
       - 'desktop/scripts/native-package-resources.contract.test.mjs'
+      - 'desktop/scripts/reconcile-macos-update-metadata*.mjs'
       - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-feature-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-ffi/**'
       - 'source/mahayana/mahayana-rs/mahayana-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-cli/**'
+      - 'source/mahayana/mahayana-rs/mahayana-gateway/**'
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
       - 'source/mahayana/mahayana-rs/providers/telegram-protocol/**'
       - 'source/mahayana/mahayana-rs/providers/telegram-network/**'
@@ -222,6 +225,8 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --lib telegram_composition_contract_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-composition.log
           grep -Eq 'test result: ok\. 12 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/native-composition.log
+          grep -Fx 'NMR-41 proxy preference matrix passed: orders=16 removals=48 repeated_no_ops=48 complete_permutations=6 complete_permutation_removals=18' artifacts/native-message-shipping/native-composition.log
+          test "$(grep -c 'NMR-41 proxy removal passed:' artifacts/native-message-shipping/native-composition.log)" -eq 48
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-startup-retention.log
           grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/native-startup-retention.log
       - name: Retained messaging stores and Agent automation boundaries
@@ -252,8 +257,8 @@ jobs:
           grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/cli-native-owner.log
           cargo test --locked --manifest-path "$manifest" -p mahayana-cli --bin mahayana-gateway -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/gateway-native-owner.log
           grep -Eq 'test result: ok\. 5 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/gateway-native-owner.log
-          cargo test --locked --manifest-path "$manifest" -p mahayana-gateway --lib approval_respond_ -- --nocapture 2>&1 | tee artifacts/native-message-shipping/gateway-approval-dispatch.log
-          grep -Eq 'test result: ok\. 2 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/gateway-approval-dispatch.log
+          cargo test --locked --manifest-path "$manifest" -p mahayana-gateway --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/gateway-contracts.log
+          grep -Eq 'test result: ok\. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/gateway-contracts.log
       - name: Verify generic Host has no direct Telegram adapter dependency
         shell: bash
         run: |
@@ -405,6 +410,9 @@ jobs:
     if: github.event_name == 'push' || inputs.message_batch
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v6
         with:
@@ -456,6 +464,96 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-electron/package-resources.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/package-resources.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/package-resources.log
+      - name: Final macOS update metadata and blockmap behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap desktop/scripts/reconcile-macos-update-metadata.contract.test.mjs 2>&1 | tee artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# tests 15' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# pass 15' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/macos-metadata.log
+      - name: Reconcile immutable historical installer metadata without changing package bytes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HISTORICAL_PACKAGE_SOURCE: 9d16483f70df9af06db97b17bb02a24dc507e459
+          HISTORICAL_ARTIFACT_DIGEST: f17fc29681164e69507d24201c57a58c84651d66a65cc3d0ebf1faeeee0be225
+        run: |
+          set -euo pipefail
+          export MACOS_METADATA_CANDIDATE
+          MACOS_METADATA_CANDIDATE="$(mktemp -d "$RUNNER_TEMP/fabushi-historical-metadata.XXXXXX")"
+          export MACOS_METADATA_ARCHIVE="$RUNNER_TEMP/fabushi-historical-package.zip"
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/13093546572 > artifacts/native-message-electron/historical-artifact.json
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/13093546572/zip > "$MACOS_METADATA_ARCHIVE"
+          python3 - <<'PY'
+          import hashlib, json, os, shutil, zipfile
+          from pathlib import Path
+          evidence = Path('artifacts/native-message-electron')
+          archive = Path(os.environ['MACOS_METADATA_ARCHIVE'])
+          metadata = json.loads((evidence / 'historical-artifact.json').read_text())
+          expected = os.environ['HISTORICAL_ARTIFACT_DIGEST']
+          assert metadata['id'] == 13093546572 and not metadata['expired']
+          assert metadata['workflow_run']['id'] == 41327420143
+          assert metadata['workflow_run']['head_sha'] == '9993ca8e107f7e019a8201e5ab74fa54e82159f2'
+          assert metadata['digest'] == 'sha256:' + expected
+          with archive.open('rb') as handle:
+              assert hashlib.file_digest(handle, 'sha256').hexdigest() == expected
+          names = ['fabushi-1.2.78-macos-arm64.zip', 'fabushi-1.2.78-macos-arm64.dmg']
+          permitted = set(names + [name + '.blockmap' for name in names] + ['latest-mac.yml'])
+          destination = Path(os.environ['MACOS_METADATA_CANDIDATE'])
+          with zipfile.ZipFile(archive) as source:
+              assert len(source.infolist()) == len(permitted) and set(source.namelist()) == permitted
+              for item in source.infolist():
+                  assert not item.is_dir() and item.file_size > 0
+                  with source.open(item) as src, (destination / item.filename).open('xb') as dst:
+                      shutil.copyfileobj(src, dst)
+          assets = []
+          for name in names:
+              asset = destination / name
+              with asset.open('rb') as handle:
+                  digest = hashlib.file_digest(handle, 'sha256').hexdigest()
+              assets.append({'name': name, 'size': asset.stat().st_size, 'sha256': digest})
+          assert assets[0]['size'] == 174991227 and assets[1]['size'] == 174156394
+          shutil.copyfile(destination / 'latest-mac.yml', evidence / 'historical-latest-mac.before.yml')
+          receipt = {'harness_sha': os.environ['GITHUB_SHA'], 'artifact_id': metadata['id'],
+              'archive_sha256': expected, 'package_source_observed_in_job_log': os.environ['HISTORICAL_PACKAGE_SOURCE'],
+              'source_job': 124910185631, 'assets': assets, 'installed_or_released': False}
+          (evidence / 'historical-input.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt))
+          PY
+          if node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory "$MACOS_METADATA_CANDIDATE" --version 1.2.78 \
+            --target-sha "$HISTORICAL_PACKAGE_SOURCE" --verify \
+            > artifacts/native-message-electron/historical-rejection.log 2>&1; then
+            echo 'Stale historical package metadata unexpectedly passed' >&2
+            exit 1
+          fi
+          grep -Fx 'MACOS_METADATA_ASSET_MISMATCH' artifacts/native-message-electron/historical-rejection.log
+          node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory "$MACOS_METADATA_CANDIDATE" --version 1.2.78 \
+            --target-sha "$HISTORICAL_PACKAGE_SOURCE" \
+            --receipt "$GITHUB_WORKSPACE/artifacts/native-message-electron/historical-reconciled.json" \
+            > artifacts/native-message-electron/historical-reconcile.log 2>&1
+          node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory "$MACOS_METADATA_CANDIDATE" --version 1.2.78 \
+            --target-sha "$HISTORICAL_PACKAGE_SOURCE" --verify \
+            > artifacts/native-message-electron/historical-verify.log 2>&1
+          cp "$MACOS_METADATA_CANDIDATE/latest-mac.yml" artifacts/native-message-electron/historical-latest-mac.after.yml
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('artifacts/native-message-electron')
+          before = json.loads((root / 'historical-input.json').read_text())
+          after = json.loads((root / 'historical-reconciled.json').read_text())
+          verified = json.loads((root / 'historical-verify.log').read_text())
+          assert after == verified and after['sourceSha'] == before['package_source_observed_in_job_log']
+          for original in before['assets']:
+              actual = next(item for item in after['assets'] if item['name'] == original['name'])
+              assert actual['size'] == original['size'] and actual['sha256'] == original['sha256']
+          print('NMR-43 historical installer: stale metadata rejected, final maps/hashes verified, ZIP/DMG bytes unchanged; no install or release')
+          PY
       - name: Compile actual Electron main, preload and carrier
         shell: bash
         working-directory: desktop

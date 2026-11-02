@@ -2179,12 +2179,17 @@ mod telegram_composition_contract_tests {
 
     #[test]
     fn product_proxy_remove_preserves_surviving_preference_identity_and_order() {
-        // Exhaust first/middle/last removals for full and partial priority
-        // lists. Assert endpoint identity, not just numeric index validity.
+        // All ordered subsets of three endpoints, including all six complete
+        // permutations. The oracle removes an endpoint identity, without
+        // reproducing the implementation's numeric-index rebasing.
         let preference_orders: &[&[usize]] = &[
-            &[], &[0], &[1], &[2], &[0, 1], &[1, 0],
-            &[1, 2], &[2, 1], &[0, 1, 2], &[2, 1, 0],
+            &[], &[0], &[1], &[2],
+            &[0, 1], &[0, 2], &[1, 0], &[1, 2], &[2, 0], &[2, 1],
+            &[0, 1, 2], &[0, 2, 1], &[1, 0, 2],
+            &[1, 2, 0], &[2, 0, 1], &[2, 1, 0],
         ];
+        let mut completed_cases = 0;
+        let mut complete_permutation_cases = 0;
         for order in preference_orders {
             for removal in 0..3 {
                 let mut proxy = ProductProxySettings::default();
@@ -2195,9 +2200,16 @@ mod telegram_composition_contract_tests {
                 proxy.mode = ProductProxyMode::Enabled;
                 proxy.rotation.preferred_indices = order.to_vec();
                 let removed = proxy.list[removal].clone();
-                let expected = order.iter().filter_map(|&index| {
-                    (index != removal).then(|| proxy.list[index].clone())
-                }).collect::<Vec<_>>();
+                let preferred_endpoints = order.iter()
+                    .map(|&index| proxy.list[index].clone())
+                    .collect::<Vec<_>>();
+                let expected = preferred_endpoints.into_iter()
+                    .filter(|endpoint| endpoint != &removed)
+                    .collect::<Vec<_>>();
+                let expected_list = proxy.list.iter()
+                    .filter(|endpoint| *endpoint != &removed)
+                    .cloned()
+                    .collect::<Vec<_>>();
                 assert!(proxy.apply(ProductProxyMutation::Remove {
                     proxy: removed.clone(),
                 }).expect("remove existing endpoint"));
@@ -2205,6 +2217,7 @@ mod telegram_composition_contract_tests {
                     .map(|&index| proxy.list[index].clone())
                     .collect::<Vec<_>>();
                 assert_eq!(actual, expected, "order={order:?} remove={removal}");
+                assert_eq!(proxy.list, expected_list, "surviving list order");
                 assert_eq!(proxy.selected, Some(proxy_endpoint("b")));
                 assert_eq!(proxy.mode, ProductProxyMode::Enabled);
                 let stable = proxy.clone();
@@ -2212,8 +2225,23 @@ mod telegram_composition_contract_tests {
                     proxy: removed,
                 }).expect("repeat remove is a no-op"));
                 assert_eq!(proxy, stable, "repeat remove must not change state");
+                completed_cases += 1;
+                if order.len() == 3 {
+                    complete_permutation_cases += 1;
+                }
+                // Only fixture indices are logged; endpoint credentials are
+                // never included in this per-case execution evidence.
+                println!(
+                    "NMR-41 proxy removal passed: order={order:?} remove={removal} repeat=no-op"
+                );
             }
         }
+        assert_eq!(completed_cases, 48);
+        assert_eq!(complete_permutation_cases, 18);
+        println!(
+            "NMR-41 proxy preference matrix passed: orders={} removals={completed_cases} repeated_no_ops={completed_cases} complete_permutations=6 complete_permutation_removals={complete_permutation_cases}",
+            preference_orders.len()
+        );
     }
 
     #[test]

@@ -291,6 +291,11 @@ impl RuntimeProjection {
             RuntimeEvent::Ready { .. }
             | RuntimeEvent::Lagged { .. }
             | RuntimeEvent::ProviderDegraded { .. } => Vec::new(),
+            // Gateway v1 has no lifecycle frame. Native lifecycle state remains
+            // authoritative; real message/operation events own this projection.
+            // In particular, a late lifecycle event must not rebind an operation
+            // already retired by interrupt or emit a second completion.
+            RuntimeEvent::TurnStateChanged { .. } => Vec::new(),
             RuntimeEvent::MessageDelta {
                 operation_id,
                 conversation_id,
@@ -772,11 +777,15 @@ fn timestamp_string(timestamp_ms: i64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mahayana_core::{ConversationId, Message, MessageId, OperationId, RuntimeActivityStatus};
+    use mahayana_core::{
+        ApprovalId, ConversationId, Message, MessageId, OperationId, RunId,
+        RuntimeActivityStatus, TurnId, TurnState,
+    };
 
     #[derive(Default)]
     struct MockRuntime {
         commands: Vec<Value>,
+        approval_calls: Vec<(String, String)>,
     }
 
     impl GatewayRuntime for MockRuntime {
@@ -790,6 +799,8 @@ mod tests {
         }
 
         fn resolve_approval(&mut self, approval_id: &str, decision: &str) -> Result<Value, String> {
+            self.approval_calls
+                .push((approval_id.to_string(), decision.to_string()));
             Ok(json!({ "approvalId": approval_id, "decision": decision }))
         }
     }
@@ -937,6 +948,167 @@ mod tests {
         assert!(replay.events.is_empty());
         assert_eq!(replay.latest_seq, 1);
     }
+
+    fn lifecycle_event(operation: &str, state: TurnState, sequence: u64) -> RuntimeEvent {
+        RuntimeEvent::TurnStateChanged {
+            operation_id: OperationId(operation.into()),
+            turn_id: TurnId("logical-turn-1".into()),
+            run_id: RunId(operation.into()),
+            conversation_id: ConversationId("session-1".into()),
+            state,
+            sequence,
+        }
+    }
+
+    #[test]
+    fn lifecycle_projection_preserves_wire_sequence_and_operation_ownership() {
+        for lifecycle in [
+            TurnState::Accepted,
+            TurnState::Queued,
+            TurnState::Preparing,
+            TurnState::Thinking,
+            TurnState::ToolRunning,
+            TurnState::Streaming,
+            TurnState::WaitingUser,
+            TurnState::Completed,
+            TurnState::Failed,
+            TurnState::Cancelled,
+            TurnState::Recovering,
+        ] {
+            let mut state = GatewayState::with_epoch(ReplayLimits::default(), "epoch-test");
+            state.register_turn("run-1", "session-1");
+            state.emit(
+                "session-1", "run-1", 1,
+                GatewayEvent::MessageStart(MessageStartPayload::default()),
+            );
+            let before = state.replay_since("session-1", 0, Some("epoch-test"));
+
+            assert!(state.ingest_runtime_event(&lifecycle_event("run-1", lifecycle, 42), 2).is_empty());
+            assert_eq!(state.replay_since("session-1", 0, Some("epoch-test")), before);
+            assert_eq!(state.projection.session_for_turn("run-1"), Some("session-1"));
+            assert_eq!(state.projection.sessions_by_turn.len(), 1);
+            assert!(state.projection.session_for_turn("logical-turn-1").is_none());
+
+            // Lifecycle alone cannot admit an operation that prompt submission
+            // or an existing semantic event has not registered.
+            assert!(state.ingest_runtime_event(&lifecycle_event("unknown-run", lifecycle, 43), 3).is_empty());
+            assert!(state.projection.session_for_turn("unknown-run").is_none());
+            assert_eq!(state.replay_since("session-1", 0, Some("epoch-test")), before);
+        }
+    }
+
+    #[test]
+    fn lifecycle_projection_waits_for_real_completion_and_failure() {
+        for (lifecycle, message_text) in [
+            (TurnState::Completed, Some("authoritative final text")),
+            (TurnState::Completed, None),
+            (TurnState::Failed, None),
+        ] {
+            let mut state = GatewayState::with_epoch(ReplayLimits::default(), "epoch-test");
+            state.register_turn("run-1", "session-1");
+            let mut projected = Vec::new();
+            if let Some(text) = message_text {
+                projected.extend(state.ingest_runtime_event(&RuntimeEvent::MessageCompleted {
+                    operation_id: OperationId("run-1".into()),
+                    message: Message {
+                        id: MessageId("message-1".into()),
+                        conversation_id: ConversationId("session-1".into()),
+                        role: MessageRole::Assistant,
+                        text: text.into(),
+                        created_at_ms: 1,
+                        metadata: Value::Null,
+                    },
+                }, 1));
+            }
+            let before_terminal = state.replay_since("session-1", 0, Some("epoch-test"));
+            assert!(state.ingest_runtime_event(&lifecycle_event("run-1", lifecycle, 9), 2).is_empty());
+            assert_eq!(state.replay_since("session-1", 0, Some("epoch-test")), before_terminal);
+            assert_eq!(state.projection.session_for_turn("run-1"), Some("session-1"));
+
+            let terminal = if lifecycle == TurnState::Failed {
+                RuntimeEvent::OperationFailed {
+                    operation_id: OperationId("run-1".into()),
+                    code: "provider_error".into(),
+                    message: "actual provider refusal".into(),
+                }
+            } else {
+                RuntimeEvent::OperationCompleted { operation_id: OperationId("run-1".into()) }
+            };
+            projected.extend(state.ingest_runtime_event(&terminal, 3));
+            assert_eq!(projected.len(), 1, "lifecycle must not duplicate semantic completion");
+            assert_eq!(projected[0].session_id, "session-1");
+            assert_eq!(projected[0].turn_id, "run-1");
+            assert_eq!(projected[0].seq, 1);
+            let GatewayEvent::MessageComplete(payload) = &projected[0].event else {
+                panic!("expected the existing semantic completion frame");
+            };
+            if lifecycle == TurnState::Failed {
+                assert_eq!(payload.status, MessageCompletionStatus::Error);
+                assert_eq!(payload.error.as_deref(), Some("provider_error: actual provider refusal"));
+                assert_eq!(payload.partial, Some(true));
+                assert_eq!(payload.recoverable, Some(true));
+            } else {
+                assert_eq!(payload.status, MessageCompletionStatus::Complete);
+                assert_eq!(payload.text.as_deref(), message_text);
+                assert!(payload.error.is_none());
+            }
+            assert!(state.projection.session_for_turn("run-1").is_none());
+            let settled = state.replay_since("session-1", 0, Some("epoch-test"));
+            assert!(state.ingest_runtime_event(&lifecycle_event("run-1", lifecycle, 10), 4).is_empty());
+            assert!(state.ingest_runtime_event(&terminal, 5).is_empty());
+            assert!(state.projection.session_for_turn("run-1").is_none());
+            assert_eq!(state.replay_since("session-1", 0, Some("epoch-test")), settled);
+        }
+    }
+
+    #[test]
+    fn lifecycle_projection_cannot_resurrect_interrupted_run_or_rebind_retry() {
+        let mut state = GatewayState::with_epoch(ReplayLimits::default(), "epoch-test");
+        state.register_turn("run-old", "session-1");
+        state.emit("session-1", "run-old", 1, GatewayEvent::MessageStart(MessageStartPayload::default()));
+        let interrupted = state.interrupt_turn("run-old", 2);
+        assert_eq!(interrupted.len(), 1);
+        assert_eq!(interrupted[0].seq, 2);
+        let GatewayEvent::MessageComplete(payload) = &interrupted[0].event else {
+            panic!("interrupt must retain its existing completion frame");
+        };
+        assert_eq!(payload.status, MessageCompletionStatus::Interrupted);
+
+        state.register_turn("run-retry", "session-1");
+        state.emit("session-1", "run-retry", 3, GatewayEvent::MessageStart(MessageStartPayload::default()));
+        for (sequence, lifecycle) in [TurnState::Cancelled, TurnState::Thinking, TurnState::Completed].into_iter().enumerate() {
+            assert!(state.ingest_runtime_event(&lifecycle_event("run-old", lifecycle, sequence as u64 + 4), 4).is_empty());
+        }
+        assert!(state.ingest_runtime_event(&RuntimeEvent::OperationCompleted {
+            operation_id: OperationId("run-old".into()),
+        }, 5).is_empty());
+        let approval = |operation: &str| RuntimeEvent::ApprovalRequested {
+            operation_id: OperationId(operation.into()),
+            approval_id: ApprovalId("approval-retry".into()),
+            title: "Approve retry tool".into(),
+            details: json!({"toolId": "tool-retry", "description": "confirmed request"}),
+        };
+        assert!(state.ingest_runtime_event(&approval("run-old"), 6).is_empty());
+        assert!(state.ingest_runtime_event(&lifecycle_event("run-retry", TurnState::WaitingUser, 7), 7).is_empty());
+        let projected = state.ingest_runtime_event(&approval("run-retry"), 8);
+        assert_eq!(projected.len(), 1);
+        assert_eq!(projected[0].session_id, "session-1");
+        assert_eq!(projected[0].turn_id, "run-retry");
+        assert_eq!(projected[0].seq, 4);
+        let GatewayEvent::ApprovalRequest(payload) = &projected[0].event else {
+            panic!("the new run must retain its approval frame");
+        };
+        assert_eq!(payload.request_id, "approval-retry");
+        assert_eq!(payload.tool_id.as_deref(), Some("tool-retry"));
+        assert_eq!(payload.description.as_deref(), Some("confirmed request"));
+        assert!(state.projection.session_for_turn("run-old").is_none());
+        assert_eq!(state.projection.session_for_turn("run-retry"), Some("session-1"));
+        let replay = state.replay_since("session-1", 0, Some("epoch-test"));
+        assert_eq!(replay.latest_seq, 4);
+        assert_eq!(replay.events.iter().map(GatewayEventEnvelope::kind).collect::<Vec<_>>(),
+            vec!["message.start", "message.complete", "message.start", "approval.request"]);
+    }
+
     #[test]
     fn approval_respond_routes_all_legacy_choices_to_canonical_host_decisions() {
         for (input, expected) in [
@@ -956,6 +1128,12 @@ mod tests {
                 &json!({"approvalId": "approval-1", "decision": input}),
                 &mut runtime, &mut state, 123,
             ).expect("valid approval choice");
+            assert_eq!(
+                runtime.approval_calls,
+                vec![("approval-1".to_string(), expected.to_string())],
+                "approval choice {input} must dispatch exactly once with canonical parameters",
+            );
+            assert!(runtime.commands.is_empty());
             assert_eq!(response.result["approvalId"], "approval-1");
             assert_eq!(response.result["decision"], expected);
             let parsed: mahayana_core::ApprovalDecision =
@@ -966,14 +1144,32 @@ mod tests {
 
     #[test]
     fn approval_respond_unknown_choice_fails_before_host_dispatch() {
-        let mut runtime = MockRuntime::default();
-        let mut state = GatewayState::with_epoch(ReplayLimits::default(), "epoch-test");
-        let failure = dispatch_request(
-            "approval.respond", &json!({"approvalId": "approval-1", "decision": "invented"}),
-            &mut runtime, &mut state, 123,
-        ).err().expect("unknown approval rejected");
-        assert_eq!(failure.code, -32602);
-        assert!(runtime.commands.is_empty());
+        for params in [
+            json!({"approvalId": "approval-1", "decision": "invented"}),
+            json!({"approvalId": "approval-1", "decision": "Accept"}),
+            json!({"approvalId": "approval-1", "decision": ""}),
+            json!({"approvalId": "approval-1", "decision": null}),
+            json!({"approvalId": "approval-1", "decision": true}),
+            json!({"approvalId": "approval-1", "decision": 1}),
+            json!({"approvalId": "approval-1", "decision": ["accept"]}),
+            json!({"approvalId": "approval-1", "decision": {"value": "accept"}}),
+            json!({"approvalId": "approval-1"}),
+        ] {
+            let mut runtime = MockRuntime::default();
+            let mut state = GatewayState::with_epoch(ReplayLimits::default(), "epoch-test");
+            let failure = dispatch_request(
+                "approval.respond", &params, &mut runtime, &mut state, 123,
+            ).err().expect("invalid approval rejected");
+            assert_eq!(failure.code, -32602, "invalid approval parameters: {params}");
+            assert!(
+                runtime.approval_calls.is_empty(),
+                "invalid decision reached approval dispatch: {params}",
+            );
+            assert!(
+                runtime.commands.is_empty(),
+                "invalid decision reached ordinary dispatch: {params}",
+            );
+        }
     }
 
 }

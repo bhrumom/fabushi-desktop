@@ -690,6 +690,119 @@ fixed-U implementation already preserves the intended identity invariant.
   do not claim a pre-fix execution failure. The existing earlier insertion/
   removal case missed this because its removed slot had no preferred neighbor.
 
+### Round 19 direct Host approval observation (NMR-42 / NMR-AC-33)
+
+At `5281b87d878c9223dc9cd1c100c0f56186c81173`, the two in-tree CLI
+executables have moved from the retained generic C ABI to the existing
+`MahayanaHost`. The earlier C ABI consumer description above is historical;
+the C ABI remains retained for unverified external callers and rollback.
+Do not delete exports, legacy readers or user data as part of this batch.
+
+- NMR-42: CLI/gateway creation, execution, receive, interrupt, approval and
+  close continue through the same canonical Host. Gateway approval choices
+  are exactly `accept`, `acceptForSession`, `decline` and `cancel`. Unknown
+  choices must fail before calling the runtime approval method. This is an
+  observation/oracle repair, not a new approval owner or a change to those
+  production choices.
+- NMR-AC-33: The existing gateway mock must record `resolve_approval` calls
+  independently from ordinary `execute` commands. Each valid choice must
+  produce exactly one call with the expected request ID and choice; invalid
+  choices must produce zero approval calls and zero ordinary commands.
+  An empty ordinary-command queue alone cannot prove zero approval dispatch.
+  Retain the existing two approval tests and execute them at the frozen H
+  alongside the three direct CLI cases, five gateway executable cases and
+  the CLI/gateway normal/build dependency negatives in the existing shipping
+  job. Classify the source finding as `TEST_FLAW`; do not invent an earlier
+  failing execution or alter production behavior to satisfy the assertion.
+
+All checks run only in GitHub Actions. Preserve the preceding exact-H evidence
+and record the corrected oracle's own execution separately. These bounded
+checks do not qualify external ABI consumers, signed installation packages,
+production backend pagination or independent full-product ACCEPT.
+
+### Round 19 final macOS update bytes (NMR-43 / NMR-AC-34)
+
+The existing macOS release owner runs electron-builder before separately
+stapling the DMG. Its metadata gate only checked a ZIP name and the presence
+of any blockmap. Read-only inspection of real run `41327420143`, package
+artifact `13093546572`, found the DMG ZIP-entry size `174156394` while the
+same artifact's `latest-mac.yml` declares `174154251`. The actual source
+checkout in that historical job is `9d16483f70df9af06db97b17bb02a24dc507e459`,
+distinct from the workflow run head. This proves stale size metadata in that
+artifact; it does not prove any published release or installation succeeded.
+The packaged acceptance step failed and final checksums were skipped.
+
+- NMR-43: Extend the existing `desktop/scripts` packaging owner, using the
+  locked electron-builder blockmap implementation and YAML dependency, to
+  reconcile `latest-mac.yml` and both external blockmaps after DMG stapling.
+  Bind the exact expected release version, canonical arm64 ZIP/DMG filenames,
+  real regular files inside the release directory, SHA512 and byte sizes.
+  Preserve the ZIP and DMG bytes. Regenerate each sidecar from those final
+  bytes; refresh each file's hash/size and the legacy top-level ZIP hash/path.
+  Do not reuse a nonempty stale sidecar. Preserve unrelated release fields.
+- NMR-AC-34: Before any write, reject missing/duplicate/wrong-version entries,
+  unsafe paths, symlink/non-file inputs and malformed metadata. A read-only
+  verify mode must reject stale size/hash or a blockmap that does not describe
+  the current bytes. Use the locked builder's actual generator in behavioral
+  tests: append synthetic ticket bytes after initial metadata creation,
+  demonstrate rejection, reconcile, and verify exact final size/hash and
+  regenerated sidecar bytes while proving the package inputs unchanged.
+  Cover an independently stale blockmap, missing assets, duplicate metadata,
+  version mismatch and path traversal; failed preflight leaves metadata and
+  sidecars untouched. Reconciliation is retryable after interruption; only
+  successful final verification allows the existing release flow to proceed.
+
+Wire reconciliation immediately after the existing notarize/staple step and
+before packaged acceptance/checksums/upload. Save an exact-source JSON receipt
+with final asset and sidecar digests alongside existing release evidence.
+Run the focused behavioral tests in the current Native service Actions
+workflow with `npm ci` and the existing lock. No dependency upgrades, new
+updater, signing request, package publication or release dispatch is part of
+this repair. Actual signed package generation, installation, update/rollback
+and independent ACCEPT at the final shipping H remain separate open gates.
+
+The same Actions batch also downloads immutable historical artifact
+`13093546572`, verifies archive digest
+`f17fc29681164e69507d24201c57a58c84651d66a65cc3d0ebf1faeeee0be225`, and
+extracts only its five declared package/metadata members into a temporary
+directory. Its original DMG must fail specifically with an asset size/hash
+mismatch. Reconcile that temporary copy, verify it again, and compare original
+ZIP/DMG SHA256 and sizes. Record the historical package source separately from
+the current checker H; never label historical bytes a newly built candidate.
+No installer execution, publication or signing occurs in this experiment.
+
+### Round 19 gateway lifecycle compilation recovery (NMR-44 / NMR-AC-35)
+
+Run `41460570824` at `5281b87d878c9223dc9cd1c100c0f56186c81173` failed
+shipping compilation with Rust E0004: `RuntimeProjection::project` omitted
+the existing `RuntimeEvent::TurnStateChanged` variant. This is an interface
+integration implementation defect; the diagnostic lock regeneration is not
+the cause and its unrelated dependency upgrades must not be applied.
+
+- NMR-44: Handle the lifecycle variant explicitly at the existing gateway
+  projection boundary. The present v1 gateway event schema has no lifecycle
+  event and the v2 wrapper reuses it. Preserve that schema and the canonical
+  raw RuntimeEvent authority. Lifecycle-only events produce no fabricated
+  text/reasoning/completion, no replay sequence increment, no new turn mapping
+  and no premature cleanup. Existing prompt admission establishes operation
+  ownership; actual message/operation events remain its gateway consumers.
+  A queued terminal lifecycle event after interrupt must not resurrect a
+  forgotten operation or replace the ownership of a subsequent run.
+- NMR-AC-35: Add behavioral projection cases for all existing lifecycle
+  states, stable session/run ownership and replay sequence, real completion
+  and failure as the only gateway terminal sources, and late lifecycle after
+  interrupt followed by a new run and approval. Keep the four canonical
+  approval decisions and independent call observations from NMR-42.
+  Execute the entire gateway library suite, including existing replay and
+  v2 durability tests, together with direct CLI3/gateway executable5 and all
+  previously skipped shipping dependency/protocol/TCP/package gates at the
+  repaired H. No catch-all arm or relaxed compile/assertion gate is allowed.
+
+This is a compatibility recovery for the existing gateway wire contract.
+Exposing full native lifecycle state through a future versioned gateway
+contract remains separate unfinished work; no event-schema completeness,
+full Bot regression or independent ACCEPT is claimed here.
+
 
 
 
