@@ -593,3 +593,22 @@ soak, upgrade/rollback and independent ACCEPT remain required and unaccepted.
 Exact evidence is recorded in the containing request-round9 receipt; authored
 cases, prerequisite results and actual execution remain distinct. All other
 responsibility rows and current acceptance requirements remain unchanged.
+
+### Round23 desktop Social owner-boundary controls
+
+| Requirement / acceptance | Existing production owner and direct oracle | Execution scope |
+| --- | --- | --- |
+| NMR-SOCIAL-OWNER-01; NMR-SOCIAL-AC-02 | AppHost/Host Production Electron Session policy; ordinary/Codex registry selection and native retained-data handoff | Current composition/native suites; historical59f success is scoped evidence, not all-current approval |
+| NMR-SOCIAL-OWNER-02; NMR-SOCIAL-AC-01 | FeatureHost real execute: exact early refusal before absent runtime, poisoned lock, file or event side effects; explicit Test/non-desktop/unrelated controls | Existing desktop_messaging_boundary_tests: seven retained plus three added, ten required at containing H |
+| NMR-SOCIAL-OWNER-03; NMR-SOCIAL-AC-02 | Runtime real SQLite recovery preserves Social records and continues ordinary Agent work | retained_social_recovery_tests: nine; source-comment ID correction only in this batch |
+| NMR-SOCIAL-OWNER-04; NMR-SOCIAL-AC-02 | Existing session-owned platform client validates actual URL/origin/path before credentials and disallows desktop redirects | session_owned_platform_: six; unchanged production implementation |
+
+See `docs/specs/fbcp-desktop-social-owner-boundary.md` and
+`projects/telegram-desktop-rust/evidence/round23-owner-boundary-recovery.json`.
+H0 Windows hook timeout and later Windows11 success retain their actual run
+identities. Formal publisher, real package install/upgrade/rollback, authenticated
+production pagination, source/legal/full Bot and independent ACCEPT stay open.
+
+The existing workflow now also runs these same Feature10/Runtime9/HTTP6 behavioral
+harnesses on Ubuntu while retaining the queued macOS shipping requirement. This
+focused job is not a signed-package, live-service or independent acceptance gate.

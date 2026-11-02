@@ -52,10 +52,12 @@ on:
       - 'source/mahayana/mahayana-rs/mahayana-cli/**'
       - 'source/mahayana/mahayana-rs/mahayana-gateway/**'
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-runtime/**'
       - 'source/mahayana/mahayana-rs/providers/telegram-protocol/**'
       - 'source/mahayana/mahayana-rs/providers/telegram-network/**'
       - 'source/mahayana/mahayana-rs/providers/telegram-runtime/**'
       - 'source/mahayana/mahayana-rs/Cargo.lock'
+      - 'source/mahayana/mahayana-rs/Cargo.toml'
       - 'projects/telegram-desktop-rust/upstream.lock.json'
       - '.github/workflows/native-service-contracts.yml'
       - '.github/workflows/release-macos-main.yml'
@@ -297,6 +299,81 @@ jobs:
           name: native-message-reconciliation-${{ github.sha }}
           path: artifacts/native-message
           if-no-files-found: error
+  desktop-social-owner-behaviors:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact Desktop Social behavior input
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/desktop-social-owner
+          git rev-parse HEAD > artifacts/desktop-social-owner/target-sha.txt
+          sha256sum \
+            .github/workflows/native-service-contracts.yml \
+            docs/specs/fbcp-desktop-social-owner-boundary.md \
+            source/mahayana/mahayana-rs/Cargo.lock \
+            source/mahayana/mahayana-rs/Cargo.toml \
+            source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs \
+            source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs \
+            source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs \
+            source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs \
+            source/mahayana/mahayana-rs/mahayana-product/src/lib.rs \
+            > artifacts/desktop-social-owner/input-sha256.txt
+          printf '%s\n' 'NMR-SOCIAL-AC-01/02; fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; Ubuntu controlled FeatureHost/SQLite/loopback HTTP behavior only; no macOS AppHost, package, real service, publisher, signing or independent ACCEPT.' > artifacts/desktop-social-owner/scope.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: desktop-social-owner-ubuntu-rust-1.97.1
+      - name: Install existing Linux native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libclang-dev libsqlite3-dev libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Execute actual FeatureHost Social and retained messaging boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --version > artifacts/desktop-social-owner/toolchain.txt
+          cargo --version >> artifacts/desktop-social-owner/toolchain.txt
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored; 0 measured;' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -F 'desktop_social_intents_refuse_before_auth_runtime_context_io_and_events ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -F 'desktop_social_refusal_does_not_lock_state_or_touch_retained_context ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -F 'social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+      - name: Execute real SQLite retained Social recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-runtime --lib retained_social_recovery_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/social-recovery.log
+          grep -Eq 'test result: ok\. 9 passed; 0 failed; 0 ignored; 0 measured;' artifacts/desktop-social-owner/social-recovery.log
+      - name: Execute existing session-owned HTTP boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib session_owned_platform_ -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/social-http-owner.log
+          grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored; 0 measured;' artifacts/desktop-social-owner/social-http-owner.log
+          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
+      - name: Preserve exact Desktop Social behavior evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-social-owner-behaviors-${{ github.sha }}
+          path: artifacts/desktop-social-owner
+          if-no-files-found: error
+
   native-message-shipping-compile:
     if: github.event_name == 'push' || inputs.message_batch
     runs-on: macos-15

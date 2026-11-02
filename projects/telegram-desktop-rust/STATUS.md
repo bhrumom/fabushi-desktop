@@ -354,3 +354,29 @@ CAS. Six source reviews/two complete at936 are scoped historical counts; later
 source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
+
+## Round23 resumed: current Social boundary qualification
+
+Fixed U stays `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Exact original
+H44f5203b8475afbeaa37bb049f6c72351ecb76d8 native41484767335 failed only
+Windows fixture setup (11 hook failures, no executed native assertions);
+source41484767424 succeeded. Later exact59f5fa24827812f78336c464995d161f403dedfb
+native41508537631 succeeded including Windows11, controlled28, shipping
+AppHost-copy positive and valid-format wrong-digest negative. Those runs retain
+their own source/input scope. Current106bb95 already contains the concurrent
+reopened-runtime compile fix and later forwarding/reply/pagination work.
+
+This batch contributes three missing Social public-command boundary cases,
+raises only the matching FeatureHost oracle7→10, and uses named Social spec
+IDs without replacing numeric forwarding requirements. Published code H=`83c9e3ffbf059556f3a8bce9d84d946c97433345` was remotely
+read back with all 17 file contents. Native run41524660245 is active; shipping
+job125549179025 remains queued, so Feature10 is not yet executed. The canonical ledger receives append-only
+evidence on existing rows while retaining all concurrent source_reviews and
+acceptance fields. Backend PR137 exact52fb remains draft/open/unmerged; both
+63-case CI jobs passed and production readiness skipped. No merge/deploy or
+production request occurred. Full source/legal/product/platform/Bot, formal
+publisher/real signed packages and independent ACCEPT remain incomplete.
+
+The existing workflow now also runs these same Feature10/Runtime9/HTTP6 behavioral
+harnesses on Ubuntu while retaining the queued macOS shipping requirement. This
+focused job is not a signed-package, live-service or independent acceptance gate.
