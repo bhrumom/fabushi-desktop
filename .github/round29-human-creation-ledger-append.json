@@ -4,8 +4,8 @@
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
   "authored_code_commit": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
-  "expected_input_blob": "09ae58962a743d8010e94906190fc054f878c28f",
-  "expected_output_blob": "e4d0b477425ada42be6a27e7db004f237240faec",
+  "expected_input_blob": "115e9d342f24ac5c14679ad21f1ba745d555acb9",
+  "expected_output_blob": "a6470f6acda600ba9f29b0e4b50a4d05ff21187f",
   "row_id": "FBCP-NMR-001",
   "append": {
     "requirement_ids": [
@@ -29,17 +29,21 @@
     ],
     "unit_case_ids": [
       "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
-      "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen"
+      "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
+      "source/host/src/extensions/session/human_creation_tests.rs#retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen",
+      "source/host/src/extensions/session/human_creation_tests.rs#human_format_probe_preserves_posix_locks_against_an_external_writer"
     ],
     "fault_recovery_case_ids": [
-      "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
+      "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "source/host/src/extensions/session/human_creation_tests.rs#retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen"
     ],
     "test_evidence": [
       "projects/telegram-desktop-rust/evidence/round29-forward-journal-concurrency.json"
     ],
     "test_execution_evidence": [
-      "Round29 retained failure at exactf544e9b3161d758141e1b419bcdab22cc522952e/run41526852400/job125556686433: retainedTranscript3/Human63/resource3 passed; creation11passed/1failed because original NOTADB sidecars disappeared; storage3/sharebox/journal/Agent/credential/HTTP thereafter unexecuted. The byte-preservation oracle was not weakened. Concurrent9b9cadd7d5b7cc3b7a294568fa26a3919c35021f added the existing magic preflight and f95a33b13672095d68c6ca731f2f42e6c10b9890 added the six-byte header control; both are preserved. Exact8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1 requires a complete100-byte header and adds valid-magic truncation/full-length NOTADB controls to the same creation case. Run41528875268 was queued at registration preparation, not a pass; the canonical linked receipt records subsequent exact-H execution. No acceptance promotion."
+      "Round29 exactf544e9b3161d758141e1b419bcdab22cc522952e/run41526852400/job125556686433 retained the true creation sidecar-loss failure (11passed/1failed), with subsequent storage/journal groups unexecuted. Concurrent9b9cadd7d5b7cc3b7a294568fa26a3919c35021f andf95a33b13672095d68c6ca731f2f42e6c10b9890 were preserved. Our exact8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1 complete100-byte admission and two added subcases actually passed run41528875268/job125563635600: Transcript3/Human63/resource3/creation12/storage3/sharebox1/journal12/Agent4/credential3/HTTP1, all0failed/ignored. Full457775-character log and artifact13180844165 digestsha256:cfeccf6ab799c00dd08f6fd4a73797cd5396914bb0f52d7a02fadf26eeb43a02 bind the result. The existing corruption case contains six actual source variants at8b; the valid-WAL atomic-winner/reopen case also actually passed. This does not qualify later probe/test changes.",
+      "Later concurrent7201c8897dafb39bea92543d3ac447305348e17d preserves100-byte minimum and our original subcases but replaces raw file-handle probing with SQLite default-VFS/private-cache immutable schema_version admission, adds missing/empty-main sidecar refusals, retained-WAL final-writer-close recovery and Unix external-writer POSIX-lock preservation. The two additional named creation cases are registered as authored at7201, not executed at8b. Native run41530848397/reconciliation125570311115 was queued at this registration; required current scope is Human67/creation14/storage3/journal12. Current exact-H results are recorded in the canonical linked receipt. No acceptance promotion."
     ]
   },
-  "note": "\nRound29 Human creation integrity registration: close the missing canonical mapping for existing NMR-CREATE-01b/c/d, NMR-AC-CREATE-01 and FBCP-HUMAN-CREATE-04 in the same Session/SandAgentDb owner. The existing corruption case now retains six data variants (original NOTADB, concurrent six-byte short header, valid-magic truncated header, full-length invalid magic, corrupt schema and corrupt data page), with unchanged complete-directory bytes, repeated/restarted refusal and no-owner/no-live-handle assertions. The registered valid uncheckpointed-WAL atomic-winner/reopen case is the positive boundary. Creation12/storage3 counts remain; no new owner, public schema, dependency or data migration. Production8b preserves both concurrent fixes and changes only full-header admission plus two subcases. Arbitrary valid-header/hot-or-corrupt-WAL recovery, multi-process races, source/legal/platform/real-service/Bot and independent acceptance remain open. All prior rows, source reviews, scalar execution pointers and acceptance state are unchanged."
+  "note": "\nRound29 Human creation integrity registration: close the missing canonical mapping for existing NMR-CREATE-01b/c/d, NMR-AC-CREATE-01 and FBCP-HUMAN-CREATE-04 in the same Session/SandAgentDb owner. At our8b code freeze the complete-directory corruption case retained six variants (original NOTADB, concurrent six-byte short header, valid-magic truncated header, full-length invalid magic, corrupt schema and corrupt data page), repeated/reopened refusal and no-owner/no-live-handle assertions; creation12/storage3 and the valid uncheckpointed-WAL atomic-winner/reopen positive actually passed. Preserve later7201's SQLite-VFS lock-safe probe and twelve corruption variants; its new retained-WAL and external-writer POSIX-lock cases are mapped here as authored only, with Human67/creation14 requiring their own containing-H execution. No new owner, public schema, dependency or destructive migration. Arbitrary hot/corrupt-WAL recovery, multi-process races outside these declared checks, source/legal/platform/real-service/Bot and independent acceptance remain open. All other rows, source reviews, scalar execution pointers and acceptance state are unchanged."
 }

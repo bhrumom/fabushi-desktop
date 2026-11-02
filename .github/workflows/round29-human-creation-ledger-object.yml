@@ -10,7 +10,7 @@ permissions:
 jobs:
   store-reviewed-object:
     if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     timeout-minutes: 5
     permissions:
       contents: write
@@ -24,16 +24,17 @@ jobs:
         with:
           node-version: '22'
       - name: Store only the reviewed append-only ledger object
+        shell: bash
         env:
           R29_OBJECT_TOKEN: ${{ github.token }}
         run: |
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
-          import {readFileSync, writeFileSync} from 'node:fs';
+          import {writeFileSync} from 'node:fs';
           import {execFileSync} from 'node:child_process';
           import {createHash} from 'node:crypto';
           const manifestPath = '.github/round29-human-creation-ledger-append.json';
-          const manifestBytes = readFileSync(manifestPath);
+          const manifestBytes = execFileSync('git', ['show', 'HEAD:' + manifestPath], {maxBuffer:16*1024*1024});
           const operation = JSON.parse(manifestBytes);
           const repository = 'bhrumom/fabushi-desktop';
           const path = 'projects/telegram-desktop-rust/parity-ledger.json';
@@ -52,7 +53,7 @@ jobs:
           assert.equal(head, process.env.GITHUB_SHA);
           const input = git('rev-parse', 'HEAD:' + path);
           assert.equal(input, operation.expected_input_blob, 'canonical ledger advanced; reconcile before transfer');
-          const ledger = JSON.parse(readFileSync(path, 'utf8'));
+          const ledger = JSON.parse(execFileSync('git', ['show', 'HEAD:' + path], {encoding:'utf8',maxBuffer:16*1024*1024}));
           const before = structuredClone(ledger);
           const matches = ledger.rows.map((row,index) => row.responsibility_id === operation.row_id ? index : -1).filter(index => index >= 0);
           assert.equal(matches.length, 1, 'one existing responsibility required');
