@@ -1559,3 +1559,64 @@ identity before it is exposed. This batch does not claim a changefeed for older
 remote edits/reactions, multi-device or cancellation completeness, real Worker
 deployment, full source/legal closure, signed platforms, full UI/a11y/Bot/soak,
 upgrade/rollback acceptance, or independent ACCEPT.
+
+## NMR-50i — Forward feedback follows the original recipient intent
+
+Fixed investigation input is H `2a78098a74be74b0a73a335cd751a6d1f2397e4a`;
+Telegram U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+The existing dialog retries only unconfirmed destinations with the same nonce,
+but passes only that attempt's settlement to the root notice. Alice sent / Bob
+failed, followed by a successful Bob-only retry, currently reports one
+conversation. Recipient names can also disappear from the active search page.
+The fixed-U forwarding panel and phrase responsibilities are recorded in
+`projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md` and
+`evidence/task20bf-round1-forward-source-audit.json`; this slice does not close
+their other pending product responsibilities.
+
+- **NMR-50i-a:** Existing `ForwardMessageDialog` captures the ordered selected
+  recipient IDs and display names when the immutable intent is first submitted.
+  A selected recipient retains its selected label across search changes. The
+  snapshot stays local to this dialog lifetime, and names never enter the
+  Coordinator request, Host journal, resource or native-message wire payload.
+- **NMR-50i-b:** Accumulate only settlements admitted by the existing exact
+  requested-ID/unique-response checks. An unexpected response ID invalidates
+  that attempt's confirmations; missing or repeated rows remain unconfirmed.
+  Previously confirmed recipients stay confirmed. Every projection contains
+  exactly one result per original recipient in the original order. Retry still
+  dispatches only unconfirmed recipients, using the same nonce and privacy
+  options. A thrown or ambiguous attempt cannot invent success.
+- **NMR-50i-c:** Extend the existing local `onSettled` callback with the frozen
+  recipient snapshot, and pass cumulative settlement through
+  `ProductionRenderer` to `settleForwardProjection`. Complete success names
+  one recipient, names two recipients in original selection order, or reports
+  the full original count for three or more. An unavailable/blank display name
+  uses the existing count-based wording, never a fabricated identity. Partial
+  feedback reports cumulative confirmed and outstanding counts without
+  presenting the whole intent as successful. Text remains plain text through
+  the current composer notice; there is no new overlay or message owner.
+- **NMR-50i-d:** Account rotation/logout, source replacement, close/reopen and
+  root retirement discard local feedback state with the existing lifetime
+  fence. Late replies cannot publish into a new lifetime. An already posted
+  Host intent remains durable and is neither cancelled nor deleted. A restart
+  uses existing Host journal recovery; the client must not replay a success
+  toast from lost ephemeral presentation state. This slice adds no persistence
+  format, service change, migration or new source-read completion claim.
+
+**NMR-AC-50i:** In the existing Actions UI job at frozen containing H, retain
+renderer typecheck/build and all current projection/cursor/composer/settlement/
+Chromium gates. Extend real dialog/Coordinator fixture behavior and the existing
+settlement contract cases to prove original-order one/two/many notices,
+selection across search, partial success followed by multiple retry/error and
+malformed-ack attempts, cumulative counts without confirmed-recipient resends,
+unchanged wire payload/nonce/privacy, and fresh feedback after lifetime
+retirement. Use controlled request/readiness/response barriers, not sleeps as
+the oracle. Review affected screenshots and diagnostics where rendered feedback
+is captured. Existing Host/storage behavior is unchanged and its pending gates
+remain independently required; no prior-H result is relabelled as this H.
+
+Publish through the existing isolated migration branch and draft PR with exact
+GitHub readback. Rollback is a normal reviewed revert of these local UI changes;
+it must preserve Host journals and user data. This closes only feedback for the
+already-supported single-message Human forwarding flow, not saved/self,
+premium, multi-source, typed-draft, remote-provenance, full migration or final
+independent acceptance gates.
