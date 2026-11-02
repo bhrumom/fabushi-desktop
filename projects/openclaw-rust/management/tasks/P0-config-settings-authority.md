@@ -323,3 +323,44 @@ do not widen the durable/public schema or alter the concurrency assertions.
 That reviewer completed all 29 frozen paths and the 21-path fix delta, with
 no additional blocking findings. The R4 correction requires a fresh focused
 snapshot review; no executable result is inferred from this source verdict.
+
+### H7 exact-commit result and newly reached planning recovery
+
+Commit `49200bf2577c9d83aee1f02eef2c65150ca2c2d8`, tree
+`97d939de1c931623cac5703b0f727bde311c18b9`, was pushed and read back through
+the GitHub API. Independent xhigh review converged on that tree; the resumed
+focused review confirmed R4 and the immutable v3 diff without another full
+review. Source run `41400613798` passed; artifact `13120274361` has digest
+`sha256:3e774f6257fe48431df5e35f4b5485d6fd607d053565cb9dfa2927513798c65d`.
+Runtime `41400613869`, job `125131426581`, passed shipping Host compilation,
+95 configuration/inference tests, all 22 integration targets (191 tests),
+and both typed replay/serialization library groups (8 tests each). The prior
+13 failures are resolved at this H. The newly reached planning library group
+passed 11/14; later library groups and runtime integrity were not executed.
+
+Decisions before the focused repair, based on the actual logs and exact-U
+source: `FIX/IMPL_BUG` latest-user selection scans only the discarded prefix;
+retain the latest-user assertion and include the retained tail. `FIX/TEST_FLAW`
+the split-turn fixture ends at a user turn start; supply an assistant suffix
+and retain its prefix/history assertions plus a non-split control.
+`FIX/TEST_FLAW` a 10-token positive fitting fixture cannot contain its required
+details; retain it as a refusal negative and use a sufficient bounded budget
+for the truncation positive. `FIX/IMPL_BUG` the reverse walk checks its token
+threshold before recording the crossing row's cut point, unlike fixed-U
+`compaction-cut-point.ts`; add a direct threshold/pairing counterexample.
+There is no environment-failure evidence. Run all selected library groups even
+when one fails, preserving a nonzero aggregate exit; no gate or assertion is
+removed. The shared gate must pass before dependent model integration. Wider
+source/compatibility/restart/final acceptance and all global flags remain open.
+
+Frozen planner review of tree `19f75ef0fd62f177c123010317e165a4e41cf680`
+against H7 returned one P2 finding. Decision `FIX/IMPL_BUG`: the newly selected
+threshold row can move the cut into an earlier overlapping tool span because
+the resolver compares against its original index. Resolve the connected spans
+transitively and retain both the single-span oracle and the new A/B overlap
+counterexample, including the real typed replay/serializer consumer.
+Decision `DEFER` for the separate, pre-existing `main.rs` fallback fitting
+bypass: it is outside this four-path planner recovery and will be repaired in
+the next compaction production-boundary batch. The helper refusal test does
+not establish end-to-end refusal. The independent review found no other
+blocking issue in this scope; the fix requires a fresh focused review.

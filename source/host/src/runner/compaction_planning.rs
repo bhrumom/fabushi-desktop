@@ -123,12 +123,12 @@ pub fn prepare_compaction_plan(
 
     let mut retained_tokens = 0u64;
     for index in (0..entries.len()).rev() {
+        if is_cut_point(&entries[index]) {
+            cut = resolve_tool_pair_boundary(entries, index);
+        }
         retained_tokens = retained_tokens.saturating_add(estimate_entry_tokens(&entries[index]));
         if retained_tokens >= settings.keep_recent_tokens {
             break;
-        }
-        if is_cut_point(&entries[index]) {
-            cut = resolve_tool_pair_boundary(entries, index);
         }
     }
     cut = cut.min(last_allowed);
@@ -176,12 +176,12 @@ pub fn prepare_compaction_plan(
         .filter(|entry| entry.get("kind").and_then(Value::as_str) != Some("compaction"))
         .cloned()
         .collect();
-    let latest_user_request = entries[..cut]
+    let latest_user_request = entries
         .iter()
         .rev()
-        .find(|entry| entry_role(entry) == Some("user"))
-        .and_then(|entry| entry_text(entry))
-        .filter(|text| !text.trim().is_empty())
+        .filter(|entry| entry_role(entry) == Some("user"))
+        .filter_map(entry_text)
+        .find(|text| !text.trim().is_empty())
         .map(bound_latest_user_request);
 
     Some(CompactionPlan {
@@ -926,7 +926,9 @@ fn is_cut_point(entry: &Value) -> bool {
 
 fn resolve_tool_pair_boundary(entries: &[Value], index: usize) -> usize {
     let mut pair_start = index;
-    for (candidate_index, entry) in entries.iter().enumerate() {
+    // Visit older calls after newer ones so an overlapping span can move an
+    // already-adjusted cut farther back without a second scan.
+    for (candidate_index, entry) in entries.iter().enumerate().take(index + 1).rev() {
         let Some(calls) = entry.get("toolCalls").and_then(Value::as_array) else {
             continue;
         };
@@ -951,8 +953,8 @@ fn resolve_tool_pair_boundary(entries: &[Value], index: usize) -> usize {
         else {
             continue;
         };
-        if candidate_index <= index && index <= pair_end {
-            pair_start = pair_start.min(candidate_index);
+        if candidate_index <= pair_start && pair_start <= pair_end {
+            pair_start = candidate_index;
         }
     }
     pair_start
@@ -961,6 +963,10 @@ fn resolve_tool_pair_boundary(entries: &[Value], index: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::extensions::inference::typed_replay_serialization::serialize_responses_replay;
+    use crate::extensions::session::typed_replay::{
+        TypedReplayError, project_typed_replay_entries,
+    };
     use serde_json::json;
 
     #[test]
@@ -1033,13 +1039,134 @@ mod tests {
     }
 
     #[test]
-    fn split_turn_separates_prefix_from_older_history() {
+    fn latest_user_request_skips_blank_rows_in_retained_tail() {
         let entries = vec![
+            json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            json!({"id":"latest", "kind":"message", "role":"user", "content":"continue the current task"}),
+            json!({"id":"blank", "kind":"message", "role":"user", "content":"  \n  "}),
+            json!({"id":"tail", "kind":"message", "role":"assistant", "content":"working"}),
+        ];
+        let plan = prepare_compaction_plan(
+            &entries,
+            100,
+            100,
+            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            Some("latest"),
+        ).expect("plan");
+        assert_eq!(plan.first_kept_entry_id, "latest");
+        assert_eq!(plan.latest_user_request.as_deref(), Some("continue the current task"));
+        assert_eq!(plan.entries_to_summarize, vec![entries[0].clone()]);
+    }
+
+    #[test]
+    fn retained_token_threshold_keeps_the_boundary_that_reaches_the_budget() {
+        let entries = vec![
+            json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            json!({"id":"current", "kind":"message", "role":"user", "content":"current"}),
+            json!({"id":"boundary", "kind":"message", "role":"assistant", "content":"abcdef"}),
+            json!({"id":"tail", "kind":"message", "role":"user", "content":"x"}),
+        ];
+        // The tail contributes one token and the preceding assistant two.
+        // Reaching the budget must retain that assistant, not only the tail.
+        let plan = prepare_compaction_plan(
+            &entries,
+            100,
+            100,
+            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 3 },
+            None,
+        ).expect("plan");
+        assert_eq!(plan.first_kept_entry_id, "boundary");
+        assert_eq!(plan.observed_transcript_tail_id, "tail");
+        assert!(plan.is_split_turn);
+        assert_eq!(plan.turn_prefix_entries, vec![entries[1].clone()]);
+        assert_eq!(plan.entries_to_summarize, vec![entries[0].clone()]);
+    }
+
+    #[test]
+    fn retained_token_boundary_preserves_a_spanning_tool_pair() {
+        let entries = vec![
+            json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            json!({"id":"current", "kind":"message", "role":"user", "content":"current"}),
+            json!({"id":"call", "kind":"message", "role":"assistant", "content":"call", "toolCalls":[{"id":"c1","name":"read","arguments":{}}]}),
+            json!({"id":"fragment", "kind":"message", "role":"assistant", "content":"f"}),
+            json!({"id":"result", "kind":"message", "role":"tool", "toolCallId":"c1", "toolName":"read", "content":"x"}),
+            json!({"id":"tail", "kind":"message", "role":"assistant", "content":"x"}),
+        ];
+        // Three one-token rows reach the budget at the assistant fragment.
+        // Its enclosing call/result range must move the cut back to the call.
+        let plan = prepare_compaction_plan(
+            &entries,
+            100,
+            100,
+            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 3 },
+            None,
+        ).expect("plan");
+        assert_eq!(plan.first_kept_entry_id, "call");
+        assert_eq!(plan.observed_transcript_tail_id, "tail");
+        assert!(plan.is_split_turn);
+        assert_eq!(plan.turn_prefix_entries, vec![entries[1].clone()]);
+        assert_eq!(plan.entries_to_summarize, vec![entries[0].clone()]);
+    }
+
+    #[test]
+    fn overlapping_tool_pairs_retain_a_complete_serializable_suffix() {
+        let entries = vec![
+            json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            json!({"id":"current", "kind":"message", "role":"user", "content":"current"}),
+            json!({"id":"call-a", "kind":"message", "role":"assistant", "content":"call a", "toolCalls":[{"id":"a","name":"read","arguments":{}}]}),
+            json!({"id":"call-b", "kind":"message", "role":"assistant", "content":"call b", "toolCalls":[{"id":"b","name":"read","arguments":{}}]}),
+            json!({"id":"result-a", "kind":"message", "role":"tool", "toolCallId":"a", "toolName":"read", "content":"x"}),
+            json!({"id":"fragment", "kind":"message", "role":"assistant", "content":"f"}),
+            json!({"id":"result-b", "kind":"message", "role":"tool", "toolCallId":"b", "toolName":"read", "content":"x"}),
+            json!({"id":"tail", "kind":"message", "role":"assistant", "content":"x"}),
+        ];
+        let complete = project_typed_replay_entries(&entries).expect("valid complete history");
+        serialize_responses_replay(&complete).expect("complete history serializes");
+        // The budget reaches fragment (5). The b span moves the cut to 3,
+        // which lies inside the a span (2..=4), so both calls must be retained.
+        let plan = prepare_compaction_plan(
+            &entries,
+            100,
+            100,
+            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 3 },
+            None,
+        ).expect("plan");
+        assert_eq!(plan.first_kept_entry_id, "call-a");
+        assert_eq!(plan.observed_transcript_tail_id, "tail");
+        assert!(plan.is_split_turn);
+        assert_eq!(plan.turn_prefix_entries, vec![entries[1].clone()]);
+        assert_eq!(plan.entries_to_summarize, vec![entries[0].clone()]);
+
+        let cut = entries.iter().position(|entry| {
+            entry.get("id").and_then(Value::as_str) == Some(plan.first_kept_entry_id.as_str())
+        }).expect("retained boundary exists");
+        let retained = project_typed_replay_entries(&entries[cut..])
+            .expect("retained history contains every matching call");
+        let wire = serialize_responses_replay(&retained).expect("retained history serializes");
+        let wire_pairs = wire.iter().filter_map(|item| {
+            Some((item.get("type")?.as_str()?, item.get("call_id")?.as_str()?))
+        }).collect::<Vec<_>>();
+        assert_eq!(wire_pairs, vec![
+            ("function_call", "a"),
+            ("function_call", "b"),
+            ("function_call_output", "a"),
+            ("function_call_output", "b"),
+        ]);
+        assert_eq!(
+            project_typed_replay_entries(&entries[3..])
+                .expect_err("moving only to call-b strands result-a"),
+            TypedReplayError::UnpairedToolResult { tool_call_id: "a".into() },
+        );
+    }
+
+    #[test]
+    fn split_turn_separates_prefix_from_older_history() {
+        let mut entries = vec![
             json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
             json!({"id":"old-a", "kind":"message", "role":"assistant", "content":"done"}),
             json!({"id":"current", "kind":"message", "role":"user", "content":"current request"}),
             json!({"id":"current-a", "kind":"message", "role":"assistant", "content":"partial"}),
-            json!({"id":"kept", "kind":"message", "role":"user", "content":"follow up"}),
+            json!({"id":"kept", "kind":"message", "role":"assistant", "content":"retained suffix"}),
         ];
         let plan = prepare_compaction_plan(
             &entries,
@@ -1048,10 +1175,26 @@ mod tests {
             CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
             None,
         ).expect("plan");
+        assert_eq!(plan.first_kept_entry_id, "kept");
         assert!(plan.is_split_turn);
         assert_eq!(plan.turn_prefix_entries.len(), 2);
         assert_eq!(plan.turn_prefix_entries[0]["id"], "current");
         assert_eq!(plan.entries_to_summarize.len(), 2);
+
+        // A new user request starts a new turn and cannot be a split suffix.
+        entries[4] = json!({"id":"kept", "kind":"message", "role":"user", "content":"follow up"});
+        let whole_turn = prepare_compaction_plan(
+            &entries,
+            100,
+            100,
+            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            None,
+        ).expect("whole retained turn");
+        assert_eq!(whole_turn.first_kept_entry_id, "kept");
+        assert!(!whole_turn.is_split_turn);
+        assert!(whole_turn.turn_prefix_entries.is_empty());
+        assert_eq!(whole_turn.entries_to_summarize.len(), 4);
+        assert_eq!(whole_turn.latest_user_request.as_deref(), Some("follow up"));
     }
 
     #[test]
@@ -1184,13 +1327,32 @@ mod tests {
         let suffix = format_compaction_details_suffix(Some(&details));
         let fitted = fit_compaction_summary_with_suffix(
             &"x".repeat(20_000),
-            10,
+            256,
             &suffix,
         )
         .expect("fitted summary");
         assert!(fitted.ends_with(&suffix));
         assert!(fitted.contains("<read-files>"));
         assert!(fitted.contains("quality degraded"));
+        assert!(fitted.contains("[Compaction summary truncated to fit budget]"));
+        assert!(weighted_chars(&fitted) <= 1_024);
+    }
+
+    #[test]
+    fn details_suffix_that_exceeds_summary_budget_is_rejected() {
+        let details = json!({
+            "readFiles":["src/read.rs"],
+            "modifiedFiles":["src/write.rs"],
+            "latestUnresolvedUserRequest":"continue",
+            "qualityDegraded":true
+        });
+        let suffix = format_compaction_details_suffix(Some(&details));
+        let error = fit_compaction_summary_with_suffix(
+            &"x".repeat(20_000),
+            10,
+            &suffix,
+        ).expect_err("required details cannot fit in forty characters");
+        assert_eq!(error, "compaction details suffix leaves no room for summary text");
     }
 
     #[test]

@@ -188,6 +188,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          recovery_status=0
           cargo test --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test production_turn_input_projection_contract \
             --test production_turn_agent_owner_contract \
@@ -210,14 +211,22 @@ jobs:
             --test agent_db_transcript_pages_contract \
             --test agent_db_recovery_contract \
             --test session_maintenance_contract \
-            --test session_gateway_contract
-          cargo test --manifest-path source/host/Cargo.toml --lib extensions::session::typed_replay::tests
-          cargo test --manifest-path source/host/Cargo.toml --lib extensions::inference::typed_replay_serialization::tests
-          cargo test --manifest-path source/host/Cargo.toml --lib runner::compaction_planning::tests
-          cargo test --manifest-path source/host/Cargo.toml --lib runner::production_turn_run_shell_adapter::tests
-          cargo test --manifest-path source/host/Cargo.toml --lib runner::turn_shape::tests
-          cargo test --manifest-path source/host/Cargo.toml --lib extensions::inference::production::tests
-          cargo test --manifest-path source/host/Cargo.toml --lib extensions::inference::provider_session::tests
+            --test session_gateway_contract || recovery_status=1
+          if cargo test --manifest-path source/host/Cargo.toml --lib --no-run; then
+            for recovery_filter in \
+              extensions::session::typed_replay::tests \
+              extensions::inference::typed_replay_serialization::tests \
+              runner::compaction_planning::tests \
+              runner::production_turn_run_shell_adapter::tests \
+              runner::turn_shape::tests \
+              extensions::inference::production::tests \
+              extensions::inference::provider_session::tests; do
+              cargo test --manifest-path source/host/Cargo.toml --lib "$recovery_filter" || recovery_status=1
+            done
+          else
+            recovery_status=1
+          fi
+          exit "$recovery_status"
       - name: Verify OpenClaw migration audit integrity
         shell: bash
         run: |

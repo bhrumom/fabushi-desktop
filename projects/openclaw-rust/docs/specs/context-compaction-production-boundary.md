@@ -105,6 +105,24 @@ claim that unsupported tool/media/provider or restart scopes are accepted.
 
 ## 5. Current state
 
+### Planning recovery at H `49200bf2577c9d83aee1f02eef2c65150ca2c2d8`
+
+The exact-U dossier's current identities supersede the historical implementation
+blobs in the list below: agent-core `compaction.ts` is
+`9ee5706cfd94a75f36e43752e16d1f75d9975147` and `compaction-cut-point.ts` is
+`af55af34ac16e508aa739e12aed3bebe9878b5ea`. The fixed U is unchanged.
+The bounded Rust projection must take its latest nonempty user request from
+the complete active input, including the retained tail. Its reverse token walk
+must select the current valid, tool-pair-safe boundary before checking whether
+that row reaches the retained-token threshold. Overlapping call/result spans
+must remain together even when moving the cut exposes an earlier span.
+A retained user turn start is
+not a split turn; an assistant suffix with an earlier user prefix is.
+Required details remain intact when summary fitting succeeds; insufficient
+room for the required suffix and summary is a refusal, never permission to
+drop details or exceed the token budget. Actions regression oracles cover both
+successful fitting with truncation and the insufficient-budget negative.
+
 The current implementation subject for this project round is
 `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` with tree
 `90c8aab39972da11cfad220361781d49e1bc6700`. The exact-subject closure
