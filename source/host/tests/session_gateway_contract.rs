@@ -5375,6 +5375,9 @@ fn shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_jou
             resumed.shutdown(); drop(resumed);
         }
     }
+    // Restore the original serialized metadata after malformed hex/JSON
+    // cases before deriving the next valid-JSON corruption fixtures.
+    db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
     // Valid JSON may still contain a damaged journal or a no-longer-Human
     // source. Both must fail closed even when a Session cached its owner
     // before an independent SQLite handle changed the committed metadata.
