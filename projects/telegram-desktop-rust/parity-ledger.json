@@ -1982,7 +1982,8 @@
         "pub fn clear_caption(&mut self)",
         "ClientCommand::ForwardMessage",
         "Command::ForwardMessage",
-        "fn idempotent_send_replay("
+        "fn idempotent_send_replay(",
+        "HumanForwardBatch::validate"
       ],
       "target_language": "Rust",
       "language_rationale": "Forward privacy changes canonical persisted message content/provenance and replay semantics, so it belongs below the renderer in the existing Rust messaging domain.",
@@ -2030,12 +2031,15 @@
         "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
         "path:source/host/src/extensions/session/production.rs#forward_human_message",
         "path:source/host/Cargo.toml#fabushi-messaging-core",
-        "path:source/host/src/extensions/session/production.rs#ForwardPrivacy::normalized"
+        "path:source/host/src/extensions/session/production.rs#ForwardPrivacy::normalized",
+        "path:source/host/src/extensions/session/forward_batch_journal.rs#HumanForwardBatch::validate"
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
         "native/mahayana-messaging/tests/service_contract.rs#forward_replay_is_idempotent_and_conflicts_on_changed_options",
-        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart"
+        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
+        "source/host/src/extensions/session/forward_batch_journal.rs#forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair"
       ],
       "target_commit": "21ab7870a3ba3129172942d722befb83c321f413",
       "workflow_run": null,
@@ -2103,17 +2107,21 @@
       "motion_contract": "No new motion.",
       "reduced_motion_contract": "No new motion.",
       "visual_baseline_ids": [],
-      "visual_evidence": [],
+      "visual_evidence": [
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570/artifacts/13174992345"
+      ],
       "accessibility_evidence": [],
       "design_exception_adr": null,
       "design_reviewer": null,
       "quality_risk": "high",
       "requirement_ids": [
-        "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
+        "NMR-48d"
       ],
       "oracle_ids": [
         "ORA-TDRP-SHARE-FORWARD-PRIVACY-001",
-        "ORA-TDRP-FORWARD-INTENT-UI-001"
+        "ORA-TDRP-FORWARD-INTENT-UI-001",
+        "NMR-AC-39b"
       ],
       "invariant_ids": [
         "INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001",
@@ -2125,7 +2133,9 @@
         "FWD-UI-04",
         "FWD-UI-05"
       ],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent"
+      ],
       "property_state_case_ids": [
         "PROP-TDRP-SHARE-FORWARD-PRIVACY-001"
       ],
@@ -2140,7 +2150,8 @@
         "TEMP-TDRP-SHARE-FORWARD-PRIVACY-001"
       ],
       "fault_recovery_case_ids": [
-        "FAULT-TDRP-SHARE-FORWARD-PRIVACY-001"
+        "FAULT-TDRP-SHARE-FORWARD-PRIVACY-001",
+        "shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair"
       ],
       "ui_functional_case_ids": [
         "ForwardMessageDialog.behavior.test.mjs:partial retry only sends failed destination with stable identity",
@@ -2172,12 +2183,14 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "test_execution_evidence": [],
+      "test_execution_evidence": [
+        "projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json#execution_history"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox forward submission semantics using canonical Fabushi MessagingService/Message identity owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "Shipping Human Forward now reuses canonical fabushi-messaging-core ForwardPrivacy::normalized() before Host persistence, removing the prior duplicated executable privacy policy while the existing Host Session remains the sole shipping Human Message owner. This row remains implemented, not verified: exact-head native/Host integration, Electron E2E, temporal/reload/restart/recovery and independent evidence are pending.\nTask20bf round1 resumed on live59f5fa after preserving interrupted local changes. Existing account lifetime and Host whole-batch journal are retained. FWD-UI-01..05 repairs immutable normalized retry, ambiguous settlement, 32-target selection, reverse privacy and presentation close in the actual picker. Six source bodies were read: only the two options files have complete exact source-to-responsibility records; panel/phrase records explicitly remain pending mapping. Current batch tests are authored, not locally executed; containing-H Actions artifacts establish execution. Historical target_commit/run fields remain historical and no product/source/independent acceptance is promoted.",
+      "notes": "Shipping Human Forward now reuses canonical fabushi-messaging-core ForwardPrivacy::normalized() before Host persistence, removing the prior duplicated executable privacy policy while the existing Host Session remains the sole shipping Human Message owner. This row remains implemented, not verified: exact-head native/Host integration, Electron E2E, temporal/reload/restart/recovery and independent evidence are pending.\nTask20bf round1 resumed on live59f5fa after preserving interrupted local changes. Existing account lifetime and Host whole-batch journal are retained. FWD-UI-01..05 repairs immutable normalized retry, ambiguous settlement, 32-target selection, reverse privacy and presentation close in the actual picker. Six source bodies were read: only the two options files have complete exact source-to-responsibility records; panel/phrase records explicitly remain pending mapping. Current batch tests are authored, not locally executed; containing-H Actions artifacts establish execution. Historical target_commit/run fields remain historical and no product/source/independent acceptance is promoted.\nH73cc6e1cc9fa871e5f80931979606ac9ee810551 was pushed and API commit/tree/files reread. Source157/schema37/candidate, Chromium16/settlement5/Transcript16, Electron83 and Windows11 passed; six actual UI screenshots reviewed. The H73 reconciliation job subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1; shipping remained queued at readback. A separate current-source review found valid-JSON persisted privacy contradictions; NMR-48d now rejects these at the existing load/store validator without rewriting accepted intent. Added journal and cold/cached HTTP/SQLite restart cases require Human49/journal13 at the containing new H after retaining the concurrent three reply-recovery cases and native upload case. No complete source/product/independent acceptance claim; earlier fields remain historical.",
       "additional_source_identities": [
         {
           "repository": "telegramdesktop/tdesktop",

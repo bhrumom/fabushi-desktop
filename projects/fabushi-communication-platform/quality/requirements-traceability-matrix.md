@@ -45,12 +45,19 @@ batch requires Human47 and retains journal12.
 | FWD-UI-04 | Existing privacy controls plus shared ForwardPrivacy | Hiding captions hides names; showing names restores captions; first dispatch locks snapshot |
 | FWD-UI-05 | Existing account/dialog lifetime and Session durable recovery | Close while pending retires callback only; late result cannot settle/close reopened presentation |
 | FMEP-SOURCE-01 | Unique source_reviews and existing source candidate checker | Two exact option-source records complete, four fully read panel/phrase records pending decomposition; pending records never counted complete and full acceptance still requires the entire source set |
+| NMR-48d / NMR-AC-39b | HumanForwardBatch::validate on existing Session journal load/store | `forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent` and `shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair`; three semantic contradictions, cold/cached owners, exact damaged-byte retention, no target I/O, repair/same-nonce continuation and text-only positive control |
 
 Existing Chromium12 cases are retained and extended to16, alongside settlement5,
-the original Transcript16 plus two reply-projection cases (Transcript18), and
-current Host/Agent/shipping/Electron/Windows gates. Current-H
-execution is pending at authoring; no local executable verification or independent
-ACCEPT. Evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
+the original Transcript16 plus two concurrent reply-projection cases (Transcript18),
+and current Host/Agent/shipping/Electron/Windows gates. At H
+`73cc6e1cc9fa871e5f80931979606ac9ee810551`, source157/schema37/candidate,
+Chromium16/settlement5/Transcript16, Electron83, Windows11 and reconciliation
+Human44/sharebox1/journal12/Agent4/credential3/Gateway1 passed. Six actual UI
+screenshots were viewed. Shipping was still queued at this observation.
+NMR-48d's containing H preserves the concurrent reply cases and requires
+Human49/journal13; new execution is not-run at authoring. No local executable
+verification or independent ACCEPT.
+Evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
 
 ## Historical round 28 — actual forwarding crash tests and persistence repair
 
