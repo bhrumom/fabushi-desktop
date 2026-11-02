@@ -1705,6 +1705,24 @@ blob `1f4285bde53ca674c314f90affea0f24dee68ddb` (exact generation/result owner);
 identity and publication after managed commit). These are bounded semantic
 sources, not a claim of full file/dependency closure or a replacement for OCRM.
 
+### Admission guard accounting oracle — SWA-GUARD-ORACLE-01
+
+Decision **FIX / TEST_FLAW**: exact H
+`0f3ed500d6ea7f389207782847fa797fa05f6f85`, Runtime run `41484007662`,
+Host job `125409914759` failed the Settings contract's global guard count
+with actual 11 versus expected 10. ORT-v1 added one guarded private
+`capture_original_turn_terminal_fence`; the original seven transaction bodies
+retain their ten guards. Preserve all seven per-owner counts, malformed and
+rebound identity assertions, metadata predicates and transaction checks. Count
+the added private terminal fence separately and retain an exact total of 11,
+so neither deleting an original guard nor moving it to the new helper is
+accepted. This corrects the source wiring oracle only; it does not change
+production admission or stand in for the existing runtime refusal tests.
+The original log SHA-256 is
+`400c6890a98447d593746901527332bf2d7457d7a6d274bc6fd62e9bb50ac34c`.
+Require the affected Settings gate and retained recovery contracts on the new
+exact H in Actions; later steps skipped at 0f are not passing evidence.
+
 ## References
 
 - `projects/openclaw-rust/decisions/2026-11-01-session-work-admission-owner-contract.md`

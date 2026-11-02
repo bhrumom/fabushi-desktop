@@ -601,8 +601,8 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
         owner_source
             .matches("session_admission_identity_is_well_formed(&admission)")
             .count(),
-        10,
-        "all session-owned transaction edges must validate admission identity"
+        11,
+        "all transaction edges and the original-turn terminal fence must validate admission identity"
     );
     for (method, expected_guards) in [
         ("commit_session_work_result", 2),
@@ -630,6 +630,20 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
             "{method} must retain its own admission and replay guards"
         );
     }
+    let terminal_fence = owner_source
+        .split_once("\nfn capture_original_turn_terminal_fence(")
+        .expect("the original-turn terminal fence exists")
+        .1
+        .split_once("\n}\n")
+        .expect("the original-turn terminal fence closes before later owners")
+        .0;
+    assert_eq!(
+        terminal_fence
+            .matches("session_admission_identity_is_well_formed(&admission)")
+            .count(),
+        1,
+        "the terminal fence must validate admission independently of every existing transaction"
+    );
     assert!(owner_source.contains("if !session_work_write_is_admitted(db)?"));
     let initializer = owner_source
         .split("pub fn initialize_metadata_if_missing(")
