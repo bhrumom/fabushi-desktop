@@ -1,7 +1,7 @@
 {
   "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
-  "batch": "immutable shipping forward picker intent",
+  "batch": "immutable shipping forward intent and persisted privacy recovery",
   "status_at_authoring": "implemented-tests-authored-current-H-execution-pending",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
@@ -101,14 +101,14 @@
     "scope": "Remote run/jobs reread; predecessor evidence only, not execution of this extension."
   },
   "execution": {
-    "status": "pending-at-authoring",
+    "status": "privacy-recovery-extension-tests-authored-containing-H-not-run",
     "runner": "GitHub Actions only",
     "target_identity": "Exact containing github.sha asserted by workflow and stored in artifact target-sha.txt; no self-referential future SHA is invented.",
     "workflows": [
       ".github/workflows/native-service-contracts.yml",
       ".github/workflows/tdrp-source-review-contract.yml"
     ],
-    "minimum_new_assertions": "Chromium16, unchanged settlement5/Transcript16, preserved Human44/journal12 and Host/Agent/shipping/Electron/Windows gates; existing schema and fixed source candidate plus new subset/pending negative cases.",
+    "minimum_new_assertions": "Human49 and journal13 including the two named privacy cases; preserve sharebox1/Agent4/credential3/Gateway1, Chromium16/settlement5/Transcript18 and shipping/Electron/Windows gates. Source157/schema37/candidate rerun only through the existing affected workflow.",
     "local_or_htch_validation_run": false
   },
   "rollback": "Revert this picker/checker extension normally while preserving all existing Host journals, databases, resources and credentials. Reverting restores known UI limitations; it does not delete or cancel accepted sends and does not constitute complete upgrade/rollback acceptance.",
@@ -130,7 +130,7 @@
     },
     {
       "id": 4,
-      "done": "Existing forwarding entry through durable owner is extended with retry/error/cancel presentation behavior and corresponding negatives.",
+      "done": "Existing forwarding entry through durable owner is extended with retry/error/cancel presentation behavior and corresponding negatives. NMR-48d now closes persisted privacy consistency at the existing recovery ingress with authored cold/cached/repaired intent cases.",
       "open": "Current-H execution plus remote provenance, eligibility, precise feedback and remaining options."
     },
     {
@@ -145,12 +145,12 @@
     },
     {
       "id": 7,
-      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification.",
-      "open": "Containing-H successful Actions evidence."
+      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification. H73 source157/schema37/candidate and UI16/Transcript16/settlement5/Electron83/Windows11 succeeded; six UI screenshots actually reviewed. H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1.",
+      "open": "H73 shipping still queued at readback; new privacy-extension containing-H execution and all full-product gates remain."
     },
     {
       "id": 8,
-      "done": "Continued independent source and product review; repaired actual pending-schema compatibility defect before dependent candidate use.",
+      "done": "Continued independent source and product review; repaired actual pending-schema compatibility defect before dependent candidate use. While macOS jobs waited, independent current-source review identified and implemented the persisted privacy P2; prior passing checks are retained with their exact H.",
       "open": "Classify any actual Actions failure and proceed only after repair; external service/publisher prerequisites remain."
     },
     {
@@ -171,5 +171,248 @@
     "conclusion": "success",
     "scope": "Exact object transport only; run and job steps reread through GitHub API. No product verification or acceptance."
   },
-  "delivery": "Product commit continues the existing migration branch using current-ref compare-and-swap and connector/API readback of full commit/tree/files. After direct 3.5MB object upload did not return and the object was confirmed absent, a temporary Actions-only transport branch at f81409edc0f962ba55ed1ae139004e91ebbfe17f applies the reviewed ledger delta and uploads only exact blob 81e9d4009231b07d78a851cbdff3a4cc0ef29796. It cannot promote the migration ref or grant acceptance; its helper files are excluded from the product tree."
+  "delivery": "H73 was published to the existing migration branch and API reread. The privacy extension preserves that lineage and all current reply/upload/CLI work. Three expected-head updates encountered concurrent head advances; no force update was used. Product commit 8b4594b5dba71164d978eea1e1bb9fdb639a82b3 is now saved on checkpoint/tdrp-forward-privacy-task20bf-r1 for a stable exact-H Actions campaign and pull-request integration into the same migration branch. The two existing workflow push filters add only this exact batch branch, retaining all checks and final acceptance gates.",
+  "execution_history": [
+    {
+      "head": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+      "tree": "304d825eb8ee67faa4d7058841c2268e2db25412",
+      "remote_readback": {
+        "full_commit": true,
+        "full_tree_not_truncated": true,
+        "changed_blob_identities": 14,
+        "contents_read": [
+          "shipping picker",
+          "shared review helper",
+          "unique ledger",
+          "round evidence"
+        ]
+      },
+      "source_run": {
+        "id": 41514576605,
+        "attempt": 1,
+        "conclusion": "success",
+        "contract_job": 125514708293,
+        "candidate_job": 125514843188,
+        "node_tests": 157,
+        "schema_tests": 37,
+        "ledger_schema_errors": 0,
+        "authored_source_reviews": 6,
+        "completed_source_reviews": 2,
+        "source_accepted": false
+      },
+      "native_run": {
+        "id": 41514576570,
+        "attempt": 1,
+        "conclusion": null,
+        "jobs": [
+          {
+            "id": 125514709141,
+            "name": "native-message-ui",
+            "conclusion": "success",
+            "checks": {
+              "Transcript": 16,
+              "forward_settlement": 5,
+              "Chromium": 16,
+              "renderer_build": "success"
+            }
+          },
+          {
+            "id": 125514709195,
+            "name": "native-message-electron",
+            "conclusion": "success",
+            "tests": 83,
+            "scope": "Electron build and bounded carrier/auth/package/update contracts; no installation or release"
+          },
+          {
+            "id": 125514709410,
+            "name": "windows-update-publisher",
+            "conclusion": "success",
+            "tests": 11,
+            "scope": "Windows Authenticode/Unicode with a temporary CI certificate; not the production publisher"
+          },
+          {
+            "id": 125514708818,
+            "name": "native-message-reconciliation",
+            "status_at_readback": "completed",
+            "conclusion": "success",
+            "scope": "Full job log/API reread; 65 selected checks passed, zero failed/ignored; loopback/SQLite boundaries, not deployed-service acceptance.",
+            "checks": {
+              "Human": 44,
+              "sharebox": 1,
+              "journal": 12,
+              "Agent_nonce": 4,
+              "settlement_credential": 3,
+              "authenticated_gateway": 1
+            }
+          },
+          {
+            "id": 125514709378,
+            "name": "native-message-shipping-compile",
+            "status_at_readback": "queued",
+            "conclusion": null
+          },
+          {
+            "id": 125514710824,
+            "name": "native-auth-and-journal",
+            "conclusion": "skipped",
+            "scope": "Existing push event condition; not a pass"
+          }
+        ]
+      },
+      "artifacts": [
+        {
+          "id": 13173513610,
+          "name": "tdrp-source-review-contract-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:482b1c1b0fabca5e1888c5e5ab3b1adde8f122e8ad45e205cefe45d38b230440"
+        },
+        {
+          "id": 13173503665,
+          "name": "tdrp-source-candidate-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:c12fe26dd7164b4004f098009b9cb41bfbc51757a83f104e50f34bb05631224a"
+        },
+        {
+          "id": 13174992345,
+          "name": "native-message-ui-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:5e74e7f2364d4617535fb3679349e98e3903701e2f0eb89a402bbe40b7df4bc5"
+        },
+        {
+          "id": 13174044080,
+          "name": "native-message-electron-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:0fc533df4095c82ad648c21177ae0e110afe9e08e2f3f1a82c426f785aff1042"
+        },
+        {
+          "id": 13173833468,
+          "name": "windows-update-publisher-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:d73ab6369a98dc748f955e8a1642af28a2dffbed3d9727e7e526b20eeb1147a5"
+        },
+        {
+          "id": 13175795865,
+          "digest": "sha256:109f352139eaee2bf911fe5c706ba4ea16a6883be4c14541c2c24cbb06ddb873",
+          "scope": "H73 reconciliation logs; GitHub metadata and complete log readback"
+        }
+      ],
+      "visual_readback": {
+        "artifact": 13174992345,
+        "target_sha_txt": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+        "images": [
+          "forward-light-wide.png",
+          "forward-light-narrow.png",
+          "forward-dark-wide.png",
+          "forward-dark-narrow.png",
+          "forward-immutable-retry-wide.png",
+          "forward-immutable-retry-narrow.png"
+        ],
+        "observation": "All six actual Actions screenshots viewed. No visible clipping/overlap; retry actions remain inside the 390x844 viewport. This is a bounded component review, not full visual/accessibility or packaged acceptance."
+      },
+      "evidence_scope": "API run/job/log and artifact metadata readback. Root also downloaded and read the UI ZIP target/logs/images. Other artifact interior inspection is not claimed. No local product/test execution or final ACCEPT."
+    }
+  ],
+  "privacy_recovery_extension": {
+    "base": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+    "spec": "docs/specs/fbcp-native-message-reconciliation.md#persisted-forward-privacy-consistency-task20bf-round1--nmr-48d",
+    "requirements": [
+      "NMR-48d",
+      "NMR-AC-39b"
+    ],
+    "finding": "P2: valid JSON could contain non-normalized flags, hidden sender with retained origin, or hidden media captions with retained text, and ordinary recovery consumed it. Normal new-request admission was already correct; this is not a claim of protection against arbitrary database tampering.",
+    "implementation": "HumanForwardBatch::validate reuses ForwardPrivacy::normalized and rejects all three contradictions on existing load/store paths. It never rewrites or discards the accepted journal; text without attachments is preserved even with both hide options true.",
+    "production_chain": "ordinary sync/forward retry -> load_forward_batches -> decode_forward_batches -> HumanForwardBatch::validate -> existing Session delivery/append/native HTTP; invalid state returns before target I/O",
+    "unit_case": "forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent",
+    "integration_case": "shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair",
+    "oracle": "Completed first target retained; three semantic damage classes x cold/cached owners; no new resource/message POST or history progress; exact damaged metadata retained; repair original metadata then continue unfinished target under original nonce. Text-only both-hide restart positive control.",
+    "static_review": {
+      "journal_blob": "126205768557935b7200480562d2ca4538bdbbde",
+      "integration_blob": "ba47a59d2381122e04ddc5830bfd89039fcc914b",
+      "reviewer": "root integrator, separate from implementation author",
+      "result": "No identified P1/P2 in bounded diff, adjacent shared privacy implementation and actual test fixture consumers.",
+      "execution": false,
+      "acceptance": false,
+      "merged_review": "Main integrator reread the 2e436318 current owner and exact two-file delta after the three-way merge. NMR-49 reply identity code/tests, cached Human identity checks and pre-existing corruption/stale-writer negatives remain unchanged. Privacy admission and new test bodies retain the reviewed behavior. No execution or independent ACCEPT is inferred. The next 76a84e8a merge changes the attachment size bound and adds an independent upload test; privacy fixtures use tiny immutable bytes and remain within the bound."
+    },
+    "execution": "not-run-at-authoring; containing H requires Human49 and journal13 plus resource-upload3 in GitHub Actions, retaining concurrent reply and upload cases",
+    "rollback": "Ordinary revert preserves all journal/snapshot/user data and reopens this recovery gap; no schema version or service change.",
+    "concurrent_preservation": "Preserved source-transport and NMR-49/NMR-50 spec additions, c438df83/ff6d49da cached/cold Human identity validation and extended malformed-journal/stale-writer tests, plus round13 evidence. Three-way merge retained the complete current base; privacy production logic and two new test bodies remain the reviewed delta. Later d78ba3c1 lock-diagnostic-only workflow/spec changes were merged without altering either privacy owner/test blob. The final publication parent is the exact Git commit parent, checked by expected-head CAS and remote readback. Integration onto 2e436318 retains NMR-49 implementation and its Human47/Transcript18 gates; with this privacy case the Human gate is48. The unique ledger merge preserves the complete eddd11c7 NMR-49 append. 76a84e8a service25MiB upload/snapshot correction and its same-nonce recovery plus three reader contracts are preserved; no weaker resource budget is restored.",
+    "frozen_review_base": "2e436318f4d06bccb3bee462beee7e96e554aa3f",
+    "ledger_transport_history": [
+      {
+        "head": "915402c779e079dc7e5ec70a5f644fa5ee2d45ca",
+        "run": 41516275526,
+        "conclusion": "success",
+        "base_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
+        "result_blob": "e494ba34eaaa0dbd06429a367554d9114a793236",
+        "scope": "Same temporary transport branch; only exact Git object creation, no product verification/ref update."
+      },
+      {
+        "head": "e880fdc944006268f1608de8ea123bc5dd687091",
+        "run": 41517503125,
+        "job": 125524685557,
+        "conclusion": "success",
+        "base_blob": "eddd11c7db0e8be8cfa26a58fb177901ce09b55e",
+        "result_blob": "4a4660291628a9bdb65a9ac387defae16f7c50f1",
+        "scope": "Exact append preserves concurrent NMR-49 canonical ledger; object-only transport, no ref writes or acceptance."
+      }
+    ],
+    "ledger_transport": {
+      "head": "5d391cf131e3b270f576fd2e234d2e3ac120c44f",
+      "run": 41518276457,
+      "job": 125527348636,
+      "object_step_conclusion": "success",
+      "base_blob": "a95d76c46119474e36134456442aebe39f4e9760",
+      "result_blob": "097e28e2c276db9926e9a183995d939a1ef97d8e",
+      "scope": "Exact privacy-row patch preserves concurrent reply/upload ledger. Remote product tree references this object; no Actions ref writes or acceptance."
+    },
+    "independent_review": {
+      "base": "8a20566eb48a7056d932f3f34667f89a2e6a4a4a",
+      "product_head": "8b4594b5dba71164d978eea1e1bb9fdb639a82b3",
+      "validation_head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+      "scope": "Independent read-only general/security review of complete changed privacy methods/tests and adjacent actual journal, metadata, source authorization, batch dispatch/recovery, process/HTTP/SQLite fixture and workflow consumers. Same production/test blobs at validation head.",
+      "verdict": "No P0/P1/P2 findings in the bounded review",
+      "execution_performed": false,
+      "product_acceptance": false
+    }
+  },
+  "concurrent_integration": {
+    "base": "2e436318f4d06bccb3bee462beee7e96e554aa3f",
+    "preserved": "NMR-49 reply identity settlement, three Human and two projection cases; NMR-50 spec, unique CLI/package specs, NMR-51 service upload spec and all temporary object-only workflows. Root reconciled exact journal row append; no source or acceptance promotion.",
+    "required_counts": {
+      "Human": 49,
+      "journal": 13,
+      "Transcript": 18,
+      "resource_upload": 3
+    },
+    "subsequent_preserved_base": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+    "subsequent_preservation": "CLI native Host features, real production binary/process controls, installer receipt delivery and six promotion-consumer contracts retained. No journal/test/ledger delta from this later base.",
+    "publication_parent": "8a20566eb48a7056d932f3f34667f89a2e6a4a4a",
+    "publication_delta": "76a84e8a..8a20566e changed only nine disjoint object-transport/task-spec paths; all are preserved in the published base tree."
+  },
+  "isolated_batch_delivery": {
+    "branch": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+    "pull_request": "https://github.com/bhrumom/fabushi-desktop/pull/189",
+    "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+    "tree": "a4328ecc38bd6a3a7b8093ae4b8e91e1c687769f",
+    "remote_readback": {
+      "full_commit": true,
+      "full_tree_not_truncated": true,
+      "changed_blob_identities": 11,
+      "production_journal_contents": true,
+      "canonical_ledger_blob_contents": true,
+      "workflow_and_evidence_contents": true
+    },
+    "native_run": 41518713768,
+    "source_run": 41518713832,
+    "integration": "draft PR into the existing migration branch; concurrent conflicts remain to reconcile after bounded qualification",
+    "acceptance": false
+  },
+  "verification_recovery": {
+    "classification": "TEST_FLAW",
+    "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+    "source_run": 41518713832,
+    "contract_job": 125528856020,
+    "contract_result": "157 Node and37 Python schema cases passed; canonical ledger0 errors",
+    "candidate_job": 125529038672,
+    "candidate_result": "skipped because the job condition omitted the newly allowed isolated push branch",
+    "fix": "Add only the same exact isolated ref to fixed-source-candidate.if, preserving the existing ref and every candidate/accepted-refusal gate. No same-H rerun can correct this predicate.",
+    "retained_evidence": "H531 contract and product-job results remain bound to H531. The predicate-only follow-up executes source checks at its own exact H; native code/fixtures and their in-flight run are unchanged.",
+    "acceptance": false
+  }
 }

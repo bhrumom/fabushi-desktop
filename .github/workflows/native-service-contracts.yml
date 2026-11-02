@@ -1,7 +1,7 @@
 name: Native service contracts
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/tests/session_gateway_contract.rs'
@@ -157,17 +157,18 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 48 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 49 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair ... ok' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib native_message_resource_upload_tests -- --nocapture 2>&1 | tee artifacts/native-message/resource-upload-bounds.log
           grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/resource-upload-bounds.log
-          grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
-          grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
-          grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
-          grep -F 'shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok' artifacts/native-message/session-gateway.log
       - name: Durable forwarding sharebox owner contract
         shell: bash
         run: |
@@ -179,9 +180,10 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib forward_batch_journal::tests -- --nocapture 2>&1 | tee artifacts/native-message/forward-batches.log
-          grep -Eq 'test result: ok\. 12 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-batches.log
+          grep -Eq 'test result: ok\. 13 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-batches.log
           grep -F 'stale_same_batch_snapshot_cannot_regress_completed_destination ... ok' artifacts/native-message/forward-batches.log
           grep -F 'concurrent_forward_metadata_writers_have_one_durable_winner_and_recover ... ok' artifacts/native-message/forward-batches.log
+          grep -F 'forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent ... ok' artifacts/native-message/forward-batches.log
       - name: Preserve Agent send nonce boundary
         shell: bash
         run: |
