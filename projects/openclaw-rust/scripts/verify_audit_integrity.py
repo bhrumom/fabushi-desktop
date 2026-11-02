@@ -1,186 +1,118 @@
 #!/usr/bin/env python3
-"""Fail-closed audit & mapping integrity validator.
-Enforces Spec §6.2-§6.3 and AC03: forbids bulk 1-END shortcuts, null reviewers,
-unclassified language kinds, or ledger/shard count discrepancies. An honest
-unread count is progress evidence, not a global AC02 failure; applicability and
-disposition closure are checked by the exact-head authority gate.
+"""OCRM committed source accounting integrity, not semantic/final acceptance.
+
+Both this CI consumer and validate_p0.py use the same risk-review contract.
+Legacy reading facts remain literal and independent of responsibility mapping.
 """
-import glob
 import gzip
+import hashlib
 import json
 import os
-import sys
 from pathlib import Path
+
 from jsonschema import Draft202012Validator
+from source_review import validate_source_reviews
 
 ROOT = Path(__file__).resolve().parent.parent
 REPO_ROOT = ROOT.parent.parent
 
-def fail(msg: str):
-    print(f"\n[INTEGRITY FAILURE] {msg}", file=sys.stderr)
-    sys.exit(1)
+
+def require(condition, message):
+    if not condition:
+        raise AssertionError(message)
+
+
+def read_json(path):
+    return json.loads(path.read_text())
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
 
 def main():
-    print("=== OpenClaw-Rust Migration Audit Integrity Verification ===")
-
-    # 1. Shard Verification
-    shards = sorted(glob.glob(str(ROOT / "inventory/shards/part-*.jsonl.gz")))
-    if not shards:
-        fail("No shard files found under inventory/shards/")
-
-    total_paths = 0
-    # Read completeness and responsibility mapping are independent dimensions.
-    # A fully read oracle/test file may intentionally remain unclassified until
-    # a responsibility source_ref is established. Only mapped rows require a
-    # non-empty responsibility_ids list.
-    read_complete_paths = set()
-    inventory_paths = set()
-    unclassified_paths = 0
-
-    for shard_path in shards:
-        with gzip.open(shard_path, "rt", encoding="utf-8") as f:
-            for line_no, line in enumerate(f, 1):
-                total_paths += 1
-                entry = json.loads(line)
-                path = entry.get("path")
-                inventory_paths.add(path)
-                read_status = entry.get("read_status")
-                resp_status = entry.get("responsibility_status")
-                # AC02 dimensions are schema-required row fields. Do not turn
-                # a stale or hand-edited row with missing keys into an honest
-                # unknown/pending value: that would hide a materialization
-                # defect and let the committed audit surface drift from the
-                # canonical inventory contract.
-                if "applicability_status" not in entry or "disposition_status" not in entry:
-                    fail(
-                        f"{shard_path}:{line_no}: '{path}' is missing required AC02 row fields"
-                    )
-                applicability_status = entry["applicability_status"]
-                disposition_status = entry["disposition_status"]
-
-                if applicability_status not in {"unknown", "product", "non-product", "mixed"}:
-                    fail(f"{shard_path}:{line_no}: '{path}' has invalid applicability_status={applicability_status!r}")
-                if disposition_status not in {"pending", "deep-read-required", "deep-read", "grouped-evidence", "not-applicable"}:
-                    fail(f"{shard_path}:{line_no}: '{path}' has invalid disposition_status={disposition_status!r}")
-                if disposition_status == "grouped-evidence" and not entry.get("evidence_refs"):
-                    fail(f"{shard_path}:{line_no}: '{path}' grouped disposition has no evidence_refs")
-
-                if read_status in ("read", "read-complete"):
-                    # Strict validation for claimed read files
-                    reviewer = entry.get("reviewer")
-                    if not reviewer:
-                        fail(f"{shard_path}:{line_no}: '{path}' has read_status='{read_status}' but reviewer is null/empty")
-
-                    ranges = entry.get("read_ranges")
-                    if not ranges or ranges == ["1-END"]:
-                        fail(f"{shard_path}:{line_no}: '{path}' has invalid bulk read_ranges={ranges}")
-                    for r in ranges:
-                        if not isinstance(r, dict) or "start_line" not in r or "end_line" not in r:
-                            fail(f"{shard_path}:{line_no}: '{path}' range must be dict with start_line and end_line: {r}")
-                        if r["start_line"] < 1 or r["end_line"] < r["start_line"]:
-                            fail(f"{shard_path}:{line_no}: '{path}' invalid range line numbers: {r}")
-
-                    lang = entry.get("language_kind")
-                    if lang == "unclassified":
-                        fail(f"{shard_path}:{line_no}: '{path}' has language_kind='unclassified' while claiming read")
-
-                    module_id = entry.get("module_id")
-                    if not module_id:
-                        fail(f"{shard_path}:{line_no}: '{path}' missing module_id while claiming read")
-
-                    resp_ids = entry.get("responsibility_ids")
-                    if not isinstance(resp_ids, list):
-                        fail(f"{shard_path}:{line_no}: '{path}' responsibility_ids must be a list")
-                    if resp_status == "mapped" and not resp_ids:
-                        fail(f"{shard_path}:{line_no}: '{path}' is mapped but has no responsibility_ids")
-                    if resp_status == "unclassified" and resp_ids:
-                        fail(f"{shard_path}:{line_no}: '{path}' is unclassified but has responsibility_ids")
-
-                    ev_refs = entry.get("evidence_refs")
-                    if not ev_refs or not isinstance(ev_refs, list):
-                        fail(f"{shard_path}:{line_no}: '{path}' missing evidence_refs while claiming read")
-
-                    read_complete_paths.add(path)
-                else:
-                    unclassified_paths += 1
-                    # Ensure unread entries do not falsely claim responsibilities
-                    if entry.get("responsibility_ids"):
-                        fail(f"{shard_path}:{line_no}: '{path}' is unread but has non-empty responsibility_ids")
-                    if entry.get("read_ranges"):
-                        fail(f"{shard_path}:{line_no}: '{path}' is unread but has non-empty read_ranges")
-
-    print(f"-> Shards scanned: {len(shards)}")
-    print(f"-> Total tracked paths: {total_paths}")
-    print(f"-> Read-complete paths: {len(read_complete_paths)}")
-    print(f"-> Unclassified paths: {unclassified_paths}")
-
-    with open(ROOT / "inventory/index.json", "r", encoding="utf-8") as f:
-        index = json.load(f)
-    expected_total = index.get("inventory", {}).get("tracked_entries_total")
-    if not isinstance(expected_total, int) or expected_total < 0:
-        fail("inventory/index.json must declare a non-negative tracked_entries_total")
-    if total_paths != expected_total:
-        fail(f"Total path count {total_paths} does not match canonical tracked authority {expected_total}")
-    if len(read_complete_paths) + unclassified_paths != expected_total:
-        fail("Invariant violation: read-complete + unread != canonical total tracked paths")
-
-    # 2. Parity Ledger Verification
-    ledger_path = ROOT / "parity-ledger.json"
-    with open(ledger_path, "r", encoding="utf-8") as f:
-        ledger = json.load(f)
-
-    ledger_mapped_paths = set()
-    for responsibility in ledger.get("responsibilities", []):
-        for source_ref in responsibility.get("source_refs", []):
-            path = source_ref.get("path") if isinstance(source_ref, dict) else source_ref
-            if not path:
-                fail(f"Responsibility {responsibility.get('id')} contains an empty source reference")
-            ledger_mapped_paths.add(path)
-    missing_ledger_paths = sorted(ledger_mapped_paths - inventory_paths)
-    if missing_ledger_paths:
-        fail(f"Ledger source references missing from canonical inventory: {missing_ledger_paths[:5]}")
-    print(f"-> Ledger responsibility-mapped paths: {len(ledger_mapped_paths)}")
-
-    cov = ledger.get("file_coverage", {})
-    if cov.get("tracked_paths") != expected_total:
-        fail(f"parity-ledger.json file_coverage.tracked_paths ({cov.get('tracked_paths')}) != canonical total ({expected_total})")
-    if cov.get("mapped_paths") != len(ledger_mapped_paths):
-        fail(f"parity-ledger.json file_coverage.mapped_paths ({cov.get('mapped_paths')}) != ledger responsibility-mapped paths ({len(ledger_mapped_paths)})")
-    expected_unclassified = expected_total - len(ledger_mapped_paths)
-    if cov.get("unclassified_paths") != expected_unclassified:
-        fail(f"parity-ledger.json file_coverage.unclassified_paths ({cov.get('unclassified_paths')}) != ledger-unmapped paths ({expected_unclassified})")
-    if cov.get("omitted_known") != 0:
-        fail("parity-ledger.json file_coverage.omitted_known != 0")
-
-    flags = ledger.get("completion_flags", {})
-    for flag, val in flags.items():
-        if val is not False:
-            fail(f"Global completion flag '{flag}' must be false until the applicable AC01-AC24 evidence is complete")
-
-    # Check for misclassified test files
-    for r in ledger.get("responsibilities", []):
-        if r.get("id") == "OCRM-RESP-PLUGINS-MANIFEST-DOCTOR-001":
-            for ref in r.get("source_refs", []):
-                p = ref.get("path") if isinstance(ref, dict) else ref
-                if "registry.contract.test.ts" in p or "registry.ts" in p:
-                    fail(f"Misclassified registry contract file '{p}' found in manifest doctor responsibility")
-
-    # 3. JSON Schema Draft 2020-12 Validation
-    for schema_name, data_file in [
-        ("parity-ledger.schema.json", ledger_path),
-        ("requirements-traceability-matrix.schema.json", ROOT / "requirements-traceability-matrix.json"),
-    ]:
-        with open(ROOT / "schemas" / schema_name, "r", encoding="utf-8") as sf:
-            schema = json.load(sf)
-        with open(data_file, "r", encoding="utf-8") as df:
-            data = json.load(df)
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        raise SystemExit("Validator must run in GitHub Actions")
+    lock = read_json(ROOT / "upstream.lock.json")
+    expected = {key: lock["upstream"][key] for key in ("repository", "commit", "tree")}
+    index = read_json(ROOT / "inventory/index.json")
+    ledger = read_json(ROOT / "parity-ledger.json")
+    rtm = read_json(ROOT / "requirements-traceability-matrix.json")
+    manifest = read_json(ROOT / "inventory/shards/manifest.json")
+    for name, value in (("index", index), ("ledger", ledger), ("RTM", rtm), ("shard manifest", manifest)):
+        require({key: value["upstream"][key] for key in expected} == expected, name + " source identity drift")
+    for schema_name, data in (("parity-ledger.schema.json", ledger), ("requirements-traceability-matrix.schema.json", rtm)):
+        schema = read_json(ROOT / "schemas" / schema_name)
         Draft202012Validator.check_schema(schema)
-        err = next(Draft202012Validator(schema).iter_errors(data), None)
-        if err:
-            fail(f"Schema {schema_name} error at {list(err.absolute_path)}: {err.message}")
+        Draft202012Validator(schema).validate(data)
+    source_schema = read_json(ROOT / "schemas/source-inventory.schema.json")
+    Draft202012Validator.check_schema(source_schema)
+    row_validator = Draft202012Validator(source_schema["properties"]["entries"]["items"])
+    entries, shard_paths = [], set()
+    for shard in manifest["shards"]:
+        path = REPO_ROOT / shard["path"]
+        require(path.parent == ROOT / "inventory/shards" and path.name.startswith("part-")
+                and path.suffixes == [".jsonl", ".gz"] and path not in shard_paths,
+                "Unsafe or duplicate inventory shard")
+        shard_paths.add(path)
+        raw = path.read_bytes()
+        require(digest(raw) == shard["compressed_sha256"], "Compressed shard identity drift: " + path.name)
+        plain = gzip.decompress(raw)
+        require(digest(plain) == shard["uncompressed_sha256"], "Plain shard identity drift: " + path.name)
+        chunk = [json.loads(line) for line in plain.decode().splitlines()]
+        require(chunk and len(chunk) == shard["count"] <= manifest["shard_size_limit"], "Shard cardinality drift")
+        require(chunk[0]["path"] == shard["first_path"] and chunk[-1]["path"] == shard["last_path"], "Shard bounds drift")
+        for row in chunk:
+            row_validator.validate(row)
+        entries.extend(chunk)
+    require(shard_paths == set((ROOT / "inventory/shards").glob("part-*.jsonl.gz")), "Omitted or orphan inventory shard")
+    counts = {
+        "tracked_entries_total": len(entries),
+        "blob_entries_total": sum(row["entry_kind"] == "blob" for row in entries),
+        "symlink_entries_total": sum(row["entry_kind"] == "symlink" for row in entries),
+        "gitlink_entries_total": sum(row["entry_kind"] == "gitlink" for row in entries),
+    }
+    require(counts["tracked_entries_total"] == sum(counts[key] for key in counts if key != "tracked_entries_total"), "Entry-kind conservation failure")
+    reconstructed = {"format_version": 1, "project_id": "OCRM-001", "upstream": expected, "counts": counts, "entries": entries}
+    canonical = (json.dumps(reconstructed, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    require(digest(canonical) == manifest["canonical_inventory_sha256"], "Canonical inventory reconstruction identity drift")
+    for key, count in counts.items():
+        require(index["inventory"][key] == count, "Inventory denominator drift: " + key)
+    require(manifest["tracked_entries_total"] == len(entries), "Manifest denominator drift")
+    responsibility_by_id = {}
+    for responsibility in ledger["responsibilities"]:
+        rid = responsibility["id"]
+        require(rid not in responsibility_by_id, "Duplicate responsibility ID")
+        responsibility_by_id[rid] = responsibility
+    def evidence_exists(ref):
+        path = REPO_ROOT / ref.split("#", 1)[0]
+        return path.resolve().is_relative_to(REPO_ROOT.resolve()) and path.is_file()
+    by_path = validate_source_reviews(entries, responsibility_by_id, expected_identity=expected,
+                                     evidence_exists=evidence_exists)
+    ledger_paths = set()
+    for rid, responsibility in responsibility_by_id.items():
+        for ref in responsibility["source_refs"]:
+            row = by_path.get(ref["path"])
+            require(row is not None and row["blob_sha"] == ref["blob_sha"], "Ledger source identity drift: " + rid)
+            require(rid in row["responsibility_ids"], "Missing reverse source/responsibility link: " + rid)
+            ledger_paths.add(ref["path"])
+            if rid == "OCRM-RESP-PLUGINS-MANIFEST-DOCTOR-001":
+                require("registry.contract.test.ts" not in ref["path"] and "registry.ts" not in ref["path"], "Registry responsibility misclassified as manifest doctor")
+    for path, sha in lock["root_inputs"].items():
+        require((sha is None and path not in by_path) or (path in by_path and by_path[path]["sha"] == sha), "Fixed root input drift: " + path)
+    mapped = sum(row["responsibility_status"] != "unclassified" for row in entries)
+    unread = sum(row["read_status"] != "read-complete" for row in entries)
+    require(mapped == len(ledger_paths), "Mapping denominator drift")
+    coverage = ledger["file_coverage"]
+    require(coverage["tracked_paths"] == len(entries) and coverage["mapped_paths"] == mapped
+            and coverage["unclassified_paths"] == len(entries) - mapped, "Ledger coverage drift")
+    require(index["inventory"]["unclassified"] == len(entries) - mapped, "Index mapping drift")
+    require(index["inventory"]["unread"] == unread, "Literal read-history counter drift")
+    require(index["inventory"]["omitted_known"] == coverage["omitted_known"] == 0, "Known source omission")
+    for document in (ledger, rtm):
+        require(all(value is False for value in document["completion_flags"].values()), "Unproven global completion flag")
+    print(f"OCRM committed source integrity PASS: {len(entries)} paths; {mapped} mapped; {unread} unread/partial. Risk review and final acceptance remain independent.")
 
-    print("-> Schema validation: parity-ledger.json and RTM pass Draft 2020-12")
-    print("=== Audit Integrity Check PASSED! 0 violations found. ===")
 
 if __name__ == "__main__":
     main()

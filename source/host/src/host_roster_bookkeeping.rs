@@ -5,6 +5,7 @@ use crate::extensions::attachments::attachments_service::AttachmentsService;
 use crate::extensions::box_store_sync::production::ProductionBoxStoreSyncApi;
 use crate::extensions::forever_box::ForeverBoxService;
 use crate::extensions::source_map::source_map_service::SandSourceMap;
+use crate::extensions::settings::settings_service::SettingsService;
 use crate::extensions::transcript::transcript_manager::TranscriptManager;
 use crate::host_production_extensions::ProductionHostExtensions;
 
@@ -157,6 +158,13 @@ impl HostRosterBookkeeping {
     pub fn apply_config(&mut self, cfg: &serde_json::Value) {
         let active = crate::agents::agent_roster::try_resolve_default_agent_id(cfg);
         self.apply(active.as_deref());
+    }
+
+    /// Refresh a runtime projection from the sole settings owner while the
+    /// caller holds the roster mutex. A commit receipt may already be stale.
+    pub fn apply_current_settings(&mut self, settings: &SettingsService) {
+        let current = settings.get_host_settings_snapshot();
+        self.apply_config(&current.settings);
     }
 
     pub fn apply(&mut self, active_agent_id: Option<&str>) {

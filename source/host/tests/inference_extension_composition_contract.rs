@@ -1,7 +1,11 @@
 use std::fs;
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::collections::BTreeMap;
+use std::sync::{mpsc, Arc, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::extensions::experiments::extension::{
+    HostExperimentsExtension, HostExperimentsOptions,
+};
 use mahayana_host_runtime::extensions::inference::cursor_web_tools::{
     CursorWebBackend, WebDocument, WebFetchResponse, WebSearchRequest, WebSearchResponse,
 };
@@ -18,7 +22,9 @@ use mahayana_host_runtime::extensions::inference::production::{
 };
 use mahayana_host_runtime::extensions::inference::provider_session::RoutedProvider;
 use mahayana_host_runtime::extensions::inference::cursor_session::SAND_SUMMARIZATION_MODEL_ID;
-use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
+use mahayana_host_runtime::extensions::settings::settings_service::{
+    HostSettingsUpdateError, SettingsService,
+};
 
 struct FakeAuth;
 impl InferenceAuth for FakeAuth {
@@ -160,11 +166,24 @@ fn production_inference_settings_owns_live_route_and_usage_persistence() {
     ));
     fs::create_dir_all(&root).expect("create temp settings dir");
     let settings = Arc::new(SettingsService::new(root.join("settings.json")));
-    settings
-        .set_inference_provider("openrouter")
-        .expect("persist provider");
     let adapter = ProductionInferenceSettings::new(Arc::clone(&settings));
+    let initial = settings.get_host_settings_snapshot();
+    let committed = settings
+        .set_host_settings_if_current(
+            Some(&initial.hash),
+            serde_json::json!({"inferenceProvider": "openrouter"}),
+        )
+        .expect("persist provider through the conditional owner");
 
+    assert_eq!(adapter.inference_provider(), RoutedProvider::OpenRouter);
+    assert!(matches!(
+        settings.set_host_settings_if_current(
+            Some(&initial.hash),
+            serde_json::json!({"inferenceProvider": "codex"}),
+        ),
+        Err(HostSettingsUpdateError::Conflict { .. })
+    ));
+    assert_eq!(settings.get_host_settings_snapshot(), committed);
     assert_eq!(adapter.inference_provider(), RoutedProvider::OpenRouter);
     adapter.record_inference_usage(
         RoutedProvider::OpenRouter,
@@ -182,6 +201,103 @@ fn production_inference_settings_owns_live_route_and_usage_persistence() {
     assert_eq!(usage["providers"]["openrouter"]["outputTokens"].as_u64(), Some(7));
     assert_eq!(usage["providers"]["openrouter"]["cacheReadTokens"].as_u64(), Some(3));
     assert_eq!(usage["providers"]["openrouter"]["cacheWriteTokens"].as_u64(), Some(2));
+    let persisted = settings.get_host_settings_snapshot();
+    drop(adapter);
+    drop(settings);
+    let reopened = Arc::new(SettingsService::new(root.join("settings.json")));
+    let reopened_adapter = ProductionInferenceSettings::new(Arc::clone(&reopened));
+    assert_eq!(reopened.get_host_settings_snapshot(), persisted);
+    assert_eq!(reopened_adapter.inference_provider(), RoutedProvider::OpenRouter);
+    assert_eq!(reopened.get_inference_router_usage(), usage);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_experiments_apply_reentrant_settings_notifications_in_commit_order() {
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-settings-notification-order-{}-{nonce}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&root).expect("create settings directory");
+    let path = root.join("settings.json");
+    let settings = Arc::new(SettingsService::new(&path));
+    let experiments = Arc::new(HostExperimentsExtension::new(HostExperimentsOptions {
+        is_dev_build: false,
+        env_gate_overrides: None,
+    }));
+    experiments.replace_feature_flag_overrides(BTreeMap::from([
+        ("settings_commit_order_gate".into(), false),
+    ]));
+    let applied = Arc::new(Mutex::new(Vec::new()));
+    let applied_sink = Arc::clone(&applied);
+    let experiments_for_settings = Arc::clone(&experiments);
+    let _feature_subscription = settings.subscribe_to_feature_flag_overrides(Arc::new(
+        move |overrides| {
+            // This is the same real consumer called by production composition.
+            experiments_for_settings.replace_feature_flag_overrides(overrides);
+            applied_sink.lock().expect("applied gates").push(
+                experiments_for_settings.check_feature_gate("settings_commit_order_gate"),
+            );
+        },
+    ));
+    let nested_receipt = Arc::new(Mutex::new(None));
+    let receipt_sink = Arc::clone(&nested_receipt);
+    let applied_during_callback = Arc::clone(&applied);
+    let weak_owner = Arc::downgrade(&settings);
+    let _timezone_subscription = settings.subscribe_to_user_time_zone(Arc::new(move |zone| {
+        assert_eq!(zone.as_deref(), Some("Asia/Tokyo"));
+        let owner = weak_owner.upgrade().expect("settings owner");
+        let current = owner.get_host_settings_snapshot();
+        let receipt = owner
+            .set_host_settings_if_current(
+                Some(&current.hash),
+                serde_json::json!({
+                    "inferenceProvider": "codex",
+                    "featureFlagOverrides": {"settings_commit_order_gate": false}
+                }),
+            )
+            .expect("B commits from A's timezone callback");
+        assert_eq!(receipt.settings["inferenceProvider"], "codex");
+        assert_eq!(owner.get_host_settings_snapshot(), receipt);
+        assert!(applied_during_callback.lock().expect("applied gates").is_empty(),
+            "B's receipt precedes notification completion while A is draining");
+        *receipt_sink.lock().expect("nested receipt") = Some(receipt);
+    }));
+
+    let owner = Arc::clone(&settings);
+    let (sender, receiver) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        sender.send(owner.set_host_settings_if_current(
+            None,
+            serde_json::json!({
+                "userTimeZone": "Asia/Tokyo",
+                "inferenceProvider": "openrouter",
+                "featureFlagOverrides": {"settings_commit_order_gate": true}
+            }),
+        )).expect("deliver A receipt");
+    });
+    let first = receiver.recv_timeout(Duration::from_secs(10))
+        .expect("reentrant settings notifications must not deadlock")
+        .expect("A commits");
+    worker.join().expect("settings drainer thread");
+    let second = nested_receipt.lock().expect("nested receipt")
+        .take().expect("B receipt");
+    assert_eq!(first.settings["inferenceProvider"], "openrouter");
+    assert_ne!(first.hash, second.hash);
+    assert_ne!(first.config_source["rawHash"], second.config_source["rawHash"]);
+    assert_eq!(settings.get_host_settings_snapshot(), second);
+    assert_eq!(applied.lock().expect("applied gates").as_slice(), &[true, false]);
+    assert!(!experiments.check_feature_gate("settings_commit_order_gate"));
+    let stored: serde_json::Value =
+        serde_json::from_slice(&fs::read(&path).expect("latest source bytes"))
+            .expect("persisted settings JSON");
+    assert_eq!(stored["inferenceProvider"], "codex");
+    assert!(stored.get("featureFlagOverrides").is_none(),
+        "the existing feature override contract remains runtime-only");
     let _ = fs::remove_dir_all(root);
 }
 

@@ -1,9 +1,11 @@
 # OpenClaw 全源码 Rust 迁移 — Source of Truth
 
+> 执行修订（2026-11-02）：主 Spec 最新 §17（OCRM-EXEC-02）优先于下文旧快照和执行时机。完整来源核算、风险分层审查、产品闭环批次、Actions 及时验证；不要求所有文本逐行深读，也不因全局 P0 未完成阻止已满足相关来源/合同的实施。历史 pending/未初始化数字不得作为当前工作分支事实。
+
 Status: active  
 Project ID: OCRM-001  
 Revision: 3
-Last updated: 2026-10-31（Asia/Shanghai）
+Last updated: 2026-11-02（Asia/Shanghai）
 Target: `bhrumom/fabushi-desktop` current canonical main  
 Implementation/acceptance: **未完成**
 
@@ -21,7 +23,34 @@ Implementation/acceptance: **未完成**
 4. 本项目 [`module-map.md`](module-map.md)、当前 task、ADR、lock/inventory/ledger/dossier、RTM 和 exact-head evidence。
 5. 历史研究与旧版本快照。它们必须重核后才能用于当前结论。
 
-### Exact-subject identity separation (2026-11-01)
+### 本轮固定身份与实施入口（2026-11-02）
+
+沿既有 `codex/openclaw-rust-fusion-chat-20261101-writer` 的
+`3b797be6b65095fd16b0a978e5fcd19a8ab504b3` 继续；该头包含 PR #182 的
+`d44fc4aa1dc1e0ae486515b70255017174c130ea` 及后继 478 个提交。本轮整合
+live main `5528062177e3865eef60a073a066cca144f9e3e8` 的产品/UI与执行合同。
+固定来源仍为 lock/inventory/ledger 所保存的
+`1440bb1771372334bea23d7642bb52deb7db1845` / tree
+`90c8aab39972da11cfad220361781d49e1bc6700`。本轮直接读取该 Git tree，恢复
+被后续 discovery 混入的 package/lock 根 blob，并将 RTM 的顶层来源声明
+对齐此 U；旧 `ad8d…` 阅读和证据不重标，`live_candidate` 仍仅为历史观察。
+
+`accepted_for_this_implementation_round`、baseline/closure 与八个全局完成
+标志均未提升。结构门核对固定 U 和真实 checkout/root inputs；最终门仍
+要求独立接受与风险适配审查。生成器与 runtime audit 共用
+`scripts/source_review.py`，legacy row 只兼容结构读取；Actions 增补
+unknown/deep/pending 字段，不改变 literal read_status。最终门拒绝漏项、
+身份/依赖漂移、未取得证据、浅读高风险、错误 N/A 及未映射责任。
+
+当前生产批次为 [Settings 原子配置提交](docs/specs/config-settings-atomic-commit.md)，
+真实来源审查保存在 [既有 config dossier](dossiers/config-settings-scoped.md)。
+单实例 CAS/snapshot、严格读取失败与推理消费者接线正在实施，未取得
+本轮 exact-H Actions 结果；全量来源闭包、跨进程锁、脱敏 revision、其他
+产品职责及最终 G01–G12/AC01–AC24 均未验收。
+
+### Historical exact-subject identity separation (2026-11-01)
+
+以下保留当时的身份冲突记录；当前固定来源以本轮声明与 lock 为准。
 
 本轮实现历史锚点仍是
 `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` / tree
@@ -447,7 +476,7 @@ Actions、运行时、设备、平台、签名包或独立 ACCEPT 证据降级�
 receipt、source authority 或产品验收证据；其 carrier commit 也不能继承旧
 subject 的 receipt。
 
-各 flag 的适用集合、true 谓词、负责 gate 和失效条件以主 Spec §15.1 为唯一规范。`source_closure_ready` 表示完整取得并枚举来源/依赖，不表示已阅读全文；AC02 的全量闭合是“0 适用性/处置未闭合、0 未评估适用责任”，而不是把 58,750 个路径强行变成全文深读。全部适用产品责任理解、owner/合同/oracle 双向映射和非产品 disposition 证据归 `responsibility_mapping_complete`；责任双向映射由 AC03 单独验收。P0 G02 structural 可以保留诚实 unread/unclassified；最终 G02 必须消除适用性/处置未闭合及未评估适用责任，但仍要如实报告尚未深读的非适用成组路径。
+各 flag 的适用集合、true 谓词、负责 gate 和失效条件以主 Spec §15.1 为唯一规范。`source_closure_ready` 表示完整取得并枚举来源/依赖，不表示已阅读全文；全部语义理解和责任映射归 `responsibility_mapping_complete`。P0 G02 structural 可以保留诚实 unread/unclassified，最终 G02 要求无未分类/未处置/必需审查缺口，原始 unread 不作统一硬门。
 
 主 Spec §12.3 区分受验 target 与证据载体：仓库保留 source declarations、已知 baseline 和历史 receipt 引用，当前有效状态由同一 subject target 的不可变 Actions receipt 投影。最终 receipt 发布到 artifact/attestation/check，不为回写自身 SHA 再制造一个提交；后续提交是新 target，旧绿色结果不能自动成为当前验收。
 
@@ -471,6 +500,8 @@ subject 的 receipt。
 按主 Spec 的 P0→P5 依赖推进，阶段不是范围豁免。全局闭包受阻时，满足主 Spec §11.1 的单元可在自身及传递依赖 authority、完整阅读和合同经审查后进入实现/单元验收；单元通过不改变全项目 flags，缺服务/设备仍阻塞对应验收。每个任务记录 source responsibility、existing owner、具体差异、实现与验收证据；进展以真实生产闭合为中心。阻塞时检查已有支持邮件、记录必要动作和解除条件，继续后续可执行项；恢复时重查事实和 lease。
 
 后续接手者先重读本入口、主 Spec、适用 task 和 current code。交接只保留当前请求、确切 refs、已完成且有证据的变化、未闭合项和下一可执行责任，不复制旧会话堆积状态。
+
+主实现提示词：[`management/prompts/full-fusion-batch.md`](management/prompts/full-fusion-batch.md)。当前规范修订不更新机器记录或工作分支验收状态。
 
 2026-10-31T09:38:43Z 的只读远端复核发现 OpenClaw main 已再次漂移到
 commit=d27a8c9d9fec49a81084993bf16c3fefc4efd508、root tree

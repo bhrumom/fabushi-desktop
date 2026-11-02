@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from source_review import REVIEW_FIELDS
 
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
@@ -51,7 +52,7 @@ def canonical(path):
         missing = {
             "applicability_status",
             "disposition_status",
-        }.difference(entry)
+        }.union(REVIEW_FIELDS).difference(entry)
         assert not missing, f"Missing AC02 row fields at entry {row_number}: {sorted(missing)}"
     return data, digest(raw), lock
 
@@ -142,6 +143,8 @@ def write(path):
     index["inventory"]["dispositioned"] = dispositioned
     index["inventory"]["unreviewed_applicable"] = unreviewed_applicable
     index["inventory"]["unclassified"] = len(rows) - mapped_paths
+    # Preserve literal read history independently from mapping/review depth.
+    index["inventory"]["unread"] = sum(e["read_status"] != "read-complete" for e in rows)
     index["inventory"]["itemized_manifest_location"] = str(SHARDS / "manifest.json") + " (Git-tracked canonical row shards; authority checked in Actions)"
     INDEX.write_text(json.dumps(index, sort_keys=True, indent=2, ensure_ascii=False) + "\n")
     ledger["file_coverage"]["applicability_assessed_paths"] = applicability_assessed

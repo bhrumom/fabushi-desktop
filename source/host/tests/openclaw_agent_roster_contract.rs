@@ -321,3 +321,40 @@ fn test_ocrm_roster_o09_bookkeeping_apply_config_wiring() {
     assert_eq!(bookkeeping.latest_active_agent_id(), Some("active-agent"));
     assert_eq!(*port.0.lock().unwrap(), Some("active-agent".to_string()));
 }
+
+#[test]
+fn late_config_receipt_cannot_restore_an_old_attachment_agent() {
+    use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
+
+    let path = std::env::temp_dir().join(format!("fabushi-roster-cas-{}.json", uuid::Uuid::new_v4()));
+    let settings = SettingsService::new(&path);
+    let attachment = Arc::new(TestAttachmentRosterPort(std::sync::Mutex::new(None)));
+    let mut roster = HostRosterBookkeeping::new(HostRosterPorts {
+        attachments: Arc::clone(&attachment) as Arc<dyn AttachmentRosterPort>,
+        transcript: Arc::new(TestTranscriptRosterPort),
+        forever_box: Arc::new(TestForeverBoxRosterPort),
+        state_backstop: Arc::new(TestSnapshotBackstopPort),
+        box_store_sync: Arc::new(TestBoxStoreSnapshotPort),
+        source_map: Arc::new(TestSourceMapRosterPort),
+    });
+    let receipt_a = settings.set_host_settings_if_current(None, json!({
+        "agents": {"entries": {"agent-a": {}}}
+    })).unwrap();
+    let receipt_b = settings.set_host_settings_if_current(Some(&receipt_a.hash), json!({
+        "agents": {"entries": {"agent-b": {}}}
+    })).unwrap();
+
+    // B reconciles before the delayed postcommit work for A. Both shipping
+    // Gateway entrypoints use this owner method under the same roster mutex.
+    roster.apply_current_settings(&settings);
+    roster.apply_current_settings(&settings);
+    assert_eq!(roster.latest_active_agent_id(), Some("agent-b"));
+    assert_eq!(*attachment.0.lock().unwrap(), Some("agent-b".into()));
+    assert_eq!(try_resolve_default_agent_id(&receipt_a.settings), Some("agent-a".into()));
+    assert_eq!(try_resolve_default_agent_id(&receipt_b.settings), Some("agent-b".into()));
+
+    let shipping = include_str!("../app/src/main.rs");
+    assert_eq!(shipping.matches(".apply_current_settings(&self.settings)").count(), 2,
+        "config.set and setHostSettings must both reconcile the current owner state");
+    std::fs::remove_file(path).unwrap();
+}

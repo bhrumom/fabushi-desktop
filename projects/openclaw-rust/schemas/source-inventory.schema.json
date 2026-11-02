@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "schema_version": 1,
+  "schema_version": 2,
   "$id": "https://github.com/bhrumom/fabushi-desktop/blob/main/projects/openclaw-rust/schemas/source-inventory.schema.json",
   "title": "OCRM canonical tracked source inventory",
   "type": "object",
@@ -268,8 +268,170 @@
               "type": "string"
             },
             "uniqueItems": true
+          },
+          "category": {
+            "enum": [
+              "unknown",
+              "product",
+              "mixed",
+              "generated",
+              "dependency",
+              "documentation",
+              "resource",
+              "tooling",
+              "legal"
+            ]
+          },
+          "risk": {
+            "enum": [
+              "unknown",
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "required_review_depth": {
+            "enum": [
+              "deep",
+              "contract",
+              "disposition"
+            ]
+          },
+          "review_status": {
+            "enum": [
+              "pending",
+              "in-progress",
+              "blocked",
+              "deep-complete",
+              "contract-complete",
+              "disposition-complete"
+            ]
+          },
+          "rationale": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviewed_dependency_edges": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "review_inputs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role",
+                "repository",
+                "commit",
+                "tree",
+                "path",
+                "sha"
+              ],
+              "properties": {
+                "role": {
+                  "enum": [
+                    "source",
+                    "input",
+                    "generator",
+                    "consumer",
+                    "usage",
+                    "configuration",
+                    "patch",
+                    "license",
+                    "dependency"
+                  ]
+                },
+                "repository": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "commit": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                },
+                "tree": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "sha": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                }
+              }
+            }
           }
-        }
+        },
+        "dependentRequired": {
+          "category": [
+            "risk",
+            "required_review_depth",
+            "review_status",
+            "rationale",
+            "reviewed_dependency_edges",
+            "review_inputs"
+          ],
+          "risk": [
+            "category",
+            "required_review_depth",
+            "review_status",
+            "rationale",
+            "reviewed_dependency_edges",
+            "review_inputs"
+          ],
+          "required_review_depth": [
+            "category",
+            "risk",
+            "review_status",
+            "rationale",
+            "reviewed_dependency_edges",
+            "review_inputs"
+          ],
+          "review_status": [
+            "category",
+            "risk",
+            "required_review_depth",
+            "rationale",
+            "reviewed_dependency_edges",
+            "review_inputs"
+          ],
+          "rationale": [
+            "category",
+            "risk",
+            "required_review_depth",
+            "review_status",
+            "reviewed_dependency_edges",
+            "review_inputs"
+          ],
+          "reviewed_dependency_edges": [
+            "category",
+            "risk",
+            "required_review_depth",
+            "review_status",
+            "rationale",
+            "review_inputs"
+          ],
+          "review_inputs": [
+            "category",
+            "risk",
+            "required_review_depth",
+            "review_status",
+            "rationale",
+            "reviewed_dependency_edges"
+          ]
+        },
+        "$comment": "OCRM-EXEC-02 compatible migration: legacy rows have no completed risk review authority. Actions expansion adds all review fields with unknown/deep/pending defaults, preserving literal read_status and existing evidence. Final closure requires all review fields and the shared source_review.py contract."
       }
     }
   }

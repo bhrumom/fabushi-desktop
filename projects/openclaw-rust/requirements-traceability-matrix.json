@@ -2035,8 +2035,8 @@
   ],
   "schema_version": 1,
   "upstream": {
-    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
     "repository": "openclaw/openclaw",
-    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
   }
 }

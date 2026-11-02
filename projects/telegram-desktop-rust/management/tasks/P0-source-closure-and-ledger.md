@@ -1,9 +1,9 @@
-# P0 — Revision 9 source authority, inventory and traceability closure
+# P0 — Revision 10 source authority, inventory and traceability closure
 
 Status: active / fail-closed  
-Project: TDRP-001 Revision 9  
-Parent: FBCP-001 Revision 7  
-Execution: executable validation only in GitHub Actions.
+Project: TDRP-001 Revision 10
+Parent: FBCP-001 Revision 8
+Execution: FMEP-001 Revision 2; focused batch verification and final acceptance in GitHub Actions only.
 
 ## Goal
 
@@ -29,6 +29,8 @@ Tree enumeration is not semantic reading. Directory citation is not responsibili
 4. module dossiers containing symbols, state machines, lifecycle, failure semantics, ownership and behavior oracles.
 5. `projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md` — requirement/oracle/invariant/test/evidence/reviewer chain.
 6. GitHub Actions evidence from the same exact Fabushi HEAD.
+
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 ## Bidirectional gate
 

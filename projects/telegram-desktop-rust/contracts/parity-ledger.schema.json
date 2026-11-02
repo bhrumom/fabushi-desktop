@@ -72,6 +72,94 @@
       "items": {
         "$ref": "#/$defs/row"
       }
+    },
+    "source_reviews": {
+      "type": "array",
+      "description": "FMEP-SOURCE-01 exact identity review records; required by final acceptance, optional for historical candidates.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repository",
+          "commit",
+          "path",
+          "object",
+          "category",
+          "risk",
+          "review_depth",
+          "status",
+          "rationale",
+          "evidence",
+          "responsibility_ids"
+        ],
+        "properties": {
+          "repository": {
+            "type": "string",
+            "minLength": 1
+          },
+          "commit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "object": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "enum": [
+              "product",
+              "mixed-ui",
+              "generated",
+              "dependency",
+              "resource",
+              "documentation",
+              "tooling"
+            ]
+          },
+          "risk": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "review_depth": {
+            "enum": [
+              "deep",
+              "contract",
+              "disposition"
+            ]
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "complete"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "responsibility_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {

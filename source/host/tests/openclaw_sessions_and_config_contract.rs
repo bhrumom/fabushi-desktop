@@ -1,5 +1,5 @@
 use std::fs;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Barrier, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::session_paths::{
@@ -7,7 +7,9 @@ use mahayana_host_runtime::extensions::session::session_paths::{
     resolve_internal_send_route, resolve_public_session_route, InternalSessionRouteError,
     PublicSessionRouteError, SessionKind,
 };
-use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
+use mahayana_host_runtime::extensions::settings::settings_service::{
+    HostSettingsUpdateError, SettingsService,
+};
 use mahayana_host_runtime::gateway_command_error::GatewayCommandError;
 use mahayana_host_runtime::host_diagnostics::{pin_host_diagnostics_reporter, report_diagnostic_event};
 use mahayana_host_runtime::sha256::sha256_hex;
@@ -33,16 +35,29 @@ fn test_config_get_computes_sha256_hash_and_validates_base_hash() {
     ).expect("seed settings");
 
     let service = SettingsService::new(&path);
-    let settings = service.get_host_settings();
-    let serialized = serde_json::to_string(&settings).unwrap();
-    let hash = sha256_hex(serialized.as_bytes());
-
-    // Matches true when identical baseHash is passed
-    let matches_val = Some("something").map(|bh| bh == hash);
-    assert_eq!(matches_val, Some(false));
-
-    let matching_val = Some(hash.as_str()).map(|bh| bh == hash);
-    assert_eq!(matching_val, Some(true));
+    let original = service.get_host_settings_snapshot();
+    assert_eq!(
+        original.hash,
+        sha256_hex(serde_json::to_string(&original.settings).expect("serialize snapshot"))
+    );
+    let committed = service
+        .set_host_settings_if_current(
+            Some(&original.hash),
+            json!({"userTimeZone": "Asia/Tokyo"}),
+        )
+        .expect("matching owner snapshot commits");
+    assert_eq!(committed.settings["userTimeZone"], "Asia/Tokyo");
+    assert_ne!(committed.hash, original.hash);
+    assert_eq!(
+        committed.hash,
+        sha256_hex(serde_json::to_string(&committed.settings).expect("serialize commit"))
+    );
+    assert_eq!(
+        committed.config_source["rawHash"],
+        sha256_hex(fs::read(&path).expect("committed source bytes"))
+    );
+    assert_eq!(service.get_host_settings_snapshot(), committed);
+    let _ = fs::remove_file(path);
 }
 
 #[test]
@@ -50,35 +65,48 @@ fn test_config_set_optimistic_concurrency_rejects_stale_base_hash_with_409_confl
     let path = temp_path("config-conflict");
     fs::write(
         &path,
-        r#"{"version":1,"localToolPermission":"ask"}"#,
+        r#"{"version":1,"localToolPermission":"ask","notifications":{"isEnabled":true,"legacy":"preserve-until-accepted"}}"#,
     ).expect("seed");
 
     let service = SettingsService::new(&path);
-    let current_settings = service.get_host_settings();
-    let serialized = serde_json::to_string(&current_settings).unwrap();
-    let real_hash = sha256_hex(serialized.as_bytes());
+    let original_bytes = fs::read(&path).expect("seed bytes");
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("observed changes").push(fields);
+    }));
 
     let stale_base_hash = "deadbeef00000000deadbeef00000000deadbeef00000000deadbeef00000000";
 
-    // Concurrency guard logic
-    let check_concurrency = |base_hash: &str| -> Result<(), GatewayCommandError> {
-        let current = service.get_host_settings();
-        let current_str = serde_json::to_string(&current).unwrap();
-        let current_hash = sha256_hex(current_str.as_bytes());
-        if base_hash != current_hash {
-            return Err(GatewayCommandError::Conflict(format!(
-                "config baseHash mismatch: expected {current_hash}, got {base_hash}"
-            )));
-        }
-        Ok(())
-    };
-
-    let err = check_concurrency(stale_base_hash).unwrap_err();
+    let conflict = service
+        .set_host_settings_if_current(
+            Some(stale_base_hash),
+            json!({"localToolPermission": "allow"}),
+        )
+        .expect_err("the actual owner must reject a stale hash");
+    assert!(matches!(
+        &conflict,
+        HostSettingsUpdateError::Conflict { actual, .. } if actual == stale_base_hash
+    ));
+    // A rejected comparison cannot even normalize the legacy notification field.
+    assert_eq!(fs::read(&path).expect("unchanged settings"), original_bytes);
+    assert!(observed.lock().expect("observed changes").is_empty());
+    let current = service.get_host_settings_snapshot();
+    assert!(matches!(
+        &conflict,
+        HostSettingsUpdateError::Conflict { expected, .. } if expected == &current.hash
+    ));
+    let err = GatewayCommandError::from(conflict);
     assert_eq!(err.status(), 409);
     assert!(err.to_string().contains("config baseHash mismatch"));
 
-    // Valid hash passes
-    assert!(check_concurrency(&real_hash).is_ok());
+    service
+        .set_host_settings_if_current(
+            Some(&current.hash),
+            json!({"userTimeZone": "UTC"}),
+        )
+        .expect("matching hash reaches the same production owner");
+    assert_eq!(observed.lock().expect("observed changes").len(), 1);
 
     let shipping_source = include_str!("../app/src/main.rs");
     let config_set = shipping_source
@@ -91,6 +119,77 @@ fn test_config_set_optimistic_concurrency_rejects_stale_base_hash_with_409_confl
     assert!(config_set.contains("config.set requires raw, config, or settings"));
     assert!(config_set.contains("config.set target must be a JSON object"));
     assert!(!config_set.contains("unwrap_or(args)"));
+    assert!(config_set.contains("self.settings.set_host_settings_if_current("));
+    assert!(config_set.contains("map_err(GatewayCommandError::from)"));
+    assert!(config_set.contains("\"hash\": snapshot.hash"));
+    assert!(config_set.contains("\"configSource\": snapshot.config_source"));
+    assert!(!config_set.contains("get_host_settings()"));
+    assert!(!config_set.contains("get_config_source_metadata()"));
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn config_set_racing_one_owner_hash_has_one_commit_and_one_conflict() {
+    let path = temp_path("config-cas-race");
+    let service = Arc::new(SettingsService::new(&path));
+    let initial = service.get_host_settings_snapshot();
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("observed changes").push(fields);
+    }));
+    let barrier = Arc::new(Barrier::new(3));
+    let mut handles = Vec::new();
+    for model_id in ["model-a", "model-b"] {
+        let owner = Arc::clone(&service);
+        let barrier = Arc::clone(&barrier);
+        let base_hash = initial.hash.clone();
+        handles.push(std::thread::spawn(move || {
+            barrier.wait();
+            owner.set_host_settings_if_current(
+                Some(&base_hash),
+                json!({
+                    "agentDefaultModel": {
+                        "modelId": model_id, "maxMode": false, "parameters": []
+                    }
+                }),
+            )
+        }));
+    }
+    barrier.wait();
+    let results = handles
+        .into_iter()
+        .map(|handle| handle.join().expect("config writer thread"))
+        .collect::<Vec<_>>();
+    assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 1);
+    let committed = results
+        .iter()
+        .find_map(|result| result.as_ref().ok())
+        .expect("one committed snapshot");
+    let conflict = results
+        .iter()
+        .find_map(|result| result.as_ref().err())
+        .expect("one rejected writer");
+    assert!(matches!(
+        conflict,
+        HostSettingsUpdateError::Conflict { expected, actual }
+            if expected == &committed.hash && actual == &initial.hash
+    ));
+    assert_eq!(GatewayCommandError::from((*conflict).clone()).status(), 409);
+    assert_eq!(observed.lock().expect("observed changes").len(), 1);
+    assert_eq!(&service.get_host_settings_snapshot(), committed);
+    let persisted: Value = serde_json::from_slice(&fs::read(&path).expect("settings bytes"))
+        .expect("persisted JSON");
+    assert_eq!(
+        persisted["agentDefaultModel"],
+        committed.settings["agentDefaultModel"]
+    );
+    assert_eq!(committed.settings["agentDefaultModel"]["maxMode"], true);
+    assert_eq!(
+        SettingsService::new(&path).get_host_settings_snapshot(),
+        (*committed).clone()
+    );
+    let _ = fs::remove_file(path);
 }
 
 #[test]

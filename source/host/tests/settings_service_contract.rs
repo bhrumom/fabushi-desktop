@@ -1,15 +1,19 @@
 use std::collections::BTreeMap;
 use std::fs;
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{mpsc, Arc, Barrier, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::host_diagnostics::{HostDiagnostic, pin_host_diagnostics_reporter};
 use mahayana_host_runtime::extensions::settings::settings_service::{
     MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH, SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS,
     SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES, SandAutoReviewInstructions,
-    SandLocalToolPermission, SettingsService, is_valid_iana_time_zone,
+    HostSettingsUpdateError, SandLocalToolPermission, SettingsService, is_valid_iana_time_zone,
     get_json_value_at_path, set_json_value_at_path,
 };
+use mahayana_host_runtime::gateway_command_error::GatewayCommandError;
+use mahayana_host_runtime::sha256::sha256_hex;
 
 fn temp_path(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -20,6 +24,399 @@ fn temp_path(label: &str) -> std::path::PathBuf {
         "fabushi-settings-{label}-{}-{suffix}.json",
         std::process::id()
     ))
+}
+
+#[test]
+fn conditional_settings_reply_keeps_its_commit_when_a_listener_commits_again() {
+    let path = temp_path("cas-reentrant-listener");
+    let service = Arc::new(SettingsService::new(&path));
+    let initial = service.get_host_settings_snapshot();
+    let entered = Arc::new(AtomicBool::new(false));
+    let entered_for_listener = Arc::clone(&entered);
+    let observed = Arc::new(Mutex::new(None));
+    let sink = Arc::clone(&observed);
+    let weak_owner = Arc::downgrade(&service);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |_| {
+        if entered_for_listener.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        let owner = weak_owner.upgrade().expect("settings owner remains live");
+        let first = owner.get_host_settings_snapshot();
+        let second = owner
+            .set_host_settings_if_current(
+                Some(&first.hash),
+                serde_json::json!({"inferenceProvider": "claude-code"}),
+            )
+            .expect("listener can synchronously commit a follow-up");
+        *sink.lock().expect("callback snapshots") = Some((first, second));
+    }));
+
+    let owner = Arc::clone(&service);
+    let (sender, receiver) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        let result = owner.set_host_settings_if_current(
+            Some(&initial.hash),
+            serde_json::json!({"inferenceProvider": "openrouter"}),
+        );
+        sender.send(result).expect("deliver original commit");
+    });
+    let reply = receiver
+        .recv_timeout(Duration::from_secs(10))
+        .expect("callbacks must run outside the settings writer lock")
+        .expect("original transaction commits");
+    worker.join().expect("settings writer thread");
+
+    let (first, second) = observed
+        .lock()
+        .expect("callback snapshots")
+        .take()
+        .expect("callback read and follow-up write both completed");
+    assert_eq!(reply, first);
+    assert_eq!(reply.settings["inferenceProvider"], "openrouter");
+    assert_eq!(second.settings["inferenceProvider"], "claude-code");
+    assert_ne!(reply.hash, second.hash);
+    assert_ne!(reply.config_source["rawHash"], second.config_source["rawHash"]);
+    assert_eq!(
+        reply.hash,
+        sha256_hex(serde_json::to_vec(&reply.settings).expect("serialize original reply"))
+    );
+    assert_eq!(service.get_host_settings_snapshot(), second);
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn concurrent_specialized_commits_wait_for_the_active_notification_batch() {
+    let path = temp_path("concurrent-notification-order");
+    let service = Arc::new(SettingsService::new(&path));
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _changes = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("ordered changes").push(fields);
+    }));
+    let (entered_sender, entered_receiver) = mpsc::channel();
+    let (release_sender, release_receiver) = mpsc::channel();
+    let release_receiver = Mutex::new(release_receiver);
+    let _timezone = service.subscribe_to_user_time_zone(Arc::new(move |_| {
+        entered_sender.send(()).expect("signal active timezone callback");
+        release_receiver.lock().expect("release receiver")
+            .recv_timeout(Duration::from_secs(10))
+            .expect("release active timezone callback");
+    }));
+    let first_owner = Arc::clone(&service);
+    let (first_sender, first_receiver) = mpsc::channel();
+    let first = std::thread::spawn(move || {
+        first_sender.send(first_owner.set_user_time_zone(Some("Asia/Tokyo")))
+            .expect("deliver timezone receipt");
+    });
+    entered_receiver.recv_timeout(Duration::from_secs(10))
+        .expect("timezone callback starts");
+
+    let later_owner = Arc::clone(&service);
+    let (later_sender, later_receiver) = mpsc::channel();
+    let later = std::thread::spawn(move || {
+        let provider = later_owner.set_inference_provider("openrouter");
+        let onboarding = later_owner.set_has_seen_onboarding(true);
+        later_sender.send((provider, onboarding)).expect("deliver later receipts");
+    });
+    let (provider, onboarding) = later_receiver.recv_timeout(Duration::from_secs(10))
+        .expect("active callbacks must not retain the writer lock");
+    assert!(provider.expect("provider commit"));
+    assert!(onboarding.expect("onboarding commit"));
+    assert_eq!(service.get_inference_provider(), "openrouter");
+    assert_eq!(service.get_has_seen_onboarding(), Some(true));
+    assert!(observed.lock().expect("ordered changes").is_empty(),
+        "later commits return receipts but cannot overtake A's batch");
+
+    release_sender.send(()).expect("allow notifications to drain");
+    assert!(first_receiver.recv_timeout(Duration::from_secs(10))
+        .expect("timezone receipt after queue drains").expect("timezone commit"));
+    first.join().expect("timezone writer");
+    later.join().expect("later writers");
+    assert_eq!(observed.lock().expect("ordered changes").as_slice(), &[
+        vec!["userTimeZone".to_string()],
+        vec!["inferenceProvider".to_string()],
+        vec!["hasSeenOnboarding".to_string()],
+    ]);
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn listener_panic_drains_remaining_batches_and_releases_the_drainer() {
+    let path = temp_path("notification-panic-recovery");
+    let service = Arc::new(SettingsService::new(&path));
+    let panic_once = Arc::new(AtomicBool::new(false));
+    let panic_once_for_listener = Arc::clone(&panic_once);
+    let weak_owner = Arc::downgrade(&service);
+    let _timezone = service.subscribe_to_user_time_zone(Arc::new(move |_| {
+        if !panic_once_for_listener.swap(true, Ordering::SeqCst) {
+            weak_owner.upgrade().expect("settings owner")
+                .set_host_settings_if_current(None, serde_json::json!({
+                    "inferenceProvider": "codex",
+                    "featureFlagOverrides": {"panic_recovery_gate": false}
+                }))
+                .expect("reentrant commit before the listener panic");
+            panic!("intentional settings listener panic");
+        }
+    }));
+    let second_timezone_calls = Arc::new(Mutex::new(0));
+    let second_timezone_sink = Arc::clone(&second_timezone_calls);
+    let _second_timezone = service.subscribe_to_user_time_zone(Arc::new(move |_| {
+        *second_timezone_sink.lock().expect("later timezone listener") += 1;
+    }));
+    let overrides = Arc::new(Mutex::new(Vec::new()));
+    let override_sink = Arc::clone(&overrides);
+    let _features = service.subscribe_to_feature_flag_overrides(Arc::new(move |values| {
+        override_sink.lock().expect("ordered overrides").push(values["panic_recovery_gate"]);
+    }));
+    let changes = Arc::new(Mutex::new(Vec::new()));
+    let changes_sink = Arc::clone(&changes);
+    let _changes = service.subscribe_to_changes(Arc::new(move |fields| {
+        changes_sink.lock().expect("ordered changes").push(fields);
+    }));
+
+    let owner = Arc::clone(&service);
+    let (sender, receiver) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        let outcome = catch_unwind(AssertUnwindSafe(|| {
+            owner.set_host_settings_if_current(None, serde_json::json!({
+                "userTimeZone": "Asia/Tokyo",
+                "inferenceProvider": "openrouter",
+                "featureFlagOverrides": {"panic_recovery_gate": true}
+            }))
+        }));
+        sender.send(outcome).expect("deliver recovered unwind");
+    });
+    assert!(receiver.recv_timeout(Duration::from_secs(10))
+        .expect("listener unwind cannot strand its drainer").is_err());
+    worker.join().expect("panic was caught after draining");
+    assert_eq!(*second_timezone_calls.lock().expect("later timezone listener"), 1);
+    assert_eq!(overrides.lock().expect("ordered overrides").as_slice(), &[true, false]);
+    assert_eq!(service.get_inference_provider(), "codex");
+    assert_eq!(changes.lock().expect("ordered changes").len(), 2);
+
+    service.set_host_settings_if_current(None, serde_json::json!({
+        "userTimeZone": "UTC",
+        "inferenceProvider": "cursor",
+        "featureFlagOverrides": {"panic_recovery_gate": true}
+    })).expect("later commit can own and drain the notification queue");
+    assert_eq!(*second_timezone_calls.lock().expect("later timezone listener"), 2);
+    assert_eq!(overrides.lock().expect("ordered overrides").as_slice(), &[true, false, true]);
+    assert_eq!(changes.lock().expect("ordered changes").len(), 3);
+    assert_eq!(service.get_inference_provider(), "cursor");
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn conditional_readonly_rejection_preserves_bytes_and_observers() {
+    let path = temp_path("cas-readonly");
+    let original = br#"{"version":1,"readOnly":true,"notifications":{"isEnabled":true},"inferenceProvider":"openrouter"}"#;
+    fs::write(&path, original).expect("seed readonly settings");
+    let service = SettingsService::new(&path);
+    let current = service.get_host_settings_snapshot();
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("observed changes").push(fields);
+    }));
+
+    let error = service
+        .set_host_settings_if_current(
+            Some(&current.hash),
+            serde_json::json!({"inferenceProvider": "cursor"}),
+        )
+        .expect_err("readonly config rejects a matching hash");
+    assert!(matches!(&error, HostSettingsUpdateError::Rejected(message) if message.contains("readOnly")));
+    assert_eq!(GatewayCommandError::from(error).status(), 500);
+    assert_eq!(fs::read(&path).expect("unchanged readonly settings"), original);
+    assert_eq!(service.get_host_settings_snapshot(), current);
+    assert!(observed.lock().expect("observed changes").is_empty());
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn conditional_unreadable_source_rejects_candidate_and_leaves_no_commit_event() {
+    let root = temp_path("cas-io-failure-root");
+    let path = root.join("settings.json");
+    // A directory is an unreadable settings source even for privileged CI users.
+    fs::create_dir_all(&path).expect("create blocked settings destination");
+    fs::write(path.join("keep"), b"untouched").expect("seed destination marker");
+    let service = SettingsService::new(&path);
+    let current = service.get_host_settings_snapshot();
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("observed changes").push(fields);
+    }));
+
+    let error = service
+        .set_host_settings_if_current(
+            Some(&current.hash),
+            serde_json::json!({"inferenceProvider": "openrouter"}),
+        )
+        .expect_err("unreadable input cannot acknowledge a replacement candidate");
+    assert!(matches!(error, HostSettingsUpdateError::Rejected(_)));
+    assert!(path.is_dir());
+    assert_eq!(fs::read(path.join("keep")).expect("destination marker"), b"untouched");
+    assert_eq!(service.get_host_settings_snapshot(), current);
+    assert!(observed.lock().expect("observed changes").is_empty());
+    assert_eq!(fs::read_dir(&root).expect("settings directory").count(), 1);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn invalid_sources_are_not_replaced_by_getter_normalization_or_settings_writers() {
+    let fixtures: [(&str, &[u8]); 5] = [
+        ("invalid-json", b"{broken settings source"),
+        ("invalid-utf8", b"\xff\xfe"),
+        ("non-object", b"[1, 2, 3]"),
+        ("unsupported-version", br#"{"version":2,"keep":"original"}"#),
+        ("missing-version", br#"{"keep":"original"}"#),
+    ];
+    for (label, original) in fixtures {
+        let path = temp_path(label);
+        fs::write(&path, original).expect("seed invalid settings source");
+        let service = SettingsService::new(&path);
+        let observed = Arc::new(Mutex::new(Vec::new()));
+        let sink = Arc::clone(&observed);
+        let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+            sink.lock().expect("observed changes").push(fields);
+        }));
+
+        assert_eq!(service.get_notification_config()["isEnabled"], false);
+        let fallback = service.get_host_settings_snapshot();
+        assert_eq!(service.get_host_settings(), fallback.settings);
+        assert_eq!(fallback.config_source["exists"], true);
+        assert_eq!(fallback.config_source["valid"], false);
+        assert_eq!(fallback.config_source["rawHash"], sha256_hex(original));
+        assert_eq!(fs::read(&path).expect("source after getters"), original);
+
+        assert!(matches!(
+            service.set_host_settings_if_current(
+                Some(&fallback.hash),
+                serde_json::json!({"inferenceProvider": "openrouter"}),
+            ),
+            Err(HostSettingsUpdateError::Rejected(_))
+        ));
+        assert!(service.set_has_seen_onboarding(true).is_err());
+        assert!(service.set_host_settings(&serde_json::json!({"userTimeZone": "UTC"})).is_err());
+        assert_eq!(fs::read(&path).expect("source after rejected writers"), original);
+        assert!(observed.lock().expect("observed changes").is_empty());
+        let _ = fs::remove_file(path);
+    }
+}
+
+#[test]
+fn stale_account_snapshot_cannot_restore_cleared_models_and_restart_reads_the_commit() {
+    let path = temp_path("cas-account-restart");
+    fs::write(&path, br#"{"version":1,"unrelated":{"keep":true}}"#)
+        .expect("seed unknown stored field");
+    let service = SettingsService::new(&path);
+    let old_account = service
+        .set_host_settings_if_current(
+            None,
+            serde_json::json!({
+                "mcpCustomInstructionsAccountScope": "account-a",
+                "agentDefaultModel": {"modelId": "model-a", "maxMode": false, "parameters": []},
+                "computerUseModel": {"modelId": "computer-a", "maxMode": false, "parameters": []},
+                "localToolPermission": "allow",
+                "mcpCustomInstructions": {"Demo": "old account instruction"}
+            }),
+        )
+        .expect("first account settings");
+    assert!(service.scope_to_account("account-b").expect("switch account"));
+    let current = service.get_host_settings_snapshot();
+    let bytes_before_stale_write = fs::read(&path).expect("account-b bytes");
+    assert_eq!(current.settings["mcpCustomInstructionsAccountScope"], "account-b");
+    assert!(current.settings.get("agentDefaultModel").is_none());
+    assert!(current.settings.get("computerUseModel").is_none());
+    assert_eq!(current.settings["localToolPermission"], "ask");
+    assert_eq!(current.settings["mcpCustomInstructions"], serde_json::json!({}));
+    assert!(matches!(
+        service.set_host_settings_if_current(Some(&old_account.hash), old_account.settings),
+        Err(HostSettingsUpdateError::Conflict { .. })
+    ));
+    assert_eq!(fs::read(&path).expect("unchanged account-b bytes"), bytes_before_stale_write);
+
+    let committed = service
+        .set_host_settings_if_current(
+            Some(&current.hash),
+            serde_json::json!({
+                "inferenceProvider": "openrouter",
+                "agentDefaultModel": {"modelId": "model-b", "maxMode": false, "parameters": []}
+            }),
+        )
+        .expect("new account model commits");
+    drop(service);
+    let reopened = SettingsService::new(&path);
+    assert_eq!(reopened.get_host_settings_snapshot(), committed);
+    assert_eq!(reopened.get_agent_default_model().expect("persisted model")["modelId"], "model-b");
+    let stored: serde_json::Value =
+        serde_json::from_slice(&fs::read(&path).expect("persisted settings"))
+            .expect("persisted JSON");
+    assert_eq!(stored["unrelated"], serde_json::json!({"keep": true}));
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn normalization_and_specialized_writers_preserve_each_others_commits() {
+    let path = temp_path("shared-writer-normalization");
+    fs::write(
+        &path,
+        br#"{"version":1,"notifications":{"isEnabled":true,"legacy":"drop"},"unrelated":{"keep":true}}"#,
+    )
+    .expect("seed legacy settings");
+    let service = Arc::new(SettingsService::new(&path));
+    let barrier = Arc::new(Barrier::new(8));
+    let mut handles = Vec::new();
+    for action in 0..7 {
+        let owner = Arc::clone(&service);
+        let barrier = Arc::clone(&barrier);
+        handles.push(std::thread::spawn(move || {
+            barrier.wait();
+            match action {
+                0 => {
+                    owner.get_notification_config();
+                }
+                1 => {
+                    assert!(owner.set_agent_default_model(Some(&serde_json::json!({
+                        "modelId": "shared-writer-model", "maxMode": false, "parameters": []
+                    }))).expect("model writer"));
+                }
+                2 => {
+                    assert!(owner.set_user_time_zone(Some("Asia/Tokyo")).expect("timezone writer"));
+                }
+                3 => {
+                    assert!(owner.set_mcp_custom_instruction_by_server_id("17", "Demo", "keep instruction", true)
+                        .expect("MCP writer"));
+                }
+                4 => {
+                    assert!(owner.set_has_seen_onboarding(true).expect("onboarding writer"));
+                }
+                _ => {
+                    assert!(owner.record_inference_usage("openrouter", Some(2.0), Some(1.0), None, None)
+                        .expect("usage writer"));
+                }
+            }
+        }));
+    }
+    barrier.wait();
+    for handle in handles {
+        handle.join().expect("specialized settings writer thread");
+    }
+
+    let stored: serde_json::Value =
+        serde_json::from_slice(&fs::read(&path).expect("persisted settings"))
+            .expect("persisted JSON");
+    assert_eq!(stored["notifications"], serde_json::json!({"isEnabled": false}));
+    assert_eq!(stored["unrelated"], serde_json::json!({"keep": true}));
+    assert_eq!(stored["agentDefaultModel"]["modelId"], "shared-writer-model");
+    assert_eq!(stored["agentDefaultModel"]["maxMode"], true);
+    assert_eq!(stored["userTimeZone"], "Asia/Tokyo");
+    assert_eq!(stored["mcpCustomInstructionsByServerId"]["17"], "keep instruction");
+    assert_eq!(stored["hasSeenOnboarding"], true);
+    assert_eq!(stored["inferenceRouterUsage"]["providers"]["openrouter"]["requests"], 2);
+    assert_eq!(stored["inferenceRouterUsage"]["providers"]["openrouter"]["inputTokens"], 4);
+    let _ = fs::remove_file(path);
 }
 
 #[test]

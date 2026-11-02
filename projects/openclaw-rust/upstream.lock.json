@@ -2,7 +2,7 @@
   "format_version": 1,
   "project_id": "OCRM-001",
   "spec_revision": 3,
-  "status": "p0-source-authority-rebaseline-required",
+  "status": "fixed-source-identity-reconciled-acceptance-pending",
   "target": {
     "repository": "bhrumom/fabushi-desktop",
     "base_ref": "refs/heads/main",
@@ -54,8 +54,8 @@
   },
   "root_inputs": {
     "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e",
-      "package.json": "864764f48ec4f1a7946b880b10a14d96de4b6d78",
-    "pnpm-lock.yaml": "ba24cee97daeeb709109eb7d2b6a9efdfac0f310",
+    "package.json": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+    "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
     "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
     ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
     "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",

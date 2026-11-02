@@ -3760,10 +3760,9 @@ impl UnifiedGatewayApi {
         &self,
         args: &serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let settings = self.settings.get_host_settings();
-        let serialized = serde_json::to_string(&settings)
-            .map_err(|e| GatewayCommandError::Internal(e.to_string()))?;
-        let hash = mahayana_host_runtime::sha256::sha256_hex(serialized.as_bytes());
+        let snapshot = self.settings.get_host_settings_snapshot();
+        let settings = snapshot.settings;
+        let hash = snapshot.hash;
         let matches = args.get("baseHash")
             .and_then(serde_json::Value::as_str)
             .map(|bh| bh == hash);
@@ -3772,7 +3771,7 @@ impl UnifiedGatewayApi {
             "settings": settings.clone(),
             "config": settings,
             "hash": hash,
-            "configSource": self.settings.get_config_source_metadata(),
+            "configSource": snapshot.config_source,
         });
         if let Some(m) = matches {
             res["matches"] = serde_json::json!(m);
@@ -3801,40 +3800,27 @@ impl UnifiedGatewayApi {
             ));
         }
 
-        if let Some(base_hash) = args.get("baseHash").and_then(serde_json::Value::as_str) {
-            let current = self.settings.get_host_settings();
-            let current_str = serde_json::to_string(&current)
-                .map_err(|e| GatewayCommandError::Internal(e.to_string()))?;
-            let current_hash = mahayana_host_runtime::sha256::sha256_hex(current_str.as_bytes());
-            if base_hash != current_hash {
-                return Err(GatewayCommandError::Conflict(format!(
-                    "config baseHash mismatch: expected {current_hash}, got {base_hash}"
-                )));
-            }
-        }
-
         let permission_changed = target.get("localToolPermission").is_some();
-        let result = self.settings.set_host_settings(target)
-            .map_err(|e| GatewayCommandError::Internal(format!("Failed to persist settings: {e}")))?;
+        let snapshot = self.settings.set_host_settings_if_current(
+            args.get("baseHash").and_then(serde_json::Value::as_str),
+            target.clone(),
+        ).map_err(GatewayCommandError::from)?;
+        let result = snapshot.settings;
         report_agent_roster_security_findings(&result);
         self.roster_bookkeeping
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .apply_config(&result);
+            .apply_current_settings(&self.settings);
         if permission_changed {
             self.local_tool_permission.note_permission_changed();
         }
-
-        let serialized = serde_json::to_string(&result)
-            .map_err(|e| GatewayCommandError::Internal(e.to_string()))?;
-        let hash = mahayana_host_runtime::sha256::sha256_hex(serialized.as_bytes());
 
         Ok(serde_json::json!({
             "ok": true,
             "config": result.clone(),
             "settings": result,
-            "hash": hash,
-            "configSource": self.settings.get_config_source_metadata(),
+            "hash": snapshot.hash,
+            "configSource": snapshot.config_source,
         }))
     }
 
@@ -10940,7 +10926,7 @@ fn start_routed_provider_task(
                     )
                 });
             let turn_static_config = ProductionTurnAgentStaticConfig {
-                model_id: turn_model_id,
+                model_id: turn_model_id.clone(),
                 agent_token_limit: SAND_AGENT_TOKEN_LIMIT,
                 conversation_id: turn_conversation_id,
                 is_box_scoped_subagent: worker_generated_parent_agent_id.is_some(),
@@ -13652,7 +13638,7 @@ impl GatewayApi for UnifiedGatewayApi {
             self.roster_bookkeeping
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .apply_config(&result);
+                .apply_current_settings(&self.settings);
             if permission_changed {
                 self.local_tool_permission.note_permission_changed();
             }

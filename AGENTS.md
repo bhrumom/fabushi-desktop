@@ -330,6 +330,10 @@ For messaging, rooms, channels, contacts, media, calls, identity, Telegram-sourc
 - `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md` and TDRP-001 when Telegram source behavior is involved;
 - the current PR #20 / canonical Grok Bot spec.
 
+### Product-owner execution correction
+
+For FBCP/TDRP, `docs/specs/fabushi-deferred-ci-migration.md` §12 is mandatory: current shipping owners govern placement; product batches take priority over upstream tooling order; historical Telegram paths require caller/data-safe retirement; source, product implementation, wiring and verification progress stay distinct. Refresh the relevant existing owner inventory before adding an owner. PR #20 is architectural lineage, not a frozen implementation snapshot.
+
 ### Single target architecture
 
 **PR #20 / canonical Fabushi is the only target product architecture.**
@@ -360,6 +364,8 @@ TDRP-001 remains source-informed and is not clean-room. Do not claim Rust automa
 
 **FBCP-001 / TDRP-001 project exception:** all executable verification for this migration project runs **only in GitHub Actions**. The repository-wide `htch-runtime` allowance above does not apply to FBCP/TDRP. This includes build, lint, generator, schema, unit/property/state-machine, contract, integration, E2E, temporal, visual, accessibility, performance, soak, fault-injection, package and acceptance runs.
 
+For FBCP/TDRP, FMEP-001 Revision 2 supersedes the former zero-CI development rule. Implement coherent product batches; run focused compile/contract/state-machine/integration and risk checks in GitHub Actions as each batch is ready. Push/PR/dispatch for these checks is allowed. Continue independent work while checks run; repair failed shared contracts before dependent work. Reuse valid exact-revision evidence, then complete all applicable final-candidate gates and independent acceptance. Local executable validation remains prohibited.
+
 Read-only investigation, spec/test-plan editing, evidence review and Git/API operations may occur outside Actions. Missing runner/account/service/signing configuration is blocked, never pass.
 
 ## OpenClaw full-source Rust equivalence — OCRM-001
@@ -371,7 +377,7 @@ For OpenClaw-derived implementation, interoperability, source accounting or acce
 - `projects/openclaw-rust/module-map.md`;
 - the current OCRM task, exact-source lock/inventory/ledger/dossiers, applicable domain specs and actual canonical Fabushi production owners.
 
-OCRM requires the complete pinned source responsibility scope, file-by-file understanding and Rust implementation integrated existing-owner-first into current Fabushi. Preserve all current Bot capabilities and independent Coordinator/Host/Runner/Electron/renderer boundaries. React/Electron remain presentation and thin platform bridges; migrated business state, policy, protocols, scheduling, persistence and execution control belong to Rust. No parallel OpenClaw runtime, Agent loop, session store, scheduler or marketplace may become a second production owner.
+OCRM requires complete pinned source accounting, risk-proportionate review under OCRM-001 §17, and Rust implementation integrated existing-owner-first into current Fabushi. Preserve all current Bot capabilities and independent Coordinator/Host/Runner/Electron/renderer boundaries. React/Electron remain presentation and thin platform bridges; migrated business state, policy, protocols, scheduling, persistence and execution control belong to Rust. No parallel OpenClaw runtime, Agent loop, session store, scheduler or marketplace may become a second production owner.
 
 Optional external-channel, Gateway/SDK and node interoperability is included by OCRM through scoped adapters under existing owners; it does not replace Fabushi native identity, messaging, network or canonical state. FBCP/TDRP requirements and evidence remain independently applicable.
 
@@ -379,3 +385,11 @@ Directory enumeration, source reading, mapped responsibilities, implemented code
 
 **OCRM project execution rule:** every executable validation, including generators, schema checks, builds, tests, packaging and acceptance, runs only in GitHub Actions. The repository-wide `htch-runtime` allowance does not apply to OCRM. Read-only investigation, editing, Git/API operations and evidence review are allowed outside Actions.
 
+
+### Source-review amendment — 2026-11-02
+
+FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.
+
+### OpenClaw batch execution entry
+
+OCRM-001 Revision 2 §17 governs source review and execution: deep review product/mixed/high-risk logic, contract review generated/dependency boundaries, evidenced disposition for non-product sources. Implement coherent owner-based product batches without waiting for unrelated global closure; run focused checks in Actions and retain full final acceptance. Use `projects/openclaw-rust/management/prompts/full-fusion-batch.md`. Reconcile existing working-branch schemas/validators with §17.2 before using new review states; never auto-upgrade coverage or acceptance.

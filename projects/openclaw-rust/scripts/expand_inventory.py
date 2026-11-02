@@ -5,9 +5,14 @@ Executable generation is permitted only on GitHub Actions.
 """
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
+from source_review import conservative_review_fields
+
+if os.environ.get("GITHUB_ACTIONS") != "true":
+    raise SystemExit("Generator must run in GitHub Actions")
 
 source = Path(sys.argv[1])
 payload = json.loads(source.read_text())
@@ -28,30 +33,59 @@ if len(sizes) != len(object_shas):
     raise RuntimeError("Missing source object sizes")
 
 shards_manifest = Path("projects/openclaw-rust/inventory/shards/manifest.json")
-shard_map = {}
-if shards_manifest.exists():
-    import gzip
-    m = json.loads(shards_manifest.read_text())
-    for s in m.get("shards", []):
-        sp = Path(s["path"])
-        if sp.exists():
-            with gzip.open(sp, "rt", encoding="utf-8") as gf:
-                for line in gf:
-                    r = json.loads(line)
-                    # AC02 disposition evidence may intentionally remain
-                    # unread/unclassified for ordinary non-product paths;
-                    # retain those rows instead of treating read depth as the
-                    # only reason to reuse a reviewed shard record.
-                    if (
-                        r.get("read_status") == "read-complete"
-                        or r.get("responsibility_status") != "unclassified"
-                        or r.get("applicability_status") not in (None, "unknown")
-                        or r.get("disposition_status") not in (None, "pending")
-                        or r.get("disposition") is not None
-                        or r.get("reviewer") is not None
-                        or bool(r.get("evidence_refs"))
-                    ):
-                        shard_map[r["path"]] = r
+if not shards_manifest.is_file():
+    raise AssertionError("Missing committed source inventory manifest")
+import gzip
+from jsonschema import Draft202012Validator
+
+m = json.loads(shards_manifest.read_text())
+if m["upstream"] != payload["upstream"]:
+    raise AssertionError("Committed shard identity differs from fixed U")
+expected_rows = {e["path"]: e for e in entries}
+if len(expected_rows) != len(entries):
+    raise AssertionError("Duplicate acquired inventory path")
+row_schema = json.loads((Path(__file__).resolve().parents[1] / "schemas/source-inventory.schema.json").read_text())["properties"]["entries"]["items"]
+validator = Draft202012Validator(row_schema)
+shard_map, old_rows, declared_shards = {}, [], set()
+for shard in m["shards"]:
+    path = Path(shard["path"])
+    if path.parent != shards_manifest.parent or path.suffixes != [".jsonl", ".gz"] or path in declared_shards:
+        raise AssertionError("Unsafe or duplicate committed shard")
+    declared_shards.add(path)
+    compressed = path.read_bytes()
+    plain = gzip.decompress(compressed)
+    if hashlib.sha256(compressed).hexdigest() != shard["compressed_sha256"] or hashlib.sha256(plain).hexdigest() != shard["uncompressed_sha256"]:
+        raise AssertionError("Committed inventory shard identity drift: " + str(path))
+    chunk = [json.loads(line) for line in plain.decode().splitlines()]
+    if not chunk or len(chunk) != shard["count"] or len(chunk) > m["shard_size_limit"] or chunk[0]["path"] != shard["first_path"] or chunk[-1]["path"] != shard["last_path"]:
+        raise AssertionError("Committed shard cardinality/bounds drift")
+    for record in chunk:
+        validator.validate(record)
+        path = record["path"]
+        if path in shard_map:
+            raise AssertionError("Duplicate prior inventory path: " + path)
+        acquired = expected_rows.get(path)
+        if acquired is None or any(record.get(key) != acquired.get(key) for key in ("sha", "mode", "git_type", "entry_kind")):
+            raise AssertionError("Committed source object differs from fixed U: " + path)
+        if tuple(record[key] for key in ("source_repository", "source_commit", "source_tree")) != tuple(payload["upstream"][key] for key in ("repository", "commit", "tree")):
+            raise AssertionError("Committed source identity differs from fixed U: " + path)
+        if record["blob_sha"] != (record["sha"] if record["git_type"] == "blob" else None):
+            raise AssertionError("Committed blob identity mismatch: " + path)
+        if record["size_bytes"] != (sizes[record["sha"]] if record["git_type"] == "blob" else None):
+            raise AssertionError("Committed source size drift: " + path)
+        shard_map[path] = record
+        old_rows.append(record)
+if declared_shards != set(shards_manifest.parent.glob("part-*.jsonl.gz")):
+    raise AssertionError("Omitted/orphan committed inventory shard")
+if [record["path"] for record in old_rows] != [record["path"] for record in entries]:
+    raise AssertionError("Committed/acquired inventory membership or order drift")
+for manifest_key, count_key in (("tracked_entries_total", "tracked_entries_total"), ("tracked_blob_entries_total", "blob_entries_total"), ("tracked_symlink_entries_total", "symlink_entries_total"), ("tracked_gitlink_entries_total", "gitlink_entries_total")):
+    if m[manifest_key] != payload["counts"][count_key]:
+        raise AssertionError("Committed inventory denominator drift: " + manifest_key)
+old_canonical = dict(payload, entries=old_rows)
+old_raw = (json.dumps(old_canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()
+if hashlib.sha256(old_raw).hexdigest() != m["canonical_inventory_sha256"]:
+    raise AssertionError("Committed canonical inventory digest drift")
 
 # The ledger is the canonical responsibility side of the bidirectional map.
 # Reconcile only exact path/blob matches here so stale or dangling references
@@ -64,17 +98,8 @@ for responsibility in ledger.get("responsibilities", []):
         ledger_responsibilities.setdefault(key, []).append(responsibility["id"])
 
 for e in entries:
-    shard_rec = shard_map.get(e["path"])
-    # A path match alone is not sufficient across an upstream rebaseline.
-    # Reuse hand-reviewed fields only when the prior row proves the same
-    # source identity and blob. Otherwise the new exact subject remains
-    # unread/unclassified until it is reviewed against that subject.
-    if shard_rec is not None and (
-        shard_rec.get("source_commit") != payload["upstream"]["commit"]
-        or shard_rec.get("source_tree") != payload["upstream"]["tree"]
-        or shard_rec.get("blob_sha") != e["sha"]
-    ):
-        shard_rec = None
+    shard_rec = shard_map[e["path"]]
+    e.update(shard_rec)
     e.update({
         "source_repository": payload["upstream"]["repository"],
         "source_commit": payload["upstream"]["commit"],
@@ -83,10 +108,7 @@ for e in entries:
         "size_bytes": sizes[e["sha"]] if e["git_type"] == "blob" else None,
         "language_kind": shard_rec.get("language_kind", "unclassified") if shard_rec else "unclassified",
         "module_id": shard_rec.get("module_id") if shard_rec else None,
-        # Shards are hand-reviewed evidence inputs, but older records can repeat
-        # an import edge.  The canonical schema intentionally requires unique
-        # edges; normalize without changing edge membership or ordering.
-        "dependency_edges": list(dict.fromkeys(shard_rec.get("dependency_edges", []))) if shard_rec else [],
+        "dependency_edges": shard_rec.get("dependency_edges", []) if shard_rec else [],
         "read_ranges": shard_rec.get("read_ranges", []) if shard_rec else [],
         "content_identity": shard_rec.get("content_identity") if shard_rec else None,
         "responsibility_ids": shard_rec.get("responsibility_ids", []) if shard_rec else [],
@@ -112,6 +134,7 @@ for e in entries:
     if shard_rec:
         e["read_status"] = shard_rec.get("read_status", e["read_status"])
         e["responsibility_status"] = shard_rec.get("responsibility_status", e["responsibility_status"])
+    e.update(conservative_review_fields(shard_rec or {}))
     ledger_ids = ledger_responsibilities.get((e["path"], e["blob_sha"]), [])
     if ledger_ids:
         e["responsibility_ids"] = sorted(

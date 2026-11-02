@@ -46,6 +46,20 @@ impl GatewayCommandError {
     }
 }
 
+impl From<crate::extensions::settings::settings_service::HostSettingsUpdateError>
+    for GatewayCommandError
+{
+    fn from(error: crate::extensions::settings::settings_service::HostSettingsUpdateError) -> Self {
+        use crate::extensions::settings::settings_service::HostSettingsUpdateError;
+        match error {
+            conflict @ HostSettingsUpdateError::Conflict { .. } => Self::Conflict(conflict.to_string()),
+            HostSettingsUpdateError::Rejected(message) => {
+                Self::Internal(format!("Failed to persist settings: {message}"))
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GatewayCommandErrorClassification {
     pub reason: &'static str,

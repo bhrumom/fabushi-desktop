@@ -16,6 +16,10 @@ import subprocess
 import sys
 from pathlib import Path
 from jsonschema import Draft202012Validator
+from source_review import identity, validate_source_reviews
+
+if os.environ.get("GITHUB_ACTIONS") != "true":
+    raise SystemExit("Validator must run in GitHub Actions")
 
 ROOT = Path("projects/openclaw-rust")
 EVIDENCE = Path(sys.argv[1])
@@ -65,11 +69,10 @@ def structural():
     check(ledger["upstream"] == expected and rtm["upstream"] == expected, "Ledger/RTM source drift")
     check(idx["upstream"]["commit"] == up["commit"] and idx["upstream"]["tree"] == up["tree"], "Index/lock drift")
     if FINAL_AC02:
-        live = lock["live_candidate"]
         check(up["accepted_for_this_implementation_round"] is True, "Final AC02 requires accepted upstream identity")
-        check(live["repository"] == up["repository"] and live["ref"] == up["ref"], "Final AC02 upstream ref drift")
-        check(live["commit"] == up["commit"] and live["tree"] == up["tree"], "Final AC02 upstream differs from live candidate")
-        check(lock["root_inputs"] == live["root_inputs"], "Final AC02 accepted root inputs differ from live candidate")
+        # U is fixed. Discovery/live candidates are historical observations,
+        # never an implicit rebaseline requirement. Root blobs are checked
+        # against the acquired U checkout below in both validation modes.
         check(up["baseline_identity_accepted"] is True, "Final AC02 requires accepted baseline identity")
         check(idx["upstream"]["baseline_identity_accepted"] is True, "Final AC02 index does not project accepted baseline identity")
         check(idx["authority"].get("applicability_disposition_closure") is True, "Final AC02 canonical applicability/disposition closure is not accepted")
@@ -109,17 +112,19 @@ def structural():
         check(e["disposition_status"] in {"pending", "deep-read-required", "deep-read", "grouped-evidence", "not-applicable"}, "Invalid disposition status: " + path)
         applicability_assessed += e["applicability_status"] != "unknown"
         dispositioned += e["disposition_status"] not in {"pending", "deep-read-required"}
+        if e["applicability_status"] in {"product", "mixed"} and (
+            e["responsibility_status"] != "reviewed" or not e["responsibility_ids"]
+        ):
+            unreviewed_applicable += 1
         if FINAL_AC02:
             check(e["applicability_status"] != "unknown", "Final AC02 unresolved applicability: " + path)
             check(e["disposition_status"] not in {"pending", "deep-read-required"}, "Final AC02 undispositioned path: " + path)
             if e["applicability_status"] in {"product", "mixed"}:
-                if e["responsibility_status"] != "reviewed" or not e["responsibility_ids"]:
-                    unreviewed_applicable += 1
                 check(e["responsibility_status"] == "reviewed" and bool(e["responsibility_ids"]), "Final AC02 applicable path lacks reviewed responsibility mapping: " + path)
-                check(e["read_status"] == "read-complete", "Final AC02 applicable path lacks complete semantic read: " + path)
-                check(e["disposition_status"] == "deep-read", "Final AC02 applicable path lacks deep-read disposition: " + path)
+                # source_review enforces the required depth. Generated output
+                # and mature dependency contracts do not fabricate full reads.
             if e["disposition_status"] == "grouped-evidence":
-                check(e["applicability_status"] == "non-product", "Final AC02 grouped evidence is not non-product: " + path)
+                check(e.get("required_review_depth") in {"contract", "disposition"}, "Final AC02 grouped evidence has no appropriate review contract: " + path)
                 check(bool(e["disposition"] and e["evidence_refs"] and e["reviewer"]), "Final AC02 grouped evidence is incomplete: " + path)
             if e["disposition_status"] == "not-applicable":
                 check(bool(e["disposition"] and e["evidence_refs"] and e["reviewer"]), "Final AC02 N/A disposition is incomplete: " + path)
@@ -231,6 +236,15 @@ def structural():
         if resp["status"]["verification"] == "verified" or resp["status"]["acceptance"] == "accepted":
             check(bool(resp["evidence_refs"] and resp["reviewer"]), "Unproven verified/accepted")
     mapped_paths = 0
+    def evidence_exists(ref):
+        path = Path(ref.split("#", 1)[0])
+        return not path.is_absolute() and path.resolve().is_relative_to(Path.cwd().resolve()) and path.is_file()
+    validate_source_reviews(
+        entries, responsibility_by_id, final=FINAL_AC02,
+        expected_identity={k: up[k] for k in ("repository", "commit", "tree")},
+        acquired={path: identity(row) for path, row in seen.items()},
+        evidence_exists=evidence_exists,
+    )
     for e in entries:
         for rid in e["responsibility_ids"]:
             check(rid in responsibility_by_id, "Orphan file responsibility: " + rid)
@@ -313,6 +327,9 @@ receipt_files = [
     ROOT / "schemas/requirements-traceability-matrix.schema.json",
     ROOT / "scripts/expand_inventory.py", ROOT / "scripts/validate_p0.py",
     ROOT / "scripts/shard_inventory.py",
+    ROOT / "scripts/source_review.py", ROOT / "scripts/test_source_review.py",
+    ROOT / "scripts/test_inventory_materialization.py",
+    ROOT / "scripts/verify_audit_integrity.py",
     Path(".github/workflows/ocrm-p0-authority.yml"),
 ]
 if shard_manifest.exists():
