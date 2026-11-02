@@ -26,7 +26,7 @@ jobs:
           python3 - <<'PY'
           import copy, hashlib, json, os, pathlib, subprocess, urllib.request
           scope = {'TDRP-R9-MTPROTO-BAD-MESSAGE-RECOVERY-001', 'TDRP-R9-MTPROTO-SINGLE-RPC-MESSAGE-CONTAINER-001'}
-          allowed = {'existing_owner', 'implementation_status', 'coverage_disposition', 'production_entrypoints', 'production_evidence', 'blockers', 'release_gate_status', 'notes'}
+          allowed = {'existing_owner', 'implementation_status', 'coverage_disposition', 'production_entrypoints', 'production_evidence', 'blockers', 'release_gate_status', 'notes', 'lifecycle_owner', 'composition_root', 'service_owner', 'capability_surface', 'ui_disposition'}
           manifest = pathlib.Path('.github/round3-protocol-owner-object.json').read_bytes()
           payload = json.loads(manifest)
           repository = 'bhrumom/fabushi-desktop'
