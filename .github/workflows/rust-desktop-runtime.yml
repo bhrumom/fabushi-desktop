@@ -225,6 +225,8 @@ jobs:
               tests::routed_provider_cancellation_only_marks_superseded_connectors \
               tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation \
               tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts \
+              tests::routed_provider_terminal_keeps_real_guard_custody_after_local_retirement \
+              tests::routed_provider_terminal_custody_refuses_missing_and_foreign_reports \
               tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary \
               tests::automation_deadline_retains_real_run_ownership_until_worker_terminal \
               tests::automation_deadline_preserves_queued_runner_success \
@@ -458,6 +460,10 @@ jobs:
               "runner_effect_custody_contract": "OCRM-RUNNER-EFFECT-CUSTODY-v1",
               "runner_effect_custody_result": "passed",
               "runner_downstream_custody_contract": "REC-07/08/09",
+              "runner_terminal_custody_contract": "OCRM-RUNNER-TERMINAL-CUSTODY-v1",
+              "runner_terminal_custody_result": "passed",
+              "shipping_terminal_custody_tests": ["tests::routed_provider_terminal_keeps_real_guard_custody_after_local_retirement", "tests::routed_provider_terminal_custody_refuses_missing_and_foreign_reports", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary"],
+              "runner_terminal_custody_scope": "Actual generated stream, turn owner and Runner facade preserve per-invocation tool snapshots; the existing finalizer publishes a stream-bound frozen companion alongside unchanged local terminal tags. Loopback provider/real guard/relay, late-worker and missing/foreign evidence controls do not establish durable Automation retention, backend completion or ACK suppression, original-turn restart, external-effect reconciliation or real-provider acceptance.",
               "shipping_downstream_custody_tests": ["tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate"],
               "channel_append_custody_contract": "OCRM-CHANNEL-APPEND-CUSTODY-v1",
               "shipping_channel_append_custody_tests": ["tests::channel_inbound_append_commits_once_before_runner_and_displayed_redrive", "tests::channel_inbound_append_lost_ack_holds_real_commit_without_runner_or_replay", "tests::channel_inbound_append_rollback_retries_same_preparation_before_later_input", "tests::channel_inbound_checked_history_failure_keeps_binding_and_never_dispatches", "tests::channel_inbound_runner_admission_refuses_changed_binding_and_releases_work", "tests::channel_inbound_reply_nudge_keeps_generation_after_real_session_settlement", "tests::channel_inbound_displayed_redrive_refuses_archive_restore_without_rebinding"],

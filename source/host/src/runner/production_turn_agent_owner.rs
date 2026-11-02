@@ -8,7 +8,7 @@ use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
 
-use super::generated_agent_turn_stream::run_production_generated_agent_stream;
+use super::generated_agent_turn_stream::run_production_generated_agent_stream_with_custody;
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
 use super::production_turn_input_projection::{
     ProductionTurnInputProjection, create_production_turn_agent_input_projection,
@@ -20,7 +20,8 @@ use super::turn_agent_composition::{
     SAND_AGENT_MAX_STEPS, SAND_AGENT_TOKEN_LIMIT, TurnAgentComposition,
 };
 use super::{
-    TerminalOutcome, TurnRunFinished, TurnRunOptions, TurnRunShell,
+    TerminalOutcome, ToolEffectCustodyObservation, ToolEffectCustodyUnavailableReason,
+    TurnRunFinished, TurnRunOptions, TurnRunShell,
 };
 
 pub type ProductionTurnSummarizationPrompt = Arc<
@@ -191,6 +192,7 @@ pub struct ProductionTurnAgentOwner {
     composition: TurnAgentComposition,
     shell: TurnRunShell,
     last_finished: Option<TurnRunFinished>,
+    last_tool_effect_custody: Option<ToolEffectCustodyObservation>,
     agent_state_checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     upgrade_quiescing: Arc<AtomicBool>,
     build_input: Option<ProductionTurnAgentBuildInput>,
@@ -208,6 +210,7 @@ impl ProductionTurnAgentOwner {
             composition,
             shell: TurnRunShell::default(),
             last_finished: None,
+            last_tool_effect_custody: None,
             agent_state_checkpoint_sink: None,
             upgrade_quiescing: Arc::new(AtomicBool::new(false)),
             build_input: None,
@@ -415,6 +418,12 @@ impl ProductionTurnAgentOwner {
         self.last_finished.as_ref()
     }
 
+    /// Custody from the latest invocation, including a refusal that did not
+    /// produce a new terminal settlement.
+    pub fn last_tool_effect_custody(&self) -> Option<&ToolEffectCustodyObservation> {
+        self.last_tool_effect_custody.as_ref()
+    }
+
     pub fn run_routed_provider(
         &mut self,
         data_dir: &Path,
@@ -480,6 +489,7 @@ impl ProductionTurnAgentOwner {
         turn_input: ProductionTurnInputProjection,
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
+        self.last_tool_effect_custody = Some(ToolEffectCustodyObservation::NotStarted);
         self.validate_build_input()?;
         let turn_max_steps = self
             .build_input
@@ -501,6 +511,7 @@ impl ProductionTurnAgentOwner {
         let stream_upgrade_quiescing = Arc::clone(&self.upgrade_quiescing);
         let stream_turn_quiesced = Arc::clone(&turn_quiesced);
         let tool_loop_gate_for_stream = self.shell.tool_loop_gate();
+        let last_tool_effect_custody = &mut self.last_tool_effect_custody;
         let result = run_production_turn_shell_lifecycle(
             &mut self.shell,
             &mut self.last_finished,
@@ -519,6 +530,10 @@ impl ProductionTurnAgentOwner {
                 )
             },
             move |prepared| {
+                *last_tool_effect_custody = Some(ToolEffectCustodyObservation::Unavailable {
+                    reason: ToolEffectCustodyUnavailableReason::ObservationInterrupted,
+                });
+                let run_generation = prepared.started.owner.generation;
                 let projection = prepared.prepared;
                 let stream_composition = composition_for_stream
                     .with_projected_mcp_tools(projection.mcp_tools.clone())
@@ -527,16 +542,21 @@ impl ProductionTurnAgentOwner {
                         tool_loop_gate_for_stream.clone(),
                         prepared.started.owner.clone(),
                     );
-                run_production_generated_agent_stream(
+                let outcome = run_production_generated_agent_stream_with_custody(
                     stream_composition,
                     checkpoint_sink_for_stream,
                     data_dir,
                     projection,
                     turn_max_steps,
-                    prepared.started.owner.generation,
+                    run_generation,
                     Arc::clone(&stream_upgrade_quiescing),
                     Arc::clone(&stream_turn_quiesced),
-                )
+                );
+                *last_tool_effect_custody = Some(ToolEffectCustodyObservation::Known {
+                    run_generation,
+                    snapshot: outcome.tool_effect_custody,
+                });
+                outcome.result
             },
             |_started| {},
         );
@@ -572,6 +592,7 @@ impl ProductionTurnAgentOwner {
     where
         Execute: FnOnce() -> Result<String, ProviderSessionError>,
     {
+        self.last_tool_effect_custody = Some(ToolEffectCustodyObservation::NotStarted);
         // This is the independent contract seam, not the shipping provider path.
         // Preserve the owner invariant that a durable Agent checkpoint must
         // succeed before Completed settlement. The shipping path above already
@@ -580,6 +601,7 @@ impl ProductionTurnAgentOwner {
         let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
         let checkpoint_options = options.clone();
         let turn_quiesced = Arc::new(AtomicBool::new(false));
+        let last_tool_effect_custody = &mut self.last_tool_effect_custody;
         let result = run_production_turn_shell_lifecycle(
             &mut self.shell,
             &mut self.last_finished,
@@ -589,6 +611,9 @@ impl ProductionTurnAgentOwner {
             turn_quiesced,
             |_prompt, _started| Ok(()),
             move |_prepared| {
+                *last_tool_effect_custody = Some(ToolEffectCustodyObservation::Unavailable {
+                    reason: ToolEffectCustodyUnavailableReason::UninstrumentedExecution,
+                });
                 let result = execute();
                 match (result, checkpoint_sink) {
                     (Ok(content), Some(sink)) => {

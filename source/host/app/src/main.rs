@@ -323,7 +323,7 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::is_recovery_shaped_turn;
 use mahayana_host_runtime::runner::{
-    should_run_completed_turn_side_effects, should_run_turn_memory,
+    ToolEffectCustodyReport, should_run_completed_turn_side_effects, should_run_turn_memory,
 };
 use mahayana_host_runtime::runner::prompt_collector_glue::{
     apply_staged_attachment_paths_for_turn, resolve_profile_update_for_turn,
@@ -8324,6 +8324,7 @@ impl RoutedProviderTerminal {
         result: Result<String, ProviderSessionError>,
         sent_message_count: u64,
         reacted: bool,
+        tool_effect_custody: ToolEffectCustodyReport,
     ) -> Self {
         let cancelled = cancellation.is_cancelled();
         let succeeded = result.is_ok();
@@ -8345,6 +8346,7 @@ impl RoutedProviderTerminal {
             "streamId": stream_id,
             "sentMessageCount": sent_message_count,
             "reacted": reacted,
+            "toolEffectCustody": tool_effect_custody.for_terminal(stream_id),
         });
         let error = match (projection.kind, result) {
             (TurnTerminalKind::WaitingUser, result) => {
@@ -11748,6 +11750,7 @@ fn start_routed_provider_task(
             let _ = worker_registry.mark_routed_provider_dispatched(&worker_stream_id);
             let turn_epoch = worker_transcript_runtime.current_turn_epoch(&agent_id);
             turn_input.options.turn_started_at_ms = Some(runner_started_at_ms);
+            let mut tool_effect_custody = ToolEffectCustodyReport::new(worker_stream_id.clone());
             let mut result = runner.run_routed_provider_with_projected_turn_input(
                 &data_dir,
                 &lifecycle_messages,
@@ -11755,6 +11758,7 @@ fn start_routed_provider_task(
                 turn_input.clone(),
                 &mut on_text_delta,
             );
+            tool_effect_custody.record(runner.last_tool_effect_custody());
             if provider == RoutedProvider::Codex
                 && let Err(ProviderSessionError::ProviderRefusal(refusal)) = result.as_ref()
             {
@@ -11846,6 +11850,7 @@ fn start_routed_provider_task(
                         nudge_input.options,
                         &mut suppress_hidden_nudge_delta,
                     );
+                    tool_effect_custody.record(runner.last_tool_effect_custody());
                     stream_output_produced |= result
                         .as_ref()
                         .ok()
@@ -11879,6 +11884,7 @@ fn start_routed_provider_task(
                     nudge_input.options,
                     &mut suppress_hidden_nudge_delta,
                 );
+                tool_effect_custody.record(runner.last_tool_effect_custody());
                 stream_output_produced |= result
                     .as_ref()
                     .ok()
@@ -12292,6 +12298,7 @@ fn start_routed_provider_task(
                 result,
                 send_message_delivery_counter.count(),
                 reaction_delivery_counter.count() > 0,
+                tool_effect_custody,
             );
             if worker_request_source.as_deref() == Some("provider-review") {
                 if let Some(expected_revision) =
@@ -19089,6 +19096,7 @@ mod tests {
             let terminal = super::RoutedProviderTerminal::capture(
                 stream_id, false, &worker_cancellation,
                 Ok("provider returned after deadline cancellation".into()), 2, true,
+                super::ToolEffectCustodyReport::new(stream_id),
             );
             worker_runtime.end_provider_run_with_kind(&worker_agent, false);
             worker_registry.finish_routed_provider(stream_id);
@@ -19168,6 +19176,7 @@ mod tests {
         let (foreign_cancellation, mut foreign_lease) = fixture.admit("foreign-agent", "foreign-stream");
         let foreign_terminal = super::RoutedProviderTerminal::capture(
             "foreign-stream", false, &foreign_cancellation, Ok("other task completed".into()), 0, false,
+            super::ToolEffectCustodyReport::new("foreign-stream"),
         );
         fixture.runtime.end_provider_run_with_kind("foreign-agent", false);
         fixture.registry.finish_routed_provider("foreign-stream");
@@ -19243,6 +19252,7 @@ mod tests {
         let (cancellation, mut lease) = fixture.admit_with_source("queued-agent", "queued-stream", "automation");
         let terminal = super::RoutedProviderTerminal::capture(
             "queued-stream", false, &cancellation, Ok("completed at the deadline".into()), 1, false,
+            super::ToolEffectCustodyReport::new("queued-stream"),
         );
         fixture.runtime.end_provider_run_with_kind("queued-agent", false);
         fixture.registry.finish_routed_provider("queued-stream");
@@ -19384,6 +19394,7 @@ mod tests {
                 let frozen = (hold_point != BackgroundTerminalHoldPoint::BeforeCapture).then(|| {
                     super::RoutedProviderTerminal::capture(
                         &stream_id, false, &worker_cancellation, result.take().unwrap(), 2, true,
+                        super::ToolEffectCustodyReport::new(&stream_id),
                     )
                 });
                 if hold_point == BackgroundTerminalHoldPoint::AfterRetirement {
@@ -19395,6 +19406,7 @@ mod tests {
                 held.recv_timeout(Duration::from_secs(10)).expect("release held background Runner");
                 let terminal = frozen.unwrap_or_else(|| super::RoutedProviderTerminal::capture(
                     &stream_id, false, &worker_cancellation, result.take().unwrap(), 2, true,
+                    super::ToolEffectCustodyReport::new(&stream_id),
                 ));
                 if hold_point != BackgroundTerminalHoldPoint::AfterRetirement {
                     runtime.end_provider_run_with_kind(&agent_id, false);
@@ -19571,6 +19583,7 @@ mod tests {
         let (foreign_cancellation, mut foreign_lease) = fixture.runner.admit("foreign-agent", "foreign-stream");
         let foreign_terminal = super::RoutedProviderTerminal::capture(
             "foreign-stream", false, &foreign_cancellation, Ok("other worker completed".into()), 0, false,
+            super::ToolEffectCustodyReport::new("foreign-stream"),
         );
         fixture.runner.runtime.end_provider_run_with_kind("foreign-agent", false);
         fixture.runner.registry.finish_routed_provider("foreign-stream");
@@ -19686,6 +19699,7 @@ mod tests {
         assert_eq!(fixture.sessions.append_agent_transcript_entries(&fixture.agent_id, &entries).unwrap(), entries.len());
         let event = fixture.publish_terminal(lease, super::RoutedProviderTerminal::capture(
             &fixture.stream_id, false, &cancellation, Ok("exact background result".into()), 99, true,
+            super::ToolEffectCustodyReport::new(&fixture.stream_id),
         ));
         let mut observations = Vec::new();
         let result = fixture.wait(&receiver, |item| observations.push(item));
@@ -19795,6 +19809,7 @@ mod tests {
             let terminal = super::RoutedProviderTerminal::capture(
                 &fixture.stream_id, case == "waiting", &cancellation,
                 if case == "failure" { Err(failure) } else { Ok("provider content".into()) }, 7, true,
+                super::ToolEffectCustodyReport::new(&fixture.stream_id),
             );
             let expected_admission = if case == "stale" || case == "stale-work" {
                 let mut successor = fixture.admission();
@@ -19926,6 +19941,7 @@ mod tests {
             let terminal = super::RoutedProviderTerminal::capture(
                 "held-stream", false, &worker_cancellation,
                 Ok("provider returned after delivery".into()), 2, true,
+                super::ToolEffectCustodyReport::new("held-stream"),
             );
             worker_runtime.end_provider_run_with_kind("held-agent", false);
             worker_registry.finish_routed_provider("held-stream");
@@ -20042,6 +20058,7 @@ mod tests {
             };
             let terminal = super::RoutedProviderTerminal::capture(
                 stream_id, false, &cancellation, result, 3, true,
+                super::ToolEffectCustodyReport::new(stream_id),
             );
             let expected_kind = if failed { TurnTerminalKind::Failed } else { TurnTerminalKind::Completed };
             assert_eq!(terminal.projection.kind, expected_kind);
@@ -20123,6 +20140,7 @@ mod tests {
                 else { Err(ProviderSessionError::Transport("known provider failure".into())) };
             let terminal = super::RoutedProviderTerminal::capture(
                 &stream_id, waiting, &cancellation, result, sent, reacted,
+                super::ToolEffectCustodyReport::new(&stream_id),
             );
             assert_eq!(terminal.projection.kind, expected_kind);
             assert_eq!(terminal.projection.delivered, delivered);
@@ -20165,6 +20183,196 @@ mod tests {
         fixture.close();
     }
 
+    fn completed_guard_custody_observation(
+        run_generation: u64,
+    ) -> mahayana_host_runtime::runner::ToolEffectCustodyObservation {
+        use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderAttemptControl;
+        use mahayana_host_runtime::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout_ms;
+        use mahayana_host_runtime::runner::{StreamAttemptPolicy, StreamAttemptRuntime, ToolEffectCustodyObservation};
+        let runtime = std::sync::Arc::new(StreamAttemptRuntime::new(StreamAttemptPolicy::default()));
+        let attempt = RoutedProviderAttemptControl::new(
+            std::sync::Arc::clone(&runtime), runtime.begin_attempt(), super::RoutedProviderCancellation::default(),
+        );
+        execute_routed_tool_with_timeout_ms(&attempt, "known-terminal-control".into(), 5_000,
+            || Ok(serde_json::json!({"content":[]}))).expect("actual known guarded return");
+        let snapshot = runtime.effect_custody();
+        assert_eq!(snapshot.started_revision, 1);
+        assert_eq!(snapshot.checkpoint_revision, 0);
+        assert_eq!(snapshot.pending_effects, 0);
+        assert_eq!(snapshot.unknown_result, None);
+        assert!(snapshot.retry_block_reason().is_some(), "known does not imply safe checkpoint replay");
+        ToolEffectCustodyObservation::Known { run_generation, snapshot }
+    }
+
+    #[test]
+    fn routed_provider_terminal_keeps_real_guard_custody_after_local_retirement() {
+        use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderAttemptControl;
+        use mahayana_host_runtime::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout_ms;
+        use mahayana_host_runtime::runner::{StreamAttemptPolicy, StreamAttemptRuntime, ToolEffectCustodyObservation, ToolEffectCustodyReport, ToolEffectUnknownResult};
+        use std::io::Write;
+        use std::sync::{Arc, Mutex, mpsc};
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::time::{Duration, Instant};
+        use serde_json::json;
+
+        // Actual guard -> finalizer evidence. The separate wire contract proves
+        // the generated-stream/owner/facade edge; no provider is simulated here.
+        for held_after_return in [true, false] {
+            let fixture = RoutedProviderTerminalFixture::new();
+            let receiver = fixture.events.subscribe();
+            let stream_id = if held_after_return { "pending-effect" } else { "downstream-unknown" };
+            let (cancellation, mut lease) = fixture.admit(stream_id, stream_id);
+            let runtime = Arc::new(StreamAttemptRuntime::new(StreamAttemptPolicy::default()));
+            let attempt = RoutedProviderAttemptControl::new(
+                Arc::clone(&runtime), runtime.begin_attempt(), cancellation.clone(),
+            );
+            let effects = Arc::new(AtomicUsize::new(0));
+            let counted = Arc::clone(&effects);
+            let receipt_path = fixture.root.join("actual-tool-effect.txt");
+            let worker_receipt = receipt_path.clone();
+            let (entered, entry) = mpsc::channel();
+            let (release, held) = mpsc::channel();
+            let (late_done, late_return) = mpsc::channel();
+            let (returned, guard_return) = mpsc::channel();
+            let caller = std::thread::spawn(move || {
+                let result = execute_routed_tool_with_timeout_ms(&attempt, "terminal-custody".into(), 500, move || {
+                    let mut file = fs::OpenOptions::new().create_new(true).write(true)
+                        .open(worker_receipt).expect("counted external effect receipt");
+                    writeln!(file, "one admitted effect").expect("effect bytes");
+                    file.sync_all().expect("effect receipt persisted");
+                    counted.fetch_add(1, Ordering::AcqRel);
+                    entered.send(()).expect("actual tool entered");
+                    if held_after_return {
+                        held.recv_timeout(Duration::from_secs(10)).expect("release the exact held effect");
+                        late_done.send(()).expect("actual late return");
+                        Ok(json!({"content":[{"type":"text","text":"late result"}]}))
+                    } else {
+                        Err(super::ProviderSessionError::ToolOutcomeUnknown("downstream result unavailable".into()))
+                    }
+                });
+                returned.send(result).expect("guard result consumed by finalizer fixture");
+            });
+            entry.recv_timeout(Duration::from_secs(10)).expect("effect entered before local return");
+            let result = guard_return.recv_timeout(Duration::from_secs(10)).expect("actual guard returns");
+            caller.join().expect("owned guard caller");
+            assert!(result.is_err());
+            assert_eq!(effects.load(Ordering::Acquire), 1);
+            assert_eq!(fs::read_to_string(&receipt_path).unwrap().lines().count(), 1);
+            let snapshot = runtime.effect_custody();
+            assert_eq!(snapshot.started_revision, 1);
+            assert_eq!(snapshot.checkpoint_revision, 0);
+            assert_eq!(snapshot.pending_effects, usize::from(held_after_return));
+            assert_eq!(snapshot.unknown_result, Some(if held_after_return {
+                ToolEffectUnknownResult::TimedOut
+            } else { ToolEffectUnknownResult::DownstreamOutcomeUnknown }));
+            let first = ToolEffectCustodyObservation::Known { run_generation: 1, snapshot: snapshot.clone() };
+            let clear = completed_guard_custody_observation(2);
+            assert!(!clear.requires_retention(), "known uncheckpointed work is not unknown execution");
+            let mut report = ToolEffectCustodyReport::new(stream_id);
+            report.record(Some(&first));
+            report.record(Some(&clear));
+            assert_eq!(report.invocations().len(), 2);
+            assert!(report.requires_retention(), "a later invocation cannot replace prior uncertainty");
+            let frozen = report.clone().for_terminal(stream_id);
+            assert_eq!(fixture.request(&json!({"streamId":stream_id}))["cancelled"], true);
+            let terminal = super::RoutedProviderTerminal::capture(
+                stream_id, false, &cancellation, result.map(|_| "returned".into()), 1, true, report,
+            );
+            assert_eq!(terminal.projection.kind, super::TurnTerminalKind::Cancelled);
+            assert_eq!(terminal.provider_review_outcome, super::ProviderReviewContinuationOutcome::Cancelled);
+            fixture.runtime.end_provider_run_with_kind(stream_id, false);
+            fixture.registry.finish_routed_provider(stream_id);
+            lease.settle();
+            assert!(fixture.registry.active_stream_ids_for_agent(stream_id).is_empty());
+            assert!(!fixture.runtime.has_routed_turn_lease(stream_id, stream_id));
+            assert_eq!(runtime.effect_custody(), snapshot, "local retirement cannot settle external custody");
+            let structured = Mutex::new(fixture.telemetry.logs.start_turn(stream_id, "connector", None));
+            let (span, trace) = terminal_recording_trace();
+            terminal.finalize_observations(&structured, Some(&trace));
+            terminal.publish(&fixture.events);
+            let event = receiver.recv_timeout(Duration::from_secs(5)).expect("one real finalizer event");
+            let published: ToolEffectCustodyReport = serde_json::from_value(event["payload"]["toolEffectCustody"].clone())
+                .expect("typed companion roundtrip");
+            assert_eq!(published, frozen);
+            assert!(published.requires_retention());
+            assert_eq!(published.stream_id(), stream_id);
+            assert_eq!(event["payload"]["type"], "cancelled");
+            assert_eq!(event["payload"]["sentMessageCount"], 1);
+            assert_eq!(event["payload"]["reacted"], true);
+            assert!(matches!(automation_terminal_from_event(&event, stream_id),
+                Some(Ok(AutomationExecutionResult::Interrupted { .. }))));
+            assert_eq!(*span.ends.lock().unwrap(), 1);
+            if held_after_return {
+                release.send(()).expect("release only this effect");
+                late_return.recv_timeout(Duration::from_secs(5)).expect("late operation returns");
+                let deadline = Instant::now() + Duration::from_secs(5);
+                while runtime.effect_custody().pending_effects != 0 {
+                    assert!(Instant::now() < deadline, "late guard receipt failed to settle");
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+            }
+            assert_eq!(runtime.effect_custody().unknown_result, snapshot.unknown_result);
+            assert_eq!(published, frozen, "late workers cannot rewrite the terminal value");
+            assert_eq!(effects.load(Ordering::Acquire), 1);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            fixture.close();
+        }
+    }
+
+    #[test]
+    fn routed_provider_terminal_custody_refuses_missing_and_foreign_reports() {
+        use mahayana_host_runtime::runner::{ToolEffectCustodyObservation, ToolEffectCustodyReport, ToolEffectCustodyUnavailableReason};
+        let clear = completed_guard_custody_observation(1);
+        for failed in [false, true] {
+            let stream_id = if failed { "known-failure" } else { "known-success" };
+            let mut report = ToolEffectCustodyReport::new(stream_id);
+            report.record(Some(&clear));
+            let result = if failed { Err(super::ProviderSessionError::Tool("known local failure".into())) }
+                else { Ok("known local success".into()) };
+            let terminal = super::RoutedProviderTerminal::capture(
+                stream_id, false, &super::RoutedProviderCancellation::default(), result, 0, false, report,
+            );
+            let observed: ToolEffectCustodyReport = serde_json::from_value(terminal.event["payload"]["toolEffectCustody"].clone()).unwrap();
+            assert_eq!(observed.invocations(), &[clear.clone()]);
+            assert!(!observed.requires_retention());
+            assert_eq!(terminal.event["payload"]["type"], if failed { "failed" } else { "completed" });
+        }
+        for (binding, include_clear, expected_reason) in [
+            ("actual-stream", false, ToolEffectCustodyUnavailableReason::MissingObservation),
+            ("foreign-stream", true, ToolEffectCustodyUnavailableReason::StreamBindingMismatch),
+            ("", true, ToolEffectCustodyUnavailableReason::StreamBindingMismatch),
+        ] {
+            let mut report = ToolEffectCustodyReport::new(binding);
+            if include_clear { report.record(Some(&clear)); }
+            let terminal = super::RoutedProviderTerminal::capture(
+                "actual-stream", false, &super::RoutedProviderCancellation::default(), Ok("local completion".into()), 0, false, report,
+            );
+            let observed: ToolEffectCustodyReport = serde_json::from_value(terminal.event["payload"]["toolEffectCustody"].clone()).unwrap();
+            assert_eq!(observed.stream_id(), "actual-stream");
+            assert_eq!(observed.invocations(), &[ToolEffectCustodyObservation::Unavailable { reason: expected_reason }]);
+            assert!(observed.requires_retention());
+            assert_eq!(terminal.event["payload"]["type"], "completed", "custody does not rewrite local outcome");
+        }
+        let mut mixed = ToolEffectCustodyReport::new("mixed-stream");
+        mixed.record(Some(&clear));
+        mixed.record(None);
+        mixed.record(Some(&ToolEffectCustodyObservation::NotStarted));
+        assert!(mixed.requires_retention());
+        assert_eq!(mixed.invocations().len(), 3);
+        assert_eq!(mixed.invocations()[1], ToolEffectCustodyObservation::Unavailable {
+            reason: ToolEffectCustodyUnavailableReason::MissingObservation,
+        });
+        let mut refused = ToolEffectCustodyReport::new("refused-stream");
+        refused.record(Some(&ToolEffectCustodyObservation::NotStarted));
+        assert!(!refused.requires_retention());
+        for malformed in [
+            serde_json::json!({"streamId":"s","invocations":[{"state":"futureUnrecognizedState"}]}),
+            serde_json::json!({"streamId":"s","invocations":[{"state":"known","runGeneration":1}]}),
+        ] {
+            assert!(serde_json::from_value::<ToolEffectCustodyReport>(malformed).is_err(), "unsupported evidence cannot default to clear");
+        }
+    }
+
     #[test]
     fn routed_provider_terminal_shipping_wiring_preserves_finalization_boundary() {
         let source = include_str!("main.rs").split("\n#[cfg(test)]\nmod tests {").next().unwrap();
@@ -20179,8 +20387,22 @@ mod tests {
         let runner = source.split("fn start_routed_provider_task(").nth(1).unwrap()
             .split("impl GatewayApi for UnifiedGatewayApi").next().unwrap();
         let handoff = runner.rfind("append_human_agent_message(").unwrap();
+        let invocation_observation = "tool_effect_custody.record(runner.last_tool_effect_custody());";
+        assert_eq!(runner.matches(invocation_observation).count(), 3,
+            "primary, every reply-nudge iteration and closing nudge retain their own observation");
+        for call in ["let mut result = runner.run_routed_provider_with_projected_turn_input(",
+            "result = runner.run_routed_provider_with_projected_messages("] {
+            for invocation in runner.split(call).skip(1) {
+                let record = invocation.find(invocation_observation).expect("record the actual invocation");
+                let next_control = invocation.find("stream_output_produced |= result").unwrap_or(usize::MAX)
+                    .min(invocation.find("if provider == RoutedProvider::Codex").unwrap_or(usize::MAX));
+                assert!(record < next_control, "observe before a later invocation/result can replace it");
+            }
+        }
         let capture = runner.find("let terminal = RoutedProviderTerminal::capture(").unwrap();
         assert!(handoff < capture, "freeze only after the result-changing Human handoff write");
+        let capture_call = runner[capture..].split("if worker_request_source.as_deref()").next().unwrap();
+        assert!(capture_call.contains("tool_effect_custody,"), "finalizer consumes the accumulated stream report");
         let finalizer = &runner[capture..runner.find("if let Err(error) = spawn {").unwrap()];
         assert!(!finalizer.contains("worker_cancellation.is_cancelled()"));
         let mut previous = 0;

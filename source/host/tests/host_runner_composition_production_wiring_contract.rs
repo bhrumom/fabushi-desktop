@@ -561,10 +561,16 @@ fn group_member_turn_keeps_generated_lifecycle_without_private_state() {
         "generated Agent lifecycle must model private checkpointing as optional",
     );
     assert!(
-        TURN_OWNER.contains("run_production_generated_agent_stream(")
+        TURN_OWNER.contains("run_production_generated_agent_stream_with_custody(")
             && !TURN_OWNER.contains("if let Some(checkpoint_sink) = checkpoint_sink"),
         "absence of a private checkpoint must not downgrade the turn to a raw provider path",
     );
+    let compatibility_wrapper = GENERATED_STREAM
+        .split("pub fn run_production_generated_agent_stream(").nth(1).expect("public Result entry retained")
+        .split("pub(crate) struct ProductionGeneratedAgentStreamOutcome").next().unwrap();
+    assert!(compatibility_wrapper.contains("run_production_generated_agent_stream_with_custody(")
+        && compatibility_wrapper.contains(".result"),
+        "the compatibility Result entry delegates to the same generated lifecycle");
 }
 
 
@@ -641,8 +647,16 @@ fn generated_agent_stream_owns_canonical_stream_attempt_runtime() {
         "Arc::new(StreamAttemptRuntime::new("
     ));
     assert!(GENERATED_STREAM.contains(
-        ".with_stream_attempt_runtime(stream_attempt_runtime)"
+        ".with_stream_attempt_runtime(Arc::clone(&stream_attempt_runtime))"
     ));
+    let lifecycle_result = GENERATED_STREAM.find(
+        "let result = futures::executor::block_on(path.run_lifecycle_with_output("
+    ).expect("the generated owner waits for its real lifecycle result");
+    let custody_snapshot = GENERATED_STREAM.find(
+        "let tool_effect_custody = stream_attempt_runtime.effect_custody();"
+    ).expect("terminal custody snapshots the same runtime injected into composition");
+    assert!(lifecycle_result < custody_snapshot,
+        "the retained canonical runtime is observed after the lifecycle invocation");
     assert!(TURN_COMPOSITION.contains(
         "stream_attempt_runtime: self.stream_attempt_runtime.clone()"
     ));

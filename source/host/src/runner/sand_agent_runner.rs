@@ -22,7 +22,7 @@ use super::subagent_runtime::{
     SubagentLineage, SubagentRecord, SubagentRuntime, SubagentSessionSnapshot,
 };
 use super::turn_observation::TurnObservationHandle;
-use super::{TerminalOutcome, TurnRunFinished, TurnRunOptions};
+use super::{TerminalOutcome, ToolEffectCustodyObservation, TurnRunFinished, TurnRunOptions};
 
 /// Runner-owned shipping facade for provider-backed turns.
 ///
@@ -427,6 +427,10 @@ impl SandAgentRunner {
 
     pub fn last_finished(&self) -> Option<&TurnRunFinished> {
         self.owner.last_finished()
+    }
+
+    pub fn last_tool_effect_custody(&self) -> Option<&ToolEffectCustodyObservation> {
+        self.owner.last_tool_effect_custody()
     }
 
     pub fn run_routed_provider(

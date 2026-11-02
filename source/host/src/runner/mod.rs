@@ -273,6 +273,9 @@ pub use stream_attempt::{
     AttemptProgress, OuterCheckpointDisposition, OuterStreamFuture,
     OuterStreamPersistence, RetryDecision, StreamAttemptGeneration,
     StreamAttemptPolicy, StreamAttemptRuntime,
+    ToolEffectCustodyObservation, ToolEffectCustodyReport,
+    ToolEffectCustodySnapshot, ToolEffectCustodyUnavailableReason,
+    ToolEffectUnknownResult,
     StreamCancelReason, StreamWatchdog, persist_outer_stream_checkpoint,
     persist_outer_stream_final_state, release_outer_stream_persistence,
 };

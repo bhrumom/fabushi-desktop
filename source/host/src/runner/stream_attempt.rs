@@ -14,7 +14,8 @@ impl StreamAttemptGeneration {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum ToolEffectUnknownResult {
     TimedOut,
     WorkerLost,
@@ -22,7 +23,8 @@ pub enum ToolEffectUnknownResult {
     DownstreamOutcomeUnknown,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ToolEffectCustodySnapshot {
     pub started_revision: u64,
     pub checkpoint_revision: u64,
@@ -46,6 +48,96 @@ impl ToolEffectCustodySnapshot {
             (self.started_revision != self.checkpoint_revision)
                 .then_some("tool effects are not covered by an accepted checkpoint")
         })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ToolEffectCustodyUnavailableReason {
+    MissingObservation,
+    UninstrumentedExecution,
+    ObservationInterrupted,
+    StreamBindingMismatch,
+}
+
+/// Evidence from one invocation of the existing production turn owner. A
+/// snapshot belongs to that invocation's shell generation, never a later turn.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "state", rename_all = "camelCase")]
+pub enum ToolEffectCustodyObservation {
+    NotStarted,
+    Known {
+        #[serde(rename = "runGeneration")]
+        run_generation: u64,
+        snapshot: ToolEffectCustodySnapshot,
+    },
+    Unavailable {
+        reason: ToolEffectCustodyUnavailableReason,
+    },
+}
+
+impl ToolEffectCustodyObservation {
+    pub fn requires_retention(&self) -> bool {
+        match self {
+            Self::NotStarted => false,
+            Self::Known { run_generation, snapshot } => {
+                *run_generation == 0 || snapshot.unsettled_reason().is_some()
+            }
+            Self::Unavailable { .. } => true,
+        }
+    }
+}
+
+/// A stream-local value consumed by its finalizer. Each generated invocation
+/// keeps its own revisions; a reply nudge cannot replace earlier uncertainty.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolEffectCustodyReport {
+    stream_id: String,
+    invocations: Vec<ToolEffectCustodyObservation>,
+}
+
+impl ToolEffectCustodyReport {
+    pub fn new(stream_id: impl Into<String>) -> Self {
+        Self { stream_id: stream_id.into(), invocations: Vec::new() }
+    }
+
+    pub fn stream_id(&self) -> &str {
+        &self.stream_id
+    }
+
+    pub fn invocations(&self) -> &[ToolEffectCustodyObservation] {
+        &self.invocations
+    }
+
+    pub fn record(&mut self, observation: Option<&ToolEffectCustodyObservation>) {
+        self.invocations.push(observation.cloned().unwrap_or(
+            ToolEffectCustodyObservation::Unavailable {
+                reason: ToolEffectCustodyUnavailableReason::MissingObservation,
+            },
+        ));
+    }
+
+    pub fn requires_retention(&self) -> bool {
+        self.stream_id.trim().is_empty()
+            || self.invocations.is_empty()
+            || self.invocations.iter().any(ToolEffectCustodyObservation::requires_retention)
+    }
+
+    /// Refuse to lend another stream's observations to this terminal. Missing
+    /// observations are explicit, including terminals from legacy producers.
+    pub fn for_terminal(mut self, stream_id: &str) -> Self {
+        if stream_id.trim().is_empty() || self.stream_id != stream_id {
+            let mut refused = Self::new(stream_id);
+            refused.record(Some(&ToolEffectCustodyObservation::Unavailable {
+                reason: ToolEffectCustodyUnavailableReason::StreamBindingMismatch,
+            }));
+            return refused;
+        }
+        if self.invocations.is_empty() {
+            self.record(None);
+        }
+        self
     }
 }
 

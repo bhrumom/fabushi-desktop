@@ -28,7 +28,8 @@ use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::{CompletedRoutedToolCall, TurnAgentComposition};
 use super::{
     OuterStreamFuture, OuterStreamPersistence, StreamAttemptPolicy,
-    StreamAttemptRuntime, StreamCancelReason, TurnRunOptions,
+    StreamAttemptRuntime, StreamCancelReason, ToolEffectCustodySnapshot,
+    TurnRunOptions,
 };
 
 pub struct GeneratedAgentTurnContext<'a> {
@@ -487,6 +488,34 @@ pub fn run_production_generated_agent_stream(
     upgrade_quiescing: Arc<AtomicBool>,
     turn_quiesced: Arc<AtomicBool>,
 ) -> Result<String, ProviderSessionError> {
+    run_production_generated_agent_stream_with_custody(
+        composition,
+        checkpoint_sink,
+        data_dir,
+        projection,
+        max_steps,
+        generation,
+        upgrade_quiescing,
+        turn_quiesced,
+    )
+    .result
+}
+
+pub(crate) struct ProductionGeneratedAgentStreamOutcome {
+    pub(crate) result: Result<String, ProviderSessionError>,
+    pub(crate) tool_effect_custody: ToolEffectCustodySnapshot,
+}
+
+pub(crate) fn run_production_generated_agent_stream_with_custody(
+    composition: TurnAgentComposition,
+    checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
+    data_dir: &Path,
+    projection: ProductionTurnAgentInputProjection<'_>,
+    max_steps: usize,
+    generation: u64,
+    upgrade_quiescing: Arc<AtomicBool>,
+    turn_quiesced: Arc<AtomicBool>,
+) -> ProductionGeneratedAgentStreamOutcome {
     let ProductionTurnAgentInputProjection {
         action,
         mcp_tools,
@@ -505,7 +534,7 @@ pub fn run_production_generated_agent_stream(
         .with_max_steps(max_steps)
         .with_projected_mcp_tools(mcp_tools)
         .with_projected_mcp_meta_tools(mcp_meta_tools)
-        .with_stream_attempt_runtime(stream_attempt_runtime);
+        .with_stream_attempt_runtime(Arc::clone(&stream_attempt_runtime));
     let source: Arc<
         dyn InactiveTurnAgentStreamSource<
             GeneratedAgentTurnContext<'_>,
@@ -538,7 +567,7 @@ pub fn run_production_generated_agent_stream(
     let mut output = LiveDeltaSink {
         callback: emit_update,
     };
-    futures::executor::block_on(path.run_lifecycle_with_output(
+    let result = futures::executor::block_on(path.run_lifecycle_with_output(
         &context,
         None,
         &persistence,
@@ -546,7 +575,15 @@ pub fn run_production_generated_agent_stream(
         &mut output,
     ))
     .map(|state| state.assistant_content)
-    .map_err(GeneratedAgentTurnStreamError::into_provider_error)
+    .map_err(GeneratedAgentTurnStreamError::into_provider_error);
+    // Freeze the exact composition runtime only after lifecycle persistence has
+    // returned, including errors. Late workers retain their runtime, not this
+    // value, so they cannot rewrite the owner's terminal evidence.
+    let tool_effect_custody = stream_attempt_runtime.effect_custody();
+    ProductionGeneratedAgentStreamOutcome {
+        result,
+        tool_effect_custody,
+    }
 }
 
 #[allow(dead_code)]

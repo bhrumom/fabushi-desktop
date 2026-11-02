@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex, mpsc};
 use std::thread;
@@ -16,7 +16,8 @@ use mahayana_host_runtime::extensions::inference::codex_direct_responses::{
     run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderSessionError, RoutedProviderCheckpoint, RoutedToolDefinition,
+    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint,
+    RoutedToolDefinition,
 };
 use mahayana_host_runtime::gateway_server::GatewayEventHub;
 use mahayana_host_runtime::host_event_bus::HostEventSubscription;
@@ -29,12 +30,26 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProviderRetryReport, RoutedProviderAttemptControl, RoutedProviderAttemptExecutor,
     RoutedProviderCheckpointStore, ToolEffectCustodySnapshot, ToolEffectUnknownResult,
 };
+use mahayana_host_runtime::runner::production_turn_agent_owner::{
+    ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
+    ProductionTurnAgentStaticConfig,
+};
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge,
-    coordinator_tool_execution_error, start_routed_mcp_server_for_attempt,
+    RunnerRequestContextSnapshot, coordinator_tool_execution_error,
+    start_routed_mcp_server_for_attempt,
+};
+use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
+use mahayana_host_runtime::runner::subagent_runtime::SubagentRuntime;
+use mahayana_host_runtime::runner::turn_agent_composition::{
+    SAND_AGENT_TOKEN_LIMIT, TurnAgentComposition,
 };
 use mahayana_host_runtime::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout_ms;
-use mahayana_host_runtime::runner::{StreamAttemptPolicy, StreamAttemptRuntime};
+use mahayana_host_runtime::runner::{
+    StreamAttemptPolicy, StreamAttemptRuntime, ToolEffectCustodyObservation,
+    ToolEffectCustodyReport, TurnRunOptions,
+};
+use mahayana_host_runtime::runner_production_bridge::create_production_runner;
 use serde_json::{Value, json};
 
 const MODEL: &str = "Vendor/Nested/CaseSensitive@Custody";
@@ -1126,8 +1141,9 @@ fn real_mcp_effect_prevents_provider_retry_after_attempt_expiry() {
 }
 
 
-// This final oracle reaches the private production executor through its public
-// Runner owner. Child-scoped transport configuration cannot affect other tests.
+// This oracle reaches the private production attempt executor. The separate
+// generated-stream oracle below also enters the real turn owner and facade.
+// Child-scoped transport configuration cannot affect other tests.
 const WIRE_TEST: &str = "production_fabushi_executor_refuses_replay_after_tool_expiry";
 const WIRE_ROOT_ENV: &str = "FABUSHI_EFFECT_CUSTODY_WIRE_ROOT";
 const WIRE_TOKEN_ENV: &str = "FABUSHI_EFFECT_CUSTODY_WIRE_TOKEN";
@@ -1259,6 +1275,22 @@ struct WireServer {
 
 impl WireServer {
     fn new() -> Self {
+        Self::with_response(|_| {
+            // Every replay without the missing result asks for the same
+            // non-idempotent effect; the fixed owner sends only one request.
+            Ok(format!("data: {}\n\n", json!({
+                "type":"response.completed",
+                "response":{
+                    "id":"wire-response",
+                    "output":[{"type":"function_call","name":"effect","call_id":"wire-effect","arguments":"{}"}]
+                }
+            })))
+        })
+    }
+
+    fn with_response(
+        response: impl Fn(&Value) -> Result<String, String> + Send + 'static,
+    ) -> Self {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("loopback Responses");
         listener.set_nonblocking(true).expect("bounded accept");
         let origin = format!("http://{}", listener.local_addr().expect("loopback address"));
@@ -1279,16 +1311,8 @@ impl WireServer {
                     Err(error) => return Err(error.to_string()),
                 };
                 let request = read_wire_request(&mut stream)?;
-                captured.lock().map_err(|_| "request capture poisoned")?.push(request);
-                // Every replay without the missing result asks for the same
-                // non-idempotent effect; the fixed owner sends only one request.
-                let body = format!("data: {}\n\n", json!({
-                    "type":"response.completed",
-                    "response":{
-                        "id":"wire-response",
-                        "output":[{"type":"function_call","name":"effect","call_id":"wire-effect","arguments":"{}"}]
-                    }
-                }));
+                captured.lock().map_err(|_| "request capture poisoned")?.push(request.clone());
+                let body = response(&request)?;
                 write!(stream,
                     "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                     body.len(),
@@ -1359,6 +1383,20 @@ fn production_fabushi_executor_refuses_replay_after_tool_expiry() {
     }
     let root = TempRoot::new();
     let mut server = WireServer::new();
+    let receipt = run_wire_process(&root, &mut server, WIRE_TEST, WIRE_ROOT_ENV);
+    assert_eq!(receipt["effects"], 1);
+    assert_eq!(receipt["retries"], 0);
+    let requests = server.requests.lock().expect("captured Responses");
+    assert_eq!(requests.len(), 1, "production executor must not dispatch another attempt");
+    assert_eq!(requests[0]["model"], MODEL);
+}
+
+fn run_wire_process(
+    root: &TempRoot,
+    server: &mut WireServer,
+    test_name: &str,
+    root_env: &str,
+) -> Value {
     let credential = root.0.join("credential.json");
     let mut options = fs::OpenOptions::new();
     options.create_new(true).write(true);
@@ -1376,8 +1414,8 @@ fn production_fabushi_executor_refuses_replay_after_tool_expiry() {
     let stdout_path = root.0.join("child-stdout.txt");
     let stderr_path = root.0.join("child-stderr.txt");
     let mut child = OwnedWireChild(std::process::Command::new(std::env::current_exe().expect("test executable"))
-        .args(["--exact", WIRE_TEST, "--nocapture", "--test-threads=1"])
-        .env(WIRE_ROOT_ENV, &root.0)
+        .args(["--exact", test_name, "--nocapture", "--test-threads=1"])
+        .env(root_env, &root.0)
         .env(WIRE_TOKEN_ENV, &token)
         .env("FABUSHI_RESPONSES_URL", format!("{}/v1/responses", server.origin))
         .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", &credential)
@@ -1400,11 +1438,271 @@ fn production_fabushi_executor_refuses_replay_after_tool_expiry() {
         .expect("owned child completion receipt")).expect("completion JSON");
     assert_eq!(receipt["pid"].as_u64(), Some(u64::from(pid)));
     assert_eq!(receipt["token"], token);
-    assert_eq!(receipt["effects"], 1);
-    assert_eq!(receipt["retries"], 0);
-    let requests = server.requests.lock().expect("captured Responses");
-    assert_eq!(requests.len(), 1, "production executor must not dispatch another attempt");
-    assert_eq!(requests[0]["model"], MODEL);
+    receipt
 }
 
+const GENERATED_WIRE_TEST: &str = "production_generated_runner_preserves_terminal_tool_custody";
+const GENERATED_WIRE_ROOT_ENV: &str = "FABUSHI_GENERATED_CUSTODY_WIRE_ROOT";
 
+struct GeneratedRelayBridge {
+    relay: Arc<CoordinatorToolRelay>,
+    cancel_after_local_return: Option<RoutedProviderCancellation>,
+}
+
+impl RoutedToolBridge for GeneratedRelayBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(vec![RoutedToolDefinition {
+            name: "b".into(), provider_identifier: "custody-contract".into(),
+            tool_name: "b".into(), description: None,
+            input_schema: json!({"type":"object"}),
+        }])
+    }
+
+    fn call_tool(&self, tool: &RoutedToolDefinition, args: Value, call_id: &str) -> Result<Value, ProviderSessionError> {
+        let result = self.relay.request_tool_execution(json!({
+            "providerIdentifier":tool.provider_identifier, "name":tool.name,
+            "toolName":tool.tool_name, "args":args, "toolCallId":call_id,
+        })).map_err(coordinator_tool_execution_error);
+        if let Some(cancellation) = self.cancel_after_local_return.as_ref() {
+            // The relay has observed the counted effect's entry, and its
+            // external worker is still held when the actual guard receives this.
+            cancellation.cancel("cancel generated turn after downstream outcome was lost");
+        }
+        result
+    }
+}
+
+struct GeneratedWireRunner {
+    runner: SandAgentRunner,
+    cancellation: RoutedProviderCancellation,
+    store: Arc<ProductionRoutedProviderCheckpointStore>,
+    retries: Arc<AtomicUsize>,
+}
+
+impl GeneratedWireRunner {
+    fn new(root: &Path, stream_id: &str, relay: Arc<CoordinatorToolRelay>, cancel: bool) -> Self {
+        use mahayana_host_runtime::host_request_context::HostRequestContext;
+
+        let cancellation = RoutedProviderCancellation::default();
+        let store = Arc::new(ProductionRoutedProviderCheckpointStore::new(
+            root, "generated-custody-agent", stream_id,
+        ));
+        let retries = Arc::new(AtomicUsize::new(0));
+        let retry_sink = Arc::clone(&retries);
+        let composition = TurnAgentComposition::new(
+            RoutedProvider::Fabushi,
+            Arc::new(GeneratedRelayBridge {
+                relay,
+                cancel_after_local_return: cancel.then(|| cancellation.clone()),
+            }),
+            RunnerRequestContextSnapshot {
+                context: HostRequestContext {
+                    os_version: "generated-custody-contract".into(), shell: None,
+                    time_zone: Some("UTC".into()),
+                    transcripts_folder: root.join("transcripts").to_string_lossy().into_owned(),
+                    user_full_name: None,
+                },
+                rules: None,
+            },
+            cancellation.clone(),
+            store.clone(),
+        )
+        .with_fabushi_model(MODEL)
+        .with_retry_sink(Arc::new(move |_| {
+            retry_sink.fetch_add(1, Ordering::AcqRel);
+        }));
+        // The same production bridge used by HostRunnerComposition binds the
+        // real owner/facade. No attempt executor, runtime or custody is injected.
+        let runner = create_production_runner(
+            composition,
+            ProductionTurnAgentBuildBindings::new(
+                ProductionTurnAgentStaticConfig {
+                    model_id: MODEL.into(), agent_token_limit: SAND_AGENT_TOKEN_LIMIT,
+                    conversation_id: "generated-custody-agent".into(),
+                    is_box_scoped_subagent: false, is_subagent_runner: false,
+                    is_shared_room_runner: false, sand_send_message_delivery_owed: false,
+                    transcripts_folder_available: true,
+                },
+                Arc::new(|| None),
+                Arc::new(|_, _, _| panic!("bounded custody turn must not summarize")),
+            ),
+            ProductionTurnAgentLifecycleBindings::new("generated-custody-agent", stream_id),
+            None,
+            Arc::new(AtomicBool::new(false)),
+            Arc::new(Mutex::new(SubagentRuntime::default())),
+            None, None, None, None,
+        );
+        assert!(runner.last_tool_effect_custody().is_none());
+        Self { runner, cancellation, store, retries }
+    }
+
+    fn run(&mut self, root: &Path, stream_id: &str, prompt: &str) -> Result<String, ProviderSessionError> {
+        self.runner.run_routed_provider_with_options(
+            root,
+            &[ProviderMessage { role: "user".into(), content: prompt.into() }],
+            TurnRunOptions {
+                inference_request_id: Some(stream_id.into()),
+                ..TurnRunOptions::default()
+            },
+            &mut |_, _| {},
+        )
+    }
+
+    fn snapshot(&self, stream_id: &str, generation: u64) -> ToolEffectCustodySnapshot {
+        let finished = self.runner.last_finished().expect("real shell terminal");
+        assert_eq!(finished.owner.request_id, stream_id);
+        assert_eq!(finished.owner.generation, generation);
+        match self.runner.last_tool_effect_custody().expect("real generated observation") {
+            ToolEffectCustodyObservation::Known { run_generation, snapshot } => {
+                assert_eq!(*run_generation, generation, "custody belongs to the actual shell run");
+                snapshot.clone()
+            }
+            observation => panic!("generated execution lost its typed observation: {observation:?}"),
+        }
+    }
+}
+
+fn generated_wire_prompt(request: &Value) -> Result<&str, String> {
+    request["input"].as_array()
+        .and_then(|input| input.iter().rev().find(|item| item["role"] == "user"))
+        .and_then(|item| item["content"].as_str())
+        .ok_or_else(|| "generated fixture request lost its user prompt".into())
+}
+
+fn generated_wire_response(request: &Value) -> Result<String, String> {
+    let prompt = generated_wire_prompt(request)?;
+    let events = match prompt {
+        "generated-unknown" | "generated-cancel" => vec![json!({
+            "type":"response.completed",
+            "response":{
+                "id":format!("{prompt}-response"),
+                "output":[{"type":"function_call","name":"b","call_id":format!("{prompt}-call"),"arguments":"{}"}]
+            }
+        })],
+        "generated-clear" => vec![
+            json!({"type":"response.output_text.delta","delta":"clear completion"}),
+            json!({"type":"response.completed","response":{"id":"clear-response","output":[]}}),
+        ],
+        "generated-failure" => vec![json!({
+            "type":"response.failed",
+            "response":{"error":{"message":"known fixture provider failure"}},
+        })],
+        _ => return Err(format!("unexpected generated fixture prompt: {prompt}")),
+    };
+    Ok(events.iter().map(|event| format!("data: {event}\n\n")).collect())
+}
+
+fn run_generated_wire_child(root: PathBuf) {
+    let mut effects = 0;
+    let mut total_retries = 0;
+    let mut frozen_reports = Vec::new();
+    for (stream_id, reply, cancel) in [
+        ("generated-unknown", DownstreamReply::Timeout, false),
+        ("generated-cancel", DownstreamReply::Value(json!({
+            "result":{"case":"error","value":{"error":"downstream result was lost"}},
+        })), true),
+    ] {
+        let receipt_path = root.join(format!("{stream_id}-effects.txt"));
+        let mut downstream = GatedDownstream::new(reply, receipt_path.clone());
+        let mut fixture = GeneratedWireRunner::new(&root, stream_id, Arc::clone(&downstream.relay), cancel);
+        assert!(fixture.run(&root, stream_id, stream_id).is_err(),
+            "unknown effect cannot be reported as provider success");
+        assert_eq!(fixture.cancellation.is_cancelled(), cancel);
+        let snapshot = fixture.snapshot(stream_id, 1);
+        assert_eq!(snapshot, ToolEffectCustodySnapshot {
+            started_revision: 1, checkpoint_revision: 0, pending_effects: 0,
+            unknown_result: Some(ToolEffectUnknownResult::DownstreamOutcomeUnknown),
+        });
+        let observation = fixture.runner.last_tool_effect_custody().unwrap().clone();
+        let mut report = ToolEffectCustodyReport::new(stream_id);
+        report.record(fixture.runner.last_tool_effect_custody());
+        let frozen = report.clone().for_terminal(stream_id);
+        assert!(frozen.requires_retention());
+        assert!(!fixture.store.directory().exists(), "unknown result must not reach checkpoint persistence");
+        assert_eq!(fixture.retries.load(Ordering::Acquire), 0);
+        assert_eq!(downstream.effects.load(Ordering::Acquire), 1);
+        assert_eq!(fs::read_to_string(&receipt_path).expect("real external effect"), format!("{stream_id}-call\n"));
+        let published = downstream.events.try_iter().collect::<Vec<_>>();
+        assert_eq!(published.len(), 1, "the production bridge must publish one effect only");
+        assert_eq!(downstream.relay.pending_count(), 0);
+        {
+            let workers = downstream.workers.lock().expect("exact owned external worker");
+            assert_eq!(workers.len(), 1);
+            assert!(!workers[0].is_finished(), "external execution must outlive generated Runner return");
+        }
+        let late = downstream.release();
+        assert_eq!(late.len(), 1);
+        assert!(matches!(&late[0], Err(CoordinatorToolRelayError::Protocol(_))),
+            "the late external result must not settle an ended relay request");
+        assert_eq!(fixture.runner.last_tool_effect_custody(), Some(&observation));
+        assert_eq!(report, frozen, "late completion cannot rewrite the frozen value");
+
+        assert!(matches!(fixture.run(&root, stream_id, " \t\n"),
+            Err(ProviderSessionError::Configuration(_))));
+        assert_eq!(fixture.runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::NotStarted),
+            "a refused new invocation cannot inherit the preceding genuine Known value");
+        report.record(fixture.runner.last_tool_effect_custody());
+        assert_eq!(frozen.invocations(), std::slice::from_ref(&observation));
+        assert!(report.requires_retention());
+
+        if !cancel {
+            // Explicit facade reuse proves invocation isolation. Host nudges
+            // currently gate on success; this does not claim unknown-to-nudge reachability.
+            for (prompt, generation) in [("generated-clear", 2), ("generated-failure", 3)] {
+                let result = fixture.run(&root, stream_id, prompt);
+                if generation == 2 {
+                    assert_eq!(result.expect("real clear provider success"), "clear completion");
+                } else {
+                    assert!(matches!(result, Err(ProviderSessionError::Protocol(_))));
+                }
+                let clear = fixture.snapshot(stream_id, generation);
+                assert_eq!(clear, ToolEffectCustodySnapshot {
+                    started_revision: 0, checkpoint_revision: 0, pending_effects: 0,
+                    unknown_result: None,
+                });
+                assert!(!fixture.runner.last_tool_effect_custody().unwrap().requires_retention());
+                report.record(fixture.runner.last_tool_effect_custody());
+                assert!(report.requires_retention(), "later clear invocations cannot erase earlier uncertainty");
+                assert_eq!(frozen.invocations(), std::slice::from_ref(&observation));
+            }
+        }
+        assert_eq!(report.invocations().len(), if cancel { 2 } else { 4 });
+        assert_eq!(downstream.effects.load(Ordering::Acquire), 1);
+        assert_eq!(fs::read_to_string(&receipt_path).expect("unchanged effect receipt"), format!("{stream_id}-call\n"));
+        assert!(matches!(downstream.events.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        assert!(!fixture.store.directory().exists());
+        assert_eq!(fixture.retries.load(Ordering::Acquire), 0);
+        effects += downstream.effects.load(Ordering::Acquire);
+        total_retries += fixture.retries.load(Ordering::Acquire);
+        frozen_reports.push(report.for_terminal(stream_id));
+    }
+    fs::write(root.join("child-result.json"), json!({
+        "pid":std::process::id(),
+        "token":std::env::var(WIRE_TOKEN_ENV).expect("private child receipt token"),
+        "effects":effects, "retries":total_retries, "reports":frozen_reports,
+    }).to_string()).expect("generated child completion receipt");
+}
+
+#[test]
+fn production_generated_runner_preserves_terminal_tool_custody() {
+    if let Some(root) = std::env::var_os(GENERATED_WIRE_ROOT_ENV) {
+        run_generated_wire_child(PathBuf::from(root));
+        return;
+    }
+    let root = TempRoot::new();
+    let mut server = WireServer::with_response(generated_wire_response);
+    let receipt = run_wire_process(&root, &mut server, GENERATED_WIRE_TEST, GENERATED_WIRE_ROOT_ENV);
+    assert_eq!(receipt["effects"], 2);
+    assert_eq!(receipt["retries"], 0);
+    let reports: Vec<ToolEffectCustodyReport> = serde_json::from_value(receipt["reports"].clone())
+        .expect("actual child reports survive their serialized observation boundary");
+    assert_eq!(reports.len(), 2);
+    assert_eq!(reports[0].invocations().len(), 4);
+    assert_eq!(reports[1].invocations().len(), 2);
+    assert!(reports.iter().all(ToolEffectCustodyReport::requires_retention));
+    let requests = server.requests.lock().expect("genuine generated Responses requests");
+    let prompts = requests.iter().map(|request| generated_wire_prompt(request).unwrap()).collect::<Vec<_>>();
+    assert_eq!(prompts, ["generated-unknown", "generated-clear", "generated-failure", "generated-cancel"],
+        "no retries, refused invocations or late worker results may dispatch another provider request");
+    assert!(requests.iter().all(|request| request["model"] == MODEL));
+}

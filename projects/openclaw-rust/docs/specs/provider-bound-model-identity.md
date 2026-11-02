@@ -441,6 +441,76 @@ structured values. This is not global arbitrary-response or all-provider
 redaction acceptance. Fresh focused independent review and final exact-H
 Actions are required before verification.
 
+### Frozen terminal tool-custody evidence — REC-11/12/13
+
+Contract: `OCRM-RUNNER-TERMINAL-CUSTODY-v1`, specified before code on
+`3dea753726c6e2751252ce4ed2a68b17cfdc97cf`; fixed U is unchanged. The existing
+generated stream creates the per-run `StreamAttemptRuntime`, but returns only
+text/error. Its real owner/facade and the Host finalizer therefore lose the
+typed pending/unknown facts which REC-01–09 already preserve. Cancellation or
+an ordinary serialized provider error cannot recover those facts.
+
+Keep the existing generated stream -> `ProductionTurnAgentOwner` ->
+`SandAgentRunner` -> shipping `RoutedProviderTerminal` -> inference event chain.
+The companion is a frozen value, not a new execution owner, registry, store or
+terminal event. This is a necessary producer contract for later Automation
+retention; it does not yet alter Automation history, completion POST/ACK,
+background receipt settlement, upgrade replay or original-run durability.
+
+- REC-11: preserve the public generated-stream Result entry and factor its
+  existing implementation into an internal structured outcome carrying that
+  result plus a snapshot from the exact runtime supplied to composition. Read
+  custody after the real generated lifecycle/persistence returns on both
+  success and error. No copied provider loop or test-only custody setter.
+  The turn owner exposes its last invocation as `Known` with actual shell run
+  generation and snapshot, `NotStarted` only when the generated executor never
+  entered, or explicit `Unavailable`. Reset this observation before validation
+  and admission can return; a failed new invocation cannot inherit an old one.
+  A legacy `run_with` callback is uninstrumented once entered and must report
+  Unavailable rather than a clear snapshot. The existing facade forwards it.
+- REC-12: a fresh stream-bound report accumulates one observation after every
+  actual primary, reply-nudge-loop and closing-nudge invocation. Retain each
+  invocation's own revisions; do not sum them into an invented common clock,
+  replace earlier uncertainty with a later clear result, or retain live Arc
+  handles whose late workers can rewrite the frozen report. Missing/empty
+  evidence or a mismatched/blank stream binding is Unavailable. Known pending
+  work or sticky unknown requires retention; a started/checkpoint revision
+  difference alone is only the existing retry restriction, not unknown outcome.
+- REC-13: consume the report beside the local terminal after the final
+  result-changing Human handoff write. Add the typed `toolEffectCustody`
+  companion to the existing event payload. Keep waiting/cancellation/success/
+  failure tags, provider-review precedence, raw result content, registry/lease
+  retirement, telemetry and once-only publication unchanged. Legacy/missing
+  observations cannot be silently projected as clear. The report is evidence
+  of the instrumented tool boundary, not physical termination of remote work.
+
+Scope is the existing Runner stream/owner/facade and exports, the Host finalizer
+and its three invocation sites, existing owner/effect-custody/composition contract targets,
+and the existing scoped workflow. Reuse its locked commands and retain all
+channel/Session/Automation/terminal assertions. Correct the prior non-blocking
+channel lib-filter receipt-index omission while this workflow is already in
+scope; the actual channel test selection remains unchanged.
+
+Actions-only oracles must exercise a real bound production Runner/generated
+stream with child-scoped loopback Responses transport, actual guarded tool and
+relay, counted non-idempotent effect, strict checkpoint owner, and late external
+completion. Require the owner/facade snapshot, one effect, no replay/checkpoint,
+and immutable unknown after a late return. Preserve the lower-level genuine
+pending-worker controls; add actual finalizer/report tests for pending and
+downstream-unknown facts, late completion, multiple invocation observations,
+stream mismatch, missing evidence, clear success/failure, pre-admission refusal,
+and uncheckpointed-but-known distinction. Do not infer a specific provider
+error variant from cancellation; the existing token controls the Host terminal.
+No global environment mutation, live account or service acceptance is claimed.
+
+Necessary authority is the actual target call/state chain and the fixed-U
+started-tool settlement ranges already recorded above; this adds no whole-file
+reading or source-closure claim. Freeze and independently review the complete
+scope before exact-H Actions. Rollback reverts producer, companion and consumer
+together without deleting persisted checkpoints. Durable original-run claims,
+Automation retention and backend dedupe/ACK, original-turn restart, unknown
+effect reconciliation, real ecosystems and all full-acceptance gates stay open.
+
 ## Actions oracles and limits
 
 Use the existing scoped GitHub Actions workflow, on one frozen H. No local or
