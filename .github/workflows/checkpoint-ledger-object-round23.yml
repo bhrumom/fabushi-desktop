@@ -1,4 +1,6 @@
 name: Round23 checkpoint ledger append object
+# Regenerate after concurrent ledger0a1b4387538129e45ecaca86dab55727f08cb772;
+# prior inputcc1a/output4457 were read but never integrated.
 
 on:
   push:
