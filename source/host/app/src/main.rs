@@ -3649,6 +3649,8 @@ impl UnifiedGatewayApi {
                 definition_time_zone.as_deref(),
             )
             .map(|definition| definition.hash)
+        }, |entry, run_uuid| {
+            runtime.read_run_for_delivery(&entry.agent_id, &entry.automation.id, run_uuid)
         }) {
             PreparedBackendFire::Complete {
                 completion: terminal,

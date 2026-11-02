@@ -23,6 +23,28 @@ impl FileAutomationStore{
  pub fn list_ids(&self)->Vec<String>{self.dir.list_subdirectory_names().into_iter().filter(|id|is_safe_folder_id(id)).collect()}
  pub fn read_config(&self,id:&str)->Option<AutomationConfig>{if !is_safe_folder_id(id){return None;}let path=self.config_path(id);let raw=fs::read_to_string(&path).ok()?;parse_stored_config(&raw,file_time_ms(&path))}
  pub fn read_runs(&self,id:&str)->Vec<AutomationRun>{let Ok(raw)=fs::read_to_string(self.runs_path(id))else{return Vec::new();};let Ok(value)=serde_json::from_str::<Value>(&raw)else{return Vec::new();};let Some(items)=value.as_array()else{return Vec::new();};let mut runs=items.iter().filter_map(parse_stored_run).collect::<Vec<_>>();runs.sort_by(|a,b|b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));runs.truncate(AUTOMATION_MAX_RUN_HISTORY);runs}
+ /// Resolve delivery custody from complete checked history, never its display window.
+ pub fn read_run_for_delivery(
+     &self,
+     id: &str,
+     run_id: &str,
+ ) -> Result<Option<AutomationRun>, AutomationStoreError> {
+     if !is_safe_folder_id(id) {
+         return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid automation folder ID").into());
+     }
+     let mut matches = self.read_runs_for_mutation(id)?.into_iter().filter(|run| {
+         run.id == run_id || run.coalesced_run_ids.as_ref()
+             .is_some_and(|ids| ids.iter().any(|id| id == run_id))
+     });
+     let found = matches.next();
+     if matches.next().is_some() {
+         return Err(io::Error::new(
+             io::ErrorKind::InvalidData,
+             "automation run history contains ambiguous delivery identities",
+         ).into());
+     }
+     Ok(found)
+ }
  pub fn write_config(&self,id:&str,config:&AutomationConfig)->Result<(),AutomationStoreError>{self.dir.write_file_atomic(self.config_path(id),serialize_config(config).as_bytes())?;Ok(())}
  pub fn write_runs(&self,id:&str,runs:&[AutomationRun])->Result<(),AutomationStoreError>{let values=runs.iter().map(run_to_json).collect::<Vec<_>>();let mut raw=serde_json::to_string_pretty(&values)?;raw.push('\n');self.dir.write_file_atomic(self.runs_path(id),raw.as_bytes())?;Ok(())}
  pub fn earliest_next_run_at(&self,c:&AutomationConfig)->Option<f64>{let anchor=c.last_run_at.unwrap_or(c.created_at);let time_zone=(self.resolve_user_time_zone)();let mut earliest:Option<f64>=None;for member in trigger_members(&c.trigger){if member.get("type").and_then(Value::as_str)!=Some("cron"){continue;}let Some(schedule)=member.get("schedule").and_then(Value::as_str)else{continue;};if let Some(next)=compute_next_run_at(schedule,anchor,time_zone.as_deref()){if earliest.is_none_or(|current|next<current){earliest=Some(next);}}}earliest}
@@ -63,6 +85,12 @@ impl FileAutomationStore{
      if let Some(found) = runs.iter().find(|run| run.id == run_id) {
          return Ok(Some(found.clone()));
      }
+     if runs.iter().filter(|run| run.status == "running").count() >= AUTOMATION_MAX_RUN_HISTORY {
+         return Err(io::Error::new(
+             io::ErrorKind::WouldBlock,
+             "automation history has reached its unsettled run capacity",
+         ).into());
+     }
      let run = AutomationRun {
          id: run_id,
          trigger: match trigger {
@@ -77,7 +105,7 @@ impl FileAutomationStore{
          coalesced_run_ids: clamp_coalesced_run_ids(coalesced),
      };
      runs.insert(0, run.clone());
-     runs.truncate(AUTOMATION_MAX_RUN_HISTORY);
+     retain_run_history(&mut runs, None);
      self.write_runs(id, &runs)?;
      Ok(Some(run))
  }
@@ -105,12 +133,23 @@ impl FileAutomationStore{
      run.finished_at = Some(at);
      run.status = if status == "error" { "error" } else { "ok" }.into();
      run.detail = clamp_run_detail(detail);
+     let committed = run.clone();
+     retain_run_history(&mut runs, Some(run_id));
      self.write_runs(id, &runs)?;
-     Ok(Some(self.to_record(id, config, derive)))
+     let mut record = self.to_record(id, config, derive);
+     record.runs = runs.into_iter().take(AUTOMATION_MAX_RUN_HISTORY).collect();
+     if !record.runs.iter().any(|run| run.id == run_id) {
+         // A legacy excess of Running rows can exceed the display capacity.
+         // The settlement result must still carry the exact committed receipt.
+         record.runs.truncate(AUTOMATION_MAX_RUN_HISTORY.saturating_sub(1));
+         record.runs.push(committed);
+         record.runs.sort_by(|a, b| b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));
+     }
+     Ok(Some(record))
  }
 
- // Projection reads may omit malformed rows, but admission and settlement
- // must never acknowledge or rewrite a salvaged subset of persisted history.
+ // Projection reads may omit malformed rows, but admission, settlement and
+ // delivery must inspect the complete checked history before exact lookup.
  fn read_runs_for_mutation(&self, id: &str) -> Result<Vec<AutomationRun>, AutomationStoreError> {
      let raw = match fs::read_to_string(self.runs_path(id)) {
          Ok(raw) => raw,
@@ -132,14 +171,30 @@ impl FileAutomationStore{
          }
          runs.push(run);
      }
-     // Validate the complete input before applying the existing projection
-     // window, so truncation cannot hide malformed or ambiguous history.
      runs.sort_by(|a, b| b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));
-     runs.truncate(AUTOMATION_MAX_RUN_HISTORY);
      Ok(runs)
  }
  pub fn remove(&self,id:&str)->Result<bool,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(false);}let folder=self.dir.get_location().join(id);match fs::metadata(&folder){Ok(m)if m.is_dir()=>{},Ok(_)=>return Ok(false),Err(e)if e.kind()==io::ErrorKind::NotFound=>return Ok(false),Err(e)=>return Err(e.into())}fs::remove_dir_all(folder)?;self.dir.schedule_notify();Ok(true)}
 }
+
+fn retain_run_history(runs: &mut Vec<AutomationRun>, settled_run_id: Option<&str>) {
+    runs.sort_by(|a, b| b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));
+    let protected = runs.iter().filter(|run| {
+        run.status == "running" || settled_run_id == Some(run.id.as_str())
+    }).count();
+    let mut terminal_slots = AUTOMATION_MAX_RUN_HISTORY.saturating_sub(protected);
+    runs.retain(|run| {
+        if run.status == "running" || settled_run_id == Some(run.id.as_str()) {
+            true
+        } else if terminal_slots > 0 {
+            terminal_slots -= 1;
+            true
+        } else {
+            false
+        }
+    });
+}
+
 pub fn get_agent_automations_dir(agent_dir:&Path)->PathBuf{agent_dir.join(AUTOMATIONS_DIRNAME)}
 pub fn inspect_agent_automation_definitions(agent_dir:&Path)->AutomationDefinitionInspection{let Ok(meta)=fs::metadata(agent_dir)else{return AutomationDefinitionInspection{state:AutomationDefinitionInspectionState::AgentMissing,valid_definition_count:0};};if !meta.is_dir(){return AutomationDefinitionInspection{state:AutomationDefinitionInspectionState::AgentMissing,valid_definition_count:0};}let dir=get_agent_automations_dir(agent_dir);let Ok(entries)=fs::read_dir(&dir)else{return AutomationDefinitionInspection{state:AutomationDefinitionInspectionState::DirMissing,valid_definition_count:0};};let(mut candidate,mut valid)=(0usize,0usize);for entry in entries.flatten(){let name=entry.file_name().to_string_lossy().into_owned();if !entry.file_type().map(|k|k.is_dir()).unwrap_or(false)||!is_safe_folder_id(&name){continue;}candidate+=1;let path=entry.path().join(CONFIG_FILENAME);let Ok(raw)=fs::read_to_string(&path)else{continue;};if parse_stored_config(&raw,file_time_ms(&path)).is_some(){valid+=1;}}let state=if valid>0{AutomationDefinitionInspectionState::Valid}else if candidate>0{AutomationDefinitionInspectionState::ConfigsInvalid}else{AutomationDefinitionInspectionState::DirEmpty};AutomationDefinitionInspection{state,valid_definition_count:valid}}
 pub fn agent_has_automations(agent_dir:&Path)->bool{inspect_agent_automation_definitions(agent_dir).valid_definition_count>0}

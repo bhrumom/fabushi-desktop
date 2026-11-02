@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use mahayana_host_runtime::automations::automation::AutomationSpec;
+use mahayana_host_runtime::automations::automation::{AutomationSpec, AUTOMATION_MAX_RUN_HISTORY};
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
 use mahayana_host_runtime::automations::automation_trigger::trigger_schedule;
@@ -1156,7 +1156,7 @@ impl CustodyBackend {
                     prompt: entry.automation.prompt.clone(), is_enabled: entry.automation.is_enabled,
                     trigger: entry.automation.trigger.clone(),
                 }, None).map(|definition| definition.hash)
-            });
+            }, |entry, run_id| dispatch_runtime.read_run_for_delivery(&entry.agent_id, &entry.automation.id, run_id));
             let accepted = match &prepared {
                 PreparedBackendFire::Event { agent_id, automation_id, run_uuid, event } => {
                     if let Some(executor) = executor.as_ref() {
@@ -1319,7 +1319,19 @@ fn wait_for_custody_batch_to_drain(coalescer: &AutomationEventFires) {
 fn real_coalesced_retained_event_reaches_each_backend_callback_and_survives_reopen() {
     bounded_automation_case(
         "real_coalesced_retained_event_reaches_each_backend_callback_and_survives_reopen",
-        || {
+        || retained_coalesced_event_survives_reopen(0),
+    );
+}
+
+#[test]
+fn real_retained_run_survives_twenty_manual_settlements_and_reopened_backend_redelivery() {
+    bounded_automation_case(
+        "real_retained_run_survives_twenty_manual_settlements_and_reopened_backend_redelivery",
+        || retained_coalesced_event_survives_reopen(AUTOMATION_MAX_RUN_HISTORY),
+    );
+}
+
+fn retained_coalesced_event_survives_reopen(manual_runs: usize) {
             let fixture = ShippingAutomation::new("retained coalesced backend delivery");
             let automation = fixture.store.get(&fixture.automation_id).expect("actual event definition");
             assert!(automation.runs.is_empty());
@@ -1494,6 +1506,45 @@ fn real_coalesced_retained_event_reaches_each_backend_callback_and_survives_reop
             backend.runtime.stop();
             backend.transport.assert_no_completion_or_ack();
             drop(backend);
+
+            let original = fixture.runtime.read_run_for_delivery(
+                &fixture.agent_id, &fixture.automation_id, CUSTODY_RUN_UUIDS[0],
+            ).unwrap().expect("actual retained original");
+            let mut manual_executions = 0;
+            for index in 0..manual_runs {
+                let result = fixture.runtime.run_agent_automation_now_with(
+                    &fixture.agent_id, &fixture.automation_id, |_| {
+                        manual_executions += 1;
+                        Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+                    },
+                );
+                assert_eq!(result, Ok(Some(FireAutomationOutcome::Ok)), "manual run {index}");
+                for run_id in CUSTODY_RUN_UUIDS {
+                    assert_eq!(fixture.runtime.read_run_for_delivery(
+                        &fixture.agent_id, &fixture.automation_id, run_id,
+                    ).unwrap().as_ref(), Some(&original));
+                }
+                assert_eq!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap(), admitted.cron);
+            }
+            assert_eq!(manual_executions, manual_runs, "each independent manual run really entered execution");
+            let before_reopen = CustodyPersistedState::capture(
+                &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+            );
+            let rows: Vec<Value> = serde_json::from_slice(&before_reopen.history).unwrap();
+            assert_eq!(rows.len(), (manual_runs + 1).min(AUTOMATION_MAX_RUN_HISTORY));
+            assert_eq!(before_reopen.cron, admitted.cron, "manual settlements cannot refresh original cron authority");
+            let initial_rows: Vec<Value> = serde_json::from_slice(&admitted.history).unwrap();
+            assert_eq!(rows.iter().find(|row| row["id"] == CUSTODY_RUN_UUIDS[0]), initial_rows.first(),
+                "every stored original field and alias survives the history window");
+            let observations = fixture.observed.lock().unwrap().clone();
+            assert_eq!(observations.len(), manual_runs);
+            assert!(observations.iter().all(|report|
+                report.outcome == FireAutomationOutcome::Ok
+                    && report.automation_run_id.as_deref() != Some(CUSTODY_RUN_UUIDS[0])));
+            if manual_runs == 0 {
+                assert_eq!(before_reopen, admitted, "preserve the original no-follow-up custody control");
+            }
+            before_reopen.preserve_evidence(&fixture.root, "before-reopen-after-manual-runs");
             fixture.runtime.dispose();
             fixture.workers.shutdown();
             assert_eq!(fixture.workers.active_worker_count(), 0);
@@ -1505,10 +1556,28 @@ fn real_coalesced_retained_event_reaches_each_backend_callback_and_survives_reop
                 let owners = ReopenedCustodyOwners::open(&fixture.root, &fixture.agent_id);
                 assert_eq!(CustodyPersistedState::capture(
                     &owners.workers, &owners.store, &fixture.agent_id, &fixture.automation_id,
-                ), admitted);
+                ), before_reopen);
+                let replay_executions = Arc::new(AtomicUsize::new(0));
+                let reopened_executor = if manual_runs == 0 {
+                    None
+                } else {
+                    let runtime = owners.runtime.clone();
+                    let entered = Arc::clone(&replay_executions);
+                    let executor: EventBatchExecutor = Arc::new(move |batch: EventFireBatch| {
+                        runtime.run_background_automation_with(
+                            &batch.agent_id, &batch.automation.id, AutomationRunTrigger::Event,
+                            batch.events, batch.run_uuid, batch.coalesced_run_uuids, 2_000.0, None,
+                            |_| {
+                                entered.fetch_add(1, Ordering::SeqCst);
+                                Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+                            },
+                        )
+                    });
+                    Some(executor)
+                };
                 let reopened_backend = CustodyBackend::start(
                     &fixture.root, &format!("reopened-backend-{generation}"),
-                    &owners.runtime, delivery.clone(), None,
+                    &owners.runtime, delivery.clone(), reopened_executor,
                 );
                 reopened_backend.assert_abandoned_after(0);
                 for _ in 0..2 {
@@ -1517,10 +1586,11 @@ fn real_coalesced_retained_event_reaches_each_backend_callback_and_survives_reop
                     reopened_backend.assert_abandoned_after(earlier_poll);
                     assert_eq!(CustodyPersistedState::capture(
                         &owners.workers, &owners.store, &fixture.agent_id, &fixture.automation_id,
-                    ), admitted);
+                    ), before_reopen);
                     assert!(owners.observed.lock().unwrap().is_empty());
                     assert!(!owners.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
                     assert_eq!(executions.load(Ordering::SeqCst), 1);
+                    assert_eq!(replay_executions.load(Ordering::SeqCst), 0, "actual reopened executor must stay unreachable");
                 }
                 reopened_backend.runtime.stop();
                 reopened_backend.transport.assert_no_completion_or_ack();
@@ -1529,6 +1599,99 @@ fn real_coalesced_retained_event_reaches_each_backend_callback_and_survives_reop
                 drop(owners);
             }
             assert_eq!(executions.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn real_full_running_history_refuses_before_cron_or_executor_and_checked_read_obeys_deletion() {
+    bounded_automation_case(
+        "real_full_running_history_refuses_before_cron_or_executor_and_checked_read_obeys_deletion",
+        || {
+            let fixture = ShippingAutomation::new("Running capacity admission");
+            let mut admitted_executions = 0;
+            for _ in 0..AUTOMATION_MAX_RUN_HISTORY {
+                let result = fixture.runtime.run_agent_automation_now_with(
+                    &fixture.agent_id, &fixture.automation_id, |_| {
+                        admitted_executions += 1;
+                        Ok(AutomationExecutionResult::RetainedUnsettled {
+                            terminal: Box::new(AutomationExecutionResult::Completed),
+                        })
+                    },
+                );
+                assert_eq!(result, Ok(None));
+            }
+            assert_eq!(admitted_executions, AUTOMATION_MAX_RUN_HISTORY);
+            let original = fixture.store.read_runs(&fixture.automation_id);
+            assert_eq!(original.len(), AUTOMATION_MAX_RUN_HISTORY);
+            assert!(original.iter().all(|run| run.status == "running"));
+            let history = fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap();
+            let cron = fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+            assert!(cron.is_empty());
+            let mut refused_executions = 0;
+            let refused = fixture.runtime.run_background_automation_with(
+                &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                Vec::new(), Some("refused-at-capacity".into()), Vec::new(), 2_000.0, None,
+                |_| {
+                    refused_executions += 1;
+                    Ok(AutomationExecutionResult::Completed)
+                },
+            );
+            assert!(refused.unwrap_err().contains("unsettled run capacity"));
+            assert_eq!(refused_executions, 0);
+            assert_eq!(fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap(), history);
+            assert_eq!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap(), cron);
+            assert!(fixture.observed.lock().unwrap().is_empty());
+            assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+            for run in &original {
+                assert_eq!(fixture.runtime.read_run_for_delivery(
+                    &fixture.agent_id, &fixture.automation_id, &run.id,
+                ).unwrap().as_ref(), Some(run));
+            }
+            assert_eq!(fixture.runtime.read_run_for_delivery(
+                &fixture.agent_id, &fixture.automation_id, "refused-at-capacity",
+            ).unwrap(), None);
+
+            fixture.workers.begin_agent_delete(&fixture.agent_id).unwrap();
+            let blocked = fixture.runtime.read_run_for_delivery(
+                &fixture.agent_id, &fixture.automation_id, &original[0].id,
+            ).expect_err("checked read uses the canonical Session admission/deletion fence");
+            assert!(blocked.contains("new session work is not admitted"));
+            fixture.workers.end_agent_delete(&fixture.agent_id).unwrap();
+            assert_eq!(fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap(), history);
+            assert_eq!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap(), cron);
+
+            // Explicitly settle one fixture run through the same admitted
+            // store owner. This capacity control is not unknown-effect recovery.
+            SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                    fixture.store.finish_run(&fixture.automation_id, &original[0].id,
+                        "ok", 3_000.0, None).map_err(|error| error.to_string())?
+                        .ok_or_else(|| "capacity control did not settle its exact fixture row".to_string())?;
+                    Ok(())
+                }).unwrap();
+            let next = fixture.runtime.run_background_automation_with(
+                &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                Vec::new(), Some("independent-after-capacity".into()), Vec::new(), 3_001.0, None,
+                |_| {
+                    refused_executions += 1;
+                    Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+                },
+            );
+            assert_eq!(next, Ok(Some(FireAutomationOutcome::Ok)));
+            assert_eq!(refused_executions, 1, "the refused call released its volatile key for real later work");
+            assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+            let after = fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+            assert_eq!(after.len(), 1);
+            assert_eq!(after[0].run_id, "independent-after-capacity");
+            assert_eq!(after[0].state, "terminal");
+            assert!(after[0].fence_state_known);
+            let reports = fixture.observed.lock().unwrap().clone();
+            assert_eq!(reports.len(), 1);
+            assert_eq!(reports[0].automation_run_id.as_deref(), Some("independent-after-capacity"));
+            for run in original.iter().skip(1) {
+                assert_eq!(fixture.runtime.read_run_for_delivery(
+                    &fixture.agent_id, &fixture.automation_id, &run.id,
+                ).unwrap().as_ref(), Some(run));
+            }
         },
     );
 }

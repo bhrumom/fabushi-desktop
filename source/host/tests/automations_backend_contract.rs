@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use mahayana_host_runtime::automations::automation::AutomationSpec;
+use mahayana_host_runtime::automations::automation::{AutomationSpec, AUTOMATION_MAX_RUN_HISTORY};
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
 use mahayana_host_runtime::extensions::automations::backend_relay_source::{
@@ -715,6 +715,7 @@ impl FireDeliveryOwners {
             &self.runtime.list_all_automations().expect("reopened automation history"),
             fire,
             cloud_revision,
+            |entry, run_id| self.runtime.read_run_for_delivery(&entry.agent_id, &entry.automation.id, run_id),
         )
     }
 
@@ -827,6 +828,126 @@ fn reopened_running_original_and_alias_never_execute_complete_or_ack() {
             assert_eq!(transport.calls(), vec![
                 ("/sand/automation-events/poll".into(), json!({"ackRunUuids":[]})); 3
             ], "no completion requests or ACK for {case:?}, generation={generation}");
+        }
+    }
+}
+
+#[test]
+fn reopened_backend_reads_hidden_legacy_running_authority_beyond_display_history() {
+    let fixture = PersistedFireFixture::new(RedeliveryCase::RevisionedSchedule);
+    let legacy = {
+        let owners = FireDeliveryOwners::open(&fixture.root);
+        let store = owners.store(&fixture.fire.sand_agent_id);
+        let mut rows: Vec<Value> = serde_json::from_slice(&fixture.baseline.history).unwrap();
+        rows.extend((0..AUTOMATION_MAX_RUN_HISTORY).map(|index| json!({
+            "id":format!("newer-terminal-{index}"),"startedAt":1_000 + index,
+            "finishedAt":2_000 + index,"status":"ok","trigger":"manual",
+        })));
+        // Represent a valid file left by an older writer. Current admission
+        // must not fabricate such overflow to exercise authoritative reads.
+        SandAgentSessionStore::new(Arc::clone(&owners.workers))
+            .with_admitted_filesystem_mutation(&fixture.fire.sand_agent_id, || {
+                fs::write(store.runs_path(&fixture.automation_id), serde_json::to_vec(&rows).unwrap())
+                    .map_err(|error| error.to_string())
+            }).unwrap();
+        let state = owners.snapshot(&fixture.fire.sand_agent_id, &fixture.automation_id);
+        assert_eq!(state.config, fixture.baseline.config);
+        assert_eq!(state.cron, fixture.baseline.cron);
+        state
+    };
+    for generation in 0..2 {
+        let owners = FireDeliveryOwners::open(&fixture.root);
+        let display = owners.store(&fixture.fire.sand_agent_id).read_runs(&fixture.automation_id);
+        assert_eq!(display.len(), AUTOMATION_MAX_RUN_HISTORY);
+        assert!(!display.iter().any(|run| run.id == ORIGINAL_RUN_UUID));
+        for run_id in [ORIGINAL_RUN_UUID, COALESCED_RUN_UUID] {
+            let found = owners.runtime.read_run_for_delivery(
+                &fixture.fire.sand_agent_id, &fixture.automation_id, run_id,
+            ).unwrap().expect("complete legacy authority");
+            assert_eq!(found.id, ORIGINAL_RUN_UUID);
+            assert_eq!(found.status, "running");
+        }
+        let transport = MockTransport::with_responses(vec![
+            Ok(fixture.delivery(&[ORIGINAL_RUN_UUID, COALESCED_RUN_UUID])); 3
+        ]);
+        let mut backend = AutomationFireBackendRuntime::new(transport.clone());
+        for poll in 0..3 {
+            assert_eq!(owners.poll(&mut backend, 1_000 + poll), vec![
+                PreparedBackendFire::Abandon { reason: "existing_run_unsettled" }; 2
+            ], "generation={generation}, poll={poll}");
+            assert_eq!(backend.pending_len(), 0);
+            assert_eq!(owners.executions.load(Ordering::SeqCst), 0);
+            assert!(owners.observed.lock().unwrap().is_empty());
+            assert_eq!(owners.snapshot(&fixture.fire.sand_agent_id, &fixture.automation_id), legacy);
+        }
+        assert_eq!(transport.calls(), vec![
+            ("/sand/automation-events/poll".into(), json!({"ackRunUuids":[]})); 3
+        ]);
+    }
+}
+
+#[test]
+fn reopened_backend_abandons_unreadable_malformed_and_ambiguous_authority_without_ack() {
+    for fault in ["unreadable", "invalid-json", "malformed-tail", "duplicate-primary", "ambiguous-alias"] {
+        let fixture = PersistedFireFixture::new(RedeliveryCase::RevisionedSchedule);
+        let history_path = {
+            let owners = FireDeliveryOwners::open(&fixture.root);
+            let store = owners.store(&fixture.fire.sand_agent_id);
+            let path = store.runs_path(&fixture.automation_id);
+            SandAgentSessionStore::new(Arc::clone(&owners.workers))
+                .with_admitted_filesystem_mutation(&fixture.fire.sand_agent_id, || {
+                    if fault == "unreadable" {
+                        fs::remove_file(&path).map_err(|error| error.to_string())?;
+                        fs::create_dir(&path).map_err(|error| error.to_string())?;
+                        fs::write(path.join("sentinel"), b"owned unreadable history")
+                            .map_err(|error| error.to_string())?;
+                    } else if fault == "invalid-json" {
+                        fs::write(&path, b"[ incomplete").map_err(|error| error.to_string())?;
+                    } else {
+                        let mut rows: Vec<Value> = serde_json::from_slice(&fixture.baseline.history).unwrap();
+                        rows.extend((0..AUTOMATION_MAX_RUN_HISTORY + 1).map(|index| json!({
+                            "id":format!("newer-{index}"),"startedAt":1_000 + index,"status":"ok",
+                        })));
+                        rows.push(match fault {
+                            "malformed-tail" => json!({"id":"invalid","startedAt":"unknown"}),
+                            "duplicate-primary" => rows[0].clone(),
+                            "ambiguous-alias" => json!({"id":"other-owner","startedAt":0,"status":"ok",
+                                "coalescedRunIds":[ORIGINAL_RUN_UUID,COALESCED_RUN_UUID]}),
+                            _ => unreachable!(),
+                        });
+                        fs::write(&path, serde_json::to_vec(&rows).unwrap()).map_err(|error| error.to_string())?;
+                    }
+                    Ok(())
+                }).unwrap();
+            path
+        };
+        let before = if fault == "unreadable" { None } else { Some(fs::read(&history_path).unwrap()) };
+        for generation in 0..2 {
+            let owners = FireDeliveryOwners::open(&fixture.root);
+            let transport = MockTransport::with_responses(vec![
+                Ok(fixture.delivery(&[ORIGINAL_RUN_UUID, COALESCED_RUN_UUID])); 3
+            ]);
+            let mut backend = AutomationFireBackendRuntime::new(transport.clone());
+            for poll in 0..3 {
+                assert_eq!(owners.poll(&mut backend, 1_000 + poll), vec![
+                    PreparedBackendFire::Abandon { reason: "run_history_unavailable" }; 2
+                ], "fault={fault}, generation={generation}, poll={poll}");
+                assert_eq!(backend.pending_len(), 0);
+                assert_eq!(owners.executions.load(Ordering::SeqCst), 0);
+                assert!(owners.observed.lock().unwrap().is_empty());
+                assert_eq!(owners.workers.list_cron_session_runs(&fixture.fire.sand_agent_id).unwrap(), fixture.baseline.cron);
+                let store = owners.store(&fixture.fire.sand_agent_id);
+                assert_eq!(fs::read(store.config_path(&fixture.automation_id)).unwrap(), fixture.baseline.config);
+                if let Some(before) = &before {
+                    assert_eq!(&fs::read(&history_path).unwrap(), before);
+                } else {
+                    assert!(history_path.is_dir());
+                    assert_eq!(fs::read(history_path.join("sentinel")).unwrap(), b"owned unreadable history");
+                }
+            }
+            assert_eq!(transport.calls(), vec![
+                ("/sand/automation-events/poll".into(), json!({"ackRunUuids":[]})); 3
+            ]);
         }
     }
 }

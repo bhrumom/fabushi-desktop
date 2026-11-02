@@ -45,13 +45,22 @@ fn fire(event: Option<Value>) -> BackendAutomationFire {
     }
 }
 
+// Pure delivery tests explicitly supply their in-memory authority. Shipping
+// and owner integration tests instead use AutomationRuntime's checked read.
+fn fixture_history(entry: &AgentAutomationEntry, run_id: &str) -> Result<Option<AutomationRun>, String> {
+    Ok(entry.automation.runs.iter().find(|run| {
+        run.id == run_id || run.coalesced_run_ids.as_ref()
+            .is_some_and(|ids| ids.iter().any(|id| id == run_id))
+    }).cloned())
+}
+
 #[test]
 fn prepares_schedule_and_event_delivery_only_after_target_validation() {
     let schedule = entry(json!({"type":"cron","schedule":"0 * * * *"}));
     let mut scheduled_fire = fire(None);
     scheduled_fire.scheduled_for_ms = Some(90);
     assert!(matches!(
-        prepare_backend_fire(&[schedule], &scheduled_fire, |_| None),
+        prepare_backend_fire(&[schedule], &scheduled_fire, |_| None, fixture_history),
         PreparedBackendFire::Schedule {
             ref agent_id,
             ref automation_id,
@@ -73,7 +82,7 @@ fn prepares_schedule_and_event_delivery_only_after_target_validation() {
         "timestampMs":99
     })));
     assert!(matches!(
-        prepare_backend_fire(&[listener], &event_fire, |_| None),
+        prepare_backend_fire(&[listener], &event_fire, |_| None, fixture_history),
         PreparedBackendFire::Event {
             ref agent_id,
             ref automation_id,
@@ -96,7 +105,7 @@ fn existing_completed_run_is_not_executed_twice() {
         event: None,
         coalesced_run_ids: Some(vec!["run-1".into()]),
     });
-    let prepared = prepare_backend_fire(&[target], &fire(None), |_| None);
+    let prepared = prepare_backend_fire(&[target], &fire(None), |_| None, fixture_history);
     assert!(matches!(
         prepared,
         PreparedBackendFire::Complete {
@@ -160,7 +169,7 @@ fn running_original_and_coalesced_ids_are_abandoned_before_fire_validation() {
             assert_eq!(
                 prepare_backend_fire(std::slice::from_ref(&target), &backend_fire, |_| {
                     panic!("known running identity must precede revision lookup: {case}")
-                }),
+                }, fixture_history),
                 PreparedBackendFire::Abandon { reason: "existing_run_unsettled" },
                 "{case}, stored_id={stored_id}",
             );
@@ -195,7 +204,7 @@ fn terminal_original_and_coalesced_ids_replay_stored_success_and_failure() {
             assert_eq!(
                 prepare_backend_fire(&[target], &backend_fire, |_| {
                     panic!("stored terminal replay must precede revision lookup")
-                }),
+                }, fixture_history),
                 PreparedBackendFire::Complete { completion, reason: "existing_run" },
                 "status={status}, stored_id={stored_id}",
             );
@@ -211,13 +220,13 @@ fn stale_or_unverifiable_definition_never_executes() {
     revisioned.definition_revision = Some("remote-hash".into());
 
     assert_eq!(
-        prepare_backend_fire(&[target.clone()], &revisioned, |_| None),
+        prepare_backend_fire(&[target.clone()], &revisioned, |_| None, fixture_history),
         PreparedBackendFire::Abandon {
             reason: "definition_revision_unavailable"
         }
     );
     assert!(matches!(
-        prepare_backend_fire(&[target], &revisioned, |_| Some("local-hash".into())),
+        prepare_backend_fire(&[target], &revisioned, |_| Some("local-hash".into()), fixture_history),
         PreparedBackendFire::Complete {
             reason: "definition_changed",
             ..
@@ -232,12 +241,64 @@ fn legacy_schedule_slot_covered_by_last_run_is_rejected() {
     let mut backend_fire = fire(None);
     backend_fire.scheduled_for_ms = Some(100);
     assert!(matches!(
-        prepare_backend_fire(&[target], &backend_fire, |_| None),
+        prepare_backend_fire(&[target], &backend_fire, |_| None, fixture_history),
         PreparedBackendFire::Complete {
             reason: "slot_already_covered",
             ..
         }
     ));
+}
+
+#[test]
+fn checked_history_result_governs_delivery_independently_of_display_projection() {
+    let target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+    let retained = AutomationRun {
+        id: "hidden-parent".into(), trigger: "event".into(), started_at: 0.0,
+        finished_at: None, status: "running".into(), detail: None, event: None,
+        coalesced_run_ids: Some(vec!["run-1".into()]),
+    };
+    assert!(target.automation.runs.is_empty(), "old retained authority is outside display");
+    assert_eq!(prepare_backend_fire(std::slice::from_ref(&target), &fire(None), |_| {
+        panic!("known unfinished authority precedes revision")
+    }, |selected, run_id| {
+        assert_eq!(selected.agent_id, "agent-1");
+        assert_eq!(selected.automation.id, "local-1");
+        assert_eq!(run_id, "run-1");
+        Ok(Some(retained.clone()))
+    }), PreparedBackendFire::Abandon { reason: "existing_run_unsettled" });
+
+    let mut stale_display = target;
+    stale_display.automation.runs.push(retained);
+    assert!(matches!(prepare_backend_fire(&[stale_display], &fire(None), |_| None, |_, _| Ok(None)),
+        PreparedBackendFire::Schedule { .. }), "only the supplied checked authority establishes absence");
+}
+
+#[test]
+fn unavailable_checked_history_never_falls_back_to_display_or_definition_rejection() {
+    for case in ["enabled", "disabled", "covered_slot", "changed_revision", "unrecognized_event"] {
+        let mut target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+        target.automation.runs.push(AutomationRun {
+            id: "run-1".into(), trigger: "schedule".into(), started_at: 1.0,
+            finished_at: Some(2.0), status: "ok".into(), detail: None, event: None,
+            coalesced_run_ids: None,
+        });
+        let mut backend_fire = fire(None);
+        match case {
+            "disabled" => target.automation.is_enabled = false,
+            "covered_slot" => target.automation.last_run_at = Some(101.0),
+            "changed_revision" => backend_fire.definition_revision = Some("old".into()),
+            "unrecognized_event" => backend_fire.event = Some(json!({"source":"unrecognized"})),
+            _ => {}
+        }
+        let before = target.clone();
+        assert_eq!(prepare_backend_fire(std::slice::from_ref(&target), &backend_fire, |_| {
+            panic!("unavailable history must precede revision: {case}")
+        }, |_, run_id| {
+            assert_eq!(run_id, "run-1");
+            Err("checked input is unreadable, malformed or ambiguous".into())
+        }), PreparedBackendFire::Abandon { reason: "run_history_unavailable" }, "{case}");
+        assert_eq!(target, before);
+    }
 }
 
 #[test]

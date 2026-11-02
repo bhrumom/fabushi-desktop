@@ -1,5 +1,6 @@
 use serde_json::{Map, Value};
 
+use crate::automations::automation::AutomationRun;
 use crate::automations::automation_id::stable_automation_id;
 use crate::automations::automation_trigger::{
     GITHUB_EVENT_KINDS, trigger_matches_event, trigger_members, trigger_schedule,
@@ -41,6 +42,7 @@ pub fn prepare_backend_fire(
     entries: &[AgentAutomationEntry],
     fire: &BackendAutomationFire,
     expected_definition_revision: impl Fn(&AgentAutomationEntry) -> Option<String>,
+    read_run_for_delivery: impl Fn(&AgentAutomationEntry, &str) -> Result<Option<AutomationRun>, String>,
 ) -> PreparedBackendFire {
     let target = entries.iter().find(|entry| {
         entry.agent_id == fire.sand_agent_id
@@ -50,7 +52,11 @@ pub fn prepare_backend_fire(
         return rejected("automation_missing", "Automation not found on the Sand box");
     };
 
-    match existing_run_history(target, &fire.id) {
+    let existing = match read_run_for_delivery(target, &fire.id) {
+        Ok(existing) => existing,
+        Err(_) => return PreparedBackendFire::Abandon { reason: "run_history_unavailable" },
+    };
+    match existing_run_history(existing.as_ref()) {
         ExistingRunHistory::Absent => {}
         ExistingRunHistory::Running => {
             return PreparedBackendFire::Abandon {
@@ -148,17 +154,8 @@ enum ExistingRunHistory {
     Terminal(FireCompletion),
 }
 
-fn existing_run_history(
-    target: &AgentAutomationEntry,
-    run_uuid: &str,
-) -> ExistingRunHistory {
-    let Some(run) = target.automation.runs.iter().find(|run| {
-        run.id == run_uuid
-            || run
-                .coalesced_run_ids
-                .as_ref()
-                .is_some_and(|ids| ids.iter().any(|id| id == run_uuid))
-    }) else {
+fn existing_run_history(run: Option<&AutomationRun>) -> ExistingRunHistory {
+    let Some(run) = run else {
         return ExistingRunHistory::Absent;
     };
     if run.status == "running" {

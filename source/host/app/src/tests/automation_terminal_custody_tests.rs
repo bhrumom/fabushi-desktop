@@ -273,7 +273,9 @@ fn automation_unknown_tool_terminal_retains_durable_run_and_backend_delivery() {
                     Ok(entries) => entries,
                     Err(error) => { errors.lock().unwrap().push(error); return false; }
                 };
-                let prepared = prepare_backend_fire(&entries, &fire, |_| None);
+                let prepared = prepare_backend_fire(&entries, &fire, |_| None, |entry, run_uuid| {
+                    automations.read_run_for_delivery(&entry.agent_id, &entry.automation.id, run_uuid)
+                });
                 let accepted = matches!(&prepared, PreparedBackendFire::Schedule { .. });
                 sender.send((prepared, completion)).expect("bounded receiver owns this dispatch");
                 accepted

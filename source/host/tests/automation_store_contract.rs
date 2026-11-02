@@ -1,12 +1,12 @@
 use std::fs;use std::io;use std::sync::{Arc,mpsc};use std::time::{Duration,SystemTime,UNIX_EPOCH};
-use mahayana_host_runtime::automations::automation::{AutomationRecord,AutomationSpec,AUTOMATION_MAX_RUN_HISTORY};
-use mahayana_host_runtime::automations::automation_store::{AutomationDefinitionInspectionState,AutomationStoreError,FileAutomationStore,agent_has_automations,inspect_agent_automation_definitions,parse_stored_config};
+use mahayana_host_runtime::automations::automation::{AutomationRecord,AutomationRun,AutomationSpec,AUTOMATION_MAX_RUN_HISTORY};
+use mahayana_host_runtime::automations::automation_store::{AutomationDefinitionInspectionState,AutomationStoreError,FileAutomationStore,agent_has_automations,inspect_agent_automation_definitions,parse_stored_config,parse_stored_run};
 use mahayana_host_runtime::automations::automation_trigger::{parse_stored_trigger,slack_scope_matches,trigger_schedule};
 use mahayana_host_runtime::automations::routine_notices::{GITHUB_LISTENER_SCOPE,routine_notice_ids_to_raise};
 use serde_json::json;
 fn root(label:&str)->std::path::PathBuf{let n=SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();std::env::temp_dir().join(format!("fabushi-automation-{label}-{}-{n}",std::process::id()))}
 #[test]fn trigger_parser_normalizes_slack_github_and_group_contract(){let slack=parse_stored_trigger(&json!({"type":"slack","channel":" #eng ","match":{"kind":"reaction","emoji":[":Ship:","ship","BAD SPACE"],"bySelf":true}})).unwrap();assert_eq!(slack["channel"],"#eng");assert_eq!(slack["match"]["emoji"],json!(["ship"]));assert!(slack_scope_matches("#Eng","eng"));assert!(!slack_scope_matches("@Eng","#eng"));let github=parse_stored_trigger(&json!({"type":"github","repo":"Org/Repo","events":["pr-opened","ci-passed"],"userAllowlist":["@Alice","alice"],"ciBranch":" main "})).unwrap();assert_eq!(github["userAllowlist"],json!(["Alice"]));assert_eq!(github["ciBranch"],"main");let group=parse_stored_trigger(&json!({"type":"group","listeners":[{"type":"cron","schedule":"0 9 * * 1-5"},slack]})).unwrap();assert_eq!(trigger_schedule(&group).as_deref(),Some("0 9 * * 1-5"));}
-#[test]fn file_store_persists_crud_run_history_and_durable_footprint(){let root=root("crud");let agent=root.join("agent");let dir=agent.join("automations");fs::create_dir_all(&agent).unwrap();let store=FileAutomationStore::new(&dir);assert_eq!(inspect_agent_automation_definitions(&agent).state,AutomationDefinitionInspectionState::DirMissing);let spec=AutomationSpec{name:"Morning Check".into(),prompt:" check inbox ".into(),trigger:json!({"type":"cron","schedule":"0 9 * * 1-5"}),is_enabled:None};let record=store.upsert(&spec,1000.0).unwrap().unwrap();assert_eq!(record.id,"morning-check");assert_eq!(record.prompt,"check inbox");assert!(agent_has_automations(&agent));assert_eq!(inspect_agent_automation_definitions(&agent).valid_definition_count,1);let second=store.upsert(&spec,1100.0).unwrap().unwrap();assert_eq!(second.id,"morning-check-2");assert!(!store.set_enabled(&record.id,false).unwrap().unwrap().is_enabled);let run=store.begin_run(&record.id,"manual",1200.0,Some(" evt "),Some("run-1"),None).unwrap().unwrap();assert_eq!(run.trigger,"manual");let finished=store.finish_run(&record.id,"run-1","error",1300.0,Some(" failed ")).unwrap().unwrap();assert_eq!(finished.runs[0].status,"error");for i in 0..(AUTOMATION_MAX_RUN_HISTORY+5){store.begin_run(&record.id,"schedule",2000.0+i as f64,None,Some(&format!("r-{i}")),None).unwrap();}assert_eq!(store.read_runs(&record.id).len(),AUTOMATION_MAX_RUN_HISTORY);assert!(store.remove(&second.id).unwrap());let _=fs::remove_dir_all(root);}
+#[test]fn file_store_persists_crud_run_history_and_durable_footprint(){let root=root("crud");let agent=root.join("agent");let dir=agent.join("automations");fs::create_dir_all(&agent).unwrap();let store=FileAutomationStore::new(&dir);assert_eq!(inspect_agent_automation_definitions(&agent).state,AutomationDefinitionInspectionState::DirMissing);let spec=AutomationSpec{name:"Morning Check".into(),prompt:" check inbox ".into(),trigger:json!({"type":"cron","schedule":"0 9 * * 1-5"}),is_enabled:None};let record=store.upsert(&spec,1000.0).unwrap().unwrap();assert_eq!(record.id,"morning-check");assert_eq!(record.prompt,"check inbox");assert!(agent_has_automations(&agent));assert_eq!(inspect_agent_automation_definitions(&agent).valid_definition_count,1);let second=store.upsert(&spec,1100.0).unwrap().unwrap();assert_eq!(second.id,"morning-check-2");assert!(!store.set_enabled(&record.id,false).unwrap().unwrap().is_enabled);let run=store.begin_run(&record.id,"manual",1200.0,Some(" evt "),Some("run-1"),None).unwrap().unwrap();assert_eq!(run.trigger,"manual");let finished=store.finish_run(&record.id,"run-1","error",1300.0,Some(" failed ")).unwrap().unwrap();assert_eq!(finished.runs[0].status,"error");for i in 0..(AUTOMATION_MAX_RUN_HISTORY+5){let id=format!("r-{i}");store.begin_run(&record.id,"schedule",2000.0+i as f64,None,Some(&id),None).unwrap();store.finish_run(&record.id,&id,"ok",2100.0+i as f64,None).unwrap();}assert_eq!(store.read_runs(&record.id).len(),AUTOMATION_MAX_RUN_HISTORY);assert!(store.remove(&second.id).unwrap());let _=fs::remove_dir_all(root);}
 #[test]fn config_and_notice_contract(){let raw=r#"{"name":" Test ","prompt":" go ","schedule":"@daily","enabled":true,"createdAt":9999,"raisedNotices":[]}"#;let config=parse_stored_config(raw,5000.0).unwrap();assert_eq!(config.created_at,5000.0);assert_eq!(config.name,"Test");let trigger=json!({"type":"github","repo":"org/repo","events":["pr-opened"]});let notices=routine_notice_ids_to_raise(1_700_000_000_000.0,&trigger,&[]);assert_eq!(notices,vec![GITHUB_LISTENER_SCOPE.to_string()]);assert!(routine_notice_ids_to_raise(1_700_000_000_000.0,&trigger,&notices).is_empty());}
 
 
@@ -330,10 +330,10 @@ fn finish_rejects_duplicate_ids_before_applying_the_history_window() {
 }
 
 #[test]
-fn finish_does_not_acknowledge_a_run_outside_the_existing_history_window() {
+fn finish_does_not_acknowledge_a_truly_absent_run_in_over_window_history() {
     for definition_only in [false, true] {
         let (root, store, id) = history_store("finish-window-miss");
-        let mut rows = vec![json!({"id":"run","startedAt":0,"status":"running"})];
+        let mut rows = vec![json!({"id":"other","startedAt":0,"status":"running"})];
         rows.extend((0..AUTOMATION_MAX_RUN_HISTORY).map(|index| {
             json!({"id":format!("newer-{index}"),"startedAt":index + 1})
         }));
@@ -342,6 +342,38 @@ fn finish_does_not_acknowledge_a_run_outside_the_existing_history_window() {
         fs::write(store.runs_path(&id), &raw).unwrap();
         assert!(finish_history(&store, &id, definition_only).unwrap().is_none());
         assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn finish_settles_present_old_running_history_and_returns_the_exact_receipt() {
+    for definition_only in [false, true] {
+        let (root, store, id) = history_store("finish-retained-window");
+        let mut rows = vec![json!({
+            "id":"run","startedAt":0,"status":"running","coalescedRunIds":["alias"]
+        })];
+        rows.extend((0..AUTOMATION_MAX_RUN_HISTORY).map(|index| {
+            json!({"id":format!("newer-{index}"),"startedAt":index + 1,"status":"ok"})
+        }));
+        fs::write(store.runs_path(&id), serde_json::to_vec(&rows).unwrap()).unwrap();
+        let config = fs::read(store.config_path(&id)).unwrap();
+        assert!(!store.read_runs(&id).iter().any(|run| run.id == "run"));
+        let finished = finish_history(&store, &id, definition_only).unwrap().expect("exact old run exists");
+        assert_eq!(finished.next_run_at.is_none(), definition_only);
+        assert_eq!(finished.runs.len(), AUTOMATION_MAX_RUN_HISTORY);
+        let receipt = finished.runs.iter().find(|run| run.id == "run").expect("pinned returned receipt");
+        assert_eq!(receipt.started_at, 0.0);
+        assert_eq!(receipt.finished_at, Some(2_000.0));
+        assert_eq!(receipt.status, "error");
+        assert_eq!(receipt.detail.as_deref(), Some("failed"));
+        assert_eq!(receipt.coalesced_run_ids, Some(vec!["alias".into()]));
+        assert_eq!(store.read_run_for_delivery(&id, "alias").unwrap().as_ref(), Some(receipt));
+        let persisted = persisted_history(&store, &id);
+        assert_eq!(persisted.len(), AUTOMATION_MAX_RUN_HISTORY);
+        assert_eq!(persisted.iter().find(|run| run.id == "run"), Some(receipt));
+        assert!(!persisted.iter().any(|run| run.id == "newer-0"));
         assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
         let _ = fs::remove_dir_all(root);
     }
@@ -421,4 +453,197 @@ fn finish_preserves_valid_legacy_normalization_order_and_projection() {
         assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
         let _ = fs::remove_dir_all(root);
     }
+}
+
+fn persisted_history(store: &FileAutomationStore, id: &str) -> Vec<AutomationRun> {
+    let rows: Vec<serde_json::Value> = serde_json::from_slice(
+        &fs::read(store.runs_path(id)).expect("persisted history bytes"),
+    ).expect("persisted history array");
+    rows.iter().map(|row| parse_stored_run(row).expect("complete persisted row")).collect()
+}
+
+#[test]
+fn begin_keeps_running_identity_and_aliases_across_settled_history_eviction() {
+    let (root, store, id) = history_store("retained-across-window");
+    let original = store.begin_run(&id, "event", 0.0, Some("original event"), Some("retained"),
+        Some(&["alias-a".into(), "alias-b".into()])).unwrap().unwrap();
+    let config = fs::read(store.config_path(&id)).unwrap();
+    for index in 0..AUTOMATION_MAX_RUN_HISTORY + 3 {
+        let run_id = format!("new-{index}");
+        store.begin_run(&id, "manual", 100.0 + index as f64, None, Some(&run_id), None).unwrap().unwrap();
+        store.finish_run(&id, &run_id, if index % 2 == 0 { "ok" } else { "error" },
+            200.0 + index as f64, None).unwrap().unwrap();
+        let all = persisted_history(&store, &id);
+        assert!(all.len() <= AUTOMATION_MAX_RUN_HISTORY);
+        assert_eq!(all.iter().find(|run| run.id == original.id), Some(&original));
+        assert!(all.windows(2).all(|pair| pair[0].started_at >= pair[1].started_at));
+        for query in ["retained", "alias-a", "alias-b"] {
+            assert_eq!(store.read_run_for_delivery(&id, query).unwrap(), Some(original.clone()));
+        }
+    }
+    let all = persisted_history(&store, &id);
+    assert_eq!(all.len(), AUTOMATION_MAX_RUN_HISTORY);
+    assert!(!all.iter().any(|run| run.id == "new-0"));
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn full_running_capacity_refuses_growth_but_keeps_existing_lookup_and_settlement() {
+    let (root, store, id) = history_store("running-capacity");
+    for index in 0..AUTOMATION_MAX_RUN_HISTORY {
+        store.begin_run(&id, "schedule", index as f64, None,
+            Some(&format!("running-{index}")), None).unwrap().unwrap();
+    }
+    let all = persisted_history(&store, &id);
+    let before = fs::read(store.runs_path(&id)).unwrap();
+    let config = fs::read(store.config_path(&id)).unwrap();
+    for run in &all {
+        assert_eq!(store.begin_run(&id, "event", 9_000.0, Some("different"),
+            Some(&run.id), Some(&["different-alias".into()])).unwrap().as_ref(), Some(run));
+        assert_eq!(store.read_run_for_delivery(&id, &run.id).unwrap().as_ref(), Some(run));
+    }
+    let error = store.begin_run(&id, "manual", 9_000.0, None, Some("over-capacity"), None)
+        .expect_err("twenty Running authorities cannot be evicted");
+    assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::WouldBlock));
+    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), before);
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+
+    let settled = store.finish_run(&id, "running-0", "ok", 10_000.0, None).unwrap().unwrap();
+    let receipt = settled.runs.iter().find(|run| run.id == "running-0").unwrap();
+    assert_eq!(receipt.status, "ok");
+    assert_eq!(store.read_run_for_delivery(&id, "running-0").unwrap().as_ref(), Some(receipt));
+    let backdated = store.begin_run(&id, "manual", -1.0, None, Some("backdated"), None).unwrap().unwrap();
+    let after = persisted_history(&store, &id);
+    assert_eq!(after.len(), AUTOMATION_MAX_RUN_HISTORY);
+    assert_eq!(after.iter().find(|run| run.id == "backdated"), Some(&backdated));
+    assert_eq!(backdated.started_at, -1.0);
+    for run in all.iter().filter(|run| run.id != "running-0") {
+        assert_eq!(after.iter().find(|entry| entry.id == run.id), Some(run));
+    }
+    assert!(!after.iter().any(|run| run.id == "running-0"), "only the settled row is now evictable");
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn legacy_running_excess_drains_without_growth_or_loss_and_returns_bounded_receipts() {
+    for definition_only in [false, true] {
+        let (root, store, id) = history_store("legacy-running-excess");
+        let running_count = AUTOMATION_MAX_RUN_HISTORY + 3;
+        let mut rows = (0..running_count).map(|index| {
+            json!({"id":format!("old-{index}"),"startedAt":index,"status":"running"})
+        }).collect::<Vec<_>>();
+        rows.push(json!({"id":"terminal","startedAt":1000,"status":"ok"}));
+        fs::write(store.runs_path(&id), serde_json::to_vec(&rows).unwrap()).unwrap();
+        let original = persisted_history(&store, &id);
+        let before = fs::read(store.runs_path(&id)).unwrap();
+        let config = fs::read(store.config_path(&id)).unwrap();
+        assert!(!store.read_runs(&id).iter().any(|run| run.id == "old-0"));
+        assert_eq!(store.begin_run(&id, "manual", 9_000.0, None, Some("old-0"), None)
+            .unwrap().as_ref(), original.iter().find(|run| run.id == "old-0"));
+        let error = store.begin_run(&id, "manual", 9_000.0, None, Some("new"), None).unwrap_err();
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::WouldBlock));
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), before);
+
+        let mut prior_len = original.len();
+        for index in 0..4 {
+            let run_id = format!("old-{index}");
+            let result = if definition_only {
+                store.finish_run_definition(&id, &run_id, "error", 10_000.0 + index as f64, Some("known terminal"))
+            } else {
+                store.finish_run(&id, &run_id, "error", 10_000.0 + index as f64, Some("known terminal"))
+            }.unwrap().unwrap();
+            assert_eq!(result.next_run_at.is_none(), definition_only);
+            assert!(result.runs.len() <= AUTOMATION_MAX_RUN_HISTORY);
+            let receipt = result.runs.iter().find(|run| run.id == run_id).expect("old exact target in bounded receipt");
+            assert_eq!(receipt.status, "error");
+            assert_eq!(receipt.finished_at, Some(10_000.0 + index as f64));
+            let persisted = persisted_history(&store, &id);
+            assert!(persisted.len() <= prior_len, "legacy excess never grows");
+            assert_eq!(persisted.len(), (running_count - index).max(AUTOMATION_MAX_RUN_HISTORY));
+            assert_eq!(persisted.iter().find(|run| run.id == run_id), Some(receipt));
+            for retained_index in index + 1..running_count {
+                let retained = format!("old-{retained_index}");
+                assert_eq!(persisted.iter().find(|run| run.id == retained),
+                    original.iter().find(|run| run.id == retained));
+            }
+            assert!(!persisted.iter().any(|run| run.id == "terminal"));
+            prior_len = persisted.len();
+        }
+        assert_eq!(prior_len, AUTOMATION_MAX_RUN_HISTORY);
+        store.begin_run(&id, "manual", 20_000.0, None, Some("after-drain"), None).unwrap().unwrap();
+        assert_eq!(persisted_history(&store, &id).len(), AUTOMATION_MAX_RUN_HISTORY);
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn delivery_lookup_reads_hidden_original_and_aliases_without_rewriting_history() {
+    let (root, store, id) = history_store("delivery-hidden");
+    let mut rows = (0..AUTOMATION_MAX_RUN_HISTORY).map(|index| {
+        json!({"id":format!("newer-{index}"),"startedAt":index + 1,"status":"ok"})
+    }).collect::<Vec<_>>();
+    rows.push(json!({"id":"  ","startedAt":0,"status":"running","coalescedRunIds":["alias","alias"]}));
+    let raw = serde_json::to_vec_pretty(&rows).unwrap();
+    fs::write(store.runs_path(&id), &raw).unwrap();
+    let config = fs::read(store.config_path(&id)).unwrap();
+    assert_eq!(store.read_runs(&id).len(), AUTOMATION_MAX_RUN_HISTORY);
+    assert!(!store.read_runs(&id).iter().any(|run| run.id == "  "));
+    let original = store.read_run_for_delivery(&id, "  ").unwrap().expect("literal primary ID");
+    assert_eq!(original.status, "running");
+    assert_eq!(store.read_run_for_delivery(&id, "alias").unwrap(), Some(original));
+    assert_eq!(store.read_run_for_delivery(&id, "missing").unwrap(), None);
+    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn delivery_lookup_refuses_malformed_tails_and_cross_row_identity_ambiguity() {
+    let mut cases = vec![
+        b"[".to_vec(),
+        br#"{"id":"run","startedAt":0}"#.to_vec(),
+        b"[\xff]".to_vec(),
+        br#"[{"id":"run","startedAt":0},{"id":"bad","startedAt":"invalid"}]"#.to_vec(),
+        br#"[{"id":"run","startedAt":0},{"id":"run","startedAt":1}]"#.to_vec(),
+        br#"[{"id":"a","startedAt":0,"coalescedRunIds":["run"]},{"id":"b","startedAt":1,"coalescedRunIds":["run"]}]"#.to_vec(),
+        br#"[{"id":"run","startedAt":0},{"id":"b","startedAt":1,"coalescedRunIds":["run"]}]"#.to_vec(),
+    ];
+    let mut hidden_tail = (0..AUTOMATION_MAX_RUN_HISTORY + 2).map(|index| {
+        json!({"id":format!("newer-{index}"),"startedAt":100 + index})
+    }).collect::<Vec<_>>();
+    hidden_tail.push(json!({"id":"run","startedAt":1,"status":"running"}));
+    hidden_tail.push(json!({"id":"bad","startedAt":"invalid"}));
+    cases.push(serde_json::to_vec(&hidden_tail).unwrap());
+    for (index, raw) in cases.iter().enumerate() {
+        let (root, store, id) = history_store(&format!("delivery-invalid-{index}"));
+        fs::write(store.runs_path(&id), raw).unwrap();
+        let config = fs::read(store.config_path(&id)).unwrap();
+        assert!(store.read_run_for_delivery(&id, "run").is_err(), "case {index}");
+        if index < 5 || index == 7 {
+            assert!(store.read_run_for_delivery(&id, "absent").is_err(), "invalid whole input is not absence");
+        }
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), *raw);
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn delivery_lookup_distinguishes_missing_history_from_read_errors_and_unsafe_paths() {
+    let (root, store, id) = history_store("delivery-read-boundary");
+    assert_eq!(store.read_run_for_delivery(&id, "run").unwrap(), None);
+    assert!(!store.runs_path(&id).exists());
+    for unsafe_id in ["", "../escape", "/absolute", "nested/folder"] {
+        let error = store.read_run_for_delivery(unsafe_id, "run").unwrap_err();
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidInput));
+    }
+    fs::create_dir(store.runs_path(&id)).unwrap();
+    fs::write(store.runs_path(&id).join("sentinel"), b"owned history directory").unwrap();
+    assert!(store.read_runs(&id).is_empty(), "display remains fail-soft");
+    assert!(matches!(store.read_run_for_delivery(&id, "run"), Err(AutomationStoreError::Io(_))));
+    assert_eq!(fs::read(store.runs_path(&id).join("sentinel")).unwrap(), b"owned history directory");
+    let _ = fs::remove_dir_all(root);
 }

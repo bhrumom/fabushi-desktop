@@ -617,6 +617,25 @@ impl AutomationRuntime {
         SandAgentSessionStore::new(Arc::clone(&self.sessions)).list_all_automations()
     }
 
+    pub fn read_run_for_delivery(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+    ) -> Result<Option<AutomationRun>, String> {
+        self.with_agent_mutation_lock(agent_id, || {
+            let session = SandAgentSessionStore::new(Arc::clone(&self.sessions));
+            let store = session.automation_store_for(agent_id)?;
+            // Use the same Session filesystem/deletion boundary as history
+            // writers. The closure reads only this already-resolved store;
+            // it must not re-enter the public Session admission facade.
+            session.with_admitted_filesystem_mutation(agent_id, || {
+                store.read_run_for_delivery(automation_id, run_id)
+                    .map_err(|error| error.to_string())
+            })
+        })
+    }
+
     pub fn list_all_automation_definitions(&self) -> Result<Vec<AgentAutomationEntry>, String> {
         SandAgentSessionStore::new(Arc::clone(&self.sessions)).list_all_automation_definitions()
     }

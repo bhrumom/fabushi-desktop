@@ -898,3 +898,102 @@ Cancellation alone must also retain the real registered task and admitted routed
 lease; the fixture checks both owners before terminal publication. The other
 two new app custody cases passed on the failing H; recovery and Coordinator
 checks did not execute. The integrated repair still requires new exact-H Actions.
+
+## Retained history authority — AUTO-RETAINED-HISTORY-v1
+
+Decision **AUTO-RETAINED-HISTORY-01 — FIX / IMPL_BUG**, source-identified at
+`18ef48cf1b72c045141f56b227be79226056113b` and revalidated before edits on
+`85fcd3d3034d908029a6bc3770755f90f3bc1e63`. No executed failing baseline is
+claimed. Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`.
+
+The actual retained-unsettled path leaves Running file history and cron rows.
+Twenty later successful manual runs can evict that original from the current
+20-row mutation/display window. A valid revisioned backend redelivery then
+appears absent; the existing legitimate same-identity Running cron refresh
+allows another executor entry. Existing owners must retain the unsettled fact
+and consult its complete checked history before delivery decisions. This closes
+the pruning/projection gap explicitly left open above, without changing cron
+refresh semantics or introducing another registry, store or execution owner.
+
+- ARH01: The existing strict history reader validates the entire array and
+  unique primary IDs, preserving all current legacy normalization and errors,
+  and returns every valid row before exact lookup. Ordinary fail-soft display
+  reads remain newest-first and bounded by `AUTOMATION_MAX_RUN_HISTORY` (20).
+- ARH02: Existing-ID begin remains idempotent without a write, before capacity
+  checks. A new run refuses when at least 20 existing rows are Running; preserve
+  their bytes and enter no cron/executor. Otherwise retain every Running row,
+  including a backdated new run, and use remaining slots for newest terminal
+  rows only. Do not stop independent work merely because one run is retained.
+- ARH03: Settlement finds the exact primary ID in complete checked history.
+  Preserve every remaining Running row and pin the just-settled target while
+  retaining newest other terminal rows within the capacity. Return a bounded
+  `AutomationRecord.runs` containing that exact committed target even when its
+  old timestamp would put it outside the ordinary display. Preserve genuine
+  absence/None, atomic-write errors and whole-input corruption refusal.
+- ARH04: Valid legacy input may already contain more than 20 Running rows.
+  Refuse new growth, keep authoritative lookup available, and permit non-growing
+  settlement without deleting another Running row. If the protected set plus
+  this exact terminal receipt still exceeds 20, preserve that set without other
+  terminal history; compact back to 20 when it fits. Display and returned
+  receipt projections stay bounded. This is draining existing excess, not a
+  new unlimited capacity or silent quarantine.
+- ARH05: Add checked original-or-coalesced-ID lookup to FileAutomationStore,
+  returning one existing `AutomationRun`, true checked absence, or an error.
+  Multiple matching rows are ambiguous and must error; repeated aliases within
+  one row are one owner. Reuse the existing strict parser and safe folder-ID
+  boundary. Missing history keeps existing first-run semantics. Do not use a
+  display projection or a swallowed read error to establish absence.
+- ARH06: Expose that read through the existing AutomationRuntime/Session store
+  boundary. `prepare_backend_fire` must require a checked resolver for the
+  selected entry and requested UUID, before enabled, revision, legacy-slot,
+  trigger or event decisions. Errors/ambiguity return existing Abandon without
+  invoking completion. Known Running retains `existing_run_unsettled`, terminal
+  replay remains existing Complete, and only checked absence proceeds. The
+  shipping Host supplies the real resolver; there is no permissive default.
+- ARH07: Preserve Session deletion/filesystem admission, Runtime mutation and
+  in-flight ownership, Spend Guard, all ACK/custody/deadline predicates and the
+  existing backend completion/ACK path. AHA-04 still applies: lastRunAt may
+  change before a later begin refusal; this is not a cross-file transaction.
+
+Production scope is the existing `automation_store.rs`,
+`extensions/transcript/automation_runtime.rs`, `extensions/automations/fire_delivery.rs`
+and the actual Host `dispatch_production_backend_fire` caller. The integrator
+owns the public resolver contract and Host composition. Reuse existing selected
+store, Runtime, run-path, delivery/backend, production-wiring and app custody
+test homes; update every caller of the required resolver. No schema, dependency,
+AgentDb duplicate semantics or new permission/scheduling truth changes.
+
+The shared Rust contract is `FileAutomationStore::read_run_for_delivery(id,
+run_id) -> Result<Option<AutomationRun>, AutomationStoreError>` and
+`AutomationRuntime::read_run_for_delivery(agent_id, automation_id, run_id)
+-> Result<Option<AutomationRun>, String>`. Extend `prepare_backend_fire` with
+a required fourth argument `Fn(&AgentAutomationEntry, &str)
+-> Result<Option<AutomationRun>, String>`, after the existing revision resolver.
+The shipping callback passes the Runtime read. An error maps to
+`Abandon { reason: "run_history_unavailable" }`; retain the existing known-run
+reason strings. Reuse existing Session filesystem/deletion serialization for
+the read without nested acquisition or new mutation; all existing history
+writers remain under their current owner. Test-only fixture resolvers must be
+explicit and cannot become a production default.
+
+Preserve valid CRUD/cap assertions using settled rows, then add the 20-Running
+capacity negative. Replace only the obsolete expectation that a still-present
+old Running row must be treated as absent: retain a genuinely absent no-write
+negative and add exact old-row settlement/disk/returned-receipt positives.
+Keep malformed tails, duplicates, legacy normalization, write failures,
+cancellation, unknown custody, alias/identity and completion/ACK assertions.
+
+Actions must exercise actual RetainedUnsettled Runtime output, twenty real
+successful manual runs, unchanged original file/cron identity, reopened
+Session/Automation owners and a fresh controlled backend. Repeated original
+and alias delivery must enter no executor and send no completion/ACK. Include
+hidden legacy Running, malformed/ambiguous authority, full-capacity refusal,
+backdated admission, legacy excess drain, distinct-run and terminal positives.
+Controlled transport is a protocol fixture, not real-service acceptance.
+Freeze the complete batch, independently review and obtain exact-H Actions.
+
+Already deleted history cannot be reconstructed here. Concurrent/cross-process
+execution claims, the lookup-to-begin race, direct reuse of an existing UUID,
+evicted terminal receipts, full Spend Guard reconciliation and unknown external
+effects remain open. Rollback reintroduces unsettled eviction/replay risk; no
+stored format changes. Preserve full OCRM scope and all eight global flags.
