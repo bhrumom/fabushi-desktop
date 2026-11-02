@@ -51,7 +51,9 @@ fn plaintext_exchange_preserves_wire_envelope() {
         let mut transport = TcpTransport::from_stream(stream, TransportMode::Intermediate);
         let payload = transport.receive_payload().unwrap();
         let request = PlaintextEnvelope::decode(&payload).unwrap();
-        assert_eq!(request.body, vec![1, 2, 3, 4]);
+        assert!(request.body.starts_with(&[1, 2, 3, 4]));
+        assert_eq!(request.body.len() % 4, 0);
+        assert!(request.body.len() <= 4 + 63 * 4);
         transport
             .send_payload(
                 &PlaintextEnvelope {

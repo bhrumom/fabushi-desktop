@@ -1,21 +1,19 @@
-use crate::crypto::aes_ige_decrypt;
-use crate::crypto::aes_ige_encrypt;
-use crate::crypto::CryptoError;
-use crate::tl::TlError;
-use crate::tl::TlReader;
-use crate::tl::TlWriter;
+use crate::{
+    api::build_req_pq_multi,
+    crypto::{aes_ige_decrypt, aes_ige_encrypt, CryptoError},
+    tl::{TlError, TlReader, TlWriter},
+};
 use num_bigint_dig::BigUint;
-use sha1::Digest as Sha1Digest;
-use sha1::Sha1;
+use sha1::{Digest as Sha1Digest, Sha1};
 use sha2::Sha256;
 use subtle::ConstantTimeEq;
 use thiserror::Error;
-use zeroize::Zeroize;
-use zeroize::Zeroizing;
+use zeroize::{Zeroize, Zeroizing};
 
 pub const REQ_PQ_MULTI_CONSTRUCTOR: u32 = 0xbe7e_8ef1;
 pub const RES_PQ_CONSTRUCTOR: u32 = 0x0516_2463;
 pub const P_Q_INNER_DATA_DC_CONSTRUCTOR: u32 = 0xa9f5_5f95;
+pub const P_Q_INNER_DATA_TEMP_DC_CONSTRUCTOR: u32 = 0x56fd_df88;
 pub const REQ_DH_PARAMS_CONSTRUCTOR: u32 = 0xd712_e4be;
 pub const SERVER_DH_PARAMS_OK_CONSTRUCTOR: u32 = 0xd0e8_075c;
 pub const SERVER_DH_PARAMS_FAIL_CONSTRUCTOR: u32 = 0x79cb_045d;
@@ -29,6 +27,7 @@ pub const KNOWN_DH_PRIME_HEX: &str = "C71CAEB9C6B1C9048E6C522F70F13F73980D40238E
 pub const TELEGRAM_MAIN_RSA_MODULUS_HEX: &str = "E8BB3305C0B52C6CF2AFDF7637313489E63E05268E5BADB601AF417786472E5F93B85438968E20E6729A301C0AFC121BF7151F834436F7FDA680847A66BF64ACCEC78EE21C0B316F0EDAFE2F41908DA7BD1F4A5107638EEB67040ACE472A14F90D9F7C2B7DEF99688BA3073ADB5750BB02964902A359FE745D8170E36876D4FD8A5D41B2A76CBFF9A13267EB9580B2D06D10357448D20D9DA2191CB5D8C93982961CDFDEDA629E37F1FB09A0722027696032FE61ED663DB7A37F6F263D370F69DB53A0DC0A1748BDAAFF6209D5645485E6E001D1953255757E4B8E42813347B11DA6AB500FD0ACE7E6DFA3736199CCAF9397ED0745A427DCFA6CD67BCB1ACFF3";
 pub const TELEGRAM_TEST_RSA_MODULUS_HEX: &str = "C8C11D635691FAC091DD9489AEDCED2932AA8A0BCEFEF05FA800892D9B52ED03200865C9E97211CB2EE6C7AE96D3FB0E15AEFFD66019B44A08A240CFDD2868A85E1F54D6FA5DEAA041F6941DDF302690D61DC476385C2FA655142353CB4E4B59F6E5B6584DB76FE8B1370263246C010C93D011014113EBDF987D093F9D37C2BE48352D69A1683F8F6E6C2167983C761E3AB169FDE5DAAA12123FA1BEAB621E4DA5935E9C198F82F35EAE583A99386D8110EA6BD1ABB0F568759F62694419EA5F69847C43462ABEF858B4CB5EDC84E7B9226CD7BD7E183AA974A712C079DDE85B9DC063B8A5C08E8F859C0EE5DCD824C7807F20153361A7F63CFD2A433A1BE7F5";
 pub const DEFAULT_MAX_PLAINTEXT_BODY: usize = 16 * 1024 * 1024;
+pub const MAX_PLAINTEXT_PADDING_BYTES: usize = 63 * 4;
 
 pub type Nonce = [u8; 16];
 
@@ -40,22 +39,59 @@ pub struct PlaintextEnvelope {
 
 impl PlaintextEnvelope {
     pub fn encode(&self) -> Result<Vec<u8>, HandshakeError> {
-        if self.body.len() > DEFAULT_MAX_PLAINTEXT_BODY {
+        self.encode_with_padding(&[])
+    }
+
+    pub fn encode_with_random_padding(&self) -> Result<Vec<u8>, HandshakeError> {
+        self.encode_with_random_padding_with(secure_random_fill)
+    }
+
+    pub fn encode_with_random_padding_with<F>(
+        &self,
+        mut fill_random: F,
+    ) -> Result<Vec<u8>, HandshakeError>
+    where
+        F: FnMut(&mut [u8]) -> Result<(), HandshakeError>,
+    {
+        let mut selector = [0_u8; 1];
+        fill_random(&mut selector)?;
+        let padding_length = usize::from(selector[0] & 0x3f) * 4;
+        let mut padding = vec![0_u8; padding_length];
+        if !padding.is_empty() {
+            fill_random(&mut padding)?;
+        }
+        self.encode_with_padding(&padding)
+    }
+
+    pub fn encode_with_padding(&self, padding: &[u8]) -> Result<Vec<u8>, HandshakeError> {
+        if self.body.is_empty() || !self.body.len().is_multiple_of(4) {
+            return Err(HandshakeError::InvalidBodyLength(
+                i64::try_from(self.body.len()).unwrap_or(i64::MAX),
+            ));
+        }
+        if padding.len() > MAX_PLAINTEXT_PADDING_BYTES || !padding.len().is_multiple_of(4) {
+            return Err(HandshakeError::InvalidPlaintextPaddingLength(padding.len()));
+        }
+        let message_data_length = self
+            .body
+            .len()
+            .checked_add(padding.len())
+            .ok_or(HandshakeError::InvalidBodyLength(i64::MAX))?;
+        if message_data_length > DEFAULT_MAX_PLAINTEXT_BODY {
             return Err(HandshakeError::BodyTooLarge {
-                length: self.body.len(),
+                length: message_data_length,
                 maximum: DEFAULT_MAX_PLAINTEXT_BODY,
             });
         }
-        let body_length: i32 = self
-            .body
-            .len()
+        let body_length: i32 = message_data_length
             .try_into()
             .map_err(|_| HandshakeError::InvalidBodyLength(i64::MAX))?;
-        let mut encoded = Vec::with_capacity(20 + self.body.len());
+        let mut encoded = Vec::with_capacity(20 + message_data_length);
         encoded.extend_from_slice(&0_i64.to_le_bytes());
         encoded.extend_from_slice(&self.message_id.to_le_bytes());
         encoded.extend_from_slice(&body_length.to_le_bytes());
         encoded.extend_from_slice(&self.body);
+        encoded.extend_from_slice(padding);
         Ok(encoded)
     }
 
@@ -75,7 +111,7 @@ impl PlaintextEnvelope {
         }
         let message_id = i64::from_le_bytes(input[8..16].try_into().expect("checked length"));
         let raw_length = i32::from_le_bytes(input[16..20].try_into().expect("checked length"));
-        if raw_length < 0 {
+        if raw_length <= 0 || raw_length % 4 != 0 {
             return Err(HandshakeError::InvalidBodyLength(i64::from(raw_length)));
         }
         let body_length = raw_length as usize;
@@ -255,14 +291,9 @@ impl AuthKeyHandshake {
         if !matches!(self.state, AuthKeyHandshakeState::Ready) {
             return Err(HandshakeError::InvalidState("req_pq_multi already sent"));
         }
-        let mut writer = TlWriter::with_capacity(20);
-        writer.write_u32(REQ_PQ_MULTI_CONSTRUCTOR);
-        writer.write_i128_bytes(&self.nonce);
+        let body = build_req_pq_multi(&self.nonce);
         self.state = AuthKeyHandshakeState::AwaitingResPq;
-        Ok(PlaintextEnvelope {
-            message_id,
-            body: writer.into_bytes(),
-        })
+        Ok(PlaintextEnvelope { message_id, body })
     }
 
     pub fn receive_res_pq(
@@ -309,6 +340,65 @@ impl AuthKeyHandshake {
         message_id: i64,
         dc_id: i32,
         test_environment: bool,
+        fill_random: F,
+    ) -> Result<PlaintextEnvelope, HandshakeError>
+    where
+        F: FnMut(&mut [u8]) -> Result<(), HandshakeError>,
+    {
+        self.prepare_req_dh_params_with_lifetime(
+            message_id,
+            dc_id,
+            test_environment,
+            None,
+            fill_random,
+        )
+    }
+
+    pub fn prepare_temporary_req_dh_params(
+        &mut self,
+        message_id: i64,
+        dc_id: i32,
+        test_environment: bool,
+        expires_in: i32,
+    ) -> Result<PlaintextEnvelope, HandshakeError> {
+        self.prepare_temporary_req_dh_params_with_random(
+            message_id,
+            dc_id,
+            test_environment,
+            expires_in,
+            secure_random_fill,
+        )
+    }
+
+    pub fn prepare_temporary_req_dh_params_with_random<F>(
+        &mut self,
+        message_id: i64,
+        dc_id: i32,
+        test_environment: bool,
+        expires_in: i32,
+        fill_random: F,
+    ) -> Result<PlaintextEnvelope, HandshakeError>
+    where
+        F: FnMut(&mut [u8]) -> Result<(), HandshakeError>,
+    {
+        if expires_in <= 0 {
+            return Err(HandshakeError::InvalidTemporaryKeyLifetime(expires_in));
+        }
+        self.prepare_req_dh_params_with_lifetime(
+            message_id,
+            dc_id,
+            test_environment,
+            Some(expires_in),
+            fill_random,
+        )
+    }
+
+    fn prepare_req_dh_params_with_lifetime<F>(
+        &mut self,
+        message_id: i64,
+        dc_id: i32,
+        test_environment: bool,
+        expires_in: Option<i32>,
         mut fill_random: F,
     ) -> Result<PlaintextEnvelope, HandshakeError>
     where
@@ -329,9 +419,16 @@ impl AuthKeyHandshake {
         }
         let mut new_nonce = Zeroizing::new([0_u8; 32]);
         fill_random(&mut new_nonce[..])?;
-        let inner = Zeroizing::new(build_p_q_inner_data_dc(
-            &response, &factors, &new_nonce, dc_id,
-        )?);
+        let inner = Zeroizing::new(match expires_in {
+            Some(expires_in) => build_p_q_inner_data_temp_dc(
+                &response,
+                &factors,
+                &new_nonce,
+                dc_id,
+                expires_in,
+            )?,
+            None => build_p_q_inner_data_dc(&response, &factors, &new_nonce, dc_id)?,
+        });
         let encrypted = rsa_pad_with_random(&inner, &key, &mut fill_random)?;
         let body = build_req_dh_params(&response, &factors, fingerprint, &encrypted)?;
         self.new_nonce = Some(new_nonce);
@@ -549,12 +646,45 @@ pub fn build_p_q_inner_data_dc(
     Ok(writer.into_bytes())
 }
 
+pub fn build_p_q_inner_data_temp_dc(
+    response: &ResPq,
+    factors: &FactoredPq,
+    new_nonce: &[u8; 32],
+    dc_id: i32,
+    expires_in: i32,
+) -> Result<Vec<u8>, HandshakeError> {
+    if expires_in <= 0 {
+        return Err(HandshakeError::InvalidTemporaryKeyLifetime(expires_in));
+    }
+    if decode_unsigned_be(&response.pq)? != factors.pq
+        || factors.p.saturating_mul(factors.q) != factors.pq
+    {
+        return Err(HandshakeError::PqFactorsDoNotMatch);
+    }
+    let mut writer = TlWriter::new();
+    writer.write_u32(P_Q_INNER_DATA_TEMP_DC_CONSTRUCTOR);
+    writer.write_bytes(&response.pq)?;
+    writer.write_bytes(&factors.p_bytes())?;
+    writer.write_bytes(&factors.q_bytes())?;
+    writer.write_i128_bytes(&response.nonce);
+    writer.write_i128_bytes(&response.server_nonce);
+    writer.write_i256_bytes(new_nonce);
+    writer.write_i32(dc_id);
+    writer.write_i32(expires_in);
+    Ok(writer.into_bytes())
+}
+
 pub fn build_req_dh_params(
     response: &ResPq,
     factors: &FactoredPq,
     public_key_fingerprint: u64,
     encrypted_inner_data: &[u8],
 ) -> Result<Vec<u8>, HandshakeError> {
+    if decode_unsigned_be(&response.pq)? != factors.pq
+        || factors.p.saturating_mul(factors.q) != factors.pq
+    {
+        return Err(HandshakeError::PqFactorsDoNotMatch);
+    }
     if !response
         .server_public_key_fingerprints
         .contains(&public_key_fingerprint)
@@ -651,6 +781,10 @@ pub fn parse_server_dh_params(
 ) -> Result<ServerDhParams, HandshakeError> {
     let mut reader = TlReader::with_limits(input, DEFAULT_MAX_PLAINTEXT_BODY, 64);
     let constructor = reader.read_u32()?;
+    match constructor {
+        SERVER_DH_PARAMS_OK_CONSTRUCTOR | SERVER_DH_PARAMS_FAIL_CONSTRUCTOR => {}
+        other => return Err(HandshakeError::UnexpectedServerDhConstructor(other)),
+    }
     let nonce = reader.read_i128_bytes()?;
     let server_nonce = reader.read_i128_bytes()?;
     validate_nonce_pair(&nonce, &server_nonce, expected_nonce, expected_server_nonce)?;
@@ -661,7 +795,7 @@ pub fn parse_server_dh_params(
         SERVER_DH_PARAMS_FAIL_CONSTRUCTOR => ServerDhParams::Fail {
             new_nonce_hash: reader.read_i128_bytes()?,
         },
-        other => return Err(HandshakeError::UnexpectedServerDhConstructor(other)),
+        _ => unreachable!("server_DH_params constructor was validated above"),
     };
     if !reader.is_finished() {
         return Err(HandshakeError::TrailingBodyBytes(reader.remaining()));
@@ -792,6 +926,34 @@ pub fn validate_server_dh_parameters(data: &ServerDhInnerData) -> Result<(), Han
     Ok(())
 }
 
+pub fn build_client_dh_inner_data(
+    nonce: &Nonce,
+    server_nonce: &Nonce,
+    retry_id: u64,
+    g_b: &[u8],
+) -> Result<Vec<u8>, TlError> {
+    let mut inner = TlWriter::new();
+    inner.write_u32(CLIENT_DH_INNER_DATA_CONSTRUCTOR);
+    inner.write_i128_bytes(nonce);
+    inner.write_i128_bytes(server_nonce);
+    inner.write_u64(retry_id);
+    inner.write_bytes(g_b)?;
+    Ok(inner.into_bytes())
+}
+
+pub fn build_set_client_dh_params(
+    nonce: &Nonce,
+    server_nonce: &Nonce,
+    encrypted_data: &[u8],
+) -> Result<Vec<u8>, TlError> {
+    let mut request = TlWriter::new();
+    request.write_u32(SET_CLIENT_DH_PARAMS_CONSTRUCTOR);
+    request.write_i128_bytes(nonce);
+    request.write_i128_bytes(server_nonce);
+    request.write_bytes(encrypted_data)?;
+    Ok(request.into_bytes())
+}
+
 pub fn prepare_client_dh<F>(
     data: &ServerDhInnerData,
     new_nonce: &[u8; 32],
@@ -827,13 +989,13 @@ where
         new_nonce[index] ^ data.server_nonce[index]
     }));
 
-    let mut inner = TlWriter::new();
-    inner.write_u32(CLIENT_DH_INNER_DATA_CONSTRUCTOR);
-    inner.write_i128_bytes(&data.nonce);
-    inner.write_i128_bytes(&data.server_nonce);
-    inner.write_u64(retry_id);
-    inner.write_bytes(&biguint_to_minimal_be(&g_b))?;
-    let inner = Zeroizing::new(inner.into_bytes());
+    let g_b_bytes = biguint_to_minimal_be(&g_b);
+    let inner = Zeroizing::new(build_client_dh_inner_data(
+        &data.nonce,
+        &data.server_nonce,
+        retry_id,
+        &g_b_bytes,
+    )?);
 
     let mut answer_with_hash = Zeroizing::new(Sha1::digest(&inner[..]).to_vec());
     answer_with_hash.extend_from_slice(&inner);
@@ -848,13 +1010,10 @@ where
     key.zeroize();
     iv.zeroize();
 
-    let mut request = TlWriter::new();
-    request.write_u32(SET_CLIENT_DH_PARAMS_CONSTRUCTOR);
-    request.write_i128_bytes(&data.nonce);
-    request.write_i128_bytes(&data.server_nonce);
-    request.write_bytes(&encrypted_data)?;
+    let request_body =
+        build_set_client_dh_params(&data.nonce, &data.server_nonce, &encrypted_data)?;
     Ok(PreparedClientDh {
-        request_body: request.into_bytes(),
+        request_body,
         auth_key,
         auth_key_aux_hash,
         server_salt,
@@ -870,6 +1029,12 @@ pub fn parse_dh_gen_result(
 ) -> Result<DhGenResult, HandshakeError> {
     let mut reader = TlReader::new(input);
     let constructor = reader.read_u32()?;
+    let (result, tag) = match constructor {
+        DH_GEN_OK_CONSTRUCTOR => (DhGenResult::Ok, 1_u8),
+        DH_GEN_RETRY_CONSTRUCTOR => (DhGenResult::Retry, 2_u8),
+        DH_GEN_FAIL_CONSTRUCTOR => (DhGenResult::Fail, 3_u8),
+        other => return Err(HandshakeError::UnexpectedDhGenConstructor(other)),
+    };
     let nonce = reader.read_i128_bytes()?;
     let server_nonce = reader.read_i128_bytes()?;
     validate_nonce_pair(&nonce, &server_nonce, expected_nonce, expected_server_nonce)?;
@@ -877,12 +1042,6 @@ pub fn parse_dh_gen_result(
     if !reader.is_finished() {
         return Err(HandshakeError::TrailingBodyBytes(reader.remaining()));
     }
-    let (result, tag) = match constructor {
-        DH_GEN_OK_CONSTRUCTOR => (DhGenResult::Ok, 1_u8),
-        DH_GEN_RETRY_CONSTRUCTOR => (DhGenResult::Retry, 2_u8),
-        DH_GEN_FAIL_CONSTRUCTOR => (DhGenResult::Fail, 3_u8),
-        other => return Err(HandshakeError::UnexpectedDhGenConstructor(other)),
-    };
     let mut material = Zeroizing::new(Vec::with_capacity(41));
     material.extend_from_slice(new_nonce);
     material.push(tag);
@@ -1060,6 +1219,8 @@ pub enum HandshakeError {
     InvalidBodyLength(i64),
     #[error("plaintext MTProto body length {length} exceeds maximum {maximum}")]
     BodyTooLarge { length: usize, maximum: usize },
+    #[error("plaintext MTProto random padding length {0} is invalid")]
+    InvalidPlaintextPaddingLength(usize),
     #[error("plaintext MTProto body declared {declared} bytes but carried {actual}")]
     EnvelopeLengthMismatch { declared: usize, actual: usize },
     #[error("auth-key handshake state does not permit this operation: {0}")]
@@ -1088,6 +1249,8 @@ pub enum HandshakeError {
     NoTrustedServerKey,
     #[error("RSA-encrypted p_q_inner_data must not be empty")]
     EmptyEncryptedInnerData,
+    #[error("temporary auth-key lifetime must be positive, found {0}")]
+    InvalidTemporaryKeyLifetime(i32),
     #[error("Telegram RSA modulus must contain 256 bytes, found {0}")]
     InvalidRsaModulusLength(usize),
     #[error("Telegram RSA exponent is empty or zero")]

@@ -165,6 +165,12 @@ jobs:
         run: |
           set -euo pipefail
           cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml 2>&1 | tee artifacts/native-message-shipping/app-host-check.log
+      - name: Verify protocol and TCP compatibility behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-protocol --test protocol_contract 2>&1 | tee artifacts/native-message-shipping/telegram-protocol-contract.log
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-network --test tcp_transport 2>&1 | tee artifacts/native-message-shipping/telegram-tcp-transport.log
       - name: Diagnose locked AppHost dependency drift (no acceptance)
         if: failure()
         shell: bash

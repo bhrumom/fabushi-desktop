@@ -338,13 +338,13 @@ mod tests {
 
     #[test]
     fn special_config_txt_matches_qmultimap_order_and_latin1_projection() {
-        let response = br#"{"Answer":[
+        let response = r#"{"Answer":[
             {"type":16,"data":"aa"},
             {"type":16,"data":"bb"},
             {"type":1,"data":"ignored"},
             {"type":16,"data":"cccc"},
             {"type":16,"data":"é😀"}
-        ]}"#;
+        ]}"#.as_bytes();
         assert_eq!(
             normalize_special_config_response(SpecialConfigResponseKind::DnsTxt, response),
             b"cccc???bbaa"
@@ -356,9 +356,9 @@ mod tests {
         assert_eq!(
             normalize_special_config_response(
                 SpecialConfigResponseKind::Firestore,
-                br#"{"fields":{"data":{"stringValue":"abé😀"}}}"#,
+                r#"{"fields":{"data":{"stringValue":"abé😀"}}}"#.as_bytes(),
             ),
-            b"abé??"
+            b"ab\xE9??"
         );
         for malformed in [
             b"not-json".as_slice(),

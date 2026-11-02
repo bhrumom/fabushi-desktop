@@ -1206,6 +1206,7 @@ dependencies = [
  "fabushi-telegram-core",
  "getrandom 0.2.17",
  "hex",
+ "hmac",
  "num-bigint-dig",
  "pbkdf2 0.12.2",
  "serde",
@@ -1214,6 +1215,7 @@ dependencies = [
  "sha2 0.10.9",
  "subtle",
  "thiserror 1.0.69",
+ "x25519-dalek",
  "zeroize",
 ]
 
