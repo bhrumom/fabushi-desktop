@@ -7,7 +7,8 @@ use serde_json::{Value, json};
 use crate::agents::agent_messaging::{
     AgentAddress, AgentMessageImage, build_agent_inbound_wake_prompt, clamp_agent_message,
 };
-use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::session::production::{ProductionSessionWorkers, project_agent_transcript_entries};
+use crate::extensions::session::agent_db::AgentDbProjectionError;
 use crate::extensions::session::agent_session::{
     CommunicationEndpoint, SessionCommunicationDecision, plan_session_communication,
 };
@@ -519,104 +520,130 @@ pub fn persist_agent_inbound_message(
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|value| !value.is_empty());
-    let entries = sessions.read_agent_transcript_entries(agent_id)?;
-    if let Some(message_id) = inbound_message_id {
-        if let Some(existing) = entries.iter().find(|entry| {
-            entry.get("kind").and_then(Value::as_str) == Some("message")
-                && entry
-                    .get("fromAgent")
-                    .and_then(Value::as_object)
-                    .and_then(|from| from.get("id"))
-                    .and_then(Value::as_str)
-                    == Some(from_id)
-                && entry.get("messageId").and_then(Value::as_str) == Some(message_id)
-        }) {
-            let same_payload = existing.get("content").and_then(Value::as_str) == Some(text)
-                && existing.get("replyToId").and_then(Value::as_str) == reply_to_id
-                && existing.get("images") == inbound.get("images")
-                && existing.get("replyContext") == inbound.get("replyContext");
-            if !same_payload {
-                return Err(format!(
-                    "agent inbound message identity conflict for {from_id}:{message_id}"
-                ));
-            }
-            return Ok(false);
-        }
-    }
-    let entry_id = inbound_message_id
-        .map(|message_id| format!("agent-inbound:{from_id}:{message_id}"))
-        .unwrap_or_else(|| next_entry_id(&entries, TranscriptEntryIdKind::UserMessage));
     let mut claimed_turn = None;
-    if reply_to_id.is_some() {
-        let Some(target_admission) = target_admission.as_ref() else { return Ok(false); };
-        let claim = sessions.pending_conversation_turns().claim_reply(
-            agent_id,
-            from_id,
-            None,
-            &target_admission.session_id,
-            &entry_id,
-            reply_to_id,
-            None,
-            text,
-            timestamp_ms,
-        );
-        match claim {
-            PendingConversationTurnClaimResult::Claimed(reply) => claimed_turn = Some(reply),
-            PendingConversationTurnClaimResult::NotFound
-            | PendingConversationTurnClaimResult::NotReady => return Ok(false),
+    if let (Some(_), Some(target_admission)) = (reply_to_id, target_admission.as_ref()) {
+        // The registry retains only claim ownership. This ID is local reply
+        // payload, not a reservation in the transcript's shared namespace.
+        let provisional_entry_id = match inbound_message_id {
+            Some(message_id) => format!("agent-inbound:{from_id}:{message_id}"),
+            None => next_entry_id(
+                &sessions.read_agent_transcript_entries(agent_id)?,
+                TranscriptEntryIdKind::UserMessage,
+            ),
+        };
+        if let PendingConversationTurnClaimResult::Claimed(reply) =
+            sessions.pending_conversation_turns().claim_reply(
+                agent_id,
+                from_id,
+                None,
+                &target_admission.session_id,
+                &provisional_entry_id,
+                reply_to_id,
+                None,
+                text,
+                timestamp_ms,
+            )
+        {
+            claimed_turn = Some(reply);
         }
     }
-    let mut entry = json!({
-        "kind": "message",
-        "id": entry_id,
-        "role": "user",
-        "content": text,
-        "isStreaming": false,
-        "timestampMs": timestamp_ms,
-        "fromAgent": {"id": from_id, "name": from_name},
-    });
-    if let Some(message_id) = inbound_message_id {
-        entry["messageId"] = Value::String(message_id.to_string());
-    }
-    if let Some(images) = inbound.get("images").filter(|value| {
+    let images = inbound.get("images").filter(|value| {
         value.as_array().is_some_and(|images| !images.is_empty())
-    }) {
-        entry["images"] = images.clone();
-    }
-    if let Some(reply_context) = inbound.get("replyContext") {
-        entry["replyContext"] = reply_context.clone();
-    }
-    if let Some(reply_to_id) = reply_to_id {
-        entry["replyToId"] = Value::String(reply_to_id.to_string());
-    }
-    let append_result = if let Some(session_key) = sessions
-        .read_session_work_admission(agent_id)?
-        .map(|record| record.session_key)
-        .filter(|value| !value.trim().is_empty())
-    {
-        entry["sessionKey"] = Value::String(session_key.clone());
-        sessions.append_agent_transcript_entries_if_session_admitted(
-            agent_id,
-            &session_key,
-            &[entry],
-        )
-    } else {
-        sessions.append_agent_transcript_entries(agent_id, &[entry])
-    };
-    let inserted = match append_result {
-        Ok(inserted) => inserted,
+    });
+    // Empty image lists are omitted by the existing transcript shape. Other
+    // supplied values must still participate in stable-ID conflict checks.
+    let identity_images = inbound.get("images").filter(|value| {
+        !value.as_array().is_some_and(Vec::is_empty)
+    });
+    let can_append = reply_to_id.is_none() || claimed_turn.is_some();
+    let append_result = sessions.commit_agent_transcript_entries(
+        agent_id,
+        target_admission.as_ref().map(|record| record.session_key.as_str()),
+        target_admission.as_ref().map(|record| record.lifecycle_revision.as_str()),
+        |entries| {
+            if let Some(message_id) = inbound_message_id {
+                let visible = project_agent_transcript_entries(entries);
+                if let Some(existing) = visible.iter().find(|entry| {
+                    entry.get("kind").and_then(Value::as_str) == Some("message")
+                        && entry
+                            .get("fromAgent")
+                            .and_then(Value::as_object)
+                            .and_then(|from| from.get("id"))
+                            .and_then(Value::as_str)
+                            == Some(from_id)
+                        && entry.get("messageId").and_then(Value::as_str) == Some(message_id)
+                }) {
+                    let existing_images = existing.get("images").filter(|value| {
+                        !value.as_array().is_some_and(Vec::is_empty)
+                    });
+                    let same_payload = existing.get("content").and_then(Value::as_str) == Some(text)
+                        && existing.get("replyToId").and_then(Value::as_str) == reply_to_id
+                        && existing_images == identity_images
+                        && existing.get("replyContext") == inbound.get("replyContext");
+                    if !same_payload {
+                        return Err(format!(
+                            "agent inbound message identity conflict for {from_id}:{message_id}"
+                        ));
+                    }
+                    return Ok((None, Vec::new()));
+                }
+            }
+            // Even a settled reply is checked for a conflicting stable ID,
+            // but only a held reply claim authorizes a fresh reply append.
+            if !can_append {
+                return Ok((None, Vec::new()));
+            }
+            let entry_id = inbound_message_id
+                .map(|message_id| format!("agent-inbound:{from_id}:{message_id}"))
+                .unwrap_or_else(|| next_entry_id(entries, TranscriptEntryIdKind::UserMessage));
+            let mut entry = json!({
+                "kind": "message",
+                "id": entry_id,
+                "role": "user",
+                "content": text,
+                "isStreaming": false,
+                "timestampMs": timestamp_ms,
+                "fromAgent": {"id": from_id, "name": from_name},
+            });
+            if let Some(message_id) = inbound_message_id {
+                entry["messageId"] = Value::String(message_id.to_string());
+            }
+            if let Some(images) = images {
+                entry["images"] = images.clone();
+            }
+            if let Some(reply_context) = inbound.get("replyContext") {
+                entry["replyContext"] = reply_context.clone();
+            }
+            if let Some(reply_to_id) = reply_to_id {
+                entry["replyToId"] = Value::String(reply_to_id.to_string());
+            }
+            if let Some(admission) = target_admission.as_ref() {
+                entry["sessionKey"] = Value::String(admission.session_key.clone());
+            }
+            Ok((Some(entry_id), vec![entry]))
+        },
+    );
+    let committed_entry_id = match append_result {
+        Ok(entry_id) => entry_id,
+        Err(error @ AgentDbProjectionError::TranscriptCommitUnknown(_)) => {
+            // Retain reply custody: an unknown COMMIT is not safe to replay.
+            return Err(error.to_string());
+        }
         Err(error) => {
             if let Some(reply) = claimed_turn.as_ref() {
                 let _ = sessions.pending_conversation_turns().release(agent_id, &reply.id);
             }
-            return Err(error);
+            return Err(error.to_string());
         }
     };
-    if inserted == 0 {
+    let Some(committed_entry_id) = committed_entry_id else {
         if let Some(reply) = claimed_turn.as_ref() {
             let _ = sessions.pending_conversation_turns().release(agent_id, &reply.id);
         }
         return Ok(false);
+    };
+    if let Some(reply) = claimed_turn.as_mut() {
+        reply.message_id = committed_entry_id;
     }
     if let Some(reply) = claimed_turn.take() {
         let _ = sessions.pending_conversation_turns().complete(agent_id, &reply.id);

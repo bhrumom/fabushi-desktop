@@ -209,3 +209,131 @@ These are the recorded read extents, not a claim that partially inspected files
 were fully read. The current OCRM inventory/ledger/RTM remain the only source
 and responsibility accounts; full recursive ingress dependencies and actual
 channel services/devices remain unaccepted.
+
+## Fresh Transcript commit — `SESSION-FRESH-APPEND-v1`
+
+Original implementation base: `3761bde297377bca80ad7497d1664f6f3d32bc58`;
+integration parent: `e70a72574c108f8b7704eb45e5109875a24eddb9`. Fixed U is
+unchanged. This follow-up repairs Gateway prompt and legacy direct-agent
+inbound allocation in the shared `tNu` / `tNuaM` namespace. Their former
+read/allocate/append split could lose a different message to `INSERT OR IGNORE`.
+The channel producer now uses the CA-v1 retained-attempt transaction above;
+preserve that already-published custody and generation-bound Runner path.
+All three producers serialize allocation through the same Session/SQLite
+owner. Generic explicit-ID compatibility writes keep their existing semantics.
+
+- FC-01: the existing Session filesystem/deletion boundary and `SandAgentDb`
+  connection own one strict `BEGIN IMMEDIATE` read/plan/insert/commit operation.
+  Recheck metadata-bound canonical session identity, archive/deletion state,
+  selector and a supplied lifecycle revision in that transaction. An explicitly
+  legacy no-admission caller remains compatible only while no admission record
+  exists; a newly present record requires the caller to bind its selector.
+- FC-02: the planner is crate-internal, synchronous and invoked exactly once.
+  It receives the complete physical-row snapshot, including occupied IDs that
+  presentation decoding would hide. Invalid JSON, nonobject rows or disagreement
+  between SQL and embedded IDs refuse the operation. Preserve the existing pure
+  `next_entry_id` algorithm and sequential batch allocation. Planners perform no
+  I/O, Session/DB calls, listener dispatch, pending-turn mutation or provider work.
+- FC-03: validate every proposed row's nonempty identity, kind and canonical
+  provenance before accepting the batch. Every fresh insert must affect exactly
+  one row; an ignored or conflicting insert rolls the whole batch back. A
+  deliberately existing nonce/stable inbound identity is an explicit no-op,
+  never success inferred from a fresh zero-row insertion. No recovery helper may
+  replay the planner or convert closed/busy/read failure into an empty success.
+- FC-04: return producer context only after COMMIT. A changed commit advances
+  the existing DB write generation once. Carry the existing entries-upserted
+  publication out of both connection and Session filesystem locks before
+  synchronously notifying listeners. Failed or duplicate operations publish no
+  fresh entries. Notifications remain observations, not transport acknowledgments
+  or a new globally ordered event stream.
+- FC-05: preserve the actual CA-v1 channel API and shipping handoff. Channel
+  preparation is retained across confirmed rollback, Unknown blocks replay,
+  and both continuations keep their original Session binding. Do not add a
+  parallel String-result channel facade. Channel history retains its stricter
+  owner-decoding refusal; Gateway/A2A physical snapshots may reserve opaque
+  future IDs without treating them as visible messages. A recognized hidden
+  control row supplies the positive shared-namespace control, while separate
+  Gateway/A2A controls preserve opaque-ID compatibility.
+- FC-06: Gateway recomputes nonce lookup, reply/fork placement, IDs and returned
+  echo/recovery context from the transaction snapshot. Prepare attachment file
+  facts and perform existing profile/awaiting/activity effects outside owner
+  locks. The initial compatibility read may guide those metadata effects but
+  cannot authorize a durable echo. This does not make those secondary effects
+  atomic with the transcript or turn their failure into proof of rollback.
+  Reuse the existing owner-row validity and hidden-receipt projection for
+  semantic nonce/thread/recovery decisions; opaque physical rows still reserve
+  their IDs but cannot impersonate a visible echo through a matching nonce.
+- FC-07: direct-agent inbound recomputes stable-ID duplicate/conflict checks
+  and legacy user ID selection in the same commit. Preserve stable
+  `agent-inbound:{from}:{message}` IDs and pending reply claim/complete/release
+  ordering. A provisional legacy ID used only in the returned local claim is
+  not a reservation; replace it with the actual committed ID before settlement.
+  No registry mutation runs inside the DB planner. A COMMIT failure is a typed
+  unknown outcome: refuse provider continuation and retain an existing reply
+  claim, rather than automatically releasing it for another side effect.
+
+The shared crate-internal Session facade is
+`commit_agent_transcript_entries(agent_id, session_key: Option<&str>,
+expected_lifecycle_revision: Option<&str>, planner)`, with a pure `FnOnce`
+planner returning `(producer_result, fresh_entries)`. It returns the DB owner's
+typed error, including `TranscriptCommitUnknown`, without a retry. The
+channel's distinct prepared-attempt API remains `append_channel_inbound_entries`.
+Both operations belong to the same existing owner and connection; the channel
+contract needs retained preparation and explicit known/unknown rollback outcomes,
+whereas Gateway/A2A also need transactional nonce/no-op and context planning.
+No duplicate channel facade, storage or schema owner is introduced.
+
+Actions must exercise real Session/SQLite owners: fresh batch and frozen ID
+compatibility, the three producers sharing IDs, same-nonce replay, partial
+insert rollback, closed/busy/read/identity/generation/archive/delete refusals,
+and a synchronous listener reentering Session after commit. Retain existing
+Gateway attachment/reply/fork and A2A correlation/permission controls. The
+shipping CA-v1 channel persister and its append-before-provider branch retain
+their direct controls; an injected provider boundary is not real provider acceptance.
+
+Allowed implementation paths are the existing Session `agent_db.rs`,
+`agent_db_serde.rs`, `production.rs`, `gateway.rs`, Transcript `agent_to_agent_messaging.rs`, shipping
+Host `main.rs`, their contract tests, the Session-private
+`production_fresh_append_tests.rs` module and existing Actions selectors. Root
+integrates shared workflow and OCRM traceability. No data migration, alternative
+ID format, new queue, new journal or new runtime is introduced. Reverting the
+change restores the collision risk without removing user state.
+
+This contract does not prove the generation of an envelope queued before the
+admission read, authenticated/pre-displayed ingress, durable transport ACK or
+restart delivery. The channel CA-v1 head now retains failed/unknown append
+custody; autonomous rearm/dispose fences, secondary acceptance effects, other
+assistant/send-message namespaces and true post-COMMIT crash reconciliation
+remain open. The superseded unpublished ID-less facade is omitted: its common
+transaction/publication/admission assertions move to the production-used private
+Session facade, while user-row validation remains covered by the actual CA-v1
+batch validator and Gateway/A2A input contracts. No existing assertion is removed
+from the integration parent. Preserve those failures and full acceptance gates.
+The fixed-U channel dossier's recorded source reads are reused only for their
+unchanged invariant; no historical read, scoped authority or global flag is
+promoted by this local production repair. Exact-H evidence remains required.
+
+### Fresh failure settlement
+
+FC-03/FC-07 require an explicit cleanup decision while the existing connection
+guard remains held. Pre-COMMIT refusal is an ordinary error only after rollback
+acknowledgment and autocommit state establish clean rollback. Otherwise return
+typed `TranscriptCommitUnknown` and retain A2A reply custody. Every failed COMMIT
+acknowledgment stays unknown even if cleanup succeeds. Retire the exact connection
+through the existing owner if it remains unsettled; no later read/write may
+consume an uncommitted prefix as accepted transcript. Do not replay the planner.
+Transaction destruction is an unwind backstop, not proof that rollback succeeded.
+Keep compatibility writes and poison refusal semantics. Required controls perform
+real inserts before command-level rollback failure, cover pre-COMMIT and COMMIT
+failures separately, and bind actual A2A claim/no-publication/no-generation state.
+
+### Duplicate attachment reads
+
+FC-06 preserves the existing duplicate/coalesced-send resource behavior: when
+an existing visible nonce is observed, authorize its returned context in the
+Session transaction before reading attachment file facts. If that nonce is no
+longer present, perform fresh preparation outside locks and recheck it in the
+fresh append transaction. Physical opaque rows cannot authorize this fast path.
+A controlled file-facts boundary in the real persister must prove zero reads
+for a duplicate and real committed attachment facts for a fresh send; this does
+not replace provider, filesystem-platform or performance-budget acceptance.

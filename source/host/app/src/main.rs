@@ -18435,6 +18435,136 @@ mod tests {
     }
 
     #[test]
+    fn channel_inbound_commit_preserves_all_messages_before_continuation() {
+        use serde_json::json;
+
+        let fixture = ChannelInboundAppendFixture::new();
+        let admission = fixture.sessions.read_session_work_admission(&fixture.agent_id).unwrap().unwrap();
+        let owner = fixture.sessions.open_agent_db_owner(&fixture.agent_id).unwrap();
+        // A recognized owner control row reserves an ID while presentation hides
+        // it. CA-v1 still refuses undecodable history; Gateway/A2A separately
+        // cover opaque future rows through their physical allocation snapshot.
+        let hidden = json!({
+            "id":"t0u", "kind":"background-result-receipt",
+            "sessionKey":admission.session_key, "lifecycleRevision":admission.lifecycle_revision,
+            "workId":"prior-control", "idempotencyKey":"prior-control",
+            "content":"retained control", "sentMessageCount":0,
+        });
+        assert_eq!(owner.append_transcript_entries(&[hidden.clone()]).unwrap(), 1);
+        assert!(fixture.rows().is_empty());
+        let generation = get_sand_agent_db_write_generation(owner.db_path());
+        let envelopes = vec![
+            json!({"text":"first channel message", "address":{"platform":"test", "chat":"room"},
+                "sender":{"id":"sender-a"}, "timestampMs":101}),
+            json!({"text":"already displayed", "address":"test:room", "isDisplayed":true, "timestampMs":102}),
+            json!({"text":"second channel message", "address":" test:room ",
+                "sender":{"id":"sender-b"}, "timestampMs":103}),
+        ];
+        assert!(fixture.enqueue(&envelopes));
+        let work = fixture.take().unwrap();
+        let mut continuations = 0;
+        assert!(super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &work,
+            |attempt| super::append_channel_inbound_entries(
+                &fixture.sessions, &fixture.agent_id, &work.envelopes, attempt,
+            ),
+            |original, attempt| {
+                continuations += 1;
+                let entries = fixture.rows();
+                assert_eq!(entries.len(), 2);
+                assert_eq!(attempt.entries.as_ref().unwrap(), &entries);
+                assert_eq!(entries[0]["id"], "t1u");
+                assert_eq!(entries[1]["id"], "t2u");
+                assert_eq!(entries[0]["content"], "first channel message");
+                assert_eq!(entries[1]["content"], "second channel message");
+                for (entry, timestamp, sender) in [(&entries[0], 101, "sender-a"), (&entries[1], 103, "sender-b")] {
+                    assert_eq!(entry["channel"], "test:room");
+                    assert_eq!(entry["timestampMs"], timestamp);
+                    assert_eq!(entry["channelSender"]["id"], sender);
+                    assert_eq!(entry["sessionKey"], admission.session_key);
+                    assert_eq!(entry["isStreaming"], false);
+                }
+                Some(super::redrivable_inbound_envelopes(original))
+            },
+        ));
+        assert_eq!(continuations, 1);
+        assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation + 1);
+        let committed = fixture.rows();
+        let redrive = fixture.take().expect("retained displayed continuation");
+        assert!(redrive.envelopes.iter().all(|envelope| envelope["isDisplayed"] == true));
+        assert!(super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &redrive,
+            |attempt| super::append_channel_inbound_entries(
+                &fixture.sessions, &fixture.agent_id, &redrive.envelopes, attempt,
+            ),
+            |_, attempt| {
+                continuations += 1;
+                assert!(attempt.entries.as_ref().unwrap().is_empty(), "trusted live redrive does not append twice");
+                assert_eq!(attempt.session_key, admission.session_key);
+                assert_eq!(attempt.lifecycle_revision, admission.lifecycle_revision);
+                None
+            },
+        ));
+        assert_eq!(continuations, 2);
+        assert_eq!(fixture.rows(), committed);
+        assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation + 1);
+        let retained: String = fixture.connection().query_row(
+            "SELECT entry FROM transcript_entries WHERE id = 't0u'", [], |row| row.get(0),
+        ).unwrap();
+        assert_eq!(serde_json::from_str::<serde_json::Value>(&retained).unwrap(), hidden);
+        assert!(fixture.take().is_none());
+    }
+
+    #[test]
+    fn channel_inbound_commit_failure_never_enters_continuation() {
+        use serde_json::json;
+        use super::{ChannelInboundAppendFailureKind, ChannelInboundAppendOutcome};
+        use mahayana_host_runtime::extensions::transcript::background_wakes::InboundAppendState;
+
+        let fixture = ChannelInboundAppendFixture::new();
+        let owner = fixture.sessions.open_agent_db_owner(&fixture.agent_id).unwrap();
+        let mut continuations = 0;
+        assert!(fixture.enqueue(&[json!({"text":"committed control", "address":"test:room", "timestampMs":1})]));
+        let work = fixture.take().unwrap();
+        assert!(super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &work,
+            |attempt| super::append_channel_inbound_entries(
+                &fixture.sessions, &fixture.agent_id, &work.envelopes, attempt,
+            ),
+            |_, attempt| {
+                continuations += 1;
+                assert_eq!(attempt.entries.as_ref().unwrap().len(), 1);
+                None
+            },
+        ));
+        assert!(fixture.take().is_none());
+        let before = fixture.rows();
+        let generation = get_sand_agent_db_write_generation(owner.db_path());
+        owner.close(false);
+        assert!(fixture.enqueue(&[json!({"text":"must not start provider", "address":"test:room", "timestampMs":2})]));
+        let refused = fixture.take().unwrap();
+        assert!(!super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &refused,
+            |attempt| {
+                let outcome = super::append_channel_inbound_entries(
+                    &fixture.sessions, &fixture.agent_id, &refused.envelopes, attempt,
+                );
+                assert!(matches!(&outcome, ChannelInboundAppendOutcome::NotWritten(failure)
+                    if failure.kind == ChannelInboundAppendFailureKind::Closed));
+                outcome
+            },
+            |_, _| { continuations += 1; None },
+        ));
+        assert_eq!(continuations, 1, "closed owner cannot become an empty successful append");
+        assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation);
+        assert_eq!(fixture.wakes.lock().unwrap().inbound_append_state(&fixture.agent_id), Some(InboundAppendState::NotWritten));
+        fixture.sessions.shutdown();
+        let reopened = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 100);
+        assert_eq!(reopened.read_agent_transcript_entries(&fixture.agent_id).unwrap(), before);
+        reopened.shutdown();
+    }
+
+    #[test]
     fn channel_inbound_drain_idle_predecessor_preserves_successor_ownership() {
         use std::sync::{Arc, Mutex, mpsc};
         use std::time::Duration;

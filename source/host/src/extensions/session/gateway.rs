@@ -8,7 +8,7 @@ use crate::agents::agent_profile::SandAgentProfile;
 use crate::extensions::transcript::group_chat_glue::{
     GroupChatGlue, GroupChatGlueError,
 };
-use crate::selected_image_inputs::read_image_file_dimensions;
+use crate::selected_image_inputs::{MediaDimensions, read_image_file_dimensions};
 use crate::extensions::transcript::send_acceptance::{
     mark_accepted_send_activity, prepare_send_acceptance,
 };
@@ -27,7 +27,7 @@ use uuid::Uuid;
 
 use super::agent_db_transcript_pages::{TranscriptPageQuery, TranscriptWindowQuery};
 use super::agent_session::SandAgentSessionStore;
-use super::production::ProductionSessionWorkers;
+use super::production::{ProductionSessionWorkers, project_agent_transcript_entries};
 use super::session_profile_files::AgentProfileUpdate;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -75,6 +75,39 @@ fn recent_recovery_user_messages(
         .collect()
 }
 
+fn existing_send_prompt_context(
+    entries: &[Value],
+    client_nonce: Option<&str>,
+) -> Option<crate::extensions::transcript::send_pipeline::PersistedSendContext> {
+    use crate::extensions::transcript::send_pipeline::PersistedSendContext;
+
+    let client_nonce = client_nonce?;
+    let user_message_id = entries
+        .iter()
+        .find(|entry| {
+            entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce)
+                && entry.get("kind").and_then(Value::as_str) == Some("message")
+                && entry.get("role").and_then(Value::as_str) == Some("user")
+        })
+        .and_then(|entry| entry.get("id"))
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
+    let echo_entry_id = user_message_id.clone().or_else(|| {
+        entries
+            .iter()
+            .find(|entry| entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce))
+            .and_then(|entry| entry.get("id"))
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+    })?;
+    Some(PersistedSendContext {
+        echo_entry_id: Some(echo_entry_id),
+        user_message_id,
+        recent_user_messages: recent_recovery_user_messages(entries),
+        ..PersistedSendContext::default()
+    })
+}
+
 pub fn persist_accepted_send_prompt(
     session: &Arc<ProductionSessionWorkers>,
     args: &Value,
@@ -90,6 +123,20 @@ pub fn persist_accepted_send_prompt_context(
     session: &Arc<ProductionSessionWorkers>,
     args: &Value,
     accepted: &Value,
+) -> Result<crate::extensions::transcript::send_pipeline::PersistedSendContext, SessionGatewayError> {
+    persist_accepted_send_prompt_context_with_attachment_facts(
+        session, args, accepted, |path| {
+            let dimensions = read_image_file_dimensions(path);
+            (stat_attached_file_size(path), dimensions)
+        },
+    )
+}
+
+fn persist_accepted_send_prompt_context_with_attachment_facts(
+    session: &Arc<ProductionSessionWorkers>,
+    args: &Value,
+    accepted: &Value,
+    mut attachment_facts: impl FnMut(&str) -> (Option<u64>, Option<MediaDimensions>),
 ) -> Result<crate::extensions::transcript::send_pipeline::PersistedSendContext, SessionGatewayError> {
     use crate::extensions::transcript::send_pipeline::{
         PersistedAcceptedEcho, PersistedSendContext,
@@ -111,13 +158,12 @@ pub fn persist_accepted_send_prompt_context(
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|value| !value.is_empty());
-    let session_key = match requested_session_key {
-        Some(session_key) => Some(session_key.to_string()),
-        None => session
-            .read_session_work_admission(agent_id)
-            .map_err(SessionGatewayError::internal)?
-            .map(|record| record.session_key),
-    };
+    let admission = session
+        .read_session_work_admission(agent_id)
+        .map_err(SessionGatewayError::internal)?;
+    let session_key = requested_session_key
+        .map(ToOwned::to_owned)
+        .or_else(|| admission.as_ref().map(|record| record.session_key.clone()));
     let prompt = args
         .get("prompt")
         .or_else(|| args.get("text"))
@@ -143,139 +189,129 @@ pub fn persist_accepted_send_prompt_context(
         .read_agent_transcript_entries(agent_id)
         .map_err(SessionGatewayError::internal)?;
 
-    if let Some(client_nonce) = client_nonce.as_deref() {
-        let existing_user_message_id = existing
-            .iter()
-            .find(|entry| {
-                entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce)
-                    && entry.get("kind").and_then(Value::as_str) == Some("message")
-                    && entry.get("role").and_then(Value::as_str) == Some("user")
-            })
-            .and_then(|entry| entry.get("id"))
-            .and_then(Value::as_str)
-            .map(ToOwned::to_owned);
-        let existing_echo_id = existing_user_message_id.clone().or_else(|| {
-            existing
-                .iter()
-                .find(|entry| {
-                    entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce)
-                })
-                .and_then(|entry| entry.get("id"))
-                .and_then(Value::as_str)
-                .map(ToOwned::to_owned)
-        });
-        if existing_echo_id.is_some() {
-            return Ok(PersistedSendContext {
-                echo_entry_id: existing_echo_id,
-                user_message_id: existing_user_message_id,
-                recent_user_messages: recent_recovery_user_messages(&existing),
-                ..PersistedSendContext::default()
-            });
+    // A likely duplicate still needs current owner admission and a transactional
+    // nonce check, but must not reread attachment payloads merely to return it.
+    if existing_send_prompt_context(&existing, client_nonce.as_deref()).is_some() {
+        let (duplicate, visible) = session.commit_agent_transcript_entries(
+            agent_id,
+            session_key.as_deref(),
+            admission.as_ref().map(|record| record.lifecycle_revision.as_str()),
+            |snapshot| {
+                let visible = project_agent_transcript_entries(snapshot);
+                let duplicate = existing_send_prompt_context(&visible, client_nonce.as_deref());
+                Ok(((duplicate, visible), Vec::new()))
+            },
+        ).map_err(|error| SessionGatewayError::internal(error.to_string()))?;
+        if let Some(context) = duplicate {
+            return Ok(context);
         }
+        // The observed nonce disappeared before the transaction. Prepare a
+        // fresh send outside locks, then check the nonce again before inserting.
+        existing = visible;
     }
-
     let preparation = prepare_send_acceptance(session, agent_id, existing.len(), &prompt)
         .map_err(SessionGatewayError::internal)?;
-    let needs_roster_refresh =
-        preparation.seeded_name.is_some() || preparation.awaiting_cleared;
-
-    let threading = resolve_send_reply_threading(
-        &existing,
-        optional_string(args, "replyToId")?,
-        optional_bool(args, "isFork")?.unwrap_or(false),
-    );
-    let batch_id = (!attachment_paths.is_empty()).then(|| Uuid::new_v4().to_string());
-    let mut staged = Vec::new();
-    let mut first_echo_id = None;
-
-    for (index, file_path) in attachment_paths.iter().enumerate() {
-        let id = next_entry_id(&existing, TranscriptEntryIdKind::UserAttachment);
-        let file_name = attachment_names
-            .get(index)
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(ToOwned::to_owned);
-        let mut entry = create_user_attachment_entry(
-            id.clone(),
-            file_path.clone(),
-            UserAttachmentOptions {
-                file_name,
-                batch_id: batch_id.clone(),
-                client_nonce: client_nonce.clone(),
-                byte_size: stat_attached_file_size(file_path),
-                width: read_image_file_dimensions(file_path).map(|value| value.width),
-                height: read_image_file_dimensions(file_path).map(|value| value.height),
-                reply_to: threading.reply_to_id.clone(),
-                branched: threading.is_fork,
-            },
-        );
-        if let Some(session_key) = session_key.as_deref() {
-            entry["sessionKey"] = Value::String(session_key.to_string());
-        }
-        first_echo_id.get_or_insert_with(|| id.clone());
-        existing.push(entry.clone());
-        staged.push(entry);
-    }
-
+    let needs_roster_refresh = preparation.seeded_name.is_some() || preparation.awaiting_cleared;
+    let reply_to_id = optional_string(args, "replyToId")?;
+    let is_fork = optional_bool(args, "isFork")?.unwrap_or(false);
     let append_user_message = optional_bool(args, "appendUserMessage")?.unwrap_or(true);
-    let mut user_message_id = None;
-    if append_user_message && !prompt.is_empty() {
-        let id = next_entry_id(&existing, TranscriptEntryIdKind::UserMessage);
-        let mut entry = create_user_message(
-            id.clone(),
-            prompt,
-            UserMessageOptions {
-                composed_at_ms: optional_f64(args, "composedAtMs"),
-                rich_text: optional_string(args, "richText")?.map(ToOwned::to_owned),
-                reply_to: threading.reply_to_id.clone(),
+    let rich_text = optional_string(args, "richText")?.map(ToOwned::to_owned);
+    let composed_at_ms = optional_f64(args, "composedAtMs");
+    let timestamp_ms = system_now_ms();
+    let batch_id = (!attachment_paths.is_empty()).then(|| Uuid::new_v4().to_string());
+    let attachments = attachment_paths
+        .iter()
+        .enumerate()
+        .map(|(index, file_path)| {
+            let (byte_size, dimensions) = attachment_facts(file_path);
+            (file_path.clone(), UserAttachmentOptions {
+                file_name: attachment_names
+                    .get(index)
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned),
                 batch_id: batch_id.clone(),
-                branched: threading.is_fork,
                 client_nonce: client_nonce.clone(),
-            },
-            system_now_ms(),
-        );
-        if let Some(session_key) = session_key.as_deref() {
-            entry["sessionKey"] = Value::String(session_key.to_string());
-        }
-        user_message_id = Some(id.clone());
-        first_echo_id.get_or_insert_with(|| id.clone());
-        existing.push(entry.clone());
-        staged.push(entry);
-    }
+                byte_size,
+                width: dimensions.as_ref().map(|value| value.width),
+                height: dimensions.as_ref().map(|value| value.height),
+                ..UserAttachmentOptions::default()
+            })
+        })
+        .collect::<Vec<_>>();
 
-    if !staged.is_empty() {
-        if let Some(session_key) = session_key.as_deref() {
-            session
-                .append_agent_transcript_entries_if_session_admitted(
-                    agent_id,
-                    session_key,
-                    &staged,
-                )
-                .map_err(SessionGatewayError::internal)?;
-        } else {
-            session
-                .append_agent_transcript_entries(agent_id, &staged)
-                .map_err(SessionGatewayError::internal)?;
-        }
+    let context = session.commit_agent_transcript_entries(
+        agent_id,
+        session_key.as_deref(),
+        admission.as_ref().map(|record| record.lifecycle_revision.as_str()),
+        |snapshot| {
+            let mut visible = project_agent_transcript_entries(snapshot);
+            if let Some(context) = existing_send_prompt_context(&visible, client_nonce.as_deref()) {
+                return Ok((context, Vec::new()));
+            }
+            let threading = resolve_send_reply_threading(&visible, reply_to_id, is_fork);
+            let mut existing = snapshot.to_vec();
+            let mut staged = Vec::new();
+            let mut first_echo_id = None;
+            for (file_path, mut options) in attachments {
+                let id = next_entry_id(&existing, TranscriptEntryIdKind::UserAttachment);
+                options.reply_to = threading.reply_to_id.clone();
+                options.branched = threading.is_fork;
+                let mut entry = create_user_attachment_entry(id.clone(), file_path, options);
+                if let Some(session_key) = session_key.as_deref() {
+                    entry["sessionKey"] = Value::String(session_key.to_string());
+                }
+                first_echo_id.get_or_insert_with(|| id.clone());
+                existing.push(entry.clone());
+                visible.push(entry.clone());
+                staged.push(entry);
+            }
+            let mut user_message_id = None;
+            if append_user_message && !prompt.is_empty() {
+                let id = next_entry_id(&existing, TranscriptEntryIdKind::UserMessage);
+                let mut entry = create_user_message(
+                    id.clone(),
+                    prompt,
+                    UserMessageOptions {
+                        composed_at_ms,
+                        rich_text,
+                        reply_to: threading.reply_to_id,
+                        batch_id,
+                        branched: threading.is_fork,
+                        client_nonce,
+                    },
+                    timestamp_ms,
+                );
+                if let Some(session_key) = session_key.as_deref() {
+                    entry["sessionKey"] = Value::String(session_key.to_string());
+                }
+                user_message_id = Some(id.clone());
+                first_echo_id.get_or_insert(id);
+                existing.push(entry.clone());
+                visible.push(entry.clone());
+                staged.push(entry);
+            }
+            let context = PersistedSendContext {
+                echo_entry_id: user_message_id.clone().or(first_echo_id),
+                user_message_id,
+                recent_user_messages: recent_recovery_user_messages(&visible),
+                accepted_echoes: staged.iter().cloned().map(|entry| PersistedAcceptedEcho {
+                    entry,
+                    is_on_active_transcript: false,
+                }).collect(),
+                needs_roster_refresh,
+                acceptance_effects_applied: true,
+                accepted_durably: true,
+            };
+            Ok((context, staged))
+        },
+    ).map_err(|error| SessionGatewayError::internal(error.to_string()))?;
+    if !context.accepted_echoes.is_empty() {
         mark_accepted_send_activity(session, agent_id, system_now_ms())
             .map_err(SessionGatewayError::internal)?;
     }
-    Ok(PersistedSendContext {
-        echo_entry_id: user_message_id.clone().or(first_echo_id),
-        user_message_id,
-        recent_user_messages: recent_recovery_user_messages(&existing),
-        accepted_echoes: staged
-            .into_iter()
-            .map(|entry| PersistedAcceptedEcho {
-                entry,
-                is_on_active_transcript: false,
-            })
-            .collect(),
-        needs_roster_refresh,
-        acceptance_effects_applied: true,
-        accepted_durably: true,
-    })
+    Ok(context)
 }
 
 pub fn dispatch_production_session_gateway_call(
@@ -975,4 +1011,92 @@ fn optional_i64(args: &Value, field: &str) -> Option<i64> {
                 .filter(|value| value.is_finite())
                 .map(|value| value.trunc() as i64)
         })
+}
+
+#[cfg(test)]
+mod fresh_append_tests {
+    use super::*;
+    use crate::storage::store_db::get_sand_agent_db_write_generation;
+
+    struct Fixture {
+        root: std::path::PathBuf,
+        session: Arc<ProductionSessionWorkers>,
+        agent: String,
+        args: Value,
+    }
+
+    impl Fixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!("gateway-nonce-files-{}", Uuid::new_v4()));
+            let session = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 50));
+            let agent = session.materialize_new_session(None, "user", None).unwrap().id;
+            let attachment = root.join("attachment.txt");
+            std::fs::write(&attachment, b"actual attachment facts").unwrap();
+            let args = json!({
+                "agentId":agent, "prompt":"keep this message", "clientNonce":"attachment-replay",
+                "attachmentPaths":[attachment], "attachmentNames":["attachment.txt"],
+            });
+            Self { root, session, agent, args }
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            self.session.shutdown();
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn duplicate_nonce_is_confirmed_without_reopening_attachment_payloads() {
+        let fixture = Fixture::new();
+        let mut reads = 0;
+        let fresh = persist_accepted_send_prompt_context_with_attachment_facts(
+            &fixture.session, &fixture.args, &json!({"accepted":true}), |path| {
+                reads += 1;
+                let dimensions = read_image_file_dimensions(path);
+                (stat_attached_file_size(path), dimensions)
+            },
+        ).unwrap();
+        assert_eq!(reads, 1, "fresh acceptance uses the real file-facts boundary");
+        assert!(fresh.accepted_durably && fresh.acceptance_effects_applied);
+        assert_eq!(fresh.accepted_echoes.len(), 2);
+        assert_eq!(fresh.accepted_echoes[0].entry["kind"], "user-attachment");
+        assert_eq!(fresh.accepted_echoes[0].entry["byteSize"], 23);
+        let owner = fixture.session.open_agent_db_owner(&fixture.agent).unwrap();
+        let before = (owner.get_transcript_entries().unwrap(), get_sand_agent_db_write_generation(owner.db_path()));
+        let duplicate = persist_accepted_send_prompt_context_with_attachment_facts(
+            &fixture.session, &fixture.args, &json!({"accepted":true}), |_| {
+                panic!("a transactionally confirmed nonce must not inspect an attachment")
+            },
+        ).unwrap();
+        assert_eq!(duplicate.echo_entry_id, fresh.echo_entry_id);
+        assert_eq!(duplicate.user_message_id, fresh.user_message_id);
+        assert_eq!(duplicate.recent_user_messages, fresh.recent_user_messages);
+        assert!(!duplicate.accepted_durably && !duplicate.acceptance_effects_applied);
+        assert!(duplicate.accepted_echoes.is_empty());
+        assert_eq!((owner.get_transcript_entries().unwrap(), get_sand_agent_db_write_generation(owner.db_path())), before);
+    }
+
+    #[test]
+    fn duplicate_nonce_fast_path_still_requires_current_session_admission() {
+        let fixture = Fixture::new();
+        assert!(persist_accepted_send_prompt_context(
+            &fixture.session, &fixture.args, &json!({"accepted":true}),
+        ).unwrap().accepted_durably);
+        let admission = fixture.session.read_session_work_admission(&fixture.agent).unwrap().unwrap();
+        fixture.session.transition_session_work_archive(
+            &fixture.agent, &admission.session_key, &fixture.agent,
+            Some(&admission.lifecycle_revision), true, Some("user"), None, 100.0,
+        ).unwrap();
+        let owner = fixture.session.open_agent_db_owner(&fixture.agent).unwrap();
+        let before = (owner.get_transcript_entries().unwrap(), get_sand_agent_db_write_generation(owner.db_path()));
+        let result = persist_accepted_send_prompt_context_with_attachment_facts(
+            &fixture.session, &fixture.args, &json!({"accepted":true}), |_| {
+                panic!("archived duplicate must fail before attachment inspection")
+            },
+        );
+        assert!(matches!(result, Err(SessionGatewayError::Internal(_))));
+        assert_eq!((owner.get_transcript_entries().unwrap(), get_sand_agent_db_write_generation(owner.db_path())), before);
+    }
 }

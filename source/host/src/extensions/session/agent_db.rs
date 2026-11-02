@@ -59,6 +59,10 @@ pub enum AgentDbProjectionError {
     CompactionConflict(String),
     #[error("agent session work-admission record is invalid: {0}")]
     WorkAdmissionInvalid(String),
+    #[error("fresh transcript append is invalid: {0}")]
+    TranscriptAppendInvalid(String),
+    #[error("fresh transcript commit outcome is unknown; do not replay: {0}")]
+    TranscriptCommitUnknown(String),
     #[error("latestRootBlobId hex is invalid: {0}")]
     LatestRootHex(String),
     #[error("canonical Agent checkpoint root is invalid: {0}")]
@@ -88,6 +92,23 @@ const KV_PURPOSE: &str = "purpose";
 const KV_PARTNERS: &str = "conversationPartners";
 const KV_SESSION_WORK_ADMISSION: &str = "sessionWorkAdmission";
 const MAX_COMPACTION_SUMMARY_CHARS: usize = 16_000;
+
+/// A committed value and its existing transcript notification. Session carries
+/// this out of its filesystem/deletion lock before publishing to subscribers.
+pub(crate) struct CommittedTranscriptAppend<T> {
+    value: T,
+    entries: Vec<serde_json::Value>,
+    db_path: PathBuf,
+}
+
+impl<T> CommittedTranscriptAppend<T> {
+    pub(crate) fn publish(self) -> T {
+        if !self.entries.is_empty() {
+            publish_entries_upserted(&self.db_path, self.entries);
+        }
+        self.value
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AgentMetadataProjection {
@@ -3456,6 +3477,144 @@ impl SandAgentDb {
             publish_entries_upserted(&self.db_path, inserted.clone());
         }
         Ok(inserted.len())
+    }
+
+    /// Plan and commit a fresh append against one physical-row snapshot. The
+    /// crate-internal planner must be pure, nonblocking and nonreentrant: no
+    /// Session/DB calls, filesystem I/O, listeners or other owner mutations.
+    /// Unlike compatibility writes this never retries the planner, recovers the
+    /// database after an error, or interprets closed/busy as an empty success.
+    pub(crate) fn commit_transcript_entries<T>(
+        &self,
+        session_key: Option<&str>,
+        expected_lifecycle_revision: Option<&str>,
+        planner: impl FnOnce(&[serde_json::Value])
+            -> Result<(T, Vec<serde_json::Value>), String>,
+    ) -> Result<CommittedTranscriptAppend<T>, AgentDbProjectionError> {
+        let session_key = session_key.map(str::trim);
+        if session_key == Some("")
+            || expected_lifecycle_revision.is_some_and(|revision| revision.trim().is_empty())
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "fresh transcript append requires nonempty supplied identity".into(),
+            ));
+        }
+        let mut guard = self.connection.lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let db = guard.as_mut().ok_or_else(|| {
+            AgentDbProjectionError::WorkAdmissionInvalid("agent database is closed".into())
+        })?;
+        // RAII remains an unwind backstop. Normal failure returns must
+        // establish rollback explicitly before the connection is reusable.
+        let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let prepared = (|| -> Result<(T, Vec<serde_json::Value>), AgentDbProjectionError> {
+            match (read_kv(&transaction, KV_SESSION_WORK_ADMISSION)?, session_key) {
+                (Some(raw), Some(session_key)) => {
+                    let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw)?;
+                    if !session_admission_identity_is_bound(&transaction, &admission)?
+                        || admission.session_key != session_key
+                        || admission.archived_at_ms.is_some()
+                        || admission.deletion_pending
+                        || expected_lifecycle_revision
+                            .is_some_and(|revision| revision != admission.lifecycle_revision)
+                    {
+                        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                            "session identity or generation is not admitted for fresh append".into(),
+                        ));
+                    }
+                }
+                (None, None) if expected_lifecycle_revision.is_none() => {}
+                _ => return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "fresh transcript append requires the current session admission identity".into(),
+                )),
+            }
+
+            let existing = {
+                let mut statement = transaction.prepare(
+                    "SELECT id, entry FROM transcript_entries ORDER BY seq",
+                )?;
+                let rows = statement.query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })?;
+                let mut entries = Vec::new();
+                for row in rows {
+                    let (id, raw) = row?;
+                    let entry: serde_json::Value = serde_json::from_str(&raw).map_err(|_| {
+                        AgentDbProjectionError::TranscriptAppendInvalid(
+                            "stored transcript row is not valid JSON".into(),
+                        )
+                    })?;
+                    if id.trim().is_empty() || !entry.is_object()
+                        || entry.get("id").and_then(serde_json::Value::as_str) != Some(id.as_str())
+                    {
+                        return Err(AgentDbProjectionError::TranscriptAppendInvalid(
+                            "stored transcript identity is missing or differs from its SQL identity".into(),
+                        ));
+                    }
+                    entries.push(entry);
+                }
+                entries
+            };
+            let (value, entries) = planner(&existing)
+                .map_err(AgentDbProjectionError::TranscriptAppendInvalid)?;
+            for entry in &entries {
+                let id = entry.get("id").and_then(serde_json::Value::as_str)
+                    .filter(|id| !id.trim().is_empty())
+                    .ok_or_else(|| AgentDbProjectionError::TranscriptAppendInvalid(
+                        "every fresh transcript row requires an identity".into(),
+                    ))?;
+                if entry.get("kind").and_then(serde_json::Value::as_str)
+                    .is_none_or(|kind| kind.trim().is_empty())
+                    || session_key.is_some_and(|key| {
+                        entry.get("sessionKey").and_then(serde_json::Value::as_str)
+                            .map(str::trim) != Some(key)
+                    })
+                {
+                    return Err(AgentDbProjectionError::TranscriptAppendInvalid(
+                        "every fresh transcript row requires its kind and admitted provenance".into(),
+                    ));
+                }
+                if transaction.execute(INSERT_TRANSCRIPT_ENTRY_SQL, params![id, entry.to_string()])? != 1 {
+                    return Err(AgentDbProjectionError::TranscriptAppendInvalid(
+                        "fresh transcript insertion was ignored or its identity is already occupied".into(),
+                    ));
+                }
+            }
+            Ok((value, entries))
+        })();
+        let (value, entries) = match prepared {
+            Ok(prepared) => prepared,
+            Err(error) => {
+                let rollback = transaction.rollback();
+                let clean = db.is_autocommit();
+                if rollback.is_err() || !clean {
+                    if !clean {
+                        self.retire_channel_inbound_connection(&mut guard);
+                    }
+                    return Err(AgentDbProjectionError::TranscriptCommitUnknown(format!(
+                        "fresh append rollback was not confirmed after {error}",
+                    )));
+                }
+                return Err(error);
+            }
+        };
+        if let Err(error) = transaction.commit() {
+            // COMMIT's destructor cleanup is best-effort. Its result remains
+            // unknown even when cleanup succeeds; an unsettled connection must
+            // be retired before another owner operation can observe its rows.
+            if !db.is_autocommit() {
+                let _ = db.execute_batch("ROLLBACK");
+            }
+            if !db.is_autocommit() {
+                self.retire_channel_inbound_connection(&mut guard);
+            }
+            return Err(AgentDbProjectionError::TranscriptCommitUnknown(error.to_string()));
+        }
+        if !entries.is_empty() {
+            bump_db_write_generation(&self.db_path);
+        }
+        drop(guard);
+        Ok(CommittedTranscriptAppend { value, entries, db_path: self.db_path.clone() })
     }
 
     /// Append entries only while the canonical session is currently admitted.
@@ -7196,5 +7355,586 @@ mod channel_inbound_append_tests {
         assert!(owner.connection.lock().unwrap().is_none());
         assert_eq!(live_db_handle_count(owner.db_path()), 0);
         let _ = std::fs::remove_dir_all(root);
+    }
+}
+
+#[cfg(test)]
+mod fresh_append_tests {
+    use super::*;
+    use std::sync::atomic::AtomicUsize;
+    use std::sync::mpsc;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+    use crate::extensions::transcript::transcript_entry_ids::{
+        TranscriptEntryIdKind, next_entry_id,
+    };
+    use crate::storage::store_db::get_sand_agent_db_write_generation;
+    use crate::transcript_mutation_events::{
+        TranscriptMutationSubscription, subscribe_transcript_mutations,
+    };
+    use serde_json::{Value, json};
+
+    struct Fixture {
+        root: PathBuf,
+        owner: SandAgentDb,
+        recoveries: Arc<AtomicUsize>,
+    }
+
+    impl Fixture {
+        fn new(label: &str) -> Self {
+            let suffix = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+            let root = std::env::temp_dir().join(format!(
+                "fabushi-fresh-db-{label}-{}-{suffix}", std::process::id(),
+            ));
+            let db_path = root.join(format!("agent-{suffix}")).join("store.db");
+            let recoveries = Arc::new(AtomicUsize::new(0));
+            let captured = Arc::clone(&recoveries);
+            let owner = SandAgentDb::open_with_options(&db_path, SandAgentDbOptions {
+                recovery: DbRecoveryOptions {
+                    busy_timeout_ms: 0,
+                    on_corruption_recovered: Some(Arc::new(move |_| {
+                        captured.fetch_add(1, Ordering::SeqCst);
+                    })),
+                    ..DbRecoveryOptions::default()
+                },
+                ..SandAgentDbOptions::default()
+            }).unwrap();
+            Self { root, owner, recoveries }
+        }
+
+        fn raw_db(&self) -> rusqlite::Connection {
+            rusqlite::Connection::open(self.owner.db_path()).unwrap()
+        }
+
+        fn rows(&self) -> Vec<(i64, String, String)> {
+            let db = self.raw_db();
+            let mut statement = db.prepare("SELECT seq, id, entry FROM transcript_entries ORDER BY seq").unwrap();
+            let rows = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+                .unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+            rows
+        }
+
+        fn generation(&self) -> u64 {
+            get_sand_agent_db_write_generation(self.owner.db_path())
+        }
+
+        fn bind_admission(&self) -> SessionWorkAdmissionRecord {
+            let metadata = self.owner.read_metadata().unwrap();
+            let agent_id = metadata["agentId"].as_str().unwrap();
+            let admission: SessionWorkAdmissionRecord = serde_json::from_value(json!({
+                "session_key": format!("agent:{agent_id}:main"),
+                "session_id": agent_id,
+                "lifecycle_revision": metadata["lifecycleRevision"],
+            })).unwrap();
+            assert!(self.owner.compare_and_set_session_work_admission(None, &admission).unwrap());
+            admission
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            self.owner.close(false);
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
+    struct Publications {
+        values: Arc<Mutex<Vec<Value>>>,
+        subscription: Option<TranscriptMutationSubscription>,
+    }
+
+    impl Publications {
+        fn new(owner: &SandAgentDb) -> Self {
+            let values = Arc::new(Mutex::new(Vec::new()));
+            let captured = Arc::clone(&values);
+            let agent = agent_id_for_db_path(owner.db_path());
+            let subscription = subscribe_transcript_mutations(move |mutation| {
+                if mutation.get("agentId").and_then(Value::as_str) == Some(agent.as_str()) {
+                    captured.lock().unwrap().push(Value::Object(mutation.clone()));
+                }
+            });
+            Self { values, subscription: Some(subscription) }
+        }
+
+        fn values(&self) -> Vec<Value> {
+            self.values.lock().unwrap().clone()
+        }
+    }
+
+    impl Drop for Publications {
+        fn drop(&mut self) {
+            self.subscription.take().unwrap().unsubscribe();
+        }
+    }
+
+    fn message(id: &str, content: &str) -> Value {
+        json!({"id": id, "kind": "message", "role": "user", "content": content})
+    }
+
+    fn refuse_rollback_commands(owner: &SandAgentDb) {
+        unsafe extern "C" fn authorizer(
+            _user_data: *mut std::ffi::c_void,
+            action: std::ffi::c_int,
+            operation: *const std::ffi::c_char,
+            _second: *const std::ffi::c_char,
+            _database: *const std::ffi::c_char,
+            _trigger: *const std::ffi::c_char,
+        ) -> std::ffi::c_int {
+            if action == rusqlite::ffi::SQLITE_TRANSACTION && !operation.is_null() {
+                // SQLite owns this nullable, NUL-terminated callback argument.
+                // The callback neither retains it nor reenters the connection.
+                let operation = unsafe { std::ffi::CStr::from_ptr(operation) };
+                if operation.to_bytes() == b"ROLLBACK" {
+                    return rusqlite::ffi::SQLITE_DENY;
+                }
+            }
+            rusqlite::ffi::SQLITE_OK
+        }
+
+        let guard = owner.connection.lock().unwrap();
+        let db = guard.as_ref().unwrap();
+        // The static callback needs no borrowed user data. Install it while
+        // holding the actual owner's connection lock; retirement closes that
+        // connection and no test retains or uses its raw handle afterward.
+        let result = unsafe {
+            rusqlite::ffi::sqlite3_set_authorizer(
+                db.handle(), Some(authorizer), std::ptr::null_mut(),
+            )
+        };
+        assert_eq!(result, rusqlite::ffi::SQLITE_OK);
+    }
+
+    #[test]
+    fn fresh_commit_returns_value_and_defers_exact_publication_until_requested() {
+        let fixture = Fixture::new("publication");
+        let events = Publications::new(&fixture.owner);
+        let before = fixture.generation();
+        let calls = AtomicUsize::new(0);
+        let context = String::from("owned producer context");
+        let expected = vec![message("t0u", "one"), message("t1u", "two")];
+        let committed = fixture.owner.commit_transcript_entries(None, None, |snapshot| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            assert!(snapshot.is_empty());
+            // Moving context makes this a real FnOnce, not a replayable FnMut.
+            Ok((context, expected.clone()))
+        }).unwrap();
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!(fixture.owner.get_transcript_entries().unwrap(), expected);
+        assert_eq!(fixture.generation(), before + 1);
+        assert!(events.values().is_empty(), "commit itself must not call listeners");
+        assert_eq!(committed.publish(), "owned producer context");
+        assert_eq!(events.values(), vec![json!({
+            "kind": "entries-upserted", "agentId": fixture.owner.agent_dir_name,
+            "entries": expected,
+        })]);
+
+        let unchanged = (fixture.rows(), fixture.generation(), events.values());
+        let existing = fixture.owner.commit_transcript_entries(None, None, |snapshot| {
+            assert_eq!(snapshot, expected.as_slice());
+            Ok(("explicit existing result", Vec::new()))
+        }).unwrap().publish();
+        assert_eq!(existing, "explicit existing result");
+        assert_eq!((fixture.rows(), fixture.generation(), events.values()), unchanged);
+    }
+
+    #[test]
+    fn closed_busy_and_failed_snapshot_reads_never_invoke_the_fresh_planner() {
+        for case in ["closed", "busy", "read"] {
+            let fixture = Fixture::new(case);
+            let events = Publications::new(&fixture.owner);
+            let before = (fixture.rows(), fixture.generation());
+            let control = fixture.raw_db();
+            match case {
+                "closed" => fixture.owner.close(false),
+                "busy" => control.execute_batch("BEGIN IMMEDIATE").unwrap(),
+                "read" => control.execute_batch("ALTER TABLE transcript_entries RENAME TO unavailable_transcript").unwrap(),
+                _ => unreachable!(),
+            }
+            let calls = AtomicUsize::new(0);
+            let error = fixture.owner.commit_transcript_entries(None, None, |_| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(((), vec![message("t0u", "not admitted")]))
+            }).err().expect("strict failure must not become empty success");
+            match case {
+                "closed" => assert!(matches!(error, AgentDbProjectionError::WorkAdmissionInvalid(_))),
+                "busy" => assert!(matches!(error, AgentDbProjectionError::Sqlite(ref sqlite)
+                    if sqlite.sqlite_error_code() == Some(rusqlite::ErrorCode::DatabaseBusy))),
+                "read" => assert!(matches!(error, AgentDbProjectionError::Sqlite(_))),
+                _ => unreachable!(),
+            }
+            match case {
+                "busy" => control.execute_batch("ROLLBACK").unwrap(),
+                "read" => control.execute_batch("ALTER TABLE unavailable_transcript RENAME TO transcript_entries").unwrap(),
+                _ => {},
+            }
+            assert_eq!(calls.load(Ordering::SeqCst), 0);
+            assert_eq!((fixture.rows(), fixture.generation()), before);
+            assert!(events.values().is_empty());
+            assert_eq!(fixture.recoveries.load(Ordering::SeqCst), 0);
+        }
+    }
+
+    #[test]
+    fn invalid_or_occupied_second_plan_row_rolls_back_without_replaying_planner() {
+        let fixture = Fixture::new("invalid-plan");
+        fixture.owner.append_transcript_entries(&[message("occupied", "keep")]).unwrap();
+        let events = Publications::new(&fixture.owner);
+        for invalid in [
+            message("occupied", "collision"),
+            message("t0u", "duplicate within batch"),
+            message(" ", "blank id"),
+            json!({"kind": "message", "role": "user", "content": "no id"}),
+            json!({"id": "second", "content": "no kind"}),
+            json!({"id": "second", "kind": " "}),
+        ] {
+            let before = (fixture.rows(), fixture.generation());
+            let calls = AtomicUsize::new(0);
+            let error = fixture.owner.commit_transcript_entries(None, None, |_| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(((), vec![message("t0u", "must roll back"), invalid]))
+            }).err().expect("invalid fresh plan must fail");
+            assert!(matches!(error, AgentDbProjectionError::TranscriptAppendInvalid(_)));
+            assert_eq!(calls.load(Ordering::SeqCst), 1);
+            assert_eq!((fixture.rows(), fixture.generation()), before);
+            assert!(events.values().is_empty());
+        }
+        let before = (fixture.rows(), fixture.generation());
+        let calls = AtomicUsize::new(0);
+        let error = fixture.owner.commit_transcript_entries(None, None, |_| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            Err::<((), Vec<Value>), _>("producer plan refused".into())
+        }).err().unwrap();
+        assert!(matches!(error, AgentDbProjectionError::TranscriptAppendInvalid(_)));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!((fixture.rows(), fixture.generation()), before);
+        assert!(events.values().is_empty());
+        assert_eq!(fixture.recoveries.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn fresh_db_admission_is_rechecked_before_planning_even_without_session_facade() {
+        for case in ["legacy-selector", "wrong-selector", "stale", "empty", "archive", "delete", "foreign-id", "metadata", "malformed"] {
+            let fixture = Fixture::new(case);
+            let mut admission = fixture.bind_admission();
+            let original_revision = admission.lifecycle_revision.clone();
+            let events = Publications::new(&fixture.owner);
+            let control = fixture.raw_db();
+            match case {
+                "archive" => admission.archived_at_ms = Some(100.0),
+                "delete" => admission.deletion_pending = true,
+                "foreign-id" => admission.session_id = "foreign-agent".into(),
+                "empty" => admission.lifecycle_revision.clear(),
+                _ => {},
+            }
+            control.execute("UPDATE kv SET value = ?1 WHERE key = 'sessionWorkAdmission'",
+                [serde_json::to_string(&admission).unwrap()]).unwrap();
+            if case == "metadata" {
+                control.execute("UPDATE kv SET value = 'bad-hex' WHERE key = 'metadata'", []).unwrap();
+            } else if case == "malformed" {
+                control.execute("UPDATE kv SET value = 'not-json' WHERE key = 'sessionWorkAdmission'", []).unwrap();
+            }
+            let key = match case {
+                "legacy-selector" => None,
+                "wrong-selector" => Some("agent:other:main"),
+                _ => Some(admission.session_key.as_str()),
+            };
+            let revision = if case == "stale" { Some("stale-generation") }
+                else if case == "legacy-selector" { None }
+                else { Some(original_revision.as_str()) };
+            let calls = AtomicUsize::new(0);
+            let before = (fixture.rows(), fixture.generation());
+            assert!(fixture.owner.commit_transcript_entries(key, revision, |_| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(((), Vec::<Value>::new()))
+            }).is_err());
+            assert_eq!(calls.load(Ordering::SeqCst), 0);
+            assert_eq!((fixture.rows(), fixture.generation()), before);
+            assert!(events.values().is_empty());
+        }
+    }
+
+    #[test]
+    fn fresh_commit_failure_is_typed_unknown_and_does_not_replay_or_publish() {
+        let fixture = Fixture::new("commit-failure");
+        let events = Publications::new(&fixture.owner);
+        // The INSERT succeeds; SQLite checks this deferred constraint only at
+        // COMMIT. This is a real commit failure, not an injected planner error.
+        {
+            let guard = fixture.owner.connection.lock().unwrap();
+            guard.as_ref().unwrap().execute_batch(
+                "PRAGMA foreign_keys = ON;
+                 CREATE TABLE fresh_parent(id TEXT PRIMARY KEY);
+                 CREATE TABLE fresh_child(parent_id TEXT REFERENCES fresh_parent(id)
+                     DEFERRABLE INITIALLY DEFERRED);
+                 CREATE TRIGGER fail_fresh_commit AFTER INSERT ON transcript_entries
+                 BEGIN INSERT INTO fresh_child(parent_id) VALUES ('missing'); END;",
+            ).unwrap();
+        }
+        let before = (fixture.rows(), fixture.generation());
+        let calls = AtomicUsize::new(0);
+        let error = fixture.owner.commit_transcript_entries(None, None, |_| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            Ok(("must never escape as accepted", vec![message("t0u", "commit will fail")]))
+        }).err().expect("deferred foreign key must fail COMMIT");
+        assert!(matches!(error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!((fixture.rows(), fixture.generation()), before);
+        assert!(events.values().is_empty());
+        assert_eq!(fixture.recoveries.load(Ordering::SeqCst), 0);
+        assert!(fixture.owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+        let control = fixture.raw_db();
+        assert_eq!(control.query_row("SELECT count(*) FROM fresh_child", [], |row| row.get::<_, i64>(0)).unwrap(), 0);
+        control.execute_batch("DROP TRIGGER fail_fresh_commit").unwrap();
+        fixture.owner.commit_transcript_entries(None, None, |_| {
+            Ok(((), vec![message("t0u", "new explicit request")]))
+        }).unwrap().publish();
+        assert_eq!(fixture.generation(), before.1 + 1);
+        assert_eq!(events.values().len(), 1);
+        // This proves refusal/no implicit replay for a failing COMMIT. It does
+        // not simulate a crash or an acknowledgment lost after a successful one.
+    }
+
+    #[test]
+    fn fresh_insert_and_commit_failures_retire_an_unclean_connection() {
+        for failure in ["insert", "commit"] {
+            let fixture = Fixture::new(&format!("rollback-refused-{failure}"));
+            let events = Publications::new(&fixture.owner);
+            {
+                let guard = fixture.owner.connection.lock().unwrap();
+                let db = guard.as_ref().unwrap();
+                if failure == "insert" {
+                    db.execute_batch(
+                        "CREATE TRIGGER refuse_second_fresh_row BEFORE INSERT ON transcript_entries
+                         WHEN NEW.id = 't1u'
+                         BEGIN SELECT RAISE(ABORT, 'fresh second insert refused'); END;",
+                    ).unwrap();
+                } else {
+                    db.execute_batch(
+                        "PRAGMA foreign_keys = ON;
+                         CREATE TABLE fresh_rollback_parent(id TEXT PRIMARY KEY);
+                         CREATE TABLE fresh_rollback_child(parent_id TEXT REFERENCES fresh_rollback_parent(id)
+                             DEFERRABLE INITIALLY DEFERRED);
+                         CREATE TRIGGER fail_fresh_rollback_commit AFTER INSERT ON transcript_entries
+                         BEGIN INSERT INTO fresh_rollback_child(parent_id) VALUES ('missing'); END;",
+                    ).unwrap();
+                }
+            }
+            refuse_rollback_commands(&fixture.owner);
+            let before = (fixture.rows(), fixture.generation());
+            let calls = AtomicUsize::new(0);
+            let error = fixture.owner.commit_transcript_entries(None, None, |_| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(((), vec![message("t0u", "actual first insert"), message("t1u", "actual second insert")]))
+            }).err().expect("uncertain cleanup must refuse the fresh append");
+            assert!(matches!(&error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+            let expected_cause = if failure == "insert" { "fresh second insert refused" } else { "FOREIGN KEY" };
+            assert!(error.to_string().contains(expected_cause), "{failure}: {error}");
+            assert_eq!(calls.load(Ordering::SeqCst), 1, "cleanup must not replay the planner");
+            assert!(fixture.owner.is_closed());
+            assert!(fixture.owner.connection.lock().unwrap().is_none());
+            assert_eq!(live_db_handle_count(fixture.owner.db_path()), 0);
+            assert_eq!((fixture.rows(), fixture.generation()), before);
+            assert!(fixture.owner.get_transcript_entries().unwrap().is_empty(),
+                "the retired owner cannot expose an uncommitted prefix");
+            assert!(fixture.owner.commit_transcript_entries::<()>(None, None, |_| {
+                panic!("a retired owner cannot accept another planner")
+            }).is_err());
+            assert!(events.values().is_empty());
+            assert_eq!(fixture.recoveries.load(Ordering::SeqCst), 0);
+
+            let reopened = SandAgentDb::open_existing_agent(fixture.owner.db_path(), 0).unwrap();
+            assert!(reopened.get_transcript_entries().unwrap().is_empty());
+            assert_eq!(fixture.generation(), before.1);
+            reopened.close(false);
+            // Reopening inspects storage; it does not resolve the refused
+            // caller's unknown outcome or authorize replay of its work.
+        }
+    }
+
+    #[test]
+    fn actual_agent_inbound_commit_unknown_retains_reply_claim_without_side_effects() {
+        assert_actual_agent_inbound_unknown_retains_reply_claim("commit", false);
+    }
+
+    #[test]
+    fn actual_agent_inbound_rollback_unknown_retires_owner_and_retains_reply_claim() {
+        for failure in ["insert", "commit"] {
+            assert_actual_agent_inbound_unknown_retains_reply_claim(failure, true);
+        }
+    }
+
+    fn assert_actual_agent_inbound_unknown_retains_reply_claim(failure: &str, refuse_rollback: bool) {
+        use crate::extensions::session::production::ProductionSessionWorkers;
+        use crate::extensions::session::session_conversation_state::PendingConversationTurnClaimResult;
+        use crate::extensions::transcript::agent_to_agent_messaging::persist_agent_inbound_message;
+
+        let suffix = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-fresh-a2a-unknown-{failure}-{refuse_rollback}-{}-{suffix}", std::process::id(),
+        ));
+        let sessions = ProductionSessionWorkers::with_agents_root(&root, 50);
+        let source = sessions.materialize_new_session(None, "user", None).unwrap();
+        let target = sessions.materialize_new_session(None, "user", None).unwrap();
+        let admission = sessions.read_session_work_admission(&target.id).unwrap().unwrap();
+        let owner = sessions.open_agent_db_owner(&target.id).unwrap();
+        // Settle ordinary first-read roster activity seeding before measuring
+        // side effects of the refused inbound transaction.
+        assert!(sessions.summarize_agent_by_id(&source.id, None).unwrap().is_some());
+        assert!(sessions.summarize_agent_by_id(&target.id, None).unwrap().is_some());
+        let turns = sessions.pending_conversation_turns();
+        let turn_id = turns.register(
+            &target.id, Some("pending-unknown-reply"), &source.id, &admission.session_id,
+            None, Duration::from_secs(60),
+        ).unwrap();
+        assert!(turns.set_outbound_message_id(&target.id, &turn_id, "request-unknown"));
+        assert!(turns.mark_ready(&target.id, &turn_id));
+        let mut expected_claim = turns.snapshot(&target.id, &turn_id).unwrap();
+        assert!(!expected_claim.claimed);
+        expected_claim.claimed = true;
+
+        {
+            // Foreign-key enforcement belongs to the actual connection used
+            // by Session, not the separate observation connection below.
+            let guard = owner.connection.lock().unwrap();
+            let db = guard.as_ref().unwrap();
+            if failure == "commit" {
+                db.execute_batch(
+                    "PRAGMA foreign_keys = ON;
+                     CREATE TABLE fresh_a2a_parent(id TEXT PRIMARY KEY);
+                     CREATE TABLE fresh_a2a_child(parent_id TEXT REFERENCES fresh_a2a_parent(id)
+                         DEFERRABLE INITIALLY DEFERRED);
+                     CREATE TRIGGER fail_fresh_a2a_commit AFTER INSERT ON transcript_entries
+                     BEGIN INSERT INTO fresh_a2a_child(parent_id) VALUES ('missing'); END;",
+                ).unwrap();
+                assert_eq!(db.query_row("PRAGMA foreign_keys", [], |row| row.get::<_, i64>(0)).unwrap(), 1);
+            } else {
+                db.execute_batch(
+                    "CREATE TRIGGER fail_fresh_a2a_insert AFTER INSERT ON transcript_entries
+                     BEGIN SELECT RAISE(FAIL, 'fresh reply insert refused after mutation'); END;",
+                ).unwrap();
+            }
+        }
+        if refuse_rollback {
+            refuse_rollback_commands(&owner);
+        }
+        let control = rusqlite::Connection::open(owner.db_path()).unwrap();
+        let durable_snapshot = || {
+            let mut transcript = control.prepare(
+                "SELECT seq, id, entry FROM transcript_entries ORDER BY seq",
+            ).unwrap();
+            let rows = transcript.query_map([], |row| {
+                Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+            }).unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+            let mut kv = control.prepare("SELECT key, value FROM kv ORDER BY key").unwrap();
+            let values = kv.query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            }).unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+            (rows, values, get_sand_agent_db_write_generation(owner.db_path()))
+        };
+        let before = durable_snapshot();
+        assert!(before.0.is_empty());
+        let partners = sessions.get_agent_conversation_partner_ids(&target.id).unwrap();
+        assert!(partners.is_empty());
+        let events = Publications::new(&owner);
+        let inbound = json!({
+            "from": {"id": source.id}, "messageId": "reply-unknown",
+            "replyToId": "request-unknown", "text": "reply awaiting durable commit",
+            "timestampMs": 100,
+        });
+
+        let error = persist_agent_inbound_message(&sessions, &target.id, &inbound)
+            .expect_err("the actual inbound producer must refuse uncertain settlement");
+        assert!(error.contains("commit outcome is unknown"), "{error}");
+        assert!(error.contains("do not replay"), "{error}");
+        let expected_cause = if failure == "commit" { "FOREIGN KEY" } else { "fresh reply insert refused after mutation" };
+        assert!(error.contains(expected_cause), "the actual SQL fault must cause failure: {error}");
+        assert_eq!(turns.snapshot(&target.id, &turn_id), Some(expected_claim.clone()),
+            "unknown settlement keeps the pending claim held, neither released nor completed");
+        assert_eq!(turns.claim_reply(
+            &target.id, &source.id, None, &admission.session_id, "competing-reply",
+            Some("request-unknown"), None, "must not acquire held custody", 101,
+        ), PendingConversationTurnClaimResult::NotFound);
+        assert_eq!(turns.snapshot(&target.id, &turn_id), Some(expected_claim));
+        assert_eq!(durable_snapshot(), before);
+        assert!(events.values().is_empty());
+        if failure == "commit" {
+            assert_eq!(control.query_row("SELECT count(*) FROM fresh_a2a_child", [], |row| row.get::<_, i64>(0)).unwrap(), 0);
+        }
+        if refuse_rollback {
+            assert!(owner.is_closed());
+            assert!(owner.connection.lock().unwrap().is_none());
+            assert_eq!(live_db_handle_count(owner.db_path()), 0);
+            assert!(owner.get_transcript_entries().unwrap().is_empty());
+            assert!(sessions.get_agent_conversation_partner_ids(&target.id).is_err(),
+                "Session cannot admit reads through its retired cached owner");
+        } else {
+            assert!(!owner.is_closed());
+            assert!(owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+            assert_eq!(sessions.get_agent_conversation_partner_ids(&target.id).unwrap(), partners);
+        }
+
+        // This exercises the producer's unknown-result custody branch after
+        // actual write/COMMIT errors and, when selected, refused cleanup. It
+        // does not prove crash reconciliation or replay the held inbound.
+        drop(events);
+        drop(control);
+        sessions.shutdown();
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn immediate_transaction_excludes_an_independent_allocator_until_commit() {
+        let fixture = Fixture::new("independent-owner");
+        let first = SandAgentDb::open_existing_agent(fixture.owner.db_path(), 0).unwrap();
+        let second = SandAgentDb::open_existing_agent(fixture.owner.db_path(), 0).unwrap();
+        let before = fixture.generation();
+        let events = Publications::new(&fixture.owner);
+        let (snapshot_tx, snapshot_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let (done_tx, done_rx) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            let result = first.commit_transcript_entries(None, None, |snapshot| {
+                let id = next_entry_id(snapshot, TranscriptEntryIdKind::UserMessage);
+                snapshot_tx.send((snapshot.len(), id.clone())).unwrap();
+                // Test-only rendezvous at the production planner proves the
+                // first real BEGIN IMMEDIATE and snapshot are held right now.
+                release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                Ok((id.clone(), vec![message(&id, "first producer")]))
+            }).map(|committed| committed.publish());
+            let _ = done_tx.send(result);
+        });
+        assert_eq!(snapshot_rx.recv_timeout(Duration::from_secs(5)).unwrap(), (0, "t0u".into()));
+        let second_calls = AtomicUsize::new(0);
+        let competing = second.commit_transcript_entries(None, None, |snapshot| {
+            second_calls.fetch_add(1, Ordering::SeqCst);
+            let id = next_entry_id(snapshot, TranscriptEntryIdKind::UserMessage);
+            Ok((id.clone(), vec![message(&id, "second producer")]))
+        });
+        // Release before assertions so a failing oracle cannot strand the
+        // first worker. No timing guess or sleep establishes the ordering.
+        release_tx.send(()).unwrap();
+        let first_result = done_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        worker.join().unwrap();
+        assert!(matches!(competing, Err(AgentDbProjectionError::Sqlite(ref error))
+            if error.sqlite_error_code() == Some(rusqlite::ErrorCode::DatabaseBusy)));
+        assert_eq!(second_calls.load(Ordering::SeqCst), 0);
+        assert_eq!(first_result.unwrap(), "t0u");
+        assert_eq!(fixture.generation(), before + 1);
+        assert_eq!(events.values().len(), 1);
+
+        // This is an explicit new call after observed commit, not owner retry.
+        let second_id = second.commit_transcript_entries(None, None, |snapshot| {
+            second_calls.fetch_add(1, Ordering::SeqCst);
+            assert_eq!(snapshot, &[message("t0u", "first producer")]);
+            let id = next_entry_id(snapshot, TranscriptEntryIdKind::UserMessage);
+            Ok((id.clone(), vec![message(&id, "second producer")]))
+        }).unwrap().publish();
+        assert_eq!(second_id, "t1u");
+        assert_eq!(second_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(fixture.owner.get_transcript_entries().unwrap(), vec![
+            message("t0u", "first producer"), message("t1u", "second producer"),
+        ]);
+        assert_eq!(fixture.generation(), before + 2);
+        assert_eq!(events.values().len(), 2);
     }
 }

@@ -173,11 +173,17 @@ pub fn parse_transcript_entry(raw: &str) -> Option<Value> {
 /// Presentation readers continue to use `parse_transcript_entry`.
 pub fn parse_owner_transcript_entry(raw: &str) -> Option<Value> {
     let entry = serde_json::from_str::<Value>(raw).ok()?;
+    is_valid_owner_transcript_entry(&entry).then_some(entry)
+}
+
+/// Share the existing owner projection with a transaction's already-decoded
+/// physical snapshot without serializing and parsing every row again.
+pub(crate) fn is_valid_owner_transcript_entry(entry: &Value) -> bool {
     match entry.get("kind").and_then(Value::as_str) {
         Some("compaction" | "background-result-receipt" | "outgoing-media-settlement") => {
-            Some(entry)
+            true
         }
-        _ => is_valid_transcript_entry(&entry).then_some(entry),
+        _ => is_valid_transcript_entry(entry),
     }
 }
 

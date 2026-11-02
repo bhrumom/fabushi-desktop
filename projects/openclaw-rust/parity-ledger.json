@@ -15923,7 +15923,14 @@
         "source/host/tests/production_agent_store_recovery_contract.rs",
         "source/host/tests/checkpoint_root_identity_contract.rs",
         "source/host/tests/production_checkpoint_restart_contract.rs",
-        "source/host/tests/production_agent_checkpoint_contract.rs"
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/production_fresh_append_tests.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -15962,14 +15969,15 @@
       ],
       "id": "OCRM-RESP-SESSION-WORK-ADMISSION-001",
       "integration": {
-        "consumer": "Bounded Host Gateway archive/restore, local background-revival receipt, and newly opened session-owner media recovery consumers are wired; typed provider-review continuation admission is wired but fails closed when native continuation identity is unavailable; SWA-ROOT-RECOVERY-v1 also wires checked root/blob recovery into Host Runner watermark, prompt epoch and checkpoint sinks, while original-turn restart claim/settlement remains open",
+        "consumer": "Bounded Host Gateway archive/restore, local background-revival receipt, and newly opened session-owner media recovery consumers are wired; typed provider-review continuation admission is wired but fails closed when native continuation identity is unavailable; SWA-ROOT-RECOVERY-v1 also wires checked root/blob recovery into Host Runner watermark, prompt epoch and checkpoint sinks, while original-turn restart claim/settlement remains open; fresh echo/continuation context is returned only after whole-batch commit, with transcript notifications outside Session/DB locks; transport ACK and unknown post-COMMIT crash reconciliation remain open",
         "entrypoint": "source/host/app/src/main.rs::UnifiedGatewayApi::call_with_context -> call_openclaw_sessions_patch -> source/host/src/extensions/session/production.rs",
         "owner": "source/host/src/extensions/session/production.rs and source/host/src/extensions/session/agent_db.rs (deletion fence, generation CAS, archive/receipt/media-recovery slices, and typed provider-review admission; full detached lifecycle owner pending); ProductionAgentStore under the same Session owner validates persisted/cached checkpoint identity before recovery and publication",
-        "producer": "source/host/app/src/main.rs::call_openclaw_sessions_patch is an authenticated canonical-main archive/restore producer with expected identity/revision and active-foreground-stream guards; local background-revival remains a separate bounded producer"
+        "producer": "source/host/app/src/main.rs::call_openclaw_sessions_patch is an authenticated canonical-main archive/restore producer with expected identity/revision and active-foreground-stream guards; local background-revival remains a separate bounded producer; SESSION-FRESH-APPEND-v1 binds Gateway prompt persistence and direct-agent inbound to strict Session/SQLite snapshot allocation; channel undisplayed drafts retain CA-v1 prepared-batch custody and the existing typed Session/SQLite append boundary"
       },
       "invariants": [
         "Archived sessions cannot admit new work until explicitly restored",
-        "Unknown or damaged persisted checkpoint state cannot become an empty production session or an implicit empty-root CAS match"
+        "Unknown or damaged persisted checkpoint state cannot become an empty production session or an implicit empty-root CAS match",
+        "Fresh channel/Gateway/A2A append cannot report a skipped or partial insert as durable success; canonical IDs and provenance are checked in the allocation transaction"
       ],
       "migration_rollback": "Standard session archive state flag in agent database",
       "oracle_ids": [
@@ -16080,7 +16088,8 @@
       ],
       "typed_contracts": [
         "Session work admission and archive lifecycle",
-        "SWA-ROOT-RECOVERY-v1 checked production checkpoint-root recovery"
+        "SWA-ROOT-RECOVERY-v1 checked production checkpoint-root recovery",
+        "SESSION-FRESH-APPEND-v1 strict physical-snapshot allocation, all-row commit and deferred existing transcript publication"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },

@@ -16,7 +16,7 @@ use crate::storage::agent_paths::get_sand_agents_root_dir;
 use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, CronSessionRunRecord,
+    AgentDbProjectionError, AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, CronSessionRunRecord,
     ChannelInboundAppendAttempt, ChannelInboundAppendFailure, ChannelInboundAppendFailureKind,
     ChannelInboundAppendOutcome,
     PendingMemoryMutation,
@@ -43,6 +43,19 @@ fn hide_session_work_receipts(entries: &mut Vec<serde_json::Value>) {
             Some("background-result-receipt" | "outgoing-media-settlement")
         )
     });
+}
+
+/// Preserve the existing Session view for semantic planning while the fresh
+/// append owner separately retains every physical ID for allocation.
+pub(crate) fn project_agent_transcript_entries(
+    snapshot: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    let mut entries = snapshot.iter()
+        .filter(|entry| super::agent_db_serde::is_valid_owner_transcript_entry(entry))
+        .cloned()
+        .collect::<Vec<_>>();
+    hide_session_work_receipts(&mut entries);
+    entries
 }
 use super::call_session::{CallSession, CallSessionStore, CallSignal, transition_target};
 use super::agent_db_serde::{
@@ -3638,6 +3651,27 @@ impl ProductionSessionWorkers {
         })
     }
 
+    /// Commit a pure transcript plan against the existing owner's transaction.
+    /// Keep the planner free of I/O, owner calls and pending-work mutations.
+    /// Publication is deliberately outside the non-reentrant Session lock.
+    pub(crate) fn commit_agent_transcript_entries<T>(
+        &self,
+        agent_id: &str,
+        session_key: Option<&str>,
+        expected_lifecycle_revision: Option<&str>,
+        planner: impl FnOnce(&[serde_json::Value])
+            -> Result<(T, Vec<serde_json::Value>), String>,
+    ) -> Result<T, AgentDbProjectionError> {
+        let committed = self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            Ok(owner.commit_transcript_entries(
+                session_key, expected_lifecycle_revision, planner,
+            ))
+        }).map_err(AgentDbProjectionError::WorkAdmissionInvalid)??;
+        Ok(committed.publish())
+    }
+
     pub fn append_agent_transcript_entries(
         &self,
         agent_id: &str,
@@ -6160,6 +6194,10 @@ mod sharebox_shipping_tests {
         let _ = fs::remove_dir_all(root);
     }
 }
+
+#[cfg(test)]
+#[path = "production_fresh_append_tests.rs"]
+mod fresh_append_tests;
 
 #[cfg(test)]
 mod plugin_skills_admission_tests {

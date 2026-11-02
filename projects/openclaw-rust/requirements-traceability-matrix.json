@@ -70,7 +70,11 @@
         "source/host/tests/production_checkpoint_restart_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
-        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+        "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+        "source/host/src/extensions/session/production_fresh_append_tests.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -282,7 +286,11 @@
         "source/host/tests/production_checkpoint_restart_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
-        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+        "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+        "source/host/src/extensions/session/production_fresh_append_tests.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -1302,7 +1310,11 @@
         "source/host/tests/production_checkpoint_restart_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
-        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+        "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+        "source/host/src/extensions/session/production_fresh_append_tests.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",

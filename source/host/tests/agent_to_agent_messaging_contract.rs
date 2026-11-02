@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::{Arc,Mutex};
 use std::sync::atomic::{AtomicUsize,Ordering};
-use std::time::{SystemTime,UNIX_EPOCH};
+use std::time::{Duration,SystemTime,UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
@@ -90,6 +90,13 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     assert!(persist_agent_inbound_message(&sessions, &alpha.id, reply_inbound).expect("persist reply"));
     let a_after_reply = sessions.read_agent_transcript_entries(&alpha.id).expect("alpha reply transcript");
     assert_eq!(a_after_reply.len(), 2);
+    assert!(!persist_agent_inbound_message(&sessions, &alpha.id, reply_inbound)
+        .expect("settled empty-images reply is an existing delivery"));
+    let mut conflicting_reply = reply_inbound.clone();
+    conflicting_reply["text"] = serde_json::json!("changed after settlement");
+    assert!(persist_agent_inbound_message(&sessions, &alpha.id, &conflicting_reply)
+        .expect_err("settled reply identity is still checked").contains("identity conflict"));
+    assert_eq!(sessions.read_agent_transcript_entries(&alpha.id).unwrap(), a_after_reply);
     sessions.shutdown();let _=fs::remove_dir_all(root);
 }
 
@@ -119,21 +126,115 @@ fn direct_delivery_preflights_admitted_target_before_side_effects() {
 }
 
 #[test]
-fn inbound_turn_claim_is_released_when_append_inserts_nothing() {
-    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
-    let inbound = source
-        .split("pub fn persist_agent_inbound_message(")
-        .nth(1)
-        .expect("inbound owner exists")
-        .split("fn now_ms(")
-        .next()
-        .expect("inbound owner boundary exists");
-    let no_insert = inbound
-        .split("if inserted == 0 {")
-        .nth(1)
-        .expect("no-insert branch exists");
-    assert!(no_insert.contains("pending_conversation_turns().release"));
-    assert!(!no_insert.contains("pending_conversation_turns().complete"));
+fn inbound_turn_claim_is_released_on_refusal_or_duplicate_and_completed_only_after_commit() {
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let source = sessions.materialize_new_session(Some(&profile("Source")), "user", None).unwrap();
+    let target = sessions.materialize_new_session(Some(&profile("Target")), "user", None).unwrap();
+    let admission = sessions.read_session_work_admission(&target.id).unwrap().unwrap();
+    let turns = sessions.pending_conversation_turns();
+    let register = |id: &str| {
+        let id = turns.register(
+            &target.id, Some(id), &source.id, &admission.session_id,
+            None, Duration::from_secs(60),
+        ).unwrap();
+        assert!(turns.set_outbound_message_id(&target.id, &id, "request-1"));
+        assert!(turns.mark_ready(&target.id, &id));
+        id
+    };
+    let turn_id = register("turn-1");
+    let db_path = sessions.session_db_path(&target.id).unwrap();
+    let db = rusqlite::Connection::open(&db_path).unwrap();
+    db.execute_batch(
+        "CREATE TRIGGER ignore_agent_inbound BEFORE INSERT ON transcript_entries
+         BEGIN SELECT RAISE(IGNORE); END;",
+    ).unwrap();
+    let events = Arc::new(AtomicUsize::new(0));
+    let subscription = subscribe_transcript_mutations({
+        let events = Arc::clone(&events);
+        let expected_agent = target.id.clone();
+        move |event| {
+            if event.get("agentId").and_then(serde_json::Value::as_str) == Some(expected_agent.as_str()) {
+                events.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+    });
+    let inbound = serde_json::json!({
+        "from":{"id":source.id},"messageId":"reply-1","replyToId":"request-1",
+        "text":"reply payload","images":[],"timestampMs":100,
+    });
+    assert!(persist_agent_inbound_message(&sessions, &target.id, &inbound)
+        .expect_err("ignored fresh insert is refusal").contains("ignored"));
+    assert!(!turns.snapshot(&target.id, &turn_id).expect("refusal retains pending turn").claimed);
+    assert!(sessions.read_agent_transcript_entries(&target.id).unwrap().is_empty());
+    assert!(sessions.get_agent_conversation_partner_ids(&target.id).unwrap().is_empty());
+    assert_eq!(events.load(Ordering::SeqCst), 0);
+
+    db.execute_batch("DROP TRIGGER ignore_agent_inbound").unwrap();
+    assert!(persist_agent_inbound_message(&sessions, &target.id, &inbound).expect("fresh committed reply"));
+    assert!(turns.snapshot(&target.id, &turn_id).is_none(), "commit completes the claim");
+    let committed = sessions.read_agent_transcript_entries(&target.id).unwrap();
+    assert_eq!(committed.len(), 1);
+    assert_eq!(committed[0]["id"], format!("agent-inbound:{}:reply-1", source.id));
+    assert_eq!(events.load(Ordering::SeqCst), 1);
+
+    // A newly held local claim cannot convert an already committed stable ID
+    // into another delivery or consume the pending turn as fresh work.
+    let duplicate_turn = register("turn-duplicate");
+    assert!(!persist_agent_inbound_message(&sessions, &target.id, &inbound).expect("explicit duplicate"));
+    assert!(!turns.snapshot(&target.id, &duplicate_turn).expect("duplicate releases, not completes").claimed);
+    assert_eq!(events.load(Ordering::SeqCst), 1);
+    let mut conflict = inbound.clone();
+    conflict["text"] = serde_json::json!("different reply payload");
+    assert!(persist_agent_inbound_message(&sessions, &target.id, &conflict)
+        .expect_err("stable identity conflict").contains("identity conflict"));
+    assert!(!turns.snapshot(&target.id, &duplicate_turn).expect("conflict retains turn").claimed);
+    for changed_images in [serde_json::json!([{"url":"changed.png"}]), serde_json::json!({"invalid":"images"})] {
+        let mut image_conflict = inbound.clone();
+        image_conflict["images"] = changed_images;
+        assert!(persist_agent_inbound_message(&sessions, &target.id, &image_conflict)
+            .expect_err("changed images are still a payload conflict").contains("identity conflict"));
+        assert!(!turns.snapshot(&target.id, &duplicate_turn).unwrap().claimed);
+    }
+    assert_eq!(sessions.read_agent_transcript_entries(&target.id).unwrap(), committed);
+    assert_eq!(events.load(Ordering::SeqCst), 1);
+    subscription.unsubscribe();
+    drop(db);
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn legacy_inbound_uses_occupied_physical_ids_and_preserves_no_admission_compatibility() {
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let source = sessions.materialize_new_session(Some(&profile("Source")), "user", None).unwrap();
+    let target = sessions.materialize_new_session(Some(&profile("Target")), "user", None).unwrap();
+    let owner = sessions.open_agent_db_owner(&target.id).unwrap();
+    assert!(owner.delete_kv("sessionWorkAdmission").unwrap());
+    let db = rusqlite::Connection::open(sessions.session_db_path(&target.id).unwrap()).unwrap();
+    db.execute(
+        "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+        rusqlite::params!["t0u", serde_json::json!({"id":"t0u","kind":"future-entry"}).to_string()],
+    ).unwrap();
+    assert!(sessions.read_agent_transcript_entries(&target.id).unwrap().is_empty());
+    for text in ["first legacy inbound", "second legacy inbound"] {
+        assert!(persist_agent_inbound_message(&sessions, &target.id, &serde_json::json!({
+            "from":{"id":source.id},"text":text,"timestampMs":100,
+        })).expect("legacy fresh commit"));
+    }
+    let entries = sessions.read_agent_transcript_entries(&target.id).unwrap();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[0]["id"], "t1u");
+    assert_eq!(entries[1]["id"], "t2u");
+    assert!(entries.iter().all(|entry| entry.get("sessionKey").is_none()));
+    let count: i64 = db.query_row("SELECT COUNT(*) FROM transcript_entries", [], |row| row.get(0)).unwrap();
+    assert_eq!(count, 3, "opaque occupied row survives both fresh deliveries");
+    drop(db);
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
@@ -271,7 +372,10 @@ fn inbound_policy_recheck_is_target_admission_scoped() {
     assert!(source.contains("if source_admission.is_some() || target_admission.is_some()"));
     assert!(source.contains(".map(|admission| admission.session_key.clone())"));
     assert!(source.contains(".unwrap_or_default()"));
-    assert!(source.contains("sessions.assert_session_work_admission(\n            agent_id"));
+    let normalized: String = source.chars().filter(|ch| !ch.is_whitespace()).collect();
+    assert!(normalized.contains(
+        "ifletSome(target_admission)=target_admission.as_ref(){sessions.assert_session_work_admission(agent_id,Some(&target_admission.session_key),)?;}"
+    ));
 }
 
 #[test]
