@@ -4,6 +4,7 @@
 import {
   COORDINATOR_METHOD_TABLE,
   parseCoordinatorAgentThreadResponse,
+  parseCoordinatorHumanTranscriptPageResponse,
   parseCoordinatorTranscriptWindowResponse,
   type CoordinatorMethod
 } from "../../../../source/shared/rpc/coordinator";
@@ -203,6 +204,7 @@ const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = 
     return value;
   },
   "transcript-window": (value) => parseCoordinatorTranscriptWindowResponse(value) ?? MALFORMED_REPLY,
+  "human-transcript-page": (value) => parseCoordinatorHumanTranscriptPageResponse(value) ?? MALFORMED_REPLY,
   "agent-thread": (value) => parseCoordinatorAgentThreadResponse(value) ?? MALFORMED_REPLY,
   "acceptance-lookup": (value) => isSourceRecord(value) && typeof value.outcome === "string" ? value : MALFORMED_REPLY,
   "connect-url": (value) => isSourceRecord(value) && typeof value.url === "string" ? value : MALFORMED_REPLY,

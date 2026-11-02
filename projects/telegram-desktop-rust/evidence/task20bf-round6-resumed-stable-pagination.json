@@ -425,5 +425,41 @@
     "Full unified UI/a11y/localization/temporal/security/performance/soak and existing Bot regression",
     "Independent ACCEPT and final shipping SHA/artifact alignment"
   ],
-  "full_migration_accepted": false
+  "full_migration_accepted": false,
+  "follow_up_correction": {
+    "failed_head": "06decb74cede0830b49170cde98c2d92590d4293",
+    "run": 41519414297,
+    "job": 125531272399,
+    "classification": "IMPL_BUG",
+    "signature": "TypeScript TS2741: exhaustive REPLY_CONVERTERS omitted human-transcript-page",
+    "completed_checks": {
+      "projection": {
+        "tests": 20,
+        "passed": 20,
+        "failed": 0,
+        "skipped": 0
+      },
+      "cursor_rpc": {
+        "tests": 17,
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0
+      }
+    },
+    "not_run_after_failure": [
+      "remaining renderer build",
+      "forward settlement5",
+      "Chromium16"
+    ],
+    "log_sha256": "3872ede4d229abaf0cc537db4dca4ef9d1ee775934d2a918fba44400bfae6236",
+    "artifact": 13177246265,
+    "artifact_digest": "sha256:090f948924cbc3727170d74f56807118d015b650f0b113050fbd7fcf76d66c1a",
+    "fix": {
+      "path": "frontend/src/recovered/runtime/coordinator-source.ts",
+      "blob": "cfd9d10bfad7db64f41f0bda2bbc0db597c06dbe",
+      "changes": "Import the canonical Human response parser and register it in the existing exhaustive converter table. Existing telemetry and parser admissions retained; no gate weakened.",
+      "regression_gate": "Existing actual renderer tsc exhaustiveness plus the20 projection and17 cursor/RPC behavior cases",
+      "execution": "not-run until containing exact-H Actions"
+    }
+  }
 }
