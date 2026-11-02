@@ -5,6 +5,7 @@ on:
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/tests/session_gateway_contract.rs'
+      - 'source/host/tests/native_call_scope_contract.rs'
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
       - 'frontend/src/production/ProductionRenderer.tsx'
@@ -162,6 +163,24 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Canonical Native call scope admission, refusal and reopen
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test native_call_scope_contract -- --nocapture 2>&1 | tee artifacts/native-message/call-scope.log
+          grep -Eq 'test result: ok\. 5 passed; 0 failed; 0 ignored;' artifacts/native-message/call-scope.log
+      - name: Preserve shipping Native call lifecycle and discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_call_ -- --nocapture 2>&1 | tee artifacts/native-message/call-shipping.log
+          grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/call-shipping.log
+      - name: Preserve local CallSession lifecycle and restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract call_session_owner_fences_lifecycle_signaling_reconnect_and_restart -- --exact --nocapture 2>&1 | tee artifacts/native-message/call-local-lifecycle.log
+          grep -Eq 'test result: ok\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message/call-local-lifecycle.log
       - name: Human ingress, settlement and restart contracts
         shell: bash
         run: |
