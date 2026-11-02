@@ -75,5 +75,10 @@
     "expected_unmapped_responsibilities": 0,
     "unmapped_responsibilities": 2
   },
-  "validation": "Object transport only; source schema/candidate Actions still required at the publication H. No product acceptance."
+  "validation": "Object transport only; source schema/candidate Actions still required at the publication H. No product acceptance.",
+  "publication_observation": {
+    "head": "07ea477f0312398f04e55110934dbd2ff5ab3727",
+    "ledger_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+    "reason": "Current canonical ledger and RTM advanced after object generation. Preserve concurrent d8789216 changes; the helper still verifies both exact reviewed rows and transforms the exact Actions checkout only."
+  }
 }
