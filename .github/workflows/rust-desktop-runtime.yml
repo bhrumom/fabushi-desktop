@@ -253,12 +253,56 @@ jobs:
           set -euo pipefail
           cargo check --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
           git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
+      - name: Initialize scoped command diagnostics
+        id: ocrm_diagnostics
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        env:
+          OCRM_RECOVERY_EVIDENCE_DIR: ${{ runner.temp }}/ocrm-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OCRM_RECOVERY_EVIDENCE_DIR"
+          printf 'OCRM_RECOVERY_EVIDENCE_DIR=%s\n' "$OCRM_RECOVERY_EVIDENCE_DIR" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"]
+          source_paths = [".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock", "projects/openclaw-rust/upstream.lock.json"]
+          lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          receipt = {
+              "kind": "ocrm-recovery-command-diagnostics",
+              "verification_verdict": None,
+              "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in source_paths},
+          }
+          Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"], "subject.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          PY
+          cat > "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh" <<'SH'
+          run_recovery_check() {
+            local check_name="$1"
+            shift
+            local check_status=0
+            printf '%q ' "$@" > "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.command.txt" || return $?
+            printf '\n' >> "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.command.txt" || return $?
+            "$@" > "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.log" 2>&1 || check_status=$?
+            printf '%s\t%s\n' "$check_name" "$check_status" >> "$OCRM_RECOVERY_EVIDENCE_DIR/command-exit-codes.tsv" || return $?
+            cat "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.log" || return $?
+            return "$check_status"
+          }
+          SH
       - name: Test OCRM Settings transaction and inference consumers
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
+          source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
+          run_recovery_check settings-inference cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test host_secret_store_contract \
             --test host_foundation_contract \
             --test box_store_download_frozen_parity_contract \
@@ -285,6 +329,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
           admission_status=0
           if test -x "$FABUSHI_ORIGINAL_TURN_APP_TEST_EXECUTABLE"; then
             for admission_test in \
@@ -361,13 +406,13 @@ jobs:
               tests::background_terminal_disconnect_preserves_existing_error_and_release \
               tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate \
               tests::automation_terminal_event_maps_runner_settlement_without_guessing; do
-              cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
+              run_recovery_check "app-${admission_test//::/_}" cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
                 "$admission_test" -- --exact || admission_status=1
             done
           else
             admission_status=1
           fi
-          cargo test --locked --manifest-path source/host/app/Cargo.toml --test startup_admission_contract || admission_status=1
+          run_recovery_check app-startup-admission cargo test --locked --manifest-path source/host/app/Cargo.toml --test startup_admission_contract || admission_status=1
           exit "$admission_status"
       - name: Test native Runtime provider dispatch admission
         id: ocrm_native_runtime
@@ -438,37 +483,7 @@ jobs:
           mkdir -p "$FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT"
           mkdir -p "$OCRM_RECOVERY_EVIDENCE_DIR"
           trap 'recovery_exit=$?; trap - EXIT; printf "%s\n" "$recovery_exit" > "$OCRM_RECOVERY_EVIDENCE_DIR/step-exit-code.txt"; exit "$recovery_exit"' EXIT
-          python3 - <<'PY'
-          import hashlib, json, os, subprocess
-          from pathlib import Path
-          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          assert head == os.environ["FABUSHI_TARGET_SHA"]
-          source_paths = [".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock", "projects/openclaw-rust/upstream.lock.json"]
-          lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
-          receipt = {
-              "kind": "ocrm-recovery-command-diagnostics",
-              "verification_verdict": None,
-              "subject_commit": head,
-              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
-              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
-              "run_id": os.environ["GITHUB_RUN_ID"],
-              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
-              "runner_os": os.environ["RUNNER_OS"],
-              "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in source_paths},
-          }
-          Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"], "subject.json").write_text(json.dumps(receipt, indent=2) + "\n")
-          PY
-          run_recovery_check() {
-            local check_name="$1"
-            shift
-            local check_status=0
-            printf '%q ' "$@" > "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.command.txt" || return $?
-            printf '\n' >> "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.command.txt" || return $?
-            "$@" > "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.log" 2>&1 || check_status=$?
-            printf '%s\t%s\n' "$check_name" "$check_status" >> "$OCRM_RECOVERY_EVIDENCE_DIR/command-exit-codes.tsv" || return $?
-            cat "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.log" || return $?
-            return "$check_status"
-          }
+          source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
           # SESSION-JSON-ROUNDTRIP-v1: retain the effective locked dependency
           # feature graph with each baseline/fixed subject; do not infer it from Cargo.lock.
           run_recovery_check feature-graph cargo tree --locked --manifest-path source/host/Cargo.toml --edges features --invert serde_json
@@ -601,7 +616,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Preserve exact-subject Recovery command diagnostics
-        if: ${{ always() && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
+        if: ${{ always() && (steps.ocrm_diagnostics.outcome == 'success' || steps.ocrm_diagnostics.outcome == 'failure' || steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
         uses: actions/upload-artifact@v4
         with:
           name: ocrm-recovery-commands-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}

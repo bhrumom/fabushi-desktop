@@ -597,17 +597,26 @@ const SESSION_ADMISSION_GUARD_OWNERS: [(&str, &str, usize); 8] = [
     ("", "update_persisted_transcript_entry_if_session_admitted", 1),
 ];
 
+fn admission_guard_attributes_are_supported(attributes: &[syn::Attribute]) -> bool {
+    attributes.iter().all(|attribute| attribute.path().is_ident("doc"))
+}
+
 fn admission_guard_calls_in_block(block: &syn::Block) -> Option<usize> {
     block.stmts.iter().try_fold(0, |count, statement| {
         let calls = match statement {
-            syn::Stmt::Local(local) => match local.init.as_ref() {
-                Some(init) => admission_guard_calls_in_expr(&init.expr)?
-                    + match init.diverge.as_ref() {
-                        Some((_, expression)) => admission_guard_calls_in_expr(expression)?,
-                        None => 0,
-                    },
-                None => 0,
-            },
+            syn::Stmt::Local(local) => {
+                if !admission_guard_attributes_are_supported(&local.attrs) {
+                    return None;
+                }
+                match local.init.as_ref() {
+                    Some(init) => admission_guard_calls_in_expr(&init.expr)?
+                        + match init.diverge.as_ref() {
+                            Some((_, expression)) => admission_guard_calls_in_expr(expression)?,
+                            None => 0,
+                        },
+                    None => 0,
+                }
+            }
             syn::Stmt::Expr(expression, _) => admission_guard_calls_in_expr(expression)?,
             // A nested function or macro body is not this function owner's
             // executable call site. Neither can compensate for a missing guard.
@@ -630,6 +639,67 @@ fn admission_guard_calls_in_expr(expression: &syn::Expr) -> Option<usize> {
         expression.map_or(Some(0), admission_guard_calls_in_expr)
     }
 
+    fn directly_invoked_synchronous_closure(expression: &Expr) -> Option<&syn::ExprClosure> {
+        match expression {
+            Expr::Paren(value) if admission_guard_attributes_are_supported(&value.attrs) => {
+                directly_invoked_synchronous_closure(&value.expr)
+            }
+            Expr::Group(value) if admission_guard_attributes_are_supported(&value.attrs) => {
+                directly_invoked_synchronous_closure(&value.expr)
+            }
+            Expr::Closure(value) if value.asyncness.is_none()
+                && admission_guard_attributes_are_supported(&value.attrs) => Some(value),
+            _ => None,
+        }
+    }
+
+    // This is a bounded syntactic inventory, not a cfg evaluator or a proof of
+    // control-flow dominance. Unsupported attributes cannot establish a call.
+    let attributes = match expression {
+        Expr::Array(value) => &value.attrs,
+        Expr::Assign(value) => &value.attrs,
+        Expr::Async(value) => &value.attrs,
+        Expr::Await(value) => &value.attrs,
+        Expr::Binary(value) => &value.attrs,
+        Expr::Block(value) => &value.attrs,
+        Expr::Break(value) => &value.attrs,
+        Expr::Call(value) => &value.attrs,
+        Expr::Cast(value) => &value.attrs,
+        Expr::Closure(value) => &value.attrs,
+        Expr::Const(value) => &value.attrs,
+        Expr::Continue(value) => &value.attrs,
+        Expr::Field(value) => &value.attrs,
+        Expr::ForLoop(value) => &value.attrs,
+        Expr::Group(value) => &value.attrs,
+        Expr::If(value) => &value.attrs,
+        Expr::Index(value) => &value.attrs,
+        Expr::Infer(value) => &value.attrs,
+        Expr::Let(value) => &value.attrs,
+        Expr::Lit(value) => &value.attrs,
+        Expr::Loop(value) => &value.attrs,
+        Expr::Macro(value) => &value.attrs,
+        Expr::Match(value) => &value.attrs,
+        Expr::MethodCall(value) => &value.attrs,
+        Expr::Paren(value) => &value.attrs,
+        Expr::Path(value) => &value.attrs,
+        Expr::Range(value) => &value.attrs,
+        Expr::Reference(value) => &value.attrs,
+        Expr::Repeat(value) => &value.attrs,
+        Expr::Return(value) => &value.attrs,
+        Expr::Struct(value) => &value.attrs,
+        Expr::Try(value) => &value.attrs,
+        Expr::TryBlock(value) => &value.attrs,
+        Expr::Tuple(value) => &value.attrs,
+        Expr::Unary(value) => &value.attrs,
+        Expr::Unsafe(value) => &value.attrs,
+        Expr::While(value) => &value.attrs,
+        Expr::Yield(value) => &value.attrs,
+        _ => return None,
+    };
+    if !admission_guard_attributes_are_supported(attributes) {
+        return None;
+    }
+
     match expression {
         Expr::Call(call) => {
             let named_guard = matches!(call.func.as_ref(), Expr::Path(function)
@@ -640,8 +710,14 @@ fn admission_guard_calls_in_expr(expression: &syn::Expr) -> Option<usize> {
                     if argument.mutability.is_none()
                         && matches!(argument.expr.as_ref(), Expr::Path(value)
                             if value.qself.is_none() && value.path.is_ident("admission")));
-            Some(usize::from(named_guard && actual_admission)
-                + admission_guard_calls_in_expr(&call.func)? + many(&call.args)?)
+            // The transaction owners call synchronous closure literals through
+            // parentheses. A closure value or an async-closure call alone does
+            // not execute its body, so only this direct call edge earns credit.
+            let callee_calls = match directly_invoked_synchronous_closure(&call.func) {
+                Some(closure) => admission_guard_calls_in_expr(&closure.body)?,
+                None => admission_guard_calls_in_expr(&call.func)?,
+            };
+            Some(usize::from(named_guard && actual_admission) + callee_calls + many(&call.args)?)
         }
         Expr::MethodCall(call) => Some(
             admission_guard_calls_in_expr(&call.receiver)? + many(&call.args)?,
@@ -655,10 +731,13 @@ fn admission_guard_calls_in_expr(expression: &syn::Expr) -> Option<usize> {
         Expr::Range(value) => Some(
             optional(value.start.as_deref())? + optional(value.end.as_deref())?,
         ),
-        Expr::Struct(value) => Some(
-            many(value.fields.iter().map(|field| &field.expr))?
-                + optional(value.rest.as_deref())?,
-        ),
+        Expr::Struct(value) => {
+            if value.fields.iter().any(|field| !admission_guard_attributes_are_supported(&field.attrs)) {
+                return None;
+            }
+            Some(many(value.fields.iter().map(|field| &field.expr))?
+                + optional(value.rest.as_deref())?)
+        }
         Expr::If(value) => Some(
             admission_guard_calls_in_expr(&value.cond)?
                 + admission_guard_calls_in_block(&value.then_branch)?
@@ -666,6 +745,9 @@ fn admission_guard_calls_in_expr(expression: &syn::Expr) -> Option<usize> {
         ),
         Expr::Match(value) => {
             let arms = value.arms.iter().try_fold(0, |count, arm| {
+                if !admission_guard_attributes_are_supported(&arm.attrs) {
+                    return None;
+                }
                 Some(count + admission_guard_calls_in_expr(&arm.body)?
                     + optional(arm.guard.as_ref().map(|(_, guard)| guard.as_ref()))?)
             })?;
@@ -681,11 +763,12 @@ fn admission_guard_calls_in_expr(expression: &syn::Expr) -> Option<usize> {
         ),
         Expr::Loop(value) => admission_guard_calls_in_block(&value.body),
         Expr::Block(value) => admission_guard_calls_in_block(&value.block),
-        Expr::Async(value) => admission_guard_calls_in_block(&value.block),
         Expr::Const(value) => admission_guard_calls_in_block(&value.block),
         Expr::TryBlock(value) => admission_guard_calls_in_block(&value.block),
         Expr::Unsafe(value) => admission_guard_calls_in_block(&value.block),
-        Expr::Closure(value) => admission_guard_calls_in_expr(&value.body),
+        // Constructing a closure or future is not execution of its body. The
+        // only supported deferred-body entry is the synchronous call above.
+        Expr::Async(_) | Expr::Closure(_) => Some(0),
         Expr::Await(value) => admission_guard_calls_in_expr(&value.base),
         Expr::Cast(value) => admission_guard_calls_in_expr(&value.expr),
         Expr::Field(value) => admission_guard_calls_in_expr(&value.base),
@@ -853,6 +936,78 @@ fn admission_guard_oracle_cannot_replace_terminal_guard_with_non_owner_text_or_c
         assert_eq!(changed.matches(CALL).count(), source.matches(CALL).count());
         assert!(syn::parse_file(&changed).is_ok(), "counterfactual syntax: {replacement}");
         assert!(check_session_admission_guard_owners(&changed).is_err(), "{replacement}");
+    }
+}
+
+#[test]
+fn admission_guard_oracle_counts_direct_synchronous_closure_invocation() {
+    const CALL: &str = "session_admission_identity_is_well_formed(&admission)";
+    const OWNER: &str = "capture_original_turn_terminal_fence";
+    let source = admission_guard_oracle_fixture();
+    for closure in [
+        format!("(|| {CALL})"),
+        format!("((|| -> bool {{ {CALL} }}))"),
+    ] {
+        let invoked = replace_admission_guard_fixture_call(source, OWNER, 0, &format!("{closure}()"));
+        assert_eq!(invoked.matches(CALL).count(), source.matches(CALL).count());
+        assert!(syn::parse_file(&invoked).is_ok(), "invocation syntax: {closure}");
+        check_session_admission_guard_owners(&invoked)
+            .expect("a directly invoked synchronous closure must retain its actual guard");
+
+        let dormant = replace_admission_guard_fixture_call(
+            source, OWNER, 0, &format!("{{ let _ = {closure}; true }}"),
+        );
+        assert_eq!(dormant.matches(CALL).count(), source.matches(CALL).count());
+        assert!(syn::parse_file(&dormant).is_ok(), "dormant syntax: {closure}");
+        let error = check_session_admission_guard_owners(&dormant)
+            .expect_err("removing the invocation must remove credit for the same closure body");
+        assert!(error.starts_with(OWNER), "wrong failed boundary: {error}");
+    }
+}
+
+#[test]
+fn admission_guard_oracle_rejects_dormant_closures_and_futures() {
+    const CALL: &str = "session_admission_identity_is_well_formed(&admission)";
+    const OWNER: &str = "capture_original_turn_terminal_fence";
+    let source = admission_guard_oracle_fixture();
+    for replacement in [
+        format!("{{ let _ = || {CALL}; true }}"),
+        format!("{{ let _ = || (|| {CALL})(); true }}"),
+        format!("(|| {{ let _ = || {CALL}; true }})()"),
+        format!("{{ let _ = async {{ {CALL} }}; true }}"),
+        format!("{{ let _ = async {{ (|| {CALL})() }}; true }}"),
+        format!("{{ let _ = (async || {{ {CALL} }})(); true }}"),
+        format!("{{ let _ = (|| async {{ {CALL} }})(); true }}"),
+    ] {
+        let changed = replace_admission_guard_fixture_call(source, OWNER, 0, &replacement);
+        assert_eq!(changed.matches(CALL).count(), source.matches(CALL).count());
+        assert!(syn::parse_file(&changed).is_ok(), "deferred-body syntax: {replacement}");
+        let error = check_session_admission_guard_owners(&changed)
+            .expect_err("a dormant closure or future cannot replace the live terminal guard");
+        assert!(error.starts_with(OWNER), "wrong failed boundary for {replacement}: {error}");
+    }
+}
+
+#[test]
+fn admission_guard_oracle_rejects_conditionally_excluded_guard_paths() {
+    const CALL: &str = "session_admission_identity_is_well_formed(&admission)";
+    const OWNER: &str = "capture_original_turn_terminal_fence";
+    let source = admission_guard_oracle_fixture();
+    for replacement in [
+        format!("{{ #[cfg(any())] let _ = {CALL}; true }}"),
+        format!("{{ #[cfg_attr(all(), cfg(any()))] let _ = {CALL}; true }}"),
+        format!("{{ #[cfg(any())] {CALL}; true }}"),
+        format!("{{ #[cfg(any())] {{ {CALL}; }} true }}"),
+        format!("{{ #[cfg(any())] (|| {{ {CALL} }})(); true }}"),
+        format!("{{ match () {{ #[cfg(any())] () => {{ {CALL}; }}, _ => (), }} true }}"),
+        format!("{{ struct GuardFixture {{ #[cfg(any())] checked: bool }} let _ = GuardFixture {{ #[cfg(any())] checked: {CALL} }}; true }}"),
+    ] {
+        let changed = replace_admission_guard_fixture_call(source, OWNER, 0, &replacement);
+        assert_eq!(changed.matches(CALL).count(), source.matches(CALL).count());
+        assert!(syn::parse_file(&changed).is_ok(), "conditional-path syntax: {replacement}");
+        let error = check_session_admission_guard_owners(&changed)
+            .expect_err("unsupported conditional attributes cannot establish a live guard");
+        assert!(error.starts_with(OWNER), "wrong failed boundary for {replacement}: {error}");
     }
 }
 

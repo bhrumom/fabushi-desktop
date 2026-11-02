@@ -6494,6 +6494,7 @@ mod original_turn_terminal_tests {
             fixture.publish();
             let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
             let mut pending_media_path = None;
+            let mut retained_media_path = None;
             let (key, raw) = match kind {
                 "memory" => ("pendingExternalMemoryMutation", serde_json::to_string(&PendingMemoryMutation {
                     mutation_id: "pending-memory".into(), operation: "clear".into(),
@@ -6516,6 +6517,9 @@ mod original_turn_terminal_tests {
                         .join("attachments").join("pending-original-turn.bin");
                     fs::create_dir_all(media_path.parent().unwrap()).unwrap();
                     fs::write(&media_path, b"owned pending original-turn media").unwrap();
+                    let retained_path = media_path.with_file_name("unrelated-original-turn.bin");
+                    fs::write(&retained_path, b"unrelated retained media").unwrap();
+                    retained_media_path = Some(retained_path);
                     fixture.workers.capture_session_media_admission(
                         &fixture.original.agent_id, &fixture.original.session_key,
                         "pending-media", Some(&media_path),
@@ -6543,6 +6547,7 @@ mod original_turn_terminal_tests {
             assert_eq!(fixture.raw_kv(key).as_deref(), Some(raw.as_str()));
             if let Some(media_path) = &pending_media_path {
                 assert_eq!(fs::read(media_path).unwrap(), b"owned pending original-turn media");
+                assert_eq!(fs::read(retained_media_path.as_ref().unwrap()).unwrap(), b"unrelated retained media");
             }
             // This is the existing ordinary recovery owner, deliberately
             // called only after the strict path has retained the input.
@@ -6552,6 +6557,7 @@ mod original_turn_terminal_tests {
                 assert!(admission.admitted_media_work_id.is_none());
                 assert!(admission.admitted_media_paths.is_empty());
                 assert!(!pending_media_path.as_ref().unwrap().exists());
+                assert_eq!(fs::read(retained_media_path.as_ref().unwrap()).unwrap(), b"unrelated retained media");
             } else {
                 assert!(ordinary.read_kv(key).unwrap().is_none());
             }
@@ -6577,6 +6583,7 @@ mod original_turn_terminal_tests {
         for _ in 0..2 {
             assert!(restarted.read_original_turn_terminal_candidate(&fixture.original).is_err());
             assert!(restarted.prepare_original_turn_terminal_view(&fixture.original, &fixture.root_id).is_err());
+            assert_eq!(fixture.rows(), before, "strict inspection must retain unknown media custody");
             let error = restarted.open_agent_db_owner(&fixture.original.agent_id)
                 .err().expect("unknown media custody must not be cleared by ordinary open");
             assert_eq!(error, "pending outgoing media has no durable materialized paths");

@@ -1710,6 +1710,15 @@ malformed-admission, archived/deleting and source-wiring assertions remain.
 Use the already pinned Rust parser; this repair changes no production policy,
 dependency or completion flag. Exact integrated-H Actions execution is required.
 
+An owner call cannot be established by constructing an uncalled closure or an
+unpolled async body. Credit a closure body only at a directly proved invocation;
+retain the real immediately invoked transaction closures. Counterfactuals must
+reject dormant closure/future substitutions while preserving the eleven real
+guards and all existing owner, relocation and dynamic refusal assertions.
+Conditionally excluded statements or expressions also cannot establish a live
+guard; reject unsupported conditional attributes on the counted path. These
+bounded structural checks do not claim general control-flow or name resolution.
+
 Bearing source review at fixed U: `src/agents/embedded-agent-runner/run/run-settlement.ts` blob
 `53f37c4adcbe109f748a9f34271803cd0370b2a4` (original/committed successor and
 settlement before retirement); `src/sessions/background-session-result.ts`
@@ -1768,7 +1777,8 @@ must keep an unknown work-only fence. Exercise the positive case through
 `capture_session_media_admission` with a real file under the agent media root.
 Strict terminal inspection must retain all database rows, the serialized input
 and file bytes; only the ordinary owner may remove that proven owned file and
-clear both custody fields. Retain memory/profile controls. Add a separate
+clear both custody fields while preserving an unrelated sibling file. Retain
+memory/profile controls. Add a separate
 work-only negative requiring repeated strict and ordinary opens to refuse
 without changing the exact rows or stored fence. Do not relax either production
 refusal, synthesize settlement, or remove the invalid-admission controls.
@@ -1777,6 +1787,19 @@ These repairs and the supplemental guard observation require fresh complete
 scope review and the affected compile, actual fresh-App restart and private
 recovery filters in Actions on the integrated H. Source review, an App binary
 compiled with `--no-run`, and skipped downstream steps are not runtime proof.
+
+### ORT-RECOVERY-ORACLE-01 — retained command evidence
+
+The H485 full Host-log download returned `Transport closed`; its published
+artifacts contain no Settings/App/Native named execution logs. Retain their
+step successes without inventing case results. Initialize the existing Recovery
+command-capture helper before Settings/App, capture their unchanged commands
+and actual exits, and upload the same diagnostic artifact even when an earlier
+gate fails. Preserve command order, exact filters, failure propagation and App
+aggregation. Keep the already published Native Runtime subject/input receipt,
+command/step exit records and artifact; do not duplicate its command capture.
+Compiler bindings and declared passed fields cannot replace executed cases.
+This capture repair starts no separate workflow or gate.
 
 ## References
 
