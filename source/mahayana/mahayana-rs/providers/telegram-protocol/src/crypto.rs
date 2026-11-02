@@ -16,6 +16,9 @@ const AES_BLOCK_LENGTH: usize = 16;
 const MIN_PADDING_LENGTH: usize = 12;
 const MAX_PADDING_LENGTH: usize = 1_024;
 const INTERNAL_HEADER_LENGTH: usize = 32;
+const ENVELOPE_HEADER_LENGTH: usize = 24;
+// Fixed U bounds the complete received encrypted packet, including its header.
+const MAX_ENVELOPE_LENGTH: usize = 16 * 1024 * 1024;
 
 #[derive(Clone, Zeroize, ZeroizeOnDrop)]
 pub struct AuthKey([u8; AUTH_KEY_LENGTH]);
@@ -101,7 +104,10 @@ impl EncryptedEnvelope {
     }
 
     pub fn from_bytes(value: &[u8]) -> Result<Self, CryptoError> {
-        if value.len() < 24 || !(value.len() - 24).is_multiple_of(AES_BLOCK_LENGTH) {
+        if value.len() < ENVELOPE_HEADER_LENGTH
+            || value.len() > MAX_ENVELOPE_LENGTH
+            || !(value.len() - ENVELOPE_HEADER_LENGTH).is_multiple_of(AES_BLOCK_LENGTH)
+        {
             return Err(CryptoError::InvalidEnvelope);
         }
         Ok(Self {
@@ -196,6 +202,7 @@ pub fn decrypt_message(
 ) -> Result<PlainMessage, CryptoError> {
     if envelope.auth_key_id != auth_key.id()
         || envelope.encrypted_data.is_empty()
+        || envelope.encrypted_data.len() > MAX_ENVELOPE_LENGTH - ENVELOPE_HEADER_LENGTH
         || !envelope
             .encrypted_data
             .len()
@@ -237,7 +244,9 @@ fn compute_message_key_large(
 }
 
 fn decode_plain_message(plaintext: &[u8]) -> Result<PlainMessage, CryptoError> {
-    if plaintext.len() < INTERNAL_HEADER_LENGTH + MIN_PADDING_LENGTH {
+    if plaintext.len() < INTERNAL_HEADER_LENGTH + MIN_PADDING_LENGTH
+        || plaintext.len() > MAX_ENVELOPE_LENGTH - ENVELOPE_HEADER_LENGTH
+    {
         return Err(CryptoError::InvalidPlaintext);
     }
     let server_salt = read_i64(plaintext, 0)?;
@@ -275,11 +284,15 @@ fn validate_plain_message(
     direction: Option<CryptoDirection>,
     expected_session_id: Option<i64>,
 ) -> Result<(), CryptoError> {
+    let plaintext_length = INTERNAL_HEADER_LENGTH
+        .checked_add(message.body.len())
+        .and_then(|length| length.checked_add(message.padding.len()))
+        .ok_or(CryptoError::InvalidPlaintext)?;
     if message.body.is_empty()
         || !message.body.len().is_multiple_of(4)
         || !(MIN_PADDING_LENGTH..=MAX_PADDING_LENGTH).contains(&message.padding.len())
-        || !(INTERNAL_HEADER_LENGTH + message.body.len() + message.padding.len())
-            .is_multiple_of(AES_BLOCK_LENGTH)
+        || plaintext_length > MAX_ENVELOPE_LENGTH - ENVELOPE_HEADER_LENGTH
+        || !plaintext_length.is_multiple_of(AES_BLOCK_LENGTH)
     {
         return Err(CryptoError::InvalidPlaintext);
     }

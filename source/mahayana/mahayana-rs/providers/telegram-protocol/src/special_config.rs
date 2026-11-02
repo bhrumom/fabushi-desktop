@@ -114,6 +114,14 @@ pub fn select_special_config_endpoints(
             continue;
         }
         for address in &rule.ips {
+            let port = match address {
+                IpPort::Plain { port, .. } | IpPort::Secret { port, .. } => *port,
+            };
+            // The TL parser preserves signed ports. Match the existing runtime
+            // boundary before admitting endpoints to the target retry queue.
+            if port <= 0 || port > i32::from(u16::MAX) {
+                continue;
+            }
             match address {
                 IpPort::Plain { ipv4, port } => endpoints.push(SpecialConfigEndpoint {
                     dc_id: rule.dc_id,

@@ -112,7 +112,7 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "blocked-protocol-failure-diagnosis",
+    "status": "pending-repaired-head-protocol-and-shipping-actions",
     "local_executable_validation": "not-run",
     "dependent_message_batches": "blocked",
     "full_product_acceptance": false,
@@ -356,9 +356,22 @@
               "conclusion": "success"
             }
           ],
-          "classification": "unclassified-pending-complete-failure-log",
+          "classification": "IMPL_BUG",
           "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125111348691/logs",
-          "log_retrieval": "Decoded job-log connector returned Transport closed twice. Other API reads succeeded. The 22,930,418-byte compressed shipping artifact is preserved; its payload and failure root cause are not inferred from its size. A read-only Actions artifact reader will verify the ZIP digest, read/hash full logs and emit bounded diagnostic context before any test rerun."
+          "log_retrieval": "The oversized original decoded job-log endpoint failed twice. Run 41395252062 recovered the pinned artifact, verified ZIP digest and all member CRC/SHA256 values, and read every byte. Original ZIP and complete raw logs remain in recovery artifact 13119445566; bounded diagnostics identify both implementation failures.",
+          "app_host_compile": "success",
+          "protocol": {
+            "passed": 112,
+            "failed": 2,
+            "ignored": 0,
+            "filtered_out": 0
+          },
+          "tcp": "not-executed",
+          "proxy_and_credential": "skipped",
+          "failure_signatures": [
+            "secure_inner_message_wire_rejects_body_above_fixed_u_16_mib_ceiling",
+            "special_config_selector_preserves_fixed_u_expiry_prefix_and_endpoint_policy"
+          ]
         }
       ],
       "artifacts": [
@@ -1911,7 +1924,23 @@
         }
       ]
     },
-    "remaining": "cppgir expected-lite gitlink 95b9cb015fa17baa749c2b396b335906e1596a9e was discovered but its declared URL and full recursive tree are not yet acquired. Canonical lock/index still use the prior U; do not promote source/semantic/legal acceptance."
+    "remaining": "cppgir expected-lite gitlink 95b9cb015fa17baa749c2b396b335906e1596a9e was discovered but its declared URL and full recursive tree are not yet acquired. Canonical lock/index still use the prior U; do not promote source/semantic/legal acceptance.",
+    "recursive_followup": {
+      "status": "implemented-pending-exact-head-actions",
+      "format": "TDRP_CPPGIR_ACQUISITION_V2",
+      "expected_root_tree": "b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8",
+      "expected_gitmodules": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3",
+      "expected_nested_path": "expected-lite",
+      "expected_nested_commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+      "declared_url": "must be read from exact gitmodules; not guessed",
+      "global_source_acceptance": false,
+      "review": {
+        "verdict": "approved-for-read-only-focused-actions",
+        "blocking_findings": [],
+        "method": "Independent static frozen-helper review of original-host identities, recursive exact pins, legacy digest compatibility, strict declaration/gitlink equality, bounds and partial-failure receipts. No local executable validation.",
+        "precision_fix": "Reject literal '?' and '#' even when query/fragment is empty, to enforce the documented URL policy."
+      }
+    }
   },
   "fixed_upstream_message_research": {
     "path": "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md",
@@ -1927,7 +1956,7 @@
     "source_closure": false
   },
   "failure_artifact_recovery": {
-    "status": "pending-exact-actions-read",
+    "status": "completed-success",
     "scope": [
       "scripts/tdrp-summarize-protocol-artifact.py",
       ".github/workflows/tdrp-protocol-failure-evidence.yml"
@@ -1941,6 +1970,115 @@
       "blocking_findings": [],
       "method": "Independent static identity/streaming/CRC/path/stdout/failure/CLI review; no local executable validation."
     },
-    "tests_rerun": false
+    "tests_rerun": false,
+    "recovery_head": "46a5fe02537bd93ef792b6e49507671bbceb8690",
+    "recovery_run_id": 41395252062,
+    "recovery_job_id": 125115071150,
+    "complete": true,
+    "completed_members": 3,
+    "all_members_streamed_to_end": true,
+    "all_member_crcs_verified": true,
+    "target_sha_verified": "93b5977f99115bd41a9ff30441e0b22696797364",
+    "members": [
+      {
+        "name": "telegram-protocol-contract.log",
+        "bytes": 76694376,
+        "sha256": "c77c748d9081c0337794fd5c29f2e7f44ec37a6249ab306e37ebdcb0fbb54ff4"
+      },
+      {
+        "name": "app-host-check.log",
+        "bytes": 75068,
+        "sha256": "c350d12a415e6f8a860b66c98fe38e220a2a47a9aaa87adfffb1c586b07825ee"
+      },
+      {
+        "name": "target-sha.txt",
+        "bytes": 41,
+        "sha256": "6dbc6e7213c2e358017e1024a3b32debaf1c8f0f60762e51d05933e6b98be332"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13119445566,
+        "name": "tdrp-protocol-failure-41394020435-46a5fe02537bd93ef792b6e49507671bbceb8690",
+        "size_in_bytes": 45876621,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13119445566",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13119445566/zip",
+        "expired": false,
+        "created_at": "2026-11-02T05:39:22Z",
+        "expires_at": "2027-01-31T05:39:00Z",
+        "updated_at": "2026-11-02T05:39:22Z",
+        "digest": "sha256:e400b95f283b7d557982a7b469f3ba77fbd2404139981ecff41e2ccb8d3fa4fc",
+        "workflow_run": {
+          "id": 41395252062,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "46a5fe02537bd93ef792b6e49507671bbceb8690"
+        }
+      }
+    ]
+  },
+  "protocol_implementation_repair": {
+    "base": "46a5fe02537bd93ef792b6e49507671bbceb8690",
+    "classification": "IMPL_BUG",
+    "status": "implemented-pending-exact-head-actions",
+    "scope": [
+      "source/mahayana/mahayana-rs/providers/telegram-protocol/src/crypto.rs",
+      "source/mahayana/mahayana-rs/providers/telegram-protocol/src/special_config.rs",
+      "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+    ],
+    "changes": [
+      "Bound the complete encrypted packet to 16 MiB at parser and direct decrypt entry before allocation/AES; use checked plaintext length arithmetic including both headers and padding.",
+      "Use the same full-packet budget at encoding and quick-ack generation as explicit target hardening; preserve session/direction validation and existing error classes.",
+      "Filter Plain and Secret ports to 1..65535 before retry-queue admission, matching the existing target runtime check without changing signed TL parsing, expiry, prefix, IP or secret semantics.",
+      "Retain both failing behavioral oracles. Avoid dumping a 16 MiB ciphertext on a size-rejection regression. Add maximum-aligned valid roundtrip, full-packet-overhead rejection, correctly authenticated direct-envelope bypass rejection and both-form port boundary coverage."
+    ],
+    "source_evidence": [
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+        "blob": "13cbc76ec723386027b5b4dcac79999b791c4614",
+        "read_scope": "targeted ranges: limit declaration at 53, receive/auth/session/size checks 1289-1367, send path 2711-2760; not a whole-file review",
+        "finding": "The source receive bound covers the 24-byte encrypted outer header. No identical explicit send-side bound was found in the inspected send path; target encoding guard is labeled defensive."
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/mtproto/special_config_request.cpp",
+        "blob": "fdb65506b0a886bc2daeccb61090bc44be7e2d88",
+        "read_scope": "selector expiry/prefix/endpoint callback path; no whole-upstream claim",
+        "finding": "Preserves signed port to callback; target port filtering is not claimed as a copied source selector rule."
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/mtproto/config_loader.cpp",
+        "blob": "5d07404ba07223016c6728b986dcba10628d7194",
+        "read_scope": "special endpoint queue path",
+        "finding": "Source endpoint queue and subsequent DcOptions path do not establish the target port filter."
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp",
+        "blob": "d8499fc1df2ed7fdb88da687a04b824d243ff49a",
+        "read_scope": "constructAddOne and ApplyOneOption",
+        "finding": "No equivalent range check in these inspected functions."
+      }
+    ],
+    "production_wiring": [
+      "RPC and ping receive paths call EncryptedEnvelope::from_bytes then decrypt_message then MessageIdGuard; send path calls encrypt_message.",
+      "refresh_special_config -> decode_and_select_special_config -> selector -> SpecialConfigEndpointQueue -> apply_resolved_special_config_endpoint -> resolved_special_endpoint_directory; existing runtime converts port with u16::try_from and rejects zero."
+    ],
+    "unchanged_open_gaps": [
+      "Padded-intermediate network receive normalization still needs a dedicated boundary behavior check; raw envelope acceptance is not weakened to absorb transport padding.",
+      "MessageIdGuard clock-window and random-padding distribution differ from fixed U; this repair makes no full protocol-equivalence claim."
+    ],
+    "review": {
+      "verdict": "approved-for-focused-exact-head-actions",
+      "blocking_findings": [],
+      "method": "Independent static review of crypto arithmetic, Rust dependency/trait visibility, authentication-bypass oracle, endpoint policy and fixed-U receive path. No local executable validation and no independent product ACCEPT."
+    }
   }
 }

@@ -3971,10 +3971,104 @@ fn secure_inner_message_wire_rejects_body_above_fixed_u_16_mib_ceiling() {
         padding: vec![0x77; 12],
     };
 
-    assert_eq!(
-        encrypt_message(&auth_key, CryptoDirection::ClientToServer, &message).unwrap_err(),
-        CryptoError::InvalidPlaintext
+    assert!(matches!(
+        encrypt_message(&auth_key, CryptoDirection::ClientToServer, &message),
+        Err(CryptoError::InvalidPlaintext)
+    ));
+}
+
+#[test]
+fn secure_inner_message_limit_includes_headers_and_padding() {
+    const MAX_PACKET: usize = 16 * 1024 * 1024;
+    let auth_key = AuthKey::from_slice(&[0x67_u8; 256]).unwrap();
+    let message = PlainMessage {
+        server_salt: 1,
+        session_id: 2,
+        message_id: 4,
+        sequence_number: 1,
+        body: vec![0_u8; MAX_PACKET - 64],
+        padding: vec![0x77; 16],
+    };
+    assert_eq!(24 + 32 + message.body.len() + message.padding.len(), MAX_PACKET + 8);
+    assert!(matches!(
+        encrypt_message(&auth_key, CryptoDirection::ClientToServer, &message),
+        Err(CryptoError::InvalidPlaintext)
+    ));
+    assert!(matches!(
+        quick_ack_token(&auth_key, CryptoDirection::ClientToServer, &message),
+        Err(CryptoError::InvalidPlaintext)
+    ));
+}
+
+#[test]
+fn secure_inner_message_largest_aligned_envelope_inside_limit_round_trips() {
+    const MAX_PACKET: usize = 16 * 1024 * 1024;
+    let auth_key = AuthKey::from_slice(&[0x68_u8; 256]).unwrap();
+    let message = PlainMessage {
+        server_salt: 1,
+        session_id: 2,
+        message_id: 4,
+        sequence_number: 1,
+        body: vec![0x31_u8; MAX_PACKET - 76],
+        padding: vec![0x77; 12],
+    };
+    let envelope = encrypt_message(&auth_key, CryptoDirection::ClientToServer, &message).unwrap();
+    let wire = envelope.to_bytes();
+    // A 24-byte envelope header leaves the largest aligned packet eight bytes below the limit.
+    assert_eq!(wire.len(), MAX_PACKET - 8);
+    let parsed = EncryptedEnvelope::from_bytes(&wire).unwrap();
+    let recovered = decrypt_message(
+        &auth_key,
+        CryptoDirection::ClientToServer,
+        &parsed,
+        message.session_id,
+    )
+    .unwrap();
+    // Keep failure output bounded even if a large payload regresses.
+    assert!(recovered == message);
+}
+
+#[test]
+fn secure_inner_message_oversize_authenticated_envelope_cannot_bypass_parser() {
+    const MAX_PACKET: usize = 16 * 1024 * 1024;
+    let auth_key = AuthKey::from_slice(&[0x69_u8; 256]).unwrap();
+    let body_length = MAX_PACKET - 64;
+    let mut plaintext = Vec::with_capacity(MAX_PACKET - 16);
+    plaintext.extend_from_slice(&1_i64.to_le_bytes());
+    plaintext.extend_from_slice(&2_i64.to_le_bytes());
+    plaintext.extend_from_slice(&4_i64.to_le_bytes());
+    plaintext.extend_from_slice(&1_i32.to_le_bytes());
+    plaintext.extend_from_slice(&(body_length as i32).to_le_bytes());
+    plaintext.resize(32 + body_length, 0x31);
+    plaintext.extend_from_slice(&[0x77; 16]);
+    assert_eq!(plaintext.len(), MAX_PACKET - 16);
+
+    // Build a correctly authenticated oversized packet independently of the guarded encoder.
+    let mut digest = sha2::Sha256::new();
+    digest.update(&auth_key.as_bytes()[88..120]);
+    digest.update(&plaintext);
+    let digest = digest.finalize();
+    let message_key: [u8; 16] = digest[8..24].try_into().unwrap();
+    let (aes_key, aes_iv) = derive_aes_key_iv(
+        &auth_key,
+        &message_key,
+        CryptoDirection::ClientToServer,
     );
+    let envelope = EncryptedEnvelope {
+        auth_key_id: auth_key.id(),
+        message_key,
+        encrypted_data: aes_ige_encrypt(&plaintext, &aes_key, &aes_iv).unwrap(),
+    };
+    let wire = envelope.to_bytes();
+    assert_eq!(wire.len(), MAX_PACKET + 8);
+    assert!(matches!(
+        EncryptedEnvelope::from_bytes(&wire),
+        Err(CryptoError::InvalidEnvelope)
+    ));
+    assert!(matches!(
+        decrypt_message(&auth_key, CryptoDirection::ClientToServer, &envelope, 2),
+        Err(CryptoError::AuthenticationFailed)
+    ));
 }
 
 
@@ -4693,6 +4787,53 @@ fn special_config_selector_preserves_fixed_u_expiry_prefix_and_endpoint_policy()
         select_special_config_endpoints(&config, "+1", 301),
         Err(SpecialConfigError::Expired { .. })
     ));
+}
+
+#[test]
+fn special_config_selector_applies_runtime_port_boundary_to_plain_and_secret_endpoints() {
+    use std::net::Ipv4Addr;
+    use fabushi_telegram_protocol::{
+        select_special_config_endpoints, AccessPointRule, HelpConfigSimple, IpPort,
+        SpecialConfigEndpoint,
+    };
+
+    let ports = [i32::MIN, -1, 0, 1, 443, 65535, 65536, i32::MAX];
+    for with_secret in [false, true] {
+        let secret = if with_secret { vec![0xdd; 17] } else { Vec::new() };
+        let mut config = HelpConfigSimple {
+            date: 200,
+            expires: 300,
+            rules: vec![AccessPointRule {
+                phone_prefix_rules: "+1,-1555".into(),
+                dc_id: 2,
+                ips: ports.iter().map(|&port| {
+                    if with_secret {
+                        IpPort::Secret { ipv4: 0x7f00_0001, port, secret: secret.clone() }
+                    } else {
+                        IpPort::Plain { ipv4: 0x7f00_0001, port }
+                    }
+                }).collect(),
+            }],
+        };
+        let expected: Vec<_> = [1, 443, 65535].into_iter().map(|port| SpecialConfigEndpoint {
+            dc_id: 2,
+            ip_address: Ipv4Addr::new(127, 0, 0, 1),
+            port,
+            secret: secret.clone(),
+        }).collect();
+        // Preserve future-date and inclusive-expiry policy while filtering individual endpoints.
+        for now in [100, 300] {
+            assert_eq!(
+                select_special_config_endpoints(&config, "+1 (212) 555-0100", now).unwrap(),
+                expected,
+            );
+        }
+        assert!(select_special_config_endpoints(&config, "+1 555 123 4567", 100).unwrap().is_empty());
+        config.rules[0].ips.retain(|address| match address {
+            IpPort::Plain { port, .. } | IpPort::Secret { port, .. } => *port <= 0 || *port > 65535,
+        });
+        assert!(select_special_config_endpoints(&config, "+1 212 555 0100", 100).unwrap().is_empty());
+    }
 }
 
 #[test]
