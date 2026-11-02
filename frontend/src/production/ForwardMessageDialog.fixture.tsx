@@ -2,6 +2,8 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
+import { createCoordinatorClient, COORDINATOR_PROTOCOL_VERSION, type CoordinatorCallAdmission } from "./coordinator-client";
+import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
 import { createRuntimeThemeInstaller, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import type { TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import "./production.css";
@@ -23,14 +25,56 @@ function controlled<T>(kind: RequestKind, args: unknown): Promise<T> {
 }
 const searchRecipients = (input: { sourceConversationId: string; sourceEntryId: string; query: string; limit: number }) =>
   controlled<readonly ForwardRecipient[]>("search", input);
-const forwardMessage = (input: {
+const forwardRequestFrames: Record<string, unknown>[] = [];
+let coordinatorConsumer: { onPort(port: TransferredCoordinatorPort): void } | null = null;
+const coordinatorBridge: CoordinatorPortBridge = {
+  claim(consumer) {
+    coordinatorConsumer = consumer;
+    return { request() {}, release() { coordinatorConsumer = null; } };
+  },
+};
+const coordinator = createCoordinatorClient(coordinatorBridge)!;
+function connectCoordinator() {
+  const listeners = new Map<string, (event: any) => void>();
+  const emit = (data: unknown) => listeners.get("message")?.({ data });
+  const port: TransferredCoordinatorPort = {
+    postMessage(value) {
+      // Keep the real request-frame boundary, including structured-clone rules:
+      // admission callbacks must never become gateway payload fields.
+      const frame = structuredClone(value) as Record<string, unknown>;
+      if (frame.kind !== "request") return;
+      if (frame.method !== "forwardHumanMessage") throw new Error("unexpected forward fixture RPC");
+      forwardRequestFrames.push(frame);
+      const id = `forward-${++nextRequest}`;
+      calls.push({ id, kind: "forward", args: frame.args });
+      pending.set(id, {
+        resolve: (destinations) => emit({ kind: "reply", requestId: frame.requestId, outcome: { status: "ok", value: { destinations } } }),
+        reject: (error) => emit({ kind: "reply", requestId: frame.requestId, outcome: { status: "failed", failure: { code: "fixture-forward", message: error.message } } }),
+      });
+    },
+    close() {},
+    start() {},
+    addEventListener(type: string, listener: (event: any) => void) { listeners.set(type, listener); },
+  };
+  coordinatorConsumer!.onPort(port);
+  return {
+    ready: () => emit({ kind: "lifecycle", phase: "ready", protocolVersion: COORDINATOR_PROTOCOL_VERSION }),
+    disconnect: () => listeners.get("close")?.({}),
+  };
+}
+let coordinatorPort = connectCoordinator();
+coordinatorPort.ready();
+const forwardMessage = async (input: {
   sourceConversationId: string;
   sourceEntryId: string;
   destinationConversationIds: readonly string[];
   clientNonce: string;
   dropSenderNames: boolean;
   dropCaptions: boolean;
-}) => controlled<readonly ForwardSettlement[]>("forward", input);
+}, admission?: CoordinatorCallAdmission): Promise<readonly ForwardSettlement[]> => {
+  const result = await coordinator.call("forwardHumanMessage", input, admission) as { destinations: readonly ForwardSettlement[] };
+  return result.destinations;
+};
 
 type Controls = {
   readonly generation: number;
@@ -94,6 +138,15 @@ function Fixture() {
 Object.assign(window, {
   __forwardHarness: {
     requests: () => [...calls],
+    forwardFrames: () => [...forwardRequestFrames],
+    holdCoordinatorReadiness: () => {
+      coordinatorPort.disconnect();
+      coordinatorPort = connectCoordinator();
+    },
+    releaseCoordinatorReadiness: async () => {
+      coordinatorPort.ready();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    },
     events: () => [...events],
     pending: () => [...pending.keys()],
     resolve: async (id: string, value: unknown) => {

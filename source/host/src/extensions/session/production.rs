@@ -2555,6 +2555,13 @@ impl ProductionSessionWorkers {
         // Resume the source-owned plan before taking a destination mutation
         // lock. Forward delivery itself takes destination locks and performs HTTP.
         self.resume_human_forward_batches()?;
+        self.sync_human_conversation_history(conversation_id)
+    }
+
+    fn sync_human_conversation_history(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
         const PAGE_LIMIT: usize = 200;
         const MAX_GAP_PAGES: usize = 32;
         const MAX_SAFE_ID: u64 = 9_007_199_254_740_991;
@@ -2701,16 +2708,17 @@ impl ProductionSessionWorkers {
         let Some(client) = self.shipping_native_messaging()? else {
             return self.list_human_conversations();
         };
+        let local_human_id = self.local_human_id()?;
         let identity = client.identity()?;
-        if identity.user_id != self.local_human_id()? {
+        if identity.user_id != local_human_id {
             return Err(format!(
                 "Fabushi native messaging credential user {} does not match active Human identity {}",
                 identity.user_id,
-                self.local_human_id()?
+                local_human_id
             ));
         }
         self.resume_human_forward_batches()?;
-        for friend in client.list_friends()? {
+        for friend in client.list_friends_for_user(local_human_id)? {
             let peer_human_id = fabushi_identity_text(&friend.user_id)?;
             let title = friend.display_name.trim();
             let conversation = self.create_human_conversation(
@@ -2721,7 +2729,9 @@ impl ProductionSessionWorkers {
                 .get("id")
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "synced Human conversation omitted its id".to_string())?;
-            self.sync_human_conversation(conversation_id)?;
+            // The top-level roster invocation already recovered the outbox.
+            // A failed target gets one attempt per invocation, not per friend.
+            self.sync_human_conversation_history(conversation_id)?;
         }
         self.sync_human_calls()?;
         self.list_human_conversations()
@@ -3232,11 +3242,20 @@ impl ProductionSessionWorkers {
     ) -> Result<HumanForwardBatch, String> {
         let (account, issuer) = self.human_forward_scope()?;
         let serial = self.human_message_lock(&format!("forward-batch:{account}:{issuer}:{request_id}"))?;
-        let _exclusive = serial.lock().map_err(|_| "Human forward batch lock poisoned".to_string())?;
+        let exclusive = serial.lock().map_err(|_| "Human forward batch lock poisoned".to_string())?;
+        self.deliver_forward_batch_while_locked(
+            source_id, request_id, requested, require_existing, &account, &issuer, &exclusive,
+        )
+    }
+
+    fn deliver_forward_batch_while_locked(
+        &self, source_id: &str, request_id: &str, requested: Option<&[String]>, require_existing: bool,
+        account: &str, issuer: &str, _exclusive: &std::sync::MutexGuard<'_, ()>,
+    ) -> Result<HumanForwardBatch, String> {
         let owner = self.open_human_conversation_db_owner(source_id)?;
         if require_existing {
             let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            Self::validate_human_retry_conversation(&metadata, source_id, &account)?;
+            Self::validate_human_retry_conversation(&metadata, source_id, account)?;
         }
         let mut batch = load_forward_batches(&owner, source_id)?.into_iter().find(|item|
             item.account_id == account && item.issuer == issuer && item.request_id == request_id
@@ -3271,7 +3290,7 @@ impl ProductionSessionWorkers {
                 }
                 Err(ForwardSourceFailure::Storage(error)) => return Err(error),
             }
-            if self.human_forward_scope()? != (account.clone(), issuer.clone()) {
+            if self.human_forward_scope()? != (account.to_string(), issuer.to_string()) {
                 return Err("Fabushi native messaging credential changed Human account or issuer".into());
             }
             let destination_id = target.conversation_id.clone();
@@ -3353,7 +3372,21 @@ impl ProductionSessionWorkers {
                 // Do not erase or bypass an invalid source on recovery. An
                 // unavailable source retains the original intent, and no
                 // destination is sent without reauthorization.
-                self.deliver_forward_batch(&source_id, &batch.request_id, None)?;
+                let serial = self.human_message_lock(&format!(
+                    "forward-batch:{account}:{issuer}:{}", batch.request_id,
+                ))?;
+                let exclusive = match serial.try_lock() {
+                    Ok(guard) => guard,
+                    Err(std::sync::TryLockError::WouldBlock) => continue,
+                    Err(std::sync::TryLockError::Poisoned(_)) => {
+                        return Err("Human forward batch lock poisoned".to_string());
+                    }
+                };
+                // Keep the admitted guard through delivery. Releasing it here
+                // and taking the blocking wrapper would stall history again.
+                self.deliver_forward_batch_while_locked(
+                    &source_id, &batch.request_id, None, false, &account, &issuer, &exclusive,
+                )?;
             }
         }
         Ok(())

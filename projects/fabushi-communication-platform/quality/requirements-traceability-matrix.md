@@ -752,3 +752,15 @@ preservation. Existing concurrent CREATE01..04 and Human retry implementation
 are preserved, not re-attributed. Source completeness and independent ACCEPT
 are unchanged; historical counts remain scoped to their immutable H and attempt.
 
+## NMR-50 forwarding recovery and admission
+
+The existing `FBCP-NMR-001` and `TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001` rows retain Session/Transcript, source SandAgentDb and Native HTTP ownership. This bounded batch changes no journal schema, Backend PR137, source-review status or acceptance value.
+
+| Requirement | Production boundary | Authored execution oracle |
+| --- | --- | --- |
+| NMR-50a | Automatic recovery holds one successful batch `try_lock` guard through existing delivery; explicit forward/retry remains serialized | Held POST response; both unrelated and destination history finish first; journal unchanged and POST1; canonical settlement and reopen |
+| NMR-50b | Direct history entry recovers once; top-level roster recovers once and calls the shared history-only body for each friend | Three-friend roster retries failed target once per invocation; original payload/nonce survives shutdown/reopen |
+| NMR-50c | Host-bound friends request checks active user before GET and the full credential snapshot after the complete body | Wrong-user zero HTTP; six streaming credential rotations preserve roster/metadata/transcript and issue no downstream HTTP; authorized retry and reopen |
+| NMR-50d | Dialog lifetime admission passes through ProductionRenderer to the existing Coordinator request-frame boundary | Actual client/controlled port in the existing Chromium picker fixture; six pre-ready retirement paths post zero frames; live positive sends exactly one; after-post lifetime retirement preserves Host intent |
+
+The four added Host functions require Human72, retaining every prior Human/Agent/journal gate. The existing16 Chromium picker functions include the new real-port scenarios. These are authored and statically reviewed at preparation; only the containing exact-H Actions result recorded in `projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json` can qualify execution. Complete source/legal, real service, supported signed packages, full Bot/UI/accessibility/performance/soak/upgrade/rollback, independent ACCEPT and formal release remain blocked.

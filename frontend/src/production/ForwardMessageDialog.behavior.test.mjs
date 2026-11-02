@@ -45,10 +45,10 @@ after(async () => {
   }
   await new Promise((resolveClose) => serverLog == null ? resolveClose() : serverLog.end(resolveClose));
 });
-async function fixture(t) {
+async function fixture(t, variant = "") {
   const page = await browser.newPage();
   const diagnostics = [];
-  const name = t.name.replace(/[^a-z0-9]+/gi, "-");
+  const name = `${t.name}${variant}`.replace(/[^a-z0-9]+/gi, "-");
   page.on("pageerror", (error) => diagnostics.push({ kind: "pageerror", message: error.message }));
   page.on("console", (message) => { if (message.type() === "error") diagnostics.push({ kind: "console", message: message.text() }); });
   page.on("requestfailed", (request) => diagnostics.push({ kind: "requestfailed", url: request.url(), error: request.failure()?.errorText }));
@@ -81,6 +81,63 @@ async function fixture(t) {
   const submit = async () => page.getByRole("button", { name: "Forward", exact: true }).click();
   return { page, call, request, settleSearch, select, submit };
 }
+
+async function assertPreReadyForwardRetired(t, retirement) {
+  const f = await fixture(t, `-readiness-${retirement}`);
+  await f.settleSearch(); await f.select();
+  await f.call("holdCoordinatorReadiness");
+  await f.submit();
+  await f.page.getByRole("button", { name: "Forwarding…", exact: true }).waitFor();
+  assert.deepEqual(await f.call("forwardFrames"), []);
+  if (retirement === "close") {
+    await f.page.getByRole("button", { name: "Close", exact: true }).click();
+    await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+    await f.call("reopen");
+  } else if (retirement === "source") {
+    await f.call("replaceSource", "message-2");
+    await f.request("search", 2);
+  } else if (retirement === "unmount") {
+    const scope = await f.call("unmount");
+    assert.equal(scope.after, scope.before + 1);
+  } else {
+    await f.call("switchAccount", retirement === "logout" ? null : "B");
+    await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+    if (retirement === "A-B-A") await f.call("switchAccount", "A");
+    if (retirement !== "logout") await f.call("reopen");
+  }
+  // The real client had an unresolved reconnect-ready promise. Retiring the
+  // original dialog must reject its call before any mutation frame is posted.
+  await f.call("releaseCoordinatorReadiness");
+  assert.deepEqual(await f.call("forwardFrames"), []);
+  assert.equal((await f.call("requests")).filter((request) => request.kind === "forward").length, 0);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 0);
+  assert.equal(await f.page.getByText("Coordinator request scope expired", { exact: false }).count(), 0);
+  if (retirement === "unmount") return;
+  if (retirement === "logout") {
+    await f.call("switchAccount", "B");
+    await f.call("reopen");
+  }
+  // The current account/source/dialog can still send once; the retired request
+  // must not revive when the same transport or account becomes ready again.
+  await f.request("search", 2);
+  await f.settleSearch("human:current"); await f.select("human:current"); await f.submit();
+  const sent = await f.request("forward");
+  const frames = await f.call("forwardFrames");
+  assert.equal(frames.length, 1);
+  assert.equal(frames[0].method, "forwardHumanMessage");
+  assert.equal(sent.args.sourceEntryId, retirement === "source" ? "message-2" : "message-1");
+  assert.deepEqual(sent.args.destinationConversationIds, ["human:current"]);
+  assert.deepEqual(Object.keys(frames[0].args).sort(), [
+    "clientNonce", "destinationConversationIds", "dropCaptions",
+    "dropSenderNames", "sourceConversationId", "sourceEntryId",
+  ]);
+  await f.call("resolve", sent.id, [{ conversationId: "human:current", status: "sent" }]);
+  await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+  await f.call("releaseCoordinatorReadiness");
+  assert.equal((await f.call("forwardFrames")).length, 1);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 1);
+}
+
 test("current forward closes and settles exactly once", async (t) => {
   const f = await fixture(t); await f.settleSearch();
   await f.page.waitForFunction(() => document.activeElement === document.querySelector('input[type="search"]'));
@@ -108,7 +165,11 @@ test("current forward closes and settles exactly once", async (t) => {
   assert.notEqual(themeColors[0].foreground, themeColors[1].foreground);
   assert.notEqual(themeColors[0].background, themeColors[1].background);
   await f.page.getByRole("listbox").focus();
+  await f.call("holdCoordinatorReadiness");
   await f.page.keyboard.press("Control+Enter");
+  await f.page.getByRole("button", { name: "Forwarding…", exact: true }).waitFor();
+  assert.deepEqual(await f.call("forwardFrames"), []);
+  await f.call("releaseCoordinatorReadiness");
   const sent = await f.request("forward"); await f.call("resolve", sent.id, [{ conversationId: "human:b", status: "sent" }]);
   await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
   assert.equal((await f.call("events")).filter((e) => e.kind === "settled").length, 1);
@@ -119,12 +180,14 @@ test("account switch prevents old success from closing B dialog", async (t) => {
   await f.call("resolve", old.id, [{ conversationId: "human:b", status: "sent" }]);
   await f.page.getByRole("heading", { name: "Forward message" }).waitFor();
   assert.deepEqual(await f.call("events"), []);
+  await assertPreReadyForwardRetired(t, "account");
 });
 test("logout prevents late error from being displayed", async (t) => {
   const f = await fixture(t); await f.settleSearch(); await f.select(); await f.submit();
   const old = await f.request("forward"); await f.call("switchAccount", null);
   await f.call("reject", old.id, "private-old-token");
   assert.equal(await f.page.getByText("private-old-token").count(), 0);
+  await assertPreReadyForwardRetired(t, "logout");
 });
 test("A B A reuse still rejects old settlement", async (t) => {
   const f = await fixture(t); await f.settleSearch(); await f.select(); await f.submit();
@@ -132,6 +195,7 @@ test("A B A reuse still rejects old settlement", async (t) => {
   await f.call("resolve", old.id, [{ conversationId: "human:b", status: "sent" }]);
   await f.page.getByRole("heading", { name: "Forward message" }).waitFor();
   assert.deepEqual(await f.call("events"), []);
+  await assertPreReadyForwardRetired(t, "A-B-A");
 });
 test("closed dialog discards old search", async (t) => {
   const f = await fixture(t); const old = await f.request("search"); await f.call("close");
@@ -144,12 +208,14 @@ test("replaced source discards old search", async (t) => {
   const replacement = await f.request("search", 2);
   assert.equal(replacement.args.sourceEntryId, "message-2");
   assert.equal(await f.page.getByText("OLD_SECRET").count(), 0);
+  await assertPreReadyForwardRetired(t, "source");
 });
 test("unmount synchronously invalidates root generation", async (t) => {
   const f = await fixture(t); const old = await f.request("search");
   const scope = await f.call("unmount");
   assert.equal(scope.after, scope.before + 1);
   await f.call("resolve", old.id, [{ id: "old", name: "OLD_SECRET" }]);
+  await assertPreReadyForwardRetired(t, "unmount");
 });
 test("late rejected search cannot display error in reopened dialog", async (t) => {
   const f = await fixture(t); const old = await f.request("search"); await f.call("close"); await f.call("reopen");
@@ -233,7 +299,7 @@ test("ambiguous missing duplicate and unexpected settlements retain the frozen r
   const first = await f.request("forward");
   await f.call("reject", first.id, "Forward outcome is unknown");
   await f.page.getByRole("alert").waitFor();
-  assert.equal(await f.page.getByRole("alert").textContent(), "Forward outcome is unknown");
+  assert.equal(await f.page.getByRole("alert").textContent(), "fixture-forward: Forward outcome is unknown");
   assert.equal(await f.page.getByRole("checkbox", { name: "Hide sender name", exact: true }).isDisabled(), true);
 
   const ambiguousResults = [
@@ -325,6 +391,7 @@ test("closing a pending forward retires presentation without cancelling or settl
   await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
   assert.equal((await f.call("events")).filter((e) => e.kind === "closed").length, 2);
   assert.equal((await f.call("events")).filter((e) => e.kind === "settled").length, 1);
+  await assertPreReadyForwardRetired(t, "close");
 });
 
 test("late searches preserve send failure and retry destinations even when selected rows are hidden", async (t) => {
@@ -335,13 +402,13 @@ test("late searches preserve send failure and retry destinations even when selec
   await f.call("reject", first.id, "Forward service unavailable");
   await f.page.getByRole("alert").waitFor();
   await f.call("resolve", searching.id, [{ id: "human:c", name: "human:c" }]);
-  assert.equal(await f.page.getByRole("alert").textContent(), "Forward service unavailable");
+  assert.equal(await f.page.getByRole("alert").textContent(), "fixture-forward: Forward service unavailable");
   assert.equal(await f.page.getByText("1 selected", { exact: true }).count(), 1);
   assert.equal(await f.page.getByRole("option", { name: "human:c" }).locator('input[type="checkbox"]').isDisabled(), true);
   await f.page.getByRole("searchbox").fill("offline search");
   const offline = await f.request("search", 3);
   await f.call("reject", offline.id, "Search is offline");
-  assert.equal(await f.page.getByRole("alert").textContent(), "Forward service unavailable");
+  assert.equal(await f.page.getByRole("alert").textContent(), "fixture-forward: Forward service unavailable");
   await f.submit();
   const retry = await f.request("forward", 2);
   assert.deepEqual(retry.args, first.args);

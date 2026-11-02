@@ -1,0 +1,89 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 27,
+  "target_path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "base_blob": "115e9d342f24ac5c14679ad21f1ba745d555acb9",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "acceptance_changed": false,
+  "rows": {
+    "FBCP-NMR-001": {
+      "append": {
+        "requirement_ids": [
+          "NMR-50",
+          "NMR-50a",
+          "NMR-50b",
+          "NMR-50c",
+          "NMR-50d"
+        ],
+        "fabushi_target_paths": [
+          "frontend/src/production/ForwardMessageDialog.tsx",
+          "frontend/src/production/coordinator-client.ts"
+        ],
+        "fabushi_target_symbols": [
+          "ProductionSessionWorkers::sync_human_conversation_history",
+          "ProductionSessionWorkers::deliver_forward_batch_while_locked",
+          "FabushiNativeMessagingClient::list_friends_for_user",
+          "CoordinatorCallAdmission"
+        ],
+        "production_entrypoints": [
+          "syncHumanConversation / syncHumanConversations -> one source-batch recovery admission -> existing history-only Session body",
+          "ForwardMessageDialog captured lifetime -> ProductionRenderer -> CoordinatorCallAdmission before pending registration and request frame; posted batches retain the source Session durable owner"
+        ],
+        "production_evidence": [
+          "path:source/host/src/extensions/session/production.rs#deliver_forward_batch_while_locked",
+          "path:source/host/src/extensions/session/native_messaging.rs#list_friends_for_user",
+          "path:frontend/src/production/ForwardMessageDialog.tsx",
+          "path:projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json"
+        ],
+        "test_evidence": [
+          "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history",
+          "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens",
+          "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api",
+          "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_roster_rejects_six_streaming_credential_rotations_before_effects_and_recovers",
+          "authored-not-run:frontend/src/production/ForwardMessageDialog.behavior.test.mjs#existing-16-cases-with-controlled-Coordinator-readiness"
+        ]
+      },
+      "notes": "Round27 NMR-50: automatic forward recovery uses one held try_lock guard and skips only an active executor; explicit forward/retry retains serialization, strict source authorization, immutable intent and journal CAS. Direct history recovers once; top-level roster recovers once and uses the same history body per friend. Friends HTTP binds the active Host user before dispatch and rechecks all six credential fields after the complete body before roster effects. The existing dialog lifetime reaches the actual Coordinator request-frame admission boundary; closing after posting does not cancel accepted Host intent. Four new real Host/HTTP/SQLite/reopen cases and expanded existing16 Chromium picker cases are authored; require Human72 and containing-H UI/compile gates. This entry records implementation and authored scope, not execution or acceptance; actual exact-H results are in the existing round27 receipt. Preserve every concurrent source_review, coverage count, owner, prior scalar execution field and blocked independent ACCEPT/formal release state."
+    },
+    "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001": {
+      "append": {
+        "requirement_ids": [
+          "NMR-50",
+          "NMR-50a",
+          "NMR-50b",
+          "NMR-50c",
+          "NMR-50d"
+        ],
+        "fabushi_target_paths": [
+          "frontend/src/production/ForwardMessageDialog.tsx",
+          "frontend/src/production/coordinator-client.ts"
+        ],
+        "fabushi_target_symbols": [
+          "ProductionSessionWorkers::sync_human_conversation_history",
+          "ProductionSessionWorkers::deliver_forward_batch_while_locked",
+          "FabushiNativeMessagingClient::list_friends_for_user",
+          "CoordinatorCallAdmission"
+        ],
+        "production_entrypoints": [
+          "syncHumanConversation / syncHumanConversations -> one source-batch recovery admission -> existing history-only Session body",
+          "ForwardMessageDialog captured lifetime -> ProductionRenderer -> CoordinatorCallAdmission before pending registration and request frame; posted batches retain the source Session durable owner"
+        ],
+        "production_evidence": [
+          "path:source/host/src/extensions/session/production.rs#deliver_forward_batch_while_locked",
+          "path:source/host/src/extensions/session/native_messaging.rs#list_friends_for_user",
+          "path:frontend/src/production/ForwardMessageDialog.tsx",
+          "path:projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json"
+        ],
+        "test_evidence": [
+          "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history",
+          "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens",
+          "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api",
+          "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_roster_rejects_six_streaming_credential_rotations_before_effects_and_recovers",
+          "authored-not-run:frontend/src/production/ForwardMessageDialog.behavior.test.mjs#existing-16-cases-with-controlled-Coordinator-readiness"
+        ]
+      },
+      "notes": "Round27 NMR-50: automatic forward recovery uses one held try_lock guard and skips only an active executor; explicit forward/retry retains serialization, strict source authorization, immutable intent and journal CAS. Direct history recovers once; top-level roster recovers once and uses the same history body per friend. Friends HTTP binds the active Host user before dispatch and rechecks all six credential fields after the complete body before roster effects. The existing dialog lifetime reaches the actual Coordinator request-frame admission boundary; closing after posting does not cancel accepted Host intent. Four new real Host/HTTP/SQLite/reopen cases and expanded existing16 Chromium picker cases are authored; require Human72 and containing-H UI/compile gates. This entry records implementation and authored scope, not execution or acceptance; actual exact-H results are in the existing round27 receipt. Preserve every concurrent source_review, coverage count, owner, prior scalar execution field and blocked independent ACCEPT/formal release state."
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { TranscriptMessage } from "../recovered/features/conversation/workspace/model";
+import type { CoordinatorCallAdmission } from "./coordinator-client";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
 import {
@@ -40,7 +41,7 @@ export interface ForwardMessageDialogProps {
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
-  }) => Promise<readonly ForwardSettlement[]>;
+  }, admission?: CoordinatorCallAdmission) => Promise<readonly ForwardSettlement[]>;
   readonly onSettled?: (settlement: readonly ForwardSettlement[], accountScopeGeneration: number) => void;
 }
 
@@ -260,6 +261,10 @@ export function ForwardMessageDialog({
       const settlement = await forwardMessage({
         ...snapshot,
         destinationConversationIds,
+      }, {
+        // Readiness can outlive this dialog. Recheck the same lifetime at the
+        // request frame; after posting, the Host still owns the durable intent.
+        isCurrent: () => isCurrent(lifetime),
       });
       if (!isCurrent(lifetime)) return;
       const hasUnexpectedSettlement = settlement.some((item) => !destinationConversationIds.includes(item.conversationId));

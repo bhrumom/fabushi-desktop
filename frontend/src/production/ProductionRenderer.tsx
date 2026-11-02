@@ -1112,9 +1112,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
-  }): Promise<readonly ForwardSettlement[]> => {
+  }, admission?: Parameters<ProductionCoordinatorClient["call"]>[2]): Promise<readonly ForwardSettlement[]> => {
     if (client == null) throw new Error("coordinator is unavailable for forwarding");
-    const result = await client.call("forwardHumanMessage", input);
+    const result = await client.call("forwardHumanMessage", input, admission);
     if (result == null || typeof result !== "object" || !("destinations" in result) || !Array.isArray(result.destinations)) {
       throw new Error("forwardHumanMessage returned an invalid settlement");
     }
