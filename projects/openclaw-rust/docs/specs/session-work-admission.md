@@ -1044,6 +1044,24 @@ test dependency edge changes. The pinned upstream Syn manifest and
 MIT-or-Apache-2.0 license and parser feature boundary remain in force. This is
 source-oracle boundary evidence, not a full semantic architecture verifier.
 
+### Group-member admission oracle — SWA-GROUP-ORACLE-01
+
+Run `41416993406` at `f2f2ba00d66b3db79f9cd46690b3ce3737fe296b`
+exposed a TEST_FLAW in `routed_send_acceptance_contract`: its positive
+group-member fixture omitted the selector required by the existing trusted
+route contract, so production correctly returned `MissingSelector` before
+the running/badge oracle. The actual `run_local_group_member_turn` supplies
+`agent:{member_id}:group:{room_id}` or an existing admitted selector.
+
+Give the positive fixture that canonical group selector and retain every
+running, user-turn badge, source, provider and lease-settlement assertion.
+Keep absent and mismatched-agent selectors as explicit negative controls:
+no persistence callback, queue admission, active source or routed lease.
+Do not enable direct-main fallback or change production authorization.
+Existing Actions already selects this target. A fresh independent review
+and exact-H affected Actions must pass; prior positive results remain
+evidence only for their exact subjects and unchanged scope.
+
 ## Release and rollback
 
 Cloud-agent wake rearming does not settle background work. The existing

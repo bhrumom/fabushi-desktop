@@ -248,6 +248,45 @@ fn routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal() {
 
 
 #[test]
+fn group_member_routed_admission_refuses_missing_or_mismatched_selector_before_effects() {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-routed-group-member-refusal-{}", uuid::Uuid::new_v4()
+    ));
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    let persisted = AtomicUsize::new(0);
+    for (selector, reason) in [
+        (None, "MissingSelector"),
+        (Some("agent:other-member:group:room-a"), "SelectorAgentMismatch"),
+    ] {
+        let mut args = serde_json::json!({
+            "agentId": "member-a",
+            "prompt": "hidden group prompt",
+            "clientNonce": "refused-group-nonce",
+            "streamId": "refused-group-stream",
+            "requestSource": "group-member",
+            "groupMemberTurn": true,
+        });
+        if let Some(selector) = selector {
+            args["sessionKey"] = selector.into();
+        }
+        let result = runtime.accept_routed_send(&args, |_| {
+            persisted.fetch_add(1, Ordering::SeqCst);
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        });
+        assert_eq!(result, Err(ProductionSendError::BadRequest(
+            format!("invalid trusted session route: {reason}")
+        )));
+        assert_eq!(persisted.load(Ordering::SeqCst), 0);
+        assert!(!runtime.has_routed_turn_lease("member-a", "refused-group-stream"));
+        assert_eq!(runtime.in_flight_run_count("member-a"), 0);
+        assert_eq!(runtime.queued_turn_count("member-a"), 0);
+        assert!(runtime.is_turn_dispatch_idle("member-a"));
+        assert!(runtime.active_turn_source("member-a").is_none());
+    }
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn group_member_routed_admission_projects_running_without_user_turn_badge() {
     let root = std::env::temp_dir().join(format!(
         "fabushi-routed-group-member-{}",
@@ -256,6 +295,7 @@ fn group_member_routed_admission_projects_running_without_user_turn_badge() {
     let runtime = ProductionTranscriptRuntime::new(Some(&root));
     let args = serde_json::json!({
         "agentId": "member-a",
+        "sessionKey": "agent:member-a:group:room-a",
         "prompt": "hidden group prompt",
         "clientNonce": "group-member-nonce",
         "streamId": "group-member-stream",
