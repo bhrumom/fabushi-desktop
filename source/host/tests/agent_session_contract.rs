@@ -1,7 +1,7 @@
 use std::fs;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, mpsc};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::settings_file::{
     get_sand_settings_path, read_sand_settings_file,
@@ -334,6 +334,103 @@ fn production_compaction_rejects_invalid_send_message_without_publishing_boundar
             .expect("rejected boundary remains inactive")
             .is_empty());
     }
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_compaction_cancellation_while_filesystem_lock_is_held_preserves_state() {
+    let root = temp_root("compaction-cancel-filesystem-wait");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let record = production.materialize_new_session(None, "user", None).unwrap();
+    let commit = seed_session_compaction(&production, &record.id);
+    let owner = production.open_agent_db_owner(&record.id).unwrap();
+    let before = compaction_session_snapshot(&owner);
+    let admission_before = owner.read_session_work_admission().unwrap().unwrap();
+    let (publications, _subscriptions, transcript_subscription) = observe_compaction_session_publications(&owner);
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let lock_held = Arc::new(AtomicBool::new(false));
+    let reads = Arc::new(AtomicUsize::new(0));
+    let reads_while_locked = Arc::new(AtomicUsize::new(0));
+
+    let (worker, outcome_receiver) = production.with_agent_filesystem_mutation(&record.id, || {
+        lock_held.store(true, Ordering::SeqCst);
+        let committing_session = Arc::clone(&production);
+        let committing_agent_id = record.id.clone();
+        let candidate = commit.clone();
+        let cancellation = Arc::clone(&cancelled);
+        let held = Arc::clone(&lock_held);
+        let cancellation_reads = Arc::clone(&reads);
+        let premature_reads = Arc::clone(&reads_while_locked);
+        let (started_sender, started_receiver) = mpsc::channel();
+        let (outcome_sender, outcome_receiver) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            let should_cancel = || {
+                cancellation_reads.fetch_add(1, Ordering::SeqCst);
+                if held.load(Ordering::SeqCst) {
+                    premature_reads.fetch_add(1, Ordering::SeqCst);
+                }
+                cancellation.load(Ordering::SeqCst)
+            };
+            let _ = started_sender.send(());
+            let outcome = committing_session.commit_agent_compaction_with_cancellation(
+                &committing_agent_id, &candidate, &should_cancel,
+            );
+            let _ = outcome_sender.send(outcome);
+        });
+        // The real Session mutex is held before launching this attempt. The
+        // handshake marks its public call; the holder cancels before releasing
+        // ownership, without inferring a parked thread from a sleep or timeout.
+        started_receiver.recv_timeout(Duration::from_secs(5))
+            .map_err(|error| format!("compaction worker did not start: {error}"))?;
+        assert!(matches!(outcome_receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        assert_eq!(reads.load(Ordering::SeqCst), 0);
+        cancelled.store(true, Ordering::SeqCst);
+        assert_eq!(compaction_session_snapshot(&owner), before);
+        assert_eq!(publications.load(Ordering::SeqCst), 0);
+        lock_held.store(false, Ordering::SeqCst);
+        Ok((worker, outcome_receiver))
+    }).unwrap();
+
+    // Join only after the bounded result so a lock regression cannot hang the
+    // test on an unbounded join. No cancellation callback blocks or reenters.
+    let outcome = outcome_receiver.recv_timeout(Duration::from_secs(5))
+        .expect("cancelled compaction must return after the filesystem lock releases")
+        .expect("clean cancellation outcome");
+    worker.join().expect("compaction worker returned");
+    assert_eq!(outcome, CompactionCommitOutcome::RejectedCancelled);
+    assert_eq!(reads.load(Ordering::SeqCst), 1);
+    assert_eq!(reads_while_locked.load(Ordering::SeqCst), 0);
+    assert_eq!(compaction_session_snapshot(&owner), before);
+    assert_eq!(owner.read_session_work_admission().unwrap(), Some(admission_before.clone()));
+    assert_eq!(publications.load(Ordering::SeqCst), 0);
+    assert!(production.read_agent_typed_compacted_transcript_entries(&record.id).unwrap().is_empty());
+
+    cancelled.store(false, Ordering::SeqCst);
+    let should_cancel = || cancelled.load(Ordering::SeqCst);
+    let CompactionCommitOutcome::Committed(entry) = production
+        .commit_agent_compaction_with_cancellation(&record.id, &commit, &should_cancel).unwrap() else {
+        panic!("the same candidate must commit after cancellation is cleared");
+    };
+    let next_revision = entry["lifecycleRevision"].as_str().unwrap();
+    assert_ne!(next_revision, admission_before.lifecycle_revision);
+    let mut expected_admission = admission_before;
+    expected_admission.lifecycle_revision = next_revision.to_string();
+    assert_eq!(owner.read_session_work_admission().unwrap(), Some(expected_admission));
+    assert_eq!(owner.read_metadata().unwrap()["lifecycleRevision"], next_revision);
+    let after_commit = compaction_session_snapshot(&owner);
+    assert_eq!(&after_commit.0[..before.0.len()], before.0.as_slice());
+    assert_eq!(after_commit.0.len(), before.0.len() + 1);
+    assert_ne!(after_commit.1, before.1);
+    assert_eq!(after_commit.2, before.2 + 1);
+    assert_eq!(publications.load(Ordering::SeqCst), 3);
+    assert_eq!(
+        production.commit_agent_compaction_with_cancellation(&record.id, &commit, &should_cancel).unwrap(),
+        CompactionCommitOutcome::AlreadyCommitted(entry),
+    );
+    assert_eq!(compaction_session_snapshot(&owner), after_commit);
+    assert_eq!(publications.load(Ordering::SeqCst), 3);
+    transcript_subscription.unsubscribe();
     production.shutdown();
     let _ = fs::remove_dir_all(root);
 }

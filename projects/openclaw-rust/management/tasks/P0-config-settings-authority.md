@@ -493,6 +493,54 @@ Decision `C3 DEFER / NON_BLOCKING`: the unchanged split-prefix cancellation
 fallback remains a Runner recovery follow-up; it must recheck cancellation at
 commit and prove no durable mutation. Fitter refusal alone does not prove it.
 
+2026-11-02 follow-up selection: C3 is now the distinct production contract
+`OCRM-COMPACTION-CANCEL-v1`, after preserving the earlier fit/custody batch.
+The prior review's deferred scope decision is retained, not rewritten as a
+failed old check. **FIX / IMPL_BUG** for this new batch: source tracing proves
+a cancelled prefix error can select a fitting fallback, and pre-lock checks
+cannot cover cancellation while waiting for canonical Session/DB ownership.
+The integrator will add guarded compatibility delegates and a distinct
+cancelled outcome before wiring the real worker token; exact raw rollback and
+actual shipping prefix controls are required. Base is H740, fixed U unchanged.
+The Session/DB shared API, locks and main composition remain integrator-owned;
+an independent xhigh oracle worker may edit only the two existing DB/Session
+contract test files. No local executable validation, global promotion or
+process-restart recovery claim is authorized by this source finding.
+
+The authored C3 implementation now passes the actual worker token through the
+existing Session/DB owners and checks it after each canonical mutex and before
+COMMIT. Split-prefix Ok and Err are both refused after cancellation; ordinary
+prefix failure still selects a fitting fallback. The two DB cases compare raw
+rows/all KV, admission, generation and three publication channels, then prove
+the identical candidate commits and retries idempotently. A Session case
+launches the public call while holding the real filesystem mutex and cancels
+before release; its handshake does not claim kernel waiter introspection.
+Two shipping app cases use the real planning, prefix-selection, fitter and
+Session commit boundaries, including a fitting fallback and positive commit.
+These five new tests are authored, not executed. Incoming H881's checked-root
+owner changes were preserved during serial reconciliation; C3 remains a
+separate candidate from the Plugin snapshot batch.
+
+C3 freezes on parent `41e845a3f246a1420796bbac0a323d335f6c7f36`, whose complete
+22-file Plugin candidate and commit/tree/parent identities were read back
+through GitHub. H881 Runtime `41409355083` and source `41409355085` passed;
+its log directly includes the two shipping channel handoff controls and the
+checked checkpoint-root recovery cases. Its runtime artifact `13124992828`
+has digest `sha256:74ecd5c5b8aea7c0801588d1c159105c17d78183465f7a88b672b1450e6d9492`.
+That parent evidence is not relabeled as C3 or Plugin execution. C3's frozen
+eight-path scope requires independent general and cancellation/oracle reviews
+and its own exact-H Actions. No local executable checks ran.
+
+The source Actions for Plugin H41 (`41411027949`) passed and generated
+`58f1fb359c71e203cb82a6fe43cb52336f4542e5`, tree
+`c6c28cb07c107dd340de117c6d0724e67156063e`. Its only two changed files are the
+part-0049 gzip and its compressed manifest digest: decompressed bytes and the
+canonical inventory hash are identical; the gzip OS header changes from 03 to
+ff under the Actions generator. Preserve that generated successor as C3's
+integration parent. H41 Runtime `41411028013` was cancelled while queued and
+is not positive evidence; the generated H58 requires its own exact-H checks.
+The frozen C3 production/test/workflow blobs are unchanged by this rebase.
+
 Reconciliation decision `C4 PRESERVE`: keep the earlier public Inference/Settings
 consumer controls, post-call cancellation priority, pre-503 checkpoint durability,
 checkpoint bytes unchanged after a later model-B turn, and absence of inherited
@@ -504,3 +552,15 @@ model binding. Independent reconciliation approved adoption of the remote
 production implementation, with these complementary controls retained. The
 reconciled snapshot requires fresh source review and exact-H Actions; fixed U
 and all global completion flags remain unchanged.
+
+C3 integration additionally preserves concurrent
+`b3a3fd398d3057b264ac673fae1b352aaecf1c92`: cancellation requests remain
+acknowledgments, and only the Runner finalizer publishes its frozen terminal.
+The combined workflow retains every terminal/compaction app selector and the
+three additional terminal/telemetry integration targets. Both changes still
+require the integrated candidate’s own Actions evidence.
+
+The final C3 parent also preserves normalized checkpoint-root CAS and the two
+separate storage/reopen contract targets from
+`3ce1cd31898d090f38ba3a8c5b895da5b2de2892`; no original-turn provider replay
+or accepted restart result is inferred from that incoming implementation.

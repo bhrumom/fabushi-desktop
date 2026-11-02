@@ -142,6 +142,52 @@ tail, busy custody that remains settleable, and injected post-insert CAS loss.
 Refusal leaves transcript, raw KV values, write generation and publications
 unchanged. These are bounded recovery contracts, not full compaction acceptance.
 
+### Cancellation at the canonical commit boundary (`OCRM-COMPACTION-CANCEL-v1`)
+
+This follow-up takes the previously deferred C3 gap as its own production
+batch, initially based on `74073f19037a6eaec5f34331b27dfe9fd8c0b334`, with U
+unchanged; the frozen integration parent is
+`3ce1cd31898d090f38ba3a8c5b895da5b2de2892`, preserving normalized checkpoint
+root continuation, the Runner terminal custody repair and the Actions inventory-encoding successor of
+`41e845a3f246a1420796bbac0a323d335f6c7f36`. A successful main summary followed by a cancelled/error split-prefix
+call can currently select a fitting fallback and still rotate the transcript.
+Cancellation while waiting for the Session filesystem or DB connection lock
+is also not covered by a check performed before those boundaries.
+
+- CC-CANCEL-01: keep the existing public noncancellable commit entry points as
+  compatibility delegates. Add `commit_agent_compaction_with_cancellation`
+  and `commit_compaction_with_cancellation`, each accepting the existing
+  nonblocking, nonpanicking `Fn() -> bool` cancellation reader. It must not
+  reenter a Session/DB owner. Session checks after taking its filesystem mutex;
+  DB checks after taking its connection mutex and immediately before COMMIT.
+  Return distinct `CompactionCommitOutcome::RejectedCancelled`. A final
+  cancellation rolls back all summary/metadata/admission changes and does not
+  bump write generation or publish listeners. Rollback error remains Err,
+  never a claimed clean refusal. The final cancellation read is this commit's
+  cancellation linearization point; later cancellation does not undo a commit
+  that already passed that point. Existing custody/CAS/tail/typed-replay checks
+  and release-before-publication ordering remain intact.
+- CC-CANCEL-02: the shipping worker passes its actual cancellation reader to
+  the canonical commit. Extract only its split-prefix summary selection into
+  a production-used function so the actual branch is testable: cancellation
+  before/after prefix evaluation yields no candidate; a noncancelled prefix
+  failure still yields the existing deterministic degraded fallback. Preserve
+  fitting, required suffix and ordinary provider-failure controls. Every
+  candidate, including fallback, goes through the guarded commit.
+- CC-CANCEL-03: Actions executes actual DB/Session negative controls for
+  cancellation before mutation, while waiting on an owner lock, and after
+  transaction mutations but before COMMIT. Compare raw transcript/KV,
+  admission, write generation and publications; retain a positive commit and
+  duplicate control. The shipping oracle must make the main summary succeed,
+  cancel in the real prefix-selection call and return Err, with a fallback
+  proven to fit. It must observe no candidate/commit and also exercise a
+  noncancelled prefix-error success. A fitter rejection is not this oracle.
+
+This adds no durable schema, scheduler or cancellation owner. Existing plain
+callers retain behavior; only the production compaction caller opts into its
+existing token. Rollback needs no user-data migration. Process-restart custody,
+arbitrary tool unknown outcomes and full compaction acceptance remain open.
+
 ## 5. Current state
 
 ### Planning recovery at H `49200bf2577c9d83aee1f02eef2c65150ca2c2d8`

@@ -185,7 +185,7 @@ jobs:
             --test inference_provider_session_contract \
             --test runner_production_bridge_contract \
             --test fabushi_model_identity_production_contract
-      - name: Test shipping model admission, channel handoff and Runner terminal custody
+      - name: Test shipping model, channel, compaction cancellation and Runner terminal contracts
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
         run: |
@@ -197,6 +197,8 @@ jobs:
               tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce \
               tests::channel_inbound_drain_idle_predecessor_preserves_successor_ownership \
               tests::channel_inbound_drain_nonempty_pause_keeps_existing_cleanup_and_queue_order \
+              tests::compaction_prefix_cancellation_refuses_fitting_fallback_at_shipping_boundary \
+              tests::compaction_prefix_failure_without_cancel_commits_through_session_owner \
               tests::routed_provider_cancel_request_waits_for_worker_terminal \
               tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation \
               tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts \
@@ -341,6 +343,9 @@ jobs:
               "channel_idle_handoff_contract": "OCRM-CHANNEL-IDLE-HANDOFF-v1",
               "shipping_channel_handoff_tests": ["tests::channel_inbound_drain_idle_predecessor_preserves_successor_ownership", "tests::channel_inbound_drain_nonempty_pause_keeps_existing_cleanup_and_queue_order"],
               "channel_idle_handoff_result": "passed",
+              "compaction_cancellation_contract": "OCRM-COMPACTION-CANCEL-v1",
+              "shipping_compaction_cancellation_tests": ["tests::compaction_prefix_cancellation_refuses_fitting_fallback_at_shipping_boundary", "tests::compaction_prefix_failure_without_cancel_commits_through_session_owner"],
+              "compaction_cancellation_result": "passed",
               "runner_cancel_terminal_contract": "OCRM-RUNNER-CANCEL-TERMINAL-v1",
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
@@ -358,7 +363,7 @@ jobs:
               "plugin_snapshot_contract": "OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1",
               "plugin_snapshot_rust_result": "passed",
               "committed_source_integrity": "passed",
-              "scope": "Shared Settings CAS/snapshot; provider-bound Fabushi turn identity, accepted-checkpoint retry, shipping lease refusal, and truthful Automation history settlement through existing owners. Checkpoint recovery checks durable metadata/root/blob state before owner recovery or publication and preserves refusal custody; normalized root continuation and separate-process storage reopening retain valid fixed-root checkpoints; original-turn provider load/claim/settle remains open. MCP lifecycle coverage binds close to waiter registration and exercises real Skills polling shutdown without claiming remote operation retraction or full permission lifecycle acceptance. Automation coverage includes bounded background/spend-guard execution and guarded cron SQL lifecycle. Cancellation request acknowledgment no longer publishes a task terminal; frozen finalization inputs bind structured, trace and terminal event outcomes. Automation deadline and unknown-outcome custody remain open. Channel coverage binds atomic idle release to the actual shipping drain control in one live manager lifetime; append ambiguity, deferred rearm and restart remain open. History refusal suppresses run observations but does not undo terminal cron rows or imply no backend ACK. Loopback protocol evidence is not real provider compatibility or process-restart execution. Plugin Skills coverage is committed cache eligibility and dispose/publication ordering; live revocation after failed persistence and real marketplace/MCP permission lifecycle remain open. Platform packaging and final acceptance remain pending.",
+              "scope": "Shared Settings CAS/snapshot; provider-bound Fabushi turn identity, accepted-checkpoint retry, shipping lease refusal, and truthful Automation history settlement through existing owners. Checkpoint recovery checks durable metadata/root/blob state before owner recovery or publication and preserves refusal custody; normalized root continuation and separate-process storage reopening retain valid fixed-root checkpoints; original-turn provider load/claim/settle remains open. MCP lifecycle coverage binds close to waiter registration and exercises real Skills polling shutdown without claiming remote operation retraction or full permission lifecycle acceptance. Automation coverage includes bounded background/spend-guard execution and guarded cron SQL lifecycle. Cancellation request acknowledgment no longer publishes a task terminal; frozen finalization inputs bind structured, trace and terminal event outcomes. Automation deadline and unknown-outcome custody remain open. Channel coverage binds atomic idle release to the actual shipping drain control in one live manager lifetime; append ambiguity, deferred rearm and restart remain open. History refusal suppresses run observations but does not undo terminal cron rows or imply no backend ACK. Loopback protocol evidence is not real provider compatibility or process-restart execution. Compaction cancellation coverage binds the actual worker token to post-lock and pre-COMMIT checks, raw rollback/no-publication controls, and split-prefix fallback selection; original-turn restart custody remains open. Plugin Skills coverage is committed cache eligibility and dispose/publication ordering; live revocation after failed persistence and real marketplace/MCP permission lifecycle remain open. Platform packaging and final acceptance remain pending.",
               "independent_acceptance": "pending",
           }
           Path(".evidence/ocrm-config.json").write_text(json.dumps(evidence, sort_keys=True, indent=2)+"\n")

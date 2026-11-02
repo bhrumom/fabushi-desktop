@@ -399,7 +399,7 @@ use mahayana_host_runtime::runner::turn_agent_composition::{
     create_turn_subagent_task_review,
 };
 use mahayana_host_runtime::runner::compaction_planning::{
-    CompactionSettings, build_compaction_details_with_quality, build_compaction_summary_prompt,
+    CompactionPlan, CompactionSettings, build_compaction_details_with_quality, build_compaction_summary_prompt,
     build_turn_prefix_summary_prompt, compaction_without_summary,
     fit_compaction_summary_with_suffix, format_compaction_details_suffix,
     prepare_compaction_plan,
@@ -7857,6 +7857,34 @@ fn build_cloud_agent_auto_review_hook(
     })
 }
 
+fn resolve_split_compaction_summary(
+    plan: &CompactionPlan,
+    summary: String,
+    summarize_prefix: impl FnOnce(&str) -> Result<String, ProviderSessionError>,
+    should_cancel: &dyn Fn() -> bool,
+) -> Option<(String, bool)> {
+    if should_cancel() {
+        return None;
+    }
+    if !plan.is_split_turn || plan.turn_prefix_entries.is_empty() {
+        return Some((summary, false));
+    }
+    let prefix = build_turn_prefix_summary_prompt(plan)
+        .ok()
+        .and_then(|prompt| summarize_prefix(&prompt).ok());
+    // A cancelled provider may report Err. That error must not select the
+    // ordinary degraded fallback and rotate the authoritative transcript.
+    if should_cancel() {
+        return None;
+    }
+    Some(match prefix {
+        Some(prefix) => (format!(
+            "{summary}\n\n---\n\n**Turn Context (split turn):**\n\n{prefix}"
+        ), false),
+        None => (compaction_without_summary(plan), true),
+    })
+}
+
 fn starts_new_local_tool_direction(
     request_source: Option<&str>,
     is_ack_redrive: bool,
@@ -11580,6 +11608,7 @@ fn start_routed_provider_task(
                                 Ok(Some(admission)) => {
                                     match build_compaction_summary_prompt(&plan) {
                                         Ok(summary_prompt) => {
+                                            let should_cancel = || worker_cancellation.is_cancelled();
                                             let commit_compaction = |summary: String,
                                                                       quality_degraded: bool| {
                                                 let commit = CompactionCommit {
@@ -11605,7 +11634,9 @@ fn start_routed_provider_task(
                                                         .clone(),
                                                 };
                                                 match worker_sessions
-                                                    .commit_agent_compaction(&agent_id, &commit)
+                                                    .commit_agent_compaction_with_cancellation(
+                                                        &agent_id, &commit, &should_cancel,
+                                                    )
                                                 {
                                                     Ok(CompactionCommitOutcome::Committed(_))
                                                     | Ok(CompactionCommitOutcome::AlreadyCommitted(_)) => {}
@@ -11615,40 +11646,34 @@ fn start_routed_provider_task(
                                                             agent_id, worker_stream_id
                                                         );
                                                     }
+                                                    Ok(CompactionCommitOutcome::RejectedCancelled) => {
+                                                        eprintln!(
+                                                            "mahayana-host compaction_rejected_cancelled agent={} run={}",
+                                                            agent_id, worker_stream_id
+                                                        );
+                                                    }
                                                     Err(error) => eprintln!(
                                                         "mahayana-host compaction_commit_failed agent={} run={} error={error}",
                                                         agent_id, worker_stream_id
                                                     ),
                                                 }
                                             };
-                                            let should_cancel = || worker_cancellation.is_cancelled();
                                             match runner.run_summarization_prompt(
                                                 "You are the Fabushi conversation-compaction summarizer. Return only the durable summary text.",
                                                 &summary_prompt,
                                                 &should_cancel,
                                             ) {
                                                 Ok(summary) if !should_cancel() => {
-                                                    let summary = if plan.is_split_turn
-                                                        && !plan.turn_prefix_entries.is_empty()
-                                                    {
-                                                        match build_turn_prefix_summary_prompt(&plan) {
-                                                            Ok(prefix_prompt) => match runner
-                                                                .run_summarization_prompt(
-                                                                    "You are the Fabushi split-turn prefix summarizer. Return only the concise prefix context.",
-                                                                    &prefix_prompt,
-                                                                    &should_cancel,
-                                                                ) {
-                                                                    Ok(prefix) if !should_cancel() => Some((format!(
-                                                                        "{summary}\n\n---\n\n**Turn Context (split turn):**\n\n{prefix}"
-                                                                    ), false)),
-                                                                    Ok(_) => None,
-                                                                    Err(_) => Some((compaction_without_summary(&plan), true)),
-                                                                },
-                                                            Err(_) => Some((compaction_without_summary(&plan), true)),
-                                                        }
-                                                    } else {
-                                                        Some((summary, false))
-                                                    };
+                                                    let summary = resolve_split_compaction_summary(
+                                                        &plan,
+                                                        summary,
+                                                        |prefix_prompt| runner.run_summarization_prompt(
+                                                            "You are the Fabushi split-turn prefix summarizer. Return only the concise prefix context.",
+                                                            prefix_prompt,
+                                                            &should_cancel,
+                                                        ),
+                                                        &should_cancel,
+                                                    );
                                                     if let Some((summary, mut quality_degraded)) = summary {
                                                         let details =
                                                             build_compaction_details_with_quality(
@@ -17002,6 +17027,160 @@ mod tests {
     use mahayana_host_runtime::extensions::session::box_handoff_service::PendingHandoff;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn shipping_split_compaction_fixture() -> (
+        std::path::PathBuf,
+        ProductionSessionWorkers,
+        String,
+        super::CompactionPlan,
+        super::CompactionCommit,
+    ) {
+        use serde_json::json;
+        let root = std::env::temp_dir().join(format!("fabushi-compaction-cancel-{}", uuid::Uuid::new_v4()));
+        let sessions = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        let entries = vec![
+            json!({"id":"old", "kind":"message", "role":"user", "content":"old request"}),
+            json!({"id":"old-answer", "kind":"message", "role":"assistant", "content":"old answer"}),
+            json!({"id":"current", "kind":"message", "role":"user", "content":"current request"}),
+            json!({"id":"prefix", "kind":"message", "role":"assistant", "content":"partial work"}),
+            json!({"id":"kept", "kind":"message", "role":"assistant", "content":"retained suffix"}),
+        ];
+        assert_eq!(sessions.append_agent_transcript_entries(&record.id, &entries).unwrap(), entries.len());
+        let plan = super::prepare_compaction_plan(
+            &entries,
+            1_900,
+            2_000,
+            super::CompactionSettings { enabled: true, reserve_tokens: 1_280, keep_recent_tokens: 1 },
+            None,
+        ).expect("real split-turn plan");
+        assert!(plan.is_split_turn);
+        assert_eq!(plan.first_kept_entry_id, "kept");
+        assert_eq!(plan.turn_prefix_entries.len(), 2);
+        assert!(!super::build_compaction_summary_prompt(&plan).unwrap().is_empty());
+        let admission = sessions.read_session_work_admission(&record.id).unwrap().unwrap();
+        let commit = super::CompactionCommit {
+            entry_id: "compaction:shipping-cancel".into(),
+            expected_transcript_tail_id: plan.observed_transcript_tail_id.clone(),
+            first_kept_entry_id: Some(plan.first_kept_entry_id.clone()),
+            summary: String::new(),
+            tokens_before: plan.tokens_before,
+            details: None,
+            source_turn_id: "shipping-cancel-turn".into(),
+            expected_lifecycle_revision: admission.lifecycle_revision,
+        };
+        (root, sessions, record.id, plan, commit)
+    }
+
+    #[test]
+    fn compaction_prefix_cancellation_refuses_fitting_fallback_at_shipping_boundary() {
+        use mahayana_host_runtime::storage::store_db::get_sand_agent_db_write_generation;
+        let (root, sessions, agent_id, plan, mut commit) = shipping_split_compaction_fixture();
+        let owner = sessions.open_agent_db_owner(&agent_id).unwrap();
+        let snapshot = || (
+            sessions.read_agent_transcript_entries(&agent_id).unwrap(),
+            owner.read_metadata().unwrap(),
+            owner.read_session_work_admission().unwrap(),
+            get_sand_agent_db_write_generation(owner.db_path()),
+        );
+        let before = snapshot();
+        let details = super::build_compaction_details_with_quality(&plan, true);
+        let suffix = super::format_compaction_details_suffix(details.as_ref());
+        let fallback = super::fit_compaction_summary_with_suffix(
+            &super::compaction_without_summary(&plan), plan.summary_token_budget, &suffix,
+        ).expect("fallback must fit; a fitter refusal cannot prove cancellation");
+
+        for prefix_returns_ok in [false, true] {
+            let cancellation = super::RoutedProviderCancellation::default();
+            let mut prefix_calls = 0;
+            let candidate = super::resolve_split_compaction_summary(
+                &plan,
+                "Successful main summary".into(),
+                |prompt| {
+                    prefix_calls += 1;
+                    assert!(prompt.contains("current request"));
+                    assert!(cancellation.cancel("cancel while summarizing split prefix"));
+                    if prefix_returns_ok {
+                        Ok("prefix completed after cancellation".into())
+                    } else {
+                        Err(super::ProviderSessionError::Transport("prefix cancelled".into()))
+                    }
+                },
+                &|| cancellation.is_cancelled(),
+            );
+            assert_eq!(prefix_calls, 1);
+            assert!(candidate.is_none(), "cancelled prefix result cannot become a fallback candidate");
+            assert_eq!(snapshot(), before);
+        }
+
+        let cancellation = super::RoutedProviderCancellation::default();
+        assert!(cancellation.cancel("cancel before prefix selection"));
+        assert!(super::resolve_split_compaction_summary(
+            &plan, "Successful main summary".into(),
+            |_| panic!("already cancelled work must not invoke the prefix provider"),
+            &|| cancellation.is_cancelled(),
+        ).is_none());
+
+        // A separately completed candidate can also be cancelled after fitting
+        // and before the actual canonical Session mutation boundary.
+        commit.summary = fallback;
+        commit.details = details;
+        assert_eq!(sessions.commit_agent_compaction_with_cancellation(
+            &agent_id, &commit, &|| cancellation.is_cancelled(),
+        ).unwrap(), super::CompactionCommitOutcome::RejectedCancelled);
+        assert_eq!(snapshot(), before);
+        assert!(sessions.read_agent_typed_compacted_transcript_entries(&agent_id).unwrap().is_empty());
+        sessions.shutdown();
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn compaction_prefix_failure_without_cancel_commits_through_session_owner() {
+        use mahayana_host_runtime::storage::store_db::get_sand_agent_db_write_generation;
+        let (root, sessions, agent_id, plan, mut commit) = shipping_split_compaction_fixture();
+        let owner = sessions.open_agent_db_owner(&agent_id).unwrap();
+        let rows_before = sessions.read_agent_transcript_entries(&agent_id).unwrap();
+        let generation_before = get_sand_agent_db_write_generation(owner.db_path());
+        let cancellation = super::RoutedProviderCancellation::default();
+        let complete = super::resolve_split_compaction_summary(
+            &plan, "Successful main summary".into(), |_| Ok("Successful prefix context".into()),
+            &|| cancellation.is_cancelled(),
+        ).expect("noncancelled successful prefix");
+        assert!(!complete.1);
+        assert!(complete.0.contains("Successful main summary"));
+        assert!(complete.0.contains("Successful prefix context"));
+
+        let (summary, quality_degraded) = super::resolve_split_compaction_summary(
+            &plan, "Successful main summary".into(),
+            |_| Err(super::ProviderSessionError::Transport("ordinary prefix failure".into())),
+            &|| cancellation.is_cancelled(),
+        ).expect("ordinary provider failure keeps the existing fallback");
+        assert!(quality_degraded);
+        assert_eq!(summary, super::compaction_without_summary(&plan));
+        commit.details = super::build_compaction_details_with_quality(&plan, quality_degraded);
+        let suffix = super::format_compaction_details_suffix(commit.details.as_ref());
+        commit.summary = super::fit_compaction_summary_with_suffix(
+            &summary, plan.summary_token_budget, &suffix,
+        ).expect("fallback fits the same real plan");
+        let super::CompactionCommitOutcome::Committed(entry) = sessions
+            .commit_agent_compaction_with_cancellation(&agent_id, &commit, &|| cancellation.is_cancelled())
+            .unwrap() else { panic!("noncancelled fallback must reach the canonical commit"); };
+        assert_eq!(entry["details"]["qualityDegraded"], true);
+        let rows_after = sessions.read_agent_transcript_entries(&agent_id).unwrap();
+        assert_eq!(&rows_after[..rows_before.len()], rows_before.as_slice());
+        assert_eq!(rows_after.len(), rows_before.len() + 1);
+        assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation_before + 1);
+        let next_admission = owner.read_session_work_admission().unwrap().unwrap();
+        assert_ne!(next_admission.lifecycle_revision, commit.expected_lifecycle_revision);
+        assert_eq!(owner.read_metadata().unwrap()["lifecycleRevision"], next_admission.lifecycle_revision);
+        assert_eq!(sessions.commit_agent_compaction_with_cancellation(
+            &agent_id, &commit, &|| cancellation.is_cancelled(),
+        ).unwrap(), super::CompactionCommitOutcome::AlreadyCommitted(entry));
+        assert_eq!(sessions.read_agent_transcript_entries(&agent_id).unwrap(), rows_after);
+        assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation_before + 1);
+        sessions.shutdown();
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn model_admission_refusals_release_the_accepted_lease_before_permission_effects() {

@@ -3684,10 +3684,24 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         commit: &CompactionCommit,
     ) -> Result<CompactionCommitOutcome, String> {
+        self.commit_agent_compaction_with_cancellation(agent_id, commit, &|| false)
+    }
+
+    /// Cancellation is checked only after acquiring each canonical owner lock.
+    /// The reader must not block, panic, or reenter Session/DB methods.
+    pub fn commit_agent_compaction_with_cancellation(
+        &self,
+        agent_id: &str,
+        commit: &CompactionCommit,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<CompactionCommitOutcome, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
+            if should_cancel() {
+                return Ok(CompactionCommitOutcome::RejectedCancelled);
+            }
             self.assert_agent_transcript_write_admission_locked(agent_id)?;
             self.open_agent_db_owner_locked(agent_id)?
-                .commit_compaction(commit)
+                .commit_compaction_with_cancellation(commit, should_cancel)
                 .map_err(|error| error.to_string())
         })
     }

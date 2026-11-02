@@ -2444,6 +2444,69 @@ fn compaction_uses_admission_and_preserves_unknown_fields_in_both_records() {
     let _ = fs::remove_dir_all(root);
 }
 
+fn assert_compaction_cancellation_preserves_state(label: &str, cancel_at_read: usize) {
+    let (root, owner, admission, commit) = compaction_fixture(label);
+    let before = compaction_durable_snapshot(&owner);
+    let metadata_before = owner.read_metadata().unwrap();
+    let publications = CompactionPublications::new(&owner);
+    let reads = AtomicUsize::new(0);
+    // Read zero is after the connection lock and before BEGIN. Read one is
+    // after the summary insert and both raw CAS writes, immediately before
+    // COMMIT. The reader never blocks or reenters an owner under that lock.
+    let should_cancel = || reads.fetch_add(1, Ordering::SeqCst) >= cancel_at_read;
+    assert_eq!(
+        owner.commit_compaction_with_cancellation(&commit, &should_cancel).unwrap(),
+        CompactionCommitOutcome::RejectedCancelled,
+    );
+    assert_eq!(reads.load(Ordering::SeqCst), cancel_at_read + 1);
+    assert_eq!(compaction_durable_snapshot(&owner), before);
+    assert_eq!(owner.read_session_work_admission().unwrap(), Some(admission.clone()));
+    assert!(owner.get_transcript_entry_by_id(&commit.entry_id).unwrap().is_none());
+    assert_eq!(publications.counts(), [0, 0, 0]);
+
+    // The identical candidate must succeed once cancellation is absent; a
+    // stale plan, invalid replay or failed CAS cannot satisfy this control.
+    let CompactionCommitOutcome::Committed(entry) = owner
+        .commit_compaction_with_cancellation(&commit, &|| false).unwrap() else {
+        panic!("the uncancelled candidate must commit after the clean refusal");
+    };
+    let next_revision = entry["lifecycleRevision"].as_str().unwrap();
+    assert_ne!(next_revision, admission.lifecycle_revision);
+    assert_eq!(entry["sourceLifecycleRevision"], admission.lifecycle_revision);
+    let mut expected_admission = admission;
+    expected_admission.lifecycle_revision = next_revision.to_string();
+    assert_eq!(owner.read_session_work_admission().unwrap(), Some(expected_admission));
+    let mut expected_metadata = metadata_before;
+    expected_metadata["lifecycleRevision"] = serde_json::json!(next_revision);
+    assert_eq!(owner.read_metadata().unwrap(), expected_metadata);
+    let after_commit = compaction_durable_snapshot(&owner);
+    assert_eq!(&after_commit.0[..before.0.len()], before.0.as_slice());
+    assert_eq!(after_commit.0.len(), before.0.len() + 1);
+    assert_eq!(after_commit.0.last().unwrap().1, commit.entry_id);
+    assert_ne!(after_commit.1, before.1);
+    assert_eq!(after_commit.2, before.2 + 1);
+    assert_eq!(publications.counts(), [1, 1, 1]);
+
+    assert_eq!(
+        owner.commit_compaction_with_cancellation(&commit, &|| false).unwrap(),
+        CompactionCommitOutcome::AlreadyCommitted(entry),
+    );
+    assert_eq!(compaction_durable_snapshot(&owner), after_commit);
+    assert_eq!(publications.counts(), [1, 1, 1]);
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn compaction_cancellation_before_mutation_preserves_raw_state_and_publications() {
+    assert_compaction_cancellation_preserves_state("cancel-before-mutation", 0);
+}
+
+#[test]
+fn compaction_cancellation_before_commit_rolls_back_summary_metadata_and_admission() {
+    assert_compaction_cancellation_preserves_state("cancel-before-commit", 1);
+}
+
 #[test]
 fn compaction_admission_listener_can_read_the_committed_generation_from_same_owner() {
     let (root, owner, admission, commit) = compaction_fixture("listener-reentry");

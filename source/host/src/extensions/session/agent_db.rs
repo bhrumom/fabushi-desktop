@@ -263,6 +263,7 @@ pub enum CompactionCommitOutcome {
     Committed(serde_json::Value),
     AlreadyCommitted(serde_json::Value),
     RejectedStale,
+    RejectedCancelled,
 }
 
 pub type AgentDbListener = Arc<dyn Fn() + Send + Sync + 'static>;
@@ -3845,6 +3846,16 @@ impl SandAgentDb {
         &self,
         commit: &CompactionCommit,
     ) -> Result<CompactionCommitOutcome, AgentDbProjectionError> {
+        self.commit_compaction_with_cancellation(commit, &|| false)
+    }
+
+    /// The cancellation reader must not block, panic, or reenter a DB owner.
+    /// Its final read linearizes cancellation against this transaction commit.
+    pub fn commit_compaction_with_cancellation(
+        &self,
+        commit: &CompactionCommit,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<CompactionCommitOutcome, AgentDbProjectionError> {
         let entry_id = commit.entry_id.trim();
         let source_turn_id = commit.source_turn_id.trim();
         let expected_revision = commit.expected_lifecycle_revision.trim();
@@ -3887,6 +3898,9 @@ impl SandAgentDb {
             ));
         };
 
+        if should_cancel() {
+            return Ok(CompactionCommitOutcome::RejectedCancelled);
+        }
         db.execute_batch("BEGIN IMMEDIATE")?;
         let mut admission_updated = false;
         let result = (|| -> Result<CompactionCommitOutcome, AgentDbProjectionError> {
@@ -4103,6 +4117,10 @@ impl SandAgentDb {
 
         match result {
             Ok(outcome @ CompactionCommitOutcome::Committed(_)) => {
+                if should_cancel() {
+                    db.execute_batch("ROLLBACK")?;
+                    return Ok(CompactionCommitOutcome::RejectedCancelled);
+                }
                 if let Err(error) = db.execute_batch("COMMIT") {
                     let _ = db.execute_batch("ROLLBACK");
                     return Err(error.into());
