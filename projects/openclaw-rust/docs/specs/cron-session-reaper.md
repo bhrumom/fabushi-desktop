@@ -213,6 +213,65 @@ schedule/event and execution-error/interruption branches through their existing
 owners. Existing valid assertions remain. Source review and these checks do not
 establish real backend delivery, crash recovery or full cron equivalence.
 
+### Strict history admission — AUTO-HISTORY-ADMISSION-v1
+
+Decision **AHA-01 — FIX / IMPL_BUG**, before implementation on
+`1501be999f195e7204da8b095a0ab64d5bc3a5aa`. The existing file-store settlement
+reader validates the complete history, but `FileAutomationStore::begin_run`
+still uses the fail-soft display reader. A new run can therefore overwrite
+malformed, mixed or duplicate-ID history and enter execution after discarding
+the prior evidence. The current run path also requires a returned history ID
+only for background runs; a previously selected manual definition removed
+before `begin_run` can reach its executor without a history record.
+
+- AHA-01: reuse one private strict mutation reader in the existing
+  `FileAutomationStore` for admission and both settlement projections. Validate
+  the entire JSON image, every row with the existing parser and all unique
+  run IDs before applying the existing sorting/history window. Invalid JSON,
+  non-array roots, malformed/mixed rows, duplicate IDs, invalid UTF-8 and
+  non-NotFound I/O must refuse before any history write. Do not salvage a subset
+  or let a malformed row outside the display window escape validation.
+- AHA-02: missing history remains a valid first-run input; missing definition
+  remains `None` without creating a directory. Valid legacy normalization,
+  current duplicate-return behavior, ordering and the current history-window
+  policy remain unchanged. Ordinary listing remains a fail-soft display API.
+  This does not establish durable original-run dedupe or retained-run pruning.
+  Decision **AHA-EMPTY-ID-01 — FIX**: an explicitly empty new run ID must return
+  `InvalidInput` before writing history, because the existing row parser rejects
+  that very row on its next read. Add a raw-byte-preservation control; retain
+  all other existing whitespace/legacy ID semantics without new normalization.
+- AHA-03: every manual, schedule and event run must obtain a nonempty actual
+  history identity before prompt execution or cron registration. Missing
+  identity is a pre-dispatch error; preserve the existing background error
+  contract. Refusal must publish no terminal run observation, enter no executor
+  and release current in-flight ownership so a later independently admitted
+  run can proceed after the storage input is repaired.
+- AHA-04: keep existing Session filesystem/deletion admission, Runtime mutation
+  ownership, Spend Guard, notice/lastRunAt bookkeeping order and ACK-01–07
+  terminal settlement behavior. Earlier metadata bookkeeping is not rolled
+  back by a later history refusal, and this is not a cross-file transaction.
+  Do not add a second parser, store, scheduler, retry or permission authority.
+
+Actions oracles use the actual file store and existing
+`AutomationRuntime` → admitted Session adapter → run path. At the store,
+retain raw malformed bytes and configuration while refusing admission, include
+an invalid tail beyond the current window, and retain missing/valid/legacy/
+duplicate positive controls. In the production path cover manual, schedule
+and event inputs with malformed and ambiguous histories, zero executor calls,
+zero new cron rows/observations and released occupancy; repair the input and
+prove one later independent run reaches execution and the existing settlement.
+Keep existing missing-background-ID and all ACK failure/next-run assertions;
+add the manual missing-ID counterpart through the real run path/file store.
+Use the existing bounded child/fixture ownership rather than new global state.
+
+Acceptance requires independent source reviews and exact-H Actions in the
+already selected store, run-path and production-wiring targets. This is a
+target-owner corruption/admission correction, not an additional fixed-U
+whole-file-reading claim. Durable pre-dispatch execution receipts, aliases,
+sticky unknown effects, backend ACK suppression, original-turn recovery,
+real service compatibility and full OCRM acceptance remain open. No stored
+format, dependency, global acceptance flag or fixed upstream U changes.
+
 ### Automation oracle fixture custody — AUTO-FIXTURE-CUSTODY-v1
 
 Decision `AUTO-FIXTURE-CUSTODY-01 — FIX / TEST_FLAW`, before implementation.

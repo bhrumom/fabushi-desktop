@@ -40,7 +40,47 @@ impl FileAutomationStore{
  pub fn record_run(&self,id:&str,at:f64)->Result<Option<AutomationRecord>,AutomationStoreError>{self.record_run_with(id,at,true)}
  pub fn record_run_definition(&self,id:&str,at:f64)->Result<Option<AutomationRecord>,AutomationStoreError>{self.record_run_with(id,at,false)}
  fn record_run_with(&self,id:&str,at:f64,derive:bool)->Result<Option<AutomationRecord>,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(None);}let Some(mut c)=self.read_config(id)else{return Ok(None);};c.last_run_at=Some(at);self.write_config(id,&c)?;Ok(Some(self.to_record(id,c,derive)))}
- pub fn begin_run(&self,id:&str,trigger:&str,at:f64,event:Option<&str>,run_id:Option<&str>,coalesced:Option<&[String]>)->Result<Option<AutomationRun>,AutomationStoreError>{if self.read_config(id).is_none(){return Ok(None);}let mut runs=self.read_runs(id);let run_id=run_id.map(ToOwned::to_owned).unwrap_or_else(create_automation_run_id);if let Some(found)=runs.iter().find(|r|r.id==run_id){return Ok(Some(found.clone()));}let run=AutomationRun{id:run_id,trigger:match trigger{"manual"|"event"=>trigger.to_string(),_=>"schedule".into()},started_at:at,finished_at:None,status:"running".into(),detail:None,event:clamp_run_detail(event),coalesced_run_ids:clamp_coalesced_run_ids(coalesced)};runs.insert(0,run.clone());runs.truncate(AUTOMATION_MAX_RUN_HISTORY);self.write_runs(id,&runs)?;Ok(Some(run))}
+ pub fn begin_run(
+     &self,
+     id: &str,
+     trigger: &str,
+     at: f64,
+     event: Option<&str>,
+     run_id: Option<&str>,
+     coalesced: Option<&[String]>,
+ ) -> Result<Option<AutomationRun>, AutomationStoreError> {
+     if self.read_config(id).is_none() {
+         return Ok(None);
+     }
+     if run_id.is_some_and(str::is_empty) {
+         return Err(io::Error::new(
+             io::ErrorKind::InvalidInput,
+             "automation run ID must not be empty",
+         ).into());
+     }
+     let mut runs = self.read_runs_for_mutation(id)?;
+     let run_id = run_id.map(ToOwned::to_owned).unwrap_or_else(create_automation_run_id);
+     if let Some(found) = runs.iter().find(|run| run.id == run_id) {
+         return Ok(Some(found.clone()));
+     }
+     let run = AutomationRun {
+         id: run_id,
+         trigger: match trigger {
+             "manual" | "event" => trigger.to_string(),
+             _ => "schedule".into(),
+         },
+         started_at: at,
+         finished_at: None,
+         status: "running".into(),
+         detail: None,
+         event: clamp_run_detail(event),
+         coalesced_run_ids: clamp_coalesced_run_ids(coalesced),
+     };
+     runs.insert(0, run.clone());
+     runs.truncate(AUTOMATION_MAX_RUN_HISTORY);
+     self.write_runs(id, &runs)?;
+     Ok(Some(run))
+ }
  pub fn finish_run(&self,id:&str,run_id:&str,status:&str,at:f64,detail:Option<&str>)->Result<Option<AutomationRecord>,AutomationStoreError>{self.finish_run_with(id,run_id,status,at,detail,true)}
  pub fn finish_run_definition(&self,id:&str,run_id:&str,status:&str,at:f64,detail:Option<&str>)->Result<Option<AutomationRecord>,AutomationStoreError>{self.finish_run_with(id,run_id,status,at,detail,false)}
  fn finish_run_with(
@@ -58,7 +98,7 @@ impl FileAutomationStore{
      let Some(config) = self.read_config(id) else {
          return Ok(None);
      };
-     let mut runs = self.read_runs_for_settlement(id)?;
+     let mut runs = self.read_runs_for_mutation(id)?;
      let Some(run) = runs.iter_mut().find(|run| run.id == run_id) else {
          return Ok(None);
      };
@@ -69,9 +109,9 @@ impl FileAutomationStore{
      Ok(Some(self.to_record(id, config, derive)))
  }
 
- // Projection reads may omit malformed rows, but settlement must never
- // acknowledge or rewrite a salvaged subset of the persisted history.
- fn read_runs_for_settlement(&self, id: &str) -> Result<Vec<AutomationRun>, AutomationStoreError> {
+ // Projection reads may omit malformed rows, but admission and settlement
+ // must never acknowledge or rewrite a salvaged subset of persisted history.
+ fn read_runs_for_mutation(&self, id: &str) -> Result<Vec<AutomationRun>, AutomationStoreError> {
      let raw = match fs::read_to_string(self.runs_path(id)) {
          Ok(raw) => raw,
          Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),

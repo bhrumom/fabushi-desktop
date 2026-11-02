@@ -137,6 +137,67 @@ fn background_run_without_durable_history_identity_never_reaches_executor() {
 }
 
 #[test]
+fn manual_run_without_history_identity_refuses_before_execution_and_releases_admission() {
+    let root = root("manual-missing-run-identity");
+    let store = FileAutomationStore::new(root.join("automations"));
+    let automation = create_automation(&store);
+    let config = store.read_config(&automation.id).expect("original definition");
+    assert!(store.remove(&automation.id).expect("remove the selected definition"));
+    let path = AutomationRunPath::default();
+    let observed = Arc::new(Mutex::new(Vec::<AutomationRunObservation>::new()));
+    let sink = Arc::clone(&observed);
+    path.set_run_reporter(Some(Arc::new(move |report| {
+        sink.lock().unwrap().push(report.clone());
+    })));
+    let mut executed = 0;
+    let error = path.fire_automation_with(
+        &store,
+        FireAutomationArgs::manual("agent-1", automation.clone(), 2_500.0),
+        |_| {
+            executed += 1;
+            Ok(AutomationExecutionResult::Completed)
+        },
+    ).expect_err("manual execution also requires an actual persisted history identity");
+    assert_eq!(error, "manual automation run did not produce a durable run identity");
+    assert_eq!(executed, 0);
+    assert!(observed.lock().unwrap().is_empty());
+    assert!(!path.is_in_flight("agent-1", &automation.id));
+    assert!(!store.get_location().join(&automation.id).exists());
+
+    // Restore the actual definition, then admit a new run through the same
+    // production path. Refusal must not retain the process-local occupancy.
+    store.write_config(&automation.id, &config).expect("repair the missing definition");
+    let outcome = path.fire_automation_with(
+        &store,
+        FireAutomationArgs::manual("agent-1", automation.clone(), 3_000.0),
+        |_| {
+            executed += 1;
+            let runs = store.read_runs(&automation.id);
+            assert_eq!(runs.len(), 1);
+            assert!(!runs[0].id.is_empty());
+            assert_eq!(runs[0].status, "running");
+            assert!(runs[0].finished_at.is_none());
+            Ok(AutomationExecutionResult::Completed)
+        },
+    ).expect("independent run after repair");
+    assert_eq!(outcome, Some(FireAutomationOutcome::Ok));
+    assert_eq!(executed, 1);
+    let reports = observed.lock().unwrap();
+    assert_eq!(reports.len(), 1);
+    assert_eq!(reports[0].outcome, FireAutomationOutcome::Ok);
+    let run_id = reports[0].automation_run_id.as_deref().expect("actual admitted ID");
+    assert!(!run_id.is_empty());
+    let runs = store.read_runs(&automation.id);
+    assert_eq!(runs.len(), 1);
+    assert_eq!(runs[0].id, run_id);
+    assert_eq!(runs[0].status, "ok");
+    assert_eq!(runs[0].finished_at, Some(3_000.0));
+    assert!(!path.is_in_flight("agent-1", &automation.id));
+    drop(reports);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn failed_and_interrupted_runs_settle_as_error_and_manual_failures_are_counted() {
     let root = root("terminal");
     let store = FileAutomationStore::new(root.join("automations"));

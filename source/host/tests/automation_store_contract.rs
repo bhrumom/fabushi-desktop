@@ -53,6 +53,184 @@ fn history_store(label: &str) -> (std::path::PathBuf, FileAutomationStore, Strin
     (root, store, automation.id)
 }
 
+#[test]
+fn begin_rejects_malformed_and_ambiguous_history_without_salvaging_rows() {
+    let cases: &[(&str, &[u8], bool)] = &[
+        ("invalid-json", b"[", true),
+        ("non-array", br#"{"id":"run","startedAt":1000}"#, true),
+        ("invalid-row", br#"[42]"#, false),
+        ("mixed-row", br#"[{"id":"run","startedAt":1000,"status":"running"},{"id":"bad","startedAt":"invalid"}]"#, false),
+        ("duplicate-id", br#"[{"id":"run","startedAt":1000},{"id":"run","startedAt":2000}]"#, false),
+        ("invalid-utf8", b"[\xff]", false),
+    ];
+    for &(label, raw, json_error) in cases {
+        let (root, store, id) = history_store(&format!("begin-{label}"));
+        let config = fs::read(store.config_path(&id)).unwrap();
+        fs::write(store.runs_path(&id), raw).expect("persist invalid admission input");
+        if label == "mixed-row" {
+            assert_eq!(store.read_runs(&id).len(), 1, "display still projects the valid subset");
+        }
+        // Both a new run and the apparently matching existing run must inspect
+        // the complete input before any mutation or duplicate return.
+        for requested_id in ["new-run", "run"] {
+            match store.begin_run(&id, "manual", 3_000.0, None, Some(requested_id), None)
+                .expect_err(label)
+            {
+                AutomationStoreError::Json(_) => assert!(json_error, "{label}"),
+                AutomationStoreError::Io(error) => {
+                    assert!(!json_error, "{label}");
+                    assert_eq!(error.kind(), io::ErrorKind::InvalidData, "{label}");
+                }
+            }
+            assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw, "{label}");
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config, "{label}");
+        }
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn begin_validates_invalid_and_duplicate_tails_beyond_the_display_window() {
+    for duplicate in [false, true] {
+        let (root, store, id) = history_store("begin-invalid-tail");
+        let mut rows = (0..AUTOMATION_MAX_RUN_HISTORY + 2).map(|index| {
+            json!({"id":format!("visible-{index}"),"startedAt":1000 + index,"status":"ok"})
+        }).collect::<Vec<_>>();
+        if duplicate {
+            rows.push(json!({"id":"old-duplicate","startedAt":1}));
+            rows.push(json!({"id":"old-duplicate","startedAt":2}));
+        } else {
+            rows.push(json!({"id":"invalid-tail","startedAt":"not a timestamp"}));
+        }
+        let raw = serde_json::to_vec_pretty(&rows).unwrap();
+        let config = fs::read(store.config_path(&id)).unwrap();
+        fs::write(store.runs_path(&id), &raw).unwrap();
+        let display = store.read_runs(&id);
+        assert_eq!(display.len(), AUTOMATION_MAX_RUN_HISTORY);
+        assert!(display.iter().all(|run| run.id.starts_with("visible-")));
+        let error = store.begin_run(&id, "schedule", 5_000.0, None, Some("new-run"), None)
+            .expect_err("the display window cannot authorize destructive admission");
+        assert!(matches!(error, AutomationStoreError::Io(ref error)
+            if error.kind() == io::ErrorKind::InvalidData));
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn begin_preserves_missing_history_and_duplicate_no_write_controls() {
+    let (root, store, id) = history_store("begin-first-run");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    assert!(store.begin_run("missing-definition", "manual", 2_000.0, None, Some(""), None)
+        .unwrap().is_none(), "missing configuration retains its established precedence");
+    assert!(!store.get_location().join("missing-definition").exists());
+    assert!(!store.runs_path(&id).exists());
+    let first = store.begin_run(&id, "manual", 2_000.0, None, None, None)
+        .unwrap().expect("missing history permits the first run");
+    assert!(!first.id.is_empty());
+    assert_eq!(first.status, "running");
+    assert_eq!(first.finished_at, None);
+    let raw = fs::read(store.runs_path(&id)).unwrap();
+    let duplicate = store.begin_run(&id, "event", 9_000.0, Some("must not replace"), Some(&first.id), None)
+        .unwrap().expect("existing run remains the duplicate result");
+    assert_eq!(duplicate, first);
+    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn begin_refuses_empty_explicit_id_before_creating_or_rewriting_history() {
+    let (root, store, id) = history_store("begin-empty-id");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let runs_path = store.runs_path(&id);
+    for raw in [None, Some(&b"[ ]\n"[..])] {
+        if let Some(raw) = raw {
+            fs::write(&runs_path, raw).unwrap();
+        }
+        let error = store.begin_run(&id, "manual", 2_000.0, None, Some(""), None)
+            .expect_err("an empty ID must not poison the next history read");
+        assert!(matches!(error, AutomationStoreError::Io(ref error)
+            if error.kind() == io::ErrorKind::InvalidInput));
+        if let Some(raw) = raw {
+            assert_eq!(fs::read(&runs_path).unwrap(), raw);
+        } else {
+            assert!(!runs_path.exists());
+        }
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    }
+    // The existing parser accepts this identity literally. Empty rejection
+    // must not introduce trimming or a new legacy normalization contract.
+    let whitespace = br#"[ { "id": "  ", "startedAt": 1000, "status": "running" } ]"#;
+    fs::write(&runs_path, whitespace).unwrap();
+    let existing = store.begin_run(&id, "manual", 2_000.0, None, Some("  "), None)
+        .unwrap().expect("literal legacy identity");
+    assert_eq!(existing.id, "  ");
+    assert_eq!(fs::read(&runs_path).unwrap(), whitespace);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn begin_preserves_legacy_normalization_and_existing_history_window() {
+    let (root, store, id) = history_store("begin-legacy");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let mut rows = vec![json!({
+        "id":"legacy", "startedAt":3_000, "finishedAt":"legacy", "event":" event ",
+        "trigger":"legacy", "status":"legacy", "coalescedRunIds":["", "coalesced", 7]
+    })];
+    rows.extend((0..AUTOMATION_MAX_RUN_HISTORY + 3).map(|index| {
+        json!({"id":format!("older-{index}"),"startedAt":index + 1})
+    }));
+    fs::write(store.runs_path(&id), serde_json::to_vec(&rows).unwrap()).unwrap();
+    let admitted = store.begin_run(&id, "event", 4_000.0, Some(" event "), Some("new-run"), None)
+        .unwrap().expect("admit against valid legacy history");
+    let persisted = store.read_runs(&id);
+    assert_eq!(persisted.len(), AUTOMATION_MAX_RUN_HISTORY);
+    assert_eq!(persisted[0], admitted);
+    assert_eq!(admitted.trigger, "event");
+    assert_eq!(admitted.event.as_deref(), Some("event"));
+    let legacy = &persisted[1];
+    assert_eq!(legacy.id, "legacy");
+    assert_eq!(legacy.trigger, "schedule");
+    assert_eq!(legacy.status, "ok");
+    assert_eq!(legacy.finished_at, None);
+    assert_eq!(legacy.event.as_deref(), Some("event"));
+    assert_eq!(legacy.coalesced_run_ids, Some(vec!["coalesced".to_string()]));
+    assert!(persisted.windows(2).all(|pair| pair[0].started_at >= pair[1].started_at));
+    assert!(!persisted.iter().any(|run| run.id == "older-0"));
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn begin_propagates_read_and_prepublication_write_errors_without_replacing_history() {
+    for read_failure in [true, false] {
+        let (root, store, id) = history_store("begin-io-refusal");
+        let config = fs::read(store.config_path(&id)).unwrap();
+        let runs_path = store.runs_path(&id);
+        let raw = br#"[ { "id": "prior", "startedAt": 1000, "status": "ok" } ]"#;
+        let blocked = if read_failure {
+            runs_path.clone()
+        } else {
+            fs::write(&runs_path, raw).unwrap();
+            std::path::PathBuf::from(format!("{}.{}.tmp", runs_path.display(), std::process::id()))
+        };
+        fs::create_dir(&blocked).expect("block the actual read or atomic writer");
+        fs::write(blocked.join("sentinel"), b"preserve owned directory").unwrap();
+        let error = store.begin_run(&id, "manual", 3_000.0, None, Some("new-run"), None)
+            .expect_err("filesystem refusal must not become an empty history");
+        assert!(matches!(error, AutomationStoreError::Io(_)));
+        assert!(blocked.is_dir());
+        assert_eq!(fs::read(blocked.join("sentinel")).unwrap(), b"preserve owned directory");
+        if !read_failure {
+            assert_eq!(fs::read(&runs_path).unwrap(), raw);
+        }
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
 fn finish_history(
     store: &FileAutomationStore,
     automation_id: &str,

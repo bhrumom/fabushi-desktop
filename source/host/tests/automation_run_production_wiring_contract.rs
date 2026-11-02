@@ -382,6 +382,106 @@ fn clear_fences() -> AutomationRunFenceSnapshot {
     }
 }
 
+fn history_admission_failure_then_independent_run(
+    trigger: AutomationRunTrigger,
+    fault: HistoryFault,
+) {
+    let fixture = ShippingAutomation::new(&format!("history-admission/{trigger:?}/{fault:?}"));
+    let runs_path = fixture.store.runs_path(&fixture.automation_id);
+    let prior_history = br#"[ { "id": "prior-terminal", "trigger": "manual", "startedAt": 1000, "finishedAt": 1100, "status": "ok", "detail": "preserve historical result" } ]"#;
+    fs::write(&runs_path, prior_history).expect("seed the original actual history");
+    let prior_runs = fixture.store.read_runs(&fixture.automation_id);
+    assert_eq!(prior_runs.len(), 1);
+    assert!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap().is_empty());
+    fixture.inject_history_fault(fault);
+    let refused_bytes = fs::read(&runs_path).expect("capture invalid input before admission");
+    let mut executed = 0;
+    let error = fixture.run(trigger, "admission-refused", |_| {
+        executed += 1;
+        Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+    }).expect_err("pre-existing invalid history must refuse the actual production executor");
+    match fault {
+        HistoryFault::CorruptJson => assert!(error.contains("automation store json error")),
+        HistoryFault::MixedRows => assert!(error.contains("history contains an invalid row")),
+        HistoryFault::DuplicateIds => assert!(error.contains("history contains duplicate run IDs")),
+        _ => panic!("unsupported history-admission control"),
+    }
+    assert_eq!(executed, 0, "{trigger:?}/{fault:?}");
+    assert_eq!(fs::read(&runs_path).unwrap(), refused_bytes, "{trigger:?}/{fault:?}");
+    assert!(fixture.observed.lock().unwrap().is_empty());
+    assert!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap().is_empty(),
+        "history refusal must precede real cron registration");
+    assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+    // Notice/lastRunAt bookkeeping still precedes history admission. This
+    // test does not mislabel that existing order as a cross-file rollback.
+
+    fs::write(&runs_path, prior_history).expect("explicitly repair the invalid stored input");
+    let repaired = fixture.run(trigger, "admission-repaired", |_| {
+        executed += 1;
+        let runs = fixture.store.read_runs(&fixture.automation_id);
+        assert_eq!(runs.len(), 2);
+        assert_eq!(runs[0].status, "running");
+        assert!(!runs[0].id.is_empty());
+        assert!(runs[0].finished_at.is_none());
+        assert_eq!(runs[1], prior_runs[0]);
+        Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+    }).expect("one independently admitted run after explicit repair");
+    assert_eq!(repaired, Some(FireAutomationOutcome::Ok));
+    assert_eq!(executed, 1);
+    let observed = fixture.observed.lock().unwrap().clone();
+    assert_eq!(observed.len(), 1);
+    assert_eq!(observed[0].trigger, trigger);
+    assert_eq!(observed[0].outcome, FireAutomationOutcome::Ok);
+    let run_id = observed[0].automation_run_id.as_deref().expect("new committed history identity");
+    assert!(!run_id.is_empty());
+    assert_ne!(run_id, "admission-refused");
+    let runs = fixture.store.read_runs(&fixture.automation_id);
+    assert_eq!(runs.len(), 2);
+    assert_eq!(runs[0].id, run_id);
+    assert_eq!(runs[0].status, "ok");
+    assert!(runs[0].finished_at.is_some());
+    assert_eq!(runs[1], prior_runs[0]);
+    assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+    let rows = fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+    if trigger.is_background() {
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].run_id, run_id);
+        assert_eq!(rows[0].state, "terminal");
+        assert_eq!(rows[0].terminal_outcome.as_deref(), Some("ok"));
+        assert!(rows[0].fence_state_known);
+        assert!(!rows[0].active_controller && !rows[0].pending_outgoing_media && !rows[0].unsettled_subagent);
+    } else {
+        assert!(rows.is_empty());
+    }
+}
+
+#[test]
+fn real_manual_history_admission_refuses_corrupt_input_before_execution() {
+    bounded_automation_case("real_manual_history_admission_refuses_corrupt_input_before_execution", || {
+        for fault in [HistoryFault::CorruptJson, HistoryFault::MixedRows, HistoryFault::DuplicateIds] {
+            history_admission_failure_then_independent_run(AutomationRunTrigger::Manual, fault);
+        }
+    });
+}
+
+#[test]
+fn real_scheduled_history_admission_refuses_corrupt_input_before_execution() {
+    bounded_automation_case("real_scheduled_history_admission_refuses_corrupt_input_before_execution", || {
+        for fault in [HistoryFault::CorruptJson, HistoryFault::MixedRows, HistoryFault::DuplicateIds] {
+            history_admission_failure_then_independent_run(AutomationRunTrigger::Schedule, fault);
+        }
+    });
+}
+
+#[test]
+fn real_event_history_admission_refuses_corrupt_input_before_execution() {
+    bounded_automation_case("real_event_history_admission_refuses_corrupt_input_before_execution", || {
+        for fault in [HistoryFault::CorruptJson, HistoryFault::MixedRows, HistoryFault::DuplicateIds] {
+            history_admission_failure_then_independent_run(AutomationRunTrigger::Event, fault);
+        }
+    });
+}
+
 fn history_failure_then_independent_run(
     trigger: AutomationRunTrigger,
     fault: HistoryFault,

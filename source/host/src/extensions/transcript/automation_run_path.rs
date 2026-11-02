@@ -453,17 +453,19 @@ impl AutomationRunPath {
             )
             .map_err(|error| error.to_string())?;
         let run_id = run.as_ref().map(|run| run.id.clone());
+        let Some(admitted_run_id) = run_id.as_deref().filter(|id| !id.is_empty()) else {
+            return Err(if args.trigger.is_background() {
+                "background automation run did not produce a durable run identity"
+            } else {
+                "manual automation run did not produce a durable run identity"
+            }.into());
+        };
 
         if args.trigger.is_background() {
-            let Some(run_id) = run_id.as_deref() else {
-                return Err(
-                    "background automation run did not produce a durable run identity".into(),
-                );
-            };
             if let Err(error) = store.begin_cron_session_run(
                 &args.agent_id,
                 &args.automation.id,
-                run_id,
+                admitted_run_id,
                 args.fired_at_ms,
             ) {
                 // The history row was opened before the owner admission
@@ -473,7 +475,7 @@ impl AutomationRunPath {
                 if let Err(settlement_error) = finish_run(
                     store,
                     &args.automation.id,
-                    Some(run_id),
+                    Some(admitted_run_id),
                     "error",
                     args.fired_at_ms,
                     Some(&error),
