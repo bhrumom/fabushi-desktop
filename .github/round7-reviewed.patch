@@ -1,0 +1,1326 @@
+diff --git a/.github/workflows/native-service-contracts.yml b/.github/workflows/native-service-contracts.yml
+index 473e584ceefa2101396ce1c52386f300b014ada0..02162d3f8d67df4af2dd8eadb9b035f409949c8c 100644
+--- a/.github/workflows/native-service-contracts.yml
++++ b/.github/workflows/native-service-contracts.yml
+@@ -157,7 +157,7 @@ jobs:
+         run: |
+           set -euo pipefail
+           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
+-          grep -Eq 'test result: ok\. 48 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
++          grep -Eq 'test result: ok\. 55 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+       - name: Human resource upload size and bounded-read contracts
+         shell: bash
+         run: |
+@@ -566,8 +566,8 @@ jobs:
+           set -euo pipefail
+           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
+           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
+-          grep -Fx '# tests 18' artifacts/native-message-ui/transcript.log
+-          grep -Fx '# pass 18' artifacts/native-message-ui/transcript.log
++          grep -Fx '# tests 27' artifacts/native-message-ui/transcript.log
++          grep -Fx '# pass 27' artifacts/native-message-ui/transcript.log
+           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
+           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
+           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
+diff --git a/docs/specs/fbcp-native-message-reconciliation.md b/docs/specs/fbcp-native-message-reconciliation.md
+index d85f0a4c662421383b40b6c45da059c67be42cd1..00460f9e86753663d72330932911f11e98895100 100644
+--- a/docs/specs/fbcp-native-message-reconciliation.md
++++ b/docs/specs/fbcp-native-message-reconciliation.md
+@@ -1413,3 +1413,33 @@ uses force=false expected-head CAS, and removes the temporary job and input.
+ This publication does not rerun unchanged product suites or grant acceptance;
+ current Backend25MiB compatibility remains governed by NMR-51.
+ 
++
++### Round 7 resumed qualification — existing NMR-22/24/26 boundaries
++
++Resume base: `3c9995a97c59d89824b2f6e0e49e72cef4825439`; retain all later
++NMR-25 through NMR-50 contracts and the fixed U. Earlier unpublished preparation
++is not authority to restore blocking sends or replace current projection owners.
++
++Before replaying a durable Human reaction intention, require a message whose
++`authorKind` is Human and whose author is the authenticated local Human or the
++selected peer. Require a canonical positive safe-integer remote ID and exact
++untrimmed emoji identity. Reject malformed/foreign/missing/changed targets before
++HTTP, preserve the complete row and intention, and publish no mutation. Recheck
++the current target and remote identity after HTTP before replacing reaction
++fields; retain unrelated current metadata. New toggles use the same admission
++before staging an intention. Existing credential/session response fences remain.
++
++Qualify the actual short and empty 32nd pages without a 33rd list GET, partial-page
++resource failure followed by checkpoint replay, equal-timestamp `beforeSeq`
++stability, and crash recovery when the row was committed but the desired intent
++was not yet cleared. Use the existing real Host/HTTP/SQLite/reopen harness.
++
++The existing pagination anchor must remain pending through intermediate React
++commits caused by row updates while an older page is in flight. Consume it only
++after that page is installed. Human reaction RPC projection must reject obsolete
++account generations, superseded mutations and authoritative transcript events,
++including deferred React updaters; current failures use the existing notice.
++Reuse `transcript-projection.ts`, the current read buffers/cursor cache, and one
++Transcript. Preserve all existing tests and validate only in exact-H Actions.
++No full source, backend deployment, package, visual/a11y or independent ACCEPT
++is implied by these bounded cases.
+diff --git a/frontend/src/production/ProductionRenderer.tsx b/frontend/src/production/ProductionRenderer.tsx
+index 0e4ad13defc5191f9d3f8ac780315042043618b1..54b7b0b46a92029836031801cdc4905ed57c14e4 100644
+--- a/frontend/src/production/ProductionRenderer.tsx
++++ b/frontend/src/production/ProductionRenderer.tsx
+@@ -46,7 +46,7 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
+ import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
+ import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
+ import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
+-import { applyTranscriptReadUpdates, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
++import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+ import { createRoutinesController } from "../recovered/features/automations/routines/controller";
+ import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
+ import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
+@@ -1309,26 +1309,49 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
+     scope: { accountSlot: null, agentId: null },
+     ...reactionRootCallbacks
+   }));
++  const [humanReactionSettlement] = useState(() => createHumanReactionSettlement(() => accountScopeGenerationRef.current));
++  useStrictModeSafeDisposal(humanReactionSettlement);
+   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
+   const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
+     async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
+-      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
+-      if (conversation == null) throw new Error("Human reaction conversation is unavailable");
+-      const value = await client.call("reactHumanMessage", {
+-        conversationId: input.agentId,
+-        entryId: input.entryId,
+-        emoji: input.emoji
+-      });
+-      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
+-      if (projected == null) throw new Error("Human reaction settlement returned an invalid transcript entry");
+-      setEntriesByAgent((current) => {
+-        const entries = current[input.agentId];
+-        if (entries == null) return current;
+-        const next = entries.map((entry) => entry.id === input.entryId ? projected : entry);
+-        return { ...current, [input.agentId]: next };
+-      });
++      const currentAccount = accountRef.current;
++      if (currentAccount?.kind !== "logged-in") return;
++      const accountSlot = currentAccount.authId ?? currentAccount.email ?? "account";
++      await humanReactionSettlement.run(
++        { conversationId: input.agentId, entryId: input.entryId },
++        async () => {
++          const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
++          if (conversation == null) throw new Error("Human reaction conversation is unavailable");
++          const value = await client.call("reactHumanMessage", {
++            conversationId: input.agentId,
++            entryId: input.entryId,
++            emoji: input.emoji
++          });
++          const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
++          if (projected == null || projected.id !== input.entryId) throw new Error("Human reaction settlement returned an invalid transcript entry");
++          return projected;
++        },
++        (projected, isCurrent) => {
++          transcriptPaginationController.ingestEntryUpdate(accountSlot, input.agentId, projected);
++          setEntriesByAgent((current) => {
++            if (!isCurrent()) return current;
++            const entries = current[input.agentId];
++            if (entries == null || !entries.some((entry) => entry.id === input.entryId)) return current;
++            return {
++              ...current,
++              [input.agentId]: entries.map((entry) => entry.id !== input.entryId ? entry
++                : entry.kind === "message" && projected.kind === "message"
++                  ? mergeAuthoritativeTranscriptMessage(entry, projected)
++                  : projected)
++            };
++          });
++        },
++        (error, isCurrent) => setNotice((current) => isCurrent()
++          ? error instanceof Error ? `Human reaction unavailable: ${error.message}` : `Human reaction unavailable: ${String(error)}`
++          : current),
++      );
+     }
+-  } : undefined, [activeIsHuman, client]);
++  } : undefined, [activeIsHuman, client, humanReactionSettlement, transcriptPaginationController]);
+   const reactionScope = useMemo(() => ({
+     accountSlot: transcriptAccountSlot,
+     agentId: activeIsHuman || activeAgentId.length === 0 ? null : activeAgentId
+@@ -2842,6 +2865,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
+           projectedEntries = applyTranscriptReadUpdates(projectedEntries, read.updates);
+         }
+         for (const entry of projectedEntries) {
++          humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
+           if (entry.kind !== "message" || entry.clientNonce == null) continue;
+           acknowledgementController.ingestTranscriptEvent({
+             accountSlot: acknowledgementScopeRef.current.accountSlot,
+@@ -2866,6 +2890,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
+         const owner = agentsRef.current.find((agent) => agent.id === ownerId);
+         const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
+         if (projected == null || !ownerId) return;
++        humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
+         rememberPreBaselineFeedEntry(ownerId, projected.id);
+         for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
+           read.updates.set(projected.id, projected);
+@@ -2886,6 +2911,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
+       },
+       onCleared: (ownerId) => {
+         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
++        humanReactionSettlement.clearConversation(ownerId);
+         transcriptBaselineSeen.add(ownerId);
+         preBaselineFeedEntryIds.delete(ownerId);
+         transcriptHistoryCursorsRef.current.delete(ownerId);
+@@ -2910,6 +2936,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
+       const owner = agentsRef.current.find((agent) => agent.id === ownerId);
+       const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
+       if (projected == null || !ownerId) return;
++      humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
+       rememberPreBaselineFeedEntry(ownerId, projected.id);
+       for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
+         read.updates.set(projected.id, projected);
+@@ -2965,7 +2992,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
+         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
+       });
+     };
+-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
++  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanReactionSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
+ 
+   useEffect(() => {
+     if (bridge == null || account?.kind !== "logged-in") {
+@@ -3720,6 +3747,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
+     const accountScopeGeneration = accountScopeGenerationRef.current;
+     await client.call("deleteAgents", { ids: [agentId] });
+     if (accountScopeGenerationRef.current !== accountScopeGeneration) return;
++    humanReactionSettlement.clearConversation(agentId);
+     transcriptHistoryCursorsRef.current.delete(agentId);
+     for (const read of pendingTranscriptReadsRef.current) {
+       if (read.agentId === agentId) pendingTranscriptReadsRef.current.delete(read);
+diff --git a/frontend/src/production/transcript-projection.contract.test.ts b/frontend/src/production/transcript-projection.contract.test.ts
+index c35d12c2c64a20728804d3df7da8ed0a3d0abc76..ce484f8737e1857984254892211feb5ae315b33a 100644
+--- a/frontend/src/production/transcript-projection.contract.test.ts
++++ b/frontend/src/production/transcript-projection.contract.test.ts
+@@ -10,6 +10,7 @@ import {
+ } from "../recovered/features/conversation/workspace/pagination.ts";
+ import {
+   applyTranscriptReadUpdates,
++  createHumanReactionSettlement,
+   currentTranscriptReadBuffers,
+   reconcileAuthoritativeTranscriptBaseline,
+   reconcileLateInitialTranscriptPage,
+@@ -425,3 +426,173 @@ test("NMR-26 viewport anchoring and disposal reject stale asynchronous effects",
+   assert.equal(controller.onEntriesCommitted(), false);
+   assert.equal(controller.installInitialPage({ entries: [message("late")] }), false);
+ });
++
++test("NMR-26 an intermediate row commit cannot consume an older-page viewport anchor", async () => {
++  const read = deferred<TranscriptHistoryPage>();
++  const controller = createTranscriptPaginationController({
++    accountSlot: "account", agentId: "conversation",
++    fetchPage: ({ beforeSeq }) => beforeSeq === 5
++      ? Promise.resolve({ entries: [message("m3")], nextBeforeSeq: 3 })
++      : read.promise,
++  });
++  controller.installInitialPage({ entries: [], nextBeforeSeq: 5 });
++  await controller.loadOlder();
++  const viewport = { scrollTop: 40, scrollHeight: 400 };
++  controller.bindViewport(viewport);
++  const loading = controller.loadOlder();
++  controller.ingestEntryUpdate("account", "conversation", message("m3", "updated"));
++  assert.equal(controller.getSnapshot().isLoadingOlder, true);
++  // The renderer commits this row update while the older read is still pending.
++  assert.equal(controller.onEntriesCommitted(), false);
++  assert.equal(viewport.scrollTop, 40);
++  read.resolve({ entries: [message("m1"), message("m2"), message("m3", "stale overlap")], nextBeforeSeq: 1 });
++  await loading;
++  viewport.scrollHeight = 480;
++  assert.equal(controller.onEntriesCommitted(), true);
++  assert.equal(viewport.scrollTop, 120);
++  assert.deepEqual(ids(controller.getSnapshot().entries), ["m1", "m2", "m3"]);
++  assert.equal(row(controller.getSnapshot().entries, "m3").text, "updated");
++  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 1 });
++  assert.equal(controller.onEntriesCommitted(), false);
++  controller.dispose();
++});
++
++const reactionTarget = { conversationId: "human-a", entryId: "older-entry" };
++const unexpectedReactionFailure = (error: unknown): never => { throw error; };
++
++test("NMR-26 a late first reaction response cannot replace a later mutation settlement", async () => {
++  const controller = createHumanReactionSettlement(() => 1);
++  const first = deferred<string>();
++  const second = deferred<string>();
++  const applied: string[] = [];
++  const a = controller.run(reactionTarget, () => first.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
++  const b = controller.run(reactionTarget, () => second.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
++  second.resolve("new reaction state");
++  await b;
++  first.resolve("old reaction state");
++  await a;
++  assert.deepEqual(applied, ["new reaction state"]);
++  controller.dispose();
++});
++
++test("NMR-26 an authoritative event wins over an outstanding reaction RPC response", async () => {
++  const controller = createHumanReactionSettlement(() => 1);
++  const pending = deferred<string>();
++  const applied: string[] = [];
++  const request = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
++  controller.observeEntry(reactionTarget);
++  applied.push("authoritative event");
++  pending.resolve("obsolete response");
++  await request;
++  assert.deepEqual(applied, ["authoritative event"]);
++  controller.dispose();
++});
++
++test("NMR-26 account generation fences a reaction across logout and return to the same identity", async () => {
++  let generation = 1;
++  const controller = createHumanReactionSettlement(() => generation);
++  const pending = deferred<string>();
++  const applied: string[] = [];
++  const request = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
++  generation = 2;
++  generation = 3;
++  pending.resolve("departed scope");
++  await request;
++  await controller.run(reactionTarget, async () => "current scope", (value) => { applied.push(value); }, unexpectedReactionFailure);
++  assert.deepEqual(applied, ["current scope"]);
++  controller.dispose();
++});
++
++test("NMR-26 independent conversation and message reactions retain their completion scope", async () => {
++  const controller = createHumanReactionSettlement(() => 1);
++  const pending = deferred<string>();
++  const applied: string[] = [];
++  const first = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
++  await controller.run({ conversationId: "human-b", entryId: reactionTarget.entryId }, async () => "other conversation", (value) => { applied.push(value); }, unexpectedReactionFailure);
++  await controller.run({ conversationId: reactionTarget.conversationId, entryId: "other-entry" }, async () => "other entry", (value) => { applied.push(value); }, unexpectedReactionFailure);
++  pending.resolve("original entry");
++  await first;
++  assert.deepEqual(applied, ["other conversation", "other entry", "original entry"]);
++  controller.dispose();
++});
++
++test("NMR-26 current reaction failures report once and obsolete failures cannot replace recovery feedback", async () => {
++  const controller = createHumanReactionSettlement(() => 1);
++  const errors: unknown[] = [];
++  const applied: string[] = [];
++  const failure = new Error("offline");
++  await controller.run(reactionTarget, async () => { throw failure; }, () => assert.fail("failed request applied"), (error) => { errors.push(error); });
++  const invalid = new Error("invalid settlement");
++  await controller.run(reactionTarget, async () => "invalid", () => { throw invalid; }, (error) => { errors.push(error); });
++  const pending = deferred<string>();
++  const old = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, (error) => { errors.push(error); });
++  await controller.run(reactionTarget, async () => "recovered", (value) => { applied.push(value); }, unexpectedReactionFailure);
++  pending.reject(new Error("obsolete failure"));
++  await old;
++  assert.deepEqual(errors, [failure, invalid]);
++  assert.deepEqual(applied, ["recovered"]);
++  controller.dispose();
++});
++
++test("NMR-26 deferred reaction state and error updates recheck events, clear and account generation", async () => {
++  let generation = 1;
++  const controller = createHumanReactionSettlement(() => generation);
++  const deferredApplications: Array<() => void> = [];
++  const applied: string[] = [];
++  const enqueue = (value: string, isCurrent: () => boolean) => {
++    deferredApplications.push(() => { if (isCurrent()) applied.push(value); });
++  };
++  await controller.run(reactionTarget, async () => "old event", enqueue, unexpectedReactionFailure);
++  controller.observeEntry(reactionTarget);
++  deferredApplications.shift()!();
++  await controller.run(reactionTarget, async () => "cleared conversation", enqueue, unexpectedReactionFailure);
++  controller.clearConversation(reactionTarget.conversationId);
++  deferredApplications.shift()!();
++  await controller.run(reactionTarget, async () => "old account", enqueue, unexpectedReactionFailure);
++  generation += 1;
++  deferredApplications.shift()!();
++  await controller.run(reactionTarget, async () => { throw new Error("old account error"); }, enqueue,
++    (_error, isCurrent) => enqueue("stale error notice", isCurrent));
++  generation += 1;
++  deferredApplications.shift()!();
++  await controller.run(reactionTarget, async () => "current state", enqueue, unexpectedReactionFailure);
++  deferredApplications.shift()!();
++  assert.deepEqual(applied, ["current state"]);
++  controller.dispose();
++});
++
++test("NMR-26 Human reaction settlement and a later event refresh an older row without moving it", async () => {
++  const pagination = createTranscriptPaginationController({
++    accountSlot: "account", agentId: reactionTarget.conversationId,
++    fetchPage: async () => ({ entries: [message(reactionTarget.entryId)], nextBeforeSeq: 1 }),
++  });
++  pagination.installInitialPage({ entries: [message("tail")], nextBeforeSeq: 2 });
++  await pagination.loadOlder();
++  const cursor = pagination.getSnapshot().cursor;
++  const controller = createHumanReactionSettlement(() => 1);
++  const reacted = { ...message(reactionTarget.entryId), reactions: [{ emoji: "👍", by: "me" }] };
++  const apply = (value: TranscriptMessage) => pagination.ingestEntryUpdate("account", reactionTarget.conversationId, value);
++  await controller.run(reactionTarget, async () => reacted, apply, unexpectedReactionFailure);
++  assert.deepEqual(pagination.getSnapshot().entries, [reacted, message("tail")]);
++  const late = deferred<TranscriptMessage>();
++  const pending = controller.run(reactionTarget, () => late.promise, apply, unexpectedReactionFailure);
++  const refreshed = { ...message(reactionTarget.entryId), reactions: [{ emoji: "❤️", by: "me" }] };
++  controller.observeEntry(reactionTarget);
++  pagination.ingestEntryUpdate("account", reactionTarget.conversationId, refreshed);
++  late.resolve(reacted);
++  await pending;
++  assert.deepEqual(pagination.getSnapshot().entries, [refreshed, message("tail")]);
++  assert.equal(pagination.getSnapshot().cursor, cursor);
++  controller.dispose();
++  pagination.dispose();
++});
++
++test("NMR-26 disposed reaction completion cannot mutate the renderer or show a stale error", async () => {
++  const controller = createHumanReactionSettlement(() => 1);
++  const pending = deferred<string>();
++  const request = controller.run(reactionTarget, () => pending.promise, () => assert.fail("disposed result applied"), unexpectedReactionFailure);
++  controller.dispose();
++  pending.reject(new Error("disconnected after dispose"));
++  await request;
++  await controller.run(reactionTarget, async () => { assert.fail("disposed request sent"); }, () => assert.fail("disposed result applied"), unexpectedReactionFailure);
++});
+diff --git a/frontend/src/production/transcript-projection.ts b/frontend/src/production/transcript-projection.ts
+index 5eadff12463c68eb30b865561a42eba77f496be9..f9bdb88ed2decc489d429ffeb7d1f07eeeeca310 100644
+--- a/frontend/src/production/transcript-projection.ts
++++ b/frontend/src/production/transcript-projection.ts
+@@ -210,3 +210,89 @@ export function reconcileTranscriptRefresh(
+   const changedIds = new Set(current.filter((entry) => priorEntry(entry) !== entry).map((entry) => entry.id));
+   return reconcileTranscriptFeedBaseline(current, incoming, changedIds);
+ }
++
++export interface HumanReactionTarget {
++  readonly conversationId: string;
++  readonly entryId: string;
++}
++
++interface HumanReactionCompletion {
++  readonly accountGeneration: number;
++  invalidated: boolean;
++}
++
++export interface HumanReactionSettlement {
++  run<T>(
++    target: HumanReactionTarget,
++    request: () => Promise<T>,
++    apply: (value: T, isCurrent: () => boolean) => void,
++    onError: (error: unknown, isCurrent: () => boolean) => void,
++  ): Promise<void>;
++  observeEntry(target: HumanReactionTarget): void;
++  clearConversation(conversationId: string): void;
++  dispose(): void;
++}
++
++/** Projection lifetime only; Session still owns reaction intent and settlement. */
++export function createHumanReactionSettlement(readAccountGeneration: () => number): HumanReactionSettlement {
++  let accountGeneration = readAccountGeneration();
++  let disposed = false;
++  // Retain settled tokens so deferred React updaters can reject later events.
++  const completions = new Map<string, Map<string, HumanReactionCompletion>>();
++
++  const enterAccount = (): number => {
++    const current = readAccountGeneration();
++    if (current !== accountGeneration) {
++      for (const entries of completions.values()) {
++        for (const completion of entries.values()) completion.invalidated = true;
++      }
++      completions.clear();
++      accountGeneration = current;
++    }
++    return current;
++  };
++
++  return {
++    async run(target, request, apply, onError) {
++      if (disposed) return;
++      const generation = enterAccount();
++      const entries = completions.get(target.conversationId) ?? new Map<string, HumanReactionCompletion>();
++      const previous = entries.get(target.entryId);
++      if (previous != null) previous.invalidated = true;
++      const completion: HumanReactionCompletion = { accountGeneration: generation, invalidated: false };
++      entries.set(target.entryId, completion);
++      completions.set(target.conversationId, entries);
++      const isCurrent = (): boolean => !disposed
++        && !completion.invalidated
++        && readAccountGeneration() === completion.accountGeneration;
++      try {
++        const value = await request();
++        if (isCurrent()) apply(value, isCurrent);
++      } catch (error) {
++        if (isCurrent()) onError(error, isCurrent);
++      }
++    },
++
++    observeEntry(target) {
++      if (disposed) return;
++      enterAccount();
++      const completion = completions.get(target.conversationId)?.get(target.entryId);
++      if (completion != null) completion.invalidated = true;
++    },
++
++    clearConversation(conversationId) {
++      if (disposed) return;
++      enterAccount();
++      const entries = completions.get(conversationId);
++      if (entries != null) {
++        for (const completion of entries.values()) completion.invalidated = true;
++        completions.delete(conversationId);
++      }
++    },
++
++    dispose() {
++      disposed = true;
++      completions.clear();
++    },
++  };
++}
+diff --git a/frontend/src/recovered/features/conversation/workspace/pagination.ts b/frontend/src/recovered/features/conversation/workspace/pagination.ts
+index 889b7d0da3d56abd7e0efb5838daafcfa1855d34..e629cfa5232a37ca734a9c8d8e26498eb001d390 100644
+--- a/frontend/src/recovered/features/conversation/workspace/pagination.ts
++++ b/frontend/src/recovered/features/conversation/workspace/pagination.ts
+@@ -126,7 +126,7 @@ export function createTranscriptPaginationController(
+   let inFlight: Promise<void> | null = null;
+   const updatesDuringRequest = new Map<string, ConversationTranscriptEntry>();
+   let viewport: TranscriptViewport | null = null;
+-  let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number } | null = null;
++  let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number; ready: boolean } | null = null;
+   let disposed = false;
+ 
+   const buildSnapshot = (): TranscriptPaginationSnapshot => ({
+@@ -219,7 +219,8 @@ export function createTranscriptPaginationController(
+           generation,
+           pageGeneration,
+           scrollTop: viewport.scrollTop,
+-          scrollHeight: viewport.scrollHeight
++          scrollHeight: viewport.scrollHeight,
++          ready: false
+         };
+       } else pendingAnchor = null;
+       olderFailure = null;
+@@ -235,6 +236,7 @@ export function createTranscriptPaginationController(
+           if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
+           const refreshedPage = page.entries.map((entry) => updatesDuringRequest.get(entry.id) ?? entry);
+           entries = mergeOlderTranscriptEntries(entries, refreshedPage);
++          if (pendingAnchor != null) pendingAnchor.ready = true;
+           cursor = cursorFromNextBeforeSeq(page.nextBeforeSeq);
+           olderFailure = null;
+           options.onPageApplied?.({ accountSlot: requestAccountSlot, agentId: requestAgentId }, {
+@@ -270,7 +272,7 @@ export function createTranscriptPaginationController(
+     },
+ 
+     onEntriesCommitted() {
+-      if (disposed || pendingAnchor == null || viewport == null) return false;
++      if (disposed || pendingAnchor == null || !pendingAnchor.ready || viewport == null) return false;
+       const anchor = pendingAnchor;
+       pendingAnchor = null;
+       if (anchor.generation !== generation || anchor.pageGeneration !== pageGeneration) return false;
+diff --git a/projects/fabushi-communication-platform/STATUS.md b/projects/fabushi-communication-platform/STATUS.md
+index c131338f69b1ac1dbf7b180087128a5672d20b39..7f3e420e4ee95efc8bc8647d3f0915b232dd79a0 100644
+--- a/projects/fabushi-communication-platform/STATUS.md
++++ b/projects/fabushi-communication-platform/STATUS.md
+@@ -6,6 +6,19 @@ Date: 2026-11-02
+ Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
+ Complete: false
+ 
++## Round7 resumed NMR-22/24/26 qualification
++
++The existing Session/gateway now refuses malformed reaction targets and emoji
++before staging or HTTP, preserves current row fields at delayed settlement,
++and keeps durable rejected intentions diagnosable. Existing Transcript projection
++fences obsolete reaction responses, and pagination waits for the accepted page
++before consuming its viewport anchor. Later reply/upload/forward/credential/CLI
++changes remain intact. Seven Host and nine production-helper cases are added;
++containing-H Actions execution is required. Initial run41409695104 failed14/16
++Human; fixture repair30b4/run41410242810 passed16Human/4Agent and shipping gates.
++See `projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json`.
++Full migration, real service, source/legal, packages/UI/a11y/Bot and ACCEPT remain open.
++
+ ## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
+ 
+ Observed 2026-11-02. Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+diff --git a/projects/fabushi-communication-platform/owner-resolution-matrix.md b/projects/fabushi-communication-platform/owner-resolution-matrix.md
+index b6aed96edb5f32abbb4e4f1366a2a94024eb4ea1..cb4d799e62ea37c41a86aa7e8adb7d73b8d2df86 100644
+--- a/projects/fabushi-communication-platform/owner-resolution-matrix.md
++++ b/projects/fabushi-communication-platform/owner-resolution-matrix.md
+@@ -109,6 +109,15 @@ packaged/real-service/full Bot/independent ACCEPT are not claimed.
+ - Agent-native typed events remain typed and coexist with Human communication in the same transcript/workspace.
+ - An owner-resolution row is not accepted until production wiring, focused contracts, integration/E2E and applicable packaged evidence exist.
+ 
+-
+-
+-
++### Round7 resumed reaction/history consumer qualification
++
++`MSG-REACTION` keeps Session/SandAgentDb as the durable owner. Its existing gateway
++passes exact emoji identity; replay and new toggles admit only the selected Human
++pair and canonical safe remote IDs before HTTP/intention writes. Settlement rereads
++the current target and retains unrelated current fields. `MSG-HISTORY-ORDER-GAP`
++keeps local beforeSeq and remote afterId distinct; new terminal-budget, partial-page
++and reopen cases qualify the existing traversal. Existing `transcript-projection.ts`
++and pagination consume reaction events/RPC results with account/mutation/event
++fences and a page-ready viewport anchor. No new durable owner or UI root is added.
++The round7 receipt and containing-H Actions are the evidence boundary; broader
++remote-window continuation, real-service, package/visual/a11y and ACCEPT remain open.
+diff --git a/projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md b/projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md
+index 8e72f3047a869eaa4225d3e173dbebc27cf17644..27b61cb68a03581e8d7c79108acc67125718d3b6 100644
+--- a/projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md
++++ b/projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md
+@@ -403,3 +403,21 @@ Exact `73cc6e1cc9fa871e5f80931979606ac9ee810551`, run `41514576570`: Electron jo
+ Exact `94dcf7a2213808a8ded6baddaf069562d365c6d7`, run `41513767498`, completed all five selected jobs successfully. Reconciliation passed Human44/sharebox1/journal12/Agent4/private3/HTTP1. Shipping job `125511939405` passed gateway executable5/library11, protocol122, TCP9 and all declared supporting suites. Copy4 means3 fixtures plus1 actual160158128-byte AppHost, mode0755, matching source/destination SHA-256 `708a20213b1363a2ac72153273b917d28a9b03cf1e19c5c4619291cfc93c956b`. Missing-input, invalid-hash and unequal-hash negatives all refused; inner TAP counts for the first two were not printed and are not invented. Original `8ce0a9a` shipping remains cancelled/unexecuted. Later Human recovery inputs need their own CI and do not inherit94dc as execution.
+ 
+ Source run `41514576605` at73cc passed157 source contracts and37 schema cases with zero ledger-shape errors; candidate remained unaccepted with16381 inventory identities/184 responsibilities, six review records, unknown/unread null. The final containing ledger commit requires its own source gates. Backend PR137 remains read-only, open/draft/unmerged at audited52fb; actual online version/authenticated pagination, formal feed/publisher approval, signed platform install/upgrade/rollback, full product/source/legal closure and independent ACCEPT remain open.
++
++### Round7 resumed NMR-22/24/26 boundary evidence
++
++Current additions retain the existing FBCP-NMR-001 row and production route.
++Seven new `shipping_human_` cases in `session_gateway_contract.rs` cover short/empty
++32nd pages, durable partial-page replay, stable equal-timestamp beforeSeq,
++applied-row/uncleared-intention restart, malformed persisted target admission,
++post-HTTP target changes, and actual gateway pre-staging refusal with a numeric-ID
++positive control. All prior Human/forward/Agent/credential/shipping cases remain.
++Nine new cases in `transcript-projection.contract.test.ts` exercise the actual
++completion fence and intermediate-render viewport anchor. Existing tail merge,
++read buffers, cursor cache, immutable forward UI and one Transcript remain.
++
++The round7 evidence receipt separates original failed63da, passed fixture30b4,
++qualified later predecessor94dc, unpublished superseded preparation and the new
++containing-H candidate. Authored source counts are55 Human and27 Transcript at
++integration base0e8c41c; actual results require the final exact-H Actions logs.
++No mounted reaction/visual/a11y, source or full independent acceptance is claimed.
+diff --git a/source/host/src/extensions/session/gateway.rs b/source/host/src/extensions/session/gateway.rs
+index e77e6bc40d9b12a020b7ad5eec1fcb6d11c68550..05435f95ad94242d1e81defdda148baca40bf86e 100644
+--- a/source/host/src/extensions/session/gateway.rs
++++ b/source/host/src/extensions/session/gateway.rs
+@@ -402,7 +402,12 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
+         }),
+         "reactHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
+             required_string(args, "entryId").and_then(|entry_id| {
+-                required_string(args, "emoji").and_then(|emoji| {
++                // Emoji bytes are reaction identity; validation must not erase
++                // padding before the production admission guard sees it.
++                args.get("emoji").and_then(Value::as_str)
++                    .filter(|value| !value.trim().is_empty())
++                    .ok_or_else(|| SessionGatewayError::bad("missing or invalid emoji"))
++                    .and_then(|emoji| {
+                     session
+                         .toggle_human_message_reaction(conversation_id, entry_id, emoji)
+                         .map_err(SessionGatewayError::internal)
+diff --git a/source/host/src/extensions/session/native_messaging.rs b/source/host/src/extensions/session/native_messaging.rs
+index 990eeb5a9e4906e2eafbd4bf0bc86f6456b16406..ac7a6367e5098ec98e5f39e45c5cde77c75e41b4 100644
+--- a/source/host/src/extensions/session/native_messaging.rs
++++ b/source/host/src/extensions/session/native_messaging.rs
+@@ -725,11 +725,12 @@ impl FabushiNativeMessagingClient {
+         active: bool,
+         expected_user_id: Option<&str>,
+     ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
+-        let message_id = required_trimmed(message_id, "message id")?;
++        let canonical_message_id = required_trimmed(message_id, "message id")?;
+         if message_id
+             .parse::<u64>()
+             .ok()
+-            .filter(|value| *value > 0)
++            .filter(|value| *value > 0 && *value <= 9_007_199_254_740_991
++                && value.to_string() == message_id && canonical_message_id == message_id)
+             .is_none()
+         {
+             return Err("Fabushi Human reaction requires a positive canonical message id".into());
+diff --git a/source/host/src/extensions/session/production.rs b/source/host/src/extensions/session/production.rs
+index 0d0641f1a9e51db4e27f8394d47cad576ab68f48..c48cbb088b47b62c2916e2bc9f2d499d2a685348 100644
+--- a/source/host/src/extensions/session/production.rs
++++ b/source/host/src/extensions/session/production.rs
+@@ -3712,6 +3712,35 @@ impl ProductionSessionWorkers {
+         Ok(entry)
+     }
+ 
++    fn human_reaction_remote_identity(entry: &serde_json::Value) -> Result<String, String> {
++        let value = entry.get("remoteMessageId")
++            .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
++        let parsed = match value {
++            serde_json::Value::String(raw) => raw.parse::<u64>().ok()
++                .filter(|id| id.to_string() == *raw),
++            serde_json::Value::Number(number) => number.as_u64(),
++            _ => None,
++        };
++        parsed.filter(|id| *id > 0 && *id <= 9_007_199_254_740_991)
++            .map(|id| id.to_string())
++            .ok_or_else(|| "Human reaction target has an invalid canonical remote message identity".to_string())
++    }
++
++    fn validate_human_reaction_target(
++        entry: &serde_json::Value,
++        local_human_id: &str,
++        peer_human_id: &str,
++    ) -> Result<(), String> {
++        let author = entry.get("authorId").and_then(serde_json::Value::as_str);
++        if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
++            || entry.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
++            || !matches!(author, Some(value) if value == local_human_id || value == peer_human_id)
++        {
++            return Err("persisted Human reaction target is outside the selected Human conversation".into());
++        }
++        Ok(())
++    }
++
+     fn replay_human_reaction_intent(
+         &self,
+         owner: &SandAgentDb,
+@@ -3733,14 +3762,20 @@ impl ProductionSessionWorkers {
+         if author != self.local_human_id()? || !self.metadata_has_local_human(metadata)? {
+             return Err("persisted Human reaction intent belongs to a different account".into());
+         }
+-        if emoji.trim().is_empty() || emoji.as_bytes().len() > 32 {
++        if emoji.is_empty() || emoji != emoji.trim() || emoji.as_bytes().len() > 32 {
+             return Err("persisted Human reaction intent contains invalid emoji".into());
+         }
++        if remote_id.parse::<u64>().ok().filter(|id| {
++            *id > 0 && *id <= 9_007_199_254_740_991 && id.to_string() == remote_id
++        }).is_none() {
++            return Err("persisted Human reaction intent contains invalid remote identity".into());
++        }
++        let peer = self.peer_human_id_from_metadata(metadata)?;
+         let current = owner.get_transcript_entry_by_id(entry_id)
+             .map_err(|error| error.to_string())?
+             .ok_or_else(|| "persisted Human reaction target disappeared".to_string())?;
+-        if current.get("remoteMessageId").map(fabushi_identity_text).transpose()?
+-            .as_deref() != Some(remote_id) {
++        Self::validate_human_reaction_target(&current, author, &peer)?;
++        if Self::human_reaction_remote_identity(&current)? != remote_id {
+             return Err("persisted Human reaction remote identity changed".into());
+         }
+         let remote = client.set_direct_message_reaction_for_user(remote_id, emoji, active, author)?;
+@@ -3754,9 +3789,14 @@ impl ProductionSessionWorkers {
+         if observed_active != active {
+             return Err("Fabushi Human reaction response did not confirm the desired state".into());
+         }
+-        let peer = self.peer_human_id_from_metadata(metadata)?;
+         let projected = Self::project_remote_human_reactions(&remote, &peer);
+-        let mut next = current;
++        let mut next = owner.get_transcript_entry_by_id(entry_id)
++            .map_err(|error| error.to_string())?
++            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
++        Self::validate_human_reaction_target(&next, author, &peer)?;
++        if Self::human_reaction_remote_identity(&next)? != remote_id {
++            return Err("persisted Human reaction remote identity changed".into());
++        }
+         let is_peer = next.get("authorId").and_then(serde_json::Value::as_str) != Some(author);
+         let object = next.as_object_mut()
+             .ok_or_else(|| "Human reaction target is not a message object".to_string())?;
+@@ -3784,8 +3824,10 @@ impl ProductionSessionWorkers {
+         entry_id: &str,
+         emoji: &str,
+     ) -> Result<serde_json::Value, String> {
+-        let emoji = emoji.trim();
+-        if emoji.is_empty() { return Err("reactHumanMessage requires emoji".into()); }
++        if emoji.trim().is_empty() { return Err("reactHumanMessage requires emoji".into()); }
++        if emoji != emoji.trim() {
++            return Err("Fabushi Human reaction emoji must not contain surrounding whitespace".into());
++        }
+         if emoji.as_bytes().len() > 32 {
+             return Err("Fabushi Human reaction emoji exceeds the backend limit".into());
+         }
+@@ -3809,9 +3851,8 @@ impl ProductionSessionWorkers {
+         let current = owner.get_transcript_entry_by_id(entry_id)
+             .map_err(|error| error.to_string())?
+             .ok_or_else(|| "Human reaction target is not in this conversation".to_string())?;
+-        let remote_id = current.get("remoteMessageId")
+-            .map(fabushi_identity_text).transpose()?
+-            .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
++        Self::validate_human_reaction_target(&current, self.local_human_id()?, &self.peer_human_id_from_metadata(&metadata)?)?;
++        let remote_id = Self::human_reaction_remote_identity(&current)?;
+         let active = current.get("remoteReactions")
+             .and_then(serde_json::Value::as_array).is_some_and(|reactions| {
+                 reactions.iter().any(|reaction| {
+diff --git a/source/host/tests/session_gateway_contract.rs b/source/host/tests/session_gateway_contract.rs
+index 6ce04692a3e623c20d698e55d164f6a05511e764..33a3299876a40afa7a00746c9292240fd75b721e 100644
+--- a/source/host/tests/session_gateway_contract.rs
++++ b/source/host/tests/session_gateway_contract.rs
+@@ -5941,3 +5941,595 @@ fn shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_af
+ }
+ 
+ 
++fn human_history_message(id: u64) -> serde_json::Value {
++    let mut row = fixture_remote_human_message(id, 2, 1, &format!("history-{id}"), None, json!([]));
++    row["createdAt"] = json!("1970-01-01T00:00:01Z");
++    row
++}
++
++fn human_history_reply(rows: Vec<serde_json::Value>) -> HumanMessageFixtureReply {
++    HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":rows}}))
++}
++
++fn human_local_history_message(id: u64) -> serde_json::Value {
++    json!({
++        "id":format!("human-server-message:{id}"),"kind":"message","role":"user",
++        "authorKind":"human","authorId":"2","authorName":"peer",
++        "content":format!("history-{id}"),"timestampMs":1000.0,"delivery":"sent",
++        "remoteMessageId":id.to_string(),"remoteCreatedAt":"1970-01-01T00:00:01Z",
++        "remoteReactions":[],"reactions":[]
++    })
++}
++
++fn human_row_ids(rows: &[serde_json::Value]) -> Vec<String> {
++    rows.iter().map(|row| row["id"].as_str().expect("canonical row id").to_owned()).collect()
++}
++
++fn record_human_target_events(
++    conversation_id: &str,
++    entry_id: &str,
++) -> (
++    Arc<std::sync::Mutex<Vec<serde_json::Value>>>,
++    mahayana_host_runtime::transcript_mutation_events::TranscriptMutationSubscription,
++) {
++    let events = Arc::new(std::sync::Mutex::new(Vec::new()));
++    let captured = Arc::clone(&events);
++    let conversation_id = conversation_id.to_owned();
++    let entry_id = entry_id.to_owned();
++    let subscription = mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations(
++        move |mutation| {
++            if mutation.get("agentId").and_then(serde_json::Value::as_str) != Some(conversation_id.as_str()) {
++                return;
++            }
++            let matches = mutation.get("entryId").and_then(serde_json::Value::as_str) == Some(entry_id.as_str())
++                || mutation.get("entries").and_then(serde_json::Value::as_array)
++                    .is_some_and(|rows| rows.iter().any(|row| row["id"].as_str() == Some(entry_id.as_str())));
++            if matches {
++                captured.lock().expect("capture target mutation").push(serde_json::Value::Object(mutation.clone()));
++            }
++        },
++    );
++    (events, subscription)
++}
++
++fn spawn_human_no_request_fixture() -> (
++    String,
++    std::sync::mpsc::Sender<()>,
++    thread::JoinHandle<Vec<String>>,
++) {
++    let listener = TcpListener::bind("127.0.0.1:0").expect("bind active admission fixture");
++    listener.set_nonblocking(true).expect("nonblocking admission fixture");
++    let url = format!("http://{}", listener.local_addr().expect("admission fixture address"));
++    let (stop, stopped) = std::sync::mpsc::channel();
++    let (ready, active) = std::sync::mpsc::channel();
++    let server = thread::spawn(move || {
++        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
++        let mut requests = Vec::new();
++        ready.send(()).expect("report live admission listener");
++        loop {
++            assert!(std::time::Instant::now() < deadline, "admission fixture was not stopped");
++            match listener.accept() {
++                Ok((mut stream, _)) => {
++                    stream.set_nonblocking(false).expect("blocking unexpected request");
++                    stream.set_write_timeout(Some(std::time::Duration::from_secs(15)))
++                        .expect("bound unexpected response");
++                    requests.push(read_fixture_http_request_before(&mut stream, Some(deadline)));
++                    let body = json!({"success":false,"error":"unexpected HTTP during Human reaction admission"}).to_string();
++                    write!(stream,
++                        "HTTP/1.1 503 Unexpected\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
++                        body.len(), body,
++                    ).expect("answer unexpected admission request");
++                    stream.flush().expect("flush unexpected response");
++                }
++                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
++                    match stopped.recv_timeout(std::time::Duration::from_millis(5)) {
++                        Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
++                        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
++                    }
++                }
++                Err(error) => panic!("admission fixture accept: {error}"),
++            }
++        }
++        requests
++    });
++    active.recv_timeout(std::time::Duration::from_secs(15)).expect("listener is active before admission");
++    (url, stop, server)
++}
++
++#[test]
++fn shipping_human_short_32nd_page_defers_latest_refresh_to_next_sync() {
++    const BASE: u64 = 1_000_000;
++    for (last_id, expected_len) in [(BASE + 6200, 6200_usize), (BASE + 6201, 6201_usize)] {
++        let root = temp_root(&format!("human-short-32nd-page-{last_id}"));
++        let mut replies = (0..31_u64).map(|page| human_history_reply(
++            (BASE + page * 200 + 1..=BASE + (page + 1) * 200).map(human_history_message).collect(),
++        )).collect::<Vec<_>>();
++        let final_page = if last_id == BASE + 6200 { vec![] } else { vec![human_history_message(last_id)] };
++        replies.push(human_history_reply(final_page));
++        let (url, server) = spawn_human_message_fixture(replies);
++        let runtime = human_message_fixture_runtime(&root, &url);
++        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
++            .as_str().expect("id").to_owned();
++        let rows = runtime.sync_human_conversation(&id).expect("short or empty final page stays within budget");
++        assert_eq!(rows.len(), expected_len);
++        for (index, row) in rows.iter().enumerate() {
++            assert_eq!(row, &human_local_history_message(BASE + index as u64 + 1));
++        }
++        let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
++        assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("coverage"),
++            Some(json!({"afterId":last_id,"complete":true})));
++        let requests = server.join().expect("no 33rd refresh");
++        assert_eq!(requests.len(), 32);
++        for (index, request) in requests.iter().enumerate() {
++            let after = if index == 0 { 0 } else { BASE + index as u64 * 200 };
++            assert!(request.starts_with(&format!("GET /api/social/messages?contactId=2&limit=200&afterId={after} ")));
++        }
++        runtime.shutdown(); drop(owner); drop(runtime);
++
++        let mut updated = human_history_message(last_id);
++        updated["reactions"] = json!([{"emoji":"👍","count":1,"reactedByMe":false}]);
++        let (url, server) = spawn_human_message_fixture(vec![
++            human_history_reply(vec![]), human_history_reply(vec![updated]),
++        ]);
++        let restarted = human_message_fixture_runtime(&root, &url);
++        let refreshed = restarted.sync_human_conversation(&id).expect("deferred latest snapshot");
++        assert_eq!(human_row_ids(&refreshed), human_row_ids(&rows));
++        let last_index = expected_len - 1;
++        assert_eq!(&refreshed[..last_index], &rows[..last_index]);
++        let mut expected_last = rows[last_index].clone();
++        expected_last["remoteReactions"] = json!([{"emoji":"👍","count":1,"reactedByMe":false}]);
++        expected_last["reactions"] = json!([{"emoji":"👍","by":"2"}]);
++        assert_eq!(refreshed[last_index], expected_last);
++        let owner = restarted.open_human_conversation_db_owner(&id).expect("reopened owner");
++        assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("retained completion"),
++            Some(json!({"afterId":last_id,"complete":true})));
++        let requests = server.join().expect("deferred refresh fixture");
++        assert_eq!(requests.len(), 2);
++        assert!(requests[0].starts_with(&format!("GET /api/social/messages?contactId=2&limit=200&afterId={last_id} ")));
++        assert!(requests[1].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
++        restarted.shutdown(); drop(owner); drop(restarted);
++        let _ = fs::remove_dir_all(root);
++    }
++}
++
++#[test]
++fn shipping_human_midpage_resource_failure_replays_durable_prefix_after_restart() {
++    let root = temp_root("human-midpage-prefix-restart");
++    let mut resource_row = human_history_message(2_000_202);
++    resource_row["attachments"] = json!([{
++        "resourceId":"midpage-retry-resource","name":"retry.bin","contentType":"application/octet-stream",
++        "size":4,"createdAt":"1970-01-01T00:00:01Z"
++    }]);
++    let interrupted_page = vec![human_history_message(2_000_201), resource_row, human_history_message(2_000_203)];
++    let (url, server) = spawn_human_message_fixture(vec![
++        human_history_reply((2_000_001..=2_000_200).map(human_history_message).collect()),
++        human_history_reply(interrupted_page.clone()),
++        HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"midpage resource disconnect"})),
++        human_history_reply(interrupted_page.clone()),
++        HumanMessageFixtureReply::Bytes(200, vec![21, 22, 23, 24]),
++        human_history_reply(interrupted_page),
++    ]);
++    let runtime = human_message_fixture_runtime(&root, &url);
++    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
++        .as_str().expect("id").to_owned();
++    assert!(runtime.sync_human_conversation(&id).expect_err("resource failure leaves a gap").contains("resource"));
++    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
++    let prefix = owner.get_transcript_entries().expect("durable page plus prefix");
++    assert_eq!(prefix.len(), 201);
++    for (index, row) in prefix.iter().enumerate() {
++        assert_eq!(row, &human_local_history_message(2_000_001 + index as u64));
++    }
++    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("prior complete page only"),
++        Some(json!({"afterId":2_000_200,"complete":false})));
++    runtime.shutdown(); drop(owner); drop(runtime);
++
++    let restarted = human_message_fixture_runtime(&root, &url);
++    let rows = restarted.sync_human_conversation(&id).expect("resume partial page");
++    assert_eq!(&rows[..201], prefix.as_slice());
++    assert_eq!(rows.len(), 203);
++    assert_eq!(rows[202], human_local_history_message(2_000_203));
++    assert_eq!(rows[201]["remoteMessageId"], "2000202");
++    assert_eq!(fs::read(rows[201]["attachments"][0]["path"].as_str().expect("download path"))
++        .expect("resource bytes"), vec![21, 22, 23, 24]);
++    let owner = restarted.open_human_conversation_db_owner(&id).expect("owner");
++    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("full page committed"),
++        Some(json!({"afterId":2_000_203,"complete":true})));
++    let requests = server.join().expect("midpage fixture");
++    assert_eq!(requests.len(), 6, "prefix replay and latest refresh reuse the committed resource");
++    assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 "));
++    assert!(requests[1].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=2000200 "));
++    assert!(requests[2].starts_with("GET /api/social/message-resources/midpage-retry-resource "));
++    assert!(requests[3].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=2000200 "));
++    assert!(requests[4].starts_with("GET /api/social/message-resources/midpage-retry-resource "));
++    assert!(requests[5].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
++    restarted.shutdown(); drop(owner); drop(restarted);
++    let _ = fs::remove_dir_all(root);
++}
++
++#[test]
++fn shipping_human_equal_timestamp_pagination_keeps_cursor_through_refresh_reaction_and_restart() {
++    let root = temp_root("human-stable-sequence-pages");
++    let initial = (3_000_001..=3_000_005).map(human_history_message).collect::<Vec<_>>();
++    let mut refreshed = (3_000_001..=3_000_006).map(human_history_message).collect::<Vec<_>>();
++    refreshed[1]["text"] = json!("refreshed older content");
++    refreshed[1]["createdAt"] = json!("1969-12-31T23:59:59Z");
++    let (url, server) = spawn_human_message_fixture(vec![
++        human_history_reply(initial.clone()), human_history_reply(initial),
++        human_history_reply(vec![human_history_message(3_000_006)]), human_history_reply(refreshed),
++        HumanMessageFixtureReply::Json(200, json!({
++            "success":true,"messageId":3_000_002,"reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
++        })),
++    ]);
++    let runtime = human_message_fixture_runtime(&root, &url);
++    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
++        .as_str().expect("id").to_owned();
++    runtime.sync_human_conversation(&id).expect("equal timestamp history");
++    let tail = dispatch(&runtime, "getHumanConversationTranscriptTail", json!({"conversationId":id,"limit":2}));
++    assert_eq!(human_row_ids(tail["entries"].as_array().expect("tail")),
++        vec!["human-server-message:3000004", "human-server-message:3000005"]);
++    let cursor = tail["nextBeforeSeq"].as_i64().expect("stable cursor");
++    runtime.sync_human_conversation(&id).expect("new message and known refresh");
++    let reacted = runtime.toggle_human_message_reaction(&id, "human-server-message:3000002", "👍")
++        .expect("react to older page");
++    assert_eq!(reacted["content"], "refreshed older content");
++    assert_eq!(reacted["timestampMs"], -1000.0);
++    let older = dispatch(&runtime, "getHumanConversationTranscriptTail",
++        json!({"conversationId":id,"beforeSeq":cursor,"limit":2}));
++    assert_eq!(human_row_ids(older["entries"].as_array().expect("older")),
++        vec!["human-server-message:3000002", "human-server-message:3000003"]);
++    assert_eq!(older["entries"][0], reacted);
++    let oldest_cursor = older["nextBeforeSeq"].as_i64().expect("oldest cursor");
++    runtime.shutdown(); drop(runtime);
++
++    let restarted = human_message_fixture_runtime(&root, &url);
++    let reopened = dispatch(&restarted, "getHumanConversationTranscriptTail",
++        json!({"conversationId":id,"beforeSeq":cursor,"limit":2}));
++    assert_eq!(reopened, older, "the persisted cursor retains the complete refreshed rows");
++    let oldest = dispatch(&restarted, "getHumanConversationTranscriptTail",
++        json!({"conversationId":id,"beforeSeq":oldest_cursor,"limit":2}));
++    assert_eq!(oldest["entries"], json!([human_local_history_message(3_000_001)]));
++    assert!(oldest["nextBeforeSeq"].is_null());
++    let all = restarted.read_human_conversation_transcript(&id).expect("all rows");
++    assert_eq!(human_row_ids(&all), (3_000_001..=3_000_006)
++        .map(|remote_id| format!("human-server-message:{remote_id}")).collect::<Vec<_>>());
++    let requests = server.join().expect("pagination fixture");
++    assert_eq!(requests.len(), 5, "paging and pure restart reads remain local");
++    assert!(requests[0].contains("&afterId=0 "));
++    assert!(requests[2].contains("&afterId=3000005 "));
++    assert_eq!(fixture_request_json(&requests[4]), json!({"emoji":"👍","active":true}));
++    restarted.shutdown(); drop(restarted);
++    let _ = fs::remove_dir_all(root);
++}
++
++#[test]
++fn shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling() {
++    let root = temp_root("human-reaction-crash-after-apply");
++    let target_id = "human-server-message:4000777";
++    let summary = json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
++    let mut remote = human_history_message(4_000_777);
++    remote["reactions"] = summary.clone();
++    let (url, server) = spawn_human_message_fixture(vec![
++        HumanMessageFixtureReply::Json(200, json!({"success":true,"messageId":4_000_777,"reactions":summary.clone()})),
++        human_history_reply(vec![]), human_history_reply(vec![remote]),
++    ]);
++    let runtime = human_message_fixture_runtime(&root, &url);
++    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
++        .as_str().expect("id").to_owned();
++    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
++    let mut applied = human_local_history_message(4_000_777);
++    applied["remoteReactions"] = summary;
++    applied["reactions"] = json!([{"emoji":"👍","by":"me"}]);
++    applied["retainedLocalMetadata"] = json!({"crash":"after row commit, before intent acknowledgement"});
++    assert!(owner.append_transcript_entry(&applied).expect("already applied row"));
++    assert!(owner.set_metadata("humanReactionIntent", json!({
++        "entryId":target_id,"remoteMessageId":"4000777","emoji":"👍","active":true,"localHumanId":"1"
++    })).expect("uncleared intent"));
++    assert!(owner.set_metadata("humanHistoryCoverage", json!({"afterId":4_000_777,"complete":false}))
++        .expect("covered history"));
++    runtime.shutdown(); drop(owner); drop(runtime);
++
++    let (events, subscription) = record_human_target_events(&id, target_id);
++    let restarted = human_message_fixture_runtime(&root, &url);
++    assert_eq!(restarted.sync_human_conversation(&id).expect("sync automatically resumes intent"), vec![applied.clone()]);
++    let owner = restarted.open_human_conversation_db_owner(&id).expect("owner");
++    assert_eq!(owner.get_metadata("humanReactionIntent").expect("durable ack"), Some(json!(null)));
++    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("complete"),
++        Some(json!({"afterId":4_000_777,"complete":true})));
++    assert!(events.lock().expect("events").iter().all(|event| event["entries"] == json!([applied.clone()])),
++        "recovery never publishes an inactive or partial intermediate row");
++    runtime.shutdown(); drop(owner); drop(restarted);
++    let reopened = human_message_fixture_runtime(&root, &url);
++    assert_eq!(reopened.read_human_conversation_transcript(&id).expect("pure reopen"), vec![applied]);
++    subscription.unsubscribe();
++    let requests = server.join().expect("already-applied intent fixture");
++    assert_eq!(requests.len(), 3);
++    assert!(requests[0].starts_with("POST /api/social/messages/4000777/reactions "));
++    assert_eq!(fixture_request_json(&requests[0]), json!({"emoji":"👍","active":true}));
++    assert!(requests[1].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=4000777 "));
++    assert!(requests[2].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
++    reopened.shutdown(); drop(reopened);
++    let _ = fs::remove_dir_all(root);
++}
++
++#[test]
++fn shipping_human_invalid_persisted_reaction_intents_are_retained_without_http_after_restart() {
++    let cases = [
++        "malformed-intent", "missing-entry", "missing-active", "foreign-account",
++        "empty-emoji", "padded-emoji", "long-emoji", "missing-target", "changed-remote",
++        "foreign-author", "wrong-kind", "wrong-author-kind",
++        "zero-remote", "unsafe-remote", "leading-zero-remote", "padded-remote",
++        "zero-target", "unsafe-target", "leading-zero-target", "padded-target", "missing-remote-target",
++    ];
++    for (index, label) in cases.into_iter().enumerate() {
++        let root = temp_root(&format!("human-invalid-intent-{label}"));
++        let remote_id = 4_100_000 + index as u64;
++        let target_id = format!("human-server-message:{remote_id}");
++        let (url, stop, server) = spawn_human_no_request_fixture();
++        let runtime = human_message_fixture_runtime(&root, &url);
++        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
++            .as_str().expect("id").to_owned();
++        let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
++        let mut original = human_local_history_message(remote_id);
++        original["retainedLocalMetadata"] = json!({"case":label,"keep":"complete row"});
++        let mut intent = json!({
++            "entryId":target_id,"remoteMessageId":remote_id.to_string(),"emoji":"👍","active":true,"localHumanId":"1"
++        });
++        let expected = match label {
++            "malformed-intent" => { intent = json!(["not an intention object"]); "persisted Human reaction intent lacks entryId" }
++            "missing-entry" => { intent.as_object_mut().expect("intent").remove("entryId"); "persisted Human reaction intent lacks entryId" }
++            "missing-active" => { intent.as_object_mut().expect("intent").remove("active"); "persisted Human reaction intent lacks desired state" }
++            "foreign-account" => { intent["localHumanId"] = json!("3"); "persisted Human reaction intent belongs to a different account" }
++            "empty-emoji" => { intent["emoji"] = json!(" "); "persisted Human reaction intent contains invalid emoji" }
++            "padded-emoji" => { intent["emoji"] = json!(" 👍"); "persisted Human reaction intent contains invalid emoji" }
++            "long-emoji" => { intent["emoji"] = json!("x".repeat(33)); "persisted Human reaction intent contains invalid emoji" }
++            "missing-target" => { intent["entryId"] = json!("human-server-message:missing"); "persisted Human reaction target disappeared" }
++            "changed-remote" => { intent["remoteMessageId"] = json!("9999999"); "persisted Human reaction remote identity changed" }
++            "foreign-author" => { original["authorId"] = json!("3"); "persisted Human reaction target is outside the selected Human conversation" }
++            "wrong-kind" => { original["kind"] = json!("notice"); original["text"] = json!("valid persisted notice, not a Human message"); "persisted Human reaction target is outside the selected Human conversation" }
++            "wrong-author-kind" => { original["authorKind"] = json!("agent"); "persisted Human reaction target is outside the selected Human conversation" }
++            "zero-remote" => { intent["remoteMessageId"] = json!("0"); "persisted Human reaction intent contains invalid remote identity" }
++            "unsafe-remote" => { intent["remoteMessageId"] = json!("9007199254740992"); "persisted Human reaction intent contains invalid remote identity" }
++            "leading-zero-remote" => { intent["remoteMessageId"] = json!(format!("0{remote_id}")); "persisted Human reaction intent contains invalid remote identity" }
++            "padded-remote" => { intent["remoteMessageId"] = json!(format!(" {remote_id} ")); "persisted Human reaction intent contains invalid remote identity" }
++            "zero-target" => { original["remoteMessageId"] = json!(0); "Human reaction target has an invalid canonical remote message identity" }
++            "unsafe-target" => { original["remoteMessageId"] = json!(9_007_199_254_740_992_u64); "Human reaction target has an invalid canonical remote message identity" }
++            "leading-zero-target" => { original["remoteMessageId"] = json!(format!("0{remote_id}")); "Human reaction target has an invalid canonical remote message identity" }
++            "padded-target" => { original["remoteMessageId"] = json!(format!(" {remote_id} ")); "Human reaction target has an invalid canonical remote message identity" }
++            "missing-remote-target" => { original.as_object_mut().expect("target").remove("remoteMessageId"); "Human reaction target has no canonical remote message identity" }
++            _ => unreachable!(),
++        };
++        assert!(owner.append_transcript_entry(&original).expect("seed target"));
++        assert!(owner.set_metadata("humanReactionIntent", intent.clone()).expect("seed durable intent"));
++        runtime.shutdown(); drop(owner); drop(runtime);
++
++        let (events, subscription) = record_human_target_events(&id, &target_id);
++        let restarted = human_message_fixture_runtime(&root, &url);
++        let result = restarted.sync_human_conversation(&id);
++        let owner = restarted.open_human_conversation_db_owner(&id).expect("reopened owner");
++        let observed_rows = owner.get_transcript_entries();
++        let observed_intent = owner.get_metadata("humanReactionIntent");
++        let observed_events = events.lock().expect("events").clone();
++        subscription.unsubscribe();
++        restarted.shutdown(); drop(owner); drop(restarted);
++        stop.send(()).expect("stop active admission listener");
++        let requests = server.join().expect("live no-HTTP fixture");
++
++        assert!(requests.is_empty(), "rejected intent made no HTTP request: {label}");
++        assert_eq!(result.expect_err("invalid persisted intent"), expected, "{label}");
++        assert_eq!(observed_rows.expect("preserved complete row"), vec![original.clone()], "{label}");
++        assert_eq!(observed_intent.expect("preserved intent"), Some(intent.clone()), "{label}");
++        assert!(observed_events.is_empty(), "no rejected-intent event: {label}");
++        let reopened = human_message_fixture_runtime(&root, &url);
++        let owner = reopened.open_human_conversation_db_owner(&id).expect("pure reopen owner");
++        assert_eq!(owner.get_transcript_entries().expect("reopen preserved row"), vec![original], "{label}");
++        assert_eq!(owner.get_metadata("humanReactionIntent").expect("reopen preserved intent"), Some(intent), "{label}");
++        reopened.shutdown(); drop(owner); drop(reopened);
++        let _ = fs::remove_dir_all(root);
++    }
++}
++
++#[test]
++fn shipping_human_reaction_rechecks_current_target_after_http_without_overwriting_newer_fields() {
++    for (index, label) in [
++        "newer-metadata", "changed-remote", "wrong-kind", "foreign-author", "wrong-author-kind",
++        "zero-remote", "unsafe-remote", "leading-zero-remote", "padded-remote", "missing-remote",
++    ].into_iter().enumerate()
++    {
++        let root = temp_root(&format!("human-reaction-current-target-{label}"));
++        let remote_id = 4_200_000 + index as u64;
++        let target_id = format!("human-server-message:{remote_id}");
++        let (seen, accepted) = std::sync::mpsc::channel();
++        let (release, resume) = std::sync::mpsc::channel();
++        let summary = json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
++        let (url, server) = spawn_human_message_fixture(vec![
++            HumanMessageFixtureReply::Deferred(Box::new(HumanMessageFixtureReply::Json(200, json!({
++                "success":true,"messageId":remote_id,"reactions":summary.clone()
++            }))), seen, resume),
++        ]);
++        let runtime = human_message_fixture_runtime(&root, &url);
++        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
++            .as_str().expect("id").to_owned();
++        let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
++        let original = human_local_history_message(remote_id);
++        assert!(owner.append_transcript_entry(&original).expect("seed target"));
++        let (events, subscription) = record_human_target_events(&id, &target_id);
++        let reacting = {
++            let runtime = Arc::clone(&runtime);
++            let id = id.clone();
++            let target_id = target_id.clone();
++            thread::spawn(move || runtime.toggle_human_message_reaction(&id, &target_id, "👍"))
++        };
++        let observed_request = accepted.recv_timeout(std::time::Duration::from_secs(15));
++        let staged = owner.get_metadata("humanReactionIntent");
++        let desired = json!({
++            "entryId":target_id,"remoteMessageId":remote_id.to_string(),"emoji":"👍","active":true,"localHumanId":"1"
++        });
++        let mut current = original;
++        current["retainedLocalMetadata"] = json!({"written":"while the reaction response is held"});
++        current["readAt"] = json!("2026-10-05T01:05:00Z");
++        let expected_error = match label {
++            "newer-metadata" => None,
++            "changed-remote" => { current["remoteMessageId"] = json!((remote_id + 100).to_string()); Some("persisted Human reaction remote identity changed") }
++            "wrong-kind" => { current["kind"] = json!("notice"); current["text"] = json!("valid notice written while reaction waits"); Some("persisted Human reaction target is outside the selected Human conversation") }
++            "foreign-author" => { current["authorId"] = json!("3"); Some("persisted Human reaction target is outside the selected Human conversation") }
++            "wrong-author-kind" => { current["authorKind"] = json!("agent"); Some("persisted Human reaction target is outside the selected Human conversation") }
++            "zero-remote" => { current["remoteMessageId"] = json!(0); Some("Human reaction target has an invalid canonical remote message identity") }
++            "unsafe-remote" => { current["remoteMessageId"] = json!(9_007_199_254_740_992_u64); Some("Human reaction target has an invalid canonical remote message identity") }
++            "leading-zero-remote" => { current["remoteMessageId"] = json!(format!("0{remote_id}")); Some("Human reaction target has an invalid canonical remote message identity") }
++            "padded-remote" => { current["remoteMessageId"] = json!(format!(" {remote_id} ")); Some("Human reaction target has an invalid canonical remote message identity") }
++            "missing-remote" => { current.as_object_mut().expect("target").remove("remoteMessageId"); Some("Human reaction target has no canonical remote message identity") }
++            _ => unreachable!(),
++        };
++        let independent_update = owner.update_transcript_entry(&target_id, &current);
++        let before_settlement = events.lock().expect("events before settlement").clone();
++        // Release before testing any observed outcome, so a failing oracle does
++        // not strand either the HTTP writer or the production reaction worker.
++        let released = release.send(());
++        let result = reacting.join().expect("reaction worker");
++        let requests = server.join().expect("held reaction fixture");
++        observed_request.expect("reaction POST is held before independent SQLite update");
++        released.expect("release reaction response");
++        assert_eq!(staged.expect("staged intention"), Some(desired.clone()), "{label}");
++        assert_eq!(independent_update.expect("independent durable update"), Some(current.clone()), "{label}");
++
++        let expected = if let Some(error) = expected_error {
++            assert_eq!(result.expect_err("changed target cannot be settled"), error, "{label}");
++            assert_eq!(owner.get_metadata("humanReactionIntent").expect("retained intent"), Some(desired), "{label}");
++            assert_eq!(*events.lock().expect("events after rejection"), before_settlement,
++                "target rejection publishes no settlement event: {label}");
++            current
++        } else {
++            let mut expected = current;
++            expected["remoteReactions"] = summary;
++            expected["reactions"] = json!([{"emoji":"👍","by":"me"}]);
++            assert_eq!(result.expect("current target settles"), expected, "{label}");
++            assert_eq!(owner.get_metadata("humanReactionIntent").expect("acknowledged intent"), Some(json!(null)));
++            let published = events.lock().expect("settled events").clone();
++            assert_eq!(published.len(), before_settlement.len() + 1);
++            assert_eq!(published.last().expect("reaction event")["entries"], json!([expected.clone()]));
++            expected
++        };
++        assert_eq!(owner.get_transcript_entries().expect("current complete row"), vec![expected.clone()], "{label}");
++        assert_eq!(requests.len(), 1, "exactly one dispatched reaction: {label}");
++        assert!(requests[0].starts_with(&format!("POST /api/social/messages/{remote_id}/reactions ")));
++        assert_eq!(fixture_request_json(&requests[0]), json!({"emoji":"👍","active":true}));
++        let final_intent = owner.get_metadata("humanReactionIntent").expect("final durable intent");
++        subscription.unsubscribe();
++        runtime.shutdown(); drop(owner); drop(runtime);
++        let reopened = human_message_fixture_runtime(&root, &url);
++        let owner = reopened.open_human_conversation_db_owner(&id).expect("pure reopen owner");
++        assert_eq!(owner.get_transcript_entries().expect("pure reopen row"), vec![expected], "{label}");
++        assert_eq!(owner.get_metadata("humanReactionIntent").expect("pure reopen intent"), final_intent, "{label}");
++        reopened.shutdown(); drop(owner); drop(reopened);
++        let _ = fs::remove_dir_all(root);
++    }
++}
++
++#[test]
++fn shipping_human_reaction_gateway_rejects_invalid_targets_and_emoji_before_staging_intent() {
++    let cases = [
++        "wrong-kind", "wrong-author-kind", "foreign-author", "zero-number", "zero-string",
++        "unsafe-number", "unsafe-string", "leading-zero-remote", "padded-remote", "missing-remote",
++        "padded-emoji-leading", "padded-emoji-trailing",
++    ];
++    for (index, label) in cases.into_iter().enumerate() {
++        let root = temp_root(&format!("human-reaction-gateway-admission-{label}"));
++        let remote_id = 4_300_000 + index as u64;
++        let target_id = format!("human-server-message:{remote_id}");
++        let (url, stop, server) = spawn_human_no_request_fixture();
++        let runtime = human_message_fixture_runtime(&root, &url);
++        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
++            .as_str().expect("id").to_owned();
++        let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
++        let mut original = human_local_history_message(remote_id);
++        original["retainedLocalMetadata"] = json!({"case":label,"keep":"complete unstaged target"});
++        let mut emoji = "👍";
++        let expected_error = match label {
++            "wrong-kind" => { original["kind"] = json!("notice"); original["text"] = json!("valid notice is not a reaction target"); "persisted Human reaction target is outside the selected Human conversation" }
++            "wrong-author-kind" => { original["authorKind"] = json!("agent"); "persisted Human reaction target is outside the selected Human conversation" }
++            "foreign-author" => { original["authorId"] = json!("3"); "persisted Human reaction target is outside the selected Human conversation" }
++            "zero-number" => { original["remoteMessageId"] = json!(0); "Human reaction target has an invalid canonical remote message identity" }
++            "zero-string" => { original["remoteMessageId"] = json!("0"); "Human reaction target has an invalid canonical remote message identity" }
++            "unsafe-number" => { original["remoteMessageId"] = json!(9_007_199_254_740_992_u64); "Human reaction target has an invalid canonical remote message identity" }
++            "unsafe-string" => { original["remoteMessageId"] = json!("9007199254740992"); "Human reaction target has an invalid canonical remote message identity" }
++            "leading-zero-remote" => { original["remoteMessageId"] = json!(format!("0{remote_id}")); "Human reaction target has an invalid canonical remote message identity" }
++            "padded-remote" => { original["remoteMessageId"] = json!(format!(" {remote_id} ")); "Human reaction target has an invalid canonical remote message identity" }
++            "missing-remote" => { original.as_object_mut().expect("target").remove("remoteMessageId"); "Human reaction target has no canonical remote message identity" }
++            "padded-emoji-leading" => { emoji = " 👍"; "Fabushi Human reaction emoji must not contain surrounding whitespace" }
++            "padded-emoji-trailing" => { emoji = "👍 "; "Fabushi Human reaction emoji must not contain surrounding whitespace" }
++            _ => unreachable!(),
++        };
++        assert!(owner.append_transcript_entry(&original).expect("seed invalid target"));
++        assert_eq!(owner.get_metadata("humanReactionIntent").expect("no existing intent"), None);
++        let (events, subscription) = record_human_target_events(&id, &target_id);
++        // Exercise the production RPC carrier too: trimming emoji here would
++        // bypass the worker's exact-identity admission before staging.
++        let result = dispatch_production_session_gateway_call(&runtime, "reactHumanMessage", &json!({
++            "conversationId":id,"entryId":target_id,"emoji":emoji
++        }));
++        let observed_rows = owner.get_transcript_entries();
++        let observed_intent = owner.get_metadata("humanReactionIntent");
++        let observed_events = events.lock().expect("admission events").clone();
++        subscription.unsubscribe();
++        runtime.shutdown(); drop(owner); drop(runtime);
++        stop.send(()).expect("stop active gateway listener");
++        let requests = server.join().expect("live gateway admission fixture");
++
++        assert!(requests.is_empty(), "gateway admission made no HTTP request: {label}");
++        assert_eq!(result.expect("handled reaction gateway request").expect_err("invalid new reaction"),
++            SessionGatewayError::Internal(expected_error.to_owned()), "{label}");
++        assert_eq!(observed_rows.expect("unchanged whole target"), vec![original.clone()], "{label}");
++        assert_eq!(observed_intent.expect("no intention staged"), None, "{label}");
++        assert!(observed_events.is_empty(), "new reaction rejection publishes no mutation: {label}");
++        let reopened = human_message_fixture_runtime(&root, &url);
++        let owner = reopened.open_human_conversation_db_owner(&id).expect("pure reopen owner");
++        assert_eq!(owner.get_transcript_entries().expect("reopen unchanged target"), vec![original], "{label}");
++        assert_eq!(owner.get_metadata("humanReactionIntent").expect("reopen has no intention"), None, "{label}");
++        reopened.shutdown(); drop(owner); drop(reopened);
++        let _ = fs::remove_dir_all(root);
++    }
++
++    // Existing numeric remote identities remain valid through the same public
++    // gateway, while the outgoing route and durable intention use canonical text.
++    let root = temp_root("human-reaction-gateway-canonical-number");
++    let remote_id = 4_400_999_u64;
++    let target_id = format!("human-server-message:{remote_id}");
++    let summary = json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
++    let (url, server) = spawn_human_message_fixture(vec![
++        HumanMessageFixtureReply::Json(200, json!({"success":true,"messageId":remote_id,"reactions":summary.clone()})),
++    ]);
++    let runtime = human_message_fixture_runtime(&root, &url);
++    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
++        .as_str().expect("id").to_owned();
++    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
++    let mut original = human_local_history_message(remote_id);
++    original["remoteMessageId"] = json!(remote_id);
++    original["retainedLocalMetadata"] = json!({"keep":"numeric compatibility"});
++    assert!(owner.append_transcript_entry(&original).expect("seed canonical numeric target"));
++    let (events, subscription) = record_human_target_events(&id, &target_id);
++    let result = dispatch_production_session_gateway_call(&runtime, "reactHumanMessage", &json!({
++        "conversationId":id,"entryId":target_id,"emoji":"👍"
++    }));
++    let requests = server.join().expect("canonical numeric positive fixture");
++    let mut expected = original;
++    expected["remoteReactions"] = summary;
++    expected["reactions"] = json!([{"emoji":"👍","by":"me"}]);
++    assert_eq!(result.expect("handled canonical numeric reaction").expect("numeric target admitted"), expected);
++    assert_eq!(owner.get_transcript_entries().expect("complete numeric target"), vec![expected.clone()]);
++    assert_eq!(owner.get_metadata("humanReactionIntent").expect("numeric intention acknowledged"), Some(json!(null)));
++    assert_eq!(requests.len(), 1, "one positive-control reaction POST");
++    assert!(requests[0].starts_with("POST /api/social/messages/4400999/reactions "));
++    assert_eq!(fixture_request_json(&requests[0]), json!({"emoji":"👍","active":true}));
++    let published = events.lock().expect("numeric target events").clone();
++    assert_eq!(published.len(), 1);
++    assert_eq!(published[0]["entries"], json!([expected.clone()]));
++    subscription.unsubscribe();
++    runtime.shutdown(); drop(owner); drop(runtime);
++    let reopened = human_message_fixture_runtime(&root, &url);
++    let owner = reopened.open_human_conversation_db_owner(&id).expect("positive pure reopen owner");
++    assert_eq!(owner.get_transcript_entries().expect("positive reopen row"), vec![expected]);
++    assert_eq!(owner.get_metadata("humanReactionIntent").expect("positive reopen acknowledgement"), Some(json!(null)));
++    reopened.shutdown(); drop(owner); drop(reopened);
++    let _ = fs::remove_dir_all(root);
++}
++
