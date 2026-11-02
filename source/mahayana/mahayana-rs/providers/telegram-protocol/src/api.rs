@@ -1033,7 +1033,10 @@ pub fn parse_bad_server_salt(input: &[u8]) -> Result<BadServerSalt, ApiRequestEr
 }
 
 pub fn parse_future_salts(input: &[u8]) -> Result<FutureSalts, ApiRequestError> {
-    const FUTURE_SALT_WIRE_BYTES: usize = 20;
+    // Fixed-U mtproto_api.tl declares salts:vector<future_salt>:
+    // both the vector and its elements are bare (count, then 4+4+8 bytes).
+    const FUTURE_SALT_WIRE_BYTES: usize = 16;
+    const MAX_FUTURE_SALTS: usize = 1_000_000;
 
     let mut reader = TlReader::new(input);
     let constructor = reader.read_u32()?;
@@ -1045,7 +1048,17 @@ pub fn parse_future_salts(input: &[u8]) -> Result<FutureSalts, ApiRequestError> 
     }
     let request_message_id = reader.read_i64()?;
     let now = reader.read_i32()?;
-    let count = reader.read_vector_length()?;
+    let signed_count = reader.read_i32()?;
+    if signed_count < 0 {
+        return Err(ApiRequestError::Tl(TlError::NegativeVectorLength(signed_count)));
+    }
+    let count = signed_count as usize;
+    if count > MAX_FUTURE_SALTS {
+        return Err(ApiRequestError::Tl(TlError::VectorLengthLimit {
+            length: count,
+            maximum: MAX_FUTURE_SALTS,
+        }));
+    }
     let required_bytes = count
         .checked_mul(FUTURE_SALT_WIRE_BYTES)
         .ok_or(ApiRequestError::InvalidFutureSalts)?;
@@ -1055,13 +1068,6 @@ pub fn parse_future_salts(input: &[u8]) -> Result<FutureSalts, ApiRequestError> 
 
     let mut salts = Vec::with_capacity(count);
     for _ in 0..count {
-        let constructor = reader.read_u32()?;
-        if constructor != FUTURE_SALT_CONSTRUCTOR {
-            return Err(ApiRequestError::Tl(TlError::UnexpectedConstructor {
-                expected: FUTURE_SALT_CONSTRUCTOR,
-                actual: constructor,
-            }));
-        }
         salts.push(FutureSalt {
             valid_since: reader.read_i32()?,
             valid_until: reader.read_i32()?,
@@ -2501,12 +2507,10 @@ mod mtproto_service_builder_contract_tests {
         writer.write_u32(FUTURE_SALTS_CONSTRUCTOR);
         writer.write_i64(0x1112_1314_1516_1718_i64);
         writer.write_i32(1_700_000_000);
-        writer.write_vector_length(2).expect("write salts vector");
-        writer.write_u32(FUTURE_SALT_CONSTRUCTOR);
+        writer.write_i32(2); // bare vector count, no vector constructor
         writer.write_i32(1_700_000_100);
         writer.write_i32(1_700_000_200);
         writer.write_i64(0x2122_2324_2526_2728_i64);
-        writer.write_u32(FUTURE_SALT_CONSTRUCTOR);
         writer.write_i32(1_700_000_300);
         writer.write_i32(1_700_000_400);
         writer.write_i64(0x3132_3334_3536_3738_i64);
@@ -2528,31 +2532,52 @@ mod mtproto_service_builder_contract_tests {
     }
 
     #[test]
-    fn future_salts_rejects_wrong_constructors_truncation_impossible_count_and_trailing() {
+    fn future_salts_rejects_wrong_bare_count_truncation_and_trailing() {
         let exact = future_salts_fixture();
+        assert_eq!(exact.len(), 52);
 
         let mut wrong_top = exact.clone();
         wrong_top[..4].copy_from_slice(&0_u32.to_le_bytes());
         assert!(parse_future_salts(&wrong_top).is_err());
 
-        let mut wrong_vector = exact.clone();
-        wrong_vector[16..20].copy_from_slice(&0_u32.to_le_bytes());
-        assert!(parse_future_salts(&wrong_vector).is_err());
+        let mut boxed_vector = exact.clone();
+        boxed_vector[16..20].copy_from_slice(&0x1cb5_c415_u32.to_le_bytes());
+        assert!(parse_future_salts(&boxed_vector).is_err());
 
-        let mut wrong_nested = exact.clone();
-        wrong_nested[24..28].copy_from_slice(&0_u32.to_le_bytes());
-        assert!(parse_future_salts(&wrong_nested).is_err());
+        let mut negative_count = exact.clone();
+        negative_count[16..20].copy_from_slice(&(-1_i32).to_le_bytes());
+        assert_eq!(
+            parse_future_salts(&negative_count).unwrap_err(),
+            ApiRequestError::Tl(TlError::NegativeVectorLength(-1))
+        );
 
-        for cut in [1_usize, 4, 8, 12, 16, 20, 24, 28, exact.len() - 1] {
+        let mut over_limit = exact.clone();
+        over_limit[16..20].copy_from_slice(&1_000_001_i32.to_le_bytes());
+        assert_eq!(
+            parse_future_salts(&over_limit).unwrap_err(),
+            ApiRequestError::Tl(TlError::VectorLengthLimit {
+                length: 1_000_001,
+                maximum: 1_000_000,
+            })
+        );
+
+        for cut in [1_usize, 4, 8, 12, 16, 20, 21, 23, 24, 28, 35, 36, 43, exact.len() - 1] {
             assert!(parse_future_salts(&exact[..cut]).is_err());
         }
 
         let mut impossible_count = exact.clone();
-        impossible_count[20..24].copy_from_slice(&3_i32.to_le_bytes());
-        assert!(parse_future_salts(&impossible_count).is_err());
+        impossible_count[16..20].copy_from_slice(&3_i32.to_le_bytes());
+        assert_eq!(
+            parse_future_salts(&impossible_count).unwrap_err(),
+            ApiRequestError::InvalidFutureSalts
+        );
 
         let mut trailing = exact;
         trailing.extend_from_slice(&0_u32.to_le_bytes());
-        assert!(parse_future_salts(&trailing).is_err());
+        assert_eq!(
+            parse_future_salts(&trailing).unwrap_err(),
+            ApiRequestError::TrailingBytes(4)
+        );
     }
+
 }
