@@ -5,10 +5,15 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
     AgentDbProjectionError, AgentDbSubscription, CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
+    ChannelInboundAppendAttempt, ChannelInboundAppendFailureKind, ChannelInboundAppendOutcome,
     PendingProfileMutation, ProfileFileSnapshot,
     ProviderReviewContinuationOutcome, SandAgentDb,
     SandAgentDbOptions, SessionProviderReview, SessionWorkAdmissionRecord,
     SessionWorkResultCommitOutcome,
+};
+use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
+    next_entry_id, TranscriptEntryIdKind,
 };
 use mahayana_host_runtime::extensions::session::agent_db_recovery::DbRecoveryOptions;
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
@@ -36,6 +41,96 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-agent-db-owner-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+struct ChannelInboundFixture {
+    root: std::path::PathBuf,
+    workers: Arc<ProductionSessionWorkers>,
+    owner: Arc<SandAgentDb>,
+    admission: SessionWorkAdmissionRecord,
+    publications: Arc<Mutex<Vec<serde_json::Value>>>,
+    subscription: Option<TranscriptMutationSubscription>,
+}
+
+impl ChannelInboundFixture {
+    fn new(label: &str) -> Self {
+        let root = temp_root(label);
+        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 50));
+        let record = workers.materialize_new_session(None, "user", None).unwrap();
+        let owner = workers.open_agent_db_owner(&record.id).unwrap();
+        let admission = owner.read_session_work_admission().unwrap().unwrap();
+        owner.append_transcript_entries(&[serde_json::json!({
+            "id": "t0u", "kind": "message", "role": "user", "content": "original",
+            "sessionKey": admission.session_key,
+        })]).unwrap();
+        let publications = Arc::new(Mutex::new(Vec::new()));
+        let observed = Arc::clone(&publications);
+        let agent_id = admission.session_id.clone();
+        let subscription = subscribe_transcript_mutations(move |mutation| {
+            if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(agent_id.as_str()) {
+                observed.lock().unwrap().push(serde_json::Value::Object(mutation.clone()));
+            }
+        });
+        Self { root, workers, owner, admission, publications, subscription: Some(subscription) }
+    }
+
+    fn connection(&self) -> rusqlite::Connection {
+        rusqlite::Connection::open(self.owner.db_path()).unwrap()
+    }
+
+    fn attempt(&self) -> ChannelInboundAppendAttempt {
+        ChannelInboundAppendAttempt {
+            session_key: self.admission.session_key.clone(),
+            session_id: self.admission.session_id.clone(),
+            lifecycle_revision: self.admission.lifecycle_revision.clone(),
+            entries: Some(channel_inbound_test_entries(
+                &self.admission, &self.owner.get_transcript_entries().unwrap(),
+            )),
+        }
+    }
+
+    fn assert_unpublished(&self) {
+        assert!(self.publications.lock().unwrap().is_empty());
+    }
+}
+
+impl Drop for ChannelInboundFixture {
+    fn drop(&mut self) {
+        if let Some(subscription) = self.subscription.take() {
+            subscription.unsubscribe();
+        }
+        self.workers.shutdown();
+        let _ = fs::remove_dir_all(&self.root);
+    }
+}
+
+fn channel_inbound_test_entries(
+    admission: &SessionWorkAdmissionRecord,
+    history: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    let mut history = history.to_vec();
+    let mut entries = Vec::new();
+    for content in ["first channel message", "second channel message"] {
+        let entry = serde_json::json!({
+            "id": next_entry_id(&history, TranscriptEntryIdKind::UserMessage),
+            "kind": "message", "role": "user", "content": content,
+            "sessionKey": admission.session_key,
+            "sessionId": admission.session_id,
+            "lifecycleRevision": admission.lifecycle_revision,
+            "channel": "fixture-channel:room", "sender": "fixture sender", "timestamp": 123.0,
+        });
+        history.push(entry.clone());
+        entries.push(entry);
+    }
+    entries
+}
+
+fn assert_channel_inbound_not_written(
+    outcome: ChannelInboundAppendOutcome,
+    kind: ChannelInboundAppendFailureKind,
+) {
+    assert!(matches!(outcome, ChannelInboundAppendOutcome::NotWritten(failure)
+        if failure.kind == kind));
 }
 
 fn compaction_fixture(
@@ -3486,4 +3581,353 @@ fn owner_matches_frozen_main_transcript_and_missing_thread_semantics() {
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn channel_inbound_session_commits_ordered_batch_and_publishes_after_unlock() {
+    let fixture = ChannelInboundFixture::new("channel-commit");
+    let expected = fixture.attempt().entries.unwrap();
+    let (observed_tx, observed_rx) = mpsc::channel();
+    let agent_id = fixture.admission.session_id.clone();
+    let read_workers = Arc::clone(&fixture.workers);
+    let subscription = subscribe_transcript_mutations(move |mutation| {
+        if mutation.get("agentId").and_then(serde_json::Value::as_str) != Some(agent_id.as_str()) {
+            return;
+        }
+        let workers = Arc::clone(&read_workers);
+        let read_agent_id = agent_id.clone();
+        let (tx, rx) = mpsc::channel();
+        let reader = std::thread::spawn(move || {
+            let _ = tx.send(workers.read_agent_transcript_entries(&read_agent_id));
+        });
+        // A callback under either the filesystem or DB mutex cannot complete
+        // this public Session read. Bound the negative control so a lock
+        // regression cannot hang CI.
+        let result = rx.recv_timeout(Duration::from_secs(2));
+        let read_completed = result.is_ok();
+        let _ = observed_tx.send(result.ok().and_then(Result::ok));
+        if read_completed {
+            reader.join().unwrap();
+        }
+    });
+    let mut attempt = None;
+    let preparations = AtomicUsize::new(0);
+    let generation = get_sand_agent_db_write_generation(fixture.owner.db_path());
+    assert_eq!(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt, |admission, history| {
+            preparations.fetch_add(1, Ordering::SeqCst);
+            assert_eq!(history.len(), 1);
+            Ok(channel_inbound_test_entries(admission, history))
+        },
+    ), ChannelInboundAppendOutcome::Committed { inserted_count: 2 });
+    assert_eq!(preparations.load(Ordering::SeqCst), 1);
+    assert_eq!(attempt.unwrap().entries, Some(expected.clone()));
+    let rows = fixture.owner.get_transcript_entries().unwrap();
+    assert_eq!(&rows[1..], expected.as_slice());
+    assert_eq!(rows.iter().map(|row| row["id"].as_str().unwrap()).collect::<Vec<_>>(),
+        vec!["t0u", "t1u", "t2u"]);
+    assert_eq!(observed_rx.recv_timeout(Duration::from_secs(3)).unwrap(), Some(rows));
+    assert!(get_sand_agent_db_write_generation(fixture.owner.db_path()) > generation);
+    let publications = fixture.publications.lock().unwrap();
+    assert_eq!(publications.len(), 1);
+    assert_eq!(publications[0]["entries"], serde_json::json!(expected));
+    drop(publications);
+    subscription.unsubscribe();
+}
+
+#[test]
+fn channel_inbound_later_insert_failure_rolls_back_and_retains_prepared_ids() {
+    let fixture = ChannelInboundFixture::new("channel-later-insert");
+    fixture.connection().execute_batch(
+        "CREATE TRIGGER channel_fail_later BEFORE INSERT ON transcript_entries
+         WHEN NEW.id = 't2u' BEGIN SELECT RAISE(ABORT, 'later channel insert failed'); END;",
+    ).unwrap();
+    let before = compaction_durable_snapshot(&fixture.owner);
+    let mut attempt = None;
+    assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt,
+        |admission, history| Ok(channel_inbound_test_entries(admission, history)),
+    ), ChannelInboundAppendFailureKind::Storage);
+    let prepared = attempt.clone().unwrap();
+    assert_eq!(prepared.entries.as_ref().unwrap().iter()
+        .map(|row| row["id"].as_str().unwrap()).collect::<Vec<_>>(), vec!["t1u", "t2u"]);
+    assert_eq!(compaction_durable_snapshot(&fixture.owner), before);
+    fixture.assert_unpublished();
+
+    fixture.connection().execute_batch("DROP TRIGGER channel_fail_later").unwrap();
+    assert_eq!(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt,
+        |_, _| panic!("a retained channel batch must not be prepared again"),
+    ), ChannelInboundAppendOutcome::Committed { inserted_count: 2 });
+    assert_eq!(attempt, Some(prepared.clone()));
+    assert_eq!(&fixture.owner.get_transcript_entries().unwrap()[1..],
+        prepared.entries.as_ref().unwrap().as_slice());
+    assert_eq!(fixture.publications.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn channel_inbound_retained_id_conflict_rolls_back_prefix_without_reminting() {
+    let fixture = ChannelInboundFixture::new("channel-id-conflict");
+    fixture.connection().execute_batch(
+        "CREATE TRIGGER channel_fail_later BEFORE INSERT ON transcript_entries
+         WHEN NEW.id = 't2u' BEGIN SELECT RAISE(ABORT, 'hold prepared batch'); END;",
+    ).unwrap();
+    let mut attempt = None;
+    assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt,
+        |admission, history| Ok(channel_inbound_test_entries(admission, history)),
+    ), ChannelInboundAppendFailureKind::Storage);
+    let prepared = attempt.clone();
+    let connection = fixture.connection();
+    connection.execute_batch("DROP TRIGGER channel_fail_later").unwrap();
+    connection.execute("INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+        rusqlite::params!["t2u", serde_json::json!({
+            "id": "t2u", "kind": "message", "role": "user", "content": "competing writer",
+        }).to_string()],
+    ).unwrap();
+    let before = compaction_durable_snapshot(&fixture.owner);
+    assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt,
+        |_, _| panic!("ID conflict must retain the original batch"),
+    ), ChannelInboundAppendFailureKind::IdentityConflict);
+    assert_eq!(attempt, prepared);
+    assert_eq!(compaction_durable_snapshot(&fixture.owner), before);
+    fixture.assert_unpublished();
+}
+
+#[test]
+fn channel_inbound_zero_row_insert_is_refused_without_partial_publication() {
+    let fixture = ChannelInboundFixture::new("channel-ignored-insert");
+    fixture.connection().execute_batch(
+        "CREATE TRIGGER channel_ignore_later BEFORE INSERT ON transcript_entries
+         WHEN NEW.id = 't2u' BEGIN SELECT RAISE(IGNORE); END;",
+    ).unwrap();
+    let before = compaction_durable_snapshot(&fixture.owner);
+    let mut attempt = None;
+    assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt,
+        |admission, history| Ok(channel_inbound_test_entries(admission, history)),
+    ), ChannelInboundAppendFailureKind::IdentityConflict);
+    assert_eq!(attempt.as_ref().unwrap().entries.as_ref().unwrap().len(), 2);
+    assert_eq!(compaction_durable_snapshot(&fixture.owner), before);
+    fixture.assert_unpublished();
+}
+
+#[test]
+fn channel_inbound_commit_edge_refuses_trigger_rebinding_or_changed_rows() {
+    for fault in ["generation", "row-replaced", "row-deleted"] {
+        let fixture = ChannelInboundFixture::new(fault);
+        let mutation = match fault {
+            "generation" => "UPDATE kv SET value = json_set(value, '$.lifecycle_revision', 'trigger-generation') WHERE key = 'sessionWorkAdmission';",
+            "row-replaced" => "UPDATE transcript_entries SET entry = json_set(entry, '$.content', 'trigger-replacement') WHERE id = 't1u';",
+            _ => "DELETE FROM transcript_entries WHERE id = 't1u';",
+        };
+        fixture.connection().execute_batch(&format!(
+            "CREATE TRIGGER channel_change_after_insert AFTER INSERT ON transcript_entries
+             WHEN NEW.id = 't2u' BEGIN {mutation} END;",
+        )).unwrap();
+        let before = compaction_durable_snapshot(&fixture.owner);
+        let mut attempt = None;
+        assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+            &fixture.admission.session_id, &mut attempt,
+            |admission, history| Ok(channel_inbound_test_entries(admission, history)),
+        ), ChannelInboundAppendFailureKind::IdentityConflict);
+        assert_eq!(attempt.as_ref().unwrap().entries.as_ref().unwrap().len(), 2);
+        assert_eq!(compaction_durable_snapshot(&fixture.owner), before);
+        fixture.assert_unpublished();
+    }
+}
+
+#[test]
+fn channel_inbound_checked_history_refuses_storage_and_decoding_errors() {
+    for fault in ["missing-table", "malformed-json", "invalid-message", "mismatched-id"] {
+        let fixture = ChannelInboundFixture::new(fault);
+        let connection = fixture.connection();
+        let original = connection.query_row(
+            "SELECT entry FROM transcript_entries WHERE id = 't0u'", [], |row| row.get::<_, String>(0),
+        ).unwrap();
+        if fault == "missing-table" {
+            connection.execute_batch("ALTER TABLE transcript_entries RENAME TO unavailable_history").unwrap();
+        } else {
+            // The production indexes reject malformed JSON before it can be
+            // stored. Remove only those indexes to model a retained damaged row.
+            connection.execute_batch("DROP INDEX idx_transcript_window; DROP INDEX idx_transcript_branched").unwrap();
+            let raw = match fault {
+                "malformed-json" => "{".to_string(),
+                "invalid-message" => serde_json::json!({"id":"t0u", "kind":"message", "content":7}).to_string(),
+                _ => serde_json::json!({"id":"different", "kind":"message", "role":"user", "content":"old"}).to_string(),
+            };
+            connection.execute("UPDATE transcript_entries SET entry = ?1 WHERE id = 't0u'", [raw]).unwrap();
+        }
+        let damaged_snapshot = (fault != "missing-table")
+            .then(|| compaction_durable_snapshot(&fixture.owner));
+        let generation = get_sand_agent_db_write_generation(fixture.owner.db_path());
+        let mut attempt = None;
+        assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+            &fixture.admission.session_id, &mut attempt,
+            |_, _| panic!("failed history cannot become empty allocation history"),
+        ), ChannelInboundAppendFailureKind::Storage);
+        let captured = attempt.clone().expect("capture binding before the failed read");
+        assert_eq!(captured.session_key, fixture.admission.session_key);
+        assert_eq!(captured.session_id, fixture.admission.session_id);
+        assert_eq!(captured.lifecycle_revision, fixture.admission.lifecycle_revision);
+        assert_eq!(captured.entries, None);
+        assert_eq!(get_sand_agent_db_write_generation(fixture.owner.db_path()), generation);
+        fixture.assert_unpublished();
+        if fault == "missing-table" {
+            connection.execute_batch("ALTER TABLE unavailable_history RENAME TO transcript_entries").unwrap();
+            assert_eq!(connection.query_row("SELECT entry FROM transcript_entries WHERE id = 't0u'", [],
+                |row| row.get::<_, String>(0)).unwrap(), original);
+        } else {
+            assert_eq!(compaction_durable_snapshot(&fixture.owner), damaged_snapshot.unwrap());
+            assert_eq!(connection.query_row("SELECT count(*) FROM transcript_entries", [],
+                |row| row.get::<_, usize>(0)).unwrap(), 1);
+            connection.execute("UPDATE transcript_entries SET entry = ?1 WHERE id = 't0u'", [original]).unwrap();
+        }
+        let mut successor = fixture.admission.clone();
+        successor.lifecycle_revision = "restored-session-generation".into();
+        assert!(fixture.owner.compare_and_set_session_work_admission(
+            Some(&fixture.admission.lifecycle_revision), &successor,
+        ).unwrap());
+        assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+            &fixture.admission.session_id, &mut attempt,
+            |_, _| panic!("an unprepared captured attempt cannot adopt a successor binding"),
+        ), ChannelInboundAppendFailureKind::IdentityConflict);
+        assert_eq!(attempt, Some(captured));
+        fixture.assert_unpublished();
+    }
+}
+
+#[test]
+fn channel_inbound_closed_and_failed_open_never_prepare_empty_history() {
+    let fixture = ChannelInboundFixture::new("channel-closed-owner");
+    fixture.owner.close(false);
+    assert!(fixture.owner.get_transcript_entries().unwrap().is_empty());
+    let mut attempt = None;
+    assert_channel_inbound_not_written(fixture.owner.append_channel_inbound_entries(
+        &mut attempt, |_, _| panic!("closed DB is not empty allocation history"),
+    ), ChannelInboundAppendFailureKind::Closed);
+    assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt,
+        |_, _| panic!("closed cached owner must not pass the facade"),
+    ), ChannelInboundAppendFailureKind::Closed);
+    assert!(attempt.is_none());
+    fixture.assert_unpublished();
+
+    assert!(fixture.workers.close_agent_db_owner(&fixture.admission.session_id, false));
+    fixture.connection().execute("UPDATE kv SET value = 'invalid metadata hex' WHERE key = 'metadata'", []).unwrap();
+    let before = compaction_durable_snapshot(&fixture.owner);
+    assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt,
+        |_, _| panic!("checked owner-open failure must not prepare a batch"),
+    ), ChannelInboundAppendFailureKind::Storage);
+    assert!(attempt.is_none());
+    assert_eq!(fixture.workers.active_agent_db_owner_count(), 0);
+    assert_eq!(compaction_durable_snapshot(&fixture.owner), before);
+    fixture.assert_unpublished();
+}
+
+#[test]
+fn channel_inbound_prevalidates_every_entry_and_retains_rejected_values() {
+    for fault in ["blank-id", "duplicate-id", "kind", "role", "content", "missing-key", "key", "session-id", "generation"] {
+        let fixture = ChannelInboundFixture::new(fault);
+        let mut prepared = fixture.attempt();
+        let entries = prepared.entries.as_mut().unwrap();
+        match fault {
+            "blank-id" => entries[1]["id"] = serde_json::json!(" "),
+            "duplicate-id" => entries[1]["id"] = entries[0]["id"].clone(),
+            "kind" => entries[1]["kind"] = serde_json::json!("notice"),
+            "role" => entries[1]["role"] = serde_json::json!("assistant"),
+            "content" => entries[1]["content"] = serde_json::json!(42),
+            "missing-key" => { entries[1].as_object_mut().unwrap().remove("sessionKey"); }
+            "key" => entries[1]["sessionKey"] = serde_json::json!("agent:other:main"),
+            "session-id" => entries[1]["sessionId"] = serde_json::json!("other"),
+            _ => entries[1]["lifecycleRevision"] = serde_json::json!("other"),
+        }
+        let expected = prepared.clone();
+        let before = compaction_durable_snapshot(&fixture.owner);
+        let mut attempt = Some(prepared);
+        assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+            &fixture.admission.session_id, &mut attempt,
+            |_, _| panic!("prepared entries cannot be replaced"),
+        ), if matches!(fault, "missing-key" | "key" | "session-id" | "generation") {
+            ChannelInboundAppendFailureKind::IdentityConflict
+        } else { ChannelInboundAppendFailureKind::InvalidBatch });
+        assert_eq!(attempt, Some(expected));
+        assert_eq!(compaction_durable_snapshot(&fixture.owner), before);
+        fixture.assert_unpublished();
+    }
+}
+
+#[test]
+fn channel_inbound_transaction_rechecks_key_generation_archive_deletion_and_owner() {
+    for fault in ["captured-key", "captured-id", "captured-revision", "archived", "deleting", "metadata"] {
+        let fixture = ChannelInboundFixture::new(fault);
+        let mut prepared = fixture.attempt();
+        match fault {
+            "captured-key" => prepared.session_key = "agent:other:main".into(),
+            "captured-id" => prepared.session_id = "other".into(),
+            "captured-revision" => prepared.lifecycle_revision = "old-generation".into(),
+            "archived" => {
+                let mut record = fixture.admission.clone();
+                record.archived_at_ms = Some(7.0);
+                assert!(fixture.owner.compare_and_set_session_work_admission(
+                    Some(&record.lifecycle_revision), &record,
+                ).unwrap());
+            }
+            "deleting" => fixture.workers.begin_agent_delete(&fixture.admission.session_id).unwrap(),
+            _ => {
+                fixture.connection().execute("UPDATE kv SET value = '00' WHERE key = 'metadata'", []).unwrap();
+            }
+        }
+        let expected = prepared.clone();
+        let before = compaction_durable_snapshot(&fixture.owner);
+        let mut attempt = Some(prepared);
+        // Exercise the durable DB edge even when the facade has a deletion
+        // fast-path or checkpoint-open rejection for the same state.
+        assert_channel_inbound_not_written(fixture.owner.append_channel_inbound_entries(
+            &mut attempt, |_, _| panic!("captured binding cannot be replaced"),
+        ), if fault.starts_with("captured-") {
+            ChannelInboundAppendFailureKind::IdentityConflict
+        } else { ChannelInboundAppendFailureKind::Admission });
+        assert_eq!(attempt, Some(expected));
+        assert_eq!(compaction_durable_snapshot(&fixture.owner), before);
+        fixture.assert_unpublished();
+    }
+}
+
+#[test]
+fn channel_inbound_empty_displayed_redrive_still_rechecks_lifecycle() {
+    let fixture = ChannelInboundFixture::new("channel-displayed-redrive");
+    let before = compaction_durable_snapshot(&fixture.owner);
+    let mut attempt = None;
+    assert_eq!(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt, |_, history| {
+            assert_eq!(history.len(), 1);
+            Ok(Vec::new())
+        },
+    ), ChannelInboundAppendOutcome::Committed { inserted_count: 0 });
+    assert_eq!(attempt.as_ref().unwrap().entries, Some(Vec::new()));
+    assert_eq!(compaction_durable_snapshot(&fixture.owner), before);
+    fixture.assert_unpublished();
+    let mut archived = fixture.admission.clone();
+    archived.archived_at_ms = Some(10.0);
+    archived.lifecycle_revision = "archive-generation".into();
+    assert!(fixture.owner.compare_and_set_session_work_admission(
+        Some(&fixture.admission.lifecycle_revision), &archived,
+    ).unwrap());
+    assert_channel_inbound_not_written(fixture.owner.append_channel_inbound_entries(
+        &mut attempt, |_, _| panic!("displayed redrive remains prepared"),
+    ), ChannelInboundAppendFailureKind::Admission);
+    let mut restored = archived.clone();
+    restored.archived_at_ms = None;
+    restored.lifecycle_revision = "restore-generation".into();
+    assert!(fixture.owner.compare_and_set_session_work_admission(
+        Some(&archived.lifecycle_revision), &restored,
+    ).unwrap());
+    assert_channel_inbound_not_written(fixture.workers.append_channel_inbound_entries(
+        &fixture.admission.session_id, &mut attempt,
+        |_, _| panic!("restored Session cannot adopt displayed redrive"),
+    ), ChannelInboundAppendFailureKind::IdentityConflict);
+    fixture.assert_unpublished();
 }

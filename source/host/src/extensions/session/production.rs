@@ -17,6 +17,8 @@ use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_f
 
 use super::agent_db::{
     AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, CronSessionRunRecord,
+    ChannelInboundAppendAttempt, ChannelInboundAppendFailure, ChannelInboundAppendFailureKind,
+    ChannelInboundAppendOutcome,
     PendingMemoryMutation,
     PendingProfileMutation, ProfileFileSnapshot, SandAgentDb,
     ProviderReviewContinuationOutcome, SessionProviderReview,
@@ -3620,6 +3622,51 @@ impl ProductionSessionWorkers {
                 .append_transcript_entries_if_session_admitted(session_key, entries)
                 .map_err(|error| error.to_string())
         })
+    }
+
+    /// Keep owner open, one-time preparation and append inside the existing
+    /// non-reentrant filesystem/admission boundary. The DB owner preserves the
+    /// attempt's original binding and returns the durable outcome directly.
+    pub fn append_channel_inbound_entries(
+        &self,
+        agent_id: &str,
+        attempt: &mut Option<ChannelInboundAppendAttempt>,
+        prepare: impl FnOnce(
+            &SessionWorkAdmissionRecord,
+            &[serde_json::Value],
+        ) -> Result<Vec<serde_json::Value>, ChannelInboundAppendFailure>,
+    ) -> ChannelInboundAppendOutcome {
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            if self.is_agent_being_deleted(agent_id) {
+                return Ok((ChannelInboundAppendOutcome::NotWritten(ChannelInboundAppendFailure {
+                    kind: ChannelInboundAppendFailureKind::Admission,
+                    detail: "channel append rejected while agent deletion owns cleanup".into(),
+                }), None));
+            }
+            let cached = self.db_owners.lock()
+                .map_err(|_| "agent db owner map poisoned".to_string())?
+                .get(agent_id).cloned();
+            if cached.as_ref().is_some_and(|owner| owner.is_closed()) {
+                return Ok((ChannelInboundAppendOutcome::NotWritten(ChannelInboundAppendFailure {
+                    kind: ChannelInboundAppendFailureKind::Closed,
+                    detail: "channel append owner is closed".into(),
+                }), None));
+            }
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            Ok(owner.append_channel_inbound_entries_deferred(attempt, prepare))
+        });
+        match result {
+            Ok((outcome, publication)) => {
+                if let Some(publication) = publication {
+                    publication.publish();
+                }
+                outcome
+            }
+            Err(detail) => ChannelInboundAppendOutcome::NotWritten(ChannelInboundAppendFailure {
+                kind: ChannelInboundAppendFailureKind::Storage,
+                detail,
+            }),
+        }
     }
 
     /// Append room-owned transcript state while the caller already holds the

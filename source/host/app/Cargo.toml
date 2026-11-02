@@ -17,6 +17,9 @@ serde_json = "1"
 signal-hook = "0.3"
 uuid = { version = "1", features = ["v4"] }
 
+[dev-dependencies]
+rusqlite = { version = "0.39", features = ["bundled"] }
+
 [profile.dev]
 debug = 0
 incremental = true

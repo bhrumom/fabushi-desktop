@@ -199,6 +199,13 @@ jobs:
               tests::upgrade_marker_startup_checks_all_rows_before_any_dispatch \
               tests::channel_inbound_drain_idle_predecessor_preserves_successor_ownership \
               tests::channel_inbound_drain_nonempty_pause_keeps_existing_cleanup_and_queue_order \
+              tests::channel_inbound_append_commits_once_before_runner_and_displayed_redrive \
+              tests::channel_inbound_append_lost_ack_holds_real_commit_without_runner_or_replay \
+              tests::channel_inbound_append_rollback_retries_same_preparation_before_later_input \
+              tests::channel_inbound_checked_history_failure_keeps_binding_and_never_dispatches \
+              tests::channel_inbound_runner_admission_refuses_changed_binding_and_releases_work \
+              tests::channel_inbound_reply_nudge_keeps_generation_after_real_session_settlement \
+              tests::channel_inbound_displayed_redrive_refuses_archive_restore_without_rebinding \
               tests::post_turn_compaction_cancelled_summaries_preserve_session \
               tests::post_turn_compaction_cancellation_between_phases_and_before_commit_preserves_session \
               tests::post_turn_compaction_provider_failures_commit_fitted_degraded_fallback \
@@ -301,6 +308,7 @@ jobs:
             for recovery_filter in \
               extensions::session::typed_replay::tests \
               extensions::session::production_agent_store::checked_state_tests \
+              extensions::session::agent_db::channel_inbound_append_tests \
               extensions::transcript::sand_upgrade_resume_store::checked_marker_tests \
               extensions::transcript::production_runtime::checked_upgrade_handoff_tests \
               extensions::mcp::coordinator_relay::lifecycle_tests \
@@ -418,6 +426,9 @@ jobs:
               "runner_effect_custody_result": "passed",
               "runner_downstream_custody_contract": "REC-07/08/09",
               "shipping_downstream_custody_tests": ["tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate"],
+              "channel_append_custody_contract": "OCRM-CHANNEL-APPEND-CUSTODY-v1",
+              "channel_append_custody_result": "passed",
+              "channel_append_custody_scope": "Existing Session/SQLite strict append, retained live queue and shipping handoff preserve original entries on rollback, hold unknown acknowledgements and block Runner/tail overtaking. Real transaction, public Session notification reentry and late-worker controls do not prove durable ingress, automatic reconciliation, transport ACK or real-channel delivery.",
               "runner_downstream_custody_result": "passed",
               "runner_downstream_custody_scope": "Real Host execution relay, guarded Responses/checkpoint owner and shipping private bridge preserve unknown post-publication outcomes, reject replay and isolate relay incarnations. Coordinator echo covers opaque legacy/new IDs. No original-turn restart, external termination or durable outcome reconciliation is claimed.",
               "coordinator_control_retirement_contract": "REC-10",

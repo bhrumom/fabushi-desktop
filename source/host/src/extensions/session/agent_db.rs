@@ -159,6 +159,39 @@ pub struct SessionWorkAdmissionRecord {
     pub provider_review: Option<SessionProviderReview>,
 }
 
+/// Immutable preparation for one live-owner channel input claim. A captured
+/// binding remains authoritative even when reading/preparing its entries fails.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ChannelInboundAppendAttempt {
+    pub session_key: String,
+    pub session_id: String,
+    pub lifecycle_revision: String,
+    pub entries: Option<Vec<serde_json::Value>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChannelInboundAppendFailureKind {
+    Admission,
+    Closed,
+    Storage,
+    InvalidBatch,
+    IdentityConflict,
+    RollbackUnconfirmed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChannelInboundAppendFailure {
+    pub kind: ChannelInboundAppendFailureKind,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ChannelInboundAppendOutcome {
+    Committed { inserted_count: usize },
+    NotWritten(ChannelInboundAppendFailure),
+    Unknown(ChannelInboundAppendFailure),
+}
+
 /// Durable identity/state projection for one scheduled or event-triggered
 /// automation run. Cleanup and transcript archival are deliberately not
 /// implemented by this slice; the row is the owner-local handoff required by
@@ -3525,6 +3558,110 @@ impl SandAgentDb {
         }
     }
 
+    /// Prepare and append one channel claim against its original Session
+    /// binding. This deliberately does not use the generic write helper:
+    /// neither an ignored insert nor an automatic storage retry is an
+    /// acknowledgement of the complete channel batch.
+    pub fn append_channel_inbound_entries(
+        &self,
+        attempt: &mut Option<ChannelInboundAppendAttempt>,
+        prepare: impl FnOnce(
+            &SessionWorkAdmissionRecord,
+            &[serde_json::Value],
+        ) -> Result<Vec<serde_json::Value>, ChannelInboundAppendFailure>,
+    ) -> ChannelInboundAppendOutcome {
+        let (outcome, publication) = self.append_channel_inbound_entries_deferred(attempt, prepare);
+        if let Some(publication) = publication {
+            publication.publish();
+        }
+        outcome
+    }
+
+    /// The Session facade also owns a non-reentrant filesystem mutex. Carry
+    /// only confirmed publication out to that caller so both locks are gone
+    /// before synchronous transcript observers run.
+    pub(crate) fn append_channel_inbound_entries_deferred(
+        &self,
+        attempt: &mut Option<ChannelInboundAppendAttempt>,
+        prepare: impl FnOnce(
+            &SessionWorkAdmissionRecord,
+            &[serde_json::Value],
+        ) -> Result<Vec<serde_json::Value>, ChannelInboundAppendFailure>,
+    ) -> (ChannelInboundAppendOutcome, Option<ChannelInboundAppendPublication>) {
+        self.append_channel_inbound_entries_deferred_with_control(
+            attempt,
+            prepare,
+            &ChannelInboundTransactionControl::default(),
+        )
+    }
+
+    fn append_channel_inbound_entries_deferred_with_control(
+        &self,
+        attempt: &mut Option<ChannelInboundAppendAttempt>,
+        prepare: impl FnOnce(
+            &SessionWorkAdmissionRecord,
+            &[serde_json::Value],
+        ) -> Result<Vec<serde_json::Value>, ChannelInboundAppendFailure>,
+        control: &ChannelInboundTransactionControl,
+    ) -> (ChannelInboundAppendOutcome, Option<ChannelInboundAppendPublication>) {
+        let mut guard = match self.connection.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                // An unwound owner may still have a live transaction. Do not
+                // allow any later operation to settle it implicitly.
+                let mut guard = poisoned.into_inner();
+                self.retire_channel_inbound_connection(&mut guard);
+                return (ChannelInboundAppendOutcome::Unknown(channel_inbound_failure(
+                    ChannelInboundAppendFailureKind::RollbackUnconfirmed,
+                    "channel append owner lock is poisoned",
+                )), None);
+            }
+        };
+        let Some(db) = guard.as_ref().filter(|_| !self.is_closed()) else {
+            return (ChannelInboundAppendOutcome::NotWritten(channel_inbound_failure(
+                ChannelInboundAppendFailureKind::Closed,
+                "channel append owner is closed",
+            )), None);
+        };
+        let (outcome, retire) = append_channel_inbound_transaction(
+            db,
+            &self.agent_dir_name,
+            attempt,
+            prepare,
+            control,
+        );
+        if retire {
+            self.retire_channel_inbound_connection(&mut guard);
+        }
+        let publication = if let ChannelInboundAppendOutcome::Committed { inserted_count } = &outcome {
+            if *inserted_count > 0 {
+                bump_db_write_generation(&self.db_path);
+                Some(ChannelInboundAppendPublication {
+                    db_path: self.db_path.clone(),
+                    entries: attempt.as_ref().and_then(|attempt| attempt.entries.clone())
+                        .expect("confirmed channel append retains its prepared entries"),
+                })
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        drop(guard);
+        (outcome, publication)
+    }
+
+    fn retire_channel_inbound_connection(
+        &self,
+        connection: &mut Option<rusqlite::Connection>,
+    ) {
+        self.closed.store(true, Ordering::Release);
+        drop(connection.take());
+        if self.handle_registered.swap(false, Ordering::AcqRel) {
+            release_live_db_handle(&self.db_path);
+        }
+    }
+
     /// Atomically publish one session-scoped spend-guard card together with
     /// its owner-local state and activity projection. The deletion/archive
     /// fence is checked in the same SQLite transaction as every mutation.
@@ -5054,6 +5191,315 @@ impl Drop for SandAgentDb {
     fn drop(&mut self) {
         self.close(false);
     }
+}
+
+fn channel_inbound_failure(
+    kind: ChannelInboundAppendFailureKind,
+    detail: impl Into<String>,
+) -> ChannelInboundAppendFailure {
+    ChannelInboundAppendFailure { kind, detail: detail.into() }
+}
+
+fn channel_inbound_storage_failure(error: rusqlite::Error) -> ChannelInboundAppendFailure {
+    channel_inbound_failure(ChannelInboundAppendFailureKind::Storage, error.to_string())
+}
+
+/// An ephemeral notification for an already confirmed commit. This is not a
+/// durable receipt and cannot authorize replay or resolve an unknown result.
+pub(crate) struct ChannelInboundAppendPublication {
+    db_path: PathBuf,
+    entries: Vec<serde_json::Value>,
+}
+
+impl ChannelInboundAppendPublication {
+    pub(crate) fn publish(self) {
+        publish_entries_upserted(&self.db_path, self.entries);
+    }
+}
+
+/// Production always executes the real transaction commands. Unit fault
+/// controls alter only a command/acknowledgement, never the outcome decision.
+#[derive(Default)]
+struct ChannelInboundTransactionControl {
+    #[cfg(test)]
+    lose_commit_acknowledgement: bool,
+    #[cfg(test)]
+    fail_rollback: bool,
+}
+
+impl ChannelInboundTransactionControl {
+    fn commit(&self, db: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
+        db.execute_batch("COMMIT")?;
+        #[cfg(test)]
+        if self.lose_commit_acknowledgement {
+            return Err(rusqlite::Error::InvalidQuery);
+        }
+        Ok(())
+    }
+
+    fn rollback(&self, db: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
+        #[cfg(test)]
+        if self.fail_rollback {
+            return Err(rusqlite::Error::InvalidQuery);
+        }
+        db.execute_batch("ROLLBACK")
+    }
+}
+
+fn read_channel_inbound_admission(
+    db: &rusqlite::Connection,
+    agent_id: &str,
+    attempt: Option<&ChannelInboundAppendAttempt>,
+) -> Result<SessionWorkAdmissionRecord, ChannelInboundAppendFailure> {
+    let raw = read_kv(db, KV_SESSION_WORK_ADMISSION)
+        .map_err(channel_inbound_storage_failure)?
+        .ok_or_else(|| channel_inbound_failure(
+            ChannelInboundAppendFailureKind::Admission,
+            "channel append requires an existing session admission record",
+        ))?;
+    let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw).map_err(|_| {
+        channel_inbound_failure(
+            ChannelInboundAppendFailureKind::Admission,
+            "channel append session admission record is malformed",
+        )
+    })?;
+    if admission.session_id != agent_id
+        || !session_admission_identity_is_bound(db, &admission)
+            .map_err(channel_inbound_storage_failure)?
+        || admission.archived_at_ms.is_some()
+        || admission.deletion_pending
+    {
+        return Err(channel_inbound_failure(
+            ChannelInboundAppendFailureKind::Admission,
+            "channel append session owner is malformed, archived, or deleting",
+        ));
+    }
+    if attempt.is_some_and(|attempt| {
+        attempt.session_key != admission.session_key
+            || attempt.session_id != admission.session_id
+            || attempt.lifecycle_revision != admission.lifecycle_revision
+    }) {
+        return Err(channel_inbound_failure(
+            ChannelInboundAppendFailureKind::IdentityConflict,
+            "channel append captured session identity or lifecycle changed",
+        ));
+    }
+    Ok(admission)
+}
+
+fn read_channel_inbound_history(
+    db: &rusqlite::Connection,
+) -> Result<Vec<serde_json::Value>, ChannelInboundAppendFailure> {
+    let mut statement = db.prepare("SELECT id, entry FROM transcript_entries ORDER BY seq")
+        .map_err(channel_inbound_storage_failure)?;
+    let rows = statement.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    }).map_err(channel_inbound_storage_failure)?;
+    let mut history = Vec::new();
+    for row in rows {
+        let (id, raw) = row.map_err(channel_inbound_storage_failure)?;
+        let entry = parse_owner_transcript_entry(&raw).ok_or_else(|| {
+            channel_inbound_failure(
+                ChannelInboundAppendFailureKind::Storage,
+                "channel append allocation history contains an undecodable transcript row",
+            )
+        })?;
+        if id.trim().is_empty()
+            || entry.get("id").and_then(serde_json::Value::as_str) != Some(id.as_str())
+        {
+            return Err(channel_inbound_failure(
+                ChannelInboundAppendFailureKind::Storage,
+                "channel append allocation history contains a mismatched row identity",
+            ));
+        }
+        history.push(entry);
+    }
+    Ok(history)
+}
+
+fn validate_channel_inbound_batch(
+    attempt: &ChannelInboundAppendAttempt,
+    entries: &[serde_json::Value],
+) -> Result<(), ChannelInboundAppendFailure> {
+    let mut ids = std::collections::HashSet::with_capacity(entries.len());
+    for entry in entries {
+        let id = entry.get("id").and_then(serde_json::Value::as_str);
+        if id.is_none_or(|id| id.trim().is_empty() || !ids.insert(id))
+            || entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+            || entry.get("role").and_then(serde_json::Value::as_str) != Some("user")
+            || !is_valid_transcript_entry(entry)
+        {
+            return Err(channel_inbound_failure(
+                ChannelInboundAppendFailureKind::InvalidBatch,
+                "channel append requires unique nonempty message IDs and valid user messages",
+            ));
+        }
+        if entry.get("sessionKey").and_then(serde_json::Value::as_str)
+            != Some(attempt.session_key.as_str())
+            || entry.get("sessionId").is_some_and(|value| {
+                value.as_str() != Some(attempt.session_id.as_str())
+            })
+            || entry.get("lifecycleRevision").is_some_and(|value| {
+                value.as_str() != Some(attempt.lifecycle_revision.as_str())
+            })
+        {
+            return Err(channel_inbound_failure(
+                ChannelInboundAppendFailureKind::IdentityConflict,
+                "channel append entry provenance does not match its captured session",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn channel_inbound_transaction_failure(
+    db: &rusqlite::Connection,
+    failure: ChannelInboundAppendFailure,
+    commit_attempted: bool,
+    control: &ChannelInboundTransactionControl,
+) -> (ChannelInboundAppendOutcome, bool) {
+    // A failed COMMIT acknowledgement is uncertain even if SQLite already
+    // left the transaction or a subsequent ROLLBACK succeeds.
+    if commit_attempted && db.is_autocommit() {
+        return (ChannelInboundAppendOutcome::Unknown(failure), false);
+    }
+    let rolled_back = control.rollback(db).is_ok();
+    let clean = db.is_autocommit();
+    if !rolled_back || !clean {
+        return (ChannelInboundAppendOutcome::Unknown(channel_inbound_failure(
+            ChannelInboundAppendFailureKind::RollbackUnconfirmed,
+            format!("channel append rollback was not confirmed after {:?}", failure.kind),
+        )), !clean);
+    }
+    if commit_attempted {
+        (ChannelInboundAppendOutcome::Unknown(failure), false)
+    } else {
+        (ChannelInboundAppendOutcome::NotWritten(failure), false)
+    }
+}
+
+fn append_channel_inbound_transaction(
+    db: &rusqlite::Connection,
+    agent_id: &str,
+    attempt: &mut Option<ChannelInboundAppendAttempt>,
+    prepare: impl FnOnce(
+        &SessionWorkAdmissionRecord,
+        &[serde_json::Value],
+    ) -> Result<Vec<serde_json::Value>, ChannelInboundAppendFailure>,
+    control: &ChannelInboundTransactionControl,
+) -> (ChannelInboundAppendOutcome, bool) {
+    if !db.is_autocommit() {
+        return (ChannelInboundAppendOutcome::Unknown(channel_inbound_failure(
+            ChannelInboundAppendFailureKind::RollbackUnconfirmed,
+            "channel append owner already has an unsettled transaction",
+        )), true);
+    }
+    if let Err(error) = db.execute_batch("BEGIN IMMEDIATE") {
+        let failure = channel_inbound_storage_failure(error);
+        return if db.is_autocommit() {
+            (ChannelInboundAppendOutcome::NotWritten(failure), false)
+        } else {
+            channel_inbound_transaction_failure(db, failure, false, control)
+        };
+    }
+    let inserted = (|| -> Result<usize, ChannelInboundAppendFailure> {
+        let admission = read_channel_inbound_admission(db, agent_id, attempt.as_ref())?;
+        let retained = attempt.get_or_insert_with(|| ChannelInboundAppendAttempt {
+            session_key: admission.session_key.clone(),
+            session_id: admission.session_id.clone(),
+            lifecycle_revision: admission.lifecycle_revision.clone(),
+            entries: None,
+        });
+        if retained.entries.is_none() {
+            let history = read_channel_inbound_history(db)?;
+            retained.entries = Some(prepare(&admission, &history)?);
+        }
+        let entries = retained.entries.as_ref().expect("channel batch prepared");
+        validate_channel_inbound_batch(retained, entries)?;
+        let mut statement = db.prepare(
+            "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+        ).map_err(channel_inbound_storage_failure)?;
+        for entry in entries {
+            let id = entry["id"].as_str().expect("validated channel entry ID");
+            if channel_inbound_entry_id_exists(db, id)? {
+                return Err(channel_inbound_failure(
+                    ChannelInboundAppendFailureKind::IdentityConflict,
+                    "channel append entry ID already exists",
+                ));
+            }
+            let inserted = statement.execute(params![id, entry.to_string()])
+                .map_err(|error| {
+                    if error.sqlite_error().is_some_and(|error| {
+                        matches!(
+                            error.extended_code,
+                            rusqlite::ffi::SQLITE_CONSTRAINT_UNIQUE
+                                | rusqlite::ffi::SQLITE_CONSTRAINT_PRIMARYKEY
+                        )
+                    }) {
+                        channel_inbound_failure(
+                            ChannelInboundAppendFailureKind::IdentityConflict,
+                            "channel append entry ID conflicts with an existing row",
+                        )
+                    } else {
+                        channel_inbound_storage_failure(error)
+                    }
+                })?;
+            if inserted != 1 {
+                return Err(channel_inbound_failure(
+                    ChannelInboundAppendFailureKind::IdentityConflict,
+                    "channel append did not insert every intended row",
+                ));
+            }
+        }
+        // A trigger must not change the generation or remove/replace a member
+        // while still letting its INSERT report success.
+        read_channel_inbound_admission(db, agent_id, Some(retained))?;
+        for entry in entries {
+            let id = entry["id"].as_str().expect("validated channel entry ID");
+            let stored = db.query_row(GET_TRANSCRIPT_ENTRY_SQL, params![id], |row| {
+                row.get::<_, String>(0)
+            }).optional().map_err(channel_inbound_storage_failure)?;
+            if stored.as_deref().and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+                .as_ref() != Some(entry)
+            {
+                return Err(channel_inbound_failure(
+                    ChannelInboundAppendFailureKind::IdentityConflict,
+                    "channel append stored row differs from its prepared entry",
+                ));
+            }
+        }
+        Ok(entries.len())
+    })();
+    match inserted {
+        Err(failure) => channel_inbound_transaction_failure(db, failure, false, control),
+        Ok(inserted_count) => match control.commit(db) {
+            Ok(()) if db.is_autocommit() => (
+                ChannelInboundAppendOutcome::Committed { inserted_count }, false,
+            ),
+            Ok(()) => channel_inbound_transaction_failure(
+                db,
+                channel_inbound_failure(
+                    ChannelInboundAppendFailureKind::Storage,
+                    "channel append commit left a live transaction",
+                ),
+                true,
+                control,
+            ),
+            Err(error) => channel_inbound_transaction_failure(
+                db, channel_inbound_storage_failure(error), true, control,
+            ),
+        },
+    }
+}
+
+fn channel_inbound_entry_id_exists(
+    db: &rusqlite::Connection,
+    id: &str,
+) -> Result<bool, ChannelInboundAppendFailure> {
+    db.query_row("SELECT 1 FROM transcript_entries WHERE id = ?1", params![id], |_| Ok(()))
+        .optional()
+        .map(|row| row.is_some())
+        .map_err(channel_inbound_storage_failure)
 }
 
 fn session_work_result_receipt_entry(
@@ -6598,4 +7044,157 @@ fn decode_hex(raw: &str) -> Result<Vec<u8>, String> {
         output.push(byte);
     }
     Ok(output)
+}
+
+#[cfg(test)]
+mod channel_inbound_append_tests {
+    use super::*;
+    use std::sync::atomic::AtomicUsize;
+    use crate::transcript_mutation_events::{
+        subscribe_transcript_mutations, TranscriptMutationSubscription,
+    };
+
+    fn fixture(label: &str) -> (PathBuf, SandAgentDb) {
+        let root = std::env::temp_dir().join(format!("channel-append-{label}-{}", Uuid::new_v4()));
+        let agent_id = format!("agent-{label}-{}", Uuid::new_v4());
+        let directory = root.join(&agent_id);
+        std::fs::create_dir_all(&directory).unwrap();
+        let owner = SandAgentDb::open(directory.join("store.db"), 50).unwrap();
+        let admission: SessionWorkAdmissionRecord = serde_json::from_value(serde_json::json!({
+            "session_key": format!("agent:{agent_id}:main"),
+            "session_id": agent_id,
+            "lifecycle_revision": "generation-1",
+        })).unwrap();
+        assert!(owner.compare_and_set_session_work_admission(None, &admission).unwrap());
+        (root, owner)
+    }
+
+    fn entries(
+        admission: &SessionWorkAdmissionRecord,
+        _: &[serde_json::Value],
+    ) -> Result<Vec<serde_json::Value>, ChannelInboundAppendFailure> {
+        Ok(["channel-first", "channel-second"].into_iter().map(|id| serde_json::json!({
+            "id": id, "kind": "message", "role": "user", "content": id,
+            "sessionKey": admission.session_key,
+        })).collect())
+    }
+
+    fn observe(owner: &SandAgentDb) -> (Arc<AtomicUsize>, TranscriptMutationSubscription) {
+        let count = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&count);
+        let agent_id = owner.agent_dir_name.clone();
+        let subscription = subscribe_transcript_mutations(move |mutation| {
+            if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(agent_id.as_str()) {
+                observed.fetch_add(1, Ordering::SeqCst);
+            }
+        });
+        (count, subscription)
+    }
+
+    #[test]
+    fn real_commit_failure_stays_unknown_after_successful_rollback() {
+        let (root, owner) = fixture("commit-refused");
+        owner.connection.lock().unwrap().as_ref().unwrap().execute_batch(
+            "PRAGMA foreign_keys = ON;
+             CREATE TABLE channel_parent (id INTEGER PRIMARY KEY);
+             CREATE TABLE channel_child (
+                 parent_id INTEGER REFERENCES channel_parent(id) DEFERRABLE INITIALLY DEFERRED
+             );
+             CREATE TRIGGER channel_deferred_commit AFTER INSERT ON transcript_entries
+             BEGIN INSERT INTO channel_child (parent_id) VALUES (7); END;",
+        ).unwrap();
+        let (publications, subscription) = observe(&owner);
+        let mut attempt = None;
+        let outcome = owner.append_channel_inbound_entries(&mut attempt, entries);
+        assert!(matches!(outcome, ChannelInboundAppendOutcome::Unknown(failure)
+            if failure.kind == ChannelInboundAppendFailureKind::Storage));
+        assert_eq!(attempt.as_ref().unwrap().entries.as_ref().unwrap().len(), 2);
+        assert!(owner.get_transcript_entries().unwrap().is_empty());
+        assert!(owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+        assert!(!owner.is_closed());
+        assert_eq!(publications.load(Ordering::SeqCst), 0);
+        // The cleanup is proven clean, but it does not downgrade the failed
+        // COMMIT acknowledgement or authorize replay of this retained claim.
+        subscription.unsubscribe();
+        owner.close(false);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn unconfirmed_rollback_retires_the_exact_connection_before_reuse() {
+        let (root, owner) = fixture("rollback-unconfirmed");
+        owner.connection.lock().unwrap().as_ref().unwrap().execute_batch(
+            "CREATE TRIGGER channel_abort_later BEFORE INSERT ON transcript_entries
+             WHEN NEW.id = 'channel-second'
+             BEGIN SELECT RAISE(ABORT, 'later insert failure'); END;",
+        ).unwrap();
+        let (publications, subscription) = observe(&owner);
+        let mut attempt = None;
+        let (outcome, publication) = owner.append_channel_inbound_entries_deferred_with_control(
+            &mut attempt, entries,
+            &ChannelInboundTransactionControl { fail_rollback: true, ..Default::default() },
+        );
+        assert!(matches!(outcome, ChannelInboundAppendOutcome::Unknown(failure)
+            if failure.kind == ChannelInboundAppendFailureKind::RollbackUnconfirmed));
+        assert!(publication.is_none());
+        assert_eq!(attempt.as_ref().unwrap().entries.as_ref().unwrap().len(), 2);
+        assert!(owner.is_closed());
+        assert!(owner.connection.lock().unwrap().is_none());
+        assert_eq!(live_db_handle_count(owner.db_path()), 0);
+        let inspection = rusqlite::Connection::open(owner.db_path()).unwrap();
+        assert_eq!(inspection.query_row("SELECT count(*) FROM transcript_entries", [],
+            |row| row.get::<_, usize>(0)).unwrap(), 0);
+        assert!(matches!(owner.append_channel_inbound_entries(
+            &mut attempt, |_, _| panic!("retired connection cannot be reused"),
+        ), ChannelInboundAppendOutcome::NotWritten(failure)
+            if failure.kind == ChannelInboundAppendFailureKind::Closed));
+        assert_eq!(publications.load(Ordering::SeqCst), 0);
+        // Reopen observes storage only; the shipping queue still holds Unknown
+        // and cannot infer replay or restart recovery from this absence.
+        subscription.unsubscribe();
+        drop(inspection);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn real_commit_with_lost_acknowledgement_is_never_not_written() {
+        let (root, owner) = fixture("commit-ack-lost");
+        let (publications, subscription) = observe(&owner);
+        let mut attempt = None;
+        let (outcome, publication) = owner.append_channel_inbound_entries_deferred_with_control(
+            &mut attempt, entries,
+            &ChannelInboundTransactionControl {
+                lose_commit_acknowledgement: true,
+                ..Default::default()
+            },
+        );
+        assert!(matches!(outcome, ChannelInboundAppendOutcome::Unknown(failure)
+            if failure.kind == ChannelInboundAppendFailureKind::Storage));
+        assert!(publication.is_none());
+        let retained = attempt.as_ref().unwrap().entries.as_ref().unwrap();
+        assert_eq!(&owner.get_transcript_entries().unwrap(), retained);
+        assert_eq!(publications.load(Ordering::SeqCst), 0);
+        assert!(owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+        assert!(!owner.is_closed());
+        subscription.unsubscribe();
+        owner.close(false);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn inherited_unsettled_transaction_is_retired_without_preparation() {
+        let (root, owner) = fixture("unsettled-owner");
+        owner.connection.lock().unwrap().as_ref().unwrap()
+            .execute_batch("BEGIN IMMEDIATE").unwrap();
+        let mut attempt = None;
+        assert!(matches!(owner.append_channel_inbound_entries(
+            &mut attempt, |_, _| panic!("an unsettled owner cannot admit another append"),
+        ), ChannelInboundAppendOutcome::Unknown(failure)
+            if failure.kind == ChannelInboundAppendFailureKind::RollbackUnconfirmed));
+        assert!(attempt.is_none());
+        assert!(owner.is_closed());
+        assert!(owner.connection.lock().unwrap().is_none());
+        assert_eq!(live_db_handle_count(owner.db_path()), 0);
+        let _ = std::fs::remove_dir_all(root);
+    }
 }

@@ -2459,6 +2459,7 @@ dependencies = [
  "base64 0.22.1",
  "mahayana-host-runtime",
  "mahayana-unified-app-host",
+ "rusqlite",
  "serde_json",
  "signal-hook",
  "uuid",

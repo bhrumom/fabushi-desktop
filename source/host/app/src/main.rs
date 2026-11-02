@@ -115,7 +115,7 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
 use mahayana_host_runtime::extensions::transcript::background_wakes::{
-    BackgroundWakes, build_channel_delivery_failure_wake_prompt,
+    BackgroundWakes, InboundAppendWork, build_channel_delivery_failure_wake_prompt,
     build_channel_inbound_wake_prompt, build_channel_outbound_message,
     build_timeline_event_wake_prompt, distinct_inbound_channel_addresses,
     format_channel_address_value, humanize_channel_delivery_failure,
@@ -210,6 +210,8 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     run_routed_provider_text,
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
+    ChannelInboundAppendAttempt, ChannelInboundAppendFailure,
+    ChannelInboundAppendFailureKind, ChannelInboundAppendOutcome,
     CompactionCommit, CompactionCommitOutcome, ProviderReviewContinuationOutcome,
     SessionProviderReview,
 };
@@ -6414,6 +6416,7 @@ struct BackgroundRevivalContext {
     dismissed_question_prompts: Vec<String>,
     stream_id: Option<String>,
     ack_token: Option<String>,
+    expected_session_generation: Option<(String, String)>,
 }
 
 fn run_local_background_revival_turn(
@@ -6479,6 +6482,7 @@ fn run_local_background_revival_turn_with_context(
         dismissed_question_prompts,
         stream_id,
         ack_token,
+        expected_session_generation,
     } = context;
     let stream_id =
         stream_id.unwrap_or_else(|| format!("background-revival-{}", uuid::Uuid::new_v4()));
@@ -6501,9 +6505,10 @@ fn run_local_background_revival_turn_with_context(
                 "background revival requires an existing admitted session identity for {agent_id}"
             )
         })?;
-    let admitted_lifecycle_revision = deps
-        .session_workers
-        .capture_session_work_admission(agent_id, &session_key, &stream_id)?;
+    let admitted_lifecycle_revision = capture_background_revival_admission(
+        deps.session_workers.as_ref(), agent_id, &session_key, &stream_id,
+        expected_session_generation.as_ref(),
+    )?;
     let admission_args = background_revival_admission_args(
         agent_id,
         &session_key,
@@ -6736,62 +6741,123 @@ fn wait_and_settle_background_revival(
     }
 }
 
-fn append_channel_inbound_entries(
-    deps: &LocalRoutedRunnerDeps,
-    roster: &ProductionRosterEmit,
+fn capture_background_revival_admission(
+    sessions: &ProductionSessionWorkers,
     agent_id: &str,
-    envelopes: &[serde_json::Value],
-) -> Result<(), String> {
-    let session_key = deps
-        .session_workers
-        .read_session_work_admission(agent_id)?
-        .map(|record| record.session_key)
-        .filter(|value| !value.trim().is_empty())
-        .ok_or_else(|| {
-            format!(
-                "channel inbound requires an existing admitted session identity for {agent_id}"
-            )
-        })?;
-    deps.session_workers
-        .assert_session_work_admission(agent_id, Some(&session_key))?;
-    let mut transcript = deps
-        .session_workers
-        .read_agent_transcript_entries(agent_id)
-        .unwrap_or_default();
-    let mut entries = Vec::new();
-    for envelope in envelopes.iter().filter(|envelope| {
-        envelope.get("isDisplayed").and_then(serde_json::Value::as_bool) != Some(true)
+    session_key: &str,
+    stream_id: &str,
+    expected_generation: Option<&(String, String)>,
+) -> Result<String, String> {
+    let revision = sessions.capture_session_work_admission(agent_id, session_key, stream_id)?;
+    if expected_generation.is_some_and(|(expected_key, expected_revision)| {
+        expected_key != session_key || expected_revision != &revision
     }) {
-        let channel = envelope
-            .get("address")
-            .and_then(format_channel_address_value)
-            .unwrap_or_default();
-        let entry = serde_json::json!({
-            "kind": "message",
-            "id": next_entry_id(&transcript, TranscriptEntryIdKind::UserMessage),
-            "role": "user",
-            "content": envelope.get("text").and_then(serde_json::Value::as_str).unwrap_or_default(),
-            "isStreaming": false,
-            "timestampMs": envelope.get("timestampMs").cloned().unwrap_or_else(|| serde_json::Value::Number(started_at_ms().into())),
-            "channel": channel,
-            "channelSender": envelope.get("sender").cloned().unwrap_or(serde_json::Value::Null),
-            "sessionKey": session_key.clone(),
-        });
-        transcript.push(entry.clone());
-        entries.push(entry);
+        let _ = sessions.release_session_work_admission(agent_id, &revision, stream_id);
+        return Err("channel input generation changed before Runner admission".into());
     }
-    if entries.is_empty() {
-        return Ok(());
-    }
-    deps.session_workers
-        .append_agent_transcript_entries_if_session_admitted(agent_id, &session_key, &entries)?;
-    let _ = deps
-        .session_workers
-        .mark_agent_activity(agent_id, started_at_ms() as f64);
-    let _ = roster.emit_agent_update(agent_id);
-    Ok(())
+    Ok(revision)
 }
 
+fn append_channel_inbound_entries(
+    sessions: &ProductionSessionWorkers,
+    agent_id: &str,
+    envelopes: &[serde_json::Value],
+    attempt: &mut Option<ChannelInboundAppendAttempt>,
+) -> ChannelInboundAppendOutcome {
+    sessions.append_channel_inbound_entries(agent_id, attempt, |admission, history| {
+        let mut transcript = history.to_vec();
+        let mut entries = Vec::new();
+        for envelope in envelopes.iter().filter(|envelope| {
+            envelope.get("isDisplayed").and_then(serde_json::Value::as_bool) != Some(true)
+        }) {
+            let channel = envelope
+                .get("address")
+                .and_then(format_channel_address_value)
+                .unwrap_or_default();
+            let entry = serde_json::json!({
+                "kind": "message",
+                "id": next_entry_id(&transcript, TranscriptEntryIdKind::UserMessage),
+                "role": "user",
+                "content": envelope.get("text").and_then(serde_json::Value::as_str).unwrap_or_default(),
+                "isStreaming": false,
+                "timestampMs": envelope.get("timestampMs").cloned().unwrap_or_else(|| serde_json::Value::Number(started_at_ms().into())),
+                "channel": channel,
+                "channelSender": envelope.get("sender").cloned().unwrap_or(serde_json::Value::Null),
+                "sessionKey": admission.session_key.clone(),
+            });
+            transcript.push(entry.clone());
+            entries.push(entry);
+        }
+        Ok(entries)
+    })
+}
+
+/// The real append acknowledgement is recorded before any activity or Runner
+/// side effect. The callback is a testable boundary around the existing Runner,
+/// not another executor. No queue lock is held during either callback.
+fn handoff_channel_inbound_append(
+    wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
+    agent_id: &str,
+    work: &InboundAppendWork<serde_json::Value>,
+    append: impl FnOnce(&mut Option<ChannelInboundAppendAttempt>) -> ChannelInboundAppendOutcome,
+    dispatch: impl FnOnce(&[serde_json::Value], &ChannelInboundAppendAttempt) -> Option<Vec<serde_json::Value>>,
+) -> bool {
+    if !wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        .owns_inbound_append(agent_id, work)
+    {
+        return false;
+    }
+    let mut attempt = work.attempt.clone();
+    let mut outcome = append(&mut attempt);
+    if let ChannelInboundAppendOutcome::Committed { inserted_count } = &outcome {
+        if attempt.as_ref().and_then(|prepared| prepared.entries.as_ref()).map(Vec::len)
+            != Some(*inserted_count)
+        {
+            outcome = ChannelInboundAppendOutcome::Unknown(ChannelInboundAppendFailure {
+                kind: ChannelInboundAppendFailureKind::InvalidBatch,
+                detail: "channel commit acknowledgement is missing complete preparation".into(),
+            });
+        }
+    }
+    let may_dispatch = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        .record_inbound_append_outcome(agent_id, work, attempt.clone(), &outcome);
+    if !may_dispatch {
+        match &outcome {
+            ChannelInboundAppendOutcome::NotWritten(failure) => eprintln!(
+                "mahayana-host channel_inbound_append_held agent={agent_id} state=not_written kind={:?}", failure.kind,
+            ),
+            ChannelInboundAppendOutcome::Unknown(failure) => eprintln!(
+                "mahayana-host channel_inbound_append_held agent={agent_id} state=unknown kind={:?}", failure.kind,
+            ),
+            ChannelInboundAppendOutcome::Committed { .. } => eprintln!(
+                "mahayana-host channel_inbound_append_held agent={agent_id} state=owner_changed",
+            ),
+        }
+        return false;
+    }
+    // A committed acknowledgement without preparation was rejected above.
+    let redrive = attempt.as_ref().and_then(|attempt| dispatch(&work.envelopes, attempt));
+    wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        .finish_inbound_append_with_redrive(agent_id, work, redrive)
+}
+
+fn run_channel_inbound_reply_nudge(
+    execution: &RevivalExecution,
+    attempt: &ChannelInboundAppendAttempt,
+    run: impl FnOnce(BackgroundRevivalContext) -> Result<RevivalExecution, String>,
+) -> Option<Result<RevivalExecution, String>> {
+    if execution.aborted || execution.sent_message_count != 0 {
+        return None;
+    }
+    Some(run(BackgroundRevivalContext {
+        expected_session_generation: Some((
+            attempt.session_key.clone(), attempt.lifecycle_revision.clone(),
+        )),
+        ..BackgroundRevivalContext::default()
+    }))
+}
+
+#[cfg(test)]
 fn requeue_channel_inbound_envelopes(
     wakes: &Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
     agent_id: &str,
@@ -6825,14 +6891,14 @@ fn publish_channel_activity(
     }
 }
 
-fn drain_channel_inbound_batches(
-    mut take_or_end: impl FnMut() -> Option<Vec<serde_json::Value>>,
-    mut process: impl FnMut(Vec<serde_json::Value>) -> bool,
+fn drain_channel_inbound_batches<B>(
+    mut take_or_end: impl FnMut() -> Option<B>,
+    mut process: impl FnMut(B) -> bool,
     stop_nonempty: impl FnOnce(),
 ) {
     loop {
-        // None has already released ownership under the queue mutex. A new
-        // ingress may own revival now, so the predecessor must not clean it up.
+        // None has released idle ownership or left it with another worker.
+        // The returning caller must never clear that worker's revival bit.
         let Some(envelopes) = take_or_end() else {
             return;
         };
@@ -6854,152 +6920,140 @@ fn run_channel_inbound_revival_worker(
             let mut wakes = wakes
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            wakes.take_pending_inbound_or_end_revival(&agent_id)
+            wakes.take_inbound_append_or_end_revival(&agent_id)
         },
-        |envelopes| {
+        |work| {
+            let pause = || {
+                wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .pause_inbound_append(&agent_id, &work);
+            };
             let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
                 Ok(Some(summary)) => summary,
-                Ok(None) => return false,
+                Ok(None) => { pause(); return false; },
                 Err(error) => {
                     eprintln!(
                         "mahayana-host channel_inbound_summary_failed agent={agent_id} error={error}"
                     );
-                    requeue_channel_inbound_envelopes(&wakes, &agent_id, envelopes);
+                    pause();
                     return false;
                 }
             };
             if summary.is_group || summary.remote_room.is_some() {
-                return true;
+                pause();
+                return false;
             }
             let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
-                let mut state = wakes
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner());
-                let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
-                state.pending_inbound.insert(
-                    agent_id.clone(),
-                    envelopes.into_iter().chain(pending).collect(),
-                );
+                pause();
                 return false;
             };
             if deps.transcript_runtime.is_quiescing_for_upgrade() {
-                let mut state = wakes
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner());
-                let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
-                state.pending_inbound.insert(
-                    agent_id.clone(),
-                    envelopes.into_iter().chain(pending).collect(),
-                );
+                pause();
                 return false;
             }
 
-            if let Err(error) = append_channel_inbound_entries(&deps, roster.as_ref(), &agent_id, &envelopes) {
-                eprintln!("mahayana-host channel_inbound_persist_failed agent={agent_id} error={error}");
-                return true;
-            }
+            handoff_channel_inbound_append(
+                wakes.as_ref(), &agent_id, &work,
+                |attempt| append_channel_inbound_entries(
+                    deps.session_workers.as_ref(), &agent_id, &work.envelopes, attempt,
+                ),
+                |envelopes, attempt| {
+                    let mut redrive = None;
+                    let _ = deps.session_workers.mark_agent_activity(&agent_id, started_at_ms() as f64);
+                    let _ = roster.emit_agent_update(&agent_id);
+                    let addresses = distinct_inbound_channel_addresses(envelopes);
+                    publish_channel_activity(&deps.events, &agent_id, &addresses, true);
+                    let prompt = build_channel_inbound_wake_prompt(envelopes);
+                    let widget_prompts = deps
+                        .transcript_manager
+                        .widget_responses()
+                        .collect_unanswered_question_prompts(&agent_id)
+                        .unwrap_or_default();
+                    let selected_images = collect_inbound_images(envelopes)
+                        .into_iter()
+                        .map(|image| {
+                            serde_json::json!({
+                                "data": image.data,
+                                "mimeType": image.mime_type,
+                            })
+                        })
+                        .collect();
+                    let result = run_local_background_revival_turn_with_context(
+                        deps.clone(),
+                        provider,
+                        &agent_id,
+                        "connector",
+                        &prompt,
+                        false,
+                        "continue",
+                        BackgroundRevivalContext {
+                            selected_images,
+                            skipped_question_prompts: widget_prompts.skipped_question_prompts,
+                            dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
+                            expected_session_generation: Some((
+                                attempt.session_key.clone(), attempt.lifecycle_revision.clone(),
+                            )),
+                            ..BackgroundRevivalContext::default()
+                        },
+                    );
+                    publish_channel_activity(&deps.events, &agent_id, &addresses, false);
 
-            let addresses = distinct_inbound_channel_addresses(&envelopes);
-            publish_channel_activity(&deps.events, &agent_id, &addresses, true);
-            let prompt = build_channel_inbound_wake_prompt(&envelopes);
-            let widget_prompts = deps
-                .transcript_manager
-                .widget_responses()
-                .collect_unanswered_question_prompts(&agent_id)
-                .unwrap_or_default();
-            let selected_images = collect_inbound_images(&envelopes)
-                .into_iter()
-                .map(|image| {
-                    serde_json::json!({
-                        "data": image.data,
-                        "mimeType": image.mime_type,
-                    })
-                })
-                .collect();
-            let result = run_local_background_revival_turn_with_context(
-                deps.clone(),
-                provider,
-                &agent_id,
-                "connector",
-                &prompt,
-                false,
-                "continue",
-                BackgroundRevivalContext {
-                    selected_images,
-                    skipped_question_prompts: widget_prompts.skipped_question_prompts,
-                    dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
-                    ..BackgroundRevivalContext::default()
-                },
-            );
-            publish_channel_activity(&deps.events, &agent_id, &addresses, false);
-
-            match result {
-                Ok(execution) if execution.aborted => {
-                    let preempted = {
-                        let mut state = wakes
-                            .lock()
-                            .unwrap_or_else(|poisoned| poisoned.into_inner());
-                        state.dm_preempted_wake_agent_ids.remove(&agent_id)
-                    };
-                    if preempted {
-                        let redrivable = redrivable_inbound_envelopes(&envelopes);
-                        if !redrivable.is_empty() {
-                            let mut state = wakes
-                                .lock()
-                                .unwrap_or_else(|poisoned| poisoned.into_inner());
-                            let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
-                            state.pending_inbound.insert(
-                                agent_id.clone(),
-                                redrivable.into_iter().chain(pending).collect(),
-                            );
+                    match result {
+                        Ok(execution) if execution.aborted => {
+                            let preempted = {
+                                let mut state = wakes
+                                    .lock()
+                                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                                state.dm_preempted_wake_agent_ids.remove(&agent_id)
+                            };
+                            if preempted {
+                                let redrivable = redrivable_inbound_envelopes(envelopes);
+                                if !redrivable.is_empty() {
+                                    redrive = Some(redrivable);
+                                }
+                            }
+                        }
+                        Ok(execution) => {
+                            let _ = run_channel_inbound_reply_nudge(&execution, attempt, |context| {
+                                run_local_background_revival_turn_with_context(
+                                    deps.clone(),
+                                    provider,
+                                    &agent_id,
+                                    "connector",
+                                    REPLY_NUDGE_PROMPT,
+                                    false,
+                                    "continue",
+                                    context,
+                                )
+                            });
+                            let _ = roster.emit_agent_update(&agent_id);
+                        }
+                        Err(error) => {
+                            let classified_error = ProviderSessionError::Tool(error.clone());
+                            let report = AgentErrorReport {
+                                source: "connector".into(),
+                                conversation_id: agent_id.clone(),
+                                request_id: None,
+                                error: classify_agent_error(&classified_error),
+                                detail: Some(sand_error_detail(&error)),
+                            };
+                            if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
+                                eprintln!(
+                                    "mahayana-host channel_inbound_telemetry_failed agent={} error={telemetry_error}",
+                                    agent_id
+                                );
+                            }
+                            let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
+                            tray.title = "Channel message follow-up failed".into();
+                            deps.trays.push_error(tray);
                         }
                     }
-                }
-                Ok(execution) => {
-                    if execution.sent_message_count == 0 {
-                        let _ = run_local_background_revival_turn(
-                            deps.clone(),
-                            provider,
-                            &agent_id,
-                            "connector",
-                            REPLY_NUDGE_PROMPT,
-                            false,
-                            "continue",
-                        );
-                    }
-                    let _ = roster.emit_agent_update(&agent_id);
-                }
-                Err(error) => {
-                    let classified_error = ProviderSessionError::Tool(error.clone());
-                    let report = AgentErrorReport {
-                        source: "connector".into(),
-                        conversation_id: agent_id.clone(),
-                        request_id: None,
-                        error: classify_agent_error(&classified_error),
-                        detail: Some(sand_error_detail(&error)),
-                    };
-                    if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
-                        eprintln!(
-                            "mahayana-host channel_inbound_telemetry_failed agent={} error={telemetry_error}",
-                            agent_id
-                        );
-                    }
-                    let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
-                    tray.title = "Channel message follow-up failed".into();
-                    deps.trays.push_error(tray);
-                }
-            }
-            true
+                    redrive
+                },
+            )
         },
-        || {
-            let mut state = wakes
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            BackgroundWakes::<serde_json::Value>::end_revival(
-                &mut state.reviving_inbound_agent_ids,
-                &agent_id,
-            );
-        },
+        // Each pause/acknowledgement releases only its matching worker token.
+        // A final unconditional bit clear could erase a successor's ownership.
+        || {},
     );
 }
 
@@ -17975,6 +18029,401 @@ mod tests {
         );
         assert!(without_ack.get("ackToken").is_none());
         assert_eq!(without_ack["clientNonce"], args["clientNonce"]);
+    }
+
+    struct ChannelInboundAppendFixture {
+        root: std::path::PathBuf,
+        sessions: ProductionSessionWorkers,
+        agent_id: String,
+        wakes: std::sync::Mutex<BackgroundWakes<serde_json::Value>>,
+    }
+
+    impl ChannelInboundAppendFixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!("fabushi-channel-append-{}", uuid::Uuid::new_v4()));
+            let sessions = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+            let agent_id = sessions.materialize_new_session(None, "user", None).unwrap().id;
+            Self { root, sessions, agent_id, wakes: std::sync::Mutex::new(BackgroundWakes::default()) }
+        }
+
+        fn enqueue(&self, envelopes: &[serde_json::Value]) -> bool {
+            let mut wakes = self.wakes.lock().unwrap();
+            for envelope in envelopes {
+                BackgroundWakes::enqueue(&mut wakes.pending_inbound, &self.agent_id, envelope.clone());
+            }
+            BackgroundWakes::<serde_json::Value>::begin_revival(
+                &mut wakes.reviving_inbound_agent_ids, &self.agent_id,
+            )
+        }
+
+        fn take(&self) -> Option<super::InboundAppendWork<serde_json::Value>> {
+            self.wakes.lock().unwrap().take_inbound_append_or_end_revival(&self.agent_id)
+        }
+
+        fn rows(&self) -> Vec<serde_json::Value> {
+            self.sessions.read_agent_transcript_entries(&self.agent_id).unwrap()
+        }
+
+        fn connection(&self) -> rusqlite::Connection {
+            let owner = self.sessions.open_agent_db_owner(&self.agent_id).unwrap();
+            rusqlite::Connection::open(owner.db_path()).unwrap()
+        }
+
+        fn archive_and_restore(&self) {
+            let initial = self.sessions.read_session_work_admission(&self.agent_id).unwrap().unwrap();
+            let archived = self.sessions.transition_session_work_archive(
+                &self.agent_id, &initial.session_key, &initial.session_id,
+                Some(&initial.lifecycle_revision), true, Some("channel-test"), None, 20.0,
+            ).unwrap();
+            let restored = self.sessions.transition_session_work_archive(
+                &self.agent_id, &initial.session_key, &initial.session_id,
+                Some(&archived.lifecycle_revision), false, None, None, 21.0,
+            ).unwrap();
+            assert!(restored.archived_at_ms.is_none());
+            assert_ne!(restored.lifecycle_revision, initial.lifecycle_revision);
+        }
+    }
+
+    impl Drop for ChannelInboundAppendFixture {
+        fn drop(&mut self) {
+            self.sessions.shutdown();
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn channel_inbound_append_commits_once_before_runner_and_displayed_redrive() {
+        use serde_json::json;
+        use std::cell::Cell;
+        use mahayana_host_runtime::extensions::transcript::background_wakes::InboundAppendState;
+
+        let fixture = ChannelInboundAppendFixture::new();
+        let envelopes = vec![
+            json!({"address":"telegram:room-a", "sender":"Ada", "text":"first", "timestampMs":7,
+                "images":[{"data":"image-data", "mimeType":"image/png"}]}),
+            json!({"address":{"platform":"slack", "chat":"room-b"}, "sender":"Lin", "text":"second"}),
+        ];
+        assert!(fixture.enqueue(&envelopes));
+        let work = fixture.take().unwrap();
+        let writes = Cell::new(0);
+        let dispatches = Cell::new(0);
+        assert!(super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &work,
+            |attempt| {
+                writes.set(writes.get() + 1);
+                super::append_channel_inbound_entries(&fixture.sessions, &fixture.agent_id, &work.envelopes, attempt)
+            },
+            |original, attempt| {
+                dispatches.set(dispatches.get() + 1);
+                assert_eq!(original, envelopes);
+                let rows = fixture.rows();
+                assert_eq!(rows.len(), 2);
+                assert_eq!(attempt.entries.as_ref().unwrap(), &rows);
+                assert_eq!(rows[0]["content"], "first");
+                assert_eq!(rows[0]["timestampMs"], 7);
+                assert_eq!(rows[0]["channel"], "telegram:room-a");
+                assert_eq!(rows[1]["channel"], "slack:room-b");
+                assert_eq!(rows[1]["channelSender"], "Lin");
+                assert_ne!(rows[0]["id"], rows[1]["id"]);
+                let state = fixture.wakes.try_lock().expect("dispatch is outside the queue mutex");
+                assert_eq!(state.inbound_append_state(&fixture.agent_id), Some(InboundAppendState::Committed));
+                drop(state);
+                let binding = (attempt.session_key.clone(), attempt.lifecycle_revision.clone());
+                let revision = super::capture_background_revival_admission(
+                    &fixture.sessions, &fixture.agent_id, &attempt.session_key, "channel-dispatch", Some(&binding),
+                ).unwrap();
+                fixture.sessions.release_session_work_admission(&fixture.agent_id, &revision, "channel-dispatch").unwrap();
+                Some(super::redrivable_inbound_envelopes(original))
+            },
+        ));
+        assert_eq!((writes.get(), dispatches.get()), (1, 1));
+        assert!(!super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &work,
+            |_| panic!("settled token must not append a second batch"),
+            |_, _| panic!("settled token must not dispatch again"),
+        ));
+        let committed = fixture.rows();
+        let redrive = super::redrivable_inbound_envelopes(&envelopes);
+        assert_eq!(redrive.len(), envelopes.len());
+        assert!(redrive.iter().all(|entry| entry["isDisplayed"] == true));
+        assert!(!BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut fixture.wakes.lock().unwrap().reviving_inbound_agent_ids, &fixture.agent_id,
+        ), "the current worker still owns revival");
+        let redrive_work = fixture.take().unwrap();
+        assert_ne!(redrive_work.claim_id, work.claim_id);
+        assert_ne!(redrive_work.worker_token, work.worker_token);
+        assert_eq!(redrive_work.envelopes, redrive);
+        assert!(super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &redrive_work,
+            |attempt| super::append_channel_inbound_entries(
+                &fixture.sessions, &fixture.agent_id, &redrive_work.envelopes, attempt,
+            ),
+            |original, attempt| {
+                dispatches.set(dispatches.get() + 1);
+                assert_eq!(original, redrive);
+                assert!(attempt.entries.as_ref().unwrap().is_empty());
+                assert_eq!(fixture.rows(), committed);
+                None
+            },
+        ));
+        assert_eq!(dispatches.get(), 2);
+        assert!(fixture.take().is_none());
+        assert!(!fixture.wakes.lock().unwrap().reviving_inbound_agent_ids.contains(&fixture.agent_id));
+    }
+
+    #[test]
+    fn channel_inbound_append_lost_ack_holds_real_commit_without_runner_or_replay() {
+        use serde_json::json;
+        use std::cell::Cell;
+        use super::{ChannelInboundAppendFailure, ChannelInboundAppendFailureKind, ChannelInboundAppendOutcome};
+        use mahayana_host_runtime::extensions::transcript::background_wakes::InboundAppendState;
+
+        let fixture = ChannelInboundAppendFixture::new();
+        assert!(fixture.enqueue(&[json!({"address":"telegram:room", "text":"durable input"})]));
+        let work = fixture.take().unwrap();
+        let writes = Cell::new(0);
+        let dispatches = Cell::new(0);
+        assert!(!super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &work,
+            |attempt| {
+                writes.set(writes.get() + 1);
+                let result = super::append_channel_inbound_entries(
+                    &fixture.sessions, &fixture.agent_id, &work.envelopes, attempt,
+                );
+                assert_eq!(result, ChannelInboundAppendOutcome::Committed { inserted_count: 1 });
+                assert_eq!(fixture.rows(), *attempt.as_ref().unwrap().entries.as_ref().unwrap());
+                // Lose only the acknowledgement AFTER the real Session/SQLite
+                // commit. The oracle never rolls back or fabricates the row.
+                ChannelInboundAppendOutcome::Unknown(ChannelInboundAppendFailure {
+                    kind: ChannelInboundAppendFailureKind::Storage,
+                    detail: "owned commit acknowledgement lost".into(),
+                })
+            },
+            |_, _| { dispatches.set(dispatches.get() + 1); None },
+        ));
+        let committed = fixture.rows();
+        let prepared = {
+            let wakes = fixture.wakes.lock().unwrap();
+            assert_eq!(wakes.inbound_append_state(&fixture.agent_id), Some(InboundAppendState::Unknown));
+            assert!(!wakes.pending_inbound.contains_key(&fixture.agent_id));
+            assert!(!wakes.reviving_inbound_agent_ids.contains(&fixture.agent_id));
+            wakes.inbound_append_attempt(&fixture.agent_id).unwrap().clone()
+        };
+        assert_eq!(prepared.entries.as_ref().unwrap(), &committed);
+        assert!(fixture.enqueue(&[json!({"address":"slack:later", "text":"must wait"})]));
+        assert!(fixture.take().is_none());
+        assert!(!fixture.wakes.lock().unwrap().record_inbound_append_outcome(
+            &fixture.agent_id, &work, Some(prepared), &ChannelInboundAppendOutcome::Committed { inserted_count: 1 },
+        ), "late acknowledgements cannot settle an unknown head");
+        assert!(!super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &work,
+            |_| panic!("unknown head must not append again"),
+            |_, _| panic!("unknown head must not dispatch"),
+        ));
+        assert_eq!(fixture.wakes.lock().unwrap().pending_inbound[&fixture.agent_id].len(), 1);
+        assert_eq!(fixture.rows(), committed);
+        assert_eq!((writes.get(), dispatches.get()), (1, 0));
+    }
+
+    #[test]
+    fn channel_inbound_append_rollback_retries_same_preparation_before_later_input() {
+        use serde_json::json;
+        use std::cell::Cell;
+        use mahayana_host_runtime::extensions::transcript::background_wakes::InboundAppendState;
+
+        let fixture = ChannelInboundAppendFixture::new();
+        let db = fixture.connection();
+        db.execute_batch("CREATE TRIGGER reject_channel_second BEFORE INSERT ON transcript_entries
+            WHEN json_extract(NEW.entry, '$.content') = 'second'
+            BEGIN SELECT RAISE(ABORT, 'refuse the second actual insert'); END;").unwrap();
+        let envelopes = vec![json!({"address":"slack:room", "text":"first"}), json!({"address":"slack:room", "text":"second"})];
+        assert!(fixture.enqueue(&envelopes));
+        let first_work = fixture.take().unwrap();
+        assert!(!super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &first_work,
+            |attempt| super::append_channel_inbound_entries(&fixture.sessions, &fixture.agent_id, &first_work.envelopes, attempt),
+            |_, _| panic!("a partial transaction cannot reach Runner"),
+        ));
+        assert!(fixture.rows().is_empty(), "the first insert must roll back with the second");
+        let prepared = {
+            let state = fixture.wakes.lock().unwrap();
+            assert_eq!(state.inbound_append_state(&fixture.agent_id), Some(InboundAppendState::NotWritten));
+            state.inbound_append_attempt(&fixture.agent_id).unwrap().clone()
+        };
+        assert_eq!(prepared.entries.as_ref().unwrap().len(), 2);
+        db.execute_batch("DROP TRIGGER reject_channel_second").unwrap();
+        let newer = json!({"id":"t900u", "kind":"message", "role":"user", "content":"new history"});
+        assert_eq!(fixture.sessions.append_agent_transcript_entries(&fixture.agent_id, &[newer.clone()]).unwrap(), 1);
+        assert!(fixture.enqueue(&[json!({"address":"slack:room", "text":"later input"})]));
+        let retry = fixture.take().unwrap();
+        assert_eq!(retry.claim_id, first_work.claim_id);
+        assert_ne!(retry.worker_token, first_work.worker_token);
+        assert_eq!(retry.attempt.as_ref(), Some(&prepared));
+        assert_eq!(retry.envelopes, envelopes);
+        let dispatches = Cell::new(0);
+        assert!(super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &retry,
+            |attempt| super::append_channel_inbound_entries(&fixture.sessions, &fixture.agent_id, &retry.envelopes, attempt),
+            |original, attempt| {
+                dispatches.set(dispatches.get() + 1);
+                assert_eq!(original, envelopes);
+                assert_eq!(attempt, &prepared, "history changes cannot remint IDs or timestamps");
+                None
+            },
+        ));
+        let mut expected = vec![newer];
+        expected.extend(prepared.entries.unwrap());
+        assert_eq!(fixture.rows(), expected);
+        assert_eq!(dispatches.get(), 1);
+        assert_eq!(fixture.wakes.lock().unwrap().pending_inbound[&fixture.agent_id][0]["text"], "later input");
+        drop(db);
+    }
+
+    #[test]
+    fn channel_inbound_checked_history_failure_keeps_binding_and_never_dispatches() {
+        use serde_json::json;
+        use mahayana_host_runtime::extensions::transcript::background_wakes::InboundAppendState;
+        let fixture = ChannelInboundAppendFixture::new();
+        let db = fixture.connection();
+        // Remove only the fixture indexes whose JSON predicates otherwise
+        // reject corruption before the checked history read can observe it.
+        db.execute_batch("DROP INDEX idx_transcript_window; DROP INDEX idx_transcript_branched").unwrap();
+        db.execute("INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)", ["malformed-history", "{invalid-json"]).unwrap();
+        assert!(fixture.enqueue(&[json!({"address":"telegram:room", "text":"must not get t0u"})]));
+        let work = fixture.take().unwrap();
+        assert!(!super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &work,
+            |attempt| super::append_channel_inbound_entries(&fixture.sessions, &fixture.agent_id, &work.envelopes, attempt),
+            |_, _| panic!("unreadable history must not be replaced with an empty transcript"),
+        ));
+        let state = fixture.wakes.lock().unwrap();
+        assert_eq!(state.inbound_append_state(&fixture.agent_id), Some(InboundAppendState::NotWritten));
+        let attempt = state.inbound_append_attempt(&fixture.agent_id).expect("identity captured before the failing read");
+        assert!(attempt.entries.is_none());
+        assert_eq!(attempt.session_id, fixture.agent_id);
+        assert!(!attempt.lifecycle_revision.is_empty());
+        assert_eq!(db.query_row("SELECT COUNT(*) FROM transcript_entries", [], |row| row.get::<_, i64>(0)).unwrap(), 1);
+        drop(state);
+        drop(db);
+    }
+
+    #[test]
+    fn channel_inbound_runner_admission_refuses_changed_binding_and_releases_work() {
+        let fixture = ChannelInboundAppendFixture::new();
+        let admission = fixture.sessions.read_session_work_admission(&fixture.agent_id).unwrap().unwrap();
+        for expected in [
+            (admission.session_key.clone(), "a different lifecycle".into()),
+            ("agent:another:main".into(), admission.lifecycle_revision.clone()),
+        ] {
+            assert!(super::capture_background_revival_admission(
+                &fixture.sessions, &fixture.agent_id, &admission.session_key, "refused-channel-stream", Some(&expected),
+            ).is_err());
+            assert!(fixture.sessions.read_session_work_admission(&fixture.agent_id).unwrap().unwrap().admitted_work_id.is_none());
+        }
+        let expected = (admission.session_key.clone(), admission.lifecycle_revision.clone());
+        let revision = super::capture_background_revival_admission(
+            &fixture.sessions, &fixture.agent_id, &admission.session_key, "admitted-channel-stream", Some(&expected),
+        ).unwrap();
+        assert_eq!(revision, admission.lifecycle_revision);
+        assert_eq!(fixture.sessions.read_session_work_admission(&fixture.agent_id).unwrap().unwrap().admitted_work_id.as_deref(), Some("admitted-channel-stream"));
+        fixture.sessions.release_session_work_admission(&fixture.agent_id, &revision, "admitted-channel-stream").unwrap();
+    }
+
+    #[test]
+    fn channel_inbound_reply_nudge_keeps_generation_after_real_session_settlement() {
+        use serde_json::json;
+        use std::cell::Cell;
+        use mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome;
+
+        for restore_between_turns in [false, true] {
+            let fixture = ChannelInboundAppendFixture::new();
+            assert!(fixture.enqueue(&[json!({"address":"telegram:room", "text":"reply to this input"})]));
+            let work = fixture.take().unwrap();
+            let nudge_dispatches = Cell::new(0);
+            assert!(super::handoff_channel_inbound_append(
+                &fixture.wakes, &fixture.agent_id, &work,
+                |attempt| super::append_channel_inbound_entries(&fixture.sessions, &fixture.agent_id, &work.envelopes, attempt),
+                |_, attempt| {
+                    let binding = (attempt.session_key.clone(), attempt.lifecycle_revision.clone());
+                    let revision = super::capture_background_revival_admission(
+                        &fixture.sessions, &fixture.agent_id, &attempt.session_key, "first-channel-turn", Some(&binding),
+                    ).unwrap();
+                    // Settle through the same Session receipt owner used after
+                    // the real background Runner terminal, before continuation.
+                    assert!(matches!(fixture.sessions.commit_session_work_result(
+                        &fixture.agent_id, &attempt.session_key, &revision, "first-channel-turn",
+                        "first-channel-result", "", 0,
+                    ).unwrap(), SessionWorkResultCommitOutcome::Committed(_)));
+                    assert!(fixture.sessions.read_session_work_admission(&fixture.agent_id).unwrap().unwrap().admitted_work_id.is_none());
+                    let rows_before = fixture.rows();
+                    if restore_between_turns {
+                        fixture.archive_and_restore();
+                    }
+                    let execution = super::RevivalExecution {
+                        aborted: false, quiesced_for_upgrade: false, sent_message_count: 0,
+                    };
+                    let result = super::run_channel_inbound_reply_nudge(&execution, attempt, |context| {
+                        let current = fixture.sessions.read_session_work_admission(&fixture.agent_id)?.unwrap();
+                        let revision = super::capture_background_revival_admission(
+                            &fixture.sessions, &fixture.agent_id, &current.session_key, "channel-nudge",
+                            context.expected_session_generation.as_ref(),
+                        )?;
+                        nudge_dispatches.set(nudge_dispatches.get() + 1);
+                        fixture.sessions.release_session_work_admission(&fixture.agent_id, &revision, "channel-nudge")?;
+                        Ok(super::RevivalExecution {
+                            aborted: false, quiesced_for_upgrade: false, sent_message_count: 1,
+                        })
+                    }).expect("a zero-message result uses the production nudge decision");
+                    assert_eq!(result.is_err(), restore_between_turns);
+                    assert_eq!(nudge_dispatches.get(), if restore_between_turns { 0 } else { 1 });
+                    assert_eq!(fixture.rows(), rows_before, "refusing a new generation retains committed input");
+                    assert!(fixture.sessions.read_session_work_admission(&fixture.agent_id).unwrap().unwrap().admitted_work_id.is_none());
+                    assert!(super::run_channel_inbound_reply_nudge(
+                        &super::RevivalExecution { sent_message_count: 1, ..execution }, attempt,
+                        |_| panic!("a delivered response must not be nudged"),
+                    ).is_none());
+                    None
+                },
+            ));
+        }
+    }
+
+    #[test]
+    fn channel_inbound_displayed_redrive_refuses_archive_restore_without_rebinding() {
+        use serde_json::json;
+        use mahayana_host_runtime::extensions::transcript::background_wakes::InboundAppendState;
+        let fixture = ChannelInboundAppendFixture::new();
+        let initial = fixture.sessions.read_session_work_admission(&fixture.agent_id).unwrap().unwrap();
+        assert!(fixture.enqueue(&[json!({"address":"slack:room", "text":"old generation input"})]));
+        let first = fixture.take().unwrap();
+        assert!(super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &first,
+            |attempt| super::append_channel_inbound_entries(&fixture.sessions, &fixture.agent_id, &first.envelopes, attempt),
+            |original, _| Some(super::redrivable_inbound_envelopes(original)),
+        ));
+        let committed = fixture.rows();
+        fixture.archive_and_restore();
+        assert!(!fixture.enqueue(&[json!({"address":"slack:room", "text":"later generation input"})]));
+        let continuation = fixture.take().expect("the bound displayed continuation remains before raw input");
+        assert_ne!(continuation.claim_id, first.claim_id);
+        let binding = continuation.attempt.as_ref().unwrap();
+        assert_eq!(binding.session_key, initial.session_key);
+        assert_eq!(binding.session_id, initial.session_id);
+        assert_eq!(binding.lifecycle_revision, initial.lifecycle_revision);
+        assert!(binding.entries.as_ref().unwrap().is_empty());
+        assert!(!super::handoff_channel_inbound_append(
+            &fixture.wakes, &fixture.agent_id, &continuation,
+            |attempt| super::append_channel_inbound_entries(
+                &fixture.sessions, &fixture.agent_id, &continuation.envelopes, attempt,
+            ),
+            |_, _| panic!("displayed L1 input must never dispatch into restored L2"),
+        ));
+        assert_eq!(fixture.rows(), committed);
+        let state = fixture.wakes.lock().unwrap();
+        assert_eq!(state.inbound_append_state(&fixture.agent_id), Some(InboundAppendState::NotWritten));
+        assert_eq!(state.inbound_append_attempt(&fixture.agent_id), continuation.attempt.as_ref());
+        assert_eq!(state.pending_inbound[&fixture.agent_id].len(), 1);
+        assert_eq!(state.pending_inbound[&fixture.agent_id][0]["text"], "later generation input");
     }
 
     #[test]

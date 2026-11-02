@@ -3,6 +3,9 @@ use std::collections::{HashMap, HashSet};
 use serde_json::Value;
 
 use crate::connectors::channel_delivery::ChannelOutboundMessage;
+use crate::extensions::session::agent_db::{
+    ChannelInboundAppendAttempt, ChannelInboundAppendOutcome,
+};
 
 pub const TIMELINE_EVENT_WAKE_CUE: &str = "[event]";
 pub const CHANNEL_INBOUND_WAKE_CUE: &str = "[inbound]";
@@ -353,10 +356,38 @@ where
     out
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InboundAppendState {
+    Active,
+    NotWritten,
+    Unknown,
+    Committed,
+}
+
+/// A worker's snapshot of the queue-owned head. Tokens are checked when the
+/// acknowledgement returns, so an old worker cannot settle a replacement.
+#[derive(Debug, Clone, PartialEq)]
+pub struct InboundAppendWork<T> {
+    pub claim_id: String,
+    pub worker_token: String,
+    pub envelopes: Vec<T>,
+    pub attempt: Option<ChannelInboundAppendAttempt>,
+}
+
+#[derive(Debug)]
+struct InboundAppendClaim<T> {
+    claim_id: String,
+    worker_token: Option<String>,
+    envelopes: Vec<T>,
+    attempt: Option<ChannelInboundAppendAttempt>,
+    state: InboundAppendState,
+}
+
 #[derive(Debug, Default)]
 pub struct BackgroundWakes<T> {
     pub pending_inbound: HashMap<String, Vec<T>>,
     pub reviving_inbound_agent_ids: HashSet<String>,
+    inbound_append_claims: HashMap<String, InboundAppendClaim<T>>,
     pub pending_channel_failures: HashMap<String, Vec<T>>,
     pub reviving_channel_failure_agent_ids: HashSet<String>,
     pub pending_event_wakes: HashMap<String, Vec<T>>,
@@ -365,6 +396,126 @@ pub struct BackgroundWakes<T> {
 }
 
 impl<T> BackgroundWakes<T> {
+    pub fn owns_inbound_append(&self, agent_id: &str, work: &InboundAppendWork<T>) -> bool {
+        self.inbound_append_claims.get(agent_id).is_some_and(|claim| {
+            claim.claim_id == work.claim_id
+                && claim.worker_token.as_deref() == Some(work.worker_token.as_str())
+                && claim.state == InboundAppendState::Active
+        })
+    }
+
+    pub fn inbound_append_state(&self, agent_id: &str) -> Option<InboundAppendState> {
+        self.inbound_append_claims.get(agent_id).map(|claim| claim.state)
+    }
+
+    pub fn inbound_append_attempt(&self, agent_id: &str) -> Option<&ChannelInboundAppendAttempt> {
+        self.inbound_append_claims.get(agent_id)?.attempt.as_ref()
+    }
+
+    /// Pause before any append was attempted. The exact retained head precedes
+    /// future input; an existing later wake may reacquire it with a fresh token.
+    pub fn pause_inbound_append(&mut self, agent_id: &str, work: &InboundAppendWork<T>) -> bool {
+        let Some(claim) = self.inbound_append_claims.get_mut(agent_id) else {
+            return false;
+        };
+        if claim.claim_id != work.claim_id
+            || claim.worker_token.as_deref() != Some(work.worker_token.as_str())
+            || claim.state != InboundAppendState::Active
+        {
+            return false;
+        }
+        claim.state = InboundAppendState::NotWritten;
+        claim.worker_token = None;
+        self.reviving_inbound_agent_ids.remove(agent_id);
+        true
+    }
+
+    /// Returns permission for exactly this worker to hand confirmed input to
+    /// Runner. Unknown and rolled-back heads remain owned by the queue.
+    pub fn record_inbound_append_outcome(
+        &mut self,
+        agent_id: &str,
+        work: &InboundAppendWork<T>,
+        attempt: Option<ChannelInboundAppendAttempt>,
+        outcome: &ChannelInboundAppendOutcome,
+    ) -> bool {
+        let Some(claim) = self.inbound_append_claims.get_mut(agent_id) else {
+            return false;
+        };
+        if claim.claim_id != work.claim_id
+            || claim.worker_token.as_deref() != Some(work.worker_token.as_str())
+            || claim.state != InboundAppendState::Active
+        {
+            return false;
+        }
+        claim.attempt = attempt;
+        claim.state = match outcome {
+            ChannelInboundAppendOutcome::Committed { .. } => InboundAppendState::Committed,
+            ChannelInboundAppendOutcome::NotWritten(_) => InboundAppendState::NotWritten,
+            ChannelInboundAppendOutcome::Unknown(_) => InboundAppendState::Unknown,
+        };
+        if claim.state == InboundAppendState::Committed {
+            true
+        } else {
+            claim.worker_token = None;
+            self.reviving_inbound_agent_ids.remove(agent_id);
+            false
+        }
+    }
+
+    /// The confirmed batch has finished the existing Runner path. Keep revival
+    /// until the next atomic take/idle decision, so later input cannot overtake.
+    pub fn finish_inbound_append(&mut self, agent_id: &str, work: &InboundAppendWork<T>) -> bool {
+        self.finish_inbound_append_with_redrive(agent_id, work, None)
+    }
+
+    /// Retain a displayed continuation ahead of raw input without adopting a
+    /// newer Session generation. The caller owns the existing redrive policy.
+    pub fn finish_inbound_append_with_redrive(
+        &mut self,
+        agent_id: &str,
+        work: &InboundAppendWork<T>,
+        redrive: Option<Vec<T>>,
+    ) -> bool {
+        let Some(claim) = self.inbound_append_claims.get(agent_id) else {
+            return false;
+        };
+        if claim.claim_id != work.claim_id
+            || claim.worker_token.as_deref() != Some(work.worker_token.as_str())
+            || claim.state != InboundAppendState::Committed
+        {
+            return false;
+        }
+        if let Some(envelopes) = redrive.filter(|items| !items.is_empty()) {
+            let Some(source) = claim.attempt.as_ref().filter(|attempt| {
+                attempt.entries.is_some()
+                    && !attempt.session_key.trim().is_empty()
+                    && !attempt.session_id.trim().is_empty()
+                    && !attempt.lifecycle_revision.trim().is_empty()
+            }) else {
+                // The committed head remains held if its original binding or
+                // preparation is unavailable; a continuation may not rebind.
+                return false;
+            };
+            let continuation = InboundAppendClaim {
+                claim_id: uuid::Uuid::new_v4().to_string(),
+                worker_token: None,
+                envelopes,
+                attempt: Some(ChannelInboundAppendAttempt {
+                    session_key: source.session_key.clone(),
+                    session_id: source.session_id.clone(),
+                    lifecycle_revision: source.lifecycle_revision.clone(),
+                    entries: Some(Vec::new()),
+                }),
+                state: InboundAppendState::NotWritten,
+            };
+            self.inbound_append_claims.insert(agent_id.to_string(), continuation);
+        } else {
+            self.inbound_append_claims.remove(agent_id);
+        }
+        true
+    }
+
     pub fn enqueue(map: &mut HashMap<String, Vec<T>>, agent_id: impl Into<String>, item: T) {
         map.entry(agent_id.into()).or_default().push(item);
     }
@@ -392,5 +543,47 @@ impl<T> BackgroundWakes<T> {
                 None
             }
         }
+    }
+}
+
+impl<T: Clone> BackgroundWakes<T> {
+    /// Called under the same mutex as ingress. Preparation is never merged back
+    /// into raw pending input, and Unknown can never be automatically retried.
+    pub fn take_inbound_append_or_end_revival(&mut self, agent_id: &str) -> Option<InboundAppendWork<T>> {
+        if !self.reviving_inbound_agent_ids.contains(agent_id) {
+            return None;
+        }
+        if let Some(claim) = self.inbound_append_claims.get_mut(agent_id) {
+            if claim.worker_token.is_some() {
+                // Another worker still owns this head. In particular, do not
+                // clear its revival bit on a duplicate or delayed acquisition.
+                return None;
+            }
+            if claim.state != InboundAppendState::NotWritten {
+                self.reviving_inbound_agent_ids.remove(agent_id);
+                return None;
+            }
+            claim.worker_token = Some(uuid::Uuid::new_v4().to_string());
+            claim.state = InboundAppendState::Active;
+        } else {
+            let Some(envelopes) = self.pending_inbound.remove(agent_id).filter(|items| !items.is_empty()) else {
+                self.reviving_inbound_agent_ids.remove(agent_id);
+                return None;
+            };
+            self.inbound_append_claims.insert(agent_id.to_string(), InboundAppendClaim {
+                claim_id: uuid::Uuid::new_v4().to_string(),
+                worker_token: Some(uuid::Uuid::new_v4().to_string()),
+                envelopes,
+                attempt: None,
+                state: InboundAppendState::Active,
+            });
+        }
+        let claim = self.inbound_append_claims.get(agent_id)?;
+        Some(InboundAppendWork {
+            claim_id: claim.claim_id.clone(),
+            worker_token: claim.worker_token.clone()?,
+            envelopes: claim.envelopes.clone(),
+            attempt: claim.attempt.clone(),
+        })
     }
 }
