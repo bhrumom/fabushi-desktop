@@ -368,9 +368,62 @@ jobs:
           cargo test --locked --manifest-path source/host/app/Cargo.toml --test startup_admission_contract || admission_status=1
           exit "$admission_status"
       - name: Test native Runtime provider dispatch admission
+        id: ocrm_native_runtime
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
-        run: cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-runtime --lib
+        env:
+          OCRM_NATIVE_EVIDENCE_DIR: ${{ runner.temp }}/ocrm-native-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OCRM_NATIVE_EVIDENCE_DIR"
+          trap 'native_exit=$?; trap - EXIT; printf "%s\n" "$native_exit" > "$OCRM_NATIVE_EVIDENCE_DIR/step-exit-code.txt"; exit "$native_exit"' EXIT
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"]
+          source_paths = [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "projects/openclaw-rust/upstream.lock.json",
+              "source/mahayana/mahayana-rs/Cargo.toml",
+              "source/mahayana/mahayana-rs/Cargo.lock",
+              "source/mahayana/mahayana-rs/mahayana-runtime/Cargo.toml",
+              "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+              "source/mahayana/mahayana-rs/mahayana-runtime/src/conversation_actor.rs",
+              "source/mahayana/mahayana-rs/mahayana-runtime/src/runtime_store.rs",
+              "source/mahayana/mahayana-rs/mahayana-runtime/src/dispatch_admission_tests.rs",
+              "source/mahayana/mahayana-rs/mahayana-runtime/src/acceptance_admission_tests.rs",
+          ]
+          lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          receipt = {
+              "kind": "ocrm-native-runtime-command-diagnostics",
+              "verification_verdict": None,
+              "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in source_paths},
+          }
+          Path(os.environ["OCRM_NATIVE_EVIDENCE_DIR"], "subject.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          PY
+          native_command=(cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-runtime --lib)
+          printf '%q ' "${native_command[@]}" > "$OCRM_NATIVE_EVIDENCE_DIR/command.txt"
+          printf '\n' >> "$OCRM_NATIVE_EVIDENCE_DIR/command.txt"
+          native_status=0
+          "${native_command[@]}" > "$OCRM_NATIVE_EVIDENCE_DIR/native-runtime.log" 2>&1 || native_status=$?
+          printf '%s\n' "$native_status" > "$OCRM_NATIVE_EVIDENCE_DIR/command-exit-code.txt"
+          cat "$OCRM_NATIVE_EVIDENCE_DIR/native-runtime.log"
+          exit "$native_status"
+      - name: Preserve exact-subject native Runtime diagnostics
+        if: ${{ always() && (steps.ocrm_native_runtime.outcome == 'success' || steps.ocrm_native_runtime.outcome == 'failure') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-native-runtime-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ocrm-native-runtime-${{ github.run_id }}-${{ github.run_attempt }}/
+          if-no-files-found: error
+          retention-days: 7
       - name: Test affected Session Transcript and Runner integration recovery
         id: ocrm_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}

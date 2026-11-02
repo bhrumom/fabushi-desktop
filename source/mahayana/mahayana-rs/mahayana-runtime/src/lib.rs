@@ -3,6 +3,8 @@
 mod capability_broker;
 mod conversation_actor;
 #[cfg(all(test, not(target_arch = "wasm32")))]
+mod acceptance_admission_tests;
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod dispatch_admission_tests;
 mod kernel_conversation;
 mod runtime_store;
@@ -14,7 +16,7 @@ use fabushi_official_miniapps::OfficialMiniAppEngine;
 use fabushi_official_miniapps::app_definition;
 use fabushi_official_miniapps::home_html;
 use capability_broker::CapabilityBroker;
-use conversation_actor::{ConversationActor, ConversationActorRegistry};
+use conversation_actor::{ActorAdmissionError, ConversationActor, ConversationActorRegistry};
 use kernel_conversation::KernelConversationProvider;
 use runtime_store::RuntimeStore;
 pub use runtime_store::RuntimeStoreError;
@@ -1358,19 +1360,21 @@ impl MahayanaRuntime {
             turn_created_at_ms,
             generation,
             provider_client_message_id,
+            retry_predecessor,
         ) = if let Some(retry_message_id) = retry_of_client_message_id {
-            let (turn_id, created_at_ms, generation) = self
+            let predecessor = self
                 .store
-                .retry_turn_generation(conversation_id.as_str(), &retry_message_id)?
+                .retry_turn_predecessor(conversation_id.as_str(), &retry_message_id)?
                 .ok_or_else(|| RuntimeError::RetryTargetNotFound(retry_message_id.clone()))?;
             let user_message_id = MessageId::new(retry_message_id.clone())
                 .map_err(|_| RuntimeError::RetryTargetNotFound(retry_message_id.clone()))?;
             (
-                turn_id,
+                predecessor.turn_id.clone(),
                 Some(user_message_id),
-                created_at_ms,
-                generation,
+                predecessor.created_at_ms,
+                predecessor.next_generation,
                 Some(retry_message_id),
+                Some(predecessor),
             )
         } else {
             let turn_id = TurnId::generated("turn");
@@ -1384,30 +1388,19 @@ impl MahayanaRuntime {
                 run_started_at_ms,
                 1,
                 client_message_id,
+                None,
             )
         };
         let actor = self
             .actors
             .actor(&conversation_id)
             .map_err(RuntimeError::Synchronization)?;
-        let (queued, accepted_sequence) = actor
-            .register(turn_id.clone())
-            .map_err(RuntimeError::Synchronization)?;
         let initial_state = if retrying {
             TurnState::Recovering
         } else {
             TurnState::Accepted
         };
-        let initial_sequence = if retrying {
-            actor
-                .set_state(&turn_id, TurnState::Recovering)
-                .map_err(RuntimeError::Synchronization)?
-                .unwrap_or(accepted_sequence)
-        } else {
-            accepted_sequence
-        };
-
-        let turn = LogicalTurn {
+        let mut turn = LogicalTurn {
             id: turn_id.clone(),
             conversation_id: conversation_id.clone(),
             user_message_id,
@@ -1415,7 +1408,7 @@ impl MahayanaRuntime {
             state: initial_state,
             active_run_id: Some(run_id.clone()),
         };
-        let run = ExecutionRun {
+        let mut run = ExecutionRun {
             id: run_id.clone(),
             turn_id: turn_id.clone(),
             generation,
@@ -1424,28 +1417,35 @@ impl MahayanaRuntime {
             finished_at_ms: None,
             state: initial_state,
         };
-        self.store.record_turn(&turn)?;
-        if let Some(message_id) = turn.user_message_id.as_ref() {
-            self.store.record_turn_request(
-                &turn_id,
-                message_id,
-                &text,
-                inference_provider.as_deref(),
-                hidden,
-                run_started_at_ms,
-            )?;
-        }
-        self.store.record_run(&run)?;
-
         let context = RunContext {
             turn_id: turn_id.clone(),
             run_id: run_id.clone(),
             conversation_id: conversation_id.clone(),
             actor: Arc::clone(&actor),
         };
-        lock(&self.operations)?.insert(operation_id.clone(), provider_key.clone());
-        lock(&self.run_contexts)?.insert(operation_id.clone(), context.clone());
+        let admission = {
+            // Acquire all fallible publication locks before accepting anything.
+            // Order: operations -> run_contexts -> actor state -> SQLite.
+            let mut operations = lock(&self.operations)?;
+            let mut contexts = lock(&self.run_contexts)?;
+            let admission = actor.admit_turn(turn_id.clone(), retrying, |state| {
+                turn.state = state;
+                run.state = state;
+                self.store.record_admission(
+                    &turn, &run, &text, inference_provider.as_deref(), hidden,
+                    retry_predecessor.as_ref(),
+                )
+            }).map_err(|error| match error {
+                ActorAdmissionError::Synchronization(message) => RuntimeError::Synchronization(message),
+                ActorAdmissionError::Persistence(error) => RuntimeError::RuntimeStore(error),
+            })?;
+            operations.insert(operation_id.clone(), provider_key.clone());
+            contexts.insert(operation_id.clone(), context.clone());
+            admission
+        };
 
+        // The durable final state is already committed. Publish the existing
+        // initial/Queued event order outside every admission lock.
         self.event_tx
             .send(RuntimeEvent::TurnStateChanged {
                 operation_id: operation_id.clone(),
@@ -1453,11 +1453,18 @@ impl MahayanaRuntime {
                 run_id: run_id.clone(),
                 conversation_id: conversation_id.clone(),
                 state: initial_state,
-                sequence: initial_sequence,
+                sequence: admission.initial_sequence,
             })
             .map_err(|_| RuntimeError::EventConsumerClosed)?;
-        if queued {
-            transition_turn_state(&self.event_tx, &self.store, &context, TurnState::Queued)?;
+        if let Some(sequence) = admission.queued_sequence {
+            self.event_tx.send(RuntimeEvent::TurnStateChanged {
+                operation_id: operation_id.clone(),
+                turn_id: turn_id.clone(),
+                run_id: run_id.clone(),
+                conversation_id: conversation_id.clone(),
+                state: TurnState::Queued,
+                sequence,
+            }).map_err(|_| RuntimeError::EventConsumerClosed)?;
         }
 
         let durable_intent_id = provider_client_message_id.clone();
