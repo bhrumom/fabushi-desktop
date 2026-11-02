@@ -1,0 +1,83 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "responsibility_id": "FBCP-NMR-001",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "append": {
+    "fabushi_target_paths": [
+      "source/product/fabushi/fabushi-account-service.ts",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs",
+      "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
+    ],
+    "fabushi_target_symbols": [
+      "FabushiAuthService.writeHostCredential",
+      "AppHost::new_with_feature_mode_and_storage_passphrase",
+      "create_feature_host"
+    ],
+    "production_entrypoints": [
+      "Round14 Native startup at c15dfbd9631f8b9fb6920cb5f80b9aea35210d07: source/electron-main/entry.ts installs the account adapter; FabushiAuthService.writeHostCredential writes seven Native v1 fields to the private credential file. The separate launch chain is entry.ts -> rust-coordinator-carrier -> source/node-agent-coordinator/src/main.rs::spawn_host -> source/host/app/src/main.rs -> UnifiedAppHost::new -> AppHost::new_with_feature_mode_and_storage_passphrase -> create_feature_host. The credential path is handed to the Host through the existing environment contract. HostCreateConfig receives telegram_client_id=None and telegram_self_user_id=None; this composition no longer opens legacy SQLite or creates the old client/provider. Later Host/FFI/default-link retirement remains separately scoped."
+    ],
+    "production_evidence": [
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.ts@7dc39db60fca2765671fb897b1e213619aa56d27#FabushiAuthService.writeHostCredential",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@976339e378f234fa349491d62a20d7342e779039#AppHost::new_with_feature_mode_and_storage_passphrase",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@976339e378f234fa349491d62a20d7342e779039#create_feature_host"
+    ],
+    "test_evidence": [
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_desktop_account_handoff",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_startup_preserves_encrypted_legacy_storage_for_rollback",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_startup_ignores_corrupt_legacy_database_and_preserves_sidecars",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves valid retained storage/application secrets",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and non-JSON application secret",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and invalid application credential",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves new account without legacy secrets",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: account switch replaces Native identity without touching either legacy account",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: restart denies another issuer before isolated login establishes its own Native identity",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: rejected refresh clears Native authority and preserves malformed legacy data",
+      "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: logout fences a delayed refresh before it can republish any credential"
+    ],
+    "integration_case_ids": [
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_desktop_account_handoff",
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_startup_preserves_encrypted_legacy_storage_for_rollback",
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_startup_ignores_corrupt_legacy_database_and_preserves_sidecars",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves valid retained storage/application secrets",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and non-JSON application secret",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and invalid application credential",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves new account without legacy secrets",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: account switch replaces Native identity without touching either legacy account",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: restart denies another issuer before isolated login establishes its own Native identity",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: rejected refresh clears Native authority and preserves malformed legacy data",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: logout fences a delayed refresh before it can republish any credential"
+    ],
+    "fault_recovery_case_ids": [
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_desktop_account_handoff",
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_startup_preserves_encrypted_legacy_storage_for_rollback",
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_startup_ignores_corrupt_legacy_database_and_preserves_sidecars",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves valid retained storage/application secrets",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and non-JSON application secret",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and invalid application credential",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves new account without legacy secrets",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: account switch replaces Native identity without touching either legacy account",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: restart denies another issuer before isolated login establishes its own Native identity",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: rejected refresh clears Native authority and preserves malformed legacy data",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: logout fences a delayed refresh before it can republish any credential"
+    ],
+    "security_case_ids": [
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_desktop_account_handoff",
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_startup_preserves_encrypted_legacy_storage_for_rollback",
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_startup_ignores_corrupt_legacy_database_and_preserves_sidecars",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves valid retained storage/application secrets",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and non-JSON application secret",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and invalid application credential",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves new account without legacy secrets",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: account switch replaces Native identity without touching either legacy account",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: restart denies another issuer before isolated login establishes its own Native identity",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: rejected refresh clears Native authority and preserves malformed legacy data",
+      "source/product/fabushi/fabushi-account-service.behavior.test.mjs#NMR-NATIVE-ACCOUNT: logout fences a delayed refresh before it can republish any credential"
+    ],
+    "test_execution_evidence": [
+      "https://github.com/bhrumom/fabushi-desktop/actions/runs/41438907013@c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:attempt2:completed/success:job125498460407 Human33 AgentNonce4 private-settlement3, zero failed/ignored; artifact13172098929 sha256:a0dc155e1e69ae6cb8930877f9f4278738f8a598565270f33e78c4c11cb2a2cc. Only previously unassigned macOS jobs were requested for rerun; original successful Electron/UI at identical H/input remain valid.",
+      "https://github.com/bhrumom/fabushi-desktop/actions/runs/41438907013@c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:attempt2:job125498461528:completed/success:locked actual AppHost check, composition11, Native-startup-retention3 including original encrypted reader and corrupt sidecars, normalization6, future-salts2, protocol122, TCP9 including live, proxy4, Native credential1; zero failed/ignored; artifact13172019289 sha256:f9a4ba25a84a5c5124126c3238848408925c2d1db512e4a27b45529af7fd6dae. Preserved attempt1 Electron carrier10/auth8 artifact13138047184 sha256:85ba93695f3a2f79e485c34f18b39b9499912b8f28fb8b2f90c974da2266db9b and UI16 artifact13138126451 sha256:3578acfb41f75225f13eeb09961262aab06584cf85600aa6b4f25cb4ed9c60bf; both actual builds passed."
+    ]
+  },
+  "note": "Round14 recovery verification for original production commit c15dfbd9631f8b9fb6920cb5f80b9aea35210d07: append the missing exact Electron/AppHost owner symbols and eleven authored behavior-case anchors without replaying an older ledger. The original parent/tree and all fifteen committed file contents were read back. Its previously unassigned macOS jobs (runner_id=0, no steps) were retried at the same H; run41438907013 attempt2 completed successfully with the scoped counts and artifact digests recorded above. Earlier successful Electron/UI evidence at identical H/input was retained. The temporary object-transfer mechanism only prepares an unattached blob; publication still requires fresh-input identity and non-forced expected-head CAS. All later code, row/source records and historical target/workflow fields retain their own scope. This records the round14 batch execution, not full source/legal/service/package/Bot or independent product acceptance."
+}
