@@ -296,6 +296,10 @@ impl PluginSkillsPort for SandPluginSkillsService {
         serde_json::json!({ "authBlocked": self.current_auth_blocked() })
     }
 
+    fn observe_confirmed_uninstall(&self, plugin_id: &str) -> Result<(), String> {
+        SandPluginSkillsService::observe_confirmed_uninstall(self, plugin_id)
+    }
+
     fn remove_live_references(&self, source_urls: &[String]) {
         SandPluginSkillsService::remove_live_references(self, source_urls);
     }
