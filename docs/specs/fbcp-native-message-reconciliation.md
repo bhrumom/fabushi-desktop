@@ -1211,6 +1211,82 @@ integrate the sole canonical ledger, and remove this temporary delivery job.
 Existing schema/source and product gates remain required; object creation is
 neither validation nor acceptance evidence.
 
+## NMR-50 — Forward recovery must not stall history or cross account boundaries
+
+Discovery base: `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`; fixed U remains
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`. This batch extends the existing
+`ProductionSessionWorkers` / native messaging / canonical SQLite owners. The
+public gateway, journal schema, composition and account authority stay the same.
+
+The current automatic recovery path waits for a batch mutex held across HTTP,
+before ordinary history sync can run. A forward already accepted by the service
+but awaiting its response therefore blocks the history settlement that could
+confirm it. Roster sync also scans all batches again for every friend, multiplying
+failed send attempts. Its friends request lacks the full credential fence already
+required of message history, and can create old-account conversations from a
+response completed after credential rotation. Root review decisions: FIX all
+three implementation defects within the existing owner.
+
+### Required behavior
+
+- **NMR-50a:** Explicit forward callers retain serialized, durable request
+  semantics. Automatic recovery must skip a batch already held by an active
+  executor and continue ordinary history synchronization, including the active
+  forward's destination. Acquire the batch lock once; do not release and reacquire
+  it between admission and delivery. Lock poison, corrupt journals and storage
+  errors remain failures. Skipping an active batch must neither alter its journal
+  nor issue duplicate POSTs; later direct/roster sync can resume it after release
+  or process restart. Preserve the NMR-25 history/send settlement contract and
+  NMR-47/NMR-48 journal CAS, source authorization and attachment guarantees.
+- **NMR-50b:** One top-level `syncHumanConversations` performs at most one recovery
+  scan. Its internal per-friend history sync must not repeat that scan. Direct
+  `syncHumanConversation` continues to recover once. A failed target remains
+  durable and retryable on the next invocation; unrelated histories still advance.
+- **NMR-50c:** Roster retrieval must bind to the active Host Human account before
+  HTTP and verify the entire credential snapshot after consuming the response
+  body, including user, device, token, session, expiry and issuer. A mismatch
+  rejects the response before conversation creation, metadata updates, events,
+  history requests or call sync. Retain the compatible native client API through
+  a private bound implementation. Restoring valid credentials must permit normal
+  synchronization and persist only the authorized roster.
+- **NMR-50d:** A forward awaiting Coordinator readiness has not yet been admitted
+  by the Host. Recheck its original account generation and dialog lifetime at
+  the actual request-frame boundary, after readiness and immediately before
+  pending registration/posting. Closing, unmounting, replacing the source or
+  switching accounts before that boundary rejects the old request without a
+  mutation frame. Add an optional local call precondition, compatible with
+  existing callers; never serialize callbacks into the gateway payload or add
+  a second account authority. Once posted, retain the existing durable Host
+  intent and response settlement semantics; closing the presentation does not
+  cancel, discard or reinterpret an accepted batch.
+
+### Verification and completion
+
+Use the existing real Host/loopback service/SQLite integration harness, executed
+only in GitHub Actions at the frozen batch H. A response barrier must demonstrate
+that both unrelated and destination history sync complete while a forward POST
+response remains held, with one canonical destination message and no extra POST.
+Always release the barrier before joining workers on a failing assertion. A
+multi-friend roster fixture must count exactly one failed recovery POST per
+invocation and show recovery on a later invocation. Wrong-user roster binding
+must produce zero HTTP; delayed-body rotation cases must cover all six credential
+fields and prove unchanged persisted conversations/metadata and no downstream
+request/event, followed by successful retry and reopen.
+
+Exercise NMR-50d through the actual Coordinator client and a controlled port,
+including a disconnect/readiness wait, account and dialog retirement, a live
+positive control and retirement after posting. Preserve the 16 existing actual
+Chromium picker cases and all delivery/Agent projections. A component mock that
+registers a forward immediately cannot prove the delayed frame boundary.
+
+Retain all existing Human, forward-journal, Agent and credential regressions and
+the actual AppHost compile gate; use the current Actions workflow without a
+parallel test framework. Independent code/spec review and exact-H positive
+execution evidence are required for this batch. Queued or unrun checks remain
+pending. No final source, real-service, supported-platform, UI/accessibility,
+soak, upgrade/rollback or shipping acceptance is implied. Rollback is an ordinary
+code revert; no user data or journal migration/deletion is required.
+
 
 
 
