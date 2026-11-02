@@ -492,6 +492,10 @@ jobs:
             .evidence/coordinator-inputs.json
           if-no-files-found: error
           retention-days: 90
+      - name: Record actual Coordinator JSON feature graph
+        if: ${{ always() && steps.coordinator_inputs.outcome == 'success' }}
+        shell: bash
+        run: cargo tree --locked --manifest-path source/node-agent-coordinator/Cargo.toml --edges features --invert serde_json
       - name: Verify OpenClaw migration audit integrity
         shell: bash
         run: |

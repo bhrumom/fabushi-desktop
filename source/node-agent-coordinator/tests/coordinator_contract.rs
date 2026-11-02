@@ -2177,6 +2177,325 @@ fn gateway_client_streams_real_sse_and_honors_bearer_auth() {
 }
 
 
+mod gateway_json_wire_fidelity {
+    use std::cell::{Cell, RefCell};
+    use std::collections::BTreeMap;
+    use std::io::{self, Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc::{self, Sender},
+    };
+    use std::thread::{self, JoinHandle};
+    use std::time::{Duration, Instant};
+
+    use mahayana_node_agent_coordinator::gateway::gateway_client::stream_http_events;
+    use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::dispatch_http_json;
+    use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
+    use serde_json::{Value, json};
+
+    const PEER_TIMEOUT: Duration = Duration::from_secs(10);
+    const MAX_REQUEST_BYTES: usize = 64 * 1024;
+    const EPOCH_BITS: u64 = 4_790_166_932_267_466_758;
+
+    struct ObservedRequest {
+        headers: String,
+        body: Vec<u8>,
+    }
+
+    struct ObservedExchange {
+        request: ObservedRequest,
+        response: Vec<u8>,
+    }
+
+    struct LoopbackPeer {
+        connection: GatewayConnection,
+        release_body: Sender<()>,
+        stop: Arc<AtomicBool>,
+        worker: Option<JoinHandle<io::Result<ObservedExchange>>>,
+    }
+
+    fn remaining(deadline: Instant) -> io::Result<Duration> {
+        deadline.checked_duration_since(Instant::now())
+            .filter(|remaining| !remaining.is_zero())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::TimedOut, "wire fixture deadline expired"))
+    }
+
+    fn read_some(stream: &mut TcpStream, buffer: &mut [u8], deadline: Instant) -> io::Result<usize> {
+        loop {
+            stream.set_read_timeout(Some(remaining(deadline)?))?;
+            match stream.read(buffer) {
+                Ok(0) => return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "incomplete fixture request")),
+                Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+                result => return result,
+            }
+        }
+    }
+
+    fn read_request(stream: &mut TcpStream, deadline: Instant) -> io::Result<ObservedRequest> {
+        let mut request = Vec::new();
+        let mut buffer = [0_u8; 1024];
+        let header_end = loop {
+            let available = MAX_REQUEST_BYTES.saturating_sub(request.len()).min(buffer.len());
+            if available == 0 {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "fixture request headers too large"));
+            }
+            let count = read_some(stream, &mut buffer[..available], deadline)?;
+            request.extend_from_slice(&buffer[..count]);
+            if let Some(index) = request.windows(4).position(|bytes| bytes == b"\r\n\r\n") {
+                break index + 4;
+            }
+        };
+        let headers = String::from_utf8(request[..header_end].to_vec())
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        let content_length = headers.lines().find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("content-length").then_some(value.trim())
+        }).unwrap_or("0").parse::<usize>()
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        let total = header_end.checked_add(content_length)
+            .filter(|total| *total <= MAX_REQUEST_BYTES)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "fixture request body too large"))?;
+        while request.len() < total {
+            let available = (total - request.len()).min(buffer.len());
+            let count = read_some(stream, &mut buffer[..available], deadline)?;
+            request.extend_from_slice(&buffer[..count]);
+        }
+        Ok(ObservedRequest { headers, body: request[header_end..total].to_vec() })
+    }
+
+    fn write_bytes(stream: &mut TcpStream, mut bytes: &[u8], deadline: Instant) -> io::Result<()> {
+        while !bytes.is_empty() {
+            stream.set_write_timeout(Some(remaining(deadline)?))?;
+            match stream.write(bytes) {
+                Ok(0) => return Err(io::Error::new(io::ErrorKind::WriteZero, "fixture response write stopped")),
+                Ok(count) => bytes = &bytes[count..],
+                Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+                Err(error) => return Err(error),
+            }
+        }
+        stream.set_write_timeout(Some(remaining(deadline)?))?;
+        stream.flush()
+    }
+
+    impl LoopbackPeer {
+        fn start(headers: Vec<u8>, body: Vec<u8>, after_connected: bool) -> Self {
+            let listener = TcpListener::bind("127.0.0.1:0").expect("bind wire fixture");
+            listener.set_nonblocking(true).expect("bound fixture accept loop");
+            let address = listener.local_addr().expect("wire fixture address");
+            let stop = Arc::new(AtomicBool::new(false));
+            let worker_stop = Arc::clone(&stop);
+            let (release_body, released) = mpsc::channel();
+            let worker = thread::spawn(move || {
+                let deadline = Instant::now() + PEER_TIMEOUT;
+                let mut stream = loop {
+                    remaining(deadline)?;
+                    if worker_stop.load(Ordering::Acquire) {
+                        return Err(io::Error::new(io::ErrorKind::Interrupted, "wire fixture cancelled"));
+                    }
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                            thread::sleep(Duration::from_millis(5));
+                        }
+                        Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
+                        Err(error) => return Err(error),
+                    }
+                };
+                // Accepted sockets can inherit a listener's nonblocking mode on macOS.
+                stream.set_nonblocking(false)?;
+                stream.set_read_timeout(Some(remaining(deadline)?))?;
+                stream.set_write_timeout(Some(remaining(deadline)?))?;
+                let request = read_request(&mut stream, deadline)?;
+                write_bytes(&mut stream, &headers, deadline)?;
+                if after_connected {
+                    released.recv_timeout(remaining(deadline)?)
+                        .map_err(|error| {
+                            let kind = match error {
+                                mpsc::RecvTimeoutError::Timeout => io::ErrorKind::TimedOut,
+                                mpsc::RecvTimeoutError::Disconnected => io::ErrorKind::BrokenPipe,
+                            };
+                            io::Error::new(kind, error)
+                        })?;
+                    if worker_stop.load(Ordering::Acquire) {
+                        return Err(io::Error::new(io::ErrorKind::Interrupted, "wire fixture cancelled"));
+                    }
+                }
+                write_bytes(&mut stream, &body, deadline)?;
+                let mut response = headers;
+                response.extend_from_slice(&body);
+                Ok(ObservedExchange { request, response })
+            });
+            Self {
+                connection: GatewayConnection {
+                    base_url: format!("http://{address}"),
+                    headers: BTreeMap::from([("authorization".into(), "Bearer wire-fixture".into())]),
+                },
+                release_body,
+                stop,
+                worker: Some(worker),
+            }
+        }
+
+        fn finish(mut self) -> io::Result<ObservedExchange> {
+            self.stop.store(true, Ordering::Release);
+            let _ = self.release_body.send(());
+            self.worker.take().expect("owned wire peer").join()
+                .map_err(|_| io::Error::other("wire fixture peer panicked"))?
+        }
+    }
+
+    impl Drop for LoopbackPeer {
+        fn drop(&mut self) {
+            self.stop.store(true, Ordering::Release);
+            let _ = self.release_body.send(());
+            if let Some(worker) = self.worker.take() {
+                // All peer I/O and the barrier share one deadline, including on unwind.
+                let _ = worker.join();
+            }
+        }
+    }
+
+    fn expected_entry() -> Value {
+        // No decimal parsing builds the oracle, including the integral and signed-zero controls.
+        json!({
+            "kind": "message", "id": "t-wire-u", "role": "user",
+            "content": "wire fixture\n雪", "isStreaming": false,
+            "timestampMs": f64::from_bits(EPOCH_BITS),
+            "channel": "fixture-channel",
+            "channelSender": {
+                "id": "sender-wire",
+                "nested": [
+                    f64::from_bits(EPOCH_BITS | (1_u64 << 63)),
+                    { "integral": f64::from_bits(0x408f_4000_0000_0000),
+                      "negativeZero": f64::from_bits(0x8000_0000_0000_0000),
+                      "small": f64::from_bits(0x3ddb_7cdf_d9d7_bdbb),
+                      "large": f64::from_bits(0x54b2_49ad_2594_c37d),
+                      "negativeSmall": f64::from_bits(0xbddb_7cdf_d9d7_bdbb) },
+                    [null, true, false, 42, -7, "ordinary JSON", []]
+                ]
+            }
+        })
+    }
+
+    fn float_leaves(value: &Value, path: &str, leaves: &mut Vec<(String, u64)>) {
+        match value {
+            Value::Number(number) if number.is_f64() => {
+                leaves.push((path.to_string(), number.as_f64().expect("fixture finite float").to_bits()));
+            }
+            Value::Array(values) => {
+                for (index, value) in values.iter().enumerate() {
+                    float_leaves(value, &format!("{path}/{index}"), leaves);
+                }
+            }
+            Value::Object(values) => {
+                for (key, value) in values {
+                    let key = key.replace('~', "~0").replace('/', "~1");
+                    float_leaves(value, &format!("{path}/{key}"), leaves);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn record_diagnostic(message: std::fmt::Arguments<'_>) {
+        // The unchanged Cargo command must retain diagnostics for passing probes too.
+        let mut stderr = io::stderr().lock();
+        writeln!(stderr, "{message}").expect("write synthetic wire diagnostic");
+        stderr.flush().expect("flush synthetic wire diagnostic");
+    }
+
+    fn assert_wire_value(label: &str, expected: &Value, actual: &Value, raw_response: &[u8]) {
+        record_diagnostic(format_args!("CJW {label} raw synthetic response: {}", String::from_utf8_lossy(raw_response)));
+        let mut leaves = Vec::new();
+        float_leaves(expected, "", &mut leaves);
+        assert_eq!(leaves.len(), 7, "independent fixture must contain all seven float controls");
+        let observed_bits = leaves.iter().map(|(path, expected_bits)| {
+            let actual_bits = actual.pointer(path).and_then(Value::as_f64).map(f64::to_bits);
+            let observed = actual_bits.map(|bits| format!("0x{bits:016x}"))
+                .unwrap_or_else(|| "missing/non-number".to_string());
+            record_diagnostic(format_args!("CJW {label} {path}: expected=0x{expected_bits:016x} actual={observed}"));
+            actual_bits
+        }).collect::<Vec<_>>();
+        assert_eq!(actual, expected, "{label} must preserve the complete producer JSON value");
+        // Whole-Value equality alone does not distinguish positive and negative zero.
+        for ((path, expected_bits), actual_bits) in leaves.iter().zip(observed_bits) {
+            assert_eq!(actual_bits, Some(*expected_bits), "{label} float bits changed at {path}");
+        }
+    }
+
+    fn assert_request(request: &ObservedRequest, request_line: &str, expected_body: &[u8]) {
+        assert_eq!(request.headers.lines().next(), Some(request_line));
+        for header in ["authorization: Bearer wire-fixture", "x-sand-slim-avatars: 1"] {
+            assert!(request.headers.lines().any(|line| line.eq_ignore_ascii_case(header)),
+                "missing {header}: {}", request.headers);
+        }
+        assert_eq!(request.body.as_slice(), expected_body, "request body must be forwarded unchanged");
+    }
+
+    #[test]
+    fn gateway_http_reply_preserves_finite_json_values() {
+        let expected = json!({ "entries": [expected_entry()], "nextBeforeSeq": null });
+        let body = serde_json::to_vec(&expected).expect("serialize independent HTTP fixture");
+        record_diagnostic(format_args!("CJW HTTP fixture JSON: {}", String::from_utf8_lossy(&body)));
+        let headers = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            body.len(),
+        ).into_bytes();
+        let peer = LoopbackPeer::start(headers, body, false);
+        let args = json!({ "id": "agent-wire" });
+        let expected_request = serde_json::to_vec(&args).expect("serialize fixture request");
+        let result = dispatch_http_json(&peer.connection, "getAgentTranscriptTail", args);
+        let exchange = peer.finish().expect("HTTP fixture must complete before judging numeric fidelity");
+        let actual = result.expect("HTTP transport/decode must succeed before comparing numeric values");
+        assert_request(&exchange.request, "POST /api/getAgentTranscriptTail HTTP/1.1", &expected_request);
+        assert!(exchange.request.headers.lines().any(|line| line.eq_ignore_ascii_case("content-type: application/json")));
+        assert_wire_value("HTTP", &expected, &actual, &exchange.response);
+    }
+
+    #[test]
+    fn gateway_sse_event_preserves_finite_json_values_after_connected() {
+        let expected = json!({
+            "channel": "transcript",
+            "payload": { "type": "appended", "agentId": "agent-wire", "entry": expected_entry() },
+        });
+        let encoded = serde_json::to_vec(&expected).expect("serialize independent SSE fixture");
+        record_diagnostic(format_args!("CJW SSE fixture JSON: {}", String::from_utf8_lossy(&encoded)));
+        let mut body = b"data: ".to_vec();
+        body.extend_from_slice(&encoded);
+        body.extend_from_slice(b"\n\n");
+        let headers = b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: keep-alive\r\n\r\n".to_vec();
+        let peer = LoopbackPeer::start(headers, body, true);
+        let release = peer.release_body.clone();
+        let connected = Cell::new(false);
+        let keep_streaming = Cell::new(true);
+        let events = RefCell::new(Vec::new());
+        let result = stream_http_events(
+            &peer.connection,
+            || {
+                connected.set(true);
+                // No event bytes were sent in the handshake read's initial buffer.
+                release.send(()).expect("release SSE fixture after connection");
+            },
+            |event| {
+                events.borrow_mut().push(event);
+                keep_streaming.set(false);
+            },
+            || keep_streaming.get(),
+        );
+        let exchange = peer.finish().expect("SSE fixture must complete before judging numeric fidelity");
+        result.expect("SSE transport/decode must succeed before comparing numeric values");
+        assert!(connected.get(), "SSE connection callback must release the event");
+        assert_request(&exchange.request, "GET /events HTTP/1.1", &[]);
+        assert!(exchange.request.headers.lines().any(|line| line.eq_ignore_ascii_case("accept: text/event-stream")));
+        let events = events.into_inner();
+        assert_eq!(events.len(), 1, "deliver exactly the synthetic transcript event");
+        assert_wire_value("SSE", &expected, &events[0], &exchange.response);
+    }
+}
+
+
 #[test]
 fn gateway_client_pause_and_dev_offline_gate_dispatch_without_closing_client() {
     use mahayana_node_agent_coordinator::gateway::gateway_client::CoordinatorGatewayClient;
