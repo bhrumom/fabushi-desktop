@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     OpenRouterCheckpoint, ProviderMessage, ProviderSessionError,
@@ -11,13 +11,13 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryOutcome,
     ProviderRetryReport, RoutedProviderAttemptControl, RoutedProviderAttemptExecutor,
-    RoutedProviderCheckpointStore,
+    RoutedProviderCheckpointStore, ToolEffectUnknownResult,
     first_output_timeout_for_attempt, run_production_turn_shell_lifecycle,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation,
 };
-use mahayana_host_runtime::runner::StreamAttemptPolicy;
+use mahayana_host_runtime::runner::{StreamAttemptPolicy, StreamAttemptRuntime};
 use serde_json::json;
 
 use mahayana_host_runtime::runner::{
@@ -175,6 +175,145 @@ fn policy(max_attempts: u32) -> StreamAttemptPolicy {
         initial_backoff: Duration::ZERO,
         max_backoff: Duration::ZERO,
         max_retry_after: Duration::ZERO,
+    }
+}
+
+#[derive(Clone, Copy)]
+enum PermanentFailure {
+    Authentication,
+    Configuration,
+}
+
+impl PermanentFailure {
+    fn error(self) -> ProviderSessionError {
+        // Deliberately transient-looking text: only the explicit kind is authority.
+        let message = "connection timeout (503) in a permanent credential/configuration failure".into();
+        match self {
+            Self::Authentication => ProviderSessionError::Authentication(message),
+            Self::Configuration => ProviderSessionError::Configuration(message),
+        }
+    }
+
+    fn report_type(self) -> &'static str {
+        match self {
+            Self::Authentication => "AuthenticationError",
+            Self::Configuration => "ConfigurationError",
+        }
+    }
+}
+
+struct PermanentAfterWatchdog {
+    failure: PermanentFailure,
+    attempts: usize,
+    unknown_effect: bool,
+    user_cancellation: Option<RoutedProviderCancellation>,
+}
+
+impl RoutedProviderAttemptExecutor for PermanentAfterWatchdog {
+    fn run_attempt(
+        &mut self,
+        attempt: &RoutedProviderAttemptControl,
+        resume_from: Option<&RoutedProviderCheckpoint>,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+        on_checkpoint: &mut dyn FnMut(&RoutedProviderCheckpoint) -> Result<(), ProviderSessionError>,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        self.attempts += 1;
+        assert!(resume_from.is_none());
+        if self.unknown_effect {
+            let receipt = attempt.admit_tool().expect("admit before watchdog");
+            receipt.result_tracker().mark_unknown(ToolEffectUnknownResult::DownstreamOutcomeUnknown);
+            receipt.complete();
+        }
+        let deadline = Instant::now() + Duration::from_secs(5);
+        // Unknown custody can itself set should_cancel. Observe the actual
+        // attempt retirement as well so this case still proves watchdog expiry.
+        while attempt.is_current() && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(1));
+        }
+        assert!(!attempt.is_current(), "the real watchdog must retire the attempt");
+        assert!(should_cancel());
+        on_text_delta("stale", "stale");
+        on_checkpoint(&tool_only_checkpoint())?;
+        if let Some(cancellation) = &self.user_cancellation {
+            cancellation.cancel("user cancelled after watchdog");
+        }
+        Err(self.failure.error())
+    }
+}
+
+#[test]
+fn production_permanent_failures_survive_watchdog_and_report_without_retry() {
+    for failure in [PermanentFailure::Authentication, PermanentFailure::Configuration] {
+        let adapter = ProductionTurnRunShellAdapter {
+            policy: policy(3), watchdog_poll_interval: Duration::from_millis(1),
+        };
+        let store = FakeStore::default();
+        let mut executor = PermanentAfterWatchdog {
+            failure, attempts: 0, unknown_effect: false, user_cancellation: None,
+        };
+        let mut retries = Vec::new();
+        let mut reports = Vec::new();
+        let mut deltas = Vec::new();
+        let error = adapter.run_with_retry_reporting(
+            &RoutedProviderCancellation::default(), &store, &mut executor,
+            &mut |delta, _| deltas.push(delta.to_string()),
+            &mut |event| retries.push(event.clone()),
+            &mut |report| reports.push(report.clone()),
+        ).expect_err("permanent failure must not become a watchdog retry");
+        assert_eq!(std::mem::discriminant(&error), std::mem::discriminant(&failure.error()));
+        assert_eq!(executor.attempts, 1);
+        assert!(retries.is_empty());
+        assert!(deltas.is_empty());
+        assert!(store.saved.lock().unwrap().is_empty());
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].outcome, ProviderRetryOutcome::GaveUpIneligible);
+        assert_eq!(reports[0].error_type, failure.report_type());
+        assert_eq!(reports[0].error_code, "SAND-E0405");
+        assert!(reports[0].watchdog_expired);
+        assert!(!reports[0].resume_from_checkpoint);
+        assert_eq!(reports[0].delay_ms, None);
+        assert_eq!(reports[0].error, error.to_string());
+    }
+}
+
+#[test]
+fn production_user_cancel_and_unknown_custody_keep_precedence_over_permanent_failures() {
+    for failure in [PermanentFailure::Authentication, PermanentFailure::Configuration] {
+        for user_cancel in [false, true] {
+            let adapter = ProductionTurnRunShellAdapter {
+                policy: policy(3), watchdog_poll_interval: Duration::from_millis(1),
+            };
+            let cancellation = RoutedProviderCancellation::default();
+            let runtime = Arc::new(StreamAttemptRuntime::new(adapter.policy.clone()));
+            let store = FakeStore::default();
+            let mut executor = PermanentAfterWatchdog {
+                failure, attempts: 0, unknown_effect: !user_cancel,
+                user_cancellation: user_cancel.then(|| cancellation.clone()),
+            };
+            let mut reports = Vec::new();
+            let error = adapter.run_with_attempt_runtime_reporting(
+                Arc::clone(&runtime), &cancellation, &store, &mut executor,
+                &mut |_, _| panic!("stale output"),
+                &mut |_| panic!("permanent/custody/cancel failure must not retry"),
+                &mut |report| reports.push(report.clone()),
+            ).expect_err("terminal precedence");
+            assert_eq!(executor.attempts, 1);
+            assert!(store.saved.lock().unwrap().is_empty());
+            if user_cancel {
+                assert!(matches!(error, ProviderSessionError::Cancelled(_)));
+                assert!(reports.is_empty());
+            } else {
+                assert!(matches!(error, ProviderSessionError::Tool(_)));
+                assert_eq!(runtime.effect_custody().unknown_result,
+                    Some(ToolEffectUnknownResult::DownstreamOutcomeUnknown));
+                assert_eq!(reports.len(), 1);
+                assert_eq!(reports[0].outcome, ProviderRetryOutcome::GaveUpIneligible);
+                assert_eq!(reports[0].error_type, "ToolEffectCustodyError");
+                assert_eq!(reports[0].error_code, "SAND-E0407");
+                assert!(reports[0].watchdog_expired);
+            }
+        }
     }
 }
 

@@ -468,9 +468,14 @@ impl ProductionTurnRunShellAdapter {
             let progress = progress.into_inner();
             resume_from = accepted_resume.into_inner();
             let custody = runtime.effect_custody();
-            let result = if matches!(&result, Err(ProviderSessionError::ToolOutcomeUnknown(_))) {
-                // Preserve explicit execution uncertainty even when the
-                // watchdog fired while the downstream waiter was returning.
+            let result = if matches!(&result, Err(
+                ProviderSessionError::ToolOutcomeUnknown(_)
+                    | ProviderSessionError::Authentication(_)
+                    | ProviderSessionError::Configuration(_)
+            )) {
+                // A simultaneous watchdog must preserve explicit uncertainty
+                // and permanent credential/configuration failures. Custody is
+                // still checked before retry classification below.
                 result
             } else if timed_out {
                 Err(ProviderSessionError::Transport(
@@ -560,7 +565,11 @@ impl ProductionTurnRunShellAdapter {
                 (delay, true)
             }
             RetryDecision::Fail => {
-                let outcome = if *attempt > 1 && *attempt >= policy.max_attempts {
+                let outcome = if matches!(error,
+                    ProviderSessionError::Authentication(_) | ProviderSessionError::Configuration(_)
+                ) {
+                    Some(ProviderRetryOutcome::GaveUpIneligible)
+                } else if *attempt > 1 && *attempt >= policy.max_attempts {
                     Some(ProviderRetryOutcome::Exhausted)
                 } else if *attempt > 1 || transient.retryable() {
                     Some(ProviderRetryOutcome::GaveUpIneligible)
@@ -710,7 +719,9 @@ fn retry_error_type(
     if matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)) {
         return "ToolOutcomeUnknownError";
     }
-    if watchdog_expired {
+    if watchdog_expired && !matches!(error,
+        ProviderSessionError::Authentication(_) | ProviderSessionError::Configuration(_)
+    ) {
         return "FirstTokenStallError";
     }
     match error {
@@ -751,7 +762,9 @@ fn classify_provider_failure(
             retry_after_ms: None,
         };
     }
-    if watchdog_expired {
+    if watchdog_expired && !matches!(error,
+        ProviderSessionError::Authentication(_) | ProviderSessionError::Configuration(_)
+    ) {
         return TransientStreamError {
             kind: StreamFailureKind::Timeout,
             message: error.to_string(),

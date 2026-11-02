@@ -19,6 +19,10 @@ use tokio::runtime::{Builder as TokioRuntimeBuilder, Runtime};
 use tokio::time::timeout;
 use uuid::Uuid;
 
+use crate::extensions::auth::auth_service::{
+    FabushiCoreCredential, parse_fabushi_core_credential,
+};
+use crate::extensions::auth::credential_renewer::system_now_ms;
 use crate::host_paths::get_sand_root_dir;
 use crate::extensions::session::typed_replay::TypedReplayEntry;
 
@@ -266,6 +270,8 @@ pub enum ProviderSessionError {
 impl From<CodexDirectError> for ProviderSessionError {
     fn from(error: CodexDirectError) -> Self {
         match error {
+            CodexDirectError::Authentication(message) => Self::Authentication(message),
+            CodexDirectError::Configuration(message) => Self::Configuration(message),
             CodexDirectError::Transport(message) => Self::Transport(message),
             CodexDirectError::Protocol(message) => Self::Protocol(message),
             CodexDirectError::Tool(message) => Self::Tool(message),
@@ -354,6 +360,8 @@ where
 
 fn codex_provider_error(error: ProviderSessionError) -> CodexDirectError {
     match error {
+        ProviderSessionError::Authentication(message) => CodexDirectError::Authentication(message),
+        ProviderSessionError::Configuration(message) => CodexDirectError::Configuration(message),
         ProviderSessionError::Cancelled(message) => CodexDirectError::Cancelled(message),
         ProviderSessionError::Protocol(message) => CodexDirectError::Protocol(message),
         ProviderSessionError::Tool(message) => CodexDirectError::Tool(message),
@@ -365,7 +373,7 @@ fn codex_provider_error(error: ProviderSessionError) -> CodexDirectError {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct CodexCredentials {
     access_token: String,
     refresh_token: String,
@@ -373,6 +381,19 @@ struct CodexCredentials {
     account_id: String,
     path: PathBuf,
     document: Value,
+}
+
+impl std::fmt::Debug for CodexCredentials {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.debug_struct("CodexCredentials")
+            .field("access_token", &"<redacted>")
+            .field("refresh_token", &"<redacted>")
+            .field("id_token", &"<redacted>")
+            .field("account_id", &self.account_id)
+            .field("path", &self.path)
+            .field("document", &"<redacted>")
+            .finish()
+    }
 }
 
 fn home_dir() -> PathBuf {
@@ -887,7 +908,7 @@ const CI_ISOLATED_FABUSHI_NATIVE_ISSUER: &str = "https://fabushi-ci-isolated-aut
 enum ResponsesHttpCredentials {
     ChatGpt(CodexCredentials),
     Fabushi {
-        access_token: String,
+        credential: FabushiCoreCredential,
         endpoint: String,
         credential_path: PathBuf,
     },
@@ -918,27 +939,6 @@ fn validate_fabushi_responses_url(raw: &str) -> Result<String, ProviderSessionEr
         ));
     }
     Ok(url.to_string())
-}
-
-fn credential_issuer(document: &Value) -> Result<String, ProviderSessionError> {
-    let raw = document.get("issuer").and_then(Value::as_str)
-        .unwrap_or(DEFAULT_FABUSHI_NATIVE_ISSUER);
-    let url = url::Url::parse(raw).map_err(|_| ProviderSessionError::Authentication(
-        "Fabushi account credential issuer is invalid.".into(),
-    ))?;
-    let origin = url.origin().ascii_serialization();
-    if !url.username().is_empty() || url.password().is_some()
-        || url.query().is_some() || url.fragment().is_some()
-        || (url.scheme() != "https" && !(url.scheme() == "http"
-            && matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "::1"))))
-        || (!matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "::1"))
-            && origin != DEFAULT_FABUSHI_NATIVE_ISSUER
-            && origin != CI_ISOLATED_FABUSHI_NATIVE_ISSUER) {
-        return Err(ProviderSessionError::Authentication(
-            "Fabushi account credential issuer is unsupported.".into(),
-        ));
-    }
-    Ok(origin)
 }
 
 fn ensure_responses_issuer_matches(endpoint: &str, issuer: &str) -> Result<(), ProviderSessionError> {
@@ -976,33 +976,16 @@ fn read_fabushi_responses_credentials(
             ));
         }
     }
-    let document: Value = serde_json::from_str(
-        &fs::read_to_string(path).map_err(|error| {
-            ProviderSessionError::Authentication(format!(
-                "Could not read Fabushi account-bound inference credential: {error}"
-            ))
-        })?,
-    )
-    .map_err(|error| {
+    let raw = fs::read_to_string(path).map_err(|error| {
         ProviderSessionError::Authentication(format!(
-            "Fabushi account-bound inference credential JSON is invalid: {error}"
+            "Could not read Fabushi account-bound inference credential: {error}"
         ))
     })?;
-    let issuer = credential_issuer(&document)?;
-    ensure_responses_issuer_matches(endpoint, &issuer)?;
-    let access_token = document
-        .get("accessToken")
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| {
-            ProviderSessionError::Authentication(
-                "Fabushi account-bound inference credential is missing an access token.".into(),
-            )
-        })?
-        .to_string();
+    let credential = parse_fabushi_core_credential(&raw, system_now_ms)
+        .map_err(|error| ProviderSessionError::Authentication(error.to_string()))?;
+    ensure_responses_issuer_matches(endpoint, credential.issuer())?;
     Ok(ResponsesHttpCredentials::Fabushi {
-        access_token,
+        credential,
         endpoint: endpoint.to_string(),
         credential_path: path.to_path_buf(),
     })
@@ -1063,12 +1046,12 @@ async fn send_codex_request(
             )
             .header("ChatGPT-Account-Id", credentials.account_id.clone()),
         ResponsesHttpCredentials::Fabushi {
-            access_token,
+            credential,
             endpoint,
             ..
         } => client
             .post(endpoint)
-            .header("authorization", format!("Bearer {access_token}")),
+            .header("authorization", format!("Bearer {}", credential.access_token().trim())),
     };
     await_reqwest(
         request_builder
@@ -1095,10 +1078,23 @@ async fn refresh_responses_credentials(
             ),
         ),
         ResponsesHttpCredentials::Fabushi {
+            credential,
             endpoint,
             credential_path,
-            ..
-        } => read_fabushi_responses_credentials(endpoint, credential_path),
+        } => {
+            // Reread one typed image, retaining the complete endpoint and the
+            // account/session binding captured by this transport. A new login
+            // requires a new transport; it cannot take over a 401 retry.
+            let refreshed = read_fabushi_responses_credentials(endpoint, credential_path)?;
+            if let ResponsesHttpCredentials::Fabushi { credential: next, .. } = &refreshed {
+                if next.context() == credential.context() {
+                    return Ok(refreshed);
+                }
+            }
+            Err(ProviderSessionError::Authentication(
+                "Fabushi account credential context changed during the Responses request.".into(),
+            ))
+        }
     }
 }
 
@@ -1140,6 +1136,16 @@ impl CodexDirectTransport for CodexHttpTransport {
                 .map_err(codex_provider_error)?;
             }
 
+            if response.status().as_u16() == 401
+                && matches!(&credentials, ResponsesHttpCredentials::Fabushi { .. })
+            {
+                // The sole reread/retry was rejected. Do not expose a response
+                // body that can echo a bearer or turn this into a new attempt.
+                return Err(CodexDirectError::Authentication(
+                    "Fabushi Responses authentication failed after credential reread.".into(),
+                ));
+            }
+
             if !response.status().is_success() {
                 let status = response.status();
                 let body = await_reqwest(
@@ -1149,10 +1155,26 @@ impl CodexDirectTransport for CodexHttpTransport {
                 )
                 .await
                 .map_err(codex_provider_error)?;
+                let native = matches!(&credentials, ResponsesHttpCredentials::Fabushi { .. });
                 if let Ok(payload) = serde_json::from_str::<Value>(&body) {
                     if let Some(refusal) = parse_codex_provider_refusal(&payload) {
+                        if native {
+                            // Native error bodies can echo account credentials.
+                            // Keep only the parser-owned category and HTTP status.
+                            return Err(CodexDirectError::ProviderRefusal(CodexProviderRefusal {
+                                category: refusal.category,
+                                explanation: Some(format!("Fabushi Responses request refused ({status}).")),
+                                continuation_message: None,
+                                error_type: None,
+                            }));
+                        }
                         return Err(CodexDirectError::ProviderRefusal(refusal));
                     }
+                }
+                if native {
+                    return Err(CodexDirectError::Transport(format!(
+                        "Responses request failed ({status}).",
+                    )));
                 }
                 let detail = body.chars().take(4096).collect::<String>();
                 return Err(CodexDirectError::Transport(format!(
@@ -1577,7 +1599,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
     ) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
 ) -> Result<String, ProviderSessionError> {
-    run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+    run_routed_provider_text_with_lifecycle_impl(
         provider,
         messages,
         options,
@@ -1586,9 +1608,13 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
         on_usage,
         8,
         None,
+        false,
     )
 }
 
+/// Runner attempt entry: `should_cancel` also includes watchdog and custody
+/// signals. Preserve explicit permanent failures for the attempt owner, which
+/// separately checks actual user cancellation before retry/terminal reporting.
 pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     provider: RoutedProvider,
     messages: &[ProviderMessage],
@@ -1600,6 +1626,25 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
+) -> Result<String, ProviderSessionError> {
+    run_routed_provider_text_with_lifecycle_impl(
+        provider, messages, options, resume_from, on_checkpoint, on_usage,
+        max_steps, tool_step_reminder, true,
+    )
+}
+
+fn run_routed_provider_text_with_lifecycle_impl(
+    provider: RoutedProvider,
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+    resume_from: Option<&RoutedProviderCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &RoutedProviderCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
+    preserve_attempt_failure: bool,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
     if options.typed_replay.is_some()
@@ -1782,6 +1827,13 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         }
     };
     if (options.should_cancel)() {
+        if preserve_attempt_failure && matches!(&result, Err(
+            ProviderSessionError::Authentication(_)
+                | ProviderSessionError::Configuration(_)
+                | ProviderSessionError::ToolOutcomeUnknown(_)
+        )) {
+            return result;
+        }
         return Err(ProviderSessionError::Cancelled(
             "Runner cancelled the provider request".into(),
         ));
@@ -2683,7 +2735,8 @@ mod tests {
     use super::{
         CI_ISOLATED_FABUSHI_NATIVE_ISSUER, DEFAULT_FABUSHI_NATIVE_ISSUER,
         FABUSHI_ROUTER_SYSTEM_PROMPT, RoutedProvider, await_cancelable_provider_io,
-        credential_issuer, ensure_responses_issuer_matches, jwt_audience,
+        codex_provider_error, ensure_responses_issuer_matches, jwt_audience,
+        parse_fabushi_core_credential, ProviderSessionError, ResponsesHttpCredentials,
         provider_io_runtime, responses_http_client,
         toml_string_setting, validate_fabushi_responses_url,
     };
@@ -2702,9 +2755,15 @@ mod tests {
     fn fabushi_inference_rejects_cross_issuer_targets_before_bearer_dispatch() {
         let production = validate_fabushi_responses_url("https://api.ombhrum.com/responses").unwrap();
         let isolated = validate_fabushi_responses_url(CI_ISOLATED_FABUSHI_NATIVE_ISSUER).unwrap();
-        assert_eq!(credential_issuer(&serde_json::json!({})).unwrap(), DEFAULT_FABUSHI_NATIVE_ISSUER);
+        let mut document = serde_json::json!({
+            "version": 1, "accessToken": "private-access-token", "expiresAtMs": 100_000,
+            "sessionId": "session-a", "deviceId": "device-a", "userId": 42
+        });
+        let default = parse_fabushi_core_credential(&document.to_string(), || 0).unwrap();
+        assert_eq!(default.issuer(), DEFAULT_FABUSHI_NATIVE_ISSUER);
+        document["issuer"] = serde_json::json!(CI_ISOLATED_FABUSHI_NATIVE_ISSUER);
         assert_eq!(
-            credential_issuer(&serde_json::json!({"issuer": CI_ISOLATED_FABUSHI_NATIVE_ISSUER})).unwrap(),
+            parse_fabushi_core_credential(&document.to_string(), || 0).unwrap().issuer(),
             CI_ISOLATED_FABUSHI_NATIVE_ISSUER,
         );
         assert!(ensure_responses_issuer_matches(&production, DEFAULT_FABUSHI_NATIVE_ISSUER).is_ok());
@@ -2712,7 +2771,45 @@ mod tests {
         assert!(ensure_responses_issuer_matches(&production, CI_ISOLATED_FABUSHI_NATIVE_ISSUER).is_err());
         assert!(ensure_responses_issuer_matches(&isolated, DEFAULT_FABUSHI_NATIVE_ISSUER).is_err());
         assert!(validate_fabushi_responses_url("https://untrusted.example/responses").is_err());
-        assert!(credential_issuer(&serde_json::json!({"issuer": "https://untrusted.example"})).is_err());
+        document["issuer"] = serde_json::json!("https://untrusted.example");
+        assert!(parse_fabushi_core_credential(&document.to_string(), || 0).is_err());
+    }
+
+    #[test]
+    fn fabushi_credential_debug_redacts_secret_and_permanent_errors_keep_their_types() {
+        let raw = serde_json::json!({
+            "version": 1, "accessToken": "private-access-token", "expiresAtMs": 100_000,
+            "sessionId": "session-a", "deviceId": "device-a", "userId": 42
+        }).to_string();
+        let credential = parse_fabushi_core_credential(&raw, || 0).unwrap();
+        let context = credential.context();
+        let credentials = ResponsesHttpCredentials::Fabushi {
+            credential, endpoint: "https://api.ombhrum.com/v1/responses".into(),
+            credential_path: "credential.json".into(),
+        };
+        let rendered = format!("{credentials:?} {context:?}");
+        assert!(rendered.contains("<redacted>"));
+        assert!(!rendered.contains("private-access-token"));
+        assert!(!rendered.contains(&raw));
+        let chatgpt = ResponsesHttpCredentials::ChatGpt(super::CodexCredentials {
+            access_token: "private-access-token".into(), refresh_token: "private-refresh-token".into(),
+            id_token: "private-id-token".into(), account_id: "test-account".into(),
+            path: "auth.json".into(), document: serde_json::json!({"private-document": "private-refresh-token"}),
+        });
+        let rendered = format!("{chatgpt:?}");
+        for secret in ["private-access-token", "private-refresh-token", "private-id-token", "private-document"] {
+            assert!(!rendered.contains(secret));
+        }
+        for error in [
+            ProviderSessionError::Authentication("typed timeout-shaped auth failure".into()),
+            ProviderSessionError::Configuration("typed connection-shaped config failure".into()),
+        ] {
+            let original = std::mem::discriminant(&error);
+            let message = error.to_string();
+            let round_trip = ProviderSessionError::from(codex_provider_error(error));
+            assert_eq!(std::mem::discriminant(&round_trip), original);
+            assert_eq!(round_trip.to_string(), message);
+        }
     }
 
     #[test]
@@ -2789,4 +2886,220 @@ mod tests {
         );
     }
 
+}
+
+#[cfg(test)]
+mod fabushi_credential_context_tests {
+    use super::*;
+    use std::io::Write;
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::{Mutex, atomic::{AtomicBool, Ordering}};
+    use std::time::Instant;
+
+    const TEST_NAME: &str = "extensions::inference::provider_session::fabushi_credential_context_tests::captured_endpoint_and_context_survive_real_http_refresh";
+    const CHILD_ROOT: &str = "FABUSHI_BOUND_TRANSPORT_CHILD_ROOT";
+    const NEXT_ENDPOINT: &str = "FABUSHI_BOUND_TRANSPORT_NEXT_ENDPOINT";
+    const NONCE: &str = "FABUSHI_BOUND_TRANSPORT_NONCE";
+    const TOKEN_A: &str = "private-bound-transport-token-a";
+    const ROTATED: &str = "private-bound-transport-token-a-rotated";
+    const TOKEN_B: &str = "private-bound-transport-token-b";
+    const BOUND: Duration = Duration::from_secs(20);
+
+    fn write_credential(path: &Path, issuer: &str, user: &str, token: &str) {
+        let temporary = path.with_extension(format!("{}.tmp", Uuid::new_v4()));
+        let mut options = fs::OpenOptions::new();
+        options.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        options.open(&temporary).unwrap().write_all(json!({
+            "version": 1, "issuer": issuer, "accessToken": token,
+            "expiresAtMs": 4_102_444_800_000_u64,
+            "userId": user, "deviceId": "bound-device", "sessionId": "bound-session"
+        }).to_string().as_bytes()).unwrap();
+        fs::rename(temporary, path).unwrap();
+    }
+
+    type Request = (bool, String, String, Vec<u8>);
+
+    fn read_request(stream: &mut TcpStream, next_endpoint: bool) -> Request {
+        stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut reader = BufReader::new(stream);
+        let mut line = String::new();
+        reader.read_line(&mut line).unwrap();
+        let request_line = line.trim_end().to_string();
+        let mut length = None;
+        let mut authorization = String::new();
+        loop {
+            line.clear();
+            assert!(reader.read_line(&mut line).unwrap() > 0);
+            if line == "\r\n" { break; }
+            let (name, value) = line.split_once(':').unwrap();
+            if name.eq_ignore_ascii_case("content-length") {
+                length = Some(value.trim().parse::<usize>().unwrap());
+            }
+            if name.eq_ignore_ascii_case("authorization") { authorization = value.trim().into(); }
+        }
+        let length = length.expect("request content length");
+        assert!(length < 1024 * 1024);
+        let mut body = vec![0; length];
+        reader.read_exact(&mut body).unwrap();
+        (next_endpoint, request_line, authorization, body)
+    }
+
+    fn child(root: &Path) {
+        // Capture through the actual configuration reader before changing the
+        // environment. This exact-test child has not started any I/O workers;
+        // the parent owns both HTTP servers. No environment mutation occurs
+        // after creating the transport/runtime or while requests run.
+        let captured = configured_fabushi_responses_credentials().unwrap();
+        let (original_context, original_endpoint, path) = match &captured {
+            ResponsesHttpCredentials::Fabushi { credential, endpoint, credential_path } =>
+                (credential.context(), endpoint.clone(), credential_path.clone()),
+            _ => panic!("expected Native credentials"),
+        };
+        let next_endpoint = env::var(NEXT_ENDPOINT).unwrap();
+        unsafe { env::set_var(FABUSHI_RESPONSES_URL_ENV, &next_endpoint); }
+        let mut transport = CodexHttpTransport::with_credentials(captured).unwrap();
+        let request = json!({"model":"Vendor/Case@Bound", "input":[{"role":"user","content":"bound request"}], "stream":true});
+        let mut events = Vec::new();
+        transport.stream_response(&request, &mut |event| { events.push(event); Ok(()) }, &|| false).unwrap();
+        assert_eq!(events.len(), 1);
+        let assert_original_binding = |transport: &CodexHttpTransport| {
+            match &transport.credentials {
+                ResponsesHttpCredentials::Fabushi { credential, endpoint, .. } => {
+                    assert_eq!(credential.context(), original_context);
+                    assert_eq!(credential.access_token(), ROTATED);
+                    assert_eq!(endpoint, &original_endpoint);
+                }
+                _ => panic!("Native binding changed provider"),
+            }
+            let debug = format!("{:?}", transport.credentials);
+            for token in [TOKEN_A, ROTATED, TOKEN_B] { assert!(!debug.contains(token)); }
+        };
+        assert_original_binding(&transport);
+        let error = transport.stream_response(&request, &mut |_| panic!("refusal cannot emit an event"), &|| false).unwrap_err();
+        assert!(matches!(&error, CodexDirectError::Authentication(_)));
+        for token in [TOKEN_A, ROTATED, TOKEN_B] {
+            assert!(!format!("{error:?} {error}").contains(token));
+        }
+        assert_original_binding(&transport);
+        // Drive both conversion directions through the actual HTTP SSE decoder,
+        // rather than relying only on a conversion/classifier unit assertion.
+        let configuration = transport.stream_response(&request,
+            &mut |_| Err(CodexDirectError::Configuration("typed callback configuration timeout".into())),
+            &|| false,
+        ).unwrap_err();
+        assert!(matches!(&configuration, CodexDirectError::Configuration(_)));
+        assert!(matches!(ProviderSessionError::from(configuration), ProviderSessionError::Configuration(_)));
+        assert_original_binding(&transport);
+
+        let next_origin = url::Url::parse(&next_endpoint).unwrap().origin().ascii_serialization();
+        write_credential(&path, &next_origin, "user-b", TOKEN_B);
+        let mut new_transport = CodexHttpTransport::new_fabushi().unwrap();
+        new_transport.stream_response(&request, &mut |_| Ok(()), &|| false).unwrap();
+        fs::write(root.join("receipt"), env::var(NONCE).unwrap()).unwrap();
+    }
+
+    struct Fixture {
+        root: PathBuf,
+        stop: Arc<AtomicBool>,
+        server: Option<thread::JoinHandle<()>>,
+        child: Option<std::process::Child>,
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            if let Some(child) = self.child.as_mut() {
+                if child.try_wait().ok().flatten().is_none() {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                }
+            }
+            self.stop.store(true, Ordering::Release);
+            if let Some(server) = self.server.take() { let _ = server.join(); }
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn captured_endpoint_and_context_survive_real_http_refresh() {
+        if let Some(root) = env::var_os(CHILD_ROOT) { child(&PathBuf::from(root)); return; }
+        let root = env::temp_dir().join(format!("fabushi-bound-transport-{}", Uuid::new_v4()));
+        fs::create_dir_all(&root).unwrap();
+        let a = TcpListener::bind("127.0.0.1:0").unwrap();
+        let b = TcpListener::bind("127.0.0.1:0").unwrap();
+        a.set_nonblocking(true).unwrap();
+        b.set_nonblocking(true).unwrap();
+        let origin_a = format!("http://{}", a.local_addr().unwrap());
+        let endpoint_a = format!("{origin_a}/captured/v1/responses");
+        let endpoint_b = format!("http://{}/changed/v2/responses", b.local_addr().unwrap());
+        let path = root.join("credential.json");
+        write_credential(&path, &origin_a, "user-a", TOKEN_A);
+        let stop = Arc::new(AtomicBool::new(false));
+        let stopped = Arc::clone(&stop);
+        let capture = Arc::new(Mutex::new(Vec::<Request>::new()));
+        let requests = Arc::clone(&capture);
+        let server_path = path.clone();
+        let server = thread::spawn(move || {
+            let deadline = Instant::now() + BOUND * 2;
+            let mut a_count = 0;
+            while !stopped.load(Ordering::Acquire) {
+                assert!(Instant::now() < deadline, "private transport fixture deadline");
+                for (next, listener) in [(false, &a), (true, &b)] {
+                    let mut stream = match listener.accept() {
+                        Ok((stream, _)) => stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => continue,
+                        Err(error) => panic!("fixture accept: {error}"),
+                    };
+                    requests.lock().unwrap().push(read_request(&mut stream, next));
+                    let unauthorized = !next && matches!(a_count, 0 | 2);
+                    if !next {
+                        if a_count == 0 { write_credential(&server_path, &origin_a, "user-a", ROTATED); }
+                        if a_count == 2 { write_credential(&server_path, &origin_a, "user-b", TOKEN_B); }
+                        a_count += 1;
+                    }
+                    let (status, body) = if unauthorized { ("401 Unauthorized", "{}") } else {
+                        ("200 OK", "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"bound-response\",\"output\":[]}}\n\n")
+                    };
+                    let response = format!("HTTP/1.1 {status}\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+                    stream.write_all(response.as_bytes()).unwrap();
+                }
+                thread::sleep(Duration::from_millis(2));
+            }
+        });
+        let mut fixture = Fixture { root, stop, server: Some(server), child: None };
+        let nonce = Uuid::new_v4().to_string();
+        let stdout = fixture.root.join("stdout");
+        let stderr = fixture.root.join("stderr");
+        fixture.child = Some(Command::new(env::current_exe().unwrap())
+            .args(["--exact", TEST_NAME, "--nocapture", "--test-threads=1"])
+            .env(CHILD_ROOT, &fixture.root).env(NEXT_ENDPOINT, endpoint_b).env(NONCE, &nonce)
+            .env(FABUSHI_RESPONSES_URL_ENV, endpoint_a).env(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, path)
+            .env("NO_PROXY", "*").env("no_proxy", "*")
+            .stdout(fs::File::create(&stdout).unwrap()).stderr(fs::File::create(&stderr).unwrap())
+            .spawn().unwrap());
+        let deadline = Instant::now() + BOUND;
+        let status = loop {
+            if let Some(status) = fixture.child.as_mut().unwrap().try_wait().unwrap() { break status; }
+            assert!(Instant::now() < deadline, "owned transport child deadline");
+            thread::sleep(Duration::from_millis(5));
+        };
+        fixture.stop.store(true, Ordering::Release);
+        fixture.server.take().unwrap().join().expect("observable HTTP server");
+        assert!(status.success(), "private transport child failed: {status}\n{}\n{}",
+            fs::read_to_string(stdout).unwrap(), fs::read_to_string(stderr).unwrap());
+        assert_eq!(fs::read_to_string(fixture.root.join("receipt")).unwrap(), nonce);
+        let requests = capture.lock().unwrap();
+        assert_eq!(requests.len(), 5, "two allowed refresh requests, one refused invocation, one callback refusal, one new transport");
+        for (index, (next, line, authorization, body)) in requests.iter().enumerate() {
+            assert_eq!(*next, index == 4, "only the new transport can use the changed endpoint");
+            assert_eq!(line, if *next { "POST /changed/v2/responses HTTP/1.1" } else { "POST /captured/v1/responses HTTP/1.1" });
+            assert_eq!(authorization, &format!("Bearer {}", match index { 0 => TOKEN_A, 4 => TOKEN_B, _ => ROTATED }));
+            assert_eq!(body, &requests[0].3, "request/model bytes remain unchanged");
+        }
+    }
 }

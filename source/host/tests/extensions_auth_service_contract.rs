@@ -325,3 +325,56 @@ fn auth_service_renews_stores_emits_first_credential_and_machine_id() {
     assert!(service.peek_access_token().is_none());
     service.dispose();
 }
+
+#[test]
+fn shared_core_decoder_keeps_auth_clock_file_and_exact_identity_semantics() {
+    let root = std::env::temp_dir().join(format!("fabushi-core-decoder-{}", uuid::Uuid::new_v4()));
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("credential.json");
+    let mut document = serde_json::json!({
+        "version": 1, "issuer": "https://API.OMBHRUM.COM/", "accessToken": " private-token ",
+        "expiresAtMs": 100_000 + EXPIRY_LEEWAY_MS + 1,
+        "sessionId": " session-a ", "deviceId": " device-a ", "userId": "42 "
+    });
+    fs::write(&path, document.to_string()).unwrap();
+    // Responses has stricter private-file rules. Sharing the decoder must not
+    // silently apply those additional I/O constraints to existing Core callers.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+    }
+    let now = Arc::new(Mutex::new(100_000));
+    let service = HostAuthService::new(options(
+        BTreeMap::from([(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV.into(), path.to_string_lossy().into_owned())]),
+        Arc::clone(&now), Arc::new(Mutex::new(Vec::new())),
+        Arc::new(StaticBackend { token: "unused".into(), expires_at_ms: 500_000 }),
+    )).unwrap();
+    let credential = service.get_fabushi_core_credential().unwrap();
+    assert_eq!(credential.issuer(), "https://api.ombhrum.com");
+    assert_eq!(credential.access_token(), " private-token ");
+    assert_eq!(credential.user_id, "42 ");
+    assert_eq!(credential.device_id, " device-a ");
+    assert_eq!(credential.session_id, " session-a ");
+    *now.lock().unwrap() += 1;
+    assert_eq!(service.get_fabushi_core_credential().unwrap_err().to_string(), FABUSHI_CORE_CREDENTIAL_WAITING_MESSAGE);
+
+    document["expiresAtMs"] = serde_json::json!(200_000);
+    document["userId"] = serde_json::json!(42);
+    document.as_object_mut().unwrap().remove("issuer");
+    fs::write(&path, document.to_string()).unwrap();
+    let current = service.get_fabushi_core_credential().unwrap();
+    assert_eq!(current.user_id, "42");
+    assert_eq!(current.issuer(), "https://api.ombhrum.com");
+    document["expiresAtMs"] = serde_json::json!("private-expiry-type-secret");
+    document["refreshToken"] = serde_json::json!("private-refresh-secret");
+    fs::write(&path, document.to_string()).unwrap();
+    let invalid = service.get_fabushi_core_credential().unwrap_err();
+    let rendered = format!("{invalid} {invalid:?}");
+    for secret in ["private-token", "private-expiry-type-secret", "private-refresh-secret"] {
+        assert!(!rendered.contains(secret));
+    }
+    assert!(!rendered.contains("expiresAtMs"));
+    service.dispose();
+    fs::remove_dir_all(root).unwrap();
+}

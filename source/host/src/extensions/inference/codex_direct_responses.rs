@@ -79,6 +79,10 @@ pub struct CodexDirectCheckpoint {
 
 #[derive(Debug, Error)]
 pub enum CodexDirectError {
+    #[error("Codex direct authentication failed: {0}")]
+    Authentication(String),
+    #[error("Codex direct configuration failed: {0}")]
+    Configuration(String),
     #[error("Codex direct transport failed: {0}")]
     Transport(String),
     #[error("Codex direct protocol failed: {0}")]

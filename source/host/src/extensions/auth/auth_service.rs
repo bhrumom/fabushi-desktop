@@ -36,6 +36,16 @@ pub struct FabushiCoreCredential {
     pub user_id: String,
 }
 
+/// Non-secret account/session identity from the same validated credential image.
+/// Token rotation and expiry changes do not create a new context.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct FabushiCredentialContext {
+    issuer: String,
+    user_id: String,
+    device_id: String,
+    session_id: String,
+}
+
 impl std::fmt::Debug for FabushiCoreCredential {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -57,6 +67,15 @@ impl FabushiCoreCredential {
 
     pub fn issuer(&self) -> &str {
         &self.issuer
+    }
+
+    pub(crate) fn context(&self) -> FabushiCredentialContext {
+        FabushiCredentialContext {
+            issuer: self.issuer.clone(),
+            user_id: self.user_id.clone(),
+            device_id: self.device_id.clone(),
+            session_id: self.session_id.clone(),
+        }
     }
 
     pub fn authorize_origin(&self, target: &str) -> Result<(), FabushiCoreCredentialError> {
@@ -90,7 +109,7 @@ impl FabushiCoreCredentialError {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct FabushiCoreCredentialFile {
     version: u32,
@@ -101,6 +120,43 @@ struct FabushiCoreCredentialFile {
     session_id: String,
     device_id: String,
     user_id: serde_json::Value,
+}
+
+/// Decode one Native account-owner document. Callers retain their own file and
+/// clock policy; malformed document values never enter error diagnostics.
+pub(crate) fn parse_fabushi_core_credential(
+    raw: &str,
+    now_ms: impl FnOnce() -> u64,
+) -> Result<FabushiCoreCredential, FabushiCoreCredentialError> {
+    let parsed: FabushiCoreCredentialFile =
+        serde_json::from_str(raw).map_err(|_| FabushiCoreCredentialError::unavailable())?;
+    if parsed.version != 1
+        || parsed.access_token.trim().is_empty()
+        || parsed.session_id.trim().is_empty()
+        || parsed.device_id.trim().is_empty()
+        || now_ms() >= parsed.expires_at_ms.saturating_sub(EXPIRY_LEEWAY_MS)
+    {
+        return Err(FabushiCoreCredentialError::unavailable());
+    }
+    let user_id = match parsed.user_id {
+        serde_json::Value::String(value) if !value.trim().is_empty() => value,
+        serde_json::Value::Number(value) => value.to_string(),
+        _ => return Err(FabushiCoreCredentialError::unavailable()),
+    };
+    let issuer = super::credential_renewer::configured_product_backend_url(
+        parsed.issuer.as_deref(), None,
+    ).map_err(|_| FabushiCoreCredentialError::unavailable())?;
+    let issuer = url::Url::parse(&issuer)
+        .map_err(|_| FabushiCoreCredentialError::unavailable())?
+        .origin().ascii_serialization();
+    Ok(FabushiCoreCredential {
+        access_token: parsed.access_token,
+        issuer,
+        expires_at_ms: parsed.expires_at_ms,
+        session_id: parsed.session_id,
+        device_id: parsed.device_id,
+        user_id,
+    })
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -436,35 +492,7 @@ impl HostAuthService {
             .as_deref()
             .ok_or_else(FabushiCoreCredentialError::unavailable)?;
         let raw = fs::read_to_string(path).map_err(|_| FabushiCoreCredentialError::unavailable())?;
-        let parsed: FabushiCoreCredentialFile =
-            serde_json::from_str(&raw).map_err(|_| FabushiCoreCredentialError::unavailable())?;
-        if parsed.version != 1
-            || parsed.access_token.trim().is_empty()
-            || parsed.session_id.trim().is_empty()
-            || parsed.device_id.trim().is_empty()
-            || (self.now_ms)() >= parsed.expires_at_ms.saturating_sub(EXPIRY_LEEWAY_MS)
-        {
-            return Err(FabushiCoreCredentialError::unavailable());
-        }
-        let user_id = match parsed.user_id {
-            serde_json::Value::String(value) if !value.trim().is_empty() => value,
-            serde_json::Value::Number(value) => value.to_string(),
-            _ => return Err(FabushiCoreCredentialError::unavailable()),
-        };
-        let issuer = super::credential_renewer::configured_product_backend_url(
-            parsed.issuer.as_deref(), None,
-        ).map_err(|_| FabushiCoreCredentialError::unavailable())?;
-        let issuer = url::Url::parse(&issuer)
-            .map_err(|_| FabushiCoreCredentialError::unavailable())?
-            .origin().ascii_serialization();
-        Ok(FabushiCoreCredential {
-            access_token: parsed.access_token,
-            issuer,
-            expires_at_ms: parsed.expires_at_ms,
-            session_id: parsed.session_id,
-            device_id: parsed.device_id,
-            user_id,
-        })
+        parse_fabushi_core_credential(&raw, || (self.now_ms)())
     }
 
     pub fn subscribe_to_renewal(&self, listener: RenewalListener) -> u64 {

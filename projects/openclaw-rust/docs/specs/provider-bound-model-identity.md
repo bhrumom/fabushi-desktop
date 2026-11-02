@@ -333,6 +333,114 @@ frozen-scope review precede verification claims. There is no persisted-format
 change; rollback restores the prior local leak, and external reconciliation,
 original-turn restart and full acceptance remain open.
 
+### Fabushi Responses credential context on refresh — OCRM-FABUSHI-CREDENTIAL-CONTEXT-v1
+
+Decision `FABUSHI-CREDENTIAL-CONTEXT-01 — FIX / IMPL_BUG`, specified before
+implementation on `ae8774e38fd04ba07d571dd5c5ea42ddb600f977`; fixed U is unchanged.
+The existing Responses transport captures a token and endpoint, but its 401
+path rereads the credential file without retaining account/session identity.
+Replacing that file after login can send the same request with another user's
+token. Authentication/configuration failures also lose their type in the
+Responses conversion and can be retried, including after watchdog expiry.
+
+The existing Electron Native account owner writes the version-1 credential;
+the existing Host Auth owner validates it as `FabushiCoreCredential`.
+Inference owns Responses transport and Runner owns attempt classification.
+Reuse those owners without a new account store, credential cache, auth route,
+permission authority, provider loop, dependency or persisted schema.
+
+- FC-01: share the existing Host Auth typed document decoder instead of adding
+  another account parser. Host Auth retains its current file/clock behavior.
+  Responses retains its private-regular-file and issuer/endpoint checks, reads
+  one document, and obtains token and context from that same typed image. Keep
+  version, expiry, required identity and supported-origin validation. Invalid,
+  expired or unavailable credentials cannot become an anonymous/token-only
+  context. Preserve the existing producer's string/numeric user-ID handling.
+- FC-02: within one `CodexHttpTransport`, capture canonical issuer, user ID,
+  device ID and session ID plus the already validated complete Responses URL.
+  On the existing single 401 reread, accept a replacement token/expiry only if
+  all four identity fields match. Compare typed fields, not Debug output, token
+  hashes, localized messages or an unverified JWT claim. Retain the captured
+  endpoint; do not consult a changed environment to redirect the retry. A
+  mismatch or invalid reread fails before the second HTTP request and leaves
+  the original transport binding intact. A newly constructed transport may
+  capture the newly signed-in context. Do not introduce active account refresh.
+- FC-03: preserve explicit Authentication and Configuration variants through
+  `CodexDirectError` in both conversion directions and through real Runner
+  failure/retry reporting. A simultaneous watchdog flag cannot convert either
+  permanent failure into a transient timeout or a new attempt. Retain explicit
+  user cancellation precedence, sticky unknown-effect custody, ordinary
+  effect-free transient retries and safe accepted-checkpoint continuation.
+  Do not classify an identity mismatch by its message text.
+- FC-04: errors and Debug output must not expose access/refresh tokens or raw
+  credential documents. Do not serialize the credential into checkpoints or
+  transfer Fabushi credentials to Cursor/Sand. Model, tool, Session admission,
+  permission and existing provider selection behavior remain owned by their
+  current paths; this contract grants no additional provider authorization.
+
+Actions must exercise the actual HTTP transport with a local server which
+remains observable after returning 401, and an actual credential-file swap:
+same-context token rotation sends exactly one permitted retry and succeeds;
+user/device/session/issuer changes, missing fields, malformed or expired images
+produce the typed refusal and no second request. A later new transport accepts
+the valid new context. Retain request/model bytes and demonstrate redaction.
+Use the real attempt adapter for Authentication/Configuration plus watchdog
+controls and existing transient/custody positives; a direct classifier-only
+assertion is supplementary. Existing model and tool-custody HTTP fixtures must
+use the complete valid Native producer image, retaining every behavioral
+assertion; token-only/missing-identity input becomes an explicit negative.
+
+Implementation stays in existing `auth_service`, `provider_session`,
+`codex_direct_responses`, and `production_turn_run_shell_adapter`, plus their
+existing tests/fixtures and scoped Actions selector. Freeze the complete diff,
+independently review it and obtain final exact-H shipping/shared gates. No local
+or htch executable validation. No data migration is introduced; rollback must
+revert the typed transport and retry contract together.
+
+This is a target-owner identity correction. Necessary source authority is the
+existing Native account credential producer, Host Auth typed reader, Responses
+401/serialization path and Runner retry consumers. Backend token renewal keeps
+the same account-session row and its user/device/session IDs. This bounded
+review does not add an upstream whole-file reading claim. It does not close
+credential pinning across unrelated new Runner attempts, original-turn durable
+claim/restore/settle, login revocation of already in-flight HTTP, real provider
+compatibility or full OCRM acceptance; those responsibilities remain open.
+
+### Native HTTP error projection — FC-04-HTTP-01
+
+Decision **FC-04-HTTP-01 — FIX / IMPL_BUG**, before the focused correction.
+Independent frozen source review identified that the existing non-401 Fabushi
+HTTP error path copies arbitrary response text into Transport diagnostics and
+copies policy-refusal strings into Debug-derived error diagnostics. A response
+can therefore reflect credentials despite FC-04. This is an existing adjacent
+defect exposed during this batch, not a newly introduced regression.
+
+The existing Fabushi Responses boundary must project unsuccessful HTTP
+responses into safe diagnostics. Generic errors retain the canonical HTTP
+status and existing Transport classification, without copying the raw body.
+A recognized policy refusal retains its typed ProviderRefusal category and
+canonical HTTP status through a fixed diagnostic, without forwarding arbitrary
+explanation, continuation or error-type strings from that body. A normal
+credential-free Native refusal must remain a policy refusal; it must not become
+an authentication error or a retryable generic failure. This deliberate
+diagnostic restriction applies to the Native HTTP-error boundary. Preserve the
+existing parser and ChatGPT route's structured refusal semantics, the successful
+SSE protocol, model/request bytes, the sole same-context 401 retry, explicit
+cancellation and all previous valid assertions. No token-pattern guesses,
+second sanitizer framework, persisted credential state or dependency is needed.
+
+Extend the existing real HTTP/owned-child receipt fixture with generic 403/500
+bodies and recognized refusal bodies containing distinct access/refresh-token
+sentinels in both generic and structured fields; cover an error after a valid
+401 rotation as well as an initial error. Require the actual request count,
+unchanged status-based retry disposition where applicable, retained refusal
+category, zero output/tool/checkpoint/usage publication, and no body or secret
+in either Display or Debug. A credential-free refusal is the positive
+classification control; existing ordinary parser/ChatGPT tests retain their
+structured values. This is not global arbitrary-response or all-provider
+redaction acceptance. Fresh focused independent review and final exact-H
+Actions are required before verification.
+
 ## Actions oracles and limits
 
 Use the existing scoped GitHub Actions workflow, on one frozen H. No local or
