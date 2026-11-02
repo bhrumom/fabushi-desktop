@@ -116,6 +116,45 @@ new upstream reading, equivalence or global completion credit.
 
 ## Failure, migration, rollback and limits
 
+### Completed-turn episode append custody — MEA-v1
+
+Discovery H: `79920666e475920109690520cd913df40b28c0f7`; U is unchanged.
+The shipping Host completed-turn path constructs `ProductionEpisodeProgress`
+and calls `runner::turn_memory::run_turn_memory_with`. After a nonempty episode
+summary, that consumer currently discards `FileMemoryStore::add_memory` errors
+and unconditionally clears the Session-owned pending episode turns. The MWR
+store refusal therefore protects the file but can still lose the input needed
+to create the episode after repair.
+
+Decision **MEA-01 — FIX / IMPL_BUG**: an episode append I/O error must return
+without clearing pending episode turns. Keep the existing Runner, FileMemoryStore,
+Session DB and production progress adapter; add no retry queue, journal or timer.
+
+| ID | Required behavior and oracle |
+| --- | --- |
+| MEA-01 | If a nonempty summary reaches the actual Store and append returns Err, do not call pending-turn clear and do not report an added episode. Retain every current pending turn, including a turn appended through the Session owner while the model callback was running. |
+| MEA-02 | Refusing an unreadable destination preserves its raw bytes under MWR. A real write-stage failure on a readable destination also retains pending input and must not remove or repair the fixture-owned obstacle. Reopen the actual Session storage and observe the same pending turns. |
+| MEA-03 | After an explicit fixture-owned repair, a subsequent ordinary completed turn uses the retained input, persists the summary through the existing Store and then clears pending input. No automatic replay or provider call is scheduled by the failure branch. Acknowledged duplicate/no-op append keeps the existing successful-settlement behavior without adding a second fact. |
+| MEA-04 | Preserve existing extraction, model refusal/empty/NONE handling, evidence mode, provider/account binding, normal episode limits and successful result flags. This narrowly changes Store append failure settlement; it does not claim a new account authority, exactly-once cross-store transaction, or concurrent-success settlement fence. Those broader Memory requirements remain open. |
+
+Use the existing `turn_memory_contract.rs` target with the real
+`ProductionEpisodeProgress`, `ProductionSessionWorkers` and file store. Pin the
+episode interval in a fixture-owned child process so parallel tests cannot mutate
+process-global environment. The write failure is a directory occupying the exact
+owned atomic-write temporary path, after a readable destination is established;
+it must exercise Store write failure rather than a stubbed error. Inspect complete
+pending-turn values and raw memory bytes before/after refusal and after reopen;
+retain normal, duplicate and repair positives. Add named controls to the existing
+Linux and macOS recovery receipts and preserve all earlier controls. Freeze the
+complete scope for independent source review, then verify only its exact H in
+GitHub Actions. Source review or authored tests do not constitute execution proof.
+
+No persisted format, public RPC or new UI state is added. Restart uses existing
+Session pending-turn storage. This is an existing Fabushi consumer preservation
+under OCRM-R13/R24 and AC13/AC17/AC18/AC24, not new upstream reading or full Memory
+equivalence credit. Real provider, concurrent-success, cancellation/account-policy,
+device/platform/package and final acceptance requirements remain independently open.
+
 No persisted format or migration changes. The existing `StateWriteResult`
 failure / tool error and synthesis apply failure carry refusal; the user must
 repair or restore the existing file before retrying. Do not log memory content

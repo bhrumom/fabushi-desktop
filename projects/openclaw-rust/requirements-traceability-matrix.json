@@ -739,7 +739,9 @@
         "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
         "source/host/app/tests/startup_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
-        "source/host/tests/device_pairing_contract.rs"
+        "source/host/tests/device_pairing_contract.rs",
+        "source/host/src/runner/turn_memory.rs",
+        "source/host/tests/turn_memory_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -1269,7 +1271,9 @@
         "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
         "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
         "source/host/tests/palette_message_gateway_contract.rs",
-        "frontend/src/production/command-palette-message-search.contract.test.ts"
+        "frontend/src/production/command-palette-message-search.contract.test.ts",
+        "source/host/src/runner/turn_memory.rs",
+        "source/host/tests/turn_memory_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1966,7 +1970,9 @@
         "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
         "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
         "source/host/tests/palette_message_gateway_contract.rs",
-        "frontend/src/production/command-palette-message-search.contract.test.ts"
+        "frontend/src/production/command-palette-message-search.contract.test.ts",
+        "source/host/src/runner/turn_memory.rs",
+        "source/host/tests/turn_memory_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC13",
@@ -2119,7 +2125,9 @@
         "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
         "source/host/app/tests/startup_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
-        "source/host/tests/device_pairing_contract.rs"
+        "source/host/tests/device_pairing_contract.rs",
+        "source/host/src/runner/turn_memory.rs",
+        "source/host/tests/turn_memory_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2175,7 +2183,9 @@
         "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
         "source/host/app/tests/startup_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
-        "source/host/tests/device_pairing_contract.rs"
+        "source/host/tests/device_pairing_contract.rs",
+        "source/host/src/runner/turn_memory.rs",
+        "source/host/tests/turn_memory_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC18",
@@ -2497,7 +2507,9 @@
         "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
         "source/host/app/tests/startup_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
-        "source/host/tests/device_pairing_contract.rs"
+        "source/host/tests/device_pairing_contract.rs",
+        "source/host/src/runner/turn_memory.rs",
+        "source/host/tests/turn_memory_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

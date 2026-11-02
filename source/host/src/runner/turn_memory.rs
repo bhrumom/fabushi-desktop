@@ -200,17 +200,17 @@ where
     });
 
     if let Some(summary) = summary {
-        if memory_store
-            .add_memory(
-                &format!("{MEMORY_EPISODE_PREFIX}{summary}"),
-                latest_timestamp,
-                MemoryKind::Log,
-            )
-            .ok()
-            .flatten()
-            .is_some()
-        {
-            report.episode_memory_added = true;
+        match memory_store.add_memory(
+            &format!("{MEMORY_EPISODE_PREFIX}{summary}"),
+            latest_timestamp,
+            MemoryKind::Log,
+        ) {
+            Ok(Some(_)) => report.episode_memory_added = true,
+            Ok(None) => {}
+            // The pending exchange remains the Session owner's recovery input
+            // until the store acknowledges the append (including a duplicate).
+            // A later ordinary turn can use it after the destination is repaired.
+            Err(_) => return report,
         }
     }
 
