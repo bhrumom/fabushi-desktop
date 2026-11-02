@@ -22,14 +22,21 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Prepare only the scoped append at this exact checkout
+      - name: Prepare the scoped append from one current canonical snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           mkdir -p artifacts/round15-retained-store-ledger
-          export ROUND15_INPUT_BLOB
-          ROUND15_INPUT_BLOB=$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)
+          # Transport only: pin the latest ledger input when this queued job starts.
+          # No code from that input commit is executed and no branch is written.
+          export ROUND15_INPUT_COMMIT ROUND15_INPUT_BLOB ROUND15_INPUT_SNAPSHOT
+          ROUND15_INPUT_COMMIT=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1" --jq '.object.sha')
+          ROUND15_INPUT_BLOB=$(gh api "repos/$GITHUB_REPOSITORY/contents/projects/telegram-desktop-rust/parity-ledger.json?ref=$ROUND15_INPUT_COMMIT" --jq '.sha')
+          ROUND15_INPUT_SNAPSHOT="$RUNNER_TEMP/round15-canonical-input-blob.json"
+          gh api "repos/$GITHUB_REPOSITORY/git/blobs/$ROUND15_INPUT_BLOB" > "$ROUND15_INPUT_SNAPSHOT"
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           import crypto from 'node:crypto';
@@ -43,7 +50,11 @@ jobs:
           assert.equal(ops.round, 15);
           assert.equal(ops.path, 'projects/telegram-desktop-rust/parity-ledger.json');
           assert.equal(ops.responsibility_id, 'FBCP-NMR-001');
-          const bytes = fs.readFileSync(ops.path);
+          const inputResponse = JSON.parse(fs.readFileSync(process.env.ROUND15_INPUT_SNAPSHOT, 'utf8'));
+          assert.match(process.env.ROUND15_INPUT_COMMIT, /^[0-9a-f]{40}$/);
+          assert.equal(inputResponse.sha, process.env.ROUND15_INPUT_BLOB);
+          assert.equal(inputResponse.encoding, 'base64');
+          const bytes = Buffer.from(inputResponse.content, 'base64');
           const inputBlob = hash(bytes);
           assert.equal(inputBlob, process.env.ROUND15_INPUT_BLOB);
           const before = JSON.parse(bytes);
@@ -77,7 +88,7 @@ jobs:
           const content = JSON.stringify(after, null, 2) + '\n';
           const output = Buffer.from(content);
           const outputBlob = hash(output);
-          const receipt = {task_id:ops.task_id, round:ops.round, harness_sha:process.env.GITHUB_SHA, input_blob:inputBlob, ops_blob:hash(opsBytes), output_blob:outputBlob, output_sha256:crypto.createHash('sha256').update(output).digest('hex'), changed_rows:[ops.responsibility_id], other_rows_unchanged:true, top_level_source_and_acceptance_unchanged:true, product_validation:false, commit_created:false, ref_updated:false, integration_condition:'Root reads full output, requires latest canonical input equality, then force=false expected-head CAS.'};
+          const receipt = {task_id:ops.task_id, round:ops.round, harness_sha:process.env.GITHUB_SHA, input_commit:process.env.ROUND15_INPUT_COMMIT, input_blob:inputBlob, ops_blob:hash(opsBytes), output_blob:outputBlob, output_sha256:crypto.createHash('sha256').update(output).digest('hex'), changed_rows:[ops.responsibility_id], other_rows_unchanged:true, top_level_source_and_acceptance_unchanged:true, product_validation:false, commit_created:false, ref_updated:false, integration_condition:'Root reads full output, requires latest canonical input equality, then force=false expected-head CAS.'};
           fs.writeFileSync('artifacts/round15-retained-store-ledger/prepared-ledger.json', output);
           fs.writeFileSync('artifacts/round15-retained-store-ledger/receipt.json', JSON.stringify(receipt, null, 2) + '\n');
           fs.writeFileSync(process.env.RUNNER_TEMP + '/round15-ledger-blob.json', JSON.stringify({content, encoding:'utf-8'}));
