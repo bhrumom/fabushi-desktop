@@ -25,7 +25,7 @@ pub struct PendingWakeReport {
     pub is_quiet_origin: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LostSubagentWake {
     pub parent_agent_id: String,
     pub subagent_agent_id: String,

@@ -832,7 +832,7 @@ fn weighted_chars(text: &str) -> usize {
                 | 0x1f200..=0x1f2ff | 0x20000..=0x2fa1f | 0x30000..=0x3347f => 14,
                 _ => 0,
             })
-            .sum()
+            .sum::<usize>()
 }
 
 fn weighted_value_chars(value: Option<&Value>) -> u64 {

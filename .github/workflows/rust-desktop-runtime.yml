@@ -180,6 +180,25 @@ jobs:
             --test production_settings_single_owner_contract \
             --test gateway_command_error_contract \
             --test openclaw_agent_roster_contract
+      - name: Test affected Session Transcript and Runner integration recovery
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path source/host/Cargo.toml \
+            --test production_turn_input_projection_contract \
+            --test host_runner_composition_production_wiring_contract \
+            --test pending_wake_rearm_contract \
+            --test completion_revivals_contract \
+            --test automation_runtime_contract \
+            --test automation_run_path_contract \
+            --test shared_rooms_production_contract \
+            --test agent_session_contract \
+            --test agent_db_owner_contract \
+            --test session_gateway_contract
+          cargo test --manifest-path source/host/Cargo.toml --lib extensions::session::typed_replay::tests
+          cargo test --manifest-path source/host/Cargo.toml --lib extensions::inference::typed_replay_serialization::tests
+          cargo test --manifest-path source/host/Cargo.toml --lib runner::compaction_planning::tests
       - name: Verify OpenClaw migration audit integrity
         shell: bash
         run: |
@@ -230,6 +249,10 @@ jobs:
               "shipping_host_check": "passed",
               "owner_contract_targets": ["settings_service_contract", "openclaw_sessions_and_config_contract", "inference_extension_composition_contract", "settings_extension_contract", "production_settings_single_owner_contract", "gateway_command_error_contract", "openclaw_agent_roster_contract"],
               "owner_contract_result": "passed",
+              "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "session_gateway_contract"],
+              "integration_recovery_lib_filters": ["extensions::session::typed_replay::tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests"],
+              "integration_recovery_result": "passed",
               "committed_source_integrity": "passed",
               "scope": "Shared Settings owner CAS/snapshot and existing consumers; not cross-process, provider compatibility, platform packaging or final acceptance",
               "independent_acceptance": "pending",

@@ -52,3 +52,53 @@ frozen subject's affected build/contracts and reviewed consumer wiring) and
 `OCRM-CONFIG-FULL-SOURCE-AND-PROTOCOL-ACCEPTANCE` (clear only with scoped source
 closure/risk review and the remaining configuration responsibilities above).
 The first may close independently; it cannot close the second or project flags.
+
+## Exact-H integration recovery — 2026-11-02
+
+Actions materialized conservative review fields at
+`2e1bae4bf081de857eea3f79297c271c6c11b3f9` / tree
+`ca90c3402b62c5360246a31149beda578417e640`. Its source run `41381873559`
+passed tracked-source/structural gates, 27 review tests, 10 materialization
+tests and four negative probes; artifact `13113716764` has digest
+`sha256:cd74bc1f9b122910703598157e35e7ec7e755397567cf5b6adcfa74f9a012981`.
+The artifact's internal receipt binds this H and fixed U; dependency/LFS closure,
+final review and independent acceptance remain open. Literal inventory history
+is still 62,130 unread/partial rows, with 815 mapped rows; these are accounting
+facts, not product completion.
+
+The same H's runtime run `41381875376`, rust-host job `125074236805`, failed
+`cargo check --profile ci --bin mahayana-app-host --manifest-path
+source/host/app/Cargo.toml` with exit 101 and 14 compiler errors. No Settings
+contract target ran. Classification: implementation integration defects in
+existing Session/Transcript/Runner code, not a runner/environment failure.
+
+Recovery contract `OCRM-CONFIG-INTEGRATION-RECOVERY-v1`:
+
+- Preserve Session admission, canonical replay, automation settlement and
+  pending-wake ownership. Fix duplicate imports, owned/borrowed identity use,
+  exact collection/sum types and existing error-type adaptation at their
+  current boundary; errors remain errors and admission runs before mutations.
+- A raw turn request starts with no trusted typed replay. Only the existing
+  Session owner read in `start_routed_provider_task` supplies that projection;
+  caller JSON must not manufacture it. Retain CC-07 typed attachment/tool
+  semantics and the source/consumer checks in the compaction spec.
+- Pending-wake payloads contain an existing `f64` timestamp. Their wrappers
+  may retain `PartialEq` but cannot promise Rust `Eq`; do not change persisted
+  timestamp representation, drop markers or fake equality to satisfy a derive.
+- Keep all existing production paths and assertions. Recheck shipping Host,
+  the seven Settings batch targets, and the affected Session, automation,
+  shared-room, pending-wake and turn-projection contracts in Actions. Retain
+  the source run above as its own subject evidence; new code requires a new H.
+
+The model-selection batch remains preparatory until this shared compile
+boundary is repaired. No verified/accepted state is raised by this recovery.
+
+Static review also found one `TEST_FLAW`: the typed-replay content-fallback
+fixture supplied a lone tool result despite CC-07's required call/result
+pairing. Add its matching assistant call and keep both original content/result
+assertions and the production pairing guard. Independent review found no
+existing direct unpaired-result rejection test, so add that negative oracle
+in the same Session test module. This is a fixture correction identified
+from source, not a claim that
+the skipped test ran. The affected lib filters name existing test modules;
+their actual nonzero test counts must be checked in the next Actions log.

@@ -299,7 +299,7 @@ impl HostRunnerComposition {
         let state_writer: Arc<dyn SandStateWriter> = Arc::new(state);
         let multitask_todo_state = if multitask_enabled {
             Some(Arc::new(ProductionMultitaskTodoState::new(
-                Arc::clone(sessions),
+                Arc::clone(&sessions),
                 agent_id,
             )) as Arc<dyn MultitaskTodoState>)
         } else {

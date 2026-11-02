@@ -227,7 +227,7 @@ fn project_message(
             .transpose()?
             .unwrap_or_default()
     };
-    let attachments = object
+    let attachments: Vec<ReplayAttachment> = object
         .get("attachments")
         .map(|value| {
             value
@@ -410,6 +410,24 @@ mod tests {
     }
 
     #[test]
+    fn rejects_tool_result_without_matching_replayed_call() {
+        let error = project_typed_replay_entries(&[serde_json::json!({
+            "kind": "message",
+            "role": "tool",
+            "toolCallId": "call-orphan",
+            "toolName": "read",
+            "result": {"ok": true}
+        })])
+        .expect_err("tool result without a replayed call must fail closed");
+        assert_eq!(
+            error,
+            TypedReplayError::UnpairedToolResult {
+                tool_call_id: "call-orphan".into(),
+            }
+        );
+    }
+
+    #[test]
     fn rejects_tool_calls_on_non_assistant_replay_messages() {
         let error = project_typed_replay_entries(&[serde_json::json!({
             "kind": "message",
@@ -453,15 +471,26 @@ mod tests {
 
     #[test]
     fn tool_result_content_fallback_is_not_replayed_as_an_extra_content_part() {
-        let projected = project_typed_replay_entries(&[serde_json::json!({
-            "kind": "message",
-            "role": "tool",
-            "toolCallId": "call-1",
-            "toolName": "read",
-            "content": {"ok": true}
-        })])
+        let projected = project_typed_replay_entries(&[
+            serde_json::json!({
+                "kind": "message",
+                "role": "assistant",
+                "toolCalls": [{
+                    "id": "call-1",
+                    "name": "read",
+                    "arguments": {"path": "a"}
+                }]
+            }),
+            serde_json::json!({
+                "kind": "message",
+                "role": "tool",
+                "toolCallId": "call-1",
+                "toolName": "read",
+                "content": {"ok": true}
+            }),
+        ])
         .expect("tool result content fallback");
-        let TypedReplayEntry::Message(message) = &projected[0] else {
+        let TypedReplayEntry::Message(message) = &projected[1] else {
             panic!("tool result was not projected as a message");
         };
         assert!(message.content.is_empty());

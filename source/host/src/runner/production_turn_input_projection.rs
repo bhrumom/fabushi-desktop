@@ -120,6 +120,9 @@ pub fn create_production_turn_input_projection(
                 .is_some_and(|value| !value.is_null()),
         },
         ack_token: None,
+        // Only the admitted Session owner may supply canonical replay later.
+        // Serialized request fields are not a trusted replay producer.
+        typed_replay: None,
         prompt_action,
     })
 }

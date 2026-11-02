@@ -332,7 +332,7 @@ impl SharedRooms {
         let Some(agent_id) = self.resolve_canonical_room_agent(room_id)? else {
             return Ok(());
         };
-        let dir = self.sessions.agents_root().join(agent_id);
+        let dir = self.sessions.agents_root().join(&agent_id);
         let Some(mut config) = read_sand_remote_room_config(&dir) else {
             return Ok(());
         };

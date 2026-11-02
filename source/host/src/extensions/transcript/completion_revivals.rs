@@ -7,7 +7,7 @@ use super::sand_pending_wake_store::{
 
 pub const QUIET_REVIVAL_INSTRUCTION: &str = "Pick the work back up. Everything above came out of your own quiet standing order(s) — the user did not ask to hear about it, so the saved instruction's delivery rule governs. If the outcome is a genuine change, a new actionable result, or a real blocker the user must know about, tell them once with a single useful SendMessage. If it amounts to no change, nothing new, or still waiting, end the turn with no SendMessage at all — no \"still waiting\" or progress notes; if the standing order says to keep watching, just keep the watch going quietly. Keep your status current, and clear it once everything is done and you're idle.";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SubagentCompletion {
     pub parent_agent_id: String,
     pub subagent_agent_id: String,
@@ -19,7 +19,7 @@ pub struct SubagentCompletion {
     pub pending_wake_marker: Option<DurablePendingWakeMarker>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ShellCompletion {
     pub agent_id: String,
     pub shell_id: String,
