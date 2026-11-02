@@ -354,7 +354,75 @@ fn late_config_receipt_cannot_restore_an_old_attachment_agent() {
     assert_eq!(try_resolve_default_agent_id(&receipt_b.settings), Some("agent-b".into()));
 
     let shipping = include_str!("../app/src/main.rs");
-    assert_eq!(shipping.matches(".apply_current_settings(&self.settings)").count(), 2,
-        "config.set and setHostSettings must both reconcile the current owner state");
+    assert!(public_writers_share_current_roster_reconciliation(shipping),
+        "both public write routes must reach the shared postcommit current-owner callback");
     std::fs::remove_file(path).unwrap();
+}
+
+// This supplements the real stale-receipt owner assertions above and the
+// actual public-adapter behavior tests. The shared callback has one production
+// call site; two transport entrypoints do not require duplicate owner code.
+fn public_writers_share_current_roster_reconciliation(shipping: &str) -> bool {
+    fn section<'a>(source: &'a str, start: &str, end: &str) -> Option<&'a str> {
+        let mut pieces = source.split(start);
+        pieces.next()?;
+        let body = pieces.next()?;
+        if pieces.next().is_some() {
+            return None;
+        }
+        body.split_once(end).map(|(body, _)| body)
+    }
+    let source = shipping.chars().filter(|value| !value.is_whitespace()).collect::<String>();
+    let Some(adapter) = section(&source, "fndispatch_public_settings_command(",
+        "structUnifiedGatewayApi{") else { return false; };
+    let Some(openclaw) = section(&source, "fncall_openclaw_gateway_command(",
+        "fncall_public_settings_command(") else { return false; };
+    let Some(shared) = section(&source, "fncall_public_settings_command(",
+        "fncall_openclaw_config_get(") else { return false; };
+    let Some(config_set) = section(&source, "fncall_openclaw_config_set(",
+        "fncall_openclaw_system_info(") else { return false; };
+    let Some(gateway) = section(&source, "implGatewayApiforUnifiedGatewayApi{",
+        "fnhealth(") else { return false; };
+    openclaw.contains("\"config.set\"=>self.call_openclaw_config_set(&args),")
+        && config_set.contains("self.call_public_settings_command(\"config.set\",args)")
+        && gateway.contains("ifmatches!(method,\"getHostSettings\"|\"setHostSettings\"){\
+            returnself.call_public_settings_command(method,&args);}")
+        && shared.contains("dispatch_public_settings_command(&self.settings,method,args,\
+            |trusted,permission_changed|{")
+        && shared.contains("self.roster_bookkeeping.lock().unwrap_or_else(\
+            |poisoned|poisoned.into_inner()).apply_current_settings(&self.settings);")
+        && adapter.contains("if!matches!(method,\"config.set\"|\"setHostSettings\"){\
+            returnErr(GatewayCommandError::UnknownMethod(method.into()));}")
+        && adapter.contains("letcommitted=settings.set_public_host_settings_if_current(\
+            base_hash,target.clone()).map_err(GatewayCommandError::from)?;\
+            on_committed(&committed.trusted_settings,permission_changed);")
+}
+
+#[test]
+fn roster_shared_write_wiring_oracle_rejects_bypassed_or_stale_consumers() {
+    let source = include_str!("../app/src/main.rs")
+        .chars().filter(|value| !value.is_whitespace()).collect::<String>();
+    assert!(public_writers_share_current_roster_reconciliation(&source));
+    for (before, after) in [
+        ("\"config.set\"=>self.call_openclaw_config_set(&args),",
+            "\"config.set\"=>self.call_openclaw_config_get(&args),"),
+        ("self.call_public_settings_command(\"config.set\",args)",
+            "self.call_openclaw_config_get(args)"),
+        ("ifmatches!(method,\"getHostSettings\"|\"setHostSettings\"){\
+            returnself.call_public_settings_command(method,&args);}",
+            "ifmatches!(method,\"getHostSettings\"){\
+            returnself.call_public_settings_command(method,&args);}"),
+        (".apply_current_settings(&self.settings);", ".apply_config(trusted);"),
+        ("self.roster_bookkeeping.lock()", "self.roster_bookkeeping.unlocked()"),
+        ("on_committed(&committed.trusted_settings,permission_changed);",
+            "let_=&committed;"),
+        ("fncall_openclaw_system_info(", "fnmissing_config_set_boundary("),
+    ] {
+        assert!(source.contains(before), "mutation must reach its production boundary");
+        let changed = source.replacen(before, after, 1);
+        assert!(!public_writers_share_current_roster_reconciliation(&changed),
+            "wiring oracle accepted a broken boundary: {before}");
+    }
+    let ambiguous = format!("fndispatch_public_settings_command({source}");
+    assert!(!public_writers_share_current_roster_reconciliation(&ambiguous));
 }

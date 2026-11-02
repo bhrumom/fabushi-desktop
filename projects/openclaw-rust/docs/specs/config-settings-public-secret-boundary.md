@@ -225,3 +225,27 @@ Rollback restores the old public disclosure unless the boundary is retained.
 Do not delete the installation key during rollback or normal shutdown. No stored
 Settings schema or existing secret data is rewritten by projection alone. All
 global flags and G01–G12/AC01–AC24 final acceptance obligations remain unchanged.
+
+### Retained roster wiring oracle — CS-ROSTER-ORACLE-01
+
+Decision `CS-ROSTER-ORACLE-01 — FIX / TEST_FLAW`, before edits. At exact H
+`736b862a7646351e1e25558d9ba81879a5d606e4`, Runtime `41473954269`, Host
+job `125374970975`, the retained `late_config_receipt_cannot_restore_an_old_attachment_agent`
+test passed its delayed-A/current-B owner and attachment assertions, then
+failed its source-only call-count assertion (expected two, actual one).
+Both `config.set` and `setHostSettings` now route through the existing shared
+`call_public_settings_command` adapter. Its successful-commit callback holds
+the roster mutex and calls `apply_current_settings(&self.settings)` once.
+Duplicating that production owner call would not repair a missing behavior.
+
+Retain every delayed-receipt/attachment identity assertion. Replace only the
+obsolete multiplicity oracle with bounded source checks for both actual
+entrypoints, the shared callback, current-owner read under the roster mutex,
+and callback-after-successful-public-commit order. Add negative mutations for
+bypassed entrypoints, stale receipt application, missing locking/callback and
+missing or ambiguous boundaries. The actual adapter tests and existing owner
+behavior tests remain required; source checks alone are not execution proof.
+The failed-H shipping and Native workspace locked compilation passed, but
+this failure prevented App/Recovery/Coordinator validation and cannot verify
+the completed batch. Freeze the correction and require new exact-H Actions;
+no production behavior, source authority or global acceptance flag changes.
