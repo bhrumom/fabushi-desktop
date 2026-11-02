@@ -113,6 +113,41 @@ fn build_bindings(
 }
 
 #[test]
+fn shipping_runner_preserves_the_bound_summarization_owner_and_errors() {
+    let unbound_error = runner()
+        .run_summarization_prompt("system", "user", &|| false)
+        .expect_err("unbound summary must not create another inference path");
+    assert!(matches!(unbound_error, ProviderSessionError::Configuration(_)));
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let observed_calls = Arc::clone(&calls);
+    let summarization: ProductionTurnSummarizationPrompt = Arc::new(
+        move |system, user, should_cancel| {
+            observed_calls.fetch_add(1, AtomicOrdering::SeqCst);
+            if should_cancel() {
+                return Err(ProviderSessionError::Cancelled("summary cancelled".into()));
+            }
+            Ok(format!("{system}::{user}"))
+        },
+    );
+    let runner = SandAgentRunner::new(
+        ProductionTurnAgentOwner::new(composition())
+            .with_build_bindings(build_bindings("agent-summary-facade", summarization)),
+    );
+
+    assert_eq!(
+        runner.run_summarization_prompt("system", "user", &|| false).unwrap(),
+        "system::user"
+    );
+    assert!(matches!(
+        runner.run_summarization_prompt("system", "user", &|| true),
+        Err(ProviderSessionError::Cancelled(message)) if message == "summary cancelled"
+    ));
+    assert_eq!(calls.load(AtomicOrdering::SeqCst), 2);
+    assert!(runner.last_finished().is_none(), "summary is not a second settled turn");
+}
+
+#[test]
 fn production_owner_freezes_build_input_and_privacy_once() {
     let resolve_count = Arc::new(AtomicUsize::new(0));
     let resolver_count = Arc::clone(&resolve_count);

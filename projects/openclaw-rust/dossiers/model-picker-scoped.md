@@ -350,3 +350,86 @@ actual JSON serializer and accepted-checkpoint retry. Configuration reload and
 checkpoint serde round trips must be labeled separately from the still-missing
 production process-restart resume ingress. This addendum changes none of the
 source/ledger, wiring, verification, or acceptance states above.
+
+### 2026-11-02 necessary dependency follow-up at H4
+
+This supplements the preceding read history without replacing its full/partial
+labels. U remains `1440bb1771372334bea23d7642bb52deb7db1845`, tree
+`90c8aab39972da11cfad220361781d49e1bc6700`. Target H4 is
+`ad60d4edb86e385243a67cb12e39187a073c7c01`, tree
+`0ba7a184ddf4d5ad26bdf664e6d4f1ac8e98fbc0`. The scoped target blobs cited below
+are unchanged from the preceding investigation. The integration owner's current
+`../docs/specs/provider-bound-model-identity.md` (`OCRM-MODEL-IDENTITY-v1`) was
+read in full; its frozen requirements are not implementation evidence at H4.
+
+| Additional U source | Exact blob | Actual additional read extent |
+| --- | --- | --- |
+| `src/agents/model-selection-normalize.ts` | `f05e55fdb871be46b4ae2b13ded4e38c93c54bba` | Full, 1-46 |
+| `src/agents/model-ref-shared.ts` | `6419f7728cf41a76c62364efb15337b823fb9d14` | Full, 1-180 |
+| `src/config/model-input.ts` | `ac8f21493649864348ab503fa7643b4600c5d821` | Full, 1-160 |
+| `packages/model-catalog-core/src/provider-id.ts` | `07278f5052d2be88c2244bd25b6bd265e6fb4cfd` | Full, 1-37 |
+| `packages/model-catalog-core/src/model-catalog-refs.ts` | `48b2d09a598f59d0e7c1fb2354af03c88f33f3bb` | Full, 1-78 |
+| `packages/model-catalog-core/src/model-catalog-refs.test.ts` | `e8b02394338eb4a6cd6d3543dc006ded65fe9ada` | Full source read, 1-38; not executed |
+| `packages/normalization-core/src/string-coerce.ts` | `445a9cc4f8daff07f033c3958baf2b798e240e9d` | Partial, 1-18, 60-68, 104-113 |
+| `packages/model-catalog-core/src/provider-model-id-normalization.ts` | `95c7a1b613233a925eacb60d06c68d2804ddcb0e` | Partial, 46-63, 106-178, 180-221 |
+| `src/agents/model-selection-shared.ts` | `a98c02f4678c68c469147d079b7693d646c99f4b` | Additional partial, 1-72, 396-435 |
+| `packages/ai/src/transports/openai-responses-continuation.ts` | `7afa5d6664ab9151d4f9ae996dd3f0ebddc5d74a` | Additional partial, 703-777; reread 126-147, 447-480 |
+| `packages/ai/src/transports/openai-responses-client.ts` | `0ea1b3c6063ea1a2a4dc1a9fa0ce988684811282` | Partial, 278-423, 504-662 |
+| `packages/ai/src/transports/openai-responses-continuation.test.ts` | `a45413846d46aa94e3b8e370cee9b689c98857db` | Partial source read, 215-253, 361-408; not executed |
+
+The normalization dependency supports separating provider normalization from
+selected model identity: U trims/lowercases provider IDs, while model ref parsing
+preserves nested model paths and model case. The catalog-ref tests cover those
+properties and incomplete refs. `model-input.ts` distinguishes absent primary,
+explicit primary and an explicitly empty fallback list. General model-ref
+normalization may invoke built-in aliases, manifest rules and runtime hooks;
+it is not a harmless cleanup operation for an already-resolved pair. This
+supports the preceding persisted-selection rule against reinterpreting selected
+identity. The target spec's canonical-only provider input and model syntax
+checks remain target contracts, not claims to implement every upstream alias
+or plugin normalization rule.
+
+The additional continuation consumer read narrows the upstream claim precisely.
+For ordinary automatic continuation, a changed model remains in the request
+comparison and produces `request_changed`; the resolver returns the full
+request rather than adding the old `previous_response_id`.
+`claimOpenAIResponsesHttpContinuation` consumes that result at lines 723-731;
+`store:false` also selects a full request. The client passes the claim's request
+to stream creation at lines 371-379, commits a new baseline only after a terminal
+result at lines 592-594, and releases the claim in `finally` at line 642. This
+does not reject every upstream model change. Explicit previous-response-id and
+required-input steering retain their separate branches. The stricter Fabushi
+accepted-checkpoint missing/conflicting-model refusal in the target spec is a
+recovery constraint for its existing tool/reasoning replay, not an assertion of
+complete continuation equivalence. The read test slices cover model inclusion
+in the request fingerprint and changed-envelope/explicit-continuation behavior;
+they do not replace the target checkpoint conflict oracle.
+
+| H4 checked dependency | Exact blob | Actual follow-up read extent |
+| --- | --- | --- |
+| `source/host/src/extensions/settings/settings_service.rs` | `6c6f94b0098d76b13f8f60d378c9c9ce0c7cbda8` | Partial, 418-488, 1235-1293, 1913-1950 |
+| `source/host/src/runner/production_turn_run_shell_adapter.rs` | `05ab3efff44de9820d1a9fead3f1bae16322cfb2` | Additional partial, 349-419, 617-665; earlier persist/acceptance read remains recorded above |
+| `source/host/src/runner/transient_stream_error.rs` | `21397c0e1d36abb95e0a0ad070432fea5d407ff7` | Full, 1-75 |
+| `source/host/src/extensions/inference/provider_session.rs` | `bd13533ca2b39e6f702de50cd1a08e0810a6f81e` | Additional partial, 34-97, 246-295 |
+
+At H4 the legacy Settings model getter still calls `load`, which projects
+`load_checked` failures as empty settings. The snapshot getter likewise preserves
+its legacy default projection with invalid source metadata; it is not a checked
+`Result` model-reader API. Consequently a new resolver using only that getter
+would confuse invalid/unreadable configuration with absent default. The spec's
+new checked owner view is required work, not already-present strict behavior.
+The existing complete-document and specialized writer compatibility contracts
+are not changed by this observation.
+
+The adapter still accepts a resume checkpoint only after durable persist, and
+passes the accepted object to the next attempt. Normal protocol/configuration
+failures are nonretryable in the existing classification; watchdog handling
+remains its existing separate rule. H4's unchanged production checkpoint store
+(`routed_provider_runtime.rs`, blob
+`62e0e2e3e31bb0e98ce2db0273cd6c5dbff842eb`) still has no disk-load/resume ingress;
+the adapter still begins each invocation with no resume checkpoint. Settings
+reopening, durable checkpoint serde and in-memory retry must remain separate
+claims from production process-restart execution. Catalog/manifest/hook closure,
+service model availability and full continuation/restart responsibilities remain
+open. This follow-up used source reading only, changed no source/ledger status,
+and ran no executable verification.

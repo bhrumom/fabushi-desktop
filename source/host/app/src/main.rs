@@ -794,7 +794,7 @@ impl SendMessageSink for ProductionSendMessageSink {
                 Ok(BoxHelpOutcome::AlreadyPending { request_id, instruction })
             }
             HandoffStartResult::Started { request_id } => {
-                let entry = serde_json::json!({
+                let mut entry = serde_json::json!({
                     "id": format!("runner-box-help:{tool_call_id}"),
                     "kind": "send-message",
                     "message": {
@@ -5694,7 +5694,7 @@ fn start_local_upgrade_resume_turn(
         runner_args["automationWake"] = automation_wake;
     }
 
-    if let Err(error) = start_routed_provider_task(
+    start_routed_provider_task(
         deps.routed_tool_relay,
         deps.mcp_service,
         deps.events.clone(),
@@ -5888,40 +5888,42 @@ fn run_local_automation_turn(
             "content": prompt,
         }],
     });
-    start_routed_provider_task(
-        deps.routed_tool_relay,
-        deps.mcp_service,
-        deps.events.clone(),
-        deps.host_tx,
-        deps.data_dir,
-        deps.request_context,
-        deps.auth,
-        deps.auto_review,
-        deps.experiments,
-        deps.settings,
-        deps.inference,
-        Arc::clone(&deps.session_workers),
-        Arc::clone(&deps.runner_registry),
-        deps.ack_obligations,
-        deps.transcript_runtime,
-        deps.transcript_manager,
-        deps.generated_agent_runtime,
-        deps.completion_revivals,
-        deps.forever_box,
-        deps.local_exec,
-        deps.local_tool_permission,
-        deps.session_handoff,
-        deps.trays,
-        deps.telemetry_logs,
-        deps.product_analytics,
-        deps.production_action_auditor,
-        deps.cloud_agents,
-        deps.cloud_agent_watches,
-        deps.background_shell_watches,
-        deps.host_runner_composition,
-        deps.box_store_sync,
-        Arc::clone(&deps.automations_lifecycle),
-        Arc::clone(&deps.generated_subagent_cleanup),
+    // The settlement path retains the same service owners after dispatch.
+    let runner_deps = deps.clone();
+    if let Err(error) = start_routed_provider_task(
+        runner_deps.routed_tool_relay,
+        runner_deps.mcp_service,
+        runner_deps.events.clone(),
+        runner_deps.host_tx,
+        runner_deps.data_dir,
+        runner_deps.request_context,
+        runner_deps.auth,
+        runner_deps.auto_review,
+        runner_deps.experiments,
+        runner_deps.settings,
+        runner_deps.inference,
+        Arc::clone(&runner_deps.session_workers),
+        Arc::clone(&runner_deps.runner_registry),
+        runner_deps.ack_obligations,
+        runner_deps.transcript_runtime,
+        runner_deps.transcript_manager,
+        runner_deps.generated_agent_runtime,
+        runner_deps.completion_revivals,
+        runner_deps.forever_box,
+        runner_deps.local_exec,
+        runner_deps.local_tool_permission,
+        runner_deps.session_handoff,
+        runner_deps.trays,
+        runner_deps.telemetry_logs,
+        runner_deps.product_analytics,
+        runner_deps.production_action_auditor,
+        runner_deps.cloud_agents,
+        runner_deps.cloud_agent_watches,
+        runner_deps.background_shell_watches,
+        runner_deps.host_runner_composition,
+        runner_deps.box_store_sync,
+        Arc::clone(&runner_deps.automations_lifecycle),
+        Arc::clone(&runner_deps.generated_subagent_cleanup),
         None,
         runner_args,
     )
@@ -11016,7 +11018,7 @@ fn start_routed_provider_task(
                             agent_id: pending.parent_agent_id.clone(),
                             kind: PendingWakeKind::Subagent,
                             work_id: pending.work_id.clone(),
-                            marked_at_ms: pending.marked_at_ms,
+                            marked_at_ms: pending.marked_at_ms as f64,
                             quiet_origin,
                             title: Some(pending.title.clone()),
                             subagent_type: Some(pending.subagent_type.clone()),
@@ -13204,7 +13206,7 @@ impl GatewayApi for UnifiedGatewayApi {
             return serde_json::to_value(result)
                 .map_err(|error| GatewayCommandError::Internal(format!(
                     "cloud worker doctor projection failed: {error}"
-                )))?;
+                )));
         }
         if method == "ensureForeverBox" {
             let agent_id = required_box_agent_id(method, &args)?;

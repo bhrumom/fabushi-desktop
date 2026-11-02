@@ -50,6 +50,16 @@ impl SandAgentRunner {
         }
     }
 
+    pub fn run_summarization_prompt(
+        &self,
+        system_prompt: &str,
+        user_prompt: &str,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        self.owner
+            .run_summarization_prompt(system_prompt, user_prompt, should_cancel)
+    }
+
     pub fn with_generated_agent_runtime(
         mut self,
         runtime: Arc<Mutex<SubagentRuntime>>,

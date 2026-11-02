@@ -102,3 +102,44 @@ in the same Session test module. This is a fixture correction identified
 from source, not a claim that
 the skipped test ran. The affected lib filters name existing test modules;
 their actual nonzero test counts must be checked in the next Actions log.
+
+### H4 shipping app recovery and independent exhaustion assessment
+
+H4 `ad60d4edb86e385243a67cb12e39187a073c7c01`, tree
+`0ba7a184ddf4d5ad26bdf664e6d4f1ac8e98fbc0`, is pushed and GitHub commit/ref,
+production file and workflow contents have been read back. Source run
+`41383067764` passed; artifact `13114211097`, digest
+`sha256:b0c569d4f92be692cc13550eecaf4a3a008aa42c0b2f3307ba82ff862e20dbdf`,
+contains the exact H4/U structural receipt. Its dependency/LFS closure and
+independent acceptance remain open.
+
+Runtime run `41383249411`, job `125078414436`, reached the shipping
+`mahayana-app-host-runtime` after the previous 14 library errors were removed.
+It failed with seven app compiler errors (exit 101): two malformed dispatch
+error expressions, a u64/f64 wake timestamp boundary, two missing facade
+summary calls, a Result return with an extra `?`, and an immutable JSON entry
+that needs its admitted session key. Settings and recovery tests were skipped.
+
+The normal plus focused campaign cap triggered an independent directness /
+exhaustion assessment before further dispatch. Classification: recoverable
+`IMPL_BUG`, not environment or test flaw. The failed assumption was that the
+library repair also established the previously unreachable app boundary.
+Retain H4's source proof and library compile progress, but neither proves
+shipping compilation or behavior. Do not rerun H4, lower the target to a lib,
+remove assertions, reset the budget merely by changing SHA, or claim a pass.
+The causal next instrument is the same shipping-bin check on repaired source,
+followed by the affected checks that have never run. Independent review also
+identified an adjacent partial-move risk in the automation dispatcher; clone
+its dependency bundle for dispatch so settlement retains the same Arc owners.
+
+Recovery preserves each error as an error: upgrade resume returns Result so
+its caller clears a marker only on success; automation dispatch failure does
+not enter its terminal wait loop; doctor serialization returns its mapped
+Internal error. Convert the existing millisecond timestamp at the existing
+f64 persistence boundary without changing its format. Add only a thin
+`SandAgentRunner::run_summarization_prompt` forwarder to its existing
+`ProductionTurnAgentOwner`; retain unbound Configuration, cancellation/error
+identity and no extra turn settlement. The existing owner contract gains a
+facade oracle, and Actions also selects existing upgrade, automation wiring
+and cloud-worker contracts. No production model-identity implementation is
+included until this shared boundary is repaired.
