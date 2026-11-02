@@ -40,7 +40,6 @@ mahayana-gateway-peer.workspace = true
 mahayana-gateway-protocol.workspace = true
 mahayana-host.workspace = true
 mahayana-host-protocol.workspace = true
-mahayana-ffi = { path = "../mahayana-ffi" }
 mahayana-mcp-runtime.workspace = true
 mahayana-product = { package = "mahayana-platform-client", path = "../mahayana-product" }
 mahayana-miniapp-protocol.workspace = true

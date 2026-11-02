@@ -9106,7 +9106,6 @@ dependencies = [
  "insta",
  "mahayana-core",
  "mahayana-feature-host",
- "mahayana-ffi",
  "mahayana-gateway",
  "mahayana-gateway-peer",
  "mahayana-gateway-protocol",

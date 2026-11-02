@@ -717,9 +717,10 @@ pub fn dispatch_request<R: GatewayRuntime>(
                 .and_then(Value::as_str)
                 .ok_or_else(|| RpcFailure::invalid("approval.respond requires decision"))?;
             let native_decision = match decision {
-                "allow-once" | "accept" => "allow-once",
-                "allow-session" | "acceptForSession" => "allow-session",
-                "deny" | "decline" | "cancel" => "deny",
+                "allow-once" | "accept" => "accept",
+                "allow-session" | "accept-for-session" | "acceptForSession" => "acceptForSession",
+                "deny" | "decline" => "decline",
+                "cancel" => "cancel",
                 _ => {
                     return Err(RpcFailure::invalid(
                         "decision must be allow-once/accept, allow-session/acceptForSession, or deny/decline/cancel",
@@ -936,4 +937,43 @@ mod tests {
         assert!(replay.events.is_empty());
         assert_eq!(replay.latest_seq, 1);
     }
+    #[test]
+    fn approval_respond_routes_all_legacy_choices_to_canonical_host_decisions() {
+        for (input, expected) in [
+            ("allow-once", "accept"),
+            ("accept", "accept"),
+            ("allow-session", "acceptForSession"),
+            ("acceptForSession", "acceptForSession"),
+            ("accept-for-session", "acceptForSession"),
+            ("deny", "decline"),
+            ("decline", "decline"),
+            ("cancel", "cancel"),
+        ] {
+            let mut runtime = MockRuntime::default();
+            let mut state = GatewayState::with_epoch(ReplayLimits::default(), "epoch-test");
+            let response = dispatch_request(
+                "approval.respond",
+                &json!({"approvalId": "approval-1", "decision": input}),
+                &mut runtime, &mut state, 123,
+            ).expect("valid approval choice");
+            assert_eq!(response.result["approvalId"], "approval-1");
+            assert_eq!(response.result["decision"], expected);
+            let parsed: mahayana_core::ApprovalDecision =
+                serde_json::from_value(json!(expected)).expect("Host accepts decision");
+            assert_eq!(serde_json::to_value(parsed).unwrap(), json!(expected));
+        }
+    }
+
+    #[test]
+    fn approval_respond_unknown_choice_fails_before_host_dispatch() {
+        let mut runtime = MockRuntime::default();
+        let mut state = GatewayState::with_epoch(ReplayLimits::default(), "epoch-test");
+        let failure = dispatch_request(
+            "approval.respond", &json!({"approvalId": "approval-1", "decision": "invented"}),
+            &mut runtime, &mut state, 123,
+        ).err().expect("unknown approval rejected");
+        assert_eq!(failure.code, -32602);
+        assert!(runtime.commands.is_empty());
+    }
+
 }

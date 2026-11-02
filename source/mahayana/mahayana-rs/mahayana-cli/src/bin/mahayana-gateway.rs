@@ -1,18 +1,12 @@
-use mahayana_core::RuntimeEvent;
+use mahayana_core::{ApprovalDecision, ApprovalId, OperationId, RuntimeCommand, RuntimeEvent};
+use mahayana_host::{HostCreateConfig, MahayanaHost};
 use mahayana_gateway::{GatewayRuntime, GatewayState, ReplayLimits, RpcFailure, dispatch_request};
 use mahayana_gateway_peer::{PersistentServerRequestRegistry as ServerRequestRegistry, ResolvedServerRequest, ServerRequestResponse};
 use mahayana_gateway_protocol::{
     ApprovalRequestPayload, GatewayEvent, GatewayEventEnvelope, JsonRpcEventNotification,
 };
-use mahayana_runtime::{
-    mahayana_runtime_close, mahayana_runtime_create, mahayana_runtime_execute,
-    mahayana_runtime_free_string, mahayana_runtime_interrupt, mahayana_runtime_last_error,
-    mahayana_runtime_receive, mahayana_runtime_resolve_approval,
-};
 use serde_json::{Value, json};
-use std::ffi::{CStr, CString};
 use std::io::{self, BufRead, Write};
-use std::os::raw::c_char;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -260,17 +254,7 @@ fn resolve_peer_request(
         return Err("approval server request is missing requestId".to_string());
     };
 
-    let decision = match resolved.response {
-        ServerRequestResponse::Result(result) => match result
-            .get("decision")
-            .and_then(Value::as_str)
-        {
-            Some("allow-once" | "accept") => "allow-once",
-            Some("allow-session" | "accept-for-session" | "acceptForSession") => "allow-session",
-            _ => "deny",
-        },
-        ServerRequestResponse::Error(_) => "deny",
-    };
+    let decision = peer_decision(&resolved.response);
     runtime
         .lock()
         .map_err(|_| "runtime mutex poisoned".to_string())?
@@ -315,7 +299,9 @@ fn now_ms() -> i64 {
         .min(i64::MAX as u128) as i64
 }
 
-struct RuntimeHandle(u64);
+// The stdio gateway shares the same native Rust Host owner as the desktop.
+// Keep the separately exported C ABI for clients that actually need FFI.
+struct RuntimeHandle(MahayanaHost);
 
 impl RuntimeHandle {
     fn create() -> Result<Self, String> {
@@ -337,49 +323,44 @@ impl RuntimeHandle {
         {
             config["model"] = json!({ "baseUrl": base_url });
         }
-        let config = CString::new(config.to_string()).map_err(|error| error.to_string())?;
-        let id = unsafe { mahayana_runtime_create(config.as_ptr()) };
-        if id == 0 {
-            let error = unsafe { take_json(mahayana_runtime_last_error()) }?;
-            return Err(error
-                .get("message")
-                .and_then(Value::as_str)
-                .unwrap_or("Mahayana runtime creation failed")
-                .to_string());
-        }
-        Ok(Self(id))
+        Self::create_with_config(config)
+    }
+
+    fn create_with_config(config: Value) -> Result<Self, String> {
+        let config: HostCreateConfig =
+            serde_json::from_value(config).map_err(|error| error.to_string())?;
+        MahayanaHost::create(config).map(Self).map_err(|error| error.to_string())
     }
 
     fn execute_value(&self, command: Value) -> Result<Value, String> {
-        let command = CString::new(command.to_string()).map_err(|error| error.to_string())?;
-        let response = unsafe { take_json(mahayana_runtime_execute(self.0, command.as_ptr())) }?;
-        unwrap_ffi(response)
+        let command: RuntimeCommand =
+            serde_json::from_value(command).map_err(|error| error.to_string())?;
+        let response = self.0.execute(command).map_err(|error| error.to_string())?;
+        serde_json::to_value(response).map_err(|error| error.to_string())
     }
 
     fn receive(&self, timeout_ms: u64) -> Result<Option<Value>, String> {
-        let response = unsafe { take_json(mahayana_runtime_receive(self.0, timeout_ms)) }?;
-        let data = unwrap_ffi(response)?;
-        if data.is_null() {
-            Ok(None)
-        } else {
-            Ok(Some(data))
-        }
+        self.0
+            .receive(Duration::from_millis(timeout_ms))
+            .map_err(|error| error.to_string())?
+            .map(|event| serde_json::to_value(event).map_err(|error| error.to_string()))
+            .transpose()
     }
 
     fn interrupt_value(&self, turn_id: &str) -> Result<Value, String> {
-        let request = CString::new(json!({ "operationId": turn_id }).to_string())
-            .map_err(|error| error.to_string())?;
-        let response = unsafe { take_json(mahayana_runtime_interrupt(self.0, request.as_ptr())) }?;
-        unwrap_ffi(response)
+        let operation_id = OperationId::new(turn_id).map_err(|error| error.to_string())?;
+        let response = self.0.interrupt(operation_id).map_err(|error| error.to_string())?;
+        serde_json::to_value(response).map_err(|error| error.to_string())
     }
 
     fn resolve_approval_value(&self, approval_id: &str, decision: &str) -> Result<Value, String> {
-        let request =
-            CString::new(json!({ "approvalId": approval_id, "decision": decision }).to_string())
-                .map_err(|error| error.to_string())?;
-        let response =
-            unsafe { take_json(mahayana_runtime_resolve_approval(self.0, request.as_ptr())) }?;
-        unwrap_ffi(response)
+        let approval_id = ApprovalId::new(approval_id).map_err(|error| error.to_string())?;
+        let decision: ApprovalDecision = serde_json::from_value(json!(decision))
+            .map_err(|error| format!("approval decision is invalid: {error}"))?;
+        let response = self.0
+            .resolve_approval(approval_id, decision, Value::Null)
+            .map_err(|error| error.to_string())?;
+        serde_json::to_value(response).map_err(|error| error.to_string())
     }
 }
 
@@ -397,37 +378,16 @@ impl GatewayRuntime for RuntimeHandle {
     }
 }
 
-impl Drop for RuntimeHandle {
-    fn drop(&mut self) {
-        unsafe {
-            let pointer = mahayana_runtime_close(self.0);
-            mahayana_runtime_free_string(pointer);
-        }
+fn peer_decision(response: &ServerRequestResponse) -> &'static str {
+    match response {
+        ServerRequestResponse::Result(result) => match result.get("decision").and_then(Value::as_str) {
+            Some("allow-once" | "accept") => "accept",
+            Some("allow-session" | "accept-for-session" | "acceptForSession") => "acceptForSession",
+            Some("cancel") => "cancel",
+            _ => "decline",
+        },
+        ServerRequestResponse::Error(_) => "decline",
     }
-}
-
-fn unwrap_ffi(response: Value) -> Result<Value, String> {
-    if response.get("ok").and_then(Value::as_bool) == Some(true) {
-        Ok(response.get("data").cloned().unwrap_or(Value::Null))
-    } else {
-        Err(response
-            .get("message")
-            .and_then(Value::as_str)
-            .unwrap_or("Mahayana runtime call failed")
-            .to_string())
-    }
-}
-
-unsafe fn take_json(pointer: *mut c_char) -> Result<Value, String> {
-    if pointer.is_null() {
-        return Err("Mahayana runtime returned a null pointer".into());
-    }
-    let source = unsafe { CStr::from_ptr(pointer) }
-        .to_str()
-        .map_err(|error| error.to_string())?
-        .to_string();
-    unsafe { mahayana_runtime_free_string(pointer) };
-    serde_json::from_str(&source).map_err(|error| error.to_string())
 }
 
 #[cfg(test)]
@@ -480,20 +440,51 @@ mod tests {
     }
 
     #[test]
-    fn peer_decision_maps_to_runtime_decision() {
-        let result = ServerRequestResponse::Result(json!({"decision": "allow-session"}));
-        let decision = match result {
-            ServerRequestResponse::Result(result) => {
-                match result.get("decision").and_then(Value::as_str) {
-                    Some("allow-once" | "accept") => "allow-once",
-                    Some("allow-session" | "accept-for-session" | "acceptForSession") => {
-                        "allow-session"
-                    }
-                    _ => "deny",
-                }
-            }
-            ServerRequestResponse::Error(_) => "deny",
-        };
-        assert_eq!(decision, "allow-session");
+    fn peer_decision_maps_to_canonical_host_enum_and_declines_unknown() {
+        for (external, expected) in [
+            ("allow-once", "accept"),
+            ("accept", "accept"),
+            ("allow-session", "acceptForSession"),
+            ("accept-for-session", "acceptForSession"),
+            ("acceptForSession", "acceptForSession"),
+            ("deny", "decline"),
+            ("unknown", "decline"),
+            ("cancel", "cancel"),
+        ] {
+            let result = ServerRequestResponse::Result(json!({"decision": external}));
+            let decision = peer_decision(&result);
+            assert_eq!(decision, expected);
+            let canonical: ApprovalDecision =
+                serde_json::from_value(json!(decision)).expect("Host accepts canonical decision");
+            assert_eq!(serde_json::to_value(canonical).unwrap(), json!(expected));
+        }
+    }
+
+    #[test]
+    fn direct_gateway_host_status_and_ready_without_ffi() {
+        let root = std::env::temp_dir().join(format!("mahayana-gateway-host-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&root).expect("isolated gateway root");
+        let host = RuntimeHandle::create_with_config(json!({
+            "hostPlatform": "cli",
+            "cwd": root, "workspaceRoots": [root], "dataDir": root,
+            "inheritInstalledPlugins": false
+        }))
+        .expect("direct Host starts");
+        let status = host.execute_value(json!({"@type": "mahayana.runtime.status"})).unwrap();
+        assert_eq!(status["runtimeAbiVersion"], 1);
+        let ready = host.receive(100).unwrap().expect("initial ready event");
+        assert_eq!(ready["@type"], "mahayana.runtime.ready");
+        drop(host);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn direct_gateway_host_rejects_legacy_telegram_handoff() {
+        let error = RuntimeHandle::create_with_config(json!({
+            "hostPlatform": "cli", "telegramSelfUserId": 42
+        }))
+        .err()
+        .expect("legacy handoff must fail");
+        assert!(error.contains("legacy Telegram handoff"), "{error}");
     }
 }

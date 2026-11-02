@@ -238,6 +238,22 @@ jobs:
           grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/host-legacy-handoff.log
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-ffi --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/ffi-legacy-handoff.log
           grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/ffi-legacy-handoff.log
+      - name: Native CLI/gateway direct Host and approval boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=source/mahayana/mahayana-rs/Cargo.toml
+          cargo tree --locked --manifest-path "$manifest" -p mahayana-cli --edges normal,build 2>&1 | tee artifacts/native-message-shipping/cli-production-dependencies.log
+          if grep -Eq '(mahayana-ffi|fabushi-telegram-runtime) v' artifacts/native-message-shipping/cli-production-dependencies.log; then
+            echo 'production CLI or stdio gateway retains the legacy FFI/Telegram runtime dependency' >&2
+            exit 1
+          fi
+          cargo test --locked --manifest-path "$manifest" -p mahayana-cli --bin mahayana direct_cli_host_contract_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/cli-native-owner.log
+          grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/cli-native-owner.log
+          cargo test --locked --manifest-path "$manifest" -p mahayana-cli --bin mahayana-gateway -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/gateway-native-owner.log
+          grep -Eq 'test result: ok\. 5 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/gateway-native-owner.log
+          cargo test --locked --manifest-path "$manifest" -p mahayana-gateway --lib approval_respond_ -- --nocapture 2>&1 | tee artifacts/native-message-shipping/gateway-approval-dispatch.log
+          grep -Eq 'test result: ok\. 2 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/gateway-approval-dispatch.log
       - name: Verify generic Host has no direct Telegram adapter dependency
         shell: bash
         run: |

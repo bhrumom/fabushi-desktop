@@ -6,7 +6,8 @@ use codex_cli::plugin_cmd::PluginCli;
 #[cfg(feature = "codex-compat")]
 use codex_cli::plugin_cmd::PluginSubcommand;
 use mahayana_feature_host::FeatureHostController;
-use mahayana_host::HostCreateConfig;
+use mahayana_core::{ApprovalDecision, ApprovalId, OperationId, RuntimeCommand};
+use mahayana_host::{HostCreateConfig, MahayanaHost};
 use mahayana_host::default_automation_path;
 use mahayana_host::default_product_session_path;
 use mahayana_host::default_product_surface_path;
@@ -23,26 +24,15 @@ use mahayana_plugin_runtime::{ArtifactFormat, ArtifactResolver, ExternalReleaseM
 use mahayana_product::MahayanaProductClient;
 use mahayana_product::default_mahayana_home;
 use mahayana_product::redact_secrets;
-use mahayana_runtime::mahayana_runtime_close;
-use mahayana_runtime::mahayana_runtime_create;
-use mahayana_runtime::mahayana_runtime_execute;
-use mahayana_runtime::mahayana_runtime_free_string;
-use mahayana_runtime::mahayana_runtime_interrupt;
-use mahayana_runtime::mahayana_runtime_last_error;
-use mahayana_runtime::mahayana_runtime_receive;
-use mahayana_runtime::mahayana_runtime_resolve_approval;
 use plugin_archive::pack_plugin_bundle_tar_gz;
 use serde_json::Value;
 use serde_json::json;
 use sha2::Digest;
 use sha2::Sha256;
-use std::ffi::CStr;
-use std::ffi::CString;
 use std::ffi::OsString;
 use std::fs;
 use std::io::Write;
 use std::io::{self};
-use std::os::raw::c_char;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
@@ -1873,7 +1863,9 @@ fn with_runtime(
     operation(&runtime)
 }
 
-struct RuntimeHandle(u64);
+// The CLI is an in-process Rust Host consumer. The C ABI remains available
+// to external native clients, but must not be pulled into this binary.
+struct RuntimeHandle(MahayanaHost);
 
 impl RuntimeHandle {
     fn create(codex_executable_path: Option<&Path>) -> Result<Self, String> {
@@ -1899,59 +1891,42 @@ impl RuntimeHandle {
     }
 
     fn create_with_config(config: Value) -> Result<Self, String> {
-        let config = serde_json::to_string(&config).map_err(|error| error.to_string())?;
-        let config = CString::new(config).map_err(|error| error.to_string())?;
-        let id = unsafe { mahayana_runtime_create(config.as_ptr()) };
-        if id == 0 {
-            let error = unsafe { take_json(mahayana_runtime_last_error()) }?;
-            return Err(error
-                .get("message")
-                .and_then(Value::as_str)
-                .unwrap_or("本地 Runtime 创建失败")
-                .to_string());
-        }
-        Ok(Self(id))
+        let config: HostCreateConfig =
+            serde_json::from_value(config).map_err(|error| error.to_string())?;
+        MahayanaHost::create(config).map(Self).map_err(|error| error.to_string())
     }
 
     fn execute(&self, command: Value) -> Result<Value, String> {
-        let command = CString::new(command.to_string()).map_err(|error| error.to_string())?;
-        let response = unsafe { take_json(mahayana_runtime_execute(self.0, command.as_ptr())) }?;
-        unwrap_ffi(response)
+        let command: RuntimeCommand =
+            serde_json::from_value(command).map_err(|error| error.to_string())?;
+        let response = self.0.execute(command).map_err(|error| error.to_string())?;
+        serde_json::to_value(response).map_err(|error| error.to_string())
     }
 
     fn receive(&self, timeout_ms: u64) -> Result<Option<Value>, String> {
-        let response = unsafe { take_json(mahayana_runtime_receive(self.0, timeout_ms)) }?;
-        let data = unwrap_ffi(response)?;
-        if data.is_null() {
-            Ok(None)
-        } else {
-            Ok(Some(data))
-        }
+        self.0
+            .receive(Duration::from_millis(timeout_ms))
+            .map_err(|error| error.to_string())?
+            .map(|event| serde_json::to_value(event).map_err(|error| error.to_string()))
+            .transpose()
     }
 
     fn resolve_approval(&self, approval_id: &str, decision: &str) -> Result<(), String> {
-        let request =
-            CString::new(json!({"approvalId": approval_id, "decision": decision}).to_string())
-                .map_err(|error| error.to_string())?;
-        let response =
-            unsafe { take_json(mahayana_runtime_resolve_approval(self.0, request.as_ptr())) }?;
-        unwrap_ffi(response).map(|_| ())
+        let approval_id = ApprovalId::new(approval_id).map_err(|error| error.to_string())?;
+        let decision: ApprovalDecision = serde_json::from_value(json!(decision))
+            .map_err(|error| format!("approval decision is invalid: {error}"))?;
+        self.0
+            .resolve_approval(approval_id, decision, Value::Null)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
     }
 
     fn interrupt(&self, operation_id: &str) -> Result<(), String> {
-        let request = CString::new(json!({"operationId": operation_id}).to_string())
-            .map_err(|error| error.to_string())?;
-        let response = unsafe { take_json(mahayana_runtime_interrupt(self.0, request.as_ptr())) }?;
-        unwrap_ffi(response).map(|_| ())
-    }
-}
-
-impl Drop for RuntimeHandle {
-    fn drop(&mut self) {
-        unsafe {
-            let pointer = mahayana_runtime_close(self.0);
-            mahayana_runtime_free_string(pointer);
-        }
+        let operation_id = OperationId::new(operation_id).map_err(|error| error.to_string())?;
+        self.0
+            .interrupt(operation_id)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
     }
 }
 
@@ -2279,26 +2254,47 @@ fn print_json(value: &Value) -> Result<(), String> {
     Ok(())
 }
 
-fn unwrap_ffi(response: Value) -> Result<Value, String> {
-    if response.get("ok").and_then(Value::as_bool) == Some(true) {
-        Ok(response.get("data").cloned().unwrap_or(Value::Null))
-    } else {
-        Err(response
-            .get("message")
-            .and_then(Value::as_str)
-            .unwrap_or("Runtime 调用失败")
-            .to_string())
-    }
-}
+#[cfg(test)]
+mod direct_cli_host_contract_tests {
+    use super::*;
 
-unsafe fn take_json(pointer: *mut c_char) -> Result<Value, String> {
-    if pointer.is_null() {
-        return Err("Runtime 返回了空指针".into());
+    #[test]
+    fn legacy_handoff_is_rejected_before_state_creation() {
+        let error = RuntimeHandle::create_with_config(json!({
+            "hostPlatform": "cli", "telegramClientId": 42
+        }))
+        .err()
+        .expect("legacy handoff must fail");
+        assert!(error.contains("legacy Telegram handoff"), "{error}");
     }
-    let source = unsafe { CStr::from_ptr(pointer) }
-        .to_str()
-        .map_err(|error| error.to_string())?
-        .to_string();
-    unsafe { mahayana_runtime_free_string(pointer) };
-    serde_json::from_str(&source).map_err(|error| error.to_string())
+
+    #[test]
+    fn runtime_approval_decisions_accept_only_canonical_values() {
+        for value in ["accept", "acceptForSession", "decline", "cancel"] {
+            let parsed: ApprovalDecision =
+                serde_json::from_value(json!(value)).expect("canonical Host decision");
+            assert_eq!(serde_json::to_value(parsed).unwrap(), json!(value));
+        }
+        for value in ["allow-once", "allow-session", "deny", "unknown"] {
+            assert!(serde_json::from_value::<ApprovalDecision>(json!(value)).is_err());
+        }
+    }
+
+    #[test]
+    fn native_cli_host_executes_status_and_receives_ready_without_ffi() {
+        let root = std::env::temp_dir().join(format!("mahayana-cli-host-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&root).expect("isolated CLI root");
+        let host = RuntimeHandle::create_with_config(json!({
+            "hostPlatform": "cli",
+            "cwd": root, "workspaceRoots": [root], "dataDir": root,
+            "inheritInstalledPlugins": false
+        }))
+        .expect("direct Host starts");
+        let status = host.execute(json!({"@type": "mahayana.runtime.status"})).unwrap();
+        assert_eq!(status["runtimeAbiVersion"], 1);
+        let ready = host.receive(100).unwrap().expect("initial ready event");
+        assert_eq!(ready["@type"], "mahayana.runtime.ready");
+        drop(host);
+        let _ = std::fs::remove_dir_all(root);
+    }
 }
