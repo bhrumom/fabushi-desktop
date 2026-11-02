@@ -4,8 +4,10 @@ on:
     branches: [codex/tdrp-risk-based-source-review-20261102, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
       - scripts/tdrp-source-review*.mjs
+      - scripts/tdrp-source-review*.py
       - scripts/tdrp-nested-pin-identity*.mjs
       - scripts/validate-tdrp-revision9-authority.mjs
+      - projects/telegram-desktop-rust/contracts/parity-ledger.schema.json
       - .github/workflows/tdrp-source-review-contract.yml
   workflow_dispatch:
 permissions:
@@ -13,10 +15,42 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/source-review
+          git rev-parse HEAD > artifacts/source-review/target-sha.txt
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test scripts/tdrp-source-review.test.mjs scripts/tdrp-nested-pin-identity.test.mjs
+      - name: Exact source relation and frozen upstream contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test scripts/tdrp-source-review.test.mjs scripts/tdrp-nested-pin-identity.test.mjs 2>&1 | tee artifacts/source-review/contracts.log
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate schema behavior with pinned validator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'jsonschema==4.25.1'
+          python -m pip freeze > artifacts/source-review/python-dependencies.txt
+          python scripts/tdrp-source-review-schema.test.py 2>&1 | tee artifacts/source-review/schema.log
       - run: node --check scripts/validate-tdrp-revision9-authority.mjs
+      - name: Preserve exact checker evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-source-review-contract-${{ github.sha }}
+          path: artifacts/source-review
+          if-no-files-found: error

@@ -112,7 +112,7 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-exact-repair-commit",
+    "status": "pending-followup-repair-commit",
     "local_executable_validation": "not-run",
     "dependent_message_batches": "blocked",
     "full_product_acceptance": false,
@@ -123,7 +123,91 @@
     "Compatibility compilation and tests do not retire legacy Telegram callers/storage or qualify them as native Fabushi ownership.",
     "Full supported-platform packages, UI/temporal/a11y/security/soak/update/rollback and existing Bot regression remain outstanding."
   ],
-  "runs": [],
+  "runs": [
+    {
+      "id": 41392761477,
+      "attempt": 1,
+      "head_sha": "ac9975ee7402b7a302f24871056293dc7f3ca398",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41392761477",
+      "jobs": [
+        {
+          "id": 125107535025,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "passed": 10,
+            "failed": 0,
+            "ignored": 0,
+            "filtered_out": 14
+          },
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125107535025/logs"
+        },
+        {
+          "id": 125107535313,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "classification": "IMPL_BUG",
+          "protocol_tcp": "skipped",
+          "proxy_and_credential": "skipped",
+          "failure_signatures": [
+            "E0432: mahayana-app-host imports mahayana_telegram without a direct manifest dependency",
+            "E0432: mahayana-app-host imports sha2 without a direct manifest dependency"
+          ],
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125107535313/logs"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13118181669,
+          "name": "native-message-shipping-compile-ac9975ee7402b7a302f24871056293dc7f3ca398",
+          "size_in_bytes": 11138,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118181669",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118181669/zip",
+          "expired": false,
+          "created_at": "2026-11-02T05:15:51Z",
+          "expires_at": "2027-01-31T05:13:40Z",
+          "updated_at": "2026-11-02T05:15:51Z",
+          "digest": "sha256:7f95058fbea6eea4ae2580143901469c7ad99f8be0d0f8ac7eda25db3fc9c308",
+          "workflow_run": {
+            "id": 41392761477,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "ac9975ee7402b7a302f24871056293dc7f3ca398"
+          }
+        },
+        {
+          "id": 13117977645,
+          "name": "native-message-reconciliation-ac9975ee7402b7a302f24871056293dc7f3ca398",
+          "size_in_bytes": 5333,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13117977645",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13117977645/zip",
+          "expired": false,
+          "created_at": "2026-11-02T05:16:20Z",
+          "expires_at": "2027-01-31T05:13:40Z",
+          "updated_at": "2026-11-02T05:16:20Z",
+          "digest": "sha256:7191d7d035c545a29fc5b682a6b2d842d853751aeaee644ea927df45578e1f80",
+          "workflow_run": {
+            "id": 41392761477,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "ac9975ee7402b7a302f24871056293dc7f3ca398"
+          }
+        }
+      ],
+      "environment": {
+        "runner": "macos-15 / macos-15-arm64",
+        "image_version": "20261028.0489.1",
+        "rust": "1.97.1",
+        "cargo_locked": true
+      }
+    }
+  ],
   "review": {
     "scope_base": "3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23",
     "verdict": "approved-for-focused-actions",
@@ -140,5 +224,55 @@
     "blocking_findings": [],
     "method": "Independent read-only diff/caller/manifest review; no local executable validation; not final ACCEPT.",
     "effort": "inherited parent model and effort"
+  },
+  "followup_repair": {
+    "base": "ac9975ee7402b7a302f24871056293dc7f3ca398",
+    "classification": "IMPL_BUG",
+    "scope": [
+      "source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml",
+      "source/host/app/Cargo.lock",
+      "source/mahayana/mahayana-rs/Cargo.lock",
+      ".github/workflows/native-service-contracts.yml"
+    ],
+    "rationale": "Declare the two already imported AppHost dependencies and the corresponding existing local/sha2 0.10.9 lock edges. No registry package version or checksum changes. Preserve all protocol/TCP/proxy/credential gates.",
+    "integration_parent": "62a3fc19501a5c6f5e25495c833120ae67b973e6",
+    "preserved_concurrent_commit": {
+      "sha": "62a3fc19501a5c6f5e25495c833120ae67b973e6",
+      "parent": "ac9975ee7402b7a302f24871056293dc7f3ca398",
+      "paths": [
+        ".github/workflows/tdrp-message-nonce-boundary.yml",
+        "source/host/src/extensions/transcript/send_pipeline.rs",
+        "source/host/tests/send_pipeline_nonce_boundary_contract.rs"
+      ],
+      "reason": "Other session's Host send nonce identity repair is retained unchanged; independent branch advance detected by pre-write readback.",
+      "verification": "Run the existing four nonce boundary cases in the exact-H native-message-reconciliation job alongside ten Human contracts. Preserve the other session's source, tests and separate workflow unchanged."
+    },
+    "review": {
+      "verdict": "approved-for-focused-actions",
+      "method": "Independent complete shipping log and direct-import/manifest/lock/API/caller read-only review at ac9975; no local executable validation; not ACCEPT.",
+      "blocking_findings": []
+    }
+  },
+  "source_checker_repair": {
+    "base": "ac9975ee7402b7a302f24871056293dc7f3ca398",
+    "verdict": "approved-for-focused-actions",
+    "blocking_findings": [],
+    "scope": [
+      "scripts/tdrp-source-review.mjs",
+      "scripts/tdrp-source-review.test.mjs",
+      "scripts/tdrp-source-review-schema.test.py",
+      "scripts/validate-tdrp-revision9-authority.mjs",
+      "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+      ".github/workflows/tdrp-source-review-contract.yml"
+    ],
+    "method": "Independent read-only diff, behavior-oracle and actual schema semantics review. No local executable validation.",
+    "limit": "Qualifies checker behavior only; does not reconcile the actual old-U source lock/index with fixed-U ledger or establish source closure or ACCEPT.",
+    "validation": "pending-exact-commit-actions",
+    "changes": [
+      "Join every source review to the exact responsibility primary or additional repository/commit/path/object identity.",
+      "Enforce source review depth/evidence and additional-identity semantics in the strict schema with actual JSON Schema behavior tests.",
+      "Read only the chosen frozen U and tree; retain all canonical inventory/acceptance gates and reject any open candidate at acceptance."
+    ],
+    "source_closure": false
   }
 }

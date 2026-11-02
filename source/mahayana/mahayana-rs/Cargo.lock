@@ -9054,9 +9054,11 @@ dependencies = [
  "mahayana-native-engine",
  "mahayana-platform-client",
  "mahayana-plugin-runtime",
+ "mahayana-telegram",
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "thiserror 2.0.20",
 ]
 

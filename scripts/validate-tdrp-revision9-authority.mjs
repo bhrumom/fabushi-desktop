@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { validateSourceReviews } from './tdrp-source-review.mjs';
+import { validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate } from './tdrp-source-review.mjs';
 import { canonicalNestedRepository, assertNestedGitlinkPins } from './tdrp-nested-pin-identity.mjs';
 
 const root = process.cwd();
@@ -599,11 +599,7 @@ for (const gate of ['G-INVENTORY','G-FILE','G-TRACEABILITY','G-COMPOSITION','G-S
 for (const key of ['oracle_ids','invariant_ids','evidence_ids','verdict']) fail(rtm.includes(key),'RTM missing '+key);
 
 const u=lock.upstream;
-const commit=await get(`https://api.github.com/repos/${u.repository}/git/commits/${u.commit}`);
-fail(commit.sha===u.commit,'upstream commit mismatch');
-fail(commit.tree?.sha===u.tree,'upstream tree mismatch');
-const branch=await get(`https://api.github.com/repos/${u.repository}/branches/dev`);
-fail(branch.commit?.sha===u.commit,`upstream dev advanced to ${branch.commit?.sha}; rebaseline required`);
+await readFrozenUpstreamCommit(u, get);
 
 const rootTree=await ghTree(u.repository,u.commit);
 fail(rootTree.truncated===false,'root recursive tree truncated');
@@ -717,6 +713,7 @@ const report={
 await fs.writeFile(path.join(root,'artifacts/tdrp-authority/authority-report.json'),JSON.stringify(report,null,2)+'\n');
 
 if (requireAccepted) {
+  assertNoOpenSourceCandidate(ledger);
   fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
   fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
   fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');

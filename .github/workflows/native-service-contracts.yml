@@ -122,6 +122,12 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
           grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+      - name: Preserve Agent send nonce boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test send_pipeline_nonce_boundary_contract -- --nocapture 2>&1 | tee artifacts/native-message/agent-send-nonce.log
+          grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/agent-send-nonce.log
       - name: Diagnose locked Session dependency drift (no acceptance)
         if: failure()
         shell: bash

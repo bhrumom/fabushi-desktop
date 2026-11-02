@@ -94,24 +94,19 @@
         ],
         "properties": {
           "repository": {
-            "type": "string",
-            "minLength": 1
+            "$ref": "#/$defs/nonEmpty"
           },
           "commit": {
-            "type": "string",
-            "minLength": 1
+            "$ref": "#/$defs/gitOid"
           },
           "path": {
-            "type": "string",
-            "minLength": 1
+            "$ref": "#/$defs/nonEmpty"
           },
           "object": {
-            "type": "string",
-            "minLength": 1
+            "$ref": "#/$defs/gitOid"
           },
           "rationale": {
-            "type": "string",
-            "minLength": 1
+            "$ref": "#/$defs/nonEmpty"
           },
           "category": {
             "enum": [
@@ -147,15 +142,188 @@
           "evidence": {
             "type": "array",
             "items": {
-              "type": "string",
-              "minLength": 1
-            }
+              "$ref": "#/$defs/nonEmpty"
+            },
+            "uniqueItems": true
           },
           "responsibility_ids": {
             "type": "array",
             "items": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/nonEmpty"
+            },
+            "uniqueItems": true
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "complete"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "evidence": {
+                  "minItems": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "category": {
+                        "enum": [
+                          "product",
+                          "mixed-ui"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "review_depth": {
+                        "const": "deep"
+                      },
+                      "responsibility_ids": {
+                        "minItems": 1
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "risk": {
+                        "const": "high"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "review_depth": {
+                        "const": "deep"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "category": {
+                        "enum": [
+                          "generated",
+                          "dependency"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "review_depth": {
+                        "enum": [
+                          "deep",
+                          "contract"
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "rebaseline_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Unaccepted source observations only; the accepted authority gate rejects this open marker.",
+      "required": [
+        "upstream_commit",
+        "status",
+        "direct_gitlinks_checked",
+        "nested_gitlinks_discovered",
+        "nested_gitlinks_resolved",
+        "nested_gitlinks_blocked",
+        "source_responsibility_rows",
+        "unknown",
+        "unread",
+        "omitted_known",
+        "cppgir_identity"
+      ],
+      "properties": {
+        "upstream_commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "status": {
+          "const": "unaccepted-inventory-open"
+        },
+        "direct_gitlinks_checked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nested_gitlinks_discovered": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nested_gitlinks_resolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nested_gitlinks_blocked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_responsibility_rows": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "unknown": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Null preserves unestablished coverage and is never zero or acceptance."
+        },
+        "unread": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Null preserves unestablished coverage and is never zero or acceptance."
+        },
+        "omitted_known": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cppgir_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "declared_by",
+            "repository",
+            "commit",
+            "git_tree_verified",
+            "reason"
+          ],
+          "properties": {
+            "declared_by": {
+              "$ref": "#/$defs/nonEmpty"
+            },
+            "repository": {
+              "$ref": "#/$defs/nonEmpty"
+            },
+            "commit": {
+              "$ref": "#/$defs/gitOid"
+            },
+            "git_tree_verified": {
+              "type": "boolean"
+            },
+            "reason": {
+              "$ref": "#/$defs/nonEmpty"
             }
           }
         }
@@ -313,6 +481,14 @@
         },
         "source_blob_sha": {
           "$ref": "#/$defs/nonEmpty"
+        },
+        "additional_source_identities": {
+          "type": "array",
+          "description": "Additional exact inventory identities covered by this responsibility; each still requires its own source review evidence.",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/sourceIdentity"
+          }
         },
         "source_kind": {
           "enum": [
@@ -1123,6 +1299,30 @@
           }
         }
       ]
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "commit",
+        "path",
+        "object"
+      ],
+      "properties": {
+        "repository": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "path": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "object": {
+          "$ref": "#/$defs/gitOid"
+        }
+      }
     }
   }
 }
