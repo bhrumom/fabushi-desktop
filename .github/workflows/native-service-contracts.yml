@@ -1,7 +1,7 @@
 name: Native service contracts
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-r8-author-recovery-ddfff221]
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
