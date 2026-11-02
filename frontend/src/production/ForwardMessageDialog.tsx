@@ -42,7 +42,11 @@ export interface ForwardMessageDialogProps {
     dropSenderNames: boolean;
     dropCaptions: boolean;
   }, admission?: CoordinatorCallAdmission) => Promise<readonly ForwardSettlement[]>;
-  readonly onSettled?: (settlement: readonly ForwardSettlement[], accountScopeGeneration: number) => void;
+  readonly onSettled?: (
+    settlement: readonly ForwardSettlement[],
+    accountScopeGeneration: number,
+    recipientNames: ReadonlyMap<string, string>,
+  ) => void;
 }
 
 interface ForwardDialogLifetime {
@@ -50,9 +54,15 @@ interface ForwardDialogLifetime {
   readonly sourceConversationId: string;
   readonly sourceEntryId: string;
   readonly requestId: string;
+  readonly recipientNames: Map<string, string>;
 }
 
 type ForwardRequest = Parameters<ForwardMessageDialogProps["forwardMessage"]>[0];
+
+interface ForwardDialogSnapshot {
+  readonly request: ForwardRequest;
+  readonly recipientNames: ReadonlyMap<string, string>;
+}
 
 // Match the existing Session request bound before freezing a retry intent.
 // The Host still rechecks the bound and each destination's authorization.
@@ -81,7 +91,7 @@ export function ForwardMessageDialog({
   const searchGenerationRef = useRef(0);
   const lifetimeRef = useRef<ForwardDialogLifetime | null>(null);
   const submittingLifetimeRef = useRef<ForwardDialogLifetime | null>(null);
-  const snapshotRef = useRef<ForwardRequest | null>(null);
+  const snapshotRef = useRef<ForwardDialogSnapshot | null>(null);
   const selectedRef = useRef<ReadonlySet<string>>(new Set());
   const [query, setQuery] = useState("");
   const [recipients, setRecipients] = useState<readonly ForwardRecipient[]>([]);
@@ -136,10 +146,15 @@ export function ForwardMessageDialog({
       sourceConversationId,
       sourceEntryId,
       requestId: createForwardRequestId(sourceConversationId, sourceEntryId),
+      recipientNames: new Map(),
     };
     lifetimeRef.current = lifetime;
     return () => {
-      if (lifetimeRef.current === lifetime) lifetimeRef.current = null;
+      lifetime.recipientNames.clear();
+      if (lifetimeRef.current === lifetime) {
+        lifetimeRef.current = null;
+        snapshotRef.current = null;
+      }
       if (submittingLifetimeRef.current === lifetime) submittingLifetimeRef.current = null;
       searchGenerationRef.current += 1;
     };
@@ -161,6 +176,11 @@ export function ForwardMessageDialog({
       })
         .then((next) => {
           if (!isSearchCurrent()) return;
+          // Search visibility may change without removing a selected recipient.
+          for (const id of lifetime.recipientNames.keys()) {
+            if (!selectedRef.current.has(id)) lifetime.recipientNames.delete(id);
+          }
+          for (const recipient of next) lifetime.recipientNames.set(recipient.id, recipient.name);
           setRecipients(next);
           setActiveRecipientIndex((current) => next.length === 0 ? 0 : Math.min(current, next.length - 1));
           setSearchFailure(null);
@@ -241,16 +261,25 @@ export function ForwardMessageDialog({
     // One accepted nonce identifies one immutable intent. The Host's durable
     // journal allows retries to narrow to unconfirmed destinations, never to
     // broaden the original set or change its normalized privacy options.
-    const snapshot = snapshotRef.current ?? {
-      sourceConversationId: lifetime.sourceConversationId,
-      sourceEntryId: lifetime.sourceEntryId,
-      destinationConversationIds: [...selectedRef.current],
-      clientNonce: lifetime.requestId,
-      dropSenderNames: dropSenderNames || dropCaptions,
-      dropCaptions,
-    };
-    snapshotRef.current = snapshot;
-    const destinationConversationIds = snapshot.destinationConversationIds
+    let snapshot = snapshotRef.current;
+    if (snapshot == null) {
+      const request: ForwardRequest = {
+        sourceConversationId: lifetime.sourceConversationId,
+        sourceEntryId: lifetime.sourceEntryId,
+        destinationConversationIds: [...selectedRef.current],
+        clientNonce: lifetime.requestId,
+        dropSenderNames: dropSenderNames || dropCaptions,
+        dropCaptions,
+      };
+      const recipientNames = new Map<string, string>();
+      for (const id of request.destinationConversationIds) {
+        const name = lifetime.recipientNames.get(id);
+        if (name != null) recipientNames.set(id, name);
+      }
+      snapshot = { request, recipientNames };
+      snapshotRef.current = snapshot;
+    }
+    const destinationConversationIds = snapshot.request.destinationConversationIds
       .filter((id) => selectedRef.current.has(id));
     // React may batch two submit events before repainting `submitting`.
     submittingLifetimeRef.current = lifetime;
@@ -259,7 +288,7 @@ export function ForwardMessageDialog({
     setFailure(null);
     try {
       const settlement = await forwardMessage({
-        ...snapshot,
+        ...snapshot.request,
         destinationConversationIds,
       }, {
         // Readiness can outlive this dialog. Recheck the same lifetime at the
@@ -276,7 +305,14 @@ export function ForwardMessageDialog({
       });
       const failed = completed.filter((item) => item.status !== "sent");
       updateSelected(new Set(failed.map((item) => item.conversationId)));
-      onSettled?.(completed, lifetime.accountScopeGeneration);
+      // A consumer receives only this attempt's targets and cannot mutate the
+      // names frozen with the original request or the lifetime search cache.
+      const recipientNames = new Map<string, string>();
+      for (const { conversationId } of completed) {
+        const name = snapshot.recipientNames.get(conversationId);
+        if (name != null) recipientNames.set(conversationId, name);
+      }
+      onSettled?.(completed, lifetime.accountScopeGeneration, recipientNames);
       if (!isCurrent(lifetime)) return;
       if (failed.length === 0) {
         closeLifetime(lifetime);
@@ -299,8 +335,10 @@ export function ForwardMessageDialog({
 
   const closeLifetime = (lifetime: ForwardDialogLifetime) => {
     if (!isCurrent(lifetime)) return;
+    lifetime.recipientNames.clear();
     lifetimeRef.current = null;
     submittingLifetimeRef.current = null;
+    snapshotRef.current = null;
     searchGenerationRef.current += 1;
     onClose();
   };

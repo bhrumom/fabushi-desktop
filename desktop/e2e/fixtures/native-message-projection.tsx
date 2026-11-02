@@ -22,6 +22,7 @@ const initials: Pending[] = [];
 const refreshes: Pending[] = [];
 const sends: Pending[] = [];
 const reactions: Pending[] = [];
+const forwards: Pending[] = [];
 const sendRosterRefreshes: Pending[] = [];
 const sendPositions = new Map<string, number>();
 let holdOlder = true;
@@ -66,6 +67,18 @@ function receive(request: Request) {
         return;
       }
       value = humans(); break;
+    case 'searchHumanRecipients':
+      value = humans().filter((conversation) => conversation.id !== request.args.sourceConversationId
+        && conversation.title.toLowerCase().includes(String(request.args.query ?? '').toLowerCase()));
+      break;
+    case 'forwardHumanMessage': {
+      const destinations = request.args.destinationConversationIds;
+      if (!Array.isArray(destinations) || destinations.some((destination) => typeof destination !== 'string')) {
+        throw new Error('Forwarding must send the production destination identity list');
+      }
+      forwards.push({ request, value: { destinations: destinations.map((conversationId) => ({ conversationId, status: 'sent' })) } });
+      return;
+    }
     case 'syncHumanConversations': value = humans(); break;
     case 'syncHumanConversation': value = { conversationId: id }; break;
     case 'countAgents': value = 0; break;
@@ -180,7 +193,7 @@ const bridge = optionalCapability('', {
 const fixture = {
   requests,
   approvalClears,
-  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, reactions: reactions.length, sendRosterRefreshes: sendRosterRefreshes.length }),
+  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, reactions: reactions.length, forwards: forwards.length, sendRosterRefreshes: sendRosterRefreshes.length }),
   releaseInitial(newestFirst = false) {
     holdInitial = false;
     const pending = initials.splice(0);
@@ -238,6 +251,7 @@ const fixture = {
     });
   },
   settleReaction(index = 0) { const pending = reactions[index]; if (pending == null) throw new Error('No pending reaction'); reply(pending); },
+  settleForward(index = 0) { const pending = forwards[index]; if (pending == null) throw new Error('No pending forward'); reply(pending); },
   disconnect() { sendFrame({ kind: 'event', family: 'coordinator-transport-state', payload: { state: 'down' } }); },
   reconnect() { sendFrame({ kind: 'event', family: 'coordinator-transport-state', payload: { state: 'connected' } }); },
   setAccount(authId: string | null) {

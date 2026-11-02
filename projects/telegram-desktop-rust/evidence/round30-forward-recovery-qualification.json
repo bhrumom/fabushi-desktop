@@ -7,7 +7,7 @@
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "requested_head": "06fb24c4963f35d1450c122e7222ee39e21b4192",
   "observed_main": "5528062177e3865eef60a073a066cca144f9e3e8",
-  "latest_read_head_at_preparation": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+  "latest_read_head_at_preparation": "474bd33c50aa7126a355f6951fd7a99a3c535103",
   "scope": "Verify original run terminal and every available full execution log; preserve concurrent implementation, classify actual failures, confirm minimal repair and publish scoped evidence in existing ledger/RTM. Not full migration acceptance.",
   "original_execution": {
     "repository": "bhrumom/fabushi-desktop",
@@ -919,14 +919,12 @@
     "restrictions": "No local build/test/validator, no repository edits, no remote writes, no dispatch/rerun/cancel. Logs are complete decoded UTF-8 as returned by connector; digests of artifact archives read from API and job upload logs, not independently downloaded."
   },
   "backend_latest_readback": {
-    "observed_at_utc": "2026-11-02T20:54Z",
-    "repository": "bhrumom/fabushi-backend",
-    "pr": 137,
-    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "at_utc": "2026-11-02T21:48:46Z",
     "state": "open",
     "draft": true,
     "merged": false,
-    "read_only": true
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "actions": "read_only"
   },
   "evidence_transport": {
     "harness_sha": "6fc3cb3c3c5c25681bf68d60b6ea633a7acbc563",
@@ -1177,7 +1175,37 @@
       "No GitHub writes or workflow dispatch/rerun/cancel.",
       "No acceptance promotion."
     ],
-    "findings": []
+    "findings": [],
+    "latest_feedback_batch": {
+      "head": "474bd33c50aa7126a355f6951fd7a99a3c535103",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89"
+        },
+        {
+          "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+          "blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa"
+        },
+        {
+          "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+          "blob": "da3455bff35978b41027d940213bf3fc6d9a496a"
+        },
+        {
+          "path": "docs/specs/fabushi-bot-communication-platform.md",
+          "blob": "93c543fafda43a0f84ecc13808dba9dd2ef71b42"
+        },
+        {
+          "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+          "blob": "2b3873eb34a5e31ed2460c1a9f6b72df51583694"
+        },
+        {
+          "path": "docs/specs/fabushi-deferred-ci-migration.md",
+          "blob": "01dc632975eca100c9bdc80746efdc2b0b044a57"
+        }
+      ],
+      "result": "AGENTS/twoSOT/two main specs identical to already-read base; current FMEP read completely including real authority-entrypoint subprocess negative requirement. No local product execution."
+    }
   },
   "evidence_publication": {
     "head": "3ab165561eb9fc7aba7b7bebff492cd105966b1a",
@@ -3266,6 +3294,85 @@
       "unpublished_blob": "933af1501e30b4cebd7a3b5144d98b4b7a3c8853",
       "workflow_3_to_4_not_published": true,
       "reason": "Fresh scoped CAS check discovered equivalent real process lock regression already integrated by another session in existing creation14. Preserve that stronger actual UPDATE control and avoid duplicate test/parallel harness or overwrite of the new14-case gate."
+    },
+    "publication": {
+      "head": "7d57aa4393c4f6c13bc6129255e2bec8173ed5ed",
+      "parent": "b318cffdebaba11186c627ca97797a0d46cd9b5e",
+      "force": false,
+      "expected_sha": "b318cffdebaba11186c627ca97797a0d46cd9b5e",
+      "remote_full_sha_and_files_readback": true,
+      "run_id": 41531186027,
+      "status": "At21:57:40Z Host125571506217 began Transcript recovery, UI125571506246 setup-node; no affected terminal pass yet. Shipping remains queued.",
+      "paths": [
+        {
+          "path": "frontend/src/recovered/features/conversation/workspace/view.css",
+          "blob": "74835c7c9d8a29c4978527d177f4ce67fce4058f"
+        },
+        {
+          "path": "desktop/e2e/native-message-projection.spec.ts",
+          "blob": "e48289b9fd6920aa80ceb1874a245f44dc12ea21"
+        },
+        {
+          "path": "projects/telegram-desktop-rust/evidence/round30-forward-recovery-qualification.json",
+          "blob": "75429e403133e4d3ca6523291026e4380a206706"
+        }
+      ]
     }
+  },
+  "named_forward_feedback": {
+    "spec": "NMR-FORWARD-FEEDBACK-01 / NMR-AC-FORWARD-FEEDBACK-01",
+    "base": "7d57aa4393c4f6c13bc6129255e2bec8173ed5ed",
+    "latest_checked_head": "c1fb886ac103885bcddf077e05fbcdc635a0a6ae",
+    "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "source_files": [
+      {
+        "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+        "blob": "86865db47439dbce848fc812df2554335d3e004c",
+        "read_scope": "Entire file, including legal header; responsibility/source review remains pending."
+      },
+      {
+        "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+        "blob": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+        "read_scope": "Entire file, including legal header; responsibility/source review remains pending."
+      }
+    ],
+    "source_caller": "Fixed-U share_box.cpp CreateForwardedMessagePhraseArgs/ShowForwardedMessageToast/DefaultForwardCallback was read in scoped consumer review; no whole share_box completion claim.",
+    "source_behavior": "One ordinary recipient uses its name; two use both; many aggregate. Saved/self/premium/session navigation and multiple-source selection remain unclosed. Existing Human forwarding currently takes one source entry.",
+    "implementation": "Existing Dialog lifetime caches visible/selected names; first immutable request freezes only selected names; each validated completed attempt supplies a separate Map copy to existing renderer/helper/composer notice. Search hiding/rename/consumer map mutation cannot change retry labels. Names are not service fields or persistent identities. Existing account generation rejects late completion; identity transition clears prior notice. The lifetime name cache retains selected names plus the current visible result only; older unselected names are pruned. Preserve concurrent CoordinatorCallAdmission.isCurrent at the actual request frame, all existing delayed-ready port tests and their immutable cloning boundary.",
+    "closure": "Actual production root is wired; no new owner, service schema or storage. Pending service dispatch remains existing durable Host intent; dialog close only retires presentation.",
+    "authored_tests": {
+      "settlement": 9,
+      "dialog_chromium": 17,
+      "actual_renderer": 13
+    },
+    "actual_root_cases": [
+      "UI-NMR-NAMED-FORWARD-001",
+      "UI-NMR-RETIRED-FORWARD-NAMES-001"
+    ],
+    "test_scope": "Keep all previous5/16/11 cases and add bounded behavior negatives, real ordinary UI routing, valid settlement, roster-failure survival and account A-B-A. Zero local execution; exact containing-H Actions required.",
+    "execution_status": "authored_not_run",
+    "static_review": {
+      "root_integration_review": "Dialog lifetime/snapshot/copy, helper fallback/account rules and actual root callback/reset traced; service six-field request unchanged. Initial fixture syntax comma defect found in independent static review and corrected before publication.",
+      "reviewed_by": "root and round30_ci_final; dialog author also self-reviewed",
+      "execution": false
+    },
+    "canonical_tracking": {
+      "responsibility": "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
+      "input_ledger_blob": "115e9d342f24ac5c14679ad21f1ba745d555acb9",
+      "rows": 184,
+      "source_reviews": 16,
+      "source_reviews_complete": 2,
+      "source_reviews_pending": 14,
+      "mode": "Append paths/symbols/test/provenance to existing row and evidence/responsibility links to the two existing pending source records; preserve all other fields/statuses/history. Exact Actions object preparation cannot commit or move a ref; root must read complete output and CAS-publish.",
+      "temporary_preparer": "Hard-coded exact two phrase-factory identities and one privacy responsibility. Append parsed arrays and notes content; JSON document whitespace is not an invariant. Only unattached blob creation; root must verify full before/after and use non-forced fresh-head CAS."
+    },
+    "remaining": [
+      "Real Native service authentication and compatible deployed history/provenance",
+      "Saved/self/premium/session-window navigation and full source/legal mapping",
+      "Current exact-H UI/Host/shipping and full final platform/Bot/quality gates",
+      "Independent ACCEPT and formal release"
+    ],
+    "backend137": "Read-only/open/draft/unmerged at52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23; no change or deployment",
+    "environment_note": "Scratch runtime transport became unavailable around21:56UTC; no product executable validation ran locally. Complete authored content retained in functions stores and saved through GitHub blobs; existing GitHub Actions remain the sole test execution environment."
   }
 }

@@ -34,10 +34,11 @@ test("mixed settlement retains failed count and current roster", async () => {
   const h = harness();
   await settleForwardProjection({
     settlement: [{ conversationId: "c", status: "sent" }, { conversationId: "d", status: "failed" }],
+    recipientNames: new Map([["c", "Alice"], ["d", "Bob"]]),
     accountScopeGeneration: 3, isAccountScopeCurrent: h.isCurrent,
     setNotice: h.notice, readRoster: async () => ["c", "d"], applyRoster: h.apply,
   });
-  assert.deepEqual(h.notices, ["Forwarded to 1; 1 destination still need attention."]);
+  assert.deepEqual(h.notices, ["Forwarded to 1; 1 destination still needs attention."]);
   assert.deepEqual(h.rosters, [["c", "d"]]);
 });
 test("account switch before settlement prevents every projection", async () => {
@@ -73,12 +74,93 @@ test("late rejected roster request cannot alter a new account or rollback notice
   const roster = deferred<unknown>();
   const settlement = settleForwardProjection({
     settlement: [{ conversationId: "c", status: "sent" }],
+    recipientNames: new Map([["c", "Alice"]]),
     accountScopeGeneration: 3, isAccountScopeCurrent: h.isCurrent,
     setNotice: h.notice, readRoster: () => roster.promise, applyRoster: h.apply,
   });
   h.invalidate();
   roster.reject(new Error("old account access denied"));
   await settlement;
-  assert.deepEqual(h.notices, ["Forwarded to 1 conversation."]);
+  assert.deepEqual(h.notices, ["Forwarded to Alice."]);
+  assert.deepEqual(h.rosters, []);
+});
+
+test("single and paired confirmations retain their distinct destination names", async () => {
+  const cases = [
+    { ids: ["c"], names: [["c", "  Alice  "]], notice: "Forwarded to Alice." },
+    { ids: ["c", "d"], names: [["c", "Alice"], ["d", "Bob"]], notice: "Forwarded to Alice and Bob." },
+    { ids: ["c", "d"], names: [["c", "Alex"], ["d", "Alex"]], notice: "Forwarded to Alex and Alex." },
+  ] as const;
+  for (const sample of cases) {
+    const h = harness();
+    await settleForwardProjection({
+      settlement: sample.ids.map((conversationId) => ({ conversationId, status: "sent" as const })),
+      recipientNames: new Map<string, string>(sample.names),
+      accountScopeGeneration: 3, isAccountScopeCurrent: h.isCurrent,
+      setNotice: h.notice, readRoster: null, applyRoster: h.apply,
+    });
+    assert.deepEqual(h.notices, [sample.notice]);
+    assert.deepEqual(h.rosters, []);
+  }
+});
+
+test("missing or blank labels and larger fanout retain accurate count feedback", async () => {
+  const cases = [
+    { ids: ["c"], names: [], notice: "Forwarded to 1 conversation." },
+    { ids: ["c"], names: [["c", " \t "]], notice: "Forwarded to 1 conversation." },
+    { ids: ["c", "d"], names: [["c", "Alice"]], notice: "Forwarded to 2 conversations." },
+    { ids: ["c", "d"], names: [["c", "Alice"], ["d", ""]], notice: "Forwarded to 2 conversations." },
+    { ids: ["c", "d", "e"], names: [["c", "Alice"], ["d", "Bob"], ["e", "Carol"]], notice: "Forwarded to 3 conversations." },
+  ] as const;
+  for (const sample of cases) {
+    const h = harness();
+    await settleForwardProjection({
+      settlement: sample.ids.map((conversationId) => ({ conversationId, status: "sent" as const })),
+      recipientNames: new Map<string, string>(sample.names),
+      accountScopeGeneration: 3, isAccountScopeCurrent: h.isCurrent,
+      setNotice: h.notice, readRoster: async () => sample.ids, applyRoster: h.apply,
+    });
+    assert.deepEqual(h.notices, [sample.notice]);
+    assert.deepEqual(h.rosters, [sample.ids]);
+  }
+});
+
+test("unconfirmed outcomes remain honest and still refresh the current roster", async () => {
+  const cases = [
+    { sent: [], failed: [], notice: "No forwarding destinations were confirmed." },
+    { sent: [], failed: ["c"], notice: "No deliveries confirmed; 1 destination still needs attention." },
+    { sent: [], failed: ["c", "d"], notice: "No deliveries confirmed; 2 destinations still need attention." },
+    { sent: ["c"], failed: ["d", "e"], notice: "Forwarded to 1; 2 destinations still need attention." },
+  ] as const;
+  for (const sample of cases) {
+    const h = harness();
+    await settleForwardProjection({
+      settlement: [
+        ...sample.sent.map((conversationId) => ({ conversationId, status: "sent" as const })),
+        ...sample.failed.map((conversationId) => ({ conversationId, status: "failed" as const })),
+      ],
+      recipientNames: new Map([["c", "Alice"], ["d", "Bob"], ["e", "Carol"]]),
+      accountScopeGeneration: 3, isAccountScopeCurrent: h.isCurrent,
+      setNotice: h.notice, readRoster: async () => ["current-roster"], applyRoster: h.apply,
+    });
+    assert.deepEqual(h.notices, [sample.notice]);
+    assert.deepEqual(h.rosters, [["current-roster"]]);
+  }
+});
+
+test("returning to the same account cannot revive a named settlement from its old epoch", async () => {
+  const h = harness();
+  h.invalidate(); // A -> B
+  h.invalidate(); // B -> A, with a new epoch
+  let reads = 0;
+  await settleForwardProjection({
+    settlement: [{ conversationId: "c", status: "sent" }],
+    recipientNames: new Map([["c", "Private old-account name"]]),
+    accountScopeGeneration: 3, isAccountScopeCurrent: h.isCurrent,
+    setNotice: h.notice, readRoster: async () => { reads += 1; return ["old-roster"]; },
+    applyRoster: h.apply,
+  });
+  assert.equal(reads, 0);
+  assert.deepEqual(h.notices, []);
   assert.deepEqual(h.rosters, []);
 });

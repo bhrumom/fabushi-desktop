@@ -2123,3 +2123,42 @@ multi-process cancellation, real authenticated Worker compatibility or final
 source/platform/independent acceptance. Reverting the new optional projection
 and renderer consumer leaves the existing durable checkpoint and explicit sync
 recovery intact; no user data or migration reader is deleted.
+
+## NMR-FORWARD-FEEDBACK-01 — Named feedback on the existing Human forward path
+
+This bounded extension uses fixed U `f985723b552b30fe1c17d377d57f44e61a15a8c4`,
+`chat_helpers/share_message_phrase_factory.h/.cpp` and the already reviewed
+`share_box.cpp` completion consumer. Preserve NMR-46/47 account, intent,
+permission, durable journal and failed-target retry contracts.
+
+- The existing ForwardMessageDialog keeps recipient labels within its current
+  account/source lifetime. A search may hide an already selected destination
+  without discarding its label. The first submitted immutable intent freezes
+  only selected destination labels; later rename/search results and consumer
+  mutation cannot change labels used by that intent's retries.
+- Only validated completed destinations reach the existing onSettled callback.
+  Pass a new presentation Map for that attempt; never add names to service
+  requests, persisted messages or a second owner. Reuse the existing
+  ProductionRenderer -> settleForwardProjection -> ConversationComposer notice.
+- One or two fully confirmed destinations with nonempty known labels use their
+  names. More destinations or missing labels use truthful counts. Mixed,
+  unconfirmed and empty results must not become an all-success message.
+  Refreshing the roster may fail without undoing a confirmed forward result.
+- Account changes clear existing notices. Old account/source/closed-dialog
+  callbacks, including A-B-A, cannot publish names, close a replacement dialog
+  or repopulate its roster. Ordinary code revert rolls back this presentation
+  extension without touching the accepted Host intent or user data.
+- Saved/self, premium-dependent suppression and session-window navigation remain
+  explicitly unclosed: the current direct-pair owner supplies no canonical self
+  destination. This extension cannot mark either complete phrase-factory source
+  review, whole sharing parity, independent ACCEPT or release accepted.
+
+NMR-AC-FORWARD-FEEDBACK-01 requires exact containing-H Actions: settlement9,
+actual dialog Chromium17 and actual ProductionRenderer13, while preserving all
+current compilation, cursor, retry, Transcript and Host gates. Keep all previous
+cases and normal pointer actions. The new root cases are
+UI-NMR-NAMED-FORWARD-001 (accepted notice, roster failure, account clear) and
+UI-NMR-RETIRED-FORWARD-NAMES-001 (delayed reply after A-B-A); dialog coverage includes
+hidden selections, rename/retry, callback Map mutation and lifetime replacement.
+Authored cases are not execution evidence. Use the existing canonical
+`TDRP-R9-SHARE-FORWARD-PRIVACY-001` ledger responsibility and the Round30 receipt.

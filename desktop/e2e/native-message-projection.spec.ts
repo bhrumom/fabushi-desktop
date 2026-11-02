@@ -362,3 +362,70 @@ test('NMR-26 a disconnected Human send queues and reconnect dispatches it exactl
   await expect.poll(() => domIds(page)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'human-server-message:100']);
   await milestone(page, info, 'queued-send-settled-after-reconnect');
 });
+
+async function startNamedForwardToBob(page: Page) {
+  const source = messageRow(page, 'm1');
+  await source.locator('.sand-message-action-anchor').hover();
+  await source.getByRole('button', { name: 'More message actions', exact: true }).click();
+  await source.getByRole('menuitem', { name: 'Forward', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Forward message', exact: true });
+  await dialog.getByRole('checkbox', { name: 'Bob', exact: true }).check();
+  await dialog.getByRole('button', { name: 'Forward', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().forwards)).toBe(1);
+  const request = await page.evaluate(() => window.nativeMessageFixture.requests.find((item) => item.method === 'forwardHumanMessage'));
+  expect(request?.args).toMatchObject({
+    sourceConversationId: 'human:a', sourceEntryId: 'm1',
+    destinationConversationIds: ['human:b'], dropSenderNames: false, dropCaptions: false,
+  });
+  expect(typeof request?.args.clientNonce).toBe('string');
+  await expect(page.getByText('Forwarded to Bob.', { exact: true })).toHaveCount(0);
+}
+
+test('UI-NMR-NAMED-FORWARD-001 real settlement survives roster failure and clears on account change', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  await startNamedForwardToBob(page);
+  await page.evaluate(() => {
+    window.nativeMessageFixture.holdSendRosterRefresh();
+    window.nativeMessageFixture.settleForward();
+  });
+  await expect(page.getByRole('dialog', { name: 'Forward message', exact: true })).toHaveCount(0);
+  await expect(page.getByText('Forwarded to Bob.', { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sendRosterRefreshes)).toBe(1);
+  await page.evaluate(async () => {
+    window.nativeMessageFixture.failSendRosterRefresh();
+    for (let frame = 0; frame < 4; frame += 1) await new Promise(requestAnimationFrame);
+  });
+  await expect(page.getByText('Forwarded to Bob.', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((item) => item.method === 'forwardHumanMessage').length)).toBe(1);
+  await milestone(page, info, 'named-forward-after-roster-failure');
+
+  await page.evaluate(() => window.nativeMessageFixture.setAccount('next-account'));
+  await expect(page.getByText('next-account@example.test', { exact: true })).toBeVisible();
+  await expect(messageRow(page, 'new-a')).toBeVisible();
+  await expect(page.getByText('Forwarded to Bob.', { exact: true })).toHaveCount(0);
+  await page.evaluate(() => window.nativeMessageFixture.setAccount('local'));
+  await expect(page.getByText('local@example.test', { exact: true })).toBeVisible();
+  await expect(page.getByText('Forwarded to Bob.', { exact: true })).toHaveCount(0);
+  await milestone(page, info, 'named-forward-cleared-after-account-roundtrip');
+});
+
+test('UI-NMR-RETIRED-FORWARD-NAMES-001 old-account reply cannot publish names after an account round trip', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  await startNamedForwardToBob(page);
+  await page.evaluate(() => window.nativeMessageFixture.setAccount('next-account'));
+  await expect(page.getByText('next-account@example.test', { exact: true })).toBeVisible();
+  await expect(messageRow(page, 'new-a')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Forward message', exact: true })).toHaveCount(0);
+  await page.evaluate(() => window.nativeMessageFixture.setAccount('local'));
+  await expect(page.getByText('local@example.test', { exact: true })).toBeVisible();
+  await page.evaluate(async () => {
+    window.nativeMessageFixture.settleForward();
+    for (let frame = 0; frame < 4; frame += 1) await new Promise(requestAnimationFrame);
+  });
+  await expect(page.getByText('Forwarded to Bob.', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Forward message', exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((item) => item.method === 'forwardHumanMessage').length)).toBe(1);
+  await milestone(page, info, 'retired-forward-reply-after-account-roundtrip');
+});

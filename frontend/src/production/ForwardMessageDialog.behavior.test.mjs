@@ -69,10 +69,10 @@ async function fixture(t, variant = "") {
     await page.waitForFunction(([k, c]) => window.__forwardHarness.requests().filter((r) => r.kind === k).length >= c, [kind, count]);
     return (await call("requests")).filter((r) => r.kind === kind).at(-1);
   };
-  const settleSearch = async (recipient = "human:b") => {
+  const settleSearch = async (recipient = "human:b", name = recipient) => {
     const found = await request("search");
-    await call("resolve", found.id, [{ id: recipient, name: recipient }]);
-    await page.getByRole("option", { name: recipient }).waitFor();
+    await call("resolve", found.id, [{ id: recipient, name }]);
+    await page.getByRole("option", { name, exact: true }).waitFor();
     return found;
   };
   const select = async (recipient = "human:b") => {
@@ -173,13 +173,24 @@ test("current forward closes and settles exactly once", async (t) => {
   const sent = await f.request("forward"); await f.call("resolve", sent.id, [{ conversationId: "human:b", status: "sent" }]);
   await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
   assert.equal((await f.call("events")).filter((e) => e.kind === "settled").length, 1);
+  assert.deepEqual((await f.call("events")).find((e) => e.kind === "settled").recipientNames, [["human:b", "human:b"]]);
 });
 test("account switch prevents old success from closing B dialog", async (t) => {
-  const f = await fixture(t); await f.settleSearch(); await f.select(); await f.submit();
+  const f = await fixture(t); await f.settleSearch("human:b", "Account A recipient"); await f.select("Account A recipient"); await f.submit();
   const old = await f.request("forward"); await f.call("switchAccount", "B"); await f.call("reopen");
   await f.call("resolve", old.id, [{ conversationId: "human:b", status: "sent" }]);
   await f.page.getByRole("heading", { name: "Forward message" }).waitFor();
   assert.deepEqual(await f.call("events"), []);
+  const currentSearch = await f.request("search", 2);
+  await f.call("resolve", currentSearch.id, [{ id: "human:c", name: "Account B recipient" }]);
+  await f.select("Account B recipient"); await f.submit();
+  const current = await f.request("forward", 2);
+  await f.call("resolve", current.id, [{ conversationId: "human:c", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+  const settled = (await f.call("events")).filter((e) => e.kind === "settled");
+  assert.equal(settled.length, 1);
+  assert.equal(settled[0].account, "B");
+  assert.deepEqual(settled[0].recipientNames, [["human:c", "Account B recipient"]]);
   await assertPreReadyForwardRetired(t, "account");
 });
 test("logout prevents late error from being displayed", async (t) => {
@@ -190,11 +201,23 @@ test("logout prevents late error from being displayed", async (t) => {
   await assertPreReadyForwardRetired(t, "logout");
 });
 test("A B A reuse still rejects old settlement", async (t) => {
-  const f = await fixture(t); await f.settleSearch(); await f.select(); await f.submit();
+  const f = await fixture(t); await f.settleSearch("human:b", "Previous A recipient"); await f.select("Previous A recipient"); await f.submit();
   const old = await f.request("forward"); await f.call("switchAccount", "B"); await f.call("switchAccount", "A"); await f.call("reopen");
   await f.call("resolve", old.id, [{ conversationId: "human:b", status: "sent" }]);
   await f.page.getByRole("heading", { name: "Forward message" }).waitFor();
   assert.deepEqual(await f.call("events"), []);
+  const currentSearch = await f.request("search", 2);
+  await f.call("resolve", currentSearch.id, [{ id: "human:b", name: "Current A recipient" }]);
+  await f.select("Current A recipient"); await f.submit();
+  const current = await f.request("forward", 2);
+  assert.notEqual(current.args.clientNonce, old.args.clientNonce);
+  await f.call("resolve", current.id, [{ conversationId: "human:b", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+  const settled = (await f.call("events")).filter((e) => e.kind === "settled");
+  assert.equal(settled.length, 1);
+  assert.equal(settled[0].account, "A");
+  assert.equal(settled[0].generation, 3);
+  assert.deepEqual(settled[0].recipientNames, [["human:b", "Current A recipient"]]);
   await assertPreReadyForwardRetired(t, "A-B-A");
 });
 test("closed dialog discards old search", async (t) => {
@@ -208,6 +231,23 @@ test("replaced source discards old search", async (t) => {
   const replacement = await f.request("search", 2);
   assert.equal(replacement.args.sourceEntryId, "message-2");
   assert.equal(await f.page.getByText("OLD_SECRET").count(), 0);
+  await f.call("resolve", replacement.id, [{ id: "human:b", name: "Previous source recipient" }]);
+  await f.select("Previous source recipient"); await f.submit();
+  const oldForward = await f.request("forward");
+  await f.call("replaceSource", "message-3");
+  const currentSearch = await f.request("search", 3);
+  assert.equal(currentSearch.args.sourceEntryId, "message-3");
+  await f.call("resolve", currentSearch.id, [{ id: "human:c", name: "Current source recipient" }]);
+  await f.select("Current source recipient"); await f.submit();
+  const current = await f.request("forward", 2);
+  assert.equal(current.args.sourceEntryId, "message-3");
+  await f.call("resolve", oldForward.id, [{ conversationId: "human:b", status: "sent" }]);
+  assert.deepEqual(await f.call("events"), []);
+  await f.call("resolve", current.id, [{ conversationId: "human:c", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+  const settled = (await f.call("events")).filter((e) => e.kind === "settled");
+  assert.equal(settled.length, 1);
+  assert.deepEqual(settled[0].recipientNames, [["human:c", "Current source recipient"]]);
   await assertPreReadyForwardRetired(t, "source");
 });
 test("unmount synchronously invalidates root generation", async (t) => {
@@ -273,6 +313,53 @@ test("partial retry only sends failed destination with stable identity", async (
   assert.deepEqual(second.args, { ...first.args, destinationConversationIds: ["human:c"] });
   await f.call("resolve", second.id, [{ conversationId: "human:c", status: "sent" }]);
   await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+  assert.deepEqual((await f.call("events")).filter((e) => e.kind === "settled").map((e) => e.recipientNames), [
+    [["human:b", "human:b"], ["human:c", "human:c"]],
+    [["human:c", "human:c"]],
+  ]);
+});
+
+test("hidden selected recipients keep submission names across renamed retries and consumer mutation", async (t) => {
+  const f = await fixture(t); const initial = await f.request("search");
+  await f.call("resolve", initial.id, [{ id: "human:b", name: "Beatrice old" }, { id: "human:c", name: "Camilo" }]);
+  await f.select("Beatrice old"); await f.select("Camilo");
+  await f.page.getByRole("searchbox").fill("updated name");
+  const updated = await f.request("search", 2);
+  await f.call("resolve", updated.id, [{ id: "human:b", name: "Beatrice at submission" }, { id: "human:d", name: "Unselected recipient" }]);
+  await f.page.getByRole("option", { name: "Beatrice at submission", exact: true }).waitFor();
+  await f.page.getByRole("searchbox").fill("only unselected");
+  const hidden = await f.request("search", 3);
+  await f.call("resolve", hidden.id, [{ id: "human:d", name: "Unselected recipient" }]);
+  assert.equal(await f.page.getByRole("option").count(), 1);
+  assert.equal(await f.page.getByText("2 selected", { exact: true }).count(), 1);
+  await f.submit(); const first = await f.request("forward");
+  assert.deepEqual(first.args.destinationConversationIds, ["human:b", "human:c"]);
+  assert.deepEqual(Object.keys(first.args).sort(), [
+    "clientNonce", "destinationConversationIds", "dropCaptions", "dropSenderNames", "sourceConversationId", "sourceEntryId",
+  ]);
+  await f.call("resolve", first.id, [{ conversationId: "human:b", status: "sent" }, { conversationId: "human:c", status: "failed", error: "retry" }]);
+  await f.page.getByRole("alert").waitFor();
+  const firstEvent = (await f.call("events")).find((e) => e.kind === "settled");
+  assert.deepEqual(firstEvent.recipientNames, [["human:b", "Beatrice at submission"], ["human:c", "Camilo"]]);
+  await f.call("mutateSettledRecipientName", "human:c", "Consumer replacement");
+  await f.call("mutateSettledRecipientName", "foreign", "Consumer foreign recipient");
+  await f.page.getByRole("searchbox").fill("renamed after submission");
+  const renamed = await f.request("search", 4);
+  await f.call("resolve", renamed.id, [
+    { id: "human:b", name: "Beatrice renamed" },
+    { id: "human:c", name: "Camilo renamed" },
+    { id: "human:d", name: "New destination" },
+  ]);
+  assert.equal(await f.page.getByRole("option", { name: "New destination", exact: true }).locator('input[type="checkbox"]').isDisabled(), true);
+  assert.equal(await f.page.getByRole("checkbox", { name: "Hide sender name", exact: true }).isDisabled(), true);
+  assert.equal(await f.page.getByRole("checkbox", { name: "Hide media caption", exact: true }).isDisabled(), true);
+  await f.submit(); const retry = await f.request("forward", 2);
+  assert.deepEqual(retry.args, { ...first.args, destinationConversationIds: ["human:c"] });
+  await f.call("resolve", retry.id, [{ conversationId: "human:c", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+  const settled = (await f.call("events")).filter((e) => e.kind === "settled");
+  assert.equal(settled.length, 2);
+  assert.deepEqual(settled[1].recipientNames, [["human:c", "Camilo"]]);
 });
 test("query change does not invalidate valid submit", async (t) => {
   const f = await fixture(t); await f.settleSearch(); await f.select(); await f.submit();
@@ -370,7 +457,7 @@ test("recipient limit stays editable and counts selections outside the current s
 });
 
 test("closing a pending forward retires presentation without cancelling or settling a reopened intent", async (t) => {
-  const f = await fixture(t); await f.settleSearch(); await f.select(); await f.submit();
+  const f = await fixture(t); await f.settleSearch("human:b", "Before close recipient"); await f.select("Before close recipient"); await f.submit();
   const first = await f.request("forward");
   const close = f.page.getByRole("button", { name: "Close", exact: true });
   assert.equal(await close.isEnabled(), true);
@@ -379,8 +466,8 @@ test("closing a pending forward retires presentation without cancelling or settl
   assert.equal((await f.call("pending")).includes(first.id), true);
   await f.call("reopen");
   const search = await f.request("search", 2);
-  await f.call("resolve", search.id, [{ id: "human:c", name: "human:c" }]);
-  await f.select("human:c"); await f.submit();
+  await f.call("resolve", search.id, [{ id: "human:c", name: "After reopen recipient" }]);
+  await f.select("After reopen recipient"); await f.submit();
   const second = await f.request("forward", 2);
   assert.notEqual(second.args.clientNonce, first.args.clientNonce);
   await f.call("resolve", first.id, [{ conversationId: "human:b", status: "sent" }]);
@@ -391,6 +478,7 @@ test("closing a pending forward retires presentation without cancelling or settl
   await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
   assert.equal((await f.call("events")).filter((e) => e.kind === "closed").length, 2);
   assert.equal((await f.call("events")).filter((e) => e.kind === "settled").length, 1);
+  assert.deepEqual((await f.call("events")).find((e) => e.kind === "settled").recipientNames, [["human:c", "After reopen recipient"]]);
   await assertPreReadyForwardRetired(t, "close");
 });
 
@@ -414,5 +502,6 @@ test("late searches preserve send failure and retry destinations even when selec
   assert.deepEqual(retry.args, first.args);
   await f.call("resolve", retry.id, [{ conversationId: "human:b", status: "sent" }]);
   await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+  assert.deepEqual((await f.call("events")).find((e) => e.kind === "settled").recipientNames, [["human:b", "human:b"]]);
 });
 

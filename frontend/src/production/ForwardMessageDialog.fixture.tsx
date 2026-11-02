@@ -14,6 +14,7 @@ type PendingRequest = { readonly resolve: (value: unknown) => void; readonly rej
 const calls: RequestRecord[] = [];
 const pending = new Map<string, PendingRequest>();
 const events: unknown[] = [];
+let deliveredRecipientNames: ReadonlyMap<string, string> | null = null;
 let nextRequest = 0;
 
 function controlled<T>(kind: RequestKind, args: unknown): Promise<T> {
@@ -128,7 +129,10 @@ function Fixture() {
       isAccountScopeCurrent={isCurrent}
       message={message}
       onClose={() => { events.push({ kind: "closed", account }); setOpen(false); }}
-      onSettled={(settlement, scopedGeneration) => events.push({ kind: "settled", account, generation: scopedGeneration, settlement })}
+      onSettled={(settlement, scopedGeneration, recipientNames) => {
+        deliveredRecipientNames = recipientNames;
+        events.push({ kind: "settled", account, generation: scopedGeneration, settlement, recipientNames: [...recipientNames] });
+      }}
       open={open}
       searchRecipients={searchRecipients}
       sourceConversationId="human:source"
@@ -148,6 +152,11 @@ Object.assign(window, {
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     },
     events: () => [...events],
+    mutateSettledRecipientName: (id: string, name: string) => {
+      // Deliberately hostile consumer: the dialog must retain its own snapshot.
+      if (deliveredRecipientNames == null) throw new Error("no delivered recipient names");
+      (deliveredRecipientNames as Map<string, string>).set(id, name);
+    },
     pending: () => [...pending.keys()],
     resolve: async (id: string, value: unknown) => {
       const item = pending.get(id);

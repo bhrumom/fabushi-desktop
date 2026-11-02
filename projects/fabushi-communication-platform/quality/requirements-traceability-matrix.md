@@ -768,3 +768,22 @@ The existing `FBCP-NMR-001` and `TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001` rows ret
 | NMR-50d | Dialog lifetime admission passes through ProductionRenderer to the existing Coordinator request-frame boundary | Actual client/controlled port in the existing Chromium picker fixture; six pre-ready retirement paths post zero frames; live positive sends exactly one; after-post lifetime retirement preserves Host intent |
 
 The four added Host functions require Human72, retaining every prior Human/Agent/journal gate. The existing16 Chromium picker functions include the new real-port scenarios. These are authored and statically reviewed at preparation; only the containing exact-H Actions result recorded in `projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json` can qualify execution. Complete source/legal, real service, supported signed packages, full Bot/UI/accessibility/performance/soak/upgrade/rollback, independent ACCEPT and formal release remain blocked.
+
+## Round30 — named Human forwarding feedback
+
+| Requirement | Existing production owner and wiring | Authored evidence and remaining gate |
+| --- | --- | --- |
+| NMR-FORWARD-FEEDBACK-01 | ForwardMessageDialog lifetime and immutable request snapshot -> validated Host settlement -> ProductionRenderer.settleForward -> settleForwardProjection -> ConversationComposer notice | Names are presentation-only, frozen for retries and scoped to each completed target; service request and durable journal remain unchanged. |
+| UI-NMR-NAMED-FORWARD-001 | Actual root More/Forward/recipient selection/Coordinator RPC/settlement notice | Successful named notice survives same-account roster failure and is cleared by account switch; new containing-H Chromium execution required. |
+| UI-NMR-RETIRED-FORWARD-NAMES-001 | Existing account generation and dialog lifetime | Late old-account reply after A-B-A cannot disclose names or close a current dialog. |
+| NMR-AC-FORWARD-FEEDBACK-01 | Existing native-service-contracts UI job; current Host and other gates retained | settlement9/dialog17/renderer13 authored; zero skipped/flaky/retry and actual renderer compilation required. |
+
+The unique ledger owner is `TDRP-R9-SHARE-FORWARD-PRIVACY-001`; both exact
+phrase-factory source reviews remain pending for Saved/self/premium/navigation
+and complete responsibility closure. No new message authority or data migration.
+The earlier pointer-bridge production fix is `7d57aa4393c4f6c13bc6129255e2bec8173ed5ed`,
+run41531186027; jobs were queued with no steps at preparation, not passed.
+Bounded changes, exact inputs, causal old failures and subsequent execution:
+`projects/telegram-desktop-rust/evidence/round30-forward-recovery-qualification.json`.
+Real services, full source/legal/platform/Bot/quality and independent ACCEPT/release
+remain open; Backend PR137 is read-only.

@@ -1139,9 +1139,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     });
   }, [client]);
 
-  const settleForward = useCallback((settlement: readonly ForwardSettlement[], accountScopeGeneration: number) => {
+  const settleForward = useCallback((settlement: readonly ForwardSettlement[], accountScopeGeneration: number, recipientNames: ReadonlyMap<string, string>) => {
     void settleForwardProjection({
-      settlement, accountScopeGeneration, isAccountScopeCurrent: isForwardAccountScopeCurrent, setNotice,
+      settlement, recipientNames, accountScopeGeneration, isAccountScopeCurrent: isForwardAccountScopeCurrent, setNotice,
       readRoster: client == null ? null : () => client.call("listHumanConversations"),
       applyRoster: (value) => {
         const projected = projectHumanConversations(value);
@@ -3373,6 +3373,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const identityChanged = accountIdentityRef.current != null && accountIdentityRef.current !== identity;
       if (accountIdentityRef.current !== identity) {
         accountScopeGenerationRef.current += 1;
+        // Notices may contain destination names from the retired account.
+        setNotice(null);
         submissionScopesRef.current.clear();
         // Invalidate approval cleanup before completing abandoned queue work.
         // Host requests already in flight retain their own durable settlement.

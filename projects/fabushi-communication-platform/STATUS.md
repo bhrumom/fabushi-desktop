@@ -6,6 +6,33 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
+## Round30 — forward feedback and recovery qualification
+
+The actual pointer bridge and ordinary mouse-path regression are committed at
+`7d57aa4393c4f6c13bc6129255e2bec8173ed5ed` (run41531186027). Its jobs were still
+queued with empty steps at this preparation, so no execution pass is claimed.
+Historical9b9/run41528369271 executed Human63/creation12/storage3/journal12 and
+Social10/9/6 successfully; UI10/11 failed because its test hovered row whitespace.
+The parallel anchor-hover correction is retained. Newer creation14 real external
+SQLite writer/WAL controls and Human67 have separate containing-H requirements.
+
+The current authored forwarding batch reuses existing dialog, renderer, composer
+and Session owners. It freezes selected destination labels with the first intent,
+preserves them across search hiding and retry, shows named one/two-target success
+only after validated settlement, retains honest failure/count feedback, and clears
+notices across account changes. Names never enter service requests or durable
+messages. Actual renderer account/late-reply cases and existing dialog behavior
+checks are authored: settlement9/dialog17/renderer13, not yet executed.
+
+Source/ledger/RTM stay canonical; pending phrase-factory Saved/self/premium and
+navigation obligations are retained. No Bot/Agent/Host/Runner/Tools/approval,
+Plugins/MCP/Computer/Automations capability is replaced. Full source/legal, real
+Native service deployment/authenticated pagination, signed platform packages,
+UI/a11y/performance/soak/upgrade/rollback/Bot, independent ACCEPT and release remain
+blocked. Backend PR137 remains open/draft/unmerged and read-only.
+Receipt: `projects/telegram-desktop-rust/evidence/round30-forward-recovery-qualification.json`.
+
+
 ## Round 20 peer mutation boundary — NMR-PEER-DURABILITY-01
 
 The fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
