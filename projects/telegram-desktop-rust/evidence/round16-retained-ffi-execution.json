@@ -2873,5 +2873,3220 @@
     "visual_a11y_timing_security_performance_soak_upgrade_rollback_accepted": false,
     "independent_ACCEPT": false
   },
-  "ledger_record_scope": "Add execution evidence only to the two existing responsibilities. Preserve authored-not-run-at-preparation history as history; keep primary Human six-field binding at its last independently qualified batch until a later qualified tuple is read. No root/status/source review or acceptance transition."
+  "ledger_record_scope": "Add execution evidence only to the two existing responsibilities. Preserve authored-not-run-at-preparation history as history; keep primary Human six-field binding at its last independently qualified batch until a later qualified tuple is read. No root/status/source review or acceptance transition.",
+ "canonical_execution_publication": {
+  "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+  "parent": "6263e675933e99efebbbaf08b0eb55817e15b3ef",
+  "tree": "1e938c6d9dbd681bffaab6f31e282ce79c365b1f",
+  "force": false,
+  "expected_sha": "6263e675933e99efebbbaf08b0eb55817e15b3ef",
+  "commit_verified": true,
+  "paths": [
+   {
+    "path": "projects/telegram-desktop-rust/parity-ledger.json",
+    "blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+    "full_content_verified": true
+   },
+   {
+    "path": "projects/telegram-desktop-rust/evidence/round16-native-execution.json",
+    "blob": "e0884d07b37eb176971044ff8fa0633320ff6360",
+    "full_content_verified": true
+   }
+  ],
+  "ledger_delta": {
+   "input": "0a1b4387538129e45ecaca86dab55727f08cb772",
+   "output": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+   "run": 41526396892,
+   "job": 125555120901,
+   "attempt": 1,
+   "root_api_full_content_verified": true,
+   "root_two_appends_only": true,
+   "transport_terminal_success_not_yet_claimed": false,
+   "transport_terminal_success_verified_by_independent_reader": true
+  },
+  "runs": [
+   {
+    "id": 41526808382,
+    "name": "Round16 exact ledger object",
+    "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "status": "queued",
+    "conclusion": null,
+    "attempt": 1
+   },
+   {
+    "id": 41526808527,
+    "name": "TDRP source review contract",
+    "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "status": "queued",
+    "conclusion": null,
+    "attempt": 1
+   },
+   {
+    "id": 41526808425,
+    "name": "Round25 native response ledger object",
+    "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "status": "queued",
+    "conclusion": null,
+    "attempt": 1
+   },
+   {
+    "id": 41526808394,
+    "name": "Round10 scoped ledger object",
+    "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "status": "in_progress",
+    "conclusion": null,
+    "attempt": 1
+   },
+   {
+    "id": 41526808481,
+    "name": "Round8 renderer ledger object",
+    "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "status": "in_progress",
+    "conclusion": null,
+    "attempt": 1
+   },
+   {
+    "id": 41526808401,
+    "name": "Round15 retained-store ledger object",
+    "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "status": "in_progress",
+    "conclusion": null,
+    "attempt": 1
+   },
+   {
+    "id": 41526808504,
+    "name": "Peer durability scoped object preparation",
+    "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "status": "in_progress",
+    "conclusion": null,
+    "attempt": 1
+   }
+  ],
+  "verified": true,
+  "source_run": {
+   "id": 41526808527,
+   "H": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+   "attempt": 1,
+   "status": "completed",
+   "conclusion": "success",
+   "node_passed": 158,
+   "schema_passed": 37,
+   "canonical_schema_errors": 0,
+   "source_accepted": false
+  },
+  "closing_retention": {
+   "H": "441425cd65a661f95d8b629c388281c77115d2b2",
+   "ffi_job_block_preserved": true,
+   "ffi_test_blob_preserved": true,
+   "current_ledger_blob": "2364fe3b43be1d07fbf576e674191044397bbcb2",
+   "native_receipt_preserved": true,
+   "execution_entries_preserved": true
+  },
+  "backend_readonly": {
+   "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+   "base": "687718ce9e0083aa124d29005bcce4051d357919",
+   "state": "open",
+   "draft": true,
+   "merged": false
+  }
+ },
+ "canonical_source_execution": {
+  "format": "ROUND16_FINAL_CANONICAL_SOURCE_EXECUTION_V1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 16,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "observed_at": "2026-11-02 21:18:30 UTC",
+  "scope": "Independent read-only audit of final canonical integration808de595 and its own exact-H source/schema/candidate Actions. Remote commit,parent,tree,ledger input/output binding, complete terminal job logs and complete artifact ZIPs were read. No prior-H or same-parent CI result is substituted.",
+  "verdict": "EXACT_808_SOURCE_CONTRACT_AND_CANDIDATE_CONSISTENCY_PASSED_WITH_ACCEPTANCE_BLOCKED",
+  "blocking_findings": [],
+  "commit": {
+   "head": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+   "parents": [
+    "6263e675933e99efebbbaf08b0eb55817e15b3ef"
+   ],
+   "tree": "1e938c6d9dbd681bffaab6f31e282ce79c365b1f",
+   "api_verified": true,
+   "changed_paths": [
+    {
+     "path": "projects/telegram-desktop-rust/evidence/round16-native-execution.json",
+     "blob": "e0884d07b37eb176971044ff8fa0633320ff6360",
+     "status": "added"
+    },
+    {
+     "path": "projects/telegram-desktop-rust/parity-ledger.json",
+     "blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+     "status": "modified"
+    }
+   ],
+   "parent_canonical_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+   "committed_canonical_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+   "parent_expected": "6263e675933e99efebbbaf08b0eb55817e15b3ef",
+   "tree_expected": "1e938c6d9dbd681bffaab6f31e282ce79c365b1f"
+  },
+  "canonical_delta": {
+   "input_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+   "output_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+   "full_api_content_hashes": {
+    "nextInputRaw": {
+     "bytes": 3636124,
+     "git_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+     "expected": "0a1b4387538129e45ecaca86dab55727f08cb772",
+     "matches": true
+    },
+    "nextOutputRaw": {
+     "bytes": 3637745,
+     "git_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+     "expected": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+     "matches": true
+    },
+    "nextInputOps": {
+     "bytes": 20075,
+     "git_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "expected": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "matches": true
+    }
+   },
+   "semantic_comparison": {
+    "exact_expected_output_bytes": true,
+    "changes": [
+     {
+      "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+      "fields": [
+       "test_execution_evidence"
+      ],
+      "new_execution": [
+       "exact:e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e:run41519264825:attempt1:job125531715469:Coordinator source and binary completed/success. Actual arm64 Mach-O12084688bytes sha256:cc62c0454b36afd5fb12e6b288f04c9f5ab9e6a700893dd1849903846ddf1c17; production protocol1, HTTPS1 and health-recovery4 passed; dependency/symbol/library negatives and _main passed. Artifact13177226856 and full ZIP/log independently read. Later explicit SDK inventory and remaining Box/Go/current-H package gates are not covered. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. This bounded existing-producer evidence does not advance source/legal/full-product or independent acceptance."
+      ]
+     },
+     {
+      "id": "FBCP-NMR-001",
+      "fields": [
+       "test_execution_evidence"
+      ],
+      "new_execution": [
+       "exact:9329aced33343e8e356ba34dfd0f474f3e767914:run41523624057:attempt1:job125545613103:retained-direct-ffi-compatibility:completed/success. Actual runtime_ffi target15 passed/0 failed/1 ignored, all five exported_c_* cases passed; existing live Telegram DC case remains explicitly ignored. Locked input and original11 cases preserved. Artifact13179096257 sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661; full log sha256:d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233. Source gate41523623907 success Node157/Schema37/errors0, unaccepted candidate remains unaccepted. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. These in-process C-wrapper/synthetic-store results do not qualify AppHost C ABI7, final shared/static library, installed external consumer, real user migration, live service, other pending native jobs or full ACCEPT."
+      ]
+     }
+    ],
+    "rows_before": 184,
+    "rows_after": 184,
+    "row_order_preserved": true,
+    "source_reviews_count": 6,
+    "source_reviews_preserved": true,
+    "all_non_rows_root_fields_identical": true,
+    "all_other_rows_unchanged": true,
+    "all_source_status_acceptance_and_notes_preserved": true,
+    "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "scalar_conflicts": [],
+    "actual_removed_items": []
+   },
+   "new_execution_string_occurrences": [
+    {
+     "responsibility_id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+     "count": 1
+    },
+    {
+     "responsibility_id": "FBCP-NMR-001",
+     "count": 1
+    }
+   ],
+   "binding": "The independently rehashed immutable raw input/output used by the selected c368 transport are now separately bound by GitHub API to the parent and child canonical paths. Only two execution arrays gained one item each; all current owner/source/status/acceptance content remains unchanged."
+  },
+  "workflow": {
+   "path": ".github/workflows/tdrp-source-review-contract.yml",
+   "blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+   "exact_checkout": true
+  },
+  "run": {
+   "id": 41526808527,
+   "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+   "run_attempt": 1,
+   "status": "completed",
+   "conclusion": "success",
+   "path": ".github/workflows/tdrp-source-review-contract.yml",
+   "created_at": "2026-11-02T21:16:19Z",
+   "updated_at": "2026-11-02T21:17:54Z",
+   "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526808527"
+  },
+  "jobs": [
+   {
+    "id": 125556533680,
+    "name": "contract",
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 41526808527,
+    "logs_url": null,
+    "steps": [
+     {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+     },
+     {
+      "name": "Run actions/checkout@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+     },
+     {
+      "name": "Bind exact source",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+     },
+     {
+      "name": "Run actions/setup-node@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+     },
+     {
+      "name": "Exact source relation and frozen upstream contracts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+     },
+     {
+      "name": "Run actions/setup-python@v5",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+     },
+     {
+      "name": "Validate schema behavior with pinned validator",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7
+     },
+     {
+      "name": "Check current ledger shape without granting source acceptance",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8
+     },
+     {
+      "name": "Run node --check scripts/validate-tdrp-revision9-authority.mjs",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 9
+     },
+     {
+      "name": "Preserve exact checker evidence",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 10
+     },
+     {
+      "name": "Post Run actions/setup-python@v5",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 18
+     },
+     {
+      "name": "Post Run actions/setup-node@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 19
+     },
+     {
+      "name": "Post Run actions/checkout@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 20
+     },
+     {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 21
+     }
+    ]
+   },
+   {
+    "id": 125556959979,
+    "name": "fixed-source-candidate",
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 41526808527,
+    "logs_url": null,
+    "steps": [
+     {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+     },
+     {
+      "name": "Run actions/checkout@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+     },
+     {
+      "name": "Bind exact candidate source",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+     },
+     {
+      "name": "Run actions/setup-node@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+     },
+     {
+      "name": "Run actions/setup-python@v5",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+     },
+     {
+      "name": "Read the two immutable evidence artifacts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+     },
+     {
+      "name": "Recover complete pinned Git evidence at this H",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7
+     },
+     {
+      "name": "Recover complete pinned build-input observations at this H",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8
+     },
+     {
+      "name": "Check actual complete inventory and current candidate records",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 9
+     },
+     {
+      "name": "Prove open candidates cannot enter accepted mode",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 10
+     },
+     {
+      "name": "Preserve candidate consistency and rejection evidence",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 11
+     },
+     {
+      "name": "Post Run actions/setup-python@v5",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 20
+     },
+     {
+      "name": "Post Run actions/setup-node@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 21
+     },
+     {
+      "name": "Post Run actions/checkout@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 22
+     },
+     {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 23
+     }
+    ]
+   }
+  ],
+  "actual_results": {
+   "node": {
+    "tests": 158,
+    "passed": 158,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "observed_from": "Exact808 artifact contracts.log and full contract job log",
+    "specific_existing_gates": [
+     "authority CLI enforces actual acquisition closure before later checks or network access",
+     "focused candidate CLI rejects local execution before reading inputs"
+    ]
+   },
+   "schema": {
+    "tests": 37,
+    "passed": 37,
+    "failed": 0,
+    "observed_from": "Exact808 schema.log: Ran37 tests / OK"
+   },
+   "canonical_schema": {
+    "valid": true,
+    "source_accepted": false,
+    "errors": []
+   },
+   "candidate_report": {
+    "status": "unaccepted-candidate-consistent",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "source_entries_total": 16381,
+    "root_source_entries_total": 6895,
+    "responsibility_rows": 184,
+    "authored_source_review_records": 6,
+    "completed_source_review_records": 2,
+    "unknown": null,
+    "unread": null,
+    "lexical_observations": 333,
+    "counts_by_scope": {
+     "pinned-cmake-component": 2,
+     "legacy-root-paths": 331
+    },
+    "text_files_read": 203,
+    "opaque_inputs_unread": 2,
+    "unresolved_ref_observations": 76,
+    "baseline_accepted": false,
+    "source_closure_ready": false,
+    "product_accepted": false,
+    "independent_acceptance": false,
+    "target_commit": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "reused_git_artifact": {
+     "repository": "bhrumom/fabushi-desktop",
+     "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+     "artifact_id": 13118749668,
+     "run_id": 41397005716,
+     "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+    },
+    "reused_build_input_artifact": {
+     "repository": "bhrumom/fabushi-desktop",
+     "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+     "artifact_id": 13121721589,
+     "run_id": 41401970993,
+     "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+    }
+   },
+   "accepted_mode_negative": {
+    "executed": true,
+    "rejected": true,
+    "exact_error": "Error: accepted source accounting cannot contain a rebaseline candidate",
+    "full_output": "file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/tdrp-source-review.mjs:31\n    throw Error('accepted source accounting cannot contain a rebaseline candidate');\n          ^\n\nError: accepted source accounting cannot contain a rebaseline candidate\n    at assertNoOpenSourceCandidate (file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/tdrp-source-review.mjs:31:11)\n    at file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/validate-tdrp-revision9-authority.mjs:69:22\n\nNode.js v22.23.4\n"
+   }
+  },
+  "artifacts": [
+   {
+    "id": 13180536168,
+    "name": "tdrp-source-candidate-808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "size_in_bytes": 79137,
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180536168",
+    "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180536168/zip",
+    "expired": false,
+    "created_at": "2026-11-02T21:17:50Z",
+    "expires_at": "2027-01-31T21:16:20Z",
+    "updated_at": "2026-11-02T21:17:50Z",
+    "digest": "sha256:8bb10c2c8e6c58cdab454b4a19f39bac1945092beeb2dc7d992fb941839dd11a",
+    "workflow_run": {
+     "id": 41526808527,
+     "repository_id": 1375312893,
+     "head_repository_id": 1375312893,
+     "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+     "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800"
+    },
+    "downloaded_complete": true,
+    "digest_matches": true
+   },
+   {
+    "id": 13179902859,
+    "name": "tdrp-source-review-contract-808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "size_in_bytes": 6826,
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179902859",
+    "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179902859/zip",
+    "expired": false,
+    "created_at": "2026-11-02T21:17:01Z",
+    "expires_at": "2027-01-31T21:16:20Z",
+    "updated_at": "2026-11-02T21:17:01Z",
+    "digest": "sha256:91cc169f6782722a8227b1ef20c8db142780caa54ac24ebd192b8bcc3219e344",
+    "workflow_run": {
+     "id": 41526808527,
+     "repository_id": 1375312893,
+     "head_repository_id": 1375312893,
+     "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+     "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800"
+    },
+    "downloaded_complete": true,
+    "digest_matches": true
+   }
+  ],
+  "artifact_integrity": {
+   "contract": {
+    "archive_bytes": 6826,
+    "archive_sha256": "91cc169f6782722a8227b1ef20c8db142780caa54ac24ebd192b8bcc3219e344",
+    "entries": [
+     {
+      "name": "contracts.log",
+      "bytes": 30651,
+      "sha256": "6f48d126b4873b33c7c0ce6083ec6064643c315eeeb67e1fa7b33961c800fcbc"
+     },
+     {
+      "name": "python-dependencies.txt",
+      "bytes": 133,
+      "sha256": "e1a9ff0400f49d71158bb0657d7a7263c847f464a317c0d4fe1bb73311925462"
+     },
+     {
+      "name": "ledger-schema.json",
+      "bytes": 64,
+      "sha256": "f885fcb8b17eb7861dd54188036229950d796e15db2c82e5a088f06264fd1093"
+     },
+     {
+      "name": "schema.log",
+      "bytes": 6469,
+      "sha256": "15c804d1f81fc05551a468a3551ba353fde6250e20c4319a8bf1799f38011da1"
+     },
+     {
+      "name": "target-sha.txt",
+      "bytes": 41,
+      "sha256": "fe1742e507396cc7e901e22ee471731709ce3c1ac9eb0976f20f5f804b7d93cc"
+     }
+    ],
+    "target_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "ledger_schema": {
+     "valid": true,
+     "source_accepted": false,
+     "errors": []
+    },
+    "node_summary": [
+     "# tests 158",
+     "# pass 158",
+     "# fail 0",
+     "# cancelled 0",
+     "# skipped 0",
+     "# todo 0"
+    ],
+    "node_failures": [],
+    "schema_summary": [
+     "",
+     "----------------------------------------------------------------------",
+     "Ran 37 tests in 0.141s",
+     "",
+     "OK"
+    ],
+    "schema_cases": 37,
+    "python_dependencies": "attrs==26.1.0\njsonschema==4.25.1\njsonschema-specifications==2025.9.1\nreferencing==0.37.0\nrpds-py==2026.9.1\ntyping_extensions==4.16.0\n"
+   },
+   "candidate": {
+    "archive_bytes": 79137,
+    "archive_sha256": "8bb10c2c8e6c58cdab454b4a19f39bac1945092beeb2dc7d992fb941839dd11a",
+    "entries": [
+     {
+      "name": "source-candidate/accepted.log",
+      "bytes": 526,
+      "sha256": "b953b2e603c9bc680407ad3febfed7c56a4009b089b4c3191c4f552fef2469c9"
+     },
+     {
+      "name": "source-candidate/export-recovery.log",
+      "bytes": 47122,
+      "sha256": "b486b64dc4d9dbf12e592b144c5a9943b473b7510a92eb5b7e3aa489648025c8"
+     },
+     {
+      "name": "source-candidate/candidate.log",
+      "bytes": 1144,
+      "sha256": "d474622100d1047d837eba7750547bf8757a22b60983afbef85de586ad7015af"
+     },
+     {
+      "name": "source-candidate/git-recovery.log",
+      "bytes": 47140,
+      "sha256": "66547069262ce6821a386f9d860395b3b488a596ac2ce7692348177917a02ace"
+     },
+     {
+      "name": "source-candidate/report.json",
+      "bytes": 1310,
+      "sha256": "fc8834e36a47a7740416046f026dbc2f53e6db4927ac5be8183f92c860e23a3d"
+     },
+     {
+      "name": "source-candidate/target-sha.txt",
+      "bytes": 41,
+      "sha256": "fe1742e507396cc7e901e22ee471731709ce3c1ac9eb0976f20f5f804b7d93cc"
+     },
+     {
+      "name": "candidate-git/index.json",
+      "bytes": 101312,
+      "sha256": "94042b3a8e23ae2bb35b8db82e61e294d2e83bfd95417e059a055b14eaa36af4"
+     },
+     {
+      "name": "candidate-git/metadata.json",
+      "bytes": 784,
+      "sha256": "af0482f1b1d5b07afb2b5891be8dda876b936ec84cff0a2c94ca2757e3d73875"
+     },
+     {
+      "name": "candidate-export/index.json",
+      "bytes": 401968,
+      "sha256": "9c8abc073ada62fae634195a3f1338e4817c31d7d410916201e81df3f5a912f2"
+     },
+     {
+      "name": "candidate-export/metadata.json",
+      "bytes": 784,
+      "sha256": "94dadccda9452b11905bbad665b08662b0ef4552eab833efca682c0d77e76159"
+     }
+    ],
+    "target_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+    "candidate_report": {
+     "status": "unaccepted-candidate-consistent",
+     "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+     "source_entries_total": 16381,
+     "root_source_entries_total": 6895,
+     "responsibility_rows": 184,
+     "authored_source_review_records": 6,
+     "completed_source_review_records": 2,
+     "unknown": null,
+     "unread": null,
+     "lexical_observations": 333,
+     "counts_by_scope": {
+      "pinned-cmake-component": 2,
+      "legacy-root-paths": 331
+     },
+     "text_files_read": 203,
+     "opaque_inputs_unread": 2,
+     "unresolved_ref_observations": 76,
+     "baseline_accepted": false,
+     "source_closure_ready": false,
+     "product_accepted": false,
+     "independent_acceptance": false,
+     "target_commit": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+     "reused_git_artifact": {
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+      "artifact_id": 13118749668,
+      "run_id": 41397005716,
+      "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+     },
+     "reused_build_input_artifact": {
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+      "artifact_id": 13121721589,
+      "run_id": 41401970993,
+      "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+     }
+    },
+    "accepted_negative_full_output": "file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/tdrp-source-review.mjs:31\n    throw Error('accepted source accounting cannot contain a rebaseline candidate');\n          ^\n\nError: accepted source accounting cannot contain a rebaseline candidate\n    at assertNoOpenSourceCandidate (file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/tdrp-source-review.mjs:31:11)\n    at file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/validate-tdrp-revision9-authority.mjs:69:22\n\nNode.js v22.23.4\n",
+    "recoveries": {
+     "candidate-git": {
+      "schema": "tdrp-protocol-artifact-recovery/v1",
+      "complete": true,
+      "expected": {
+       "artifact_id": 13118749668,
+       "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+       "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+       "repository": "bhrumom/fabushi-desktop",
+       "run_id": 41397005716
+      },
+      "archive": {
+       "bytes": 4582365,
+       "complete": true,
+       "path": "artifact.zip",
+       "sha256": "77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+       "verified": true
+      },
+      "completed_members": 137,
+      "declared_uncompressed_bytes": 29681262,
+      "uncompressed_bytes_read": 29681262,
+      "recovery_execution": {
+       "GITHUB_REPOSITORY": "bhrumom/fabushi-desktop",
+       "GITHUB_RUN_ATTEMPT": "1",
+       "GITHUB_RUN_ID": "41526808527",
+       "GITHUB_SHA": "808de59594d0b2d5d9fa9f4421f135bf96908800"
+      },
+      "member_count": 137
+     },
+     "candidate-export": {
+      "schema": "tdrp-protocol-artifact-recovery/v1",
+      "complete": true,
+      "expected": {
+       "artifact_id": 13121721589,
+       "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+       "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+       "repository": "bhrumom/fabushi-desktop",
+       "run_id": 41401970993
+      },
+      "archive": {
+       "bytes": 9756692,
+       "complete": true,
+       "path": "artifact.zip",
+       "sha256": "7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+       "verified": true
+      },
+      "completed_members": 486,
+      "declared_uncompressed_bytes": 37553682,
+      "uncompressed_bytes_read": 37553682,
+      "recovery_execution": {
+       "GITHUB_REPOSITORY": "bhrumom/fabushi-desktop",
+       "GITHUB_RUN_ATTEMPT": "1",
+       "GITHUB_RUN_ID": "41526808527",
+       "GITHUB_SHA": "808de59594d0b2d5d9fa9f4421f135bf96908800"
+      },
+      "member_count": 486
+     }
+    }
+   }
+  },
+  "complete_job_logs": [
+   {
+    "path": "round16-final-canonical-source/contract/job-125556533680-full.log",
+    "bytes": 90252,
+    "sha256": "e6b80f199cb629d630ace6d1ec36d16e9fc0a01e4ab082b8ba07ec47e9459eb5",
+    "git_blob": "b1bc39491626452c3b407a951df0eda7ba311dc3"
+   },
+   {
+    "path": "round16-final-canonical-source/candidate/job-125556959979-full.log",
+    "bytes": 146049,
+    "sha256": "9b0ac8ae0474cd79763487c62367d9b6d1e46cc887e3fd51c63daa5e82036b6f",
+    "git_blob": "4545c4f8aff534b3deb9224554e43875a4cdf34f"
+   }
+  ],
+  "source_identities": [
+   {
+    "path": "round16-final-canonical-source/source/parity-ledger.schema.json",
+    "bytes": 34792,
+    "sha256": "dcaab70fd699b6e605de5ed0024c8cf506f5d746ebdbb3a2915a3865b18696d5",
+    "git_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae"
+   },
+   {
+    "path": "round16-final-canonical-source/source/upstream.lock.json",
+    "bytes": 33202,
+    "sha256": "6a8b907f78ad41ff8f8abbe176a2cf37e0051119bbc3bbf93e36861f1cd03038",
+    "git_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e"
+   },
+   {
+    "path": "round16-final-canonical-source/source/validate-tdrp-source-candidate.mjs",
+    "bytes": 11203,
+    "sha256": "98cce2a59c92c0e615065ee334762bdf9c4d2fbe62845136c7196dc52a51041e",
+    "git_blob": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0"
+   },
+   {
+    "path": "round16-final-canonical-source/source/workflow.yml",
+    "bytes": 8716,
+    "sha256": "c6367def37165b56e6e57122b036341a3236fb545ff8f6be64d6bf1b3229fbae",
+    "git_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5"
+   }
+  ],
+  "FMEP_SOURCE_01": {
+   "present_in_current_schema": true,
+   "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+   "contract": {
+    "type": "array",
+    "description": "FMEP-SOURCE-01 exact identity review records; required by final acceptance, optional for historical candidates.",
+    "items": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "repository",
+      "commit",
+      "path",
+      "object",
+      "category",
+      "risk",
+      "review_depth",
+      "status",
+      "rationale",
+      "evidence",
+      "responsibility_ids"
+     ],
+     "properties": {
+      "repository": {
+       "$ref": "#/$defs/nonEmpty"
+      },
+      "commit": {
+       "$ref": "#/$defs/gitOid"
+      },
+      "path": {
+       "$ref": "#/$defs/nonEmpty"
+      },
+      "object": {
+       "$ref": "#/$defs/gitOid"
+      },
+      "rationale": {
+       "$ref": "#/$defs/nonEmpty"
+      },
+      "category": {
+       "enum": [
+        "product",
+        "mixed-ui",
+        "generated",
+        "dependency",
+        "resource",
+        "documentation",
+        "tooling"
+       ]
+      },
+      "risk": {
+       "enum": [
+        "low",
+        "medium",
+        "high"
+       ]
+      },
+      "review_depth": {
+       "enum": [
+        "deep",
+        "contract",
+        "disposition"
+       ]
+      },
+      "status": {
+       "enum": [
+        "pending",
+        "complete"
+       ]
+      },
+      "evidence": {
+       "type": "array",
+       "items": {
+        "$ref": "#/$defs/nonEmpty"
+       },
+       "uniqueItems": true
+      },
+      "responsibility_ids": {
+       "type": "array",
+       "items": {
+        "$ref": "#/$defs/nonEmpty"
+       },
+       "uniqueItems": true
+      }
+     },
+     "allOf": [
+      {
+       "if": {
+        "properties": {
+         "status": {
+          "const": "complete"
+         }
+        }
+       },
+       "then": {
+        "properties": {
+         "evidence": {
+          "minItems": 1
+         }
+        },
+        "allOf": [
+         {
+          "if": {
+           "properties": {
+            "category": {
+             "enum": [
+              "product",
+              "mixed-ui"
+             ]
+            }
+           }
+          },
+          "then": {
+           "properties": {
+            "review_depth": {
+             "const": "deep"
+            },
+            "responsibility_ids": {
+             "minItems": 1
+            }
+           }
+          }
+         },
+         {
+          "if": {
+           "properties": {
+            "risk": {
+             "const": "high"
+            }
+           }
+          },
+          "then": {
+           "properties": {
+            "review_depth": {
+             "const": "deep"
+            }
+           }
+          }
+         },
+         {
+          "if": {
+           "properties": {
+            "category": {
+             "enum": [
+              "generated",
+              "dependency"
+             ]
+            }
+           }
+          },
+          "then": {
+           "properties": {
+            "review_depth": {
+             "enum": [
+              "deep",
+              "contract"
+             ]
+            }
+           }
+          }
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "complete_product_mixed_ui_requires_deep_and_responsibility": true,
+   "complete_high_risk_requires_deep": true,
+   "complete_generated_dependency_requires_deep_or_contract": true,
+   "no_source_or_acceptance_promotion": true
+  },
+  "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "upstream_lock_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+  "automatic_transport_observation": {
+   "run": 41526808382,
+   "head": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+   "attempt": 1,
+   "status": "completed",
+   "conclusion": "success",
+   "scope": "Unattached ledger object only; metadata observation, not product or source-validation evidence."
+  },
+  "scope_limits": [
+   "This is the actual final integration H808 source workflow, not inherited9329 or other parent evidence. Node158 is the measured count; old157 is not relabeled.",
+   "Node and Schema checks are source/governance validation, not product capability progress. Source remains an unaccepted candidate with unknown/unread null, two opaque inputs unread,76 unresolved reference observations and incomplete source/legal closure.",
+   "Source-checker success, candidate consistency and the successful accepted-mode rejection do not grant baseline, source, product, package, live-service or independent acceptance.",
+   "Automatic ledger transport is an unattached-object/data integrity workflow. Its success is separately recorded only as metadata and is not a product test result.",
+   "Existing native/FFI/runtime results remain bound to their own exact commit, job and artifact. This audit does not qualify later production code, real user migration, an installed external loader or an overall shipping release."
+  ],
+  "no_failures_found_in_this_source_run": true,
+  "source_acceptance": false,
+  "product_acceptance": false,
+  "independent_acceptance": false,
+  "github_mutations": [],
+  "workflows_dispatched_or_rerun": false,
+  "local_repository_tests_builds_or_validators_executed": false,
+  "product_execution": false,
+  "original_user_data_or_credentials_accessed": false,
+  "backend_accessed": false,
+  "allowed_local_operations": "Read text/JSON/logs, compare exact data, compute byte hashes, download connector-issued ZIPs and safely extract evidence only. No repository scripts or binaries were executed.",
+  "evidence_directory": "/workspace/scratch/049bfe5e4966/round16-final-canonical-source"
+ },
+ "canonical_ledger_transport_history": {
+  "format": "ROUND16_EXECUTION_LEDGER_TRANSPORT_V1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 16,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "observed_at": "2026-11-02 21:15:39 UTC",
+  "scope": "Read-only full-log/ZIP/receipt/API raw blob and scoped data-integrity audit of the automatically triggered execution-evidence transport. No dispatch, rerun, GitHub write, repository validator, build, product execution or original user-data access.",
+  "requested_publication": {
+   "head": "c9a57c53bce6b5b8022a87ac794b4cd5d91e3134",
+   "parent": "6832cb4d3d056a5d26454098b426c57d5a1055b9",
+   "tree": "d9c883a1aaed38da22347c5e2a87a915ff88f769",
+   "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+   "harness_blob": "704fa5d6a332df2c3d4d420199f9301931e0e593",
+   "canonical_input_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+   "remote_commit_tree_binding_verified": true,
+   "changed_paths": [
+    {
+     "path": ".github/checkpoint-ledger-ops-round16.json",
+     "sha": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "status": "modified"
+    },
+    {
+     "path": "projects/telegram-desktop-rust/evidence/round16-execution-append-review.json",
+     "sha": "67a0b62369ba0de1db5e92b0e47b399a1db26a60",
+     "status": "added"
+    },
+    {
+     "path": "projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json",
+     "sha": "befb4d8675d2d7d345b88c703614790e08d48523",
+     "status": "added"
+    }
+   ]
+  },
+  "selected": {
+   "run": {
+    "id": 41526396892,
+    "head_sha": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+    "run_attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "path": ".github/workflows/checkpoint-ledger-object-round16.yml",
+    "created_at": "2026-11-02T21:13:40Z",
+    "updated_at": "2026-11-02T21:15:37Z",
+    "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526396892"
+   },
+   "job": {
+    "id": 125555120901,
+    "name": "prepare-ledger-object",
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 41526396892,
+    "logs_url": null,
+    "steps": [
+     {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+     },
+     {
+      "name": "Run actions/checkout@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+     },
+     {
+      "name": "Run actions/setup-node@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+     },
+     {
+      "name": "Merge only the frozen delta at this exact checkout",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+     },
+     {
+      "name": "Create only the unattached Git blob",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+     },
+     {
+      "name": "Preserve object identity for root CAS readback",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+     },
+     {
+      "name": "Post Run actions/setup-node@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 11
+     },
+     {
+      "name": "Post Run actions/checkout@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 12
+     },
+     {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 13
+     }
+    ]
+   },
+   "commit": {
+    "head": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+    "parents": [
+     "3949d54a79c9e22710ce8f66abea0aaf05908174"
+    ],
+    "tree": "1ec0089b8d3894c6ba7906eaf238a3158a242879"
+   },
+   "input_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+   "output_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+   "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+   "harness_blob": "704fa5d6a332df2c3d4d420199f9301931e0e593",
+   "api_raw_content_hashes": {
+    "nextInputRaw": {
+     "bytes": 3636124,
+     "git_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+     "expected": "0a1b4387538129e45ecaca86dab55727f08cb772",
+     "matches": true
+    },
+    "nextOutputRaw": {
+     "bytes": 3637745,
+     "git_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+     "expected": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+     "matches": true
+    },
+    "nextInputOps": {
+     "bytes": 20075,
+     "git_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "expected": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "matches": true
+    }
+   },
+   "api_output_matches_frozen_delta_byte_for_byte": true,
+   "full_log": {
+    "path": "round16-execution-ledger-transport/c368/job-125555120901-full.log",
+    "bytes": 28730,
+    "sha256": "0da17d14fc97f1e90dac395dbf07cee434079d8f3d6f322d1c4f0517fe387ec9",
+    "git_blob": "7aa8b40c1e5488330c2a7b11280a8fb839c934ce"
+   },
+   "artifact_metadata": {
+    "id": 13179244336,
+    "name": "round16-ledger-object-c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+    "size_in_bytes": 551392,
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179244336",
+    "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179244336/zip",
+    "expired": false,
+    "created_at": "2026-11-02T21:14:33Z",
+    "expires_at": "2027-01-31T21:13:40Z",
+    "updated_at": "2026-11-02T21:14:33Z",
+    "digest": "sha256:0ccfb3e38ff20f8015cd5519bef7e07f2be551109d46721b270ebfa290c5774b",
+    "workflow_run": {
+     "id": 41526396892,
+     "repository_id": 1375312893,
+     "head_repository_id": 1375312893,
+     "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+     "head_sha": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76"
+    }
+   },
+   "archive_integrity": {
+    "archive_bytes": 551392,
+    "archive_sha256": "0ccfb3e38ff20f8015cd5519bef7e07f2be551109d46721b270ebfa290c5774b",
+    "entries": [
+     {
+      "name": "github-blob.json",
+      "bytes": 162,
+      "sha256": "4cbafce7bec2b1f9bd6910de30d142912c7a07d2fa75eeef54ba5c646c52a42f",
+      "git_blob": "3e2dee6e7e3d8867bdd6025b1453d1bcc7c00d2d"
+     },
+     {
+      "name": "prepared-ledger.json",
+      "bytes": 3637745,
+      "sha256": "1e43bc47b97fb17acc1cf633cb31f6a1f3bfb089095d71fb7fb8c0c0d7c62e42",
+      "git_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568"
+     },
+     {
+      "name": "receipt.json",
+      "bytes": 767,
+      "sha256": "ad4ec1753e16297ca43b92f800a24d2a98aed4dc5957362c2948c79d3de07883",
+      "git_blob": "9e6330083ac80b96626473a8c209c2f0dbb3f1a1"
+     }
+    ],
+    "receipt": {
+     "harness_sha": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+     "input_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+     "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "reviewed_delta_base_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+     "output_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+     "output_sha256": "1e43bc47b97fb17acc1cf633cb31f6a1f3bfb089095d71fb7fb8c0c0d7c62e42",
+     "changed_rows": [
+      "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+      "FBCP-NMR-001"
+     ],
+     "product_validation": false,
+     "source_acceptance": false,
+     "commit_created": false,
+     "ref_updated": false,
+     "integration_condition": "Root API reads input/output, verifies scoped delta and current canonical input equality, then force=false expected-head CAS."
+    },
+    "github_blob": {
+     "sha": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+     "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/ad5e0b28add4e6bd99b3ec6036f0984595de2568"
+    }
+   },
+   "semantic_comparison": {
+    "exact_expected_output_bytes": true,
+    "changes": [
+     {
+      "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+      "fields": [
+       "test_execution_evidence"
+      ],
+      "new_execution": [
+       "exact:e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e:run41519264825:attempt1:job125531715469:Coordinator source and binary completed/success. Actual arm64 Mach-O12084688bytes sha256:cc62c0454b36afd5fb12e6b288f04c9f5ab9e6a700893dd1849903846ddf1c17; production protocol1, HTTPS1 and health-recovery4 passed; dependency/symbol/library negatives and _main passed. Artifact13177226856 and full ZIP/log independently read. Later explicit SDK inventory and remaining Box/Go/current-H package gates are not covered. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. This bounded existing-producer evidence does not advance source/legal/full-product or independent acceptance."
+      ]
+     },
+     {
+      "id": "FBCP-NMR-001",
+      "fields": [
+       "test_execution_evidence"
+      ],
+      "new_execution": [
+       "exact:9329aced33343e8e356ba34dfd0f474f3e767914:run41523624057:attempt1:job125545613103:retained-direct-ffi-compatibility:completed/success. Actual runtime_ffi target15 passed/0 failed/1 ignored, all five exported_c_* cases passed; existing live Telegram DC case remains explicitly ignored. Locked input and original11 cases preserved. Artifact13179096257 sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661; full log sha256:d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233. Source gate41523623907 success Node157/Schema37/errors0, unaccepted candidate remains unaccepted. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. These in-process C-wrapper/synthetic-store results do not qualify AppHost C ABI7, final shared/static library, installed external consumer, real user migration, live service, other pending native jobs or full ACCEPT."
+      ]
+     }
+    ],
+    "rows_before": 184,
+    "rows_after": 184,
+    "row_order_preserved": true,
+    "source_reviews_count": 6,
+    "source_reviews_preserved": true,
+    "all_non_rows_root_fields_identical": true,
+    "all_other_rows_unchanged": true,
+    "all_source_status_acceptance_and_notes_preserved": true,
+    "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "scalar_conflicts": [],
+    "actual_removed_items": []
+   },
+   "current_canonical_observation": {
+    "head": "da219ea9a9e5f143a42912ca9a127c225f36899e",
+    "canonical": "0a1b4387538129e45ecaca86dab55727f08cb772",
+    "input_matches": true,
+    "output_already_present": false
+   },
+   "source_acceptance": false,
+   "product_validation": false,
+   "commit_created_by_harness": false,
+   "ref_updated_by_harness": false,
+   "integration_condition": "Eligible only while a fresh current canonical read equals0a1b4387538129e45ecaca86dab55727f08cb772. Preserve all newer parent paths and use force=false expected-current-head CAS for outputad5e0b28add4e6bd99b3ec6036f0984595de2568. Recheck exact-H source/schema after canonical integration.",
+   "log_availability": "One fetch while the job was in_progress returned BlobNotFound. After exact-attempt completed/success, the complete terminal log was fetched and saved without a workflow rerun."
+  },
+  "superseded_original": {
+   "run": {
+    "id": 41525131496,
+    "head_sha": "c9a57c53bce6b5b8022a87ac794b4cd5d91e3134",
+    "run_attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "path": ".github/workflows/checkpoint-ledger-object-round16.yml",
+    "created_at": "2026-11-02T21:05:29Z",
+    "updated_at": "2026-11-02T21:05:46Z",
+    "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41525131496"
+   },
+   "job": {
+    "id": 125550785460,
+    "name": "prepare-ledger-object",
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 41525131496,
+    "logs_url": null,
+    "steps": [
+     {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+     },
+     {
+      "name": "Run actions/checkout@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+     },
+     {
+      "name": "Run actions/setup-node@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+     },
+     {
+      "name": "Merge only the frozen delta at this exact checkout",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+     },
+     {
+      "name": "Create only the unattached Git blob",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+     },
+     {
+      "name": "Preserve object identity for root CAS readback",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+     },
+     {
+      "name": "Post Run actions/setup-node@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 11
+     },
+     {
+      "name": "Post Run actions/checkout@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 12
+     },
+     {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 13
+     }
+    ]
+   },
+   "input_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+   "output_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+   "api_raw_content_hashes": {
+    "input": {
+     "bytes": 3614993,
+     "git_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+     "expected": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+     "matches": true
+    },
+    "output": {
+     "bytes": 3620553,
+     "git_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+     "expected": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+     "matches": true
+    },
+    "ops": {
+     "bytes": 20075,
+     "git_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "expected": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "matches": true
+    }
+   },
+   "full_log": {
+    "path": "round16-execution-ledger-transport/job-125550785460-full.log",
+    "bytes": 28737,
+    "sha256": "d8b6061c44f21a5999737e5d36ea82adbf976a9fa94ed288a2f4a88433765f1c",
+    "git_blob": "d3a4487669fbc28897b1cec9fa4a574dcf94340f"
+   },
+   "artifact_metadata": {
+    "id": 13180240304,
+    "name": "round16-ledger-object-c9a57c53bce6b5b8022a87ac794b4cd5d91e3134",
+    "size_in_bytes": 547778,
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180240304",
+    "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180240304/zip",
+    "expired": false,
+    "created_at": "2026-11-02T21:05:38Z",
+    "expires_at": "2027-01-31T21:05:29Z",
+    "updated_at": "2026-11-02T21:05:38Z",
+    "digest": "sha256:d94e0e434f61dfe81c4e51dbd771225ed6b31b6aeeff2bc7d17d8e8944041cc5",
+    "workflow_run": {
+     "id": 41525131496,
+     "repository_id": 1375312893,
+     "head_repository_id": 1375312893,
+     "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+     "head_sha": "c9a57c53bce6b5b8022a87ac794b4cd5d91e3134"
+    }
+   },
+   "archive_integrity": {
+    "archive_bytes": 547778,
+    "archive_sha256": "d94e0e434f61dfe81c4e51dbd771225ed6b31b6aeeff2bc7d17d8e8944041cc5",
+    "entries": [
+     {
+      "name": "github-blob.json",
+      "bytes": 162,
+      "sha256": "24a156bb6304cd374903a6ecdc000c8de636efa1481eb620c8b5d005bf92f69b",
+      "git_blob": "e6dc8a224bff4067555b9606a97e1379cd481c73"
+     },
+     {
+      "name": "prepared-ledger.json",
+      "bytes": 3620553,
+      "sha256": "746ac1ff85d2d6c4e9a826ebfe2978509c3351cc7807dba4526f4ea64d33784f",
+      "git_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3"
+     },
+     {
+      "name": "receipt.json",
+      "bytes": 767,
+      "sha256": "13de642ae8c4488aa8d3510a15adfb151dae835e239613c179431053417e6176",
+      "git_blob": "9d6c9c44f9d35f506260089290a08d03974e13ef"
+     }
+    ],
+    "receipt": {
+     "harness_sha": "c9a57c53bce6b5b8022a87ac794b4cd5d91e3134",
+     "input_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+     "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+     "reviewed_delta_base_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+     "output_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+     "output_sha256": "746ac1ff85d2d6c4e9a826ebfe2978509c3351cc7807dba4526f4ea64d33784f",
+     "changed_rows": [
+      "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+      "FBCP-NMR-001"
+     ],
+     "product_validation": false,
+     "source_acceptance": false,
+     "commit_created": false,
+     "ref_updated": false,
+     "integration_condition": "Root API reads input/output, verifies scoped delta and current canonical input equality, then force=false expected-head CAS."
+    },
+    "github_blob": {
+     "sha": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+     "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/221a1b9ebe198d0fa286c8196d82aa9e27447dc3"
+    }
+   },
+   "semantic_comparison": {
+    "exactFrozenOpsResult": true,
+    "rowsBefore": 184,
+    "rowsAfter": 184,
+    "rowOrderPreserved": true,
+    "other182RowsPreserved": true,
+    "rootFieldsPreserved": true,
+    "sourceReviewsPreserved": true,
+    "sourceReviewCount": 6,
+    "fixedU": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "details": [
+     {
+      "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+      "scalars": {},
+      "removed": {},
+      "appended": {
+       "blockers": [],
+       "production_entrypoints": [],
+       "test_evidence": [],
+       "requirement_ids": [],
+       "test_environment_ids": [],
+       "test_execution_evidence": [
+        "exact:e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e:run41519264825:attempt1:job125531715469:Coordinator source and binary completed/success. Actual arm64 Mach-O12084688bytes sha256:cc62c0454b36afd5fb12e6b288f04c9f5ab9e6a700893dd1849903846ddf1c17; production protocol1, HTTPS1 and health-recovery4 passed; dependency/symbol/library negatives and _main passed. Artifact13177226856 and full ZIP/log independently read. Later explicit SDK inventory and remaining Box/Go/current-H package gates are not covered. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. This bounded existing-producer evidence does not advance source/legal/full-product or independent acceptance."
+       ],
+       "fabushi_target_paths": []
+      },
+      "noteAlreadyPresent": true,
+      "fieldsChanged": [
+       "test_execution_evidence"
+      ]
+     },
+     {
+      "id": "FBCP-NMR-001",
+      "scalars": {
+       "target_commit": {
+        "before": "59f5fa24827812f78336c464995d161f403dedfb",
+        "after": "59f5fa24827812f78336c464995d161f403dedfb"
+       },
+       "workflow_run": {
+        "before": 41508537631,
+        "after": 41508537631
+       },
+       "job": {
+        "before": 125494011040,
+        "after": 125494011040
+       },
+       "artifact_id": {
+        "before": 13173116303,
+        "after": 13173116303
+       },
+       "artifact_digest": {
+        "before": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22",
+        "after": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22"
+       },
+       "run_attempt": {
+        "before": 1,
+        "after": 1
+       }
+      },
+      "removed": {
+       "blockers": []
+      },
+      "appended": {
+       "fabushi_target_paths": [
+        "desktop/e2e/native-message-projection.spec.ts",
+        "desktop/e2e/fixtures/native-message-projection.tsx",
+        "desktop/native-message-projection.html",
+        "frontend/src/recovered/features/conversation/workspace/submission.ts"
+       ],
+       "test_evidence": [
+        "authored-not-run-at-preparation:shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page; preserve all current62 Human cases including6400/32 and short/empty32, total63 after the single new legacy-upgrade case.",
+        "authored-not-run-at-preparation:actual ProductionRenderer Chromium11 (original10 plus queued-account-reset variant) through existing Coordinator client/feed; current29 projection cases retained plus remaining overlay/author/composition cases. No retry/skipped allowance; exact containing-H Actions and complete artifacts required."
+       ],
+       "requirement_ids": [
+        "NMR-23a",
+        "NMR-26a",
+        "NMR-26b",
+        "FMEP-SOURCE-01"
+       ],
+       "unit_case_ids": [],
+       "fault_recovery_case_ids": [
+        "source/host/tests/session_gateway_contract.rs#shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page"
+       ],
+       "security_case_ids": [],
+       "regression_ids": [],
+       "test_environment_ids": [],
+       "test_execution_evidence": [
+        "exact:afb34b49c5964524a887088f1095070b75cfdf8b:run41522324008:job125541192099:failure E0382 in session_gateway_contract.rs:6889, shutdown of runtime after drop; Human cases not executed. Repair only shutdown receiver to restarted; qualify at new exact-H.",
+        "exact:afb34b49c5964524a887088f1095070b75cfdf8b:source run41522324060 success Node157/schema37; existing UI pass projection29/cursor17/settlement5/dialog16 and renderer build, Electron/carrier and Windows passed. These are prerequisite evidence only; new-H results are not inherited.",
+        "exact:9329aced33343e8e356ba34dfd0f474f3e767914:run41523624057:attempt1:job125545613103:retained-direct-ffi-compatibility:completed/success. Actual runtime_ffi target15 passed/0 failed/1 ignored, all five exported_c_* cases passed; existing live Telegram DC case remains explicitly ignored. Locked input and original11 cases preserved. Artifact13179096257 sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661; full log sha256:d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233. Source gate41523623907 success Node157/Schema37/errors0, unaccepted candidate remains unaccepted. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. These in-process C-wrapper/synthetic-store results do not qualify AppHost C ABI7, final shared/static library, installed external consumer, real user migration, live service, other pending native jobs or full ACCEPT."
+       ],
+       "blockers": [
+        "Request round9 resumed remaining delta is authored, not executed at preparation: version1 coverage/legacy upgrade, full ProductionRenderer11 and actual authority CLI acquisition negative require exact containing-H Actions. Preserve current qualified59 execution pointers until new results are read.",
+        "Backend52fb/PR137 tests29 handler+10 realSQLite+24 injected readiness pass, but readiness jobs are skipped; canonical main6877 rejects explicit afterId0/no historyCursor. Current active Worker and real authenticated production multi-page/empty-page/denial/restart evidence remain unverified. Historical source33a26692/version3ad1a889 is not current deployment proof."
+       ],
+       "production_evidence": [
+        "Request round9 resumed: existing Session/Transcript/native client/ProductionRenderer/cache owners only; strict version1 durable history coverage upgrades legacy checkpoints after qualified historyCursor pages. Current native_messaging afterId0 contract is retained; no parallel owner/store/endpoint or data deletion.",
+        "Request round9 account recovery: existing composer queue/journal generation resets cancel obsolete renderer completions and release account-scoped lanes while Host in-flight persistence continues. Stale queued work cannot clear new-account approvals; a post-send roster refresh error cannot fail the accepted canonical send or restore its draft."
+       ]
+      },
+      "noteAlreadyPresent": false,
+      "fieldsChanged": [
+       "fabushi_target_paths",
+       "blockers",
+       "production_evidence",
+       "test_evidence",
+       "requirement_ids",
+       "fault_recovery_case_ids",
+       "test_execution_evidence",
+       "notes"
+      ]
+     }
+    ]
+   },
+   "input_superseded_by": "a64f3a5becae94767609d478e9667a27bc1859b5",
+   "integration_allowed_under_old_receipt": false,
+   "explanation": "While the original report was being read, a concurrent legitimate round9 commit integrated its preexisting ops into canonical. The current-input automatic run then returned the same output blob, but its new receipt correctly binds a64. This is a different input-triggered run, not a rerun to choose green. Only the new a64 receipt can support current integration."
+  },
+  "source_contract_at_requested_c9": {
+   "workflow_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+   "exact_run_list": [
+    {
+     "id": 41525131496,
+     "head_sha": "c9a57c53bce6b5b8022a87ac794b4cd5d91e3134",
+     "run_attempt": 1,
+     "status": "completed",
+     "conclusion": "success",
+     "path": ".github/workflows/checkpoint-ledger-object-round16.yml",
+     "created_at": "2026-11-02T21:05:29Z",
+     "updated_at": "2026-11-02T21:05:46Z",
+     "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41525131496"
+    }
+   ],
+   "source_run_triggered": false,
+   "source_run_success_claimed": false,
+   "reason": "The c9 commit changes only the round16 ops file plus two evidence JSON files. None match the source-review workflow push paths. Exact-H API run enumeration showed only the ledger-object workflow. This absence is expected path filtering, not a failed source job.",
+   "required_after_canonical_integration": "The commit changing canonical parity-ledger.json must have its own exact-H source run; read terminal jobs/full logs/artifacts before claiming that ledger integration qualified. Old9329 source success is historical evidence only.",
+   "node_governance_is_product_progress": false
+  },
+  "preserved_boundaries": {
+   "all184_responsibilities_preserved": true,
+   "other182_rows_preserved": true,
+   "all_non_rows_root_fields_preserved": true,
+   "all6_source_reviews_preserved": true,
+   "all_source_status_and_acceptance_fields_preserved": true,
+   "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+   "selected_delta_only_two_execution_strings": true,
+   "old_execution_history_preserved": true,
+   "no_notes_modified_by_selected_delta": true,
+   "no_items_removed_by_selected_delta": true,
+   "no_helpers_removed": true,
+   "new_ffi_claims_only_exact9329_wrapper_job": true,
+   "new_coordinator_claims_only_exacte13_binary_owner_job": true,
+   "full_native_or_shipping_success_claimed": false,
+   "final_source_legal_product_or_independent_acceptance": false
+  },
+  "data_integrity_method": "Fetch full decoded UTF-8 input/output/ops through GitHub connector. Recompute Git blob SHA1 including blob byte-length header; parse and compare JSON against only the frozen ops; compare expected serialized output byte-for-byte with fetched output. Independently download full artifact ZIP, match API SHA256, hash every member, match receipt output Git blob/SHA256 and actual GitHub create-blob response. Saved raw logs are the complete terminal job output.",
+  "files": {
+   "directory": "/workspace/scratch/049bfe5e4966/round16-execution-ledger-transport",
+   "selected_archive": "round16-execution-ledger-transport/c368/artifact.zip",
+   "selected_receipt": "round16-execution-ledger-transport/c368/artifact/receipt.json",
+   "selected_output": "round16-execution-ledger-transport/c368/artifact/prepared-ledger.json",
+   "selected_blob_response": "round16-execution-ledger-transport/c368/artifact/github-blob.json",
+   "original_archive": "round16-execution-ledger-transport/artifact.zip",
+   "before_followup_snapshot": "round16-execution-ledger-transport/c368/report-before-followup.json"
+  },
+  "github_mutations": [],
+  "workflows_rerun_or_dispatched": false,
+  "local_repository_tests_builds_or_validators_executed": false,
+  "product_execution": false,
+  "original_user_data_or_credentials_accessed": false,
+  "previously_selected_transports": [
+   {
+    "run": {
+     "id": 41525211864,
+     "head_sha": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+     "run_attempt": 1,
+     "status": "completed",
+     "conclusion": "success",
+     "path": ".github/workflows/checkpoint-ledger-object-round16.yml",
+     "created_at": "2026-11-02T21:06:00Z",
+     "updated_at": "2026-11-02T21:07:08Z",
+     "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41525211864"
+    },
+    "job": {
+     "id": 125551058723,
+     "name": "prepare-ledger-object",
+     "status": "completed",
+     "conclusion": "success",
+     "run_id": 41525211864,
+     "logs_url": null,
+     "steps": [
+      {
+       "name": "Set up job",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 1
+      },
+      {
+       "name": "Run actions/checkout@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 2
+      },
+      {
+       "name": "Run actions/setup-node@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 3
+      },
+      {
+       "name": "Merge only the frozen delta at this exact checkout",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 4
+      },
+      {
+       "name": "Create only the unattached Git blob",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 5
+      },
+      {
+       "name": "Preserve object identity for root CAS readback",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 6
+      },
+      {
+       "name": "Post Run actions/setup-node@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 11
+      },
+      {
+       "name": "Post Run actions/checkout@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 12
+      },
+      {
+       "name": "Complete job",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 13
+      }
+     ]
+    },
+    "commit": {
+     "head": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+     "parents": [
+      "0dab7dbab8a54dcc20b1d530da8ed273c1d1c939"
+     ],
+     "tree": "b35adf18c5be479a02069970bdc7ab9751b99ede"
+    },
+    "input_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+    "output_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+    "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+    "harness_blob": "704fa5d6a332df2c3d4d420199f9301931e0e593",
+    "api_raw_content_hashes": {
+     "input": {
+      "bytes": 3618932,
+      "git_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+      "expected": "a64f3a5becae94767609d478e9667a27bc1859b5",
+      "matches": true
+     },
+     "output": {
+      "bytes": 3620553,
+      "git_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+      "expected": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+      "matches": true
+     },
+     "ops": {
+      "bytes": 20075,
+      "git_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "expected": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "matches": true
+     }
+    },
+    "api_output_matches_frozen_delta_byte_for_byte": true,
+    "full_log": {
+     "path": "round16-execution-ledger-transport/aed9/job-125551058723-full.log",
+     "bytes": 28733,
+     "sha256": "4c8ffff16f81cd4443dbec68e994ed229f9883b1ec543084cf4fb30efe6783a2",
+     "git_blob": "0217da11b86d5d58bf6675936fdb0c13a3490efd"
+    },
+    "artifact_metadata": {
+     "id": 13180016087,
+     "name": "round16-ledger-object-aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+     "size_in_bytes": 547776,
+     "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180016087",
+     "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180016087/zip",
+     "expired": false,
+     "created_at": "2026-11-02T21:07:04Z",
+     "expires_at": "2027-01-31T21:06:00Z",
+     "updated_at": "2026-11-02T21:07:04Z",
+     "digest": "sha256:82edb3fc485a609a88d02a98553492ab9e970d012395c8e45f4b849c0c42c77d",
+     "workflow_run": {
+      "id": 41525211864,
+      "repository_id": 1375312893,
+      "head_repository_id": 1375312893,
+      "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "head_sha": "aed9e8ab10eb4566631a89987511754bdc8dbfe7"
+     }
+    },
+    "archive_integrity": {
+     "archive_bytes": 547776,
+     "archive_sha256": "82edb3fc485a609a88d02a98553492ab9e970d012395c8e45f4b849c0c42c77d",
+     "entries": [
+      {
+       "name": "github-blob.json",
+       "bytes": 162,
+       "sha256": "24a156bb6304cd374903a6ecdc000c8de636efa1481eb620c8b5d005bf92f69b",
+       "git_blob": "e6dc8a224bff4067555b9606a97e1379cd481c73"
+      },
+      {
+       "name": "prepared-ledger.json",
+       "bytes": 3620553,
+       "sha256": "746ac1ff85d2d6c4e9a826ebfe2978509c3351cc7807dba4526f4ea64d33784f",
+       "git_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3"
+      },
+      {
+       "name": "receipt.json",
+       "bytes": 767,
+       "sha256": "d91bc53e96c9f4629ec14fd0888dcb70420fff1bf6a6f589047d484d5f3bb53d",
+       "git_blob": "3eacc6eccf75031943cdbab5706c209b1ebadc1c"
+      }
+     ],
+     "receipt": {
+      "harness_sha": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+      "input_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+      "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "reviewed_delta_base_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+      "output_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+      "output_sha256": "746ac1ff85d2d6c4e9a826ebfe2978509c3351cc7807dba4526f4ea64d33784f",
+      "changed_rows": [
+       "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+       "FBCP-NMR-001"
+      ],
+      "product_validation": false,
+      "source_acceptance": false,
+      "commit_created": false,
+      "ref_updated": false,
+      "integration_condition": "Root API reads input/output, verifies scoped delta and current canonical input equality, then force=false expected-head CAS."
+     },
+     "github_blob": {
+      "sha": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/221a1b9ebe198d0fa286c8196d82aa9e27447dc3"
+     }
+    },
+    "semantic_comparison": {
+     "input_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+     "output_blob": "221a1b9ebe198d0fa286c8196d82aa9e27447dc3",
+     "raw_expected_output_exact": true,
+     "rows_before": 184,
+     "rows_after": 184,
+     "row_order_preserved": true,
+     "changed_rows": [
+      {
+       "index": 173,
+       "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+       "fields": [
+        "test_execution_evidence"
+       ]
+      },
+      {
+       "index": 182,
+       "id": "FBCP-NMR-001",
+       "fields": [
+        "test_execution_evidence"
+       ]
+      }
+     ],
+     "other_rows_unchanged": true,
+     "all_non_rows_root_fields_identical": true,
+     "all_rows_source_status_acceptance_fields_identical": true,
+     "source_reviews_identical": true,
+     "source_review_count": 6,
+     "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+     "coverage_identical": true,
+     "additions": [
+      {
+       "row": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+       "changedKeys": [
+        "test_execution_evidence"
+       ],
+       "added": [
+        {
+         "key": "test_execution_evidence",
+         "items": [
+          "exact:e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e:run41519264825:attempt1:job125531715469:Coordinator source and binary completed/success. Actual arm64 Mach-O12084688bytes sha256:cc62c0454b36afd5fb12e6b288f04c9f5ab9e6a700893dd1849903846ddf1c17; production protocol1, HTTPS1 and health-recovery4 passed; dependency/symbol/library negatives and _main passed. Artifact13177226856 and full ZIP/log independently read. Later explicit SDK inventory and remaining Box/Go/current-H package gates are not covered. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. This bounded existing-producer evidence does not advance source/legal/full-product or independent acceptance."
+         ]
+        }
+       ]
+      },
+      {
+       "row": "FBCP-NMR-001",
+       "changedKeys": [
+        "test_execution_evidence"
+       ],
+       "added": [
+        {
+         "key": "test_execution_evidence",
+         "items": [
+          "exact:9329aced33343e8e356ba34dfd0f474f3e767914:run41523624057:attempt1:job125545613103:retained-direct-ffi-compatibility:completed/success. Actual runtime_ffi target15 passed/0 failed/1 ignored, all five exported_c_* cases passed; existing live Telegram DC case remains explicitly ignored. Locked input and original11 cases preserved. Artifact13179096257 sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661; full log sha256:d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233. Source gate41523623907 success Node157/Schema37/errors0, unaccepted candidate remains unaccepted. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. These in-process C-wrapper/synthetic-store results do not qualify AppHost C ABI7, final shared/static library, installed external consumer, real user migration, live service, other pending native jobs or full ACCEPT."
+         ]
+        }
+       ]
+      }
+     ],
+     "scalar_conflicts": [],
+     "actual_removed_items": [],
+     "notes_changed": false
+    },
+    "current_canonical_observation": {
+     "head": "7b5985b9b48a384fe9ef1bd9a4e504f438c1db67",
+     "canonical": "a64f3a5becae94767609d478e9667a27bc1859b5",
+     "matches_input": true
+    },
+    "source_acceptance": false,
+    "product_validation": false,
+    "commit_created_by_harness": false,
+    "ref_updated_by_harness": false,
+    "integration_condition": "Eligible only while a fresh current canonical read still equals a64f3a5becae94767609d478e9667a27bc1859b5; publish output221a1b9ebe198d0fa286c8196d82aa9e27447dc3 with force=false expected-current-head CAS and verify full remote commit/tree/content.",
+    "subsequently_superseded": true,
+    "input_superseded_by": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+    "integration_allowed_under_old_input": false
+   },
+   {
+    "run": {
+     "id": 41525539552,
+     "head_sha": "19df1199779fa7fd66547ba095c277e0306d4c93",
+     "run_attempt": 1,
+     "status": "completed",
+     "conclusion": "success",
+     "path": ".github/workflows/checkpoint-ledger-object-round16.yml",
+     "created_at": "2026-11-02T21:08:05Z",
+     "updated_at": "2026-11-02T21:08:43Z",
+     "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41525539552"
+    },
+    "job": {
+     "id": 125552175219,
+     "name": "prepare-ledger-object",
+     "status": "completed",
+     "conclusion": "success",
+     "run_id": 41525539552,
+     "logs_url": null,
+     "steps": [
+      {
+       "name": "Set up job",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 1
+      },
+      {
+       "name": "Run actions/checkout@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 2
+      },
+      {
+       "name": "Run actions/setup-node@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 3
+      },
+      {
+       "name": "Merge only the frozen delta at this exact checkout",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 4
+      },
+      {
+       "name": "Create only the unattached Git blob",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 5
+      },
+      {
+       "name": "Preserve object identity for root CAS readback",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 6
+      },
+      {
+       "name": "Post Run actions/setup-node@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 11
+      },
+      {
+       "name": "Post Run actions/checkout@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 12
+      },
+      {
+       "name": "Complete job",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 13
+      }
+     ]
+    },
+    "commit": {
+     "head": "19df1199779fa7fd66547ba095c277e0306d4c93",
+     "parents": [
+      "8a2f02b091328a9b3c4416b0acef29ab423c35f6"
+     ],
+     "tree": "45073f1a0047a3dd36e37a342b1b1db14aa1e8e5"
+    },
+    "input_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+    "output_blob": "a6dbcdc569133f5fecef86cf8608a1446d6e7487",
+    "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+    "harness_blob": "704fa5d6a332df2c3d4d420199f9301931e0e593",
+    "api_raw_content_hashes": {
+     "followupInput": {
+      "bytes": 3631029,
+      "git_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+      "expected": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+      "matches": true
+     },
+     "followupOutput": {
+      "bytes": 3632650,
+      "git_blob": "a6dbcdc569133f5fecef86cf8608a1446d6e7487",
+      "expected": "a6dbcdc569133f5fecef86cf8608a1446d6e7487",
+      "matches": true
+     },
+     "followupOps": {
+      "bytes": 20075,
+      "git_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "expected": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "matches": true
+     }
+    },
+    "api_output_matches_frozen_delta_byte_for_byte": true,
+    "full_log": {
+     "path": "round16-execution-ledger-transport/19df/job-125552175219-full.log",
+     "bytes": 28733,
+     "sha256": "1dda26f4466db76a883c4519e76997ed90fd3cd80952e053c837332fb7401e17",
+     "git_blob": "2fad9fe552bc5c518006fd06f4d3f793f25dcc27"
+    },
+    "artifact_metadata": {
+     "id": 13178209535,
+     "name": "round16-ledger-object-19df1199779fa7fd66547ba095c277e0306d4c93",
+     "size_in_bytes": 549650,
+     "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178209535",
+     "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178209535/zip",
+     "expired": false,
+     "created_at": "2026-11-02T21:08:39Z",
+     "expires_at": "2027-01-31T21:08:05Z",
+     "updated_at": "2026-11-02T21:08:39Z",
+     "digest": "sha256:a08d71fb49aba3527db7948eadd3c8b1a16850cd4720afa8d48c6dd78ddc5b08",
+     "workflow_run": {
+      "id": 41525539552,
+      "repository_id": 1375312893,
+      "head_repository_id": 1375312893,
+      "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "head_sha": "19df1199779fa7fd66547ba095c277e0306d4c93"
+     }
+    },
+    "archive_integrity": {
+     "archive_bytes": 549650,
+     "archive_sha256": "a08d71fb49aba3527db7948eadd3c8b1a16850cd4720afa8d48c6dd78ddc5b08",
+     "entries": [
+      {
+       "name": "github-blob.json",
+       "bytes": 162,
+       "sha256": "5c8bd46521c417d6b9b486164f25413d7f6b23742b453c7d006063b571bd0eed",
+       "git_blob": "de0424d73cedbf0a5a78dec1c0a58424e1ab3bfc"
+      },
+      {
+       "name": "prepared-ledger.json",
+       "bytes": 3632650,
+       "sha256": "e7d5e0cd1d9bc6c0afbeba12b4e9bcf3b99ea5ef4f0ddfb9f26a1defd58d6b60",
+       "git_blob": "a6dbcdc569133f5fecef86cf8608a1446d6e7487"
+      },
+      {
+       "name": "receipt.json",
+       "bytes": 767,
+       "sha256": "cf38f27c8026f33bc56941b80098b6a078bad5786d8cb678ce355028622565c4",
+       "git_blob": "54383b8cd3bc910a919cce8b583973d6ba27c7c0"
+      }
+     ],
+     "receipt": {
+      "harness_sha": "19df1199779fa7fd66547ba095c277e0306d4c93",
+      "input_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+      "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "reviewed_delta_base_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+      "output_blob": "a6dbcdc569133f5fecef86cf8608a1446d6e7487",
+      "output_sha256": "e7d5e0cd1d9bc6c0afbeba12b4e9bcf3b99ea5ef4f0ddfb9f26a1defd58d6b60",
+      "changed_rows": [
+       "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+       "FBCP-NMR-001"
+      ],
+      "product_validation": false,
+      "source_acceptance": false,
+      "commit_created": false,
+      "ref_updated": false,
+      "integration_condition": "Root API reads input/output, verifies scoped delta and current canonical input equality, then force=false expected-head CAS."
+     },
+     "github_blob": {
+      "sha": "a6dbcdc569133f5fecef86cf8608a1446d6e7487",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/a6dbcdc569133f5fecef86cf8608a1446d6e7487"
+     }
+    },
+    "semantic_comparison": {
+     "exact_expected_output_bytes": true,
+     "changes": [
+      {
+       "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+       "changed_fields": [
+        "test_execution_evidence"
+       ],
+       "new_execution": [
+        "exact:e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e:run41519264825:attempt1:job125531715469:Coordinator source and binary completed/success. Actual arm64 Mach-O12084688bytes sha256:cc62c0454b36afd5fb12e6b288f04c9f5ab9e6a700893dd1849903846ddf1c17; production protocol1, HTTPS1 and health-recovery4 passed; dependency/symbol/library negatives and _main passed. Artifact13177226856 and full ZIP/log independently read. Later explicit SDK inventory and remaining Box/Go/current-H package gates are not covered. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. This bounded existing-producer evidence does not advance source/legal/full-product or independent acceptance."
+       ]
+      },
+      {
+       "id": "FBCP-NMR-001",
+       "changed_fields": [
+        "test_execution_evidence"
+       ],
+       "new_execution": [
+        "exact:9329aced33343e8e356ba34dfd0f474f3e767914:run41523624057:attempt1:job125545613103:retained-direct-ffi-compatibility:completed/success. Actual runtime_ffi target15 passed/0 failed/1 ignored, all five exported_c_* cases passed; existing live Telegram DC case remains explicitly ignored. Locked input and original11 cases preserved. Artifact13179096257 sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661; full log sha256:d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233. Source gate41523623907 success Node157/Schema37/errors0, unaccepted candidate remains unaccepted. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. These in-process C-wrapper/synthetic-store results do not qualify AppHost C ABI7, final shared/static library, installed external consumer, real user migration, live service, other pending native jobs or full ACCEPT."
+       ]
+      }
+     ],
+     "rows_before": 184,
+     "rows_after": 184,
+     "source_reviews_count": 6,
+     "all_non_rows_root_fields_identical": true,
+     "all_other_rows_unchanged": true,
+     "row_order_preserved": true,
+     "only_two_execution_arrays_changed": true,
+     "all_source_status_acceptance_fields_unchanged": true,
+     "source_reviews_unchanged": true,
+     "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+     "notes_unchanged": true,
+     "scalar_conflicts": [],
+     "actual_removed_items": []
+    },
+    "current_canonical_observation": {
+     "head": "6fc3cb3c3c5c25681bf68d60b6ea633a7acbc563",
+     "canonical": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+     "input_matches": true
+    },
+    "source_acceptance": false,
+    "product_validation": false,
+    "commit_created_by_harness": false,
+    "ref_updated_by_harness": false,
+    "integration_condition": "Eligible only while a fresh current canonical read equals1875f4f32255fc22c89de7a6c2981875bd76d015. Preserve all newer parent paths and use force=false expected-current-head CAS for outputa6dbcdc569133f5fecef86cf8608a1446d6e7487. Recheck exact-H source/schema after canonical integration.",
+    "subsequently_superseded": true,
+    "input_superseded_by": "cc1a1682aa5174053809c557eaf9c2a3f079fd4b",
+    "integration_allowed_under_old_input": false
+   },
+   {
+    "run": {
+     "id": 41526015494,
+     "head_sha": "3ab165561eb9fc7aba7b7bebff492cd105966b1a",
+     "run_attempt": 1,
+     "status": "completed",
+     "conclusion": "success",
+     "path": ".github/workflows/checkpoint-ledger-object-round16.yml",
+     "created_at": "2026-11-02T21:11:11Z",
+     "updated_at": "2026-11-02T21:11:30Z",
+     "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526015494"
+    },
+    "job": {
+     "id": 125553823618,
+     "name": "prepare-ledger-object",
+     "status": "completed",
+     "conclusion": "success",
+     "run_id": 41526015494,
+     "logs_url": null,
+     "steps": [
+      {
+       "name": "Set up job",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 1
+      },
+      {
+       "name": "Run actions/checkout@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 2
+      },
+      {
+       "name": "Run actions/setup-node@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 3
+      },
+      {
+       "name": "Merge only the frozen delta at this exact checkout",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 4
+      },
+      {
+       "name": "Create only the unattached Git blob",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 5
+      },
+      {
+       "name": "Preserve object identity for root CAS readback",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 6
+      },
+      {
+       "name": "Post Run actions/setup-node@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 11
+      },
+      {
+       "name": "Post Run actions/checkout@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 12
+      },
+      {
+       "name": "Complete job",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 13
+      }
+     ]
+    },
+    "commit": {
+     "head": "3ab165561eb9fc7aba7b7bebff492cd105966b1a",
+     "parents": [
+      "5755732d62146d9bccfa07d9d0dc2a2de6d12dad"
+     ],
+     "tree": "90b6f5577bb0d66d06576af663997bcb1d0137a3"
+    },
+    "input_blob": "cc1a1682aa5174053809c557eaf9c2a3f079fd4b",
+    "output_blob": "38696ed505a0b9d6700cfeae8628812231b8e0ef",
+    "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+    "harness_blob": "704fa5d6a332df2c3d4d420199f9301931e0e593",
+    "api_raw_content_hashes": {
+     "cc1Input": {
+      "bytes": 3634459,
+      "git_blob": "cc1a1682aa5174053809c557eaf9c2a3f079fd4b",
+      "expected": "cc1a1682aa5174053809c557eaf9c2a3f079fd4b",
+      "matches": true
+     },
+     "cc1Output": {
+      "bytes": 3636080,
+      "git_blob": "38696ed505a0b9d6700cfeae8628812231b8e0ef",
+      "expected": "38696ed505a0b9d6700cfeae8628812231b8e0ef",
+      "matches": true
+     },
+     "cc1Ops": {
+      "bytes": 20075,
+      "git_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "expected": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "matches": true
+     }
+    },
+    "api_output_matches_frozen_delta_byte_for_byte": true,
+    "full_log": {
+     "path": "round16-execution-ledger-transport/3ab/job-125553823618-full.log",
+     "bytes": 28738,
+     "sha256": "54f6e7e5a526fa12e5db5a65bbccc15e59f2d6f0ca1f2b5c7ded29b2c80eebfc",
+     "git_blob": "f65be2c36a638c4848235345625ead6693601a89"
+    },
+    "artifact_metadata": {
+     "id": 13179787018,
+     "name": "round16-ledger-object-3ab165561eb9fc7aba7b7bebff492cd105966b1a",
+     "size_in_bytes": 550853,
+     "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179787018",
+     "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179787018/zip",
+     "expired": false,
+     "created_at": "2026-11-02T21:11:26Z",
+     "expires_at": "2027-01-31T21:11:11Z",
+     "updated_at": "2026-11-02T21:11:26Z",
+     "digest": "sha256:2f8f2b3f7cc83d08539f1838e27a40e6a1d7d79510c50180163a734e7d44fef4",
+     "workflow_run": {
+      "id": 41526015494,
+      "repository_id": 1375312893,
+      "head_repository_id": 1375312893,
+      "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "head_sha": "3ab165561eb9fc7aba7b7bebff492cd105966b1a"
+     }
+    },
+    "archive_integrity": {
+     "archive_bytes": 550853,
+     "archive_sha256": "2f8f2b3f7cc83d08539f1838e27a40e6a1d7d79510c50180163a734e7d44fef4",
+     "entries": [
+      {
+       "name": "github-blob.json",
+       "bytes": 162,
+       "sha256": "cb3ffc9c8b4f2fa38c9b4f1f50df2e481dbd1f54521fa3c4a22e67846261f609",
+       "git_blob": "86f05a6df3247e05243133a2bf233f72b09e525b"
+      },
+      {
+       "name": "prepared-ledger.json",
+       "bytes": 3636080,
+       "sha256": "cabe094755f3fd20c59172ae2dc5c0f886bf0efc6abfbae4a5513433ac27cf2b",
+       "git_blob": "38696ed505a0b9d6700cfeae8628812231b8e0ef"
+      },
+      {
+       "name": "receipt.json",
+       "bytes": 767,
+       "sha256": "18daf1400bc123128db8db87e067997d52e4c57d7a8c7a087ea06ca3f07dd3c4",
+       "git_blob": "d44f41e9553ad11bc6bfe3a0e9ed3d317877a391"
+      }
+     ],
+     "receipt": {
+      "harness_sha": "3ab165561eb9fc7aba7b7bebff492cd105966b1a",
+      "input_blob": "cc1a1682aa5174053809c557eaf9c2a3f079fd4b",
+      "ops_blob": "23a142ca417a08a2311c20ad1a6e4c50ec11319b",
+      "reviewed_delta_base_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+      "output_blob": "38696ed505a0b9d6700cfeae8628812231b8e0ef",
+      "output_sha256": "cabe094755f3fd20c59172ae2dc5c0f886bf0efc6abfbae4a5513433ac27cf2b",
+      "changed_rows": [
+       "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+       "FBCP-NMR-001"
+      ],
+      "product_validation": false,
+      "source_acceptance": false,
+      "commit_created": false,
+      "ref_updated": false,
+      "integration_condition": "Root API reads input/output, verifies scoped delta and current canonical input equality, then force=false expected-head CAS."
+     },
+     "github_blob": {
+      "sha": "38696ed505a0b9d6700cfeae8628812231b8e0ef",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/38696ed505a0b9d6700cfeae8628812231b8e0ef"
+     }
+    },
+    "semantic_comparison": {
+     "exact_expected_output_bytes": true,
+     "changes": [
+      {
+       "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+       "changed_fields": [
+        "test_execution_evidence"
+       ],
+       "new_execution": [
+        "exact:e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e:run41519264825:attempt1:job125531715469:Coordinator source and binary completed/success. Actual arm64 Mach-O12084688bytes sha256:cc62c0454b36afd5fb12e6b288f04c9f5ab9e6a700893dd1849903846ddf1c17; production protocol1, HTTPS1 and health-recovery4 passed; dependency/symbol/library negatives and _main passed. Artifact13177226856 and full ZIP/log independently read. Later explicit SDK inventory and remaining Box/Go/current-H package gates are not covered. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. This bounded existing-producer evidence does not advance source/legal/full-product or independent acceptance."
+       ]
+      },
+      {
+       "id": "FBCP-NMR-001",
+       "changed_fields": [
+        "test_execution_evidence"
+       ],
+       "new_execution": [
+        "exact:9329aced33343e8e356ba34dfd0f474f3e767914:run41523624057:attempt1:job125545613103:retained-direct-ffi-compatibility:completed/success. Actual runtime_ffi target15 passed/0 failed/1 ignored, all five exported_c_* cases passed; existing live Telegram DC case remains explicitly ignored. Locked input and original11 cases preserved. Artifact13179096257 sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661; full log sha256:d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233. Source gate41523623907 success Node157/Schema37/errors0, unaccepted candidate remains unaccepted. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. These in-process C-wrapper/synthetic-store results do not qualify AppHost C ABI7, final shared/static library, installed external consumer, real user migration, live service, other pending native jobs or full ACCEPT."
+       ]
+      }
+     ],
+     "rows_before": 184,
+     "rows_after": 184,
+     "row_order_preserved": true,
+     "source_reviews_count": 6,
+     "source_reviews_preserved": true,
+     "all_non_rows_root_fields_identical": true,
+     "all_other_rows_unchanged": true,
+     "all_source_status_acceptance_and_notes_preserved": true,
+     "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+     "scalar_conflicts": [],
+     "actual_removed_items": []
+    },
+    "current_canonical_observation": {
+     "head": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+     "canonical": "0a1b4387538129e45ecaca86dab55727f08cb772",
+     "input_matches": false
+    },
+    "source_acceptance": false,
+    "product_validation": false,
+    "commit_created_by_harness": false,
+    "ref_updated_by_harness": false,
+    "subsequently_superseded": true,
+    "input_superseded_by": "0a1b4387538129e45ecaca86dab55727f08cb772",
+    "integration_allowed_under_old_input": false,
+    "integration_condition": "This result has been superseded by a concurrent canonical update. Do not integrate it over0a1 or any other nonmatching input."
+   }
+  ],
+  "followup_reason": "Root correctly stopped stale-input publication as concurrent owner evidence advanced canonical throughcc1 and then0a1. Every superseded transport remains preserved; selected0a1 transport is complete and independently verified. Only two execution arrays each gain one already-reviewed item, retaining round30/round31 and all other concurrent additions."
+ },
+ "auxiliary_box_package_followup": {
+  "format": "ROUND16_FINAL_BOX_PACKAGE_EXECUTION_V1",
+  "repository": "bhrumom/fabushi-desktop",
+  "head_sha": "1abefb6e48141bc753c856ddf92705591ad7e851",
+  "run_id": 41520738119,
+  "run_attempt": 1,
+  "job_id": 125536281727,
+  "job_name": "Source and binary / box-exec-daemon",
+  "job_status": "completed",
+  "job_conclusion": "success",
+  "whole_run_status_at_read": "queued",
+  "whole_run_conclusion_at_read": null,
+  "observed_at_utc": "2026-11-02 21:24:58 UTC",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "scope": "Read-only exact1ab Box binary/inputs/full job log/full ZIP/actual owner outputs/Apple SDK inventory review. No local product, compiler, test, validator, nm, otool or package tool execution. Binary bytes and retained output text were only read/hashed. New current fix is source-bound separately and is not qualified by this old success.",
+  "verdict": "ACTUAL_BOX_BINARY_INPUTS_SDK_AND_HOST_PROCESS_EVIDENCE_VERIFIED_HISTORICAL_DISCONNECT_ORACLE_INVALID",
+  "raw_evidence": {
+   "full_job_log": {
+    "path": "/workspace/scratch/049bfe5e4966/round16-final-box-job125536281727.log",
+    "bytes": 116702,
+    "sha256": "3281826bfb53c496032f37aa5fe524c60fa3f49e430754898e81e98c9baa9770",
+    "git_blob": "5283da21ef228a37ae92fb067d46ecc5156092b3",
+    "exact_connector_text": true
+   },
+   "complete_original_zip": {
+    "path": "/workspace/scratch/049bfe5e4966/round16-final-box-artifact13180430446.zip",
+    "bytes": 790609,
+    "sha256": "847f51707cf057897da29cb723574d54179829a0771265299632821dc314d1be",
+    "artifact_id": 13180430446,
+    "artifact_name": "staged-runtime-box-exec-daemon-1abefb6e48141bc753c856ddf92705591ad7e851",
+    "api_digest": "sha256:847f51707cf057897da29cb723574d54179829a0771265299632821dc314d1be",
+    "digest_matches_api": true,
+    "expired": false,
+    "source_head": "1abefb6e48141bc753c856ddf92705591ad7e851",
+    "downloaded_without_executing_contents": true
+   },
+   "artifact_members": [
+    {
+     "path": "Cargo.toml",
+     "bytes": 458,
+     "sha256": "7511a97ad45e71f7931285804ef77e36cd7f2b3c39b2973798ce2adde1814a01",
+     "git_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e"
+    },
+    {
+     "path": "binary-sha256.txt",
+     "bytes": 115,
+     "sha256": "af088b5e4dab9cfce6976ba2f9876b86055c85f8bbe4aefffa84110849ce0308",
+     "git_blob": "82329692e7e9331c32a161b487890f2d6c299e5d"
+    },
+    {
+     "path": "binary-file.txt",
+     "bytes": 81,
+     "sha256": "1986051f3a7177d1c11fd85bc8bf880ee7b174fd8ed622d3fb6cf6f9dec232d1",
+     "git_blob": "f47ecd6aeed21b08de2462205248467e853fb0ca"
+    },
+    {
+     "path": "Cargo.lock",
+     "bytes": 15520,
+     "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+     "git_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561"
+    },
+    {
+     "path": "box-exec-daemon",
+     "bytes": 2436720,
+     "sha256": "0f74efa8d199d2f6c633f5f2802577320bb9324b0671890ff20755f6c270c38e",
+     "git_blob": "d6ffda280ca09b85824289d34871b9350c113b81"
+    },
+    {
+     "path": "build.log",
+     "bytes": 483,
+     "sha256": "e99085dbc60adffc56beedbe6dc8cf1be85e7ff8751fd59931911a7529b20a13",
+     "git_blob": "c2da72db84ae2283fc8e7604750b06b361de25e9"
+    },
+    {
+     "path": "cargo-metadata.json",
+     "bytes": 288372,
+     "sha256": "f160268b53ffbe8a99216d25582a5d92b1da4e347531682a819a069c50741086",
+     "git_blob": "bb04fbb63dee8c4618cfb31befa2cb140411cc56"
+    },
+    {
+     "path": "defined-symbols.txt",
+     "bytes": 501480,
+     "sha256": "c98baaff0878c86f666a1a864521c998a996f2b8a40eddfe3297e76a63826b4c",
+     "git_blob": "b48e4a69417d383cd3288eb8de65d6181923ed86"
+    },
+    {
+     "path": "host-supervisor-contracts.log",
+     "bytes": 33344,
+     "sha256": "9db8c3fd01aee46809ba5eaed88a9c98c450650319d7e0cf6814a1329f92934b",
+     "git_blob": "03d254345bf52b97465abbe87df7707bdb0da9a3"
+    },
+    {
+     "path": "input-mode.txt",
+     "bytes": 7,
+     "sha256": "3a52732e0c98263090a2cd2509e7d2244d7194bd65f78b29e6ef6448e8143666",
+     "git_blob": "1329ec05c1cabbf713b2c95099a94f62b1ac6a9f"
+    },
+    {
+     "path": "linked-libraries.txt",
+     "bytes": 565,
+     "sha256": "7b566e83a14eff91c484fbc7470f45bb905cdcde772404e6fa5559615f9247c9",
+     "git_blob": "47f51f8408e83277488e190a47af1cff0cc11829"
+    },
+    {
+     "path": "normal-build-dependencies.log",
+     "bytes": 1584,
+     "sha256": "8c992791be1367a92e9bbfaeb9ad9d0b4fe9a3aa6b6eb0b7581be8b46e5f3447",
+     "git_blob": "5f8d9170c8bd7655f8b6b379daf32b703dcc9ee4"
+    },
+    {
+     "path": "owner-contracts.log",
+     "bytes": 1890,
+     "sha256": "60810574ff4de22e55d2037941bd6d745224c6409eb1ac896254790637ec0b69",
+     "git_blob": "1ad39bafffd54729323a5267f28fbab8c88f8f4d"
+    },
+    {
+     "path": "target-sha.txt",
+     "bytes": 41,
+     "sha256": "9a341584eb9e029293ff5ef5d9578a36bcaae61e8aa93ac753b7b9a2f6403802",
+     "git_blob": "437bf0f14e2dfddf498fcb1ecfc203aacf5d5fec"
+    },
+    {
+     "path": "scope.txt",
+     "bytes": 117,
+     "sha256": "5b723105c54c66e75880a07662b57a2ff00a536c4f063aa7fbfc886d5fd3519b",
+     "git_blob": "0e3d3cf25ac6f3760affb891f3c5af55659b7907"
+    },
+    {
+     "path": "toolchain.txt",
+     "bytes": 982,
+     "sha256": "cc5a1656bf041c48b18f7fca5d83bb0cbc1ef762394cae5a592eff02bb45177f",
+     "git_blob": "fcb7fe94d26fde0bc41949ef0528c8f7e4121e45"
+    }
+   ],
+   "reproducibility": "The raw decoded UTF-8 job log including its initial BOM is byte-for-byte the connector's complete returned text. ZIP bytes were saved unchanged, verified against GitHub digest, and all16 members were inspected as data."
+  },
+  "actual_workflow": {
+   "path": ".github/workflows/staged-runtime-source-contracts.yml",
+   "blob": "2b7e126271004487acc65509545f8377d0ce2918",
+   "capture_mode": false,
+   "complete_content": "name: Staged runtime source contracts\n\non:\n  push:\n    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]\n    paths:\n      - '.github/workflows/staged-runtime-source-contracts.yml'\n      - 'source/node-agent-coordinator/**'\n      - 'source/box-exec-daemon/**'\n      - 'source/fabushi-network-worker/**'\n      - 'desktop/package.json'\n  pull_request:\n    paths:\n      - '.github/workflows/staged-runtime-source-contracts.yml'\n      - 'source/node-agent-coordinator/**'\n      - 'source/box-exec-daemon/**'\n      - 'source/fabushi-network-worker/**'\n\npermissions:\n  contents: read\n\nenv:\n  # Inputs were captured at 565a4639 and are now pinned in the same source tree.\n  # Missing or mutated inputs must fail; capture evidence was not acceptance.\n  FBCP_CAPTURE_MISSING_INPUTS: 'false'\n  FABUSHI_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}\n\njobs:\n  acquire-inputs:\n    name: Acquire or verify auxiliary dependency inputs\n    runs-on: ubuntu-24.04\n    timeout-minutes: 20\n    outputs:\n      input_mode: ${{ steps.inputs.outputs.input_mode }}\n    env:\n      GOTOOLCHAIN: local\n      CGO_ENABLED: '0'\n      GOOS: darwin\n      GOARCH: arm64\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ env.FABUSHI_TARGET_SHA }}\n          fetch-depth: 1\n      - uses: dtolnay/rust-toolchain@stable\n        with:\n          toolchain: 1.97.1\n      - uses: actions/setup-go@v6\n        with:\n          go-version: '1.27.1'\n          cache: false\n      - name: Capture exact input identities without compiling or running products\n        id: inputs\n        shell: bash\n        run: |\n          set -euo pipefail\n          test \"$(git rev-parse HEAD)\" = \"$FABUSHI_TARGET_SHA\"\n          evidence=\"$GITHUB_WORKSPACE/artifacts/staged-runtime-inputs\"\n          mkdir -p \"$evidence\"\n          printf '%s\\n' \"$FABUSHI_TARGET_SHA\" > \"$evidence/target-sha.txt\"\n          { rustc -Vv; cargo -V; go version; go env GOOS GOARCH CGO_ENABLED GOTOOLCHAIN GOPROXY GOSUMDB; uname -a; } > \"$evidence/toolchains.txt\"\n          if [ \"$FBCP_CAPTURE_MISSING_INPUTS\" = true ]; then\n            mode=capture\n          else\n            mode=locked\n          fi\n          printf '%s\\n' \"$mode\" > \"$evidence/input-mode.txt\"\n          for root in source/node-agent-coordinator source/box-exec-daemon; do\n            mkdir -p \"$evidence/$root\"\n            if ! git ls-files --error-unmatch \"$root/Cargo.lock\" > /dev/null 2>&1; then\n              test \"$mode\" = capture\n              cargo generate-lockfile --manifest-path \"$root/Cargo.toml\"\n            fi\n            cargo metadata --locked --format-version 1 --manifest-path \"$root/Cargo.toml\" > \"$evidence/$root/cargo-metadata.json\"\n            cp \"$root/Cargo.toml\" \"$root/Cargo.lock\" \"$evidence/$root/\"\n            git diff --exit-code -- \"$root/Cargo.toml\"\n            if [ \"$mode\" = locked ]; then\n              git diff --exit-code -- \"$root/Cargo.lock\"\n            fi\n          done\n          mkdir -p \"$evidence/source/fabushi-network-worker\"\n          cp source/fabushi-network-worker/go.mod \"$evidence/source/fabushi-network-worker/original-go.mod\"\n          if ! git ls-files --error-unmatch source/fabushi-network-worker/go.sum > /dev/null 2>&1; then\n            test \"$mode\" = capture\n            (cd source/fabushi-network-worker && go mod tidy)\n          fi\n          (\n            cd source/fabushi-network-worker\n            test \"$(go list -mod=readonly -m -f '{{.Version}}' tailscale.com)\" = v1.104.1\n            go mod download -json all > \"$evidence/source/fabushi-network-worker/downloaded-modules.json\"\n            go mod verify > \"$evidence/source/fabushi-network-worker/module-verify.log\"\n            go list -mod=readonly -m -json all > \"$evidence/source/fabushi-network-worker/modules.json\"\n            GOFLAGS=-mod=readonly go mod graph > \"$evidence/source/fabushi-network-worker/module-graph.txt\"\n            cp go.mod go.sum \"$evidence/source/fabushi-network-worker/\"\n            git diff -- go.mod > \"$evidence/source/fabushi-network-worker/go-mod-resolution.patch\"\n            if [ \"$mode\" = locked ]; then\n              git diff --exit-code -- go.mod go.sum\n            fi\n          )\n          (\n            cd \"$evidence\"\n            sha256sum source/node-agent-coordinator/Cargo.toml source/node-agent-coordinator/Cargo.lock source/box-exec-daemon/Cargo.toml source/box-exec-daemon/Cargo.lock source/fabushi-network-worker/go.mod source/fabushi-network-worker/go.sum > input-sha256.txt\n          )\n          printf '%s\\n' 'Dependency acquisition/checksum evidence only. No product execution, macOS binary qualification, signed package or source/release ACCEPT is supplied by this job.' > \"$evidence/scope.txt\"\n          printf 'input_mode=%s\\n' \"$mode\" >> \"$GITHUB_OUTPUT\"\n      - name: Preserve the exact dependency inputs for review\n        if: always()\n        uses: actions/upload-artifact@v4\n        with:\n          name: staged-runtime-inputs-${{ env.FABUSHI_TARGET_SHA }}\n          path: artifacts/staged-runtime-inputs\n          if-no-files-found: error\n          retention-days: 90\n\n  rust-auxiliary:\n    needs: acquire-inputs\n    if: needs.acquire-inputs.outputs.input_mode == 'locked'\n    name: Source and binary / ${{ matrix.binary }}\n    runs-on: macos-15\n    timeout-minutes: 30\n    strategy:\n      fail-fast: false\n      matrix:\n        include:\n          - root: source/node-agent-coordinator\n            binary: mahayana-node-agent-coordinator\n          - root: source/box-exec-daemon\n            binary: box-exec-daemon\n    env:\n      RUNTIME_ROOT: ${{ matrix.root }}\n      RUNTIME_BINARY: ${{ matrix.binary }}\n      CARGO_TERM_COLOR: never\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ env.FABUSHI_TARGET_SHA }}\n          fetch-depth: 1\n      - uses: dtolnay/rust-toolchain@stable\n        with:\n          toolchain: 1.97.1\n      - uses: Swatinem/rust-cache@v2\n        with:\n          workspaces: ${{ matrix.root }} -> target\n          shared-key: auxiliary-runtime-1.97.1-${{ matrix.binary }}\n      - name: Bind exact source and acquire missing input only\n        shell: bash\n        run: |\n          set -euo pipefail\n          test \"$(git rev-parse HEAD)\" = \"$FABUSHI_TARGET_SHA\"\n          test \"$(uname -m)\" = arm64\n          evidence=\"artifacts/staged-runtime/$RUNTIME_BINARY\"\n          mkdir -p \"$evidence\"\n          printf '%s\\n' \"$FABUSHI_TARGET_SHA\" > \"$evidence/target-sha.txt\"\n          {\n            rustc -Vv\n            cargo -V\n            uname -a\n            xcodebuild -version\n            xcrun --find clang\n            xcrun clang --version\n            xcrun --show-sdk-path\n            xcrun --show-sdk-version\n            if command -v cmake; then\n              cmake --version\n            else\n              printf '%s\\n' 'cmake=unavailable (optional runner inventory)'\n            fi\n          } > \"$evidence/toolchain.txt\"\n          if git ls-files --error-unmatch \"$RUNTIME_ROOT/Cargo.lock\" > /dev/null 2>&1; then\n            printf '%s\\n' locked > \"$evidence/input-mode.txt\"\n          else\n            test \"$FBCP_CAPTURE_MISSING_INPUTS\" = true\n            printf '%s\\n' capture-untracked-inputs > \"$evidence/input-mode.txt\"\n            cargo generate-lockfile --manifest-path \"$RUNTIME_ROOT/Cargo.toml\"\n          fi\n          cp \"$RUNTIME_ROOT/Cargo.toml\" \"$evidence/Cargo.toml\"\n          cp \"$RUNTIME_ROOT/Cargo.lock\" \"$evidence/Cargo.lock\"\n          cargo metadata --locked --format-version 1 --manifest-path \"$RUNTIME_ROOT/Cargo.toml\" > \"$evidence/cargo-metadata.json\"\n          cargo tree --locked --manifest-path \"$RUNTIME_ROOT/Cargo.toml\" --edges normal,build 2>&1 | tee \"$evidence/normal-build-dependencies.log\"\n          if grep -Eq '(mahayana-ffi|mahayana-telegram|fabushi-telegram-(core|network|protocol|runtime|storage)) v' \"$evidence/normal-build-dependencies.log\"; then\n            echo 'auxiliary executable depends on a legacy Telegram or generic FFI runtime' >&2\n            exit 1\n          fi\n          git diff --exit-code -- \"$RUNTIME_ROOT/Cargo.toml\"\n          if [ \"$FBCP_CAPTURE_MISSING_INPUTS\" = false ]; then\n            git diff --exit-code -- \"$RUNTIME_ROOT/Cargo.lock\"\n          fi\n      - name: Build actual auxiliary executable with the captured or pinned input\n        shell: bash\n        run: |\n          set -euo pipefail\n          evidence=\"artifacts/staged-runtime/$RUNTIME_BINARY\"\n          cargo build --locked --profile ci --manifest-path \"$RUNTIME_ROOT/Cargo.toml\" --bin \"$RUNTIME_BINARY\" 2>&1 | tee \"$evidence/build.log\"\n          binary=\"$RUNTIME_ROOT/target/ci/$RUNTIME_BINARY\"\n          test -x \"$binary\"\n          file \"$binary\" | tee \"$evidence/binary-file.txt\"\n          grep -F 'arm64' \"$evidence/binary-file.txt\"\n          shasum -a 256 \"$binary\" > \"$evidence/binary-sha256.txt\"\n          nm -gUj \"$binary\" > \"$evidence/defined-symbols.txt\"\n          grep -Fx '_main' \"$evidence/defined-symbols.txt\"\n          otool -L \"$binary\" > \"$evidence/linked-libraries.txt\"\n          if grep -Eq '^_?(fabushi_telegram_|mahayana_runtime_)' \"$evidence/defined-symbols.txt\"; then\n            echo 'auxiliary executable exports a legacy ABI entry' >&2\n            exit 1\n          fi\n          if grep -Eqi '(mahayana_runtime|fabushi[_-]telegram)' \"$evidence/linked-libraries.txt\"; then\n            echo 'auxiliary executable loads a legacy runtime library' >&2\n            exit 1\n          fi\n          cp \"$binary\" \"$evidence/$RUNTIME_BINARY\"\n          if [ \"$FBCP_CAPTURE_MISSING_INPUTS\" = false ]; then\n            git diff --exit-code -- \"$RUNTIME_ROOT/Cargo.toml\" \"$RUNTIME_ROOT/Cargo.lock\"\n          fi\n          printf '%s\\n' 'Exact-H macOS auxiliary source/build evidence only; signed packages, other platforms and release ACCEPT remain open.' > \"$evidence/scope.txt\"\n      - name: Coordinator production process, HTTPS and health contracts\n        if: matrix.binary == 'mahayana-node-agent-coordinator' && env.FBCP_CAPTURE_MISSING_INPUTS == 'false'\n        shell: bash\n        run: |\n          set -euo pipefail\n          evidence=\"artifacts/staged-runtime/$RUNTIME_BINARY\"\n          cargo test --locked --profile ci --manifest-path \"$RUNTIME_ROOT/Cargo.toml\" --test production_protocol --test gateway_https --test host_supervisor_health -- --nocapture --test-threads=1 2>&1 | tee \"$evidence/owner-contracts.log\"\n          test \"$(grep -Ec '^test result: ok\\. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+([.][0-9]+)?s$' \"$evidence/owner-contracts.log\")\" -eq 2\n          grep -Eq '^test result: ok\\. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+([.][0-9]+)?s$' \"$evidence/owner-contracts.log\"\n      - name: Box owned filesystem, process and EOF contracts\n        if: matrix.binary == 'box-exec-daemon' && env.FBCP_CAPTURE_MISSING_INPUTS == 'false'\n        shell: bash\n        run: |\n          set -euo pipefail\n          evidence=\"artifacts/staged-runtime/$RUNTIME_BINARY\"\n          cargo test --locked --profile ci --manifest-path \"$RUNTIME_ROOT/Cargo.toml\" --lib -- --nocapture --test-threads=1 2>&1 | tee \"$evidence/owner-contracts.log\"\n          grep -Eq '^test result: ok\\. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+([.][0-9]+)?s$' \"$evidence/owner-contracts.log\"\n          FABUSHI_BOX_EXEC_DAEMON_TEST_BIN=\"$GITHUB_WORKSPACE/$evidence/$RUNTIME_BINARY\" \\\n            cargo test --locked --manifest-path source/host/Cargo.toml --test box_exec_daemon_process_contract -- --nocapture --test-threads=1 2>&1 | tee \"$evidence/host-supervisor-contracts.log\"\n          grep -Eq '^test result: ok\\. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+([.][0-9]+)?s$' \"$evidence/host-supervisor-contracts.log\"\n      - name: Preserve source and actual binary evidence\n        if: always()\n        uses: actions/upload-artifact@v4\n        with:\n          name: staged-runtime-${{ matrix.binary }}-${{ env.FABUSHI_TARGET_SHA }}\n          path: artifacts/staged-runtime/${{ matrix.binary }}\n          if-no-files-found: error\n          retention-days: 90\n\n  go-network-worker:\n    needs: acquire-inputs\n    if: needs.acquire-inputs.outputs.input_mode == 'locked'\n    name: Source and binary / fabushi-network-worker\n    runs-on: macos-15\n    timeout-minutes: 30\n    env:\n      GOTOOLCHAIN: local\n      CGO_ENABLED: '0'\n      GOOS: darwin\n      GOARCH: arm64\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ env.FABUSHI_TARGET_SHA }}\n          fetch-depth: 1\n      - uses: actions/setup-go@v6\n        with:\n          go-version: '1.27.1'\n          cache: false\n      - name: Bind exact source and acquire missing checksums only\n        shell: bash\n        run: |\n          set -euo pipefail\n          test \"$(git rev-parse HEAD)\" = \"$FABUSHI_TARGET_SHA\"\n          test \"$(uname -m)\" = arm64\n          evidence=\"$GITHUB_WORKSPACE/artifacts/staged-runtime/fabushi-network-worker\"\n          mkdir -p \"$evidence\"\n          printf '%s\\n' \"$FABUSHI_TARGET_SHA\" > \"$evidence/target-sha.txt\"\n          { go version; go env GOVERSION GOOS GOARCH CGO_ENABLED GOTOOLCHAIN GOPROXY GOSUMDB; uname -a; } > \"$evidence/toolchain.txt\"\n          cp source/fabushi-network-worker/go.mod \"$evidence/original-go.mod\"\n          if git ls-files --error-unmatch source/fabushi-network-worker/go.sum > /dev/null 2>&1; then\n            printf '%s\\n' locked > \"$evidence/input-mode.txt\"\n          else\n            test \"$FBCP_CAPTURE_MISSING_INPUTS\" = true\n            printf '%s\\n' capture-untracked-inputs > \"$evidence/input-mode.txt\"\n            (cd source/fabushi-network-worker && go mod tidy)\n          fi\n          cd source/fabushi-network-worker\n          test \"$(go list -mod=readonly -m -f '{{.Version}}' tailscale.com)\" = v1.104.1\n          go mod verify | tee \"$evidence/module-verify.log\"\n          go list -mod=readonly -m -json all > \"$evidence/modules.json\"\n          GOFLAGS=-mod=readonly go mod graph > \"$evidence/module-graph.txt\"\n          cp go.mod go.sum \"$evidence/\"\n          if [ \"$FBCP_CAPTURE_MISSING_INPUTS\" = false ]; then\n            git diff --exit-code -- go.mod go.sum\n          fi\n      - name: Build actual pure-Go worker with the captured or pinned input\n        working-directory: source/fabushi-network-worker\n        shell: bash\n        run: |\n          set -euo pipefail\n          evidence=\"$GITHUB_WORKSPACE/artifacts/staged-runtime/fabushi-network-worker\"\n          mkdir -p target/ci\n          go build -mod=readonly -trimpath -o target/ci/fabushi-network-worker . 2>&1 | tee \"$evidence/build.log\"\n          binary=target/ci/fabushi-network-worker\n          test -x \"$binary\"\n          file \"$binary\" | tee \"$evidence/binary-file.txt\"\n          grep -F 'arm64' \"$evidence/binary-file.txt\"\n          shasum -a 256 \"$binary\" > \"$evidence/binary-sha256.txt\"\n          go version -m \"$binary\" > \"$evidence/embedded-module-info.txt\"\n          grep -F 'github.com/bhrumom/fabushi-desktop/source/fabushi-network-worker' \"$evidence/embedded-module-info.txt\"\n          go tool nm \"$binary\" > \"$evidence/defined-symbols.txt\"\n          grep -E ' T main\\.main$' \"$evidence/defined-symbols.txt\"\n          otool -L \"$binary\" > \"$evidence/linked-libraries.txt\"\n          if grep -Eq ' (fabushi_telegram_|mahayana_runtime_)' \"$evidence/defined-symbols.txt\"; then\n            echo 'network worker defines a legacy ABI entry' >&2\n            exit 1\n          fi\n          if grep -Eqi '(mahayana_runtime|fabushi[_-]telegram)' \"$evidence/linked-libraries.txt\"; then\n            echo 'network worker loads a legacy runtime library' >&2\n            exit 1\n          fi\n          cp \"$binary\" \"$evidence/fabushi-network-worker\"\n          if [ \"$FBCP_CAPTURE_MISSING_INPUTS\" = false ]; then\n            git diff --exit-code -- go.mod go.sum\n          fi\n          printf '%s\\n' 'Exact-H CGO-disabled macOS auxiliary source/build evidence only; real enrollment, signed packages, other platforms and release ACCEPT remain open.' > \"$evidence/scope.txt\"\n      - name: Synthetic encrypted-state and stream protocol contracts\n        if: env.FBCP_CAPTURE_MISSING_INPUTS == 'false'\n        working-directory: source/fabushi-network-worker\n        shell: bash\n        run: |\n          set -euo pipefail\n          evidence=\"$GITHUB_WORKSPACE/artifacts/staged-runtime/fabushi-network-worker\"\n          go test -mod=readonly -count=1 -json ./... 2>&1 | tee \"$evidence/owner-contracts.jsonl\"\n          python3 - \"$evidence/owner-contracts.jsonl\" <<'PY'\n          import json, sys\n          events = [json.loads(line) for line in open(sys.argv[1]) if line.startswith(\"{\")]\n          passed = [event for event in events if event.get(\"Action\") == \"pass\" and event.get(\"Test\") and \"/\" not in event[\"Test\"]]\n          failed_or_skipped = [event for event in events if event.get(\"Action\") in (\"fail\", \"skip\")]\n          assert len(passed) == 13, (len(passed), passed)\n          assert not failed_or_skipped, failed_or_skipped\n          print(\"network-worker owner contracts: 13 top-level passed; 0 failed/skipped\")\n          PY\n          git diff --exit-code -- go.mod go.sum\n      - name: Preserve source and actual binary evidence\n        if: always()\n        uses: actions/upload-artifact@v4\n        with:\n          name: staged-runtime-fabushi-network-worker-${{ env.FABUSHI_TARGET_SHA }}\n          path: artifacts/staged-runtime/fabushi-network-worker\n          if-no-files-found: error\n          retention-days: 90\n",
+   "job_metadata": {
+    "id": 125536281727,
+    "name": "Source and binary / box-exec-daemon",
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 41520738119,
+    "logs_url": null,
+    "steps": [
+     {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+     },
+     {
+      "name": "Run actions/checkout@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+     },
+     {
+      "name": "Run dtolnay/rust-toolchain@stable",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+     },
+     {
+      "name": "Run Swatinem/rust-cache@v2",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+     },
+     {
+      "name": "Bind exact source and acquire missing input only",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+     },
+     {
+      "name": "Build actual auxiliary executable with the captured or pinned input",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+     },
+     {
+      "name": "Coordinator production process, HTTPS and health contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 7
+     },
+     {
+      "name": "Box owned filesystem, process and EOF contracts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8
+     },
+     {
+      "name": "Preserve source and actual binary evidence",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 9
+     },
+     {
+      "name": "Post Run Swatinem/rust-cache@v2",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 17
+     },
+     {
+      "name": "Post Run actions/checkout@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 18
+     },
+     {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 19
+     }
+    ]
+   }
+  },
+  "source_and_input_boundary": {
+   "box_entire_subtree": {
+    "sha": "ea8708f4ab6aea6a1413f82a2d91fef41a794d43",
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/trees/ea8708f4ab6aea6a1413f82a2d91fef41a794d43",
+    "tree": [
+     {
+      "path": "Cargo.lock",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+      "size": 15520,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/114bb8122dd6eefd7ca569b7391ec72d1fecc561"
+     },
+     {
+      "path": "Cargo.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+      "size": 458,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/477f8705412d38ed775bcd2f17058689b1ef0c0e"
+     },
+     {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ede18394cd2b46546d3ceb44de887266b62051d6",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/trees/ede18394cd2b46546d3ceb44de887266b62051d6"
+     },
+     {
+      "path": "src/cli.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "553d7bd05bef899d3c9ff7cf1c9a2b9a1ace68b5",
+      "size": 231,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/553d7bd05bef899d3c9ff7cf1c9a2b9a1ace68b5"
+     },
+     {
+      "path": "src/lib.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "441d1bd8c692c8db3548154f7bccbb1fa4f60082",
+      "size": 77,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/441d1bd8c692c8db3548154f7bccbb1fa4f60082"
+     },
+     {
+      "path": "src/main.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eca0d794be7f61fd3906b41697fa2b2767677846",
+      "size": 3195,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/eca0d794be7f61fd3906b41697fa2b2767677846"
+     },
+     {
+      "path": "src/server.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+      "size": 111209,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/a40dc3b5f78e414c3ac302137668f1d5be8dc73f"
+     },
+     {
+      "path": "src/workspace_write.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e91358cb84271251a8d271ef92a200f02be41c90",
+      "size": 3073,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/e91358cb84271251a8d271ef92a200f02be41c90"
+     }
+    ],
+    "truncated": false
+   },
+   "source_files": [
+    {
+     "path": "source/box-exec-daemon/Cargo.toml",
+     "blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e"
+    },
+    {
+     "path": "source/box-exec-daemon/Cargo.lock",
+     "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561"
+    },
+    {
+     "path": "source/box-exec-daemon/src/cli.rs",
+     "blob": "553d7bd05bef899d3c9ff7cf1c9a2b9a1ace68b5"
+    },
+    {
+     "path": "source/box-exec-daemon/src/lib.rs",
+     "blob": "441d1bd8c692c8db3548154f7bccbb1fa4f60082"
+    },
+    {
+     "path": "source/host/Cargo.toml",
+     "blob": "ebaa0140df01d0221fd35d0213b4ffce48bef9b9"
+    },
+    {
+     "path": "source/host/Cargo.lock",
+     "blob": "59748a9d9f865f4bc910f582ce7814aac59807a9"
+    },
+    {
+     "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+     "blob": "06506be3ce37c43ff02dff1da820859cab86eb3b"
+    }
+   ],
+   "server_source_blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+   "archived_manifest_and_lock_match_exact_H": true,
+   "input_mode": "locked",
+   "target_sha_file": "1abefb6e48141bc753c856ddf92705591ad7e851",
+   "production_entry": "Cargo declares the box-exec-daemon binary at src/cli.rs. Its main calls the existing library entrypoint run_box_exec_daemon_entrypoint; src/lib.rs exposes main.rs as entrypoint and the existing server/workspace_write modules. No new compatibility producer.",
+   "source_review_limit": "This audit binds the complete Box subtree and reads the manifest, production entry and observed failing test oracle. It does not claim a fresh deep review of every owner implementation.",
+   "same_tree_as_older_e13": true,
+   "box_tree_both_heads": "ea8708f4ab6aea6a1413f82a2d91fef41a794d43"
+  },
+  "actual_binary": {
+   "path_in_zip": "box-exec-daemon",
+   "bytes": 2436720,
+   "sha256": "0f74efa8d199d2f6c633f5f2802577320bb9324b0671890ff20755f6c270c38e",
+   "git_blob": "d6ffda280ca09b85824289d34871b9350c113b81",
+   "sidecar": "0f74efa8d199d2f6c633f5f2802577320bb9324b0671890ff20755f6c270c38e  source/box-exec-daemon/target/ci/box-exec-daemon\n",
+   "sidecar_matches_actual_binary": true,
+   "cloud_file_result": "source/box-exec-daemon/target/ci/box-exec-daemon: Mach-O 64-bit executable arm64\n",
+   "binary_header_read_as_data": {
+    "first32bytes_hex": "cffaedfe0c000001000000000200000015000000700900008500a00000000000",
+    "u32le": [
+     4277009103,
+     16777228,
+     0,
+     2,
+     21,
+     2416,
+     10485893,
+     0
+    ]
+   },
+   "positive_main": true,
+   "defined_symbol_count": 3231,
+   "forbidden_defined_symbols": [],
+   "normal_build_dependency_log": "fabushi-box-exec-daemon v0.1.0 (/Users/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon)\n├── chrono v0.4.45\n│   ├── iana-time-zone v0.1.65\n│   │   └── core-foundation-sys v0.8.7\n│   └── num-traits v0.2.19\n│       [build-dependencies]\n│       └── autocfg v1.5.1\n├── ctrlc v3.5.2\n│   ├── dispatch2 v0.3.1\n│   │   ├── bitflags v2.13.2\n│   │   ├── block2 v0.6.2\n│   │   │   └── objc2 v0.6.5\n│   │   │       └── objc2-encode v4.1.0\n│   │   ├── libc v0.2.191\n│   │   └── objc2 v0.6.5 (*)\n│   └── nix v0.31.3\n│       ├── bitflags v2.13.2\n│       ├── cfg-if v1.0.5\n│       └── libc v0.2.191\n│       [build-dependencies]\n│       └── cfg_aliases v0.2.2\n├── libc v0.2.191\n├── path-clean v1.0.1\n├── prost v0.13.5\n│   ├── bytes v1.12.1\n│   └── prost-derive v0.13.5 (proc-macro)\n│       ├── anyhow v1.0.104\n│       ├── itertools v0.14.0\n│       │   └── either v1.19.0\n│       ├── proc-macro2 v1.0.107\n│       │   └── unicode-ident v1.0.27\n│       ├── quote v1.0.47\n│       │   └── proc-macro2 v1.0.107 (*)\n│       └── syn v2.0.119\n│           ├── proc-macro2 v1.0.107 (*)\n│           ├── quote v1.0.47 (*)\n│           └── unicode-ident v1.0.27\n└── serde_json v1.0.154\n    ├── itoa v1.0.18\n    ├── memchr v2.8.3\n    ├── serde_core v1.0.229\n    └── zmij v1.0.23\n",
+   "forbidden_normal_build_dependencies": [],
+   "linked_libraries": "source/box-exec-daemon/target/ci/box-exec-daemon:\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)\n\t/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)\n\t/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 3502.1.255)\n\t/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 3502.1.255)\n",
+   "forbidden_linked_libraries": [],
+   "build_log": "   Compiling fabushi-box-exec-daemon v0.1.0 (/Users/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon)\nwarning: struct `PathRejectedError` is never constructed\n   --> src/server.rs:624:8\n    |\n624 | struct PathRejectedError(String);\n    |        ^^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `fabushi-box-exec-daemon` (lib) generated 1 warning\n    Finished `ci` profile [unoptimized] target(s) in 3.30s\n",
+   "qualification": "Actual macOS arm64 CI-profile executable built with the pinned lock, with positive _main and actual retained normal/build graph/symbol/library negatives. Not an installed signed release package or all-platform acceptance."
+  },
+  "actual_tests": {
+   "box_owner_reported_result": [
+    "test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s"
+   ],
+   "box_owner_actual_case_names": [
+    "entrypoint::tests::parent_pipe_eof_requests_shutdown",
+    "server::tests::authenticated_connect_routes_ping_and_exec_read_with_frozen_wire_tags",
+    "server::tests::binary_read_preserves_bytes_and_rejects_ranges_and_oversize",
+    "server::tests::disconnect_aborts_foreground_shell_process_group",
+    "server::tests::exec_connect_envelope_is_exact_and_bare_proto_stays_compatible",
+    "server::tests::frozen_write_tags_dispatch_actual_atomic_bytes_and_replace",
+    "server::tests::path_mapping_is_workspace_scoped_and_terminal_virtual_names_are_strict",
+    "server::tests::read_matches_range_encoding_and_symlink_rejection_contract",
+    "server::tests::shell_environment_and_background_stdin_match_daemon_contract",
+    "server::tests::shell_stream_emits_stdout_before_child_finishes",
+    "server::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry",
+    "server::tests::write_parent_symlink_replacement_cannot_redirect_to_outside_file",
+    "server::tests::write_rejects_escape_symlink_parent_target_and_oversize_without_side_effects"
+   ],
+   "box_owner_actual_case_count": 13,
+   "box_owner_complete_log": "   Compiling fabushi-box-exec-daemon v0.1.0 (/Users/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon)\nwarning: struct `PathRejectedError` is never constructed\n   --> src/server.rs:624:8\n    |\n624 | struct PathRejectedError(String);\n    |        ^^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `fabushi-box-exec-daemon` (lib test) generated 1 warning\n    Finished `ci` profile [unoptimized] target(s) in 1.21s\n     Running unittests src/lib.rs (source/box-exec-daemon/target/ci/deps/fabushi_box_exec_daemon-8a5df91a58d0e8c4)\n\nrunning 13 tests\ntest entrypoint::tests::parent_pipe_eof_requests_shutdown ... ok\ntest server::tests::authenticated_connect_routes_ping_and_exec_read_with_frozen_wire_tags ... ok\ntest server::tests::binary_read_preserves_bytes_and_rejects_ranges_and_oversize ... ok\ntest server::tests::disconnect_aborts_foreground_shell_process_group ... kill: illegal process id: $\nok\ntest server::tests::exec_connect_envelope_is_exact_and_bare_proto_stays_compatible ... ok\ntest server::tests::frozen_write_tags_dispatch_actual_atomic_bytes_and_replace ... ok\ntest server::tests::path_mapping_is_workspace_scoped_and_terminal_virtual_names_are_strict ... ok\ntest server::tests::read_matches_range_encoding_and_symlink_rejection_contract ... ok\ntest server::tests::shell_environment_and_background_stdin_match_daemon_contract ... ok\ntest server::tests::shell_stream_emits_stdout_before_child_finishes ... ok\ntest server::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry ... ok\ntest server::tests::write_parent_symlink_replacement_cannot_redirect_to_outside_file ... ok\ntest server::tests::write_rejects_escape_symlink_parent_target_and_oversize_without_side_effects ... ok\n\ntest result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s\n\n",
+   "host_reported_result": [
+    "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s"
+   ],
+   "host_actual_case_names": [
+    "shipping_supervisor_spawns_authenticates_and_closes_real_daemon_when_provided",
+    "sibling_binary_resolution_matches_packaged_resources_bin_contract",
+    "supervisor_rejects_contaminated_port_before_spawning"
+   ],
+   "host_actual_case_count": 3,
+   "host_supervisor_tail": "ese are intentionally ignored during dead code analysis\n\nwarning: variant `Enum` is never constructed\n --> src/cloud_agents/cloud_agent_trace_format.rs:8:5\n  |\n6 | enum CloudAgentProtoMapValueKind {\n  |      --------------------------- variant in this enum\n7 |     Scalar(u64),\n8 |     Enum,\n  |     ^^^^\n  |\n  = note: `CloudAgentProtoMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis\n\nwarning: field `proto_name` is never read\n  --> src/cloud_agents/cloud_agent_trace_format.rs:26:5\n   |\n24 | struct CloudAgentProtoFieldDescriptor {\n   |        ------------------------------ field in this struct\n25 |     number: u64,\n26 |     proto_name: &'static str,\n   |     ^^^^^^^^^^\n   |\n   = note: `CloudAgentProtoFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis\n\nwarning: `mahayana-host-runtime` (lib) generated 51 warnings (run `cargo fix --lib -p mahayana-host-runtime` to apply 29 suggestions)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 12s\n     Running tests/box_exec_daemon_process_contract.rs (source/host/target/debug/deps/box_exec_daemon_process_contract-f3db806c021a645d)\n\nrunning 3 tests\ntest shipping_supervisor_spawns_authenticates_and_closes_real_daemon_when_provided ... [box-exec-daemon] {\"event\":\"box-exec-daemon-ready\",\"terminalsDirectory\":\"/private/var/folders/y3/p6x0rn5562l5qyxy7x6jqrsc0000gn/T/fabushi-box-exec-supervisor-e748bd43-c600-4ced-8026-b2d73a4e7f13/terminals\",\"url\":\"http://127.0.0.1:49200\",\"workspaceRoot\":\"/private/var/folders/y3/p6x0rn5562l5qyxy7x6jqrsc0000gn/T/fabushi-box-exec-supervisor-e748bd43-c600-4ced-8026-b2d73a4e7f13/workspace\"}\nok\ntest sibling_binary_resolution_matches_packaged_resources_bin_contract ... ok\ntest supervisor_rejects_contaminated_port_before_spawning ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s\n\n",
+   "copied_actual_binary_supplied_by_workflow": true,
+   "missing_binary_skip_guard_printed": false,
+   "actual_ready_event_observed": true,
+   "host_source_blob": "06506be3ce37c43ff02dff1da820859cab86eb3b",
+   "host_execution_interpretation": "The existing shipping supervisor test actually launched the copied daemon, observed READY, authenticated its production ping and closed it; the source asserts a real PID, the exact supplied executable path and port release. The optional no-binary early-return branch was not taken.",
+   "counts_are_observed_not_expected": true,
+   "counts_limit": "The test runner actually reported13 Box cases and3 Host cases passed. This statement does not qualify every assertion: the disconnect case below is a proven historical test-oracle false positive. That finding does not erase the real binary/SDK/other observed case results."
+  },
+  "sdk_inventory": {
+   "complete_toolchain_txt": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\ncargo 1.97.1 (c980f4866 2026-06-30)\nDarwin sat12-bq166-b13fee8f-3592-4323-8156-a3edc5564c54-5E4AA45E9674.local 24.6.0 Darwin Kernel Version 24.6.0: Sun Oct 11 23:44:11 PDT 2026; root:xnu-11417.140.69.713.47~2/RELEASE_ARM64_VMAPPLE arm64\nXcode 16.4\nBuild version 16F6\n/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang\nApple clang version 17.0.0 (clang-1700.0.13.5)\nTarget: arm64-apple-darwin24.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n/Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk\n15.5\n/opt/homebrew/bin/cmake\ncmake version 4.4.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+   "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+   "cargo": "1.97.1 (c980f4866 2026-06-30)",
+   "host": "aarch64-apple-darwin",
+   "xcode": "16.4",
+   "xcode_build": "16F6",
+   "clang_path": "/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+   "clang_version": "Apple clang version17.0.0 (clang-1700.0.13.5)",
+   "clang_target": "arm64-apple-darwin24.6.0",
+   "sdk_path": "/Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+   "sdk_version": "15.5",
+   "cmake_path": "/opt/homebrew/bin/cmake",
+   "cmake_version": "4.4.4",
+   "actually_recorded_in_completed_mac_job": true,
+   "qualification": "This is an executed tool/SDK inventory at exact1ab, not source/legal acceptance or a claim that runner tools are immutable across runs."
+  },
+  "findings": [
+   {
+    "id": "BOX-DISCONNECT-ORACLE-01",
+    "classification": "TEST_ORACLE",
+    "state": "HISTORICAL_FALSE_PASS_CONFIRMED_CURRENT_SOURCE_FIX_EXISTS_EXECUTION_STILL_REQUIRES_ITS_H",
+    "affected_head": "1abefb6e48141bc753c856ddf92705591ad7e851",
+    "affected_case": "server::tests::disconnect_aborts_foreground_shell_process_group",
+    "source_path": "source/box-exec-daemon/src/server.rs",
+    "source_blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+    "source_url": "https://github.com/bhrumom/fabushi-desktop/blob/1abefb6e48141bc753c856ddf92705591ad7e851/source/box-exec-daemon/src/server.rs",
+    "full_historical_test": {
+     "start_line": 2733,
+     "end_line": 2805,
+     "content": "    #[cfg(unix)]\n    #[test]\n    fn disconnect_aborts_foreground_shell_process_group() {\n        let root = tempfile::tempdir().expect(\"root\");\n        let workspace = root.path().join(\"workspace\");\n        fs::create_dir_all(&workspace).expect(\"workspace\");\n        let handle = start_box_exec_daemon(BoxExecDaemonOptions {\n            host: Some(\"127.0.0.1\".into()),\n            port: Some(0),\n            auth_token: Some(\"secret\".into()),\n            workspace_root: workspace.clone(),\n            terminals_directory: Some(root.path().join(\"terminals\")),\n            environment: Some(std::env::vars().collect()),\n        })\n        .expect(\"daemon\");\n        let request = ExecServerMessage {\n            id: 77,\n            exec_id: \"abort-wire\".into(),\n            message: Some(exec_server_message::Message::ShellArgs(ShellArgs {\n                command: \"echo $ > abort-pid.txt; sleep 10\".into(),\n                working_directory: \"/workspace\".into(),\n                timeout: 0,\n                tool_call_id: \"abort-tool\".into(),\n                is_background: false,\n                skip_approval: false,\n                timeout_behavior: 0,\n                hard_timeout: None,\n            })),\n        };\n        let body = request.encode_to_vec();\n        let mut stream = TcpStream::connect((\"127.0.0.1\", handle.port)).expect(\"connect\");\n        write!(\n            stream,\n            \"POST /agent.v1.ExecService/Exec HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nAuthorization: Bearer secret\\r\\nContent-Type: application/proto\\r\\nContent-Length: {}\\r\\nConnection: close\\r\\n\\r\\n\",\n            body.len()\n        )\n        .expect(\"headers\");\n        stream.write_all(&body).expect(\"body\");\n        stream.flush().expect(\"flush\");\n\n        let pid_path = workspace.join(\"abort-pid.txt\");\n        let deadline = Instant::now() + Duration::from_secs(2);\n        while !pid_path.exists() {\n            assert!(Instant::now() < deadline, \"foreground shell never started\");\n            thread::sleep(Duration::from_millis(10));\n        }\n        let pid = fs::read_to_string(&pid_path)\n            .expect(\"pid\")\n            .trim()\n            .to_string();\n        drop(stream);\n\n        let deadline = Instant::now() + Duration::from_secs(3);\n        let mut exited = false;\n        while Instant::now() < deadline {\n            let alive = Command::new(\"kill\")\n                .args([\"-0\", &pid])\n                .status()\n                .map(|status| status.success())\n                .unwrap_or(false);\n            if !alive {\n                exited = true;\n                break;\n            }\n            thread::sleep(Duration::from_millis(20));\n        }\n        if !exited {\n            let _ = handle.stop();\n        }\n        assert!(exited, \"client disconnect did not abort foreground process group\");\n        handle.stop().expect(\"stop\");\n    }\n"
+    },
+    "exact_raw_log_line": {
+     "line": 626,
+     "text": "2026-11-02T21:06:30.5827390Z test server::tests::disconnect_aborts_foreground_shell_process_group ... kill: illegal process id: $"
+    },
+    "artifact_log_exact_context": "test server::tests::disconnect_aborts_foreground_shell_process_group ... kill: illegal process id: $\nok",
+    "cause": "The fixture runs echo $ > abort-pid.txt; sleep10. It reads the literal dollar text without parsing a numeric PID and passes it to external kill -0. Any unsuccessful status is classified as !alive, so an illegal-PID argument proves neither prior liveness nor disconnect-driven process-group termination.",
+    "consequence": "Do not count this historical green case as accepted foreground-disconnect or process-group reclamation semantics. No implementation defect in the actual cancellation mechanism is established by this finding alone.",
+    "current_source_fix": {
+     "head": "27058348051d8160937bf072e2d0766cf8eeeacf",
+     "server_blob": "f9eb8afca9e3eb80e2fbce7af5712bccca478766",
+     "workflow_blob": "53a36b3b72aed8eb929f1c87876c58fdde3b105d",
+     "api_read_back_verified": true,
+     "full_current_test": {
+      "start_line": 2733,
+      "end_line": 2864,
+      "content": "    #[cfg(unix)]\n    #[test]\n    fn disconnect_aborts_foreground_shell_process_group() {\n        fn is_alive(target: libc::pid_t) -> Result<bool, String> {\n            if unsafe { libc::kill(target, 0) } == 0 {\n                return Ok(true);\n            }\n            let error = std::io::Error::last_os_error();\n            if error.raw_os_error() == Some(libc::ESRCH) {\n                return Ok(false);\n            }\n            Err(format!(\"process probe for {target} failed: {error}\"))\n        }\n\n        let root = tempfile::tempdir().expect(\"root\");\n        let workspace = root.path().join(\"workspace\");\n        fs::create_dir_all(&workspace).expect(\"workspace\");\n        let handle = start_box_exec_daemon(BoxExecDaemonOptions {\n            host: Some(\"127.0.0.1\".into()),\n            port: Some(0),\n            auth_token: Some(\"secret\".into()),\n            workspace_root: workspace.clone(),\n            terminals_directory: Some(root.path().join(\"terminals\")),\n            environment: Some(std::env::vars().collect()),\n        })\n        .expect(\"daemon\");\n        let request = ExecServerMessage {\n            id: 77,\n            exec_id: \"abort-wire\".into(),\n            message: Some(exec_server_message::Message::ShellArgs(ShellArgs {\n                // The trap only reaps the child. Killing the leader alone must\n                // leave the child alive and fail the disconnect observation.\n                command: r#\"sleep 30 &\nchild=$!\ntrap 'wait \"$child\"' TERM\nprintf '%s %s\\n' \"$$\" \"$child\" > abort-pids.tmp\nmv abort-pids.tmp abort-pids.txt\nwait \"$child\"\"#\n                    .into(),\n                working_directory: \"/workspace\".into(),\n                timeout: 0,\n                tool_call_id: \"abort-tool\".into(),\n                is_background: false,\n                skip_approval: false,\n                timeout_behavior: 0,\n                hard_timeout: None,\n            })),\n        };\n        let body = request.encode_to_vec();\n        let cancellation_result = (|| -> Result<(), String> {\n            let mut stream = TcpStream::connect((\"127.0.0.1\", handle.port))\n                .map_err(|error| format!(\"connect: {error}\"))?;\n            write!(\n                stream,\n                \"POST /agent.v1.ExecService/Exec HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nAuthorization: Bearer secret\\r\\nContent-Type: application/proto\\r\\nContent-Length: {}\\r\\nConnection: close\\r\\n\\r\\n\",\n                body.len()\n            )\n            .map_err(|error| format!(\"headers: {error}\"))?;\n            stream\n                .write_all(&body)\n                .map_err(|error| format!(\"body: {error}\"))?;\n            stream.flush().map_err(|error| format!(\"flush: {error}\"))?;\n\n            let pid_path = workspace.join(\"abort-pids.txt\");\n            let deadline = Instant::now() + Duration::from_secs(2);\n            while !pid_path.exists() {\n                if Instant::now() >= deadline {\n                    return Err(\"foreground shell and child never became ready\".into());\n                }\n                thread::sleep(Duration::from_millis(10));\n            }\n            let ready = fs::read_to_string(&pid_path)\n                .map_err(|error| format!(\"read ready process IDs: {error}\"))?;\n            let ids = ready.split_whitespace().collect::<Vec<_>>();\n            if ids.len() != 2 {\n                return Err(format!(\"expected exactly two ready process IDs: {ready:?}\"));\n            }\n            let leader = ids[0]\n                .parse::<libc::pid_t>()\n                .map_err(|error| format!(\"invalid leader PID: {error}\"))?;\n            let child = ids[1]\n                .parse::<libc::pid_t>()\n                .map_err(|error| format!(\"invalid child PID: {error}\"))?;\n            if leader <= 1 || child <= 1 || leader == child {\n                return Err(format!(\"invalid leader/child PID pair: {leader}/{child}\"));\n            }\n            for pid in [leader, child] {\n                if !is_alive(pid)? {\n                    return Err(format!(\"process {pid} exited before client disconnect\"));\n                }\n                let group = unsafe { libc::getpgid(pid) };\n                if group == -1 {\n                    return Err(format!(\n                        \"getpgid({pid}) failed: {}\",\n                        std::io::Error::last_os_error()\n                    ));\n                }\n                if group != leader {\n                    return Err(format!(\n                        \"process {pid} belongs to group {group}, expected leader {leader}\"\n                    ));\n                }\n            }\n            if !is_alive(-leader)? {\n                return Err(\"foreground group exited before client disconnect\".into());\n            }\n            drop(stream);\n\n            let deadline = Instant::now() + Duration::from_secs(3);\n            loop {\n                let leader_alive = is_alive(leader)?;\n                let child_alive = is_alive(child)?;\n                let group_alive = is_alive(-leader)?;\n                if Instant::now() >= deadline {\n                    return Err(format!(\n                        \"disconnect did not settle group {leader}: leader={leader_alive}, child={child_alive}, group={group_alive}\"\n                    ));\n                }\n                if !leader_alive && !child_alive && !group_alive {\n                    return Ok(());\n                }\n                thread::sleep(Duration::from_millis(20));\n            }\n        })();\n\n        // Capture the disconnect outcome before cleanup; shutdown must not\n        // turn a failed observation into a passing cancellation test.\n        let cleanup_result = handle.stop();\n        cancellation_result.expect(\"client disconnect must abort the foreground process group\");\n        cleanup_result.expect(\"stop\");\n    }\n"
+     },
+     "source_observed_changes": "Atomic ready record contains leader and child PIDs; numeric pid_t validation with values>1 and distinct; libc kill probe accepts only ESRCH as absence; positive pre-disconnect liveness and common process group; post-disconnect leader/child/group disappearance; result captured before handle.stop cleanup.",
+     "existing_new_gate": "box-process-contracts / Ubuntu,13 cases with explicit disconnect case ok oracle; the same Mac binary owner suite remains required.",
+     "validation_scope": "Source binding only in this supplement. Root/other evidence owner tracks exact fix-containing-H Actions. Old1ab binary and13+3 success cannot be promoted to execution evidence for this changed test or newer source.",
+     "repeat_fix_required": false
+    }
+   }
+  ],
+  "preserved_older_evidence": {
+   "e13_box": {
+    "head": "e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e",
+    "run_id": 41519264825,
+    "job_id": 125531715363,
+    "metadata": {
+     "id": 125531715363,
+     "name": "Source and binary / box-exec-daemon",
+     "status": "completed",
+     "conclusion": "success",
+     "run_id": 41519264825,
+     "logs_url": null,
+     "steps": [
+      {
+       "name": "Set up job",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 1
+      },
+      {
+       "name": "Run actions/checkout@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 2
+      },
+      {
+       "name": "Run dtolnay/rust-toolchain@stable",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 3
+      },
+      {
+       "name": "Run Swatinem/rust-cache@v2",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 4
+      },
+      {
+       "name": "Bind exact source and acquire missing input only",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 5
+      },
+      {
+       "name": "Build actual auxiliary executable with the captured or pinned input",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 6
+      },
+      {
+       "name": "Coordinator production process, HTTPS and health contracts",
+       "status": "completed",
+       "conclusion": "skipped",
+       "number": 7
+      },
+      {
+       "name": "Box owned filesystem, process and EOF contracts",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 8
+      },
+      {
+       "name": "Preserve source and actual binary evidence",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 9
+      },
+      {
+       "name": "Post Run Swatinem/rust-cache@v2",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 17
+      },
+      {
+       "name": "Post Run actions/checkout@v6",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 18
+      },
+      {
+       "name": "Complete job",
+       "status": "completed",
+       "conclusion": "success",
+       "number": 19
+      }
+     ]
+    },
+    "source_tree_identical_to_1ab": true,
+    "older_log_or_zip_downloaded": false,
+    "qualification": "Metadata-only success; the more recent1ab complete artifact covers the identical Box subtree and adds SDK inventory. Both historical heads contain the same invalid disconnect oracle. Do not claim SDK evidence from the old run."
+   },
+   "e13_coordinator": {
+    "head": "e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e",
+    "run_id": 41519264825,
+    "job_id": 125531715469,
+    "prior_report": "runtime-lock-aux-current-execution.json",
+    "prior_report_sha256": "a1c39f0624d48e89e27d4dd581f8e7f90b6412ab18c768acc89d56a1e86849e0",
+    "qualification": "Previously fully reviewed actual binary and1+4+1 owner results preserved unchanged; not downloaded again."
+   }
+  },
+  "remaining_at_this_read": {
+   "same_run_pending_jobs": [
+    {
+     "id": 125536281747,
+     "name": "Source and binary / mahayana-node-agent-coordinator",
+     "status": "queued",
+     "conclusion": null,
+     "run_id": 41520738119,
+     "logs_url": null,
+     "steps": null
+    },
+    {
+     "id": 125536281773,
+     "name": "Source and binary / fabushi-network-worker",
+     "status": "queued",
+     "conclusion": null,
+     "run_id": 41520738119,
+     "logs_url": null,
+     "steps": null
+    }
+   ],
+   "same_run_not_terminal": true,
+   "fix_containing_H_actions_required": true,
+   "supported_platform_signed_installed_packages": false,
+   "real_services_and_full_source_legal_acceptance": false,
+   "complete_product_acceptance": false,
+   "independent_accept": false
+  },
+  "acceptance": {
+   "actual_binary_input_identity_verified": true,
+   "actual_binary_graph_symbol_library_checks_verified": true,
+   "new_apple_sdk_inventory_observed": true,
+   "actual_host_supplied_binary_execution_verified": true,
+   "box_owner_reported_13_passes": true,
+   "host_reported_3_passes": true,
+   "historical_disconnect_semantics_accepted": false,
+   "all_box_owner_semantics_accepted": false,
+   "current_fix_executed_and_accepted_by_this_audit": false,
+   "full_acceptance": false
+  },
+  "local_execution": false,
+  "github_writes": false,
+  "source_changes": false,
+  "original_data_access": false,
+  "saved_files": [
+   "round16-final-box-package-execution.json",
+   "round16-final-box-job125536281727.log",
+   "round16-final-box-artifact13180430446.zip"
+  ]
+ },
+ "adopted_box_disconnect_fix_execution": {
+  "schema": "MAHAYANA_BOX_ORACLE_FIX_EXECUTION_V1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 16,
+  "observed_at": "2026-11-02T21:30:02.124Z",
+  "repository": "bhrumom/fabushi-desktop",
+  "upstream_sha": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "verification_mode": "Read-only GitHub API, archive extraction, text/JSON reads and byte hashing; no product execution, build/test/validator or GitHub mutation.",
+  "fix_commit": {
+   "sha": "d2771e953a5b3978b3624518e7f07eaf692ee411",
+   "parent": "3ab165561eb9fc7aba7b7bebff492cd105966b1a",
+   "tree": "2d298edc98c7145106a26c4a798fdf341ebd5895",
+   "url": "https://github.com/bhrumom/fabushi-desktop/commit/d2771e953a5b3978b3624518e7f07eaf692ee411",
+   "message": "test(box-exec): prove disconnect terminates the real process group",
+   "committed_at": "2026-11-02T21:11:25Z",
+   "source": {
+    "path": "source/box-exec-daemon/src/server.rs",
+    "blob_sha": "f9eb8afca9e3eb80e2fbce7af5712bccca478766",
+    "parent_blob_sha": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+    "api_readback": true
+   },
+   "workflow": {
+    "path": ".github/workflows/staged-runtime-source-contracts.yml",
+    "blob_sha": "53a36b3b72aed8eb929f1c87876c58fdde3b105d",
+    "api_readback": true
+   },
+   "owner_boundary": "Existing fabushi-box-exec-daemon owner. server.rs change is confined to its existing disconnect_aborts_foreground_shell_process_group test; the same commit adds the Ubuntu owner gate and associated evidence/spec. No new owner, public control protocol, or production runtime replacement is claimed."
+  },
+  "workflow_run": {
+   "id": 41526069466,
+   "attempt": 1,
+   "head_sha": "d2771e953a5b3978b3624518e7f07eaf692ee411",
+   "event": "push",
+   "path": ".github/workflows/staged-runtime-source-contracts.yml",
+   "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526069466",
+   "created_at": "2026-11-02T21:11:32Z",
+   "observed_job_states": [
+    {
+     "id": 125554007352,
+     "name": "Acquire or verify auxiliary dependency inputs",
+     "status": "completed",
+     "conclusion": "success"
+    },
+    {
+     "id": 125554615301,
+     "name": "Box process contracts / Ubuntu",
+     "status": "completed",
+     "conclusion": "success"
+    },
+    {
+     "id": 125554615412,
+     "name": "Source and binary / mahayana-node-agent-coordinator",
+     "status": "queued",
+     "conclusion": null
+    },
+    {
+     "id": 125554615515,
+     "name": "Source and binary / box-exec-daemon",
+     "status": "queued",
+     "conclusion": null
+    },
+    {
+     "id": 125554615556,
+     "name": "Source and binary / fabushi-network-worker",
+     "status": "queued",
+     "conclusion": null
+    }
+   ],
+   "overall_run_accepted": false,
+   "queued_is_failure": false,
+   "same_sha_required": true
+  },
+  "ubuntu_execution": {
+   "job_id": 125554615301,
+   "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526069466/job/125554615301",
+   "job_name": "Box process contracts / Ubuntu",
+   "runner": "ubuntu-24.04",
+   "status": "completed",
+   "conclusion": "success",
+   "command": "cargo test --locked --profile ci --manifest-path source/box-exec-daemon/Cargo.toml --lib -- --nocapture --test-threads=1",
+   "actual_summary": "test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s",
+   "counts": {
+    "passed": 13,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 0,
+    "suite_duration_seconds": 0.83
+   },
+   "test_results": [
+    {
+     "name": "entrypoint::tests::parent_pipe_eof_requests_shutdown",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::authenticated_connect_routes_ping_and_exec_read_with_frozen_wire_tags",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::binary_read_preserves_bytes_and_rejects_ranges_and_oversize",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::disconnect_aborts_foreground_shell_process_group",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::exec_connect_envelope_is_exact_and_bare_proto_stays_compatible",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::frozen_write_tags_dispatch_actual_atomic_bytes_and_replace",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::path_mapping_is_workspace_scoped_and_terminal_virtual_names_are_strict",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::read_matches_range_encoding_and_symlink_rejection_contract",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::shell_environment_and_background_stdin_match_daemon_contract",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::shell_stream_emits_stdout_before_child_finishes",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::write_parent_symlink_replacement_cannot_redirect_to_outside_file",
+     "result": "ok"
+    },
+    {
+     "name": "server::tests::write_rejects_escape_symlink_parent_target_and_oversize_without_side_effects",
+     "result": "ok"
+    }
+   ],
+   "fixed_case": "server::tests::disconnect_aborts_foreground_shell_process_group",
+   "illegal_process_id_diagnostic_present": false,
+   "duplicate_line_rule": "The job log reprints the fixed case during the explicit grep gate; case counting uses the single test-run rows in owner-contracts.log, not that repeated grep output.",
+   "runtime_pid_values_emitted": false,
+   "observation_boundary": "The exact-source test passes with real TCP disconnect and subprocess/group checks. Logs do not emit numeric leader/child/group PID values or individual probe values; none are fabricated.",
+   "successful_dependency_preservation_step": "Preserve tracked Box dependency inputs",
+   "dependency_preservation_command": "git diff --exit-code HEAD -- source/box-exec-daemon/Cargo.toml source/box-exec-daemon/Cargo.lock",
+   "dependency_preservation_step_conclusion": "success",
+   "full_job_log": {
+    "path": "/workspace/scratch/049bfe5e4966/round16-box-oracle/d2771e953a5b3978b3624518e7f07eaf692ee411/job-125554615301-full.log",
+    "bytes": 51199,
+    "sha256": "f021a15e546fb9cb1b9bca9df1a7eb9f54786340b4632cb99eb442b9f2ff68a1",
+    "source_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125554615301/logs",
+    "complete_log_read": true,
+    "local_bytes_match_api_hash": true
+   }
+  },
+  "locked_inputs": {
+   "parent_to_fix_unchanged": true,
+   "files": [
+    {
+     "path": "source/box-exec-daemon/Cargo.toml",
+     "head_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+     "parent_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+     "unchanged": true,
+     "bytes": 458,
+     "git_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+     "sha256": "7511a97ad45e71f7931285804ef77e36cd7f2b3c39b2973798ce2adde1814a01"
+    },
+    {
+     "path": "source/box-exec-daemon/Cargo.lock",
+     "head_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+     "parent_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+     "unchanged": true,
+     "bytes": 15520,
+     "git_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+     "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431"
+    }
+   ],
+   "execution_used_locked": true,
+   "post_execution_tracked_input_diff_clean": true,
+   "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\ncargo 1.97.1 (c980f4866 2026-06-30)\nLinux runnervm48cm3 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 18:46:57 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n"
+  },
+  "artifact": {
+   "id": 13180391264,
+   "name": "box-process-contracts-ubuntu-d2771e953a5b3978b3624518e7f07eaf692ee411",
+   "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180391264",
+   "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180391264/zip",
+   "run_id": 41526069466,
+   "head_sha": "d2771e953a5b3978b3624518e7f07eaf692ee411",
+   "api_size_in_bytes": 2218,
+   "api_digest": "sha256:b8f447e4131c2fb9772d820d71d08e63264a8ff45ff3a849861f4fda4d57da7c",
+   "downloaded_path": "/workspace/scratch/049bfe5e4966/round16-box-oracle/d2771e953a5b3978b3624518e7f07eaf692ee411/artifact.zip",
+   "downloaded_bytes": 2218,
+   "downloaded_sha256": "b8f447e4131c2fb9772d820d71d08e63264a8ff45ff3a849861f4fda4d57da7c",
+   "api_digest_matches_downloaded_zip": true,
+   "expired": false,
+   "created_at": "2026-11-02T21:13:18Z",
+   "zip_entry_count": 4,
+   "entries": [
+    {
+     "name": "owner-contracts.log",
+     "bytes": 3835,
+     "sha256": "3db5e6997140f4eb71217e7b242655310f4ecc7fcde8dd31420e5bd4bdbc8487"
+    },
+    {
+     "name": "target-sha.txt",
+     "bytes": 41,
+     "sha256": "aeb83ed389f36697188bd167e706d684ddd7453a362ac43f82201bef86e8f016"
+    },
+    {
+     "name": "scope.txt",
+     "bytes": 107,
+     "sha256": "1e9c14527496fe83f38de2f60b3c75cfc7976fb9a2006b388d720d664600ac74"
+    },
+    {
+     "name": "toolchain.txt",
+     "bytes": 360,
+     "sha256": "bddb868a99d30478a72630eb7d56d8bbeceb0e2d0503d9ce89faf39c3ea06601"
+    }
+   ],
+   "target_sha": "d2771e953a5b3978b3624518e7f07eaf692ee411",
+   "target_sha_matches_run_and_fix": true,
+   "declared_scope": "Linux owner behavior only; macOS actual binary, signed package and independent acceptance remain required.",
+   "readback_metadata_path": "/workspace/scratch/049bfe5e4966/round16-box-oracle/d2771e953a5b3978b3624518e7f07eaf692ee411/artifact-readback.json"
+  },
+  "oracle_correction": {
+   "former_invalid_evidence": {
+    "head_sha": "1abefb6e48141bc753c856ddf92705591ad7e851",
+    "run_id": 41520738119,
+    "job_id": 125536281727,
+    "source_blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+    "classification": "TEST_ORACLE",
+    "defective_command": "echo $ > abort-pid.txt; sleep 10",
+    "invalid_success_reason": "The old test did not parse or validate a positive PID or establish a live pre-disconnect baseline. An illegal kill argument returned nonzero and was treated as process exit.",
+    "source_diff_api_verified": true,
+    "old_execution_log_provenance": "Prior independent staged-owner audit supplied the old full-log observation 'kill: illegal process id: $' followed by ok; this report does not redownload or promote that old run.",
+    "reusable_as_cancellation_pass": false
+   },
+   "fixed_source_guards": [
+    "Atomically publishes exactly two decimal process IDs after starting a sleep child; both IDs parse as libc::pid_t, exceed 1 and differ.",
+    "Before disconnect, leader and child each pass kill(pid, 0), getpgid for both equals the leader, and kill(-leader, 0) establishes a live process group.",
+    "libc process probes treat only ESRCH as absent; other probe errors fail the test.",
+    "The shell trap waits/reaps only. Leader-only termination cannot kill the child through the trap and falsely satisfy the group test.",
+    "Dropping the real authenticated ExecService TCP stream must make leader, child and process group absent within the bounded observation period.",
+    "The cancellation result is captured before handle.stop cleanup and asserted independently; cleanup cannot turn a failed disconnect observation into a pass."
+   ],
+   "fix_verified_by_exact_containing_sha": true
+  },
+  "acceptance": {
+   "linux_owner_test_execution_passed": true,
+   "actual_macos_box_binary_execution_passed": false,
+   "macos_host_supervisor_3_passed": false,
+   "coordinator_macos_passed": false,
+   "network_worker_macos_passed": false,
+   "current_macos_jobs_pending": [
+    125554615412,
+    125554615515,
+    125554615556
+   ],
+   "source_full_inventory_accepted": false,
+   "signed_packaged_delivery_accepted": false,
+   "independent_acceptance": false,
+   "overall_batch_accepted": false,
+   "scope": "This receipt qualifies only the 13 exact-H Linux Box owner tests and corrected disconnect oracle. Three macOS source/binary jobs remain queued; no current Mac binary, supervisor, signed package, full source acceptance or final delivery acceptance is inferred.",
+   "existing_data_and_rollback_readers_unchanged_by_this_audit": true
+  }
+ },
+ "followup_boundaries": {
+  "observed_at": "2026-11-02 21:31:29 UTC",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "source_file_read_at_head": "9d669a964825ceff655e59c2d9288e239a2fb3ae",
+  "source_file_blob": "befb4d8675d2d7d345b88c703614790e08d48523",
+  "original_fields_preserved": true,
+  "original_evidence_is_dated_history": true,
+  "publication_scope": "Append independently verified execution and artifact evidence to the existing referenced round16 evidence file. No production source, test, workflow, schema, source lock, canonical ledger, original user data, backend, or rollback reader is modified by this append.",
+  "source_execution_scope": "The 158 Node tests, 37 schema tests and zero ledger schema errors belong to 808de59594d0b2d5d9fa9f4421f135bf96908800/run41526808527 attempt1. Accepted-mode rejection remains effective; these governance checks do not constitute product functionality or full source/legal acceptance.",
+  "native_execution_scope": "The executed Native batch remains bound to 9329aced33343e8e356ba34dfd0f474f3e767914/run41523624057 attempt1. The five completed jobs qualify only their recorded targets. Shipping job125545613231 was queued with zero executed steps at the latest recorded observation; older binaries/results are not inherited into that H.",
+  "box_history_scope": "1abefb6e48141bc753c856ddf92705591ad7e851/run41520738119 contains genuine binary, dependency, SDK and Host supervisor evidence, but its disconnect test had an invalid PID oracle. The historical green line is not accepted as cancellation semantics.",
+  "box_repair_scope": "The independently existing d2771e953a5b3978b3624518e7f07eaf692ee411 fix was adopted, not rewritten or attributed to this round's production changes. Its run41526069466/job125554615301 has 13 actual Linux owner passes. Its three macOS jobs remain queued; no new macOS binary or Host supervisor execution is inferred.",
+  "current_product_head_is_not_relabelled_as_tested_by_older_runs": true,
+  "original_stores_sidecars_keys_and_rollback_readers_preserved": true,
+  "backend_PR137_readonly": true,
+  "full_source_and_legal_acceptance": false,
+  "final_installed_ffi_consumer_acceptance": false,
+  "supported_platform_package_acceptance": false,
+  "real_service_end_to_end_acceptance": false,
+  "full_ui_accessibility_performance_soak_upgrade_rollback_and_bot_acceptance": false,
+  "independent_acceptance": false,
+  "complete": false
+ }
+
 }
