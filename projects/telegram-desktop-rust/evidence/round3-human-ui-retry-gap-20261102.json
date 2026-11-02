@@ -1,0 +1,693 @@
+{
+  "schema_version": 1,
+  "kind": "read-only-human-ui-retry-gap",
+  "observed_at_utc": "2026-11-02T20:24:11Z",
+  "repository": "bhrumom/fabushi-desktop",
+  "exact_h": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+  "scope": {
+    "method": "Exact-ref GitHub reads and static call-chain inspection",
+    "product_changes": false,
+    "tests_executed": false,
+    "local_build_or_validation": false,
+    "independent_acceptance": false,
+    "implementation_prerequisite": "All required message jobs and actual suites at exact H must pass before implementing this dependent consumer batch. Actions status belongs to the separate run-41517836812 evidence."
+  },
+  "sources": [
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "blob": "0e4ad13defc5191f9d3f8ac780315042043618b1"
+    },
+    {
+      "path": "frontend/src/production/model.ts",
+      "blob": "dd0a5167382616faa9d087687c8173d67bed8502"
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/submission.ts",
+      "blob": "8814ab6c43c36b6c0224579587883347e53c107d"
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/acknowledgement.ts",
+      "blob": "b771c5593e80dd7ae47b123e32bf892a19bf76ee"
+    },
+    {
+      "path": "frontend/src/production/coordinator-client.ts",
+      "blob": "1f9e386e391ec9504c82dbc47662a95a3ef811eb"
+    },
+    {
+      "path": "frontend/src/production/forward-account-scope.ts",
+      "blob": "1ec545cde792aac7eb87c057536ea32ea3667e75"
+    },
+    {
+      "path": "source/host/src/extensions/session/gateway.rs",
+      "blob": "e77e6bc40d9b12a020b7ad5eec1fcb6d11c68550"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "blob": "0d0641f1a9e51db4e27f8394d47cad576ab68f48"
+    },
+    {
+      "path": "source/host/src/extensions/session/native_messaging.rs",
+      "blob": "990eeb5a9e4906e2eafbd4bf0bc86f6456b16406"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-account-runtime.ts",
+      "blob": "03d048882d1c282213f01a2a05f3420872cad6fd"
+    },
+    {
+      "path": "source/electron-main/account/cursor-auth-wiring.ts",
+      "blob": "21cea3702d46d78002ed550786c0ab0c83ef830a"
+    },
+    {
+      "path": "source/product/fabushi/fabushi-account-service.ts",
+      "blob": "7dc39db60fca2765671fb897b1e213619aa56d27"
+    },
+    {
+      "path": "frontend/src/production/transcript-projection.contract.test.ts",
+      "blob": "c35d12c2c64a20728804d3df7da8ed0a3d0abc76"
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob": "473e584ceefa2101396ce1c52386f300b014ada0"
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/desktop.ts",
+      "blob": "489b066d8cb3727dec1539c63409ef33aa4f90b8"
+    },
+    {
+      "path": "source/electron-main/attachments/attachments.ts",
+      "blob": "764654b8f97b94215a015168c6ba82ae5e80aa45"
+    }
+  ],
+  "established_call_chain": [
+    "ProductionRenderer.sendComposerPrompt Human branch -> commitComposerAttachments -> client.call(sendHumanMessage, conversationId/text/clientNonce/composedAtMs/attachments/replyToId)",
+    "Session gateway sendHumanMessage checks optional senderId against Session.local_human_id, then append_human_message -> existing SQLite pending/settlement owner -> Native uploader/message service",
+    "Queue failure preserves original input/nonce, projects live delivery=failed, restores draft, and sets the existing composer notice",
+    "ProductionRenderer.resendFailedSend unconditionally makes a new nonce, discards only the renderer failed record, and constructs retrySubmission without replyToId",
+    "Host getHumanConversationTranscript checks current local membership and returns raw rows; it does not filter rows to local authors",
+    "getCallTransportIdentity -> Session.call_transport_identity -> Native.identity reads issuer-bound credentials and requires userId == Session.local_human_id; returns userId/deviceId without HTTP or creating a CallSession"
+  ],
+  "proven_gaps": [
+    {
+      "id": "human-retry-new-nonce",
+      "anchors": [
+        "ProductionRenderer.tsx:3583 resendFailedSend",
+        "submission.ts:86 failure catch",
+        "production.rs append_human_message_with_context"
+      ],
+      "fact": "Human retry changes nonce while the existing Host pending row remains durable; renderer discard does not delete or settle that Host row. Reply context is also omitted from retrySubmission.",
+      "consequence": "A new local intent can coexist with the original pending intent; original sync recovery remains eligible. Simply preserving nonce without restoring reply will conflict with Host immutable-intent checks."
+    },
+    {
+      "id": "committed-path-recommit",
+      "anchors": [
+        "ProductionRenderer.tsx:1121 sendComposerPrompt",
+        "workspace/desktop.ts:86 commitComposerAttachments",
+        "source/electron-main/attachments/attachments.ts:93 commitStaged"
+      ],
+      "fact": "Initial Human dispatch replaces staging paths with committed Host paths. The staging bridge only accepts paths inside its staging directory. Human optimistic attachments are not updated at the same point as the Agent branch.",
+      "consequence": "A reopened Host pending attachment cannot be sent through an unconditional staging commit. Retry must recover committed paths from the existing Host intent."
+    },
+    {
+      "id": "durable-error-projection",
+      "anchors": [
+        "model.ts:325 transcriptDelivery",
+        "production.rs upload failure settlement"
+      ],
+      "fact": "Current model maps dispatching to pending but ignores lastDispatchError. Host stores failed upload/send as pending with lastDispatchError.",
+      "consequence": "The live failed surface is not restored from durable error metadata after reopen."
+    },
+    {
+      "id": "same-nonce-queue-overwrite",
+      "anchors": [
+        "submission.ts submit",
+        "submission.ts finish",
+        "submission.ts flushAgent"
+      ],
+      "fact": "submit always records.set(nonce,newRecord). A second same-nonce submit can replace a running record and queue behind its activeByAgent entry. Old finish returns immediately if its record is no longer current, leaving the active lane occupied.",
+      "consequence": "Naive same-nonce UI retry can leave the new queued retry and the old completion unresolved. Reserve/deduplicate the Human retry before any asynchronous preparation; do not await transcript reads before entering or reserving the existing queue."
+    },
+    {
+      "id": "account-queue-lifetime",
+      "anchors": [
+        "ProductionRenderer.tsx:1216 queue creation",
+        "ProductionRenderer.tsx:1260 disposal",
+        "ProductionRenderer.tsx:3244 observeAccount",
+        "submission.ts dispose"
+      ],
+      "fact": "The queue is created once, disposed on component lifetime, and not reset in the account-change callback. Scope-dependent queue callbacks use the current acknowledgement scope. resend nonce cleanup is unconditional.",
+      "consequence": "A consumer repair needs a reusable account-generation reset and stale-callback suppression; permanent dispose would also prevent subsequent valid sends. Old finally cleanup must not delete a new account's same-nonce retry marker."
+    },
+    {
+      "id": "forward-owner-exclusion",
+      "anchors": [
+        "production.rs append_human_message_with_context same_forward_context",
+        "gateway.rs sendHumanMessage",
+        "production.rs sync_human_conversation pending filter"
+      ],
+      "fact": "Ordinary sendHumanMessage supplies no forwardContext; an existing nonce requires identical forwardContext. Forward v1 pending belongs to the source journal and is excluded from generic sync send replay.",
+      "consequence": "Do not project forward pending into an ordinary Retry action or reconstruct it as an ordinary send. Retain source journal/dialog/sync recovery ownership."
+    }
+  ],
+  "proposed_existing_owner_boundary_not_implemented": {
+    "identity": "Read existing getCallTransportIdentity within the captured account scope; use its nonempty userId, not renderer authId or display name. Native issuer and Host identity checks remain authoritative.",
+    "local_intent_selection": [
+      "From getHumanConversationTranscript, require kind=message, authorKind=human, role=user, authorId equal to the verified Host userId, and exact clientNonce.",
+      "Require a unique candidate; reject ambiguous/malformed candidates. Peer rows with a colliding legacy clientNonce must never be selected or used as ACK.",
+      "Exclude any forwardContext from ordinary retry. A local pending outbox row normally has id=human-message:<nonce>; already-settled rows may have canonical server IDs.",
+      "Use the current durable content, ordered committed path/name attachments, replyToId and composedAtMs. This preserves reply identities repaired by NMR-49 rather than replaying a stale UI reply alias.",
+      "Return an already-settled local row without creating another intent. For pending recovery, send the same nonce and senderId=verified Host userId; bypass staging commit and retain Host immutable-intent checks.",
+      "If no local durable intent exists, staging fallback is allowed only for the current account's known failed composer submission that proves a pre-Host failure. A missing reopened row or a peer-only candidate is not proof that arbitrary committed paths may be restaged."
+    ],
+    "queue": "Use the existing queue/acknowledgement owner. Reserve or reuse an active same-nonce Human retry synchronously; put identity/transcript preparation inside its send operation. Preserve Agent fresh-nonce behavior and approval lifecycle.",
+    "projection": "Expose failed only for an ordinary local outgoing pending intent with durable nonempty error. Preserve dispatching->pending, sent and Agent semantics. Current model has no local-user parameter: a purely structural projection is not an authorization check; actual retry must verify the current Host identity and author as above.",
+    "scope": "Capture account generation/identity at admission, check current refs after every awaited boundary and before UI projection. Reuse the live NMR-50 guarded Coordinator call at the actual postMessage boundary when integrated; do not introduce a second guarded-call contract or replace Host authorization.",
+    "immutable_intent_limit": "This is recovery of the same intent, not permission to change text/reply/attachment identity under an existing nonce. The NMR-51 same-path byte-correction fixture does not prove an implemented UI attachment-edit workflow."
+  },
+  "auth_timing_evidence": {
+    "synchronous_after_observation": "useEffect installs onStatusChanged, but observeAccount increments generation and updates accountIdentityRef synchronously when its callback runs, before setAccount. Layout unmount increments the same generation.",
+    "render_only_ref": "accountRef.current is assigned during render at ProductionRenderer:988. applyAccountStatus and direct AccountMenu/SignOut/Privacy onStatus setters do not independently update the generation.",
+    "main_owner": "AuthService emit -> CoordinatorAccountRuntime.observe synchronously revokes old renderer port requests, then serializes transition preparation/stop/authorization/start. settleObservedStatus delivers status. cursor-auth-wiring login/logout/cancel await runtime.whenIdle before returning their RPC results.",
+    "unknown_window": "This audit did not execute or prove all cross-IPC orderings between Main auth observation, renderer status event delivery, RPC reply and new port readiness. Do not infer a deployed cross-account send from the source gap, and do not claim a renderer guard alone closes pre-observation timing.",
+    "required_guard": "Read current generationRef and current identity/scope refs immediately before postMessage after currentReady. A closure over the old account, a render-only accountRef, or an outer pre-call check is insufficient. H76 coordinator-client.call currently awaits currentReady and only checks disposed/port/serving."
+  },
+  "concrete_paths_for_later_batch": [
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "action": "Wire Human-only same-nonce recovery to the existing queue, retain reply and committed paths, reserve duplicate retries and apply current account scope/reset/cleanup."
+    },
+    {
+      "path": "frontend/src/production/model.ts",
+      "action": "Narrow ordinary Human durable-failure projection without changing forward/dispatching/sent/Agent semantics."
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/submission.ts",
+      "action": "If needed, add reusable generation reset/stale completion suppression in this existing owner; do not create a second queue."
+    },
+    {
+      "path": "frontend/src/production/coordinator-client.ts",
+      "action": "Reuse the NMR-50 guarded call once live; current H lacks that post-readiness scope predicate."
+    },
+    {
+      "path": "frontend/src/production/human-message-retry.ts",
+      "action": "Optional small production helper extracted from the existing renderer owner, actually called by it; no new domain store or public wire schema."
+    },
+    {
+      "path": "frontend/src/production/transcript-projection.contract.test.ts",
+      "action": "Extend actual production model projection cases."
+    },
+    {
+      "path": "frontend/src/production/human-message-retry.contract.test.ts",
+      "action": "Test the actually consumed helper together with the real queue/acknowledgement and controlled Coordinator port."
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "action": "Add only required exact-H consumer behavior execution/count guards while retaining all current gates."
+    }
+  ],
+  "required_unexecuted_counterexamples": [
+    "Local and peer rows share nonce; choose only verified local author. Peer-only, ambiguous-local, wrong role/authorKind, malformed and forwardContext rows cannot dispatch an ordinary retry.",
+    "Live failure and restart recovery preserve the same nonce, repaired reply and committed paths; committed retry makes zero bridge commit calls. Proven pre-Host staging failure still commits once.",
+    "Already-settled local intent returns one canonical row without new upload/message; stale UI reply is replaced by current Host reply identity.",
+    "Two immediate same-nonce retry clicks do not overwrite a running queue record, wedge activeByAgent, duplicate dispatch or leave completions unresolved.",
+    "Account switch while identity, transcript, commit or Coordinator readiness is pending prevents stale dispatch/projection/draft/notice; reset remains usable by the new account.",
+    "Old account finally cleanup cannot remove a new account's same-nonce marker; Agent retries retain fresh nonce and existing approval behavior.",
+    "Model preserves ordinary dispatching->pending, sent, error-free pending, Agent and forward journal rows while exposing only eligible ordinary durable failures."
+  ],
+  "existing_configured_tests_not_execution_claims": {
+    "human_gateway": 48,
+    "resource_bounds": 3,
+    "forward_journal": 12,
+    "transcript_projection": 18,
+    "forward_chromium": 16,
+    "projection_runner": "H76 workflow bundles the actual transcript-projection/model test through locked esbuild before Node 24 execution; reuse this current runner, not the older direct Node import assumption."
+  },
+  "subsequent_snapshot_recheck": {
+    "snapshot_h": "e5264a5da227c8ba1666293d245c3f78bf2cac8a",
+    "observed_at_utc": "2026-11-02 20:33:00 UTC",
+    "snapshot_semantics": "Fixed checkpoint only, not a statement of live branch HEAD. All original top-level sources, observations and configured counts above remain explicitly historical H76 evidence; changes below supersede affected assumptions for e526.",
+    "method": "Exact H76...e526 GitHub compare (65 changed files, below API file limit), exact-ref reads of the changed retry owners, and the newly called Human transcript read helper. Static inspection only.",
+    "concurrent_production_commit": "06decb74cede0830b49170cde98c2d92590d4293",
+    "sources": [
+      {
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "blob": "1f46fbaa9d75e4375298b144f7c505e3f83aa9f5"
+      },
+      {
+        "path": "frontend/src/production/coordinator-client.ts",
+        "blob": "b35d5899c8de48bbeff8c5ba55c017371c905308"
+      },
+      {
+        "path": "frontend/src/production/model.ts",
+        "blob": "f21623801101411e617269f802d37d78a50084d2"
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "blob": "2f322b242605e10b411c14ef768798138b578703"
+      },
+      {
+        "path": "source/host/src/extensions/session/gateway.rs",
+        "blob": "be17d7b34ee8ee50afc23745feaeb2b0c483516d"
+      },
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "blob": "bdecb7c643330c95a47023c7780573af2c2abc61"
+      },
+      {
+        "path": "frontend/src/production/transcript-projection.ts",
+        "blob": "3dabb9eccc7fab7f662bad21495e737d89d5c5a2"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db.rs",
+        "blob": "3a1b90441f06be317e39fba9cdb4d713eace3936"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db_transcript_pages.rs",
+        "blob": "64594be7a1e0311cc8fdcecf126b6381cac46068"
+      }
+    ],
+    "unchanged_by_complete_compare": [
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/submission.ts",
+        "blob": "8814ab6c43c36b6c0224579587883347e53c107d"
+      },
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/acknowledgement.ts",
+        "blob": "b771c5593e80dd7ae47b123e32bf892a19bf76ee"
+      },
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/desktop.ts",
+        "blob": "489b066d8cb3727dec1539c63409ef33aa4f90b8"
+      },
+      {
+        "path": "source/electron-main/attachments/attachments.ts",
+        "blob": "764654b8f97b94215a015168c6ba82ae5e80aa45"
+      }
+    ],
+    "changes_to_preserve": [
+      "model.projectTranscriptEntry now exposes Human authorKind, authorId and remoteMessageId. Do not carry forward an H76 assertion that these projected fields are absent; they still do not prove which author is the current authenticated local Human.",
+      "Renderer send completion and live event correlation now use transcriptEntriesCorrelate. Two author-bound Human rows require equal authorId; its exact pending-ID bridge for an unbound optimistic placeholder still does not establish the authenticated local author. Preserve current canonical-settlement merging, and keep explicit verified-local-author selection for retry.",
+      "read_human_conversation_transcript now calls get_human_transcript_entries, which reads all parsed transcript rows in timestamp/remote-ID/sequence order. This is still not a local-author-only read; a retry must uniquely select the verified local author and reject every forwardContext.",
+      "Existing Session changes add durable activity reconciliation and stable history cursor behavior. Same-nonce text/reply/attachments/forward-context checks and ordinary gateway author authorization remain in place."
+    ],
+    "remaining_gap_checks": [
+      {
+        "gap": "human-retry-new-nonce",
+        "status": "remains",
+        "anchor": "ProductionRenderer.resendFailedSend",
+        "evidence": "Still calls makeClientNonce, discards only the renderer record, supplies freshNonce and omits replyToId from retrySubmission."
+      },
+      {
+        "gap": "committed-path-recommit",
+        "status": "remains",
+        "anchor": "ProductionRenderer.sendComposerPrompt Human branch",
+        "evidence": "Still unconditionally calls commitComposerAttachments on retry attachments when bridge exists. The unchanged staging owner accepts only staging paths; durable committed paths need the Host-intent recovery branch."
+      },
+      {
+        "gap": "durable-error-projection",
+        "status": "remains",
+        "anchor": "model.transcriptDelivery",
+        "evidence": "Still maps dispatching to pending and ignores lastDispatchError. New author fields do not implement failed-pending restoration or ordinary-versus-forward eligibility."
+      },
+      {
+        "gap": "same-nonce-queue-overwrite",
+        "status": "remains_as_repair_hazard",
+        "anchor": "submission.submit/finish",
+        "evidence": "Queue owner is byte-identical to H76. The planned same-nonce admission still requires synchronous deduplication/reservation to avoid replacing a running record and wedging its active lane."
+      },
+      {
+        "gap": "account-queue-lifetime",
+        "status": "remains",
+        "anchor": "ProductionRenderer queue construction/disposal and observeAccount",
+        "evidence": "Queue still lives for component lifetime; auth callback resets projections/acknowledgements but not the queue. Current-scope failure callbacks and unconditional resend cleanup remain."
+      },
+      {
+        "gap": "forward-owner-exclusion",
+        "status": "still_required",
+        "anchor": "gateway.sendHumanMessage and production.append_human_message_with_context",
+        "evidence": "Ordinary gateway still supplies no forward context; existing pending nonce still requires identical context. Author-aware projection is not permission to route forward journal intents through ordinary retry."
+      }
+    ],
+    "nmr50_post_ready_guard": {
+      "arrived": false,
+      "anchor": "coordinator-client.createCoordinatorClient.call",
+      "observed": "Only Human cursor request/reply validation was added. call still awaits currentReady, checks disposed/port/serving, then posts the request with no captured-account predicate.",
+      "integration_boundary": "Reuse NMR-50 once its actual guarded-call implementation arrives. It must read current scope refs at the post-readiness postMessage boundary; retain existing Main and Host authorization."
+    },
+    "account_timing_scope": "observeAccount still changes generation and accountIdentityRef synchronously inside the delivered callback. Main auth owners and forward-account-scope are unchanged by the comparison. Complete ordering of Main observation, renderer status event, RPC result and port readiness was not executed or proven; no cross-account exploit is asserted.",
+    "configured_counts_not_execution": {
+      "human_gateway": 52,
+      "resource_bounds": 3,
+      "forward_journal": 12,
+      "transcript_projection": 20,
+      "human_cursor_consumers": 17,
+      "forward_chromium": 16,
+      "change": "Human 48->52; transcript 18->20; cursor consumers 17 added. Keep current cursor validation, author-aware projection and bundled esbuild runners."
+    },
+    "validation_and_gate": {
+      "product_or_spec_changes": false,
+      "tests_executed": false,
+      "local_validation": false,
+      "actions_queried": false,
+      "independent_acceptance": false,
+      "dependency": "No dependent UI implementation is qualified by this review. Parent owns H76 required-job terminal evidence; after qualification, rebase any repair onto the actual then-current head and preserve concurrent pagination changes."
+    }
+  },
+  "subsequent_db6_snapshot": {
+    "schema": "HUMAN_RETRY_SUBSEQUENT_EXACT_SNAPSHOT_V1",
+    "repository": "bhrumom/fabushi-desktop",
+    "exact_head": "db6d7f427ba25d7f90d6470a3ff69574bab5c034",
+    "observed_at_utc": "2026-11-02 21:20:16 UTC",
+    "scope": "Read-only bounded recheck of Human retry owners at this exact snapshot; not a claim about later live checkpoint heads. Original H76 and 07ea observations remain historical. No product implementation or executable validation performed.",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "input_blobs": {
+      "docs/specs/fbcp-human-message-retry.md": "0b1ec2c58a302e9ab67b88333d164270651403d7",
+      "frontend/src/production/ProductionRenderer.tsx": "43bb7c21609f9a822801b0f23e86652863ace69a",
+      "frontend/src/production/model.ts": "c5c1abba2118ca5edfda206130509bd23e2db40d",
+      "frontend/src/recovered/features/conversation/workspace/submission.ts": "93309f77e9741d74c0bdbd888dea67856fc6306c",
+      "frontend/src/production/coordinator-client.ts": "b35d5899c8de48bbeff8c5ba55c017371c905308",
+      "source/shared/rpc/coordinator.ts": "231aa38463524e9caab891b26917a454f4eaa248",
+      "source/host/src/extensions/session/gateway.rs": "9e4f1ebc675e7ab3bd0d57b3833448dc72ad979f",
+      "source/host/src/extensions/session/production.rs": "10e66d505b9faa384ac7551f9bd7bb6d24f7c97d",
+      "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs": "0929f54e3a836c6d90a2e8ee059c75fec0aca986",
+      "frontend/src/production/transcript-projection.contract.test.ts": "a0617f0e8b36cc974396de9f2d0c2440a1b1a631"
+    },
+    "comparison": {
+      "base": "07ea477f0312398f04e55110934dbd2ff5ab3727",
+      "head": "db6d7f427ba25d7f90d6470a3ff69574bab5c034",
+      "commits": 39,
+      "changed_files": 95,
+      "read_full_compare_file_list": true,
+      "relevant_concurrent_commit": "aed9e8ab10eb4566631a89987511754bdc8dbfe7"
+    },
+    "now_present_static": [
+      {
+        "owner": "ComposerSubmissionQueue.reset / ProductionRenderer.observeAccount",
+        "evidence": "submission.ts:110-115 adds generation increment, active-lane clearing, cancelled completion and record clearing. Renderer:3330-3344 synchronously invokes approval lifecycle reset and queue reset inside the installed auth status callback. The previous 07ea claim that account changes leave this queue alive is superseded."
+      },
+      {
+        "owner": "ProductionRenderer submissionScopesRef / sendComposerPrompt / queue callbacks",
+        "evidence": "Account-generation checks now run before dispatch, after attachment commit and send/list awaits, and inside key deferred state updaters; sent/cancelled scope cleanup exists. Queue onPhase addresses only pending-${nonce}, not every peer/local row sharing nonce."
+      },
+      {
+        "owner": "ProductionRenderer localTranscriptNonce / canonical settlement",
+        "evidence": "Local-author nonce filtering now protects acknowledgement ingestion. Canonical settlement uses reconcileTranscriptMutation and preserveSettled; listHumanConversations failure after settled send becomes a notice and does not manufacture a retry."
+      },
+      {
+        "owner": "ProductionRenderer transport/recovery",
+        "evidence": "Queue flush now follows committed connected transport state; scoped initial reads and canonical mutation/previous-ID reconciliation have additional authored UI/contract cases. These changes do not implement the new retryHumanMessage command."
+      }
+    ],
+    "remaining_at_this_snapshot": [
+      {
+        "id": "dedicated-command",
+        "evidence": "Full exact-ref gateway.rs and source/shared/rpc/coordinator.ts contain no retryHumanMessage. Existing gateway sendHumanMessage at376-402 still accepts caller text/attachments/reply/nonce and calls append_human_message. The new retry spec remains a written implementation contract."
+      },
+      {
+        "id": "fresh-nonce-and-reply",
+        "evidence": "Renderer resendFailedSend:3681-3727 still calls makeClientNonce, acknowledgement retryFailed with freshNonce, replaces row ID/nonce, and builds retrySubmission from projected text/attachments/new timestamp without replyToId. This does not reuse the durable same-nonce intent."
+      },
+      {
+        "id": "committed-attachment-path",
+        "evidence": "The same retry enters sendComposerPrompt:1153-1173, whose Human branch unconditionally maps paths through commitComposerAttachments when bridge exists before sendHumanMessage. There is no dedicated durable-intent-only retry call bypassing staging."
+      },
+      {
+        "id": "restart-error-projection",
+        "evidence": "Host production.rs:3803-3828 persists delivery=pending and lastDispatchError on failed outbox dispatch; complete model.ts has no lastDispatchError reference, and transcriptDelivery:325-332 maps pending to pending and dispatching to pending. A durable failed intent is therefore not projected as failed from that error by this function."
+      },
+      {
+        "id": "post-ready-admission",
+        "evidence": "Complete coordinator-client.ts remains blob b35d5899. call(method,args) at173-182 awaits currentReady, then checks only disposed/port/serving and posts the request. NMR50 optional current-scope admission has not arrived in this owner. Renderer account fencing exists; an actual cross-account IPC violation was not executed or demonstrated in this audit."
+      },
+      {
+        "id": "same-nonce-queue-reentry",
+        "evidence": "submission.ts submit still records.set(input.nonce,record) without joining an existing running record. The new reset fixes account lifetime disposal, but cannot by itself be credited as a same-nonce retry single-flight contract. The current fresh-nonce retry does not exercise the proposed same-nonce path."
+      }
+    ],
+    "required_implementation_boundary": {
+      "governing_spec": "NMR-HUMAN-RETRY-01, docs/specs/fbcp-human-message-retry.md",
+      "owner_chain": "existing ConversationTranscript Retry -> ProductionRenderer -> existing coordinator client/RPC -> Session gateway -> ProductionSessionWorkers -> existing SandAgentDb durable intent/native settlement",
+      "command_payload": "conversationId and original clientNonce only; no renderer reconstruction of durable payload",
+      "identity": "Select a unique authorized local Human user intent; peer same-nonce, duplicate/malformed/nonlocal/canonical mismatches must not be retried as the local intent.",
+      "forwarding": "Preserve forwardBatchOwned/journal/source/account/issuer authority. Ordinary append passes forward_context=None and compares context equality; do not expose forwarding work through ordinary resend or invent another forward retry owner.",
+      "lifecycle": "Reuse the now-present account generation/reset and published NMR50 scope-guard contract; add its guard at the actual post-ready postMessage point and retain checks for delayed results/updaters.",
+      "oracle_requirements": [
+        "same nonce/text/composed time/reply and persisted uploaded resources through failure/restart/retry",
+        "no staging call for already committed resources and no new composer draft mutation",
+        "settled canonical intent produces no HTTP; ambiguous accepted send never creates a second nonce",
+        "local-author versus peer same-nonce and duplicate/corrupt durable intent refusal",
+        "forward target remains governed by original journal and current source policy",
+        "one in-flight retry per account lifetime/conversation/nonce",
+        "delayed readiness, logout/account ABA, selection and unmount races at actual client/renderer boundary"
+      ],
+      "test_execution_claimed": false
+    },
+    "mutations": {
+      "production": false,
+      "spec": false,
+      "workflow": false,
+      "schema": false,
+      "ledger": false,
+      "local_executable_validation": false
+    },
+    "entire_message_batch_accepted": false,
+    "source_accepted": false,
+    "product_accepted": false,
+    "independent_acceptance": false
+  },
+  "prior_reconstruction_proposal_scope": "Historical analysis only. Subsequent published NMR-HUMAN-RETRY-01 governs dedicated Host identity-only retry; later account queue/settlement changes are recorded separately, and old absent-reset findings must not be presented as current.",
+  "subsequent_containing_preservation_snapshot": {
+    "schema": "HUMAN_RETRY_EXACT_SNAPSHOT_OWNER_RECHECK_V1",
+    "repository": "bhrumom/fabushi-desktop",
+    "exact_head": "d1b7ced237f108a22c1b166877a6d1c1bd62d301",
+    "compared_historical_receipt": ".task-evidence/human-ui-retry-db6d7f-snapshot.json",
+    "scope": "Bounded read-only actual-owner recheck while the exact-H reconciliation job queues. Not a claim about later live heads, executed validation, packaged UI, full source coverage or acceptance.",
+    "input_blobs": {
+      "docs/specs/fbcp-human-message-retry.md": "0b7a870ef251fab33d122433efee8795ad486ea7",
+      "source/host/src/extensions/session/production.rs": "183a66c70c282c4b04499cb93f0699a9d4294879",
+      "source/host/src/extensions/session/gateway.rs": "c1532f5d4ae2032843254b19b78275e9f9d1a527",
+      "frontend/src/production/ProductionRenderer.tsx": "a27c7e31f171c339fffcb93ea42caed8595636f0",
+      "frontend/src/production/coordinator-client.ts": "6308a4e658ad564d1893a49a5a605fa68a6b505c",
+      "frontend/src/production/model.ts": "a985a6faec8f1bbec2cade965df80caa08fb439c",
+      "frontend/src/recovered/features/conversation/workspace/submission.ts": "6bcd99c020680de8b9a588e05b5f09ab21c8885f",
+      "source/shared/rpc/coordinator.ts": "9695428f55817ab12ffa6dafc7713cd6d203447e",
+      "frontend/src/production/human-message-retry.ts": "5ff860dbfd7d751bffcee11358455d973b302cfb",
+      "frontend/src/production/human-message-submission.ts": "1948f46323e756c11ecc98d9ce6df603acedafa2"
+    },
+    "now_present_static": [
+      {
+        "id": "identity-only-host-command",
+        "evidence": "gateway.rs:376-389 admits exactly conversationId/clientNonce and rejects extra fields/padding/oversize nonce; production.rs:3499 retry_human_message selects a durable local-author intent through the existing Session/SandAgentDb owner. shared rpc method/parser and actual client method are present."
+      },
+      {
+        "id": "same-nonce-reply-resource-authority",
+        "evidence": "production.rs:3632 human_retry_entry rejects duplicate local intents, invalid kind/role/author/identity/payload/resources; retry selects current durable reply/composed time/attachments and calls append_human_message_from_intent(require_existing=true). A valid canonical sent row returns without HTTP. Forward-owned rows require original batch/context/account/issuer and use the existing forward delivery owner."
+      },
+      {
+        "id": "renderer-retry-routing",
+        "evidence": "ProductionRenderer.tsx:3719 branches Human retries before the unchanged Agent fresh-nonce path. A retained pre-frame Composer input uses queue.retryFailed(original.nonce); a possibly Host-admitted intent uses humanMessageRetryController with original durable identities. The Human branch does not reconstruct a payload from transcript text/attachments."
+      },
+      {
+        "id": "partial-commit-and-admission",
+        "evidence": "human-message-submission.ts retains each successful committed attachment on the original submission object. Before any possibly posted request it can resume uncommitted attachments; onRequestWillPost marks possible admission immediately before actual client postMessage. Every later repeat uses identity-only retryHumanMessage."
+      },
+      {
+        "id": "restart-failure-projection",
+        "evidence": "model.ts:325 transcriptDelivery maps a strict pending local-Human-shaped row with nonempty lastDispatchError to failed; dispatching remains pending and canonical sent rows are not regressed by old error metadata. Author/account authorization remains Host-owned, not inferred merely from this projection."
+      },
+      {
+        "id": "post-ready-scope-and-single-flight",
+        "evidence": "coordinator-client.ts:180-199 checks the supplied isCurrent before and after currentReady immediately before postMessage. human-message-retry.ts checks account generation/slot/selection generation and identity at dispatch and deferred state application, coalesces pending attempts, and fences already observed settlements. submission.ts:161 retryFailed joins pending/queued records and resubmits the original failed input rather than replacing a running same-nonce record."
+      }
+    ],
+    "exact_workflow_authored_oracles": {
+      "human_gateway_expected": 67,
+      "required_retry_names": [
+        "shipping_human_retry_reopens_attachment_reply_and_coalesces_same_nonce_without_reupload",
+        "shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation",
+        "shipping_human_retry_preserves_forward_source_policy_and_refuses_generic_ownership_bypass",
+        "shipping_human_retry_fences_account_and_issuer_changes_and_restores_durable_failure"
+      ],
+      "actual_execution_claimed": false
+    },
+    "conclusions": [
+      "The historical db6 dedicated-command, fresh-nonce/reply, committed-path, restart-error, post-ready-admission and retry reentry observations cannot be repeated as unchanged current facts at this snapshot.",
+      "This bounded reading found the governing owner chain now implemented; it does not itself prove behavioral correctness or remove exact-H Actions gates.",
+      "No product, Spec, workflow, schema or canonical ledger edit was made for this recheck."
+    ],
+    "product_accepted": false,
+    "independent_acceptance": false
+  },
+  "historical_gap_interpretation": "The earlier exact-head gap observations and rejected renderer-reconstruction proposal are retained as history. At d1b7ced237f108a22c1b166877a6d1c1bd62d301 the concurrent existing-owner implementation supplies identity-only Host retry, current renderer/queue/account guards and durable failure projection; pending actual CI/complete batch evidence remains required.",
+  "independent_current_ui_wiring": {
+    "format": "fabushi-exact-head-human-retry-static-wiring-v1",
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "d1b7ced237f108a22c1b166877a6d1c1bd62d301",
+    "run_id": 41530841386,
+    "run_attempt": 1,
+    "workflow_blob": "f9c4804ce0613b9abd1cd8834c77e558fc99d4df",
+    "status": "source_wiring_read_only_runtime_qualification_pending",
+    "source_accepted": false,
+    "product_accepted": false,
+    "shipping_qualified": false,
+    "independent_accept": false,
+    "scope": "Bounded read-only examination of actual current Human retry UI, original Composer admission progress, Coordinator frame admission, and displayed failed-row action. No shared evidence/specification/RTM/ledger modification; no repository executable validation.",
+    "sources": [
+      {
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "blob": "a27c7e31f171c339fffcb93ea42caed8595636f0",
+        "read_ranges": [
+          [
+            1318,
+            1370
+          ],
+          [
+            3713,
+            3805
+          ],
+          [
+            4320,
+            4395
+          ]
+        ],
+        "facts": [
+          "The controller is instantiated with the real client, current account/selection generation, existing acknowledgement, actual entries/notice setters and current transcript read/cache reconciliation at 1339-1364.",
+          "ConversationTranscript onResendFailedSend at 4359 reaches resendFailedSend at 3719. Human messages take the early Human branch, then return before the separate Agent branch creates a fresh nonce.",
+          "A pre-frame retained original Composer submission is retried through its existing queue; otherwise Human retry sends only the durable conversationId/clientNonce.",
+          "The current history hasOlder prop is cursor.kind === more at 4341. The previous failed browser runs remain historical results and are not converted to current success."
+        ]
+      },
+      {
+        "path": "frontend/src/production/human-message-retry.ts",
+        "blob": "5ff860dbfd7d751bffcee11358455d973b302cfb",
+        "read_ranges": [
+          [
+            1,
+            254
+          ]
+        ],
+        "facts": [
+          "The controller validates failed local Human identity and original nonce, coalesces a pending attempt, and fences account/selection generation and exact selection object.",
+          "At 200-202 it calls retryHumanMessage with only conversationId and clientNonce plus isCurrent admission; it has no composer attachment bridge or content resend payload.",
+          "Canonical returned identity is validated, authoritative rows reconcile into existing transcript projections, sent echo settles existing acknowledgement, and later failure updates are fenced.",
+          "observeEntry invalidates an attempt when a same-target sent event wins; account/selection/disposal state prevents obsolete UI mutation."
+        ]
+      },
+      {
+        "path": "frontend/src/production/human-message-submission.ts",
+        "blob": "1948f46323e756c11ecc98d9ce6df603acedafa2",
+        "read_ranges": [
+          [
+            1,
+            76
+          ]
+        ],
+        "facts": [
+          "The existing Composer submission retains per-attachment successful commit progress and a requestPosted bit.",
+          "Once a frame may have posted, the same submission calls retryHumanMessage using only original agentId/conversationId and nonce, without replaying renderer text, reply, forward context or attachments.",
+          "Before first admission it commits remaining original attachments and sends original text/nonce/composedAtMs/replyToId; onRequestWillPost marks possible admission at the actual frame boundary."
+        ]
+      },
+      {
+        "path": "frontend/src/production/coordinator-client.ts",
+        "blob": "6308a4e658ad564d1893a49a5a605fa68a6b505c",
+        "read_ranges": [
+          [
+            1,
+            65
+          ],
+          [
+            179,
+            200
+          ]
+        ],
+        "facts": [
+          "retryHumanMessage request parsing rejects fields beyond valid conversationId and original clientNonce; reply validation routes through the shared canonical contract.",
+          "Scope is checked both before waiting for readiness and immediately before posting the request frame. onRequestWillPost runs before postMessage, so a throwing post remains conservatively possibly admitted."
+        ]
+      },
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "blob": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+        "read_ranges": [
+          [
+            1,
+            56
+          ],
+          [
+            86,
+            92
+          ],
+          [
+            625,
+            639
+          ],
+          [
+            799,
+            815
+          ]
+        ],
+        "facts": [
+          "The actual failed message row renders FailedSendActions at 807; its Resend button calls onResend(entry) at 89.",
+          "The shared Transcript component accepts and forwards onResendFailedSend, reaching the ProductionRenderer callback above."
+        ]
+      },
+      {
+        "path": "frontend/src/production/human-message-retry-port.contract.test.ts",
+        "blob": "8d8bd2d0b792c54dc39cb5c55b996c2b88ee053f",
+        "read_ranges": [
+          [
+            1,
+            80
+          ]
+        ],
+        "facts": [
+          "The examined tests import the actual createCoordinatorClient and provide a controlled transferred port; there is no separate required human-message-retry-port production module.",
+          "The first cases assert actual retry frame identity-only shape, invalid payload/reply rejection, and readiness-time account/selection expiry. Test source is not an executed test result."
+        ]
+      }
+    ],
+    "call_chain": [
+      "FailedSendActions Resend button -> ConversationTranscript onResendFailedSend",
+      "ProductionRenderer resendFailedSend -> Human branch",
+      "Pre-frame original Composer record -> existing queue.retryFailed -> sendHumanComposerSubmission",
+      "Possibly posted or durable failed message -> createHumanMessageRetryController -> client.call(retryHumanMessage, {conversationId, clientNonce})",
+      "Coordinator shared request parser -> current readiness -> final scope check -> onRequestWillPost -> actual port.postMessage",
+      "Authoritative result/event -> existing acknowledgement and transcript entry/pagination/read-buffer reconciliation"
+    ],
+    "historical_gap_reconciliation": {
+      "historical_resource_dossier_target": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+      "earlier_gap": "The earlier retained research described the then-shared failed resend choosing a fresh nonce and omitting reply context. That historical observation must not be asserted as the current d1b7 Human path.",
+      "current_static_changes": [
+        "Human retry now has an explicit branch before the retained Agent fresh-nonce path.",
+        "Durable Human retry carries original identities only so Host remains responsible for immutable payload, reply, attachments and forward policy.",
+        "Pre-admission Composer commit progress is retained separately from possible Host admission, avoiding unconditional re-commit of already acknowledged files.",
+        "Actual failed-row UI wiring, scope admission and canonical settlement hooks are present in this exact source."
+      ],
+      "historical_ci_boundary": "db6/f544/e4f failed browser results remain attributed to their own exact commits. Source changes and current expected suite sizes do not turn those failures into success or prove this run passed."
+    },
+    "workflow_expected_not_executed": {
+      "ui_job_id": 125570288382,
+      "electron_job_id": 125570288599,
+      "windows_job_id": 125570288424,
+      "ui_suites": {
+        "transcript": 34,
+        "human_cursors": 19,
+        "human_retry": 40,
+        "forward_settlement": 5,
+        "forward_dialog": 16,
+        "actual_production_renderer": 11,
+        "transcript_cache": 8
+      },
+      "browser_retries": 0,
+      "renderer_compile_required": true,
+      "exact_head_source_review_run_at_initial_query": null,
+      "initial_exact_head_runs_total": 1
+    },
+    "remaining": [
+      "Await the frozen run's complete real UI/Electron/Windows terminal logs, suite counts and artifacts.",
+      "The read-only current wiring review does not execute the UI or Host and does not prove real-service retry, packaged UI/visual/accessibility, timing, long-term stability, or final independent acceptance.",
+      "Host durable retry and Native upload execution evidence must be taken from the matching exact-head jobs, not inherited from H76 or earlier browser runs.",
+      "Do not modify the parent's shared round3-human-ui-retry-gap evidence from this child review; the parent integrates this independent snapshot while preserving historical gaps."
+    ]
+  }
+}

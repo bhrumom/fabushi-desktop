@@ -473,6 +473,7 @@ Requirement bindings:
 - NMR-AC-02: the strengthened peer-nonce case first creates a real failed-dispatch pending intent, admits a peer row using the same nonce without consuming that intent, reopens the DB, then allows only the matching local acknowledgement to settle the local slot. The legacy-peer case separately preserves historical content and durable nonce provenance.
 - NMR-AC-03: the strengthened acknowledgement case isolates text, reply identity, resource identity, resource order and missing-resource differences, asserts the specific rejection and unchanged pending/anchor state, then reopens and proves matching-ack recovery with the expected resource bytes. Canonical-ID nonce rejection has an independent correct-nonce control.
 - NMR-AC-04 / NMR-09: retain real attachment/reply dispatch, ambiguous-send restart without reupload, reaction-toggle, bounded history-gap and resource-gap-before-later-row cases. Existing `source/host/tests/send_pipeline_nonce_boundary_contract.rs` contributes four Agent admission/nonce regressions; it is not complete Bot acceptance.
+- NMR-REG-TRM-01 (retained Agent/Transcript regression, `TEST_FLAW`): `source/host/src/transcript_mirror/conversation_state_binary.rs#tests::conversation_compaction_epoch_counts_external_and_self_summaries`, `source/host/src/transcript_mirror/conversation_state_binary.rs#tests::recovery_fields_decode_token_details_and_turn_timing`, `source/host/src/transcript_mirror/conversation_state_binary.rs#tests::stale_token_details_can_be_removed_without_reencoding_other_fields`. Move the misplaced test-function closing brace only; keep production bytes, fixtures and assertions unchanged. The existing checkpoint decoder remains the owner. The containing-H Ubuntu reconciliation must actually run all three cases (3 passed/0 failed/0 ignored) and report both formerly nested recovery names as `ok`; actually executed at containing H `f544e9b3161d758141e1b419bcdab22cc522952e`, run `41526852400`, job `125556686433`: all 3 passed, including both formerly nested names. That job later failed the independent creation preservation test; complete-batch acceptance stays blocked. This is additional existing Bot regression evidence, not a product feature or full Bot acceptance.
 - NMR-AC-05: the existing RTM, three owner anchors and the bounded canonical responsibility record the production route; implementation, authored tests, execution and independent acceptance remain distinct.
 
 - NMR-AC-12: all four allowed reaction tuples preserve exact strings/projection across reopen, including NFC-equivalent distinct strings. Five malformed summaries are rejected before resources and known-ID overlap while valid independent pages persist. Invalid reaction POST preserves the entire row and emits no target mutation; a later valid POST recovers after reopen and publishes exactly one durable update.
@@ -497,10 +498,42 @@ NMR-51 / NMR-AC-42 extends the existing `FBCP-NMR-001` and `MEDIA-TRANSFER` resp
 - `source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected`: exact 25 MiB succeeds; empty input and partial-read failure reject.
 - `source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one`: actual consumed bytes stop at limit+1 and oversize rejects.
 
-Authored at freeze; containing-H Actions must execute all 48 Human gateway cases, three focused resource-bound cases and preserved required message gates. Prerequisite H `59f5fa24827812f78336c464995d161f403dedfb`, run `41508537631`, passed all five applicable jobs including Human38, protocol122, TCP9/live and actual AppHost package-copy4; it does not execute this extension. Evidence: `projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json`. Fixed-U review is limited to the recorded media preparation/file-part sections; source completeness, multi-attachment atomicity, full UI/service/platform/package/Bot acceptance and independent ACCEPT stay open.
+Authored at the original H76 freeze; that containing-H selection required all 48 Human gateway cases, three focused resource-bound cases and preserved required message gates. Later actual execution and current selections are recorded separately below. Prerequisite H `59f5fa24827812f78336c464995d161f403dedfb`, run `41508537631`, passed all five applicable jobs including Human38, protocol122, TCP9/live and actual AppHost package-copy4; it does not execute this extension. Evidence: `projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json`. Fixed-U review is limited to the recorded media preparation/file-part sections; source completeness, multi-attachment atomicity, full UI/service/platform/package/Bot acceptance and independent ACCEPT stay open.
 
-The current byte-buffer upload and forward snapshot readers share the literal25MiB service bound. Their digest/path/atomic snapshot/complete-target prevalidation rules remain; existing forward exact-limit/oversize tests use service25MiB literals and all twelve journal cases are retained. `native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http` covers the added buffer entrypoint. Existing32MiB download and200MiB Agent video boundaries are unchanged. The pending/same-nonce oracle here is the Host gateway, not a claim that the current UI retry is already correct; fresh-nonce/reply/committed-path/reopen projection remains a separate consumer gap.
+The current byte-buffer upload and forward snapshot readers share the literal25MiB service bound. Their digest/path/atomic snapshot/complete-target prevalidation rules remain; existing forward exact-limit/oversize tests use service25MiB literals and all twelve journal cases are retained. `native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http` covers the added buffer entrypoint. Existing32MiB download and200MiB Agent video boundaries are unchanged. The original pending/same-nonce oracle here is the Host gateway. H76's fresh-nonce/reply/committed-path/reopen UI gaps are historical; the later d1b7 existing-owner static review records identity-only Human retry, retained pre-frame commit progress, final-frame account/selection guards and durable failure projection. Its actual containing-H execution and complete qualification remain required; see `round3-human-ui-retry-gap-20261102.json`.
 
+
+NMR51 execution followup (round 3): exact `63c59566aae7fa9b424a364df1429176c792d249`, run `41520507652`, attempt1, reconciliation job `125535006727` completed/success. Full actual logs show Human54/resource3/sharebox1/journal12/AgentNonce4/credential3/forwardHTTP1, all zero failed/ignored, including the oversized/restart/same-nonce case and each resource reader/buffer case. Artifact `13177247633`, digest `sha256:fa8b48faf174824b4b7a1fdd709955cb139b0c159571abb0c7499c9abfc450b6`. The same H also passed the actual UI58, Electron89 and native Windows11 selected cases and renderer/Electron compilation. Its macOS shipping job was still queued; these results do not qualify the complete batch, prove H76 execution, or execute the later TRM registration repair. Earlier authored-at-freeze text remains history. Four fixed-U primary resource texts and the configured TL generator/input/consumer binding were subsequently read as recorded in `projects/telegram-desktop-rust/evidence/round3-resource-source-review-20261102.json`; complete source understanding/acceptance is still false. All run/job/artifact and scope details remain in the existing `projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json`; no source/release/independent acceptance promotion.
+
+### NMR-CREATE-01d / NMR-AC-CREATE-01: retained store format and lock preservation
+
+Exact `f544e9b3161d758141e1b419bcdab22cc522952e`, run `41526852400`,
+job `125556686433`, passed Transcript3/Human63/resource3, then failed creation
+11/1 because NOTADB refusal removed existing sidecars. Later selected steps
+were not run. This is a production preservation defect; the preceding db6
+`usize:FromSql` compile failure is a separate fixture defect and executed no
+selected tests. Full logs, hashes and artifacts remain in
+`projects/telegram-desktop-rust/evidence/round3-human-store-preservation-20261102.json`.
+
+Repair `d1b7ced237f108a22c1b166877a6d1c1bd62d301` retains the existing
+`probe_human_conversation_store` / `SandAgentDb` / `ProductionSessionWorkers`
+owner. Missing/empty main plus nonempty retained WAL/SHM/journal refuses
+without SQLite writes; truly empty stores stay creatable. A default-VFS,
+private-cache, immutable SQLite `schema_version` format read propagates every
+error and owns its descriptors; no raw database open/read/close releases
+another SQLite connection's POSIX locks. Valid retained snapshots continue
+through the existing WAL-aware owner; no-sidecar stores retain `quick_check`.
+
+- `human_creation_tests::retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen`: actual committed identity/transcript exist only in retained WAL after last writer closes; main-only stale data is proved, then existing create/read/reopen preserves the WAL rows.
+- `human_creation_tests::human_format_probe_preserves_posix_locks_against_an_external_writer`: independent process UPDATE is busy before and after the real probe, then succeeds after parent rollback. The exact child case/marker proves execution without inflating the outer count.
+- Preserve all original 12 cases, ten corruption variants, three original-file diagnostics and empty-directory/zero-file/schema-only positives; add missing/empty main with sidecars to the existing refusal matrix. The containing Ubuntu gate requires creation14 plus unchanged storage3 and both new names; all Human67/TRM3/resource/UI/Agent/shipping gates remain.
+
+Run `41530841386` attempt1 binds this repair. At initial API observations it
+was queued with no runner or executed steps; authored tests and independent
+static reviews are not passes. All applicable jobs must terminate successfully
+with actual behavior/protocol/TCP evidence before dependent qualification.
+Custom VFS, metadata/open races, arbitrary hot/corrupt sidecar recovery,
+complete source/legal/service/package/Bot and independent ACCEPT stay open.
 
 ## Round21 updater source and exact-run reconciliation
 
