@@ -309,7 +309,9 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation.log
-          grep -Fq 'test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation.log
+          grep -Fq 'test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation.log
+          grep -Fq 'retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen ... ok' artifacts/native-message/human-creation.log
+          grep -Fq 'human_format_probe_preserves_posix_locks_against_an_external_writer ... ok' artifacts/native-message/human-creation.log
           cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_storage_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation-storage.log
           grep -Fq 'test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation-storage.log
       - name: Durable forwarding sharebox owner contract

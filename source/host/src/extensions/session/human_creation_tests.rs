@@ -728,6 +728,8 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         ("short-header-15", Some(15)),
         ("truncated-header-16", Some(16)),
         ("truncated-header-99", Some(99)),
+        ("missing-main-sidecars", None),
+        ("empty-main-sidecars", None),
     ] {
         let root = test_root("corrupt-store-refusal");
         let mut workers = test_workers(&root);
@@ -788,7 +790,11 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
             } else {
                 b"retained NOTADB bytes; never quarantine or replace".to_vec()
             };
-            fs::write(&path, retained_bytes).unwrap();
+            if corruption == "empty-main-sidecars" {
+                fs::write(&path, b"").unwrap();
+            } else if corruption != "missing-main-sidecars" {
+                fs::write(&path, retained_bytes).unwrap();
+            }
             for suffix in ["-wal", "-shm", "-journal"] {
                 fs::write(PathBuf::from(format!("{}{suffix}", path.display())),
                     format!("retained original {suffix} bytes")).unwrap();
@@ -816,3 +822,166 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[test]
+fn retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen() {
+    let root = test_root("retained-wal");
+    let workers = test_workers(&root);
+    let original = workers.create_human_conversation(PEER, "Checkpointed original title").unwrap();
+    let id = conversation_id(&original).to_string();
+    let owner = workers.open_human_conversation_db_owner(&id).unwrap();
+    let path = owner.db_path().to_path_buf();
+    let original_raw_metadata = owner.read_kv("metadata").unwrap().unwrap();
+    let mut retained_metadata = owner.read_metadata().unwrap();
+    retained_metadata["title"] = json!("Committed only in the retained WAL");
+    owner.close(true);
+    workers.shutdown();
+    drop(owner);
+    drop(workers);
+    assert_eq!(live_db_handle_count(&path), 0);
+
+    let writer = Connection::open(&path).unwrap();
+    let mode: String = writer.query_row("PRAGMA journal_mode=WAL", [], |row| row.get(0)).unwrap();
+    assert_eq!(mode, "wal");
+    writer.execute_batch("PRAGMA wal_autocheckpoint=0").unwrap();
+    assert!(writer.set_db_config(
+        rusqlite::config::DbConfig::SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, true,
+    ).unwrap());
+    writer.execute_batch("BEGIN IMMEDIATE").unwrap();
+    write_metadata_json(&writer, &retained_metadata);
+    for entry in persisted_entries() {
+        writer.execute(
+            "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+            params![entry["id"].as_str().unwrap(), entry.to_string()],
+        ).unwrap();
+    }
+    writer.execute_batch("COMMIT").unwrap();
+    let saved = stored_rows(&path);
+    drop(writer);
+    let wal = PathBuf::from(format!("{}-wal", path.display()));
+    assert!(fs::metadata(&wal).unwrap().len() > 32, "committed frames must remain after the last writer closes");
+
+    // Prove that the main file alone is not the current identity/transcript.
+    // SQLite owns this probe's descriptor just as it does in production.
+    let mut uri = url::Url::from_file_path(&path).unwrap();
+    uri.query_pairs_mut().append_pair("mode", "ro").append_pair("immutable", "1");
+    let main_only = Connection::open_with_flags(
+        uri.as_str(),
+        OpenFlags::SQLITE_OPEN_READ_ONLY
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_PRIVATE_CACHE,
+    ).unwrap();
+    let main_metadata: String = main_only.query_row(
+        "SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0),
+    ).unwrap();
+    assert_eq!(main_metadata, original_raw_metadata);
+    assert_ne!(main_metadata, encoded_json(&retained_metadata));
+    let main_entries: i64 = main_only.query_row(
+        "SELECT COUNT(*) FROM transcript_entries", [], |row| row.get(0),
+    ).unwrap();
+    assert_eq!(main_entries, 0);
+    drop(main_only);
+    assert!(fs::metadata(&wal).unwrap().len() > 32);
+
+    let reopened = test_workers(&root);
+    let conversation = reopened.create_human_conversation(PEER, "Must not replace WAL identity").unwrap();
+    assert_eq!(conversation["id"], id);
+    assert_eq!(conversation["title"], retained_metadata["title"]);
+    let owner = reopened.open_human_conversation_db_owner(&id).unwrap();
+    assert_eq!(owner.read_metadata().unwrap(), retained_metadata);
+    assert_eq!(owner.get_transcript_entries().unwrap(), persisted_entries());
+    assert_eq!(stored_rows(&path), saved);
+    reopened.shutdown();
+    drop(owner);
+    drop(reopened);
+
+    let restarted = test_workers(&root);
+    assert_eq!(restarted.create_human_conversation(PEER, "Must retain reopened identity").unwrap(), conversation);
+    assert_eq!(stored_rows(&path), saved);
+    restarted.shutdown();
+    drop(restarted);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn human_format_probe_preserves_posix_locks_against_an_external_writer() {
+    const CHILD_DB: &str = "FBCP_HUMAN_FORMAT_LOCK_CHILD_DB";
+    const CHILD_EXPECTATION: &str = "FBCP_HUMAN_FORMAT_LOCK_CHILD_EXPECTATION";
+    const CASE: &str = "extensions::session::production::human_creation_tests::human_format_probe_preserves_posix_locks_against_an_external_writer";
+
+    if let Some(path) = std::env::var_os(CHILD_DB) {
+        let expectation = std::env::var(CHILD_EXPECTATION).unwrap();
+        let db = Connection::open_with_flags(
+            PathBuf::from(path),
+            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_PRIVATE_CACHE,
+        ).unwrap();
+        db.busy_timeout(Duration::ZERO).unwrap();
+        let result = db.execute("UPDATE probe_lock_guard SET value=value+1 WHERE id=1", []);
+        match expectation.as_str() {
+            "blocked" => {
+                let error = result.expect_err("an independent process must not write through the held SQLite lock");
+                assert!(crate::storage::sqlite_busy::is_sqlite_busy_error(&error), "{error}");
+                let value: i64 = db.query_row(
+                    "SELECT value FROM probe_lock_guard WHERE id=1", [], |row| row.get(0),
+                ).unwrap();
+                assert_eq!(value, 0);
+            }
+            "writable" => {
+                assert_eq!(result.unwrap(), 1);
+                let value: i64 = db.query_row(
+                    "SELECT value FROM probe_lock_guard WHERE id=1", [], |row| row.get(0),
+                ).unwrap();
+                assert_eq!(value, 1);
+            }
+            _ => panic!("unexpected child lock expectation"),
+        }
+        println!("human-format-lock-child:{expectation}:verified");
+        return;
+    }
+
+    let root = test_root("external-lock");
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("store.db");
+    let db = Connection::open(&path).unwrap();
+    let mode: String = db.query_row("PRAGMA journal_mode=DELETE", [], |row| row.get(0)).unwrap();
+    assert_eq!(mode, "delete");
+    db.execute_batch(
+        "CREATE TABLE probe_lock_guard (id INTEGER PRIMARY KEY, value INTEGER NOT NULL);
+         INSERT INTO probe_lock_guard (id, value) VALUES (1, 0);
+         BEGIN IMMEDIATE;
+         UPDATE probe_lock_guard SET value=99 WHERE id=1;",
+    ).unwrap();
+    let run_child = |expectation: &str| {
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", CASE, "--nocapture", "--test-threads=1"])
+            .env(CHILD_DB, &path)
+            .env(CHILD_EXPECTATION, expectation)
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(output.status.success(), "child {expectation} failed:\n{stdout}\n{stderr}");
+        assert!(stdout.contains("1 passed; 0 failed; 0 ignored;"), "{stdout}");
+        assert!(stdout.contains(&format!("human-format-lock-child:{expectation}:verified")), "{stdout}");
+    };
+
+    // The baseline and positive control distinguish a real held OS lock from
+    // an unavailable database or a child that never executed the exact case.
+    run_child("blocked");
+    super::super::agent_db_recovery::probe_human_conversation_store(&path, 25).unwrap();
+    run_child("blocked");
+    let held_value: i64 = db.query_row(
+        "SELECT value FROM probe_lock_guard WHERE id=1", [], |row| row.get(0),
+    ).unwrap();
+    assert_eq!(held_value, 99);
+    db.execute_batch("ROLLBACK").unwrap();
+    run_child("writable");
+    let final_value: i64 = db.query_row(
+        "SELECT value FROM probe_lock_guard WHERE id=1", [], |row| row.get(0),
+    ).unwrap();
+    assert_eq!(final_value, 1);
+    drop(db);
+    fs::remove_dir_all(root).unwrap();
+}
+

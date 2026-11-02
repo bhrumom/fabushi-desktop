@@ -1787,24 +1787,30 @@ claim of an observed production data-loss incident.
   a successful owner, and retain valid WAL-backed committed identity. Use the
   current SandAgentDb and recovery options without changing general Agent
   recovery consumers. This binds the current FBCP-HUMAN-CREATE-04 amendment.
-  A retained nonempty main file must supply the complete 100-byte SQLite
-  header and exact leading 16-byte signature before WAL/journal presence can
-  bypass the immutable probe. Use ordinary read-only file I/O before SQLite.
-  Invalid or truncated headers refuse without touching the main file, sidecars
-  or siblings; repeat/reopen must preserve those bytes. Absent and zero-length
-  stores retain normal interrupted-creation behavior; valid-header WAL snapshots
-  stay on the existing owner path. Retain short/truncated and full-length invalid
-  header controls, and exercise the zero-length positive in the existing table.
-  Arbitrary corrupt/hot sidecar combinations remain separately unqualified.
-  The implementation candidate disables automatic corruption recovery on the
-  existing configured opener. With no nonempty WAL or rollback journal, first
-  check the existing main DB through immutable read-only SQLite before any
-  journal-mode/schema writes. Sidecar-backed snapshots remain with the existing
-  WAL-aware owner. Exact-H byte-preservation tests must decide this boundary
-  before qualification, including a corrupt data page with a readable schema
-  in DELETE journal mode. Arbitrary hot/corrupt-sidecar recovery remains open. The unpublished readonly_shm probe is withdrawn:
-  the locked SQLite3.51.3 has a known corrupt-WAL read-overrun in that path.
-  No dependency upgrade or full arbitrary-WAL/crash acceptance is claimed.
+  Keep automatic corruption recovery disabled on the existing Human opener.
+  Before writable SQLite work, reject missing/empty main files accompanied by
+  any nonempty retained `-wal`, `-shm` or `-journal` without changing files;
+  their dedicated recovery remains open. A genuinely empty main without
+  nonempty sidecars remains creatable. Reject a retained main shorter than the
+  full 100-byte SQLite header before opening it.
+  Perform format admission through SQLite's private-cache, immutable read-only
+  connection and header-only `PRAGMA schema_version`, discarding its value
+  and propagating every query error. Do not open/read/close a raw database
+  file: that can release another connection's process-wide POSIX locks. Keep
+  SQLite's default VFS and inode/FD lifecycle; do not add `nolock` or
+  `unix-none`. This probe is not the current schema, WAL, authorization or
+  migration-version authority. After format admission, a nonempty WAL/rollback
+  journal remains with the existing WAL-aware owner; otherwise retain immutable
+  `quick_check` before journal-mode/schema writes, including the readable-schema
+  but corrupt-data-page DELETE-journal case. Keep all ten existing corruption
+  variants, byte-preservation/repeat/reopen checks and zero-length positive.
+  Add missing/empty-main-with-sidecar refusal, actual retained-WAL/reopen and
+  external-process lock-contention controls. These controls qualify the default
+  SQLite/VFS owner path, not arbitrary custom VFS or metadata/open races.
+  Arbitrary hot/corrupt-sidecar recovery remains separately unqualified. The
+  unpublished readonly_shm probe stays withdrawn: locked SQLite 3.51.3 has a
+  known corrupt-WAL read-overrun in that path. No dependency upgrade or complete
+  WAL/crash acceptance is claimed.
 - NMR-AC-CREATE-01: Add focused real-SQLite behavioral cases in the existing Host
   owner tests, selected explicitly by the Actions reconciliation job. Force
   the same-pair scheduling interleaving with owned barriers/channels, exercise
@@ -1818,14 +1824,16 @@ claim of an observed production data-loss incident.
   exact selected/executed counts, with zero ignored or skipped cases, at the
   containing H. Add distinct-worker/SQLite-handle first-writer controls and
   missing-metadata KV/transcript/blob refusal cases with unchanged durable rows.
-  Retain current Human62/resource3, sharebox1, journal12, Agent4, credential3 and
+  Retain current Human67/resource3, sharebox1, journal12, Agent4, credential3 and
   gateway1 contracts and all applicable shipping/UI/Windows evidence.
   The existing selected ambiguous-dispatch/restart contract must enter through
   the shipping `createHumanConversation` gateway command, then retain its actual
   Native HTTP, SQLite, pending/settled event and single-message recovery oracles.
   The current upstream reconciliation job already uses Ubuntu at the same H.
-  Add creation12 and atomic-storage3 to that existing job, retaining its Human62
-  selected gateway and all other checks; no duplicate Linux job is needed.
+  Select creation14 and atomic-storage3 in that existing job, retaining Human67,
+  the current selected gateway/retry contracts and all other checks. Require
+  actual success for both retained-WAL and independent-process lock cases;
+  the child lock checks must not inflate the outer test count.
   macOS shipping and full supported-platform acceptance remain independent gates.
   Preserve concurrent106bb95b's E0382 fixture repair: cleanup shuts down the
   restarted runtime after the original was dropped. That exact H passed
@@ -1979,3 +1987,38 @@ unchanged by this transport repair. Backend PR #137 remains read-only.
 Official publisher, real signed platform packages, complete fixed-U source/
 legal coverage, real-service acceptance and independent ACCEPT remain blocked.
 
+
+## NMR-REG-TRM-01 — Restore existing Transcript recovery regression registration
+
+Exact discovery H `63c59566aae7fa9b424a364df1429176c792d249`, job
+`125535006727`, exposes two `unnameable_test_items` warnings in
+`source/host/src/transcript_mirror/conversation_state_binary.rs`
+(blob `d0cd9c66557514073bdc0e6ada670e52038df70b`). The existing owner is
+`ProductionTranscriptCheckpoint::from_state_bytes` through the current binary
+state decoder; no new state, storage, wire format or runtime owner is introduced.
+
+- Register the existing compaction, token/timing recovery and stale-token removal
+  tests independently at their current module level. Move only the misplaced
+  closing brace; preserve every original assertion, fixture and production byte.
+- Preserve the existing recovery oracles: token used/max `120/1000`, turn
+  duration/timestamp `25/200`, and removal of field 5 without re-encoding or
+  reordering the archive and turn field bytes. This is a `TEST_FLAW` repair,
+  not a new product feature or proof of all Agent recovery.
+- In the existing Ubuntu reconciliation job, run the real locked Host library
+  target `conversation_state_binary::tests`; require `3 passed; 0 failed;
+  0 ignored` and actual `... ok` records for both formerly unregistered tests.
+  Add the exact source path to the workflow trigger. Retain all Human/resource,
+  journal, Agent, credential, HTTP, UI and shipping gates and their current counts.
+- Execute only in GitHub Actions at the containing H. Existing NMR51 selected
+  execution remains bound to H63; this repair does not retroactively execute the
+  missing tests there or unblock dependent Human UI before the required message
+  jobs succeed. The one-brace repair is published at
+  `be660661a4935a590cc6e5074ba3224074493401`; its actual CI selection is published
+  at `db6d7f427ba25d7f90d6470a3ff69574bab5c034` (run `41526479236`, attempt 1).
+  These publication identities are not execution results. Record registration
+  and actual execution separately in the existing RTM/ledger and task evidence;
+  do not promote source/product/ACCEPT.
+
+Rollback is an ordinary test/workflow revert; no user data or production format
+migration is involved. All full source, real-service, supported-package, UI/Bot,
+upgrade/rollback and independent acceptance requirements remain open.

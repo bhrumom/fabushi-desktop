@@ -120,31 +120,41 @@ pub fn is_store_db_healthy(db: &Connection) -> bool {
 }
 
 /// Reject an existing corrupt main database before journal-mode/schema writes.
-/// With sidecars, reject only a main file SQLite identifies as NOTADB. Its current
-/// snapshot and integrity still belong to the existing WAL-aware opener.
+/// A WAL or rollback journal may contain the current snapshot, so those stores
+/// are left to the existing WAL-aware opener; this probe is never their authority.
 pub(super) fn probe_human_conversation_store(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<(), AgentDbRecoveryError> {
-    let mut has_nonempty_sidecar = false;
-    for suffix in ["-wal", "-journal"] {
+    // A raw open/read/close can release another SQLite connection's POSIX
+    // locks. Only inspect metadata here; let SQLite manage all file handles.
+    let main_len = match std::fs::metadata(db_path) {
+        Ok(metadata) => metadata.len(),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => 0,
+        Err(error) => return Err(error.into()),
+    };
+    let mut has_retained_sidecar = false;
+    let mut has_snapshot_sidecar = false;
+    for suffix in ["-wal", "-shm", "-journal"] {
         let mut path = db_path.as_os_str().to_os_string();
         path.push(suffix);
         match std::fs::metadata(PathBuf::from(path)) {
-            Ok(metadata) if metadata.len() > 0 => has_nonempty_sidecar = true,
+            Ok(metadata) if metadata.len() > 0 => {
+                has_retained_sidecar = true;
+                has_snapshot_sidecar |= suffix != "-shm";
+            }
             Ok(_) => {},
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
             Err(error) => return Err(error.into()),
         }
     }
-    match std::fs::metadata(db_path) {
-        Ok(metadata) if metadata.len() > 0 && metadata.len() < 100 => {
-            // Preserve truncated headers without opening a raw file descriptor.
-            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
-        },
-        Ok(_) => {},
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-        Err(error) => return Err(error.into()),
+    if main_len == 0 && !has_retained_sidecar {
+        return Ok(());
+    }
+    if main_len < 100 {
+        // Missing/empty mains with retained sidecars need dedicated recovery.
+        // SQLite may otherwise delete those files while opening a new store.
+        return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
     }
     let mut uri = url::Url::from_file_path(db_path).map_err(|_| {
         std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid Human store path")
@@ -152,20 +162,15 @@ pub(super) fn probe_human_conversation_store(
     uri.query_pairs_mut().append_pair("mode", "ro").append_pair("immutable", "1");
     let db = Connection::open_with_flags(
         uri.as_str(),
-        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
+        OpenFlags::SQLITE_OPEN_READ_ONLY
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_PRIVATE_CACHE,
     )?;
     db.busy_timeout(Duration::from_millis(busy_timeout_ms))?;
-    if has_nonempty_sidecar {
-        // A normal writable open may discard sidecars before rejecting NOTADB.
-        // Read only the main-file header through SQLite, without replaying or
-        // touching sidecars. A stale main schema is not a WAL integrity verdict.
-        if let Err(error) = db.query_row("PRAGMA schema_version", [], |row| row.get::<_, i64>(0)) {
-            if matches!(&error, rusqlite::Error::SqliteFailure(code, _)
-                if code.code == rusqlite::ErrorCode::NotADatabase)
-            {
-                return Err(error.into());
-            }
-        }
+    // This read invokes SQLite's page-one format checks without loading the
+    // schema. Its value is not the current WAL snapshot or a migration version.
+    let _: i64 = db.query_row("PRAGMA schema_version", [], |row| row.get(0))?;
+    if has_snapshot_sidecar {
         return Ok(());
     }
     let status = db.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))?;
