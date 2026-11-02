@@ -385,3 +385,7 @@ Directory enumeration, source reading, mapped responsibilities, implemented code
 
 **OCRM project execution rule:** every executable validation, including generators, schema checks, builds, tests, packaging and acceptance, runs only in GitHub Actions. The repository-wide `htch-runtime` allowance does not apply to OCRM. Read-only investigation, editing, Git/API operations and evidence review are allowed outside Actions.
 
+
+### Source-review amendment — 2026-11-02
+
+FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.

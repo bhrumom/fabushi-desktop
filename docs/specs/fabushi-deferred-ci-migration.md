@@ -104,3 +104,20 @@ Telegram core/runtime/provider/network/storage 不作为本迁移的 shipping ow
 
 阶段 A 人工审查必须能回答：实际用户入口在哪里；哪个 owner 决策；什么状态被持久化；谁发送/同步；谁消费事件；失败/重启怎么恢复；旧路径何时退出。缺一项则保留该项缺口。阶段 B 再在 Actions 证明支持配置无旧 Telegram 原生路径、同一消息跨 UI/服务/持久化的 ID 与状态一致、重试重启及数据迁移可恢复、现有 Agent 能力不回退。阶段 A 按批次做针对性验证，阶段 B 完成全范围验收；不能把政策合并当产品完成。
 
+
+## 13. FMEP-SOURCE-01 — 全量核算、风险分层阅读（2026-11-02）
+
+本条替代旧规范对全部文件同等深读与全局 unread=0 的要求；完整产品能力范围不变。每个固定 U 来源项必须有 repository/commit/path/blob 的明确身份及处置，但工作单位是产品责任/功能批次。机器枚举是来源覆盖证据，不是语义理解证明。
+
+- product / mixed-ui：深读适用产品逻辑、调用关系、状态、异常、权限、并发和恢复；逐责任映射到实际 owner。高风险、安全关键或不确定项默认 deep，不能抽样代替。
+- generated：读生成器、输入/schema 和输出合同，核对生成关系；输出按精确成员清单成组处置，不逐行重复读。手工补丁/未知差异升级 deep。
+- dependency：核对锁定版本、实际使用/API、构建可达性、配置/补丁、安全边界与许可证；关键或修改部分 deep，其余 contract。不要求重写通用成熟依赖。
+- resource / documentation / tooling：按内容用途采用 disposition；工具不自动成为产品需求。不得仅凭目录或扩展名判断无产品责任；存在疑问升级 deep。
+
+在原 ledger 增加 source_reviews，记录精确 source identity、category、risk、review_depth、status、rationale、evidence、responsibility_ids。允许同一审查证据被多个精确成员引用；禁止用目录通配符假装覆盖。complete 必须有真实证据；产品项必须 deep 且关联产品责任，high 风险必须 deep。不读取而作合同/处置审查不标成 read-complete。历史 unread/unknown 保留其原统计含义，不自动清零。
+
+新完成门为来源无遗漏、分类无未知、必需深读无缺口、产品责任全映射/实现/接入且验收通过。accepted 检查必须以实际 inventory identity 集合对照 source_reviews，不能信任自报零计数。外部下载/LFS/构建依赖仍按原闭合门另行验证；recursive inventory 通过不代表外部来源自动闭合。缺 source_reviews 的旧账本可继续作为未接受候选，最终接受必须迁移到新合同。
+
+责任账本使用核心字段加适用域合同；UI/search/design 字段仅对相应责任适用，不适用要有类别与理由，不能拿空值隐藏产品义务。现有必填字段在 schema/validator 完成对应条件化之前继续兼容，不批量伪造字段或完成状态。每批只做本批必要文档，复用共享合同。
+
+本次验收：在 Actions 以正例证明 contract/disposition 可闭合非产品来源，以负例拒绝缺项、重复、blob 漂移、低深度产品/高风险、无证据和未映射责任。执行结果只证明检查器合同，不证明现有 16k 来源已完成。
