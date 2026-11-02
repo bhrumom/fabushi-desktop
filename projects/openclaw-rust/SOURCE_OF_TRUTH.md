@@ -42,11 +42,15 @@ live main `5528062177e3865eef60a073a066cca144f9e3e8` 的产品/UI与执行合同
 unknown/deep/pending 字段，不改变 literal read_status。最终门拒绝漏项、
 身份/依赖漂移、未取得证据、浅读高风险、错误 N/A 及未映射责任。
 
-当前生产批次为 [Settings 原子配置提交](docs/specs/config-settings-atomic-commit.md)，
-真实来源审查保存在 [既有 config dossier](dossiers/config-settings-scoped.md)。
-单实例 CAS/snapshot、严格读取失败与推理消费者接线正在实施，未取得
-本轮 exact-H Actions 结果；全量来源闭包、跨进程锁、脱敏 revision、其他
-产品职责及最终 G01–G12/AC01–AC24 均未验收。
+本轮恢复起点为既有分支 `0533ca72870a2794c2db32959b9d01427abf325a`，
+保留其 Settings、模型/凭据绑定、Runner 恢复、渠道、Automations 与插件成果。
+本批补齐[默认模型桌面桥接与来源核算](management/tasks/P0-provider-bound-model-identity.md)：
+现有 RPC/镜像保留 provider，Rust Settings/Inference 继续持有校验和推理；
+固定 U 的 34 条历史阅读事实进入既有 inventory，窄责任保持未验证/未接受。
+已有 source run `41510754055` 只属于 0533，Runtime run `41509828695`
+只属于生产父提交 `dda1467e2480ad730a684402f616802d06b8b277`，不能重标为新 H。
+新批次及 Actions 物化后 H 必须取得自己的受影响证据。完整来源闭包、
+可信 session picker、真实生态/设备/平台和最终 G01–G12/AC01–AC24 仍未验收。
 
 ### Historical exact-subject identity separation (2026-11-01)
 

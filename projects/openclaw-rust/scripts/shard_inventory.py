@@ -10,7 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from source_review import REVIEW_FIELDS
+from source_review import REVIEW_FIELDS, pending_mapping_additions
 
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
@@ -89,6 +89,15 @@ def dependency_declarations(rows, source, lock):
 
 def write(path):
     doc, canonical_sha, lock = canonical(path)
+    prior_index = json.loads(INDEX.read_text())
+    if "pending_mapping_additions" in prior_index:
+        prior_manifest = json.loads((SHARDS / "manifest.json").read_text())
+        additions = pending_mapping_additions(prior_index, prior_manifest["canonical_inventory_sha256"])
+        by_path = {row["path"]: row for row in doc["entries"]}
+        for rid, source_path, blob_sha in additions:
+            row = by_path.get(source_path)
+            if row is None or row.get("blob_sha") != blob_sha or rid not in row["responsibility_ids"]:
+                raise AssertionError("Pending mapping addition was not materialized: " + source_path)
     SHARDS.mkdir(parents=True, exist_ok=True)
     DEPS.parent.mkdir(parents=True, exist_ok=True)
     rows = doc["entries"]
@@ -124,6 +133,7 @@ def write(path):
     (SHARDS / "manifest.json").write_text(json.dumps(manifest, sort_keys=True, indent=2, ensure_ascii=False) + "\n")
     DEPS.write_text(json.dumps(dependency_declarations(rows, doc["upstream"], lock), sort_keys=True, indent=2, ensure_ascii=False) + "\n")
     index = json.loads(INDEX.read_text())
+    index.pop("pending_mapping_additions", None)
     applicability_assessed = sum((e.get("applicability_status") or "unknown") != "unknown" for e in rows)
     dispositioned = sum((e.get("disposition_status") or "pending") not in {"pending", "deep-read-required"} for e in rows)
     unreviewed_applicable = sum(

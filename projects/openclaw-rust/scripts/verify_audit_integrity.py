@@ -4,6 +4,7 @@
 Both this CI consumer and validate_p0.py use the same risk-review contract.
 Legacy reading facts remain literal and independent of responsibility mapping.
 """
+import argparse
 import gzip
 import hashlib
 import json
@@ -11,7 +12,8 @@ import os
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
-from source_review import validate_source_reviews
+from source_review import (pending_mapping_additions, validate_source_reviews,
+                           validate_source_responsibility_links)
 
 ROOT = Path(__file__).resolve().parent.parent
 REPO_ROOT = ROOT.parent.parent
@@ -33,6 +35,10 @@ def digest(data):
 def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("Validator must run in GitHub Actions")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--before-expansion", action="store_true",
+                        help="Check committed history and permit only exact, pending forward mapping additions")
+    args = parser.parse_args()
     lock = read_json(ROOT / "upstream.lock.json")
     expected = {key: lock["upstream"][key] for key in ("repository", "commit", "tree")}
     index = read_json(ROOT / "inventory/index.json")
@@ -89,20 +95,21 @@ def main():
         return path.resolve().is_relative_to(REPO_ROOT.resolve()) and path.is_file()
     by_path = validate_source_reviews(entries, responsibility_by_id, expected_identity=expected,
                                      evidence_exists=evidence_exists)
-    ledger_paths = set()
+    additions = pending_mapping_additions(index, manifest["canonical_inventory_sha256"])
+    require(args.before_expansion or not additions, "Unmaterialized pending mapping additions")
+    pending = validate_source_responsibility_links(
+        entries, responsibility_by_id, before_expansion=args.before_expansion,
+        pending_additions=additions)
     for rid, responsibility in responsibility_by_id.items():
         for ref in responsibility["source_refs"]:
             row = by_path.get(ref["path"])
             require(row is not None and row["blob_sha"] == ref["blob_sha"], "Ledger source identity drift: " + rid)
-            require(rid in row["responsibility_ids"], "Missing reverse source/responsibility link: " + rid)
-            ledger_paths.add(ref["path"])
             if rid == "OCRM-RESP-PLUGINS-MANIFEST-DOCTOR-001":
                 require("registry.contract.test.ts" not in ref["path"] and "registry.ts" not in ref["path"], "Registry responsibility misclassified as manifest doctor")
     for path, sha in lock["root_inputs"].items():
         require((sha is None and path not in by_path) or (path in by_path and by_path[path]["sha"] == sha), "Fixed root input drift: " + path)
     mapped = sum(row["responsibility_status"] != "unclassified" for row in entries)
     unread = sum(row["read_status"] != "read-complete" for row in entries)
-    require(mapped == len(ledger_paths), "Mapping denominator drift")
     coverage = ledger["file_coverage"]
     require(coverage["tracked_paths"] == len(entries) and coverage["mapped_paths"] == mapped
             and coverage["unclassified_paths"] == len(entries) - mapped, "Ledger coverage drift")
@@ -111,7 +118,8 @@ def main():
     require(index["inventory"]["omitted_known"] == coverage["omitted_known"] == 0, "Known source omission")
     for document in (ledger, rtm):
         require(all(value is False for value in document["completion_flags"].values()), "Unproven global completion flag")
-    print(f"OCRM committed source integrity PASS: {len(entries)} paths; {mapped} mapped; {unread} unread/partial. Risk review and final acceptance remain independent.")
+    phase = "pre-expansion history" if args.before_expansion else "committed source"
+    print(f"OCRM {phase} integrity PASS: {len(entries)} paths; {mapped} mapped; {unread} unread/partial; {len(pending)} pending forward links. Risk review and final acceptance remain independent.")
 
 
 if __name__ == "__main__":

@@ -801,6 +801,47 @@ no data migration or credential persistence is introduced. Original-turn disk
 load/claim/settle, identity after process loss, summary identity policy, remote
 revocation, real service compatibility and all full OCRM acceptance stay open.
 
+## Existing desktop default-model bridge — OCRM-MODEL-BRIDGE-v1
+
+Integration base: `0533ca72870a2794c2db32959b9d01427abf325a`, fixed U unchanged.
+The Rust identity chain above is already implemented at this base. The existing
+`agents.setDefaultModel` preload/appWindow RPC still loses `provider` while
+`main-edge.ts::parseAgentModel` reconstructs the selection. The existing local
+settings mirror setter and fast-parameter migration also drop the field. That
+turns a bound default into a legacy unbound selection before Rust can decide it.
+
+- MB-01: Preserve the presence and exact value of an explicitly supplied
+  `provider` through the existing default-model RPC into Host Settings. Missing
+  remains missing. Null, non-string, blank and unknown bindings must reach the
+  existing Rust validator unchanged and be refused there; the bridge cannot
+  delete them or silently turn them into legacy defaults. Retain the existing
+  base-shape parsing and parameter copying. An own `provider: undefined`
+  cannot be represented in JSON and must fail explicitly at the bridge before
+  Host dispatch, rather than being omitted during serialization. Model authorization, canonical
+  provider validation, normalization and inference remain Rust responsibilities.
+- MB-02: Update the local display mirror only from an acknowledged Host result,
+  preserving its provider and model metadata through setter/getter, reopening
+  and the existing fast-parameter migration. Host refusal or unavailability
+  leaves the previous mirror intact. An acknowledged absent/null whole model
+  clears the mirror; this does not erase a null provider inside a model object.
+  Retain account-clear and legacy unbound
+  behavior. The mirror never becomes inference or permission authority.
+- MB-03: The shared and renderer DTOs may carry an optional opaque provider
+  value so raw IPC presence is not lost; they do not add a provider allowlist,
+  route selection, catalog or policy evaluator in TypeScript. Preserve the
+  existing appWindow top-frame trust boundary and Computer Use behavior.
+- MB-04: Actions exercise the actual served handler and real file-backed mirror,
+  with a controlled Host acknowledgment/refusal port, malformed-binding forwarding,
+  legacy/default migration and account-clearing controls. Reuse the shipping
+  Electron bundler and the existing Rust Settings/Inference/model contracts.
+  These are bridge and owner-contract proofs, not real provider or UI acceptance.
+
+No new session-model mutation API is admitted. The trusted catalog/operator/
+visibility/placement inputs required by the existing session mutation ADR remain
+unresolved; the full picker responsibility remains not-wired. Completed-turn
+upgrade-marker acknowledgment now exists, but does not prove interrupted
+provider continuation after restart. Final service, UI and platform gates remain.
+
 ## Actions oracles and limits
 
 Use the existing scoped GitHub Actions workflow, on one frozen H. No local or

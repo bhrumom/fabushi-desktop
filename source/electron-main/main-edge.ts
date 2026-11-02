@@ -76,13 +76,18 @@ function themeController(deps: MainEdgeDeps) { return required(deps.readThemeCon
 function egressController(deps: MainEdgeDeps) { return required(deps.readEgressTunnelController, MAIN_EDGE_EGRESS_TUNNEL_UNAVAILABLE, "The egress tunnel controller is not running."); }
 async function echo(deps: MainEdgeDeps, field: string, value: unknown, label: string): Promise<unknown> { const result = await deps.syncHostSettingsToBox({ [field]: value }); if (result == null) throw new SandHostSettingsUnreachableError(`Couldn't reach the computer to save ${label}.`); return result[field] ?? null; }
 function computerUseModel(deps: MainEdgeDeps): unknown { const stored = invoke(deps.agentPrefsStore, "getComputerUseModel"); const override = deps.getComputerUseModelOverride(); return resolveComputerUseModelSelection({ ...(isSandAgentModelSelection(stored) ? { storedModel: stored } : {}), ...(isSandAgentModelSelection(override) ? { overrideModel: override } : {}) }) ?? null; }
-function parseAgentModel(value: unknown, requireNonWhitespaceId: boolean): { modelId: string; maxMode: boolean; parameters: { id: string; value: string }[] } | null {
+function parseAgentModel(value: unknown, requireNonWhitespaceId: boolean, preserveProvider = false): { modelId: string; maxMode: boolean; parameters: { id: string; value: string }[]; provider?: unknown } | null {
   if (typeof value !== "object" || value == null || Array.isArray(value)) return null;
   const record = value as UnknownRecord;
+  if (preserveProvider && Object.prototype.hasOwnProperty.call(record, "provider") && record.provider === undefined) {
+    throw new Error("An explicit default-model provider must have a JSON value.");
+  }
   if (typeof record.modelId !== "string" || record.modelId.length === 0 || (requireNonWhitespaceId && record.modelId.trim().length === 0) || typeof record.maxMode !== "boolean" || !Array.isArray(record.parameters)) return null;
   const parameters: { id: string; value: string }[] = [];
   for (const raw of record.parameters) { if (typeof raw !== "object" || raw == null || Array.isArray(raw)) return null; const parameter = raw as UnknownRecord; if (typeof parameter.id !== "string" || parameter.id.length === 0 || typeof parameter.value !== "string") return null; parameters.push({ id: parameter.id, value: parameter.value }); }
-  return { modelId: record.modelId, maxMode: record.maxMode, parameters };
+  // Host Settings owns provider validation. An explicit invalid binding must
+  // reach that owner unchanged instead of becoming a legacy unbound default.
+  return { modelId: record.modelId, maxMode: record.maxMode, parameters, ...(preserveProvider && Object.prototype.hasOwnProperty.call(record, "provider") ? { provider: record.provider } : {}) };
 }
 
 export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
@@ -119,8 +124,8 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
 
     getThemeState: () => invoke(themeController(deps), "getState"),
     setThemePreference: (raw) => { const controller = themeController(deps); const preference = req(raw).preference; return isSandThemePreference(preference) ? invoke(controller, "setPreference", preference) : invoke(controller, "getState"); },
-    getAgentDefaultModel: async () => { const settings = await deps.readHostSettingsFromBox(); invoke(deps.agentPrefsStore, "setAgentDefaultModel", settings.agentDefaultModel); return settings.agentDefaultModel ?? null; },
-    setAgentDefaultModel: async (raw) => { const model = parseAgentModel(req(raw).model, false); if (model == null) return invoke(deps.agentPrefsStore, "getAgentDefaultModel") ?? null; const result = await deps.syncHostSettingsToBox({ agentDefaultModel: model }); if (result == null) throw new SandHostSettingsUnreachableError("Couldn't reach the computer to save the default model."); invoke(deps.agentPrefsStore, "setAgentDefaultModel", result.agentDefaultModel); return result.agentDefaultModel ?? null; },
+    getAgentDefaultModel: async () => { const settings = await deps.readHostSettingsFromBox(); invoke(deps.agentPrefsStore, "setAgentDefaultModel", settings.agentDefaultModel ?? undefined); return settings.agentDefaultModel ?? null; },
+    setAgentDefaultModel: async (raw) => { const model = parseAgentModel(req(raw).model, false, true); if (model == null) return invoke(deps.agentPrefsStore, "getAgentDefaultModel") ?? null; const result = await deps.syncHostSettingsToBox({ agentDefaultModel: model }); if (result == null) throw new SandHostSettingsUnreachableError("Couldn't reach the computer to save the default model."); invoke(deps.agentPrefsStore, "setAgentDefaultModel", result.agentDefaultModel ?? undefined); return result.agentDefaultModel ?? null; },
     getComputerUseModel: () => computerUseModel(deps),
     setComputerUseModel: (raw) => { const requested = req(raw).model; const model = requested === null ? null : parseAgentModel(requested, true); if (requested === null || model != null) { invoke(deps.agentPrefsStore, "setComputerUseModel", model ?? undefined); void deps.syncHostSettingsToBox({ computerUseModel: invoke(deps.agentPrefsStore, "getComputerUseModel") ?? null }); } return computerUseModel(deps); },
     getHostPinnedAgents: async () => (await deps.readHostSettingsFromBox()).pinnedAgentIds ?? null,

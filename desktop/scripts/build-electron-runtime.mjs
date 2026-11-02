@@ -86,7 +86,7 @@ await build({
   outfile: path.join(outPreload, "preload-miniapp-tools.cjs"),
 });
 
-// Compile the actual SDK/Host-loader contract entries with the same module
+// Compile the selected desktop boundary contract entries with the same module
 // resolution and Node target as the shipping Electron runtime.
 if (process.argv.includes("--plugin-skills-contracts")) {
   const outContracts = path.join(desktopRoot, ".tmp-grok-electron", "ocrm-plugin");
@@ -96,6 +96,7 @@ if (process.argv.includes("--plugin-skills-contracts")) {
     ["source/packages/cursor-plugins/loader.contract.test.ts", "loader.contract.test.cjs"],
     ["source/electron-main/coordinator/coordinator-control-server.contract.test.ts", "coordinator-control-server.contract.test.cjs"],
     ["source/electron-main/mcp/mcp-runtime.contract.test.ts", "mcp-runtime.contract.test.cjs"],
+    ["source/electron-main/main-edge-model.contract.test.ts", "main-edge-model.contract.test.cjs"],
   ]) {
     await build({
       ...common,

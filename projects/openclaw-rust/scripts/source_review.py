@@ -48,6 +48,144 @@ def minimum_depth(row):
     return "disposition"
 
 
+def pending_mapping_additions(index, prior_manifest_digest):
+    """Read an explicit mapping delta anchored to the unchanged prior inventory."""
+    if "pending_mapping_additions" not in index:
+        return set()
+    declaration = index["pending_mapping_additions"]
+    if (not isinstance(declaration, dict)
+            or set(declaration) != {"from_canonical_inventory_sha256", "entries"}
+            or declaration["from_canonical_inventory_sha256"] != prior_manifest_digest
+            or not isinstance(declaration["entries"], list) or not declaration["entries"]):
+        raise AssertionError("Pending mapping additions do not match prior canonical inventory")
+    additions = set()
+    for item in declaration["entries"]:
+        if (not isinstance(item, dict) or set(item) != {"responsibility_id", "path", "blob_sha"}
+                or not all(isinstance(value, str) and value for value in item.values())):
+            raise AssertionError("Invalid pending mapping addition")
+        key = (item["responsibility_id"], item["path"], item["blob_sha"])
+        if key in additions:
+            raise AssertionError("Duplicate pending mapping addition")
+        additions.add(key)
+    return additions
+
+
+def validate_source_responsibility_links(entries, responsibilities, *, before_expansion=False,
+                                         pending_additions=()):
+    """Check canonical reverse links; pre-expansion permits only pending additions.
+
+    Existing row-to-ledger links are still checked by validate_source_reviews.
+    No completed mapping or verification may use the pending-addition path.
+    The normal committed gate always requires every reverse link.
+    """
+    by_path = {row["path"]: row for row in entries}
+    linked, pending = set(), []
+    for rid, responsibility in responsibilities.items():
+        for ref in responsibility.get("source_refs", []):
+            row = by_path.get(ref["path"])
+            if row is None or row.get("blob_sha") != ref.get("blob_sha"):
+                raise AssertionError("Ledger source identity drift: " + rid)
+            if rid not in row["responsibility_ids"]:
+                status = responsibility.get("status", {})
+                if not (before_expansion and status.get("mapping") == "mapped"
+                        and status.get("verification") == "not-run"
+                        and status.get("acceptance") == "pending"
+                        and (rid, ref["path"], ref["blob_sha"]) in pending_additions):
+                    raise AssertionError("Missing reverse source/responsibility link: " + rid)
+                pending.append((rid, ref["path"], ref["blob_sha"]))
+            else:
+                linked.add(ref["path"])
+    mapped = {row["path"] for row in entries if row["responsibility_status"] != "unclassified"}
+    if mapped != linked:
+        raise AssertionError("Mapping denominator drift")
+    if before_expansion and set(pending) != set(pending_additions):
+        raise AssertionError("Pending mapping additions differ from actual missing links")
+    return pending
+
+
+def apply_literal_read_observations(entries, observations, *, expected_identity,
+                                    evidence_exists, source_line_count):
+    """Merge explicit fixed-source reading facts without granting review authority.
+
+    This is input to the existing Actions materializer, not another inventory.
+    Existing ranges, dependencies, evidence, dispositions and review states survive.
+    Partial observations never become full reads merely by merging ranges.
+    """
+    def require(condition, message):
+        if not condition:
+            raise AssertionError(message)
+
+    require(set(observations) == {"format_version", "upstream", "reviewer", "evidence_refs", "entries"}
+            and observations["format_version"] == 1, "Invalid literal read observation document")
+    require(observations["upstream"] == expected_identity, "Read observation source identity drift")
+    reviewer, evidence = observations["reviewer"], observations["evidence_refs"]
+    require(isinstance(reviewer, str) and reviewer.strip() and reviewer.splitlines() == [reviewer]
+            and isinstance(evidence, list)
+            and evidence and all(isinstance(ref, str) and evidence_exists(ref) for ref in evidence),
+            "Read observation evidence missing")
+    result = deepcopy(entries)
+    by_path = {row["path"]: row for row in result}
+    require(len(by_path) == len(result), "Duplicate inventory path in read observations")
+    require(isinstance(observations["entries"], list), "Invalid read observation entries")
+    seen = set()
+    for observation in observations["entries"]:
+        require(set(observation) == {"path", "sha", "read_status", "read_ranges",
+                                    "language_kind", "module_id", "dependency_edges"},
+                "Read observations cannot change review, mapping or acceptance states")
+        path = observation["path"]
+        require(path not in seen, "Duplicate read observation: " + path)
+        seen.add(path)
+        row = by_path.get(path)
+        require(row is not None and row.get("entry_kind") == "blob"
+                and row.get("sha") == observation["sha"]
+                and identity(row)[:3] == tuple(expected_identity[k] for k in ("repository", "commit", "tree")),
+                "Read observation object identity drift: " + path)
+        status, spans = observation["read_status"], observation["read_ranges"]
+        require(status in {"partial", "read-complete"} and isinstance(spans, list) and spans,
+                "Invalid literal read observation status/ranges: " + path)
+        line_count = source_line_count(row)
+        for span in spans:
+            require(set(span) == {"start_line", "end_line"}
+                    and type(span["start_line"]) is int and type(span["end_line"]) is int
+                    and 1 <= span["start_line"] <= span["end_line"] <= line_count,
+                    "Read observation range outside acquired content: " + path)
+        if status == "read-complete":
+            covered = 0
+            for span in sorted(spans, key=lambda value: value["start_line"]):
+                require(span["start_line"] <= covered + 1, "Incomplete full-read observation: " + path)
+                covered = max(covered, span["end_line"])
+            require(covered == line_count, "Incomplete full-read observation: " + path)
+        for field, unknown in (("language_kind", "unclassified"), ("module_id", None)):
+            value = observation[field]
+            require(isinstance(value, str) and value.strip() and value != "unclassified",
+                    "Missing read observation classification: " + path)
+            require(row.get(field) in (None, unknown, value), "Read observation classification drift: " + path)
+            row[field] = value
+        edges = observation["dependency_edges"]
+        require(isinstance(edges, list) and len(edges) == len(set(edges))
+                and all(edge in by_path for edge in edges), "Read observation dependency not acquired: " + path)
+        row["dependency_edges"] = sorted(set(row.get("dependency_edges", [])) | set(edges))
+        row["read_status"] = "read-complete" if "read-complete" in (row["read_status"], status) else "partial"
+        # Historical objects may carry content_digest or other schema-approved
+        # evidence. Preserve each object, including same-endpoint records, and
+        # only append observation ranges not already represented by history.
+        known = {(span["start_line"], span["end_line"]) for span in row["read_ranges"]}
+        for span in spans:
+            key = (span["start_line"], span["end_line"])
+            if key not in known:
+                row["read_ranges"].append(deepcopy(span))
+                known.add(key)
+        prior_reviewer = row.get("reviewer")
+        if not prior_reviewer:
+            row["reviewer"] = reviewer
+        elif prior_reviewer == reviewer or reviewer in prior_reviewer.splitlines():
+            row["reviewer"] = prior_reviewer
+        else:
+            row["reviewer"] = prior_reviewer + "\n" + reviewer
+        row["evidence_refs"] = sorted(set(row.get("evidence_refs", [])) | set(evidence))
+    return result
+
+
 def validate_source_reviews(entries, responsibilities, *, final=False,
                             expected_identity=None, acquired=None,
                             evidence_exists=None):

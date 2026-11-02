@@ -4,7 +4,8 @@ import os
 import unittest
 
 from materialize_ac02_defaults import migrate
-from source_review import conservative_review_fields, identity, validate_source_reviews
+from source_review import (conservative_review_fields, identity, validate_source_reviews,
+                           validate_source_responsibility_links, pending_mapping_additions)
 
 U = {"repository": "openclaw/openclaw", "commit": "1" * 40, "tree": "2" * 40}
 
@@ -243,6 +244,85 @@ class SourceReviewContract(unittest.TestCase):
         source["review_inputs"][2] = reference(source, "generator")
         with self.assertRaisesRegex(AssertionError, "impersonates"):
             self.validate()
+
+
+class ForwardMappingContract(unittest.TestCase):
+    def setUp(self):
+        self.rows = [row("src/product.ts", 3)]
+        self.responsibilities = {
+            "OCRM-RESP-NEW": {
+                "source_refs": [{"path": "src/product.ts", "blob_sha": self.rows[0]["sha"]}],
+                "status": {"mapping": "mapped", "verification": "not-run", "acceptance": "pending"},
+            },
+        }
+        self.additions = {("OCRM-RESP-NEW", "src/product.ts", self.rows[0]["sha"])}
+
+    def test_pending_exact_addition_is_only_allowed_before_expansion(self):
+        before = copy.deepcopy((self.rows, self.responsibilities))
+        with self.assertRaisesRegex(AssertionError, "Missing reverse"):
+            validate_source_responsibility_links(self.rows, self.responsibilities)
+        self.assertEqual(validate_source_responsibility_links(
+            self.rows, self.responsibilities, before_expansion=True, pending_additions=self.additions),
+            list(self.additions))
+        self.assertEqual((self.rows, self.responsibilities), before)
+        self.rows[0].update(responsibility_ids=["OCRM-RESP-NEW"], responsibility_status="mapped")
+        self.assertEqual(validate_source_responsibility_links(self.rows, self.responsibilities), [])
+
+    def test_review_or_acceptance_cannot_use_pending_link_path(self):
+        for field, value in (("mapping", "reviewed"), ("verification", "verified"),
+                             ("acceptance", "accepted")):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(self.responsibilities)
+                changed["OCRM-RESP-NEW"]["status"][field] = value
+                with self.assertRaisesRegex(AssertionError, "Missing reverse"):
+                    validate_source_responsibility_links(self.rows, changed, before_expansion=True,
+                                                         pending_additions=self.additions)
+
+    def test_pending_identity_drift_and_unknown_source_are_rejected(self):
+        for field, value in (("path", "src/absent.ts"), ("blob_sha", "f" * 40)):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(self.responsibilities)
+                changed["OCRM-RESP-NEW"]["source_refs"][0][field] = value
+                with self.assertRaisesRegex(AssertionError, "Ledger source identity drift"):
+                    validate_source_responsibility_links(self.rows, changed, before_expansion=True,
+                                                         pending_additions=self.additions)
+
+    def test_previous_reverse_link_cannot_be_removed_as_a_pending_addition(self):
+        self.rows[0].update(responsibility_ids=["OCRM-RESP-NEW"], responsibility_status="mapped")
+        other = row("src/other.ts", 4)
+        self.rows.append(other)
+        self.responsibilities["OCRM-RESP-NEW"]["source_refs"] = [
+            {"path": other["path"], "blob_sha": other["sha"]}
+        ]
+        with self.assertRaisesRegex(AssertionError, "Responsibility source identity drift"):
+            validate_source_reviews(self.rows, self.responsibilities, expected_identity=U)
+        with self.assertRaisesRegex(AssertionError, "Missing reverse"):
+            validate_source_responsibility_links(self.rows, self.responsibilities, before_expansion=True,
+                                                 pending_additions=self.additions)
+
+    def test_lost_link_on_still_mapped_path_cannot_be_repaired_as_a_new_addition(self):
+        self.rows[0].update(responsibility_ids=["OCRM-RESP-RETAINED"], responsibility_status="mapped")
+        self.responsibilities["OCRM-RESP-RETAINED"] = copy.deepcopy(self.responsibilities["OCRM-RESP-NEW"])
+        with self.assertRaisesRegex(AssertionError, "Missing reverse"):
+            validate_source_responsibility_links(self.rows, self.responsibilities, before_expansion=True)
+
+    def test_mapping_delta_rejects_inventory_drift_duplicates_and_unused_entries(self):
+        with self.assertRaisesRegex(AssertionError, "prior canonical inventory"):
+            pending_mapping_additions({"pending_mapping_additions": None}, "a" * 64)
+        entry = {"responsibility_id": "OCRM-RESP-NEW", "path": "src/product.ts", "blob_sha": self.rows[0]["sha"]}
+        index = {"pending_mapping_additions": {
+            "from_canonical_inventory_sha256": "a" * 64, "entries": [entry],
+        }}
+        self.assertEqual(pending_mapping_additions(index, "a" * 64), self.additions)
+        with self.assertRaisesRegex(AssertionError, "prior canonical inventory"):
+            pending_mapping_additions(index, "b" * 64)
+        index["pending_mapping_additions"]["entries"].append(entry)
+        with self.assertRaisesRegex(AssertionError, "Duplicate pending"):
+            pending_mapping_additions(index, "a" * 64)
+        self.rows[0].update(responsibility_ids=["OCRM-RESP-NEW"], responsibility_status="mapped")
+        with self.assertRaisesRegex(AssertionError, "differ from actual missing"):
+            validate_source_responsibility_links(self.rows, self.responsibilities, before_expansion=True,
+                                                 pending_additions=self.additions)
 
 
 if __name__ == "__main__":

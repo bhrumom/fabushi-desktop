@@ -334,6 +334,11 @@ receipt_files = [
 ]
 if shard_manifest.exists():
     receipt_files.extend([shard_manifest, ROOT / "dependencies/source-manifest-inputs.json"])
+read_observations = ROOT / "inventory/read-observations.json"
+if read_observations.exists():
+    receipt_files.append(read_observations)
+    receipt_files.extend(Path(ref.split("#", 1)[0])
+                         for ref in j(read_observations)["evidence_refs"])
 input_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in receipt_files}
 input_hashes["upstream-recursive-inventory.json"] = manifest_sha
 receipt = {

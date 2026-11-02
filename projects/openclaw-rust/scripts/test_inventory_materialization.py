@@ -187,6 +187,165 @@ class InventoryMaterializationContract(unittest.TestCase):
         path.write_bytes(encoded(manifest))
         self.assert_rejected_without_replacing_committed_history("canonical inventory digest drift")
 
+    def write_observations(self, change=None):
+        evidence = self.workspace / "fixture/read-evidence.md"
+        evidence.parent.mkdir(exist_ok=True)
+        evidence.write_text("Explicit literal source read; no semantic acceptance.\n")
+        source = self.rows[2]
+        observation = {
+            "path": source["path"], "sha": source["sha"], "read_status": "read-complete",
+            "read_ranges": [{"start_line": 1, "end_line": 1}],
+            "language_kind": "typescript", "module_id": "fixture-module",
+            "dependency_edges": ["package.json"],
+        }
+        document = {"format_version": 1, "upstream": self.upstream, "reviewer": "explicit-fixture-reader",
+                    "evidence_refs": ["fixture/read-evidence.md"], "entries": [observation]}
+        if change is not None:
+            change(document)
+        (self.project / "inventory/read-observations.json").write_bytes(encoded(document))
+
+    def test_explicit_read_observation_preserves_history_without_review_promotion(self):
+        source = self.rows[2]
+        source.update(conservative_review_fields({}))
+        source.update(read_status="partial", read_ranges=[{"start_line": 1, "end_line": 1}],
+                      language_kind="typescript", module_id="fixture-module", reviewer="old-reader",
+                      evidence_refs=["fixture/old-evidence.md"], dependency_edges=["docs/reference.md"],
+                      risk="high", license_provenance={"historical-license": "retained"})
+        self.write_prior(self.rows)
+        self.write_observations()
+        result = self.pipeline()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        after = json.loads(self.canonical.read_text())["entries"][2]
+        self.assertEqual(after["read_status"], "read-complete")
+        self.assertEqual(after["review_status"], "pending")
+        self.assertEqual(after["responsibility_status"], "unclassified")
+        self.assertEqual(after["risk"], "high")
+        self.assertEqual(after["license_provenance"], source["license_provenance"])
+        self.assertIn("old-reader", after["reviewer"])
+        self.assertEqual(after["dependency_edges"], ["docs/reference.md", "package.json"])
+        self.assertIn("fixture/old-evidence.md", after["evidence_refs"])
+        index = json.loads((self.project / "inventory/index.json").read_text())
+        self.assertEqual(index["inventory"]["unread"], 2)
+        self.assertFalse(index["authority"]["source_closure_ready"])
+
+    def test_partial_observation_does_not_infer_a_complete_read(self):
+        self.write_observations(lambda doc: doc["entries"][0].update(read_status="partial"))
+        result = self.pipeline()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.canonical.read_text())["entries"][2]["read_status"], "partial")
+
+    def test_digest_bearing_historical_range_survives_same_endpoint_observation_twice(self):
+        historical = {
+            "start_line": 1, "end_line": 1,
+            "content_digest": "sha256:" + digest(b"export const fixture = true;\n"),
+        }
+        self.rows[2].update(read_status="partial", read_ranges=[copy.deepcopy(historical)])
+        self.write_prior(self.rows)
+        self.write_observations()
+        first = self.pipeline()
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertEqual(json.loads(self.canonical.read_text())["entries"][2]["read_ranges"], [historical])
+        canonical = self.canonical.read_bytes()
+        shards = {path.name: path.read_bytes() for path in self.shards.iterdir()}
+        second = self.pipeline()
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(self.canonical.read_bytes(), canonical)
+        self.assertEqual(shards, {path.name: path.read_bytes() for path in self.shards.iterdir()})
+        self.assertEqual(json.loads(self.canonical.read_text())["entries"][2]["read_ranges"], [historical])
+
+    def test_semicolon_reader_with_existing_history_materializes_idempotently(self):
+        self.rows[2].update(reviewer="old-reader; historical-context", evidence_refs=["fixture/old.md"])
+        self.write_prior(self.rows)
+        reader = "current-reader; per-read attribution/history in dossier"
+        self.write_observations(lambda doc: doc.update(reviewer=reader))
+        first = self.pipeline()
+        self.assertEqual(first.returncode, 0, first.stderr)
+        canonical = self.canonical.read_bytes()
+        shards = {path.name: path.read_bytes() for path in self.shards.iterdir()}
+        second = self.pipeline()
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(self.canonical.read_bytes(), canonical)
+        self.assertEqual(shards, {path.name: path.read_bytes() for path in self.shards.iterdir()})
+        reviewer = json.loads(canonical)["entries"][2]["reviewer"]
+        self.assertEqual(reviewer, "old-reader; historical-context\n" + reader)
+
+    def test_observation_source_and_blob_drift_fail_before_materialization(self):
+        for change in (
+            lambda doc: doc.update(upstream={**self.upstream, "commit": "f" * 40}),
+            lambda doc: doc["entries"][0].update(sha="f" * 40),
+            lambda doc: doc["entries"][0].update(path="src/absent.ts"),
+        ):
+            self.write_observations(change)
+            self.assert_rejected_without_replacing_committed_history("identity drift")
+
+    def test_reader_with_trailing_line_separator_is_rejected_without_changing_history(self):
+        self.rows[2].update(reviewer="old-reader; historical-context")
+        self.write_prior(self.rows)
+        for suffix in ("\n", "\r\n", "\r", "\u2028"):
+            self.write_observations(lambda doc: doc.update(reviewer="new-reader" + suffix))
+            self.assert_rejected_without_replacing_committed_history("evidence missing")
+
+    def test_duplicate_observation_is_rejected_before_materialization(self):
+        self.write_observations(lambda doc: doc["entries"].append(copy.deepcopy(doc["entries"][0])))
+        self.assert_rejected_without_replacing_committed_history("Duplicate read observation")
+
+    def test_read_observation_cannot_grant_review_or_mapping_completion(self):
+        for field, value in (("review_status", "deep-complete"), ("responsibility_status", "reviewed"),
+                             ("read_status", "contract-complete")):
+            self.write_observations(lambda doc: doc["entries"][0].update({field: value}))
+            self.assert_rejected_without_replacing_committed_history(
+                "Invalid literal" if field == "read_status" else "cannot change review")
+
+    def test_out_of_content_ranges_and_unacquired_dependencies_fail(self):
+        for change, message in (
+            (lambda doc: doc["entries"][0].update(read_ranges=[{"start_line": 1, "end_line": 2}]), "outside acquired content"),
+            (lambda doc: doc["entries"][0].update(dependency_edges=["missing.ts"]), "dependency not acquired"),
+            (lambda doc: doc.update(evidence_refs=["missing-evidence.md"]), "evidence missing"),
+        ):
+            self.write_observations(change)
+            self.assert_rejected_without_replacing_committed_history(message)
+
+    def declare_pending_mapping(self):
+        source = self.rows[2]
+        ledger_path = self.project / "parity-ledger.json"
+        ledger = json.loads(ledger_path.read_text())
+        ledger["responsibilities"].append({
+            "id": "OCRM-RESP-FIXTURE-NEW",
+            "source_refs": [{"path": source["path"], "blob_sha": source["sha"]}],
+            "status": {"mapping": "mapped", "verification": "not-run", "acceptance": "pending"},
+        })
+        ledger_path.write_bytes(encoded(ledger))
+        index_path = self.project / "inventory/index.json"
+        index = json.loads(index_path.read_text())
+        index["pending_mapping_additions"] = {
+            "from_canonical_inventory_sha256": json.loads((self.shards / "manifest.json").read_text())["canonical_inventory_sha256"],
+            "entries": [{"responsibility_id": "OCRM-RESP-FIXTURE-NEW", "path": source["path"], "blob_sha": source["sha"]}],
+        }
+        index_path.write_bytes(encoded(index))
+
+    def test_pending_mapping_is_consumed_only_after_exact_reverse_link_materializes(self):
+        self.declare_pending_mapping()
+        result = self.pipeline()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        index = json.loads((self.project / "inventory/index.json").read_text())
+        self.assertNotIn("pending_mapping_additions", index)
+        source = json.loads(self.canonical.read_text())["entries"][2]
+        self.assertEqual(source["responsibility_ids"], ["OCRM-RESP-FIXTURE-NEW"])
+        self.assertEqual(source["read_status"], "unread")
+        self.assertEqual(source["review_status"], "pending")
+
+    def test_unresolved_mapping_delta_cannot_be_consumed_by_shard_writer(self):
+        self.declare_pending_mapping()
+        rows = [{**source, **conservative_review_fields(source)} for source in self.rows]
+        self.canonical.write_bytes(encoded(self.document(rows)))
+        before = {path.name: path.read_bytes() for path in self.shards.iterdir()}
+        result = subprocess.run([sys.executable, str(SCRIPTS / "shard_inventory.py"), "--write", str(self.canonical)],
+                                cwd=self.workspace, text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Pending mapping addition was not materialized", result.stderr)
+        self.assertEqual(before, {path.name: path.read_bytes() for path in self.shards.iterdir()})
+        self.assertIn("pending_mapping_additions", json.loads((self.project / "inventory/index.json").read_text()))
+
 
 if __name__ == "__main__":
     if os.environ.get("GITHUB_ACTIONS") != "true":

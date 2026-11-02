@@ -433,3 +433,62 @@ claims from production process-restart execution. Catalog/manifest/hook closure,
 service model availability and full continuation/restart responsibilities remain
 open. This follow-up used source reading only, changed no source/ledger status,
 and ran no executable verification.
+
+### 2026-11-02 recovered literal source facts and current bridge boundary
+
+The interrupted batch's prior literal reading observations are preserved in
+`projects/openclaw-rust/inventory/read-observations.json`: 34 exact fixed-U
+path/blob records, 31 full and three partial, with their original ranges and
+attribution. At integration base `0533ca72870a2794c2db32959b9d01427abf325a`,
+all 34 identities still match the committed shards. This is identity/history
+reconciliation, not a claim that the sources were reread in full during recovery.
+The input feeds the existing inventory; it grants no review, verification,
+acceptance or global completion state. Existing historical source versions and
+all prior reading facts above remain intact.
+
+The full additional reads cover persisted selection, normalization helpers,
+selection/config fallback boundaries, Responses parameter/payload policy,
+continuation/reasoning update and the complete transport client. Package
+manifests establish exports and declared dependencies only. Source tests are
+reading evidence, not executed upstream oracles. Earlier dated reads above
+remain historical facts, including those not repeated by this reader.
+
+The resolved branch in `model-selection-persisted.ts:18-27` returns trimmed
+provider/model identity before the raw parser. The string helper does not
+lowercase model IDs. Raw catalog/alias/manifest/plugin normalization therefore
+does not execute in that selected branch. The still-open broader frontier
+includes `src/plugins/manifest-model-id-normalization.ts`
+(`97b0115228cc1deb5a3354e2c0b32f365132e626`),
+`src/agents/provider-model-normalization.runtime.ts`
+(`109b9e92763d3d4ec819a632c25584a44fc3f2a3`) and `src/shared/model-key.ts`
+(`9d5926a9ddbb4f130b08ce360424e336a53c913b`); acquisition of these identities
+is not a full-reading claim or a scope exemption.
+
+`buildOpenAIResponsesParams` initializes `model: model.id`. The complete
+consumer read establishes two exceptions to any universal wire-identity
+claim: `openai-responses-client.ts:232` permits `onPayload` to mutate or
+replace the payload, and its Azure path at 666-680 assigns `deploymentName`
+to `params.model`. Ordinary continuation compares the prepared request;
+`requestWithoutInput` retains model and the normal changed-envelope branch
+uses a full request. Explicit previous-response ID and required-input paths
+remain separate. The new target Fabushi checkpoint conflict fence is an
+explicit target recovery invariant, not a claim of universal upstream refusal.
+
+Necessary source review found no unresolved behavior-changing dependency for
+the bounded canonical-provider/literal-model path under the existing authorized
+Fabushi route. This is not full transport/catalog/hook closure or a scoped
+G01/G02 acceptance verdict. The model responsibility remains mapped/not-run/
+pending until exact-H authority, coverage, behavior and independent evidence
+are available. Global flags stay false.
+
+The target Rust model path at this integration base already includes later
+credential binding and tool-effect custody. Its real current integration oracle
+is `fabushi_model_identity_production_contract::persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization`;
+the unpublished old four-request test and 17-file tree are not current evidence.
+The actual remaining desktop RPC and mirror lose `provider` while reconstructing
+the model object. `OCRM-MODEL-BRIDGE-v1` preserves that field through the existing
+transport/mirror; Rust Settings remains the only model validation and default
+authority. This bridge repair does not supply the trusted catalog/policy inputs
+needed for the separate session mutation/picker ingress. Completed-turn marker
+reconciliation now exists; interrupted provider continuation and real-service
+acceptance remain distinct open responsibilities.

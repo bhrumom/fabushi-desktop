@@ -109,7 +109,10 @@
         "source/host/app/src/tests/channel_host_lane_tests.rs",
         "source/host/tests/pending_wake_rearm_contract.rs",
         "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
-        "source/host/tests/automation_runtime_contract.rs"
+        "source/host/tests/automation_runtime_contract.rs",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -149,7 +152,14 @@
         "OCRM-DEVICE-PAIRING-O03",
         "OCRM-DEVICE-PAIRING-O04",
         "OCRM-DEVICE-PAIRING-O05",
-        "OCRM-DEVICE-PAIRING-O06"
+        "OCRM-DEVICE-PAIRING-O06",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -226,7 +236,8 @@
         "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
         "OCRM-RESP-SESSION-TURNS-CONTROLLER-001",
         "OCRM-RESP-SHARED-ASYNC-SCOPE-001",
-        "OCRM-RESP-INFRA-RUST-OPENCLAW-CRATES-001"
+        "OCRM-RESP-INFRA-RUST-OPENCLAW-CRATES-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -243,13 +254,23 @@
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "source/host/tests/runner_effect_custody_contract.rs",
         "source/host/tests/routed_send_acceptance_contract.rs",
-        "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs"
+        "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R05",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
         "OCRM-RESP-AGENT-LOOP-RUNNER-001",
@@ -257,7 +278,8 @@
         "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
         "OCRM-RESP-AGENT-MODEL-PRICING-001",
         "OCRM-RESP-AGENT-ACP-COMMANDS-001",
-        "OCRM-RESP-AGENT-ACP-POLICY-001"
+        "OCRM-RESP-AGENT-ACP-POLICY-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -355,7 +377,10 @@
         "source/host/app/src/tests/channel_host_lane_tests.rs",
         "source/host/tests/pending_wake_rearm_contract.rs",
         "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
-        "source/host/tests/automation_runtime_contract.rs"
+        "source/host/tests/automation_runtime_contract.rs",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -391,7 +416,14 @@
         "OCRM-SESSION-O03",
         "OCRM-SESSION-O04",
         "OCRM-SESSION-O05",
-        "OCRM-SESSION-O06"
+        "OCRM-SESSION-O06",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -469,7 +501,8 @@
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-CONFIG-001",
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-ENTRY-001",
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-INBOUND-INGRESS-001",
-        "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001"
+        "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -496,7 +529,10 @@
         "source/host/tests/gateway_server_contract.rs",
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
-        "source/node-agent-coordinator/tests/production_protocol.rs"
+        "source/node-agent-coordinator/tests/production_protocol.rs",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -508,7 +544,14 @@
         "OCRM-CONFIG-O03",
         "OCRM-CONFIG-O04",
         "OCRM-CONFIG-O05",
-        "OCRM-CONFIG-O06"
+        "OCRM-CONFIG-O06",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -546,7 +589,8 @@
         "OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001",
         "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
         "OCRM-RESP-SESSION-TURNS-CONTROLLER-001",
-        "OCRM-RESP-SHARED-ASYNC-SCOPE-001"
+        "OCRM-RESP-SHARED-ASYNC-SCOPE-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -555,7 +599,10 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
-        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R10",
@@ -567,7 +614,14 @@
         "OCRM-DEVICE-PAIRING-O03",
         "OCRM-DEVICE-PAIRING-O04",
         "OCRM-DEVICE-PAIRING-O05",
-        "OCRM-DEVICE-PAIRING-O06"
+        "OCRM-DEVICE-PAIRING-O06",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -583,7 +637,8 @@
         "OCRM-RESP-NODE-HOST-CONNECTION-001",
         "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001",
         "OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001",
-        "OCRM-RESP-SECURITY-OPENgrep-CRABBOX-001"
+        "OCRM-RESP-SECURITY-OPENgrep-CRABBOX-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -645,7 +700,10 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
-        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -657,7 +715,14 @@
         "OCRM-DEVICE-PAIRING-O03",
         "OCRM-DEVICE-PAIRING-O04",
         "OCRM-DEVICE-PAIRING-O05",
-        "OCRM-DEVICE-PAIRING-O06"
+        "OCRM-DEVICE-PAIRING-O06",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -682,7 +747,8 @@
         "OCRM-RESP-NODE-HOST-CONNECTION-001",
         "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001",
         "OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001",
-        "OCRM-RESP-NODE-HOST-WORKER-ORACLES-001"
+        "OCRM-RESP-NODE-HOST-WORKER-ORACLES-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -691,7 +757,10 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
-        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R14",
@@ -702,7 +771,14 @@
         "OCRM-CHANNEL-O02",
         "OCRM-CHANNEL-O08",
         "OCRM-CHANNEL-O11",
-        "OCRM-CHANNEL-O12"
+        "OCRM-CHANNEL-O12",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -720,7 +796,8 @@
         "OCRM-RESP-MEETING-BOT-LIFECYCLE-001",
         "OCRM-RESP-NODE-HOST-CONNECTION-001",
         "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001",
-        "OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001"
+        "OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -779,7 +856,10 @@
       "evidence_refs": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
-        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R16",
@@ -791,13 +871,21 @@
         "OCRM-EXEC-O03",
         "OCRM-EXEC-O04",
         "OCRM-EXEC-O09",
-        "OCRM-EXEC-O10"
+        "OCRM-EXEC-O10",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
         "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
         "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001",
-        "OCRM-RESP-EXEC-LINE-FRAMER-001"
+        "OCRM-RESP-EXEC-LINE-FRAMER-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -807,7 +895,10 @@
       "evidence_refs": [
         "source/host/tests/extensions_local_exec_contract.rs",
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
-        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R17",
@@ -817,13 +908,21 @@
         "OCRM-EXEC-O05",
         "OCRM-EXEC-O06",
         "OCRM-EXEC-O07",
-        "OCRM-EXEC-O08"
+        "OCRM-EXEC-O08",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
         "OCRM-RESP-EXEC-COMMAND-ERROR-001",
         "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
-        "OCRM-RESP-EXEC-KILL-TREE-001"
+        "OCRM-RESP-EXEC-KILL-TREE-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1005,7 +1104,10 @@
         "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md",
         "source/host/tests/openclaw_playback_transcode_contract.rs",
         "source/host/tests/openclaw_html_provenance_contract.rs",
-        "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md"
+        "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -1023,7 +1125,14 @@
         "OCRM-MEDIA-O02",
         "OCRM-MEDIA-O05",
         "OCRM-MEDIA-O08",
-        "OCRM-MEDIA-O09"
+        "OCRM-MEDIA-O09",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1037,7 +1146,8 @@
         "OCRM-RESP-MEDIA-PLAYBACK-TRANSCODE-001",
         "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
         "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001",
-        "OCRM-RESP-INTERACTIVE-PRESENTATION-001"
+        "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1391,13 +1501,23 @@
         "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
         "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
-        "source/host/tests/fabushi_model_identity_production_contract.rs"
+        "source/host/tests/fabushi_model_identity_production_contract.rs",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC06",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
         "OCRM-RESP-AGENT-LOOP-RUNNER-001",
@@ -1408,21 +1528,36 @@
         "OCRM-RESP-AGENT-ACP-POLICY-001",
         "OCRM-RESP-MODEL-PICKER-001",
         "OCRM-RESP-MODEL-CATALOG-PLANNER-001",
-        "OCRM-RESP-MODEL-CATALOG-REMOTE-001"
+        "OCRM-RESP-MODEL-CATALOG-REMOTE-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC07",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
+      "responsibility_ids": [
+        "OCRM-RESP-MODEL-IDENTITY-001"
+      ],
       "reviewer": null
     },
     {
@@ -1476,7 +1611,10 @@
         "source/host/app/src/tests/channel_host_lane_tests.rs",
         "source/host/tests/pending_wake_rearm_contract.rs",
         "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
-        "source/host/tests/automation_runtime_contract.rs"
+        "source/host/tests/automation_runtime_contract.rs",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",
@@ -1512,7 +1650,14 @@
         "OCRM-SESSION-O03",
         "OCRM-SESSION-O04",
         "OCRM-SESSION-O05",
-        "OCRM-SESSION-O06"
+        "OCRM-SESSION-O06",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -1590,23 +1735,37 @@
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-CONFIG-001",
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-ENTRY-001",
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-INBOUND-INGRESS-001",
-        "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001"
+        "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC09",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
         "OCRM-RESP-MCP-CHANNEL-BRIDGE-001",
-        "OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001"
+        "OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": null
     },
@@ -1846,7 +2005,10 @@
         "source/host/src/host_secret_store.rs",
         "source/host/tests/host_secret_store_contract.rs",
         "source/host/tests/box_store_download_frozen_parity_contract.rs",
-        "source/host/app/src/tests/config_secret_boundary_tests.rs"
+        "source/host/app/src/tests/config_secret_boundary_tests.rs",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -1862,7 +2024,14 @@
         "OCRM-EXEC-O05",
         "OCRM-EXEC-O06",
         "OCRM-EXEC-O07",
-        "OCRM-EXEC-O08"
+        "OCRM-EXEC-O08",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -1874,21 +2043,36 @@
         "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001",
         "OCRM-RESP-EXEC-COMMAND-ERROR-001",
         "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
-        "OCRM-RESP-EXEC-KILL-TREE-001"
+        "OCRM-RESP-EXEC-KILL-TREE-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC18",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
+      "responsibility_ids": [
+        "OCRM-RESP-MODEL-IDENTITY-001"
+      ],
       "reviewer": null
     },
     {
@@ -2066,7 +2250,10 @@
         "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md",
         "source/host/tests/openclaw_playback_transcode_contract.rs",
         "source/host/tests/openclaw_html_provenance_contract.rs",
-        "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md"
+        "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -2084,7 +2271,14 @@
         "OCRM-MEDIA-O02",
         "OCRM-MEDIA-O05",
         "OCRM-MEDIA-O08",
-        "OCRM-MEDIA-O09"
+        "OCRM-MEDIA-O09",
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2098,7 +2292,8 @@
         "OCRM-RESP-MEDIA-PLAYBACK-TRANSCODE-001",
         "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
         "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001",
-        "OCRM-RESP-INTERACTIVE-PRESENTATION-001"
+        "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
+        "OCRM-RESP-MODEL-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },

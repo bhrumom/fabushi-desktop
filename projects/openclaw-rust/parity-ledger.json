@@ -28,6 +28,671 @@
   "project_id": "OCRM-001",
   "responsibilities": [
     {
+      "adr_refs": [],
+      "behavior": "Preserve a provider-bound default through the existing desktop bridge and Rust Settings; resolve an authorized Fabushi turn once and retain identity in actual Responses JSON, metadata, accepted checkpoint retry, summarization and turn-memory. The broader catalog, picker mutation and interrupted-turn recovery remain separate responsibilities.",
+      "blocker_ids": [
+        "OCRM-MODEL-IDENTITY-SCOPED-AUTHORITY-PENDING",
+        "OCRM-MODEL-IDENTITY-EXACT-H-BEHAVIOR-PENDING",
+        "OCRM-MODEL-IDENTITY-REAL-PROVIDER-PENDING",
+        "OCRM-MODEL-IDENTITY-PACKAGED-ACCEPTANCE-PENDING"
+      ],
+      "capability_ids": [
+        "models.provider_bound_default",
+        "inference.frozen_fabushi_model",
+        "runner.accepted_checkpoint_model_identity"
+      ],
+      "dependencies": [
+        "SettingsService atomic writer and checked source reader",
+        "SandAgentSessionStore persisted provider/model pair",
+        "ProductionTranscriptRuntime accepted lease and existing permission controller",
+        "TurnAgentComposition and ProductionTurnRunShellAdapter",
+        "CodexDirectOptions serializer and ProductionRoutedProviderCheckpointStore",
+        "Fixed-U source reading and incomplete broader dependency graph are itemized in model-picker-scoped.md",
+        "OCRM-RESP-MODEL-PICKER-001 retains broader catalog/operator/visibility/placement and session mutation obligations"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/extensions/inference/production.rs",
+        "source/host/src/extensions/inference/provider_session.rs",
+        "source/host/src/extensions/inference/codex_direct_responses.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs",
+        "source/host/tests/fabushi_model_identity_production_contract.rs",
+        "source/electron-main/main-edge.ts",
+        "source/shared/node/settings/sand-settings-store.ts",
+        "source/electron-main/main-edge-model.contract.test.ts"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/settings/settings_service.rs",
+          "reason": "Existing settings persistence, atomic CAS, account clearing and notifications"
+        },
+        {
+          "path": "source/host/src/extensions/inference/production.rs",
+          "reason": "Existing production model selection and inference route composition"
+        },
+        {
+          "path": "source/host/src/extensions/inference/provider_session.rs",
+          "reason": "Existing provider adapter and pre-auth request boundary"
+        },
+        {
+          "path": "source/host/src/runner/routed_provider_runtime.rs",
+          "reason": "Existing immutable attempt projection and durable checkpoint persistence"
+        }
+      ],
+      "id": "OCRM-RESP-MODEL-IDENTITY-001",
+      "integration": {
+        "consumer": "Fabushi Responses serializer, runtime model metadata, accepted checkpoint retry, turn-memory and independent summarization producer",
+        "entrypoint": "Existing agents.setDefaultModel appWindow RPC to Host Settings; source/host/app/src/main.rs::prepare_routed_turn_model_admission after route/session authorization",
+        "owner": "ProductionAgentInferenceOwner selects; existing Settings and Session persist; Runner carries immutable identity",
+        "producer": "Authenticated config.set / setHostSettings / specialized Settings writer and existing Session model read"
+      },
+      "invariants": [
+        "Settings, Session, Inference, Runner, permission and transcript state retain their existing unique owners",
+        "Legacy unbound defaults retain Cursor semantics; another provider binding cannot select a Fabushi or Cursor default",
+        "Raw explicit presence is validated before priority selection; invalid persistent source is never absence",
+        "Accepted checkpoint identity cannot silently fall back to environment or a new default",
+        "Generic Codex legacy checkpoint decoding remains compatible; only Fabushi enforces the strict model fence"
+      ],
+      "migration_rollback": "Retain the additive optional checkpoint field and stored default fields; never replay accepted Fabushi effects under an unknown or changed model. Revert composition only with compatible persisted data and a verified release.",
+      "oracle_ids": [
+        "OCRM-MODEL-IDENTITY-O01",
+        "OCRM-MODEL-IDENTITY-O02",
+        "OCRM-MODEL-IDENTITY-O03",
+        "OCRM-MODEL-IDENTITY-O04",
+        "OCRM-MODEL-IDENTITY-O05",
+        "OCRM-MODEL-IDENTITY-O06",
+        "OCRM-MODEL-IDENTITY-O07"
+      ],
+      "owner_decision": "Extend existing Settings/Inference/Runner boundaries; no new runtime owner or store. Host remains a thin authorized composition and lease bridge.",
+      "postconditions": [
+        "Actual Fabushi request model and runtime metadata equal the frozen turn model",
+        "An updated default affects a later turn, while accepted tool continuation and retry retain the old model",
+        "Identity refusal releases an already accepted lease before permission direction, attachments, auth, HTTP or tools advance"
+      ],
+      "preconditions": [
+        "Provider and Session authorization already succeeded; a model choice never grants a route",
+        "Default settings are readable and valid when consulted; session provider/model and raw explicit fields are syntactically valid",
+        "Accepted Fabushi checkpoint resume has a captured normalized model matching the selected identity"
+      ],
+      "required_evidence_dimensions": [
+        "scoped-source-authority",
+        "scoped-coverage",
+        "contract",
+        "integration",
+        "security-negative-test",
+        "recovery",
+        "real-provider-compatibility",
+        "package"
+      ],
+      "required_gate_ids": [
+        "OCRM-G01",
+        "OCRM-G02",
+        "OCRM-G03",
+        "OCRM-G04",
+        "OCRM-G05",
+        "OCRM-G06",
+        "OCRM-G07",
+        "OCRM-G08",
+        "OCRM-G11",
+        "OCRM-G12"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R05",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-R14",
+        "OCRM-R16",
+        "OCRM-R17",
+        "OCRM-R23",
+        "OCRM-AC06",
+        "OCRM-AC07",
+        "OCRM-AC08",
+        "OCRM-AC09",
+        "OCRM-AC17",
+        "OCRM-AC18",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "Current production chain reconciled read-only at 0533ca72870a2794c2db32959b9d01427abf325a; new bridge and source-tool review pending; no scoped acceptance",
+      "risk": "High: provider identity, persisted configuration, accepted tool effects, stale settings, cancellation and lease/permission ordering. Full relevant implementation/call-state review required; no source-wide contract-only completion claim.",
+      "selected_owner": "source/host/src/extensions/inference/production.rs",
+      "source_refs": [
+        {
+          "blob_sha": "4cd75b75b5013ec450fda79be2ca454cdbd60d13",
+          "path": "src/agents/model-selection-persisted.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 62,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "f05e55fdb871be46b4ae2b13ded4e38c93c54bba",
+          "path": "src/agents/model-selection-normalize.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 46,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "6419f7728cf41a76c62364efb15337b823fb9d14",
+          "path": "src/agents/model-ref-shared.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 180,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "a56878b446309d0b42effa8b29244408a9475fa7",
+          "path": "src/agents/defaults.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 49,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "5c10c28786b22eb45a024d726f7524032b3902da",
+          "path": "src/agents/model-fallback.types.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 42,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "045ebdf5c49479871758fdfd4d15b6f95a5c38d5",
+          "path": "src/agents/model-selection-config.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 148,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "750fe40902176d40cb8afed3a5ef026683d5f405",
+          "path": "src/agents/configured-provider-fallback.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 54,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "445a9cc4f8daff07f033c3958baf2b798e240e9d",
+          "path": "packages/normalization-core/src/string-coerce.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 132,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "07278f5052d2be88c2244bd25b6bd265e6fb4cfd",
+          "path": "packages/model-catalog-core/src/provider-id.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 37,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "48b2d09a598f59d0e7c1fb2354af03c88f33f3bb",
+          "path": "packages/model-catalog-core/src/model-catalog-refs.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 78,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "95c7a1b613233a925eacb60d06c68d2804ddcb0e",
+          "path": "packages/model-catalog-core/src/provider-model-id-normalization.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 221,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "f256d2d0cd0ba01279775690297066726cdf09f7",
+          "path": "packages/model-catalog-core/src/provider-model-id-normalize.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 44,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "e8b02394338eb4a6cd6d3543dc006ded65fe9ada",
+          "path": "packages/model-catalog-core/src/model-catalog-refs.test.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 38,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "84cdbbbf4f3c915df2ffe2dfcd218bedcb70c280",
+          "path": "packages/ai/src/transports/openai-responses-params-internal.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 245,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "f36f2050676df97653beda865fa527975a5915ae",
+          "path": "packages/ai/src/providers/openai-prompt-cache.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 66,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "f2d774a47bd84e86c7ade3500398321e666a74c8",
+          "path": "packages/ai/src/transports/openai-responses-payload-policy.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 421,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "7afa5d6664ab9151d4f9ae996dd3f0ebddc5d74a",
+          "path": "packages/ai/src/transports/openai-responses-continuation.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 777,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "81844147afc9110811ed54838ef0078bf1594ab5",
+          "path": "packages/ai/src/transports/openai-responses-reasoning-update.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 114,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "0ea1b3c6063ea1a2a4dc1a9fa0ce988684811282",
+          "path": "packages/ai/src/transports/openai-responses-client.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 708,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "78eba9cd0e4c75f94e71dfb3fcb7f4cf4eeeef16",
+          "path": "packages/normalization-core/src/record-coerce.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 83,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "bef8345b9e150f57589e70bd0bf25a3fd3e73f41",
+          "path": "packages/normalization-core/src/node-crypto.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 51,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "53334f3bf5ed60bd49e6abde386fabc046b47403",
+          "path": "packages/normalization-core/src/stable-stringify.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 142,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "93a00e422cc308571d22aa819a2498105329146e",
+          "path": "packages/normalization-core/src/index.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 18,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "a45413846d46aa94e3b8e370cee9b689c98857db",
+          "path": "packages/ai/src/transports/openai-responses-continuation.test.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 260,
+                "start_line": 1
+              },
+              {
+                "end_line": 425,
+                "start_line": 350
+              }
+            ],
+            "read_status": "partial"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "d9b9b82278faca157f64c9682596a22638eb6efa",
+          "path": "src/agents/embedded-agent-runner/model-resolution-consistency.test.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 322,
+                "start_line": 292
+              }
+            ],
+            "read_status": "partial"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "13606635cecef520cc2a8ebc4e10d7769559f59f",
+          "path": "packages/normalization-core/package.json",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 160,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "613cef0166be6e14ed563edd4e27a2b5134ca57b",
+          "path": "packages/model-catalog-core/package.json",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 67,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "2ee99c5de54591d5dcad3b7b29cde9fc07549718",
+          "path": "packages/ai/package.json",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 177,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "ff1d47f130b0695a5efec953100ccee5d70a70b5",
+          "path": "src/agents/model-selection.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 257,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "1c46418286644f4febcfd0deb94d7b81ceb01c02",
+          "path": "src/agents/model-selection-resolve.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 76,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "a98c02f4678c68c469147d079b7693d646c99f4b",
+          "path": "src/agents/model-selection-shared.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 72,
+                "start_line": 1
+              },
+              {
+                "end_line": 435,
+                "start_line": 396
+              },
+              {
+                "end_line": 799,
+                "start_line": 560
+              }
+            ],
+            "read_status": "partial"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "e2b4cc262a782e9c968d87d2b0efe38772db1a5a",
+          "path": "src/agents/embedded-agent-runner/model-resolution.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 79,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "e9d494da1192bcd08fe872bde1e179083c6e3cea",
+          "path": "src/agents/embedded-agent-runner/run-entry-model-selection.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 68,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "ac8f21493649864348ab503fa7643b4600c5d821",
+          "path": "src/config/model-input.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 160,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "mapped",
+        "read": "partial",
+        "verification": "not-run",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/inference/production.rs",
+        "symbol": "ProductionAgentInferenceOwner::resolve_fabushi_turn_model"
+      },
+      "tests": [
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/inference_extension_composition_contract.rs",
+        "source/host/tests/fabushi_model_identity_production_contract.rs::persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization",
+        "source/host/tests/inference_provider_session_contract.rs",
+        "source/host/tests/inference_codex_direct_contract.rs",
+        "source/host/app/src/main.rs::tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects",
+        "source/host/tests/production_settings_single_owner_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
+        "source/host/tests/runner_routed_provider_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "source/electron-main/main-edge-model.contract.test.ts"
+      ],
+      "typed_contracts": [
+        "OCRM-MODEL-IDENTITY-v1",
+        "SettingsService::get_agent_default_model_checked",
+        "ProductionRunnerCompositionInput::fabushi_model",
+        "RoutedProviderOptions::fabushi_model",
+        "CodexDirectCheckpoint::model",
+        "resolve_fabushi_request_model",
+        "OCRM-MODEL-BRIDGE-v1"
+      ],
+      "unit_id": "OCRM-UNIT-MODEL-IDENTITY-001"
+    },
+    {
       "adr_refs": [
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md",
         "projects/openclaw-rust/decisions/2026-10-30-upstream-rebaseline-required.md"

@@ -35,6 +35,181 @@
     "unread": 62130,
     "unreviewed_applicable": 0
   },
+  "pending_mapping_additions": {
+    "entries": [
+      {
+        "blob_sha": "4cd75b75b5013ec450fda79be2ca454cdbd60d13",
+        "path": "src/agents/model-selection-persisted.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "f05e55fdb871be46b4ae2b13ded4e38c93c54bba",
+        "path": "src/agents/model-selection-normalize.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "6419f7728cf41a76c62364efb15337b823fb9d14",
+        "path": "src/agents/model-ref-shared.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "a56878b446309d0b42effa8b29244408a9475fa7",
+        "path": "src/agents/defaults.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "5c10c28786b22eb45a024d726f7524032b3902da",
+        "path": "src/agents/model-fallback.types.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "045ebdf5c49479871758fdfd4d15b6f95a5c38d5",
+        "path": "src/agents/model-selection-config.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "750fe40902176d40cb8afed3a5ef026683d5f405",
+        "path": "src/agents/configured-provider-fallback.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "445a9cc4f8daff07f033c3958baf2b798e240e9d",
+        "path": "packages/normalization-core/src/string-coerce.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "07278f5052d2be88c2244bd25b6bd265e6fb4cfd",
+        "path": "packages/model-catalog-core/src/provider-id.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "48b2d09a598f59d0e7c1fb2354af03c88f33f3bb",
+        "path": "packages/model-catalog-core/src/model-catalog-refs.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "95c7a1b613233a925eacb60d06c68d2804ddcb0e",
+        "path": "packages/model-catalog-core/src/provider-model-id-normalization.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "f256d2d0cd0ba01279775690297066726cdf09f7",
+        "path": "packages/model-catalog-core/src/provider-model-id-normalize.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "e8b02394338eb4a6cd6d3543dc006ded65fe9ada",
+        "path": "packages/model-catalog-core/src/model-catalog-refs.test.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "84cdbbbf4f3c915df2ffe2dfcd218bedcb70c280",
+        "path": "packages/ai/src/transports/openai-responses-params-internal.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "f36f2050676df97653beda865fa527975a5915ae",
+        "path": "packages/ai/src/providers/openai-prompt-cache.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "f2d774a47bd84e86c7ade3500398321e666a74c8",
+        "path": "packages/ai/src/transports/openai-responses-payload-policy.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "7afa5d6664ab9151d4f9ae996dd3f0ebddc5d74a",
+        "path": "packages/ai/src/transports/openai-responses-continuation.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "81844147afc9110811ed54838ef0078bf1594ab5",
+        "path": "packages/ai/src/transports/openai-responses-reasoning-update.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "0ea1b3c6063ea1a2a4dc1a9fa0ce988684811282",
+        "path": "packages/ai/src/transports/openai-responses-client.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "78eba9cd0e4c75f94e71dfb3fcb7f4cf4eeeef16",
+        "path": "packages/normalization-core/src/record-coerce.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "bef8345b9e150f57589e70bd0bf25a3fd3e73f41",
+        "path": "packages/normalization-core/src/node-crypto.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "53334f3bf5ed60bd49e6abde386fabc046b47403",
+        "path": "packages/normalization-core/src/stable-stringify.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "93a00e422cc308571d22aa819a2498105329146e",
+        "path": "packages/normalization-core/src/index.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "a45413846d46aa94e3b8e370cee9b689c98857db",
+        "path": "packages/ai/src/transports/openai-responses-continuation.test.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "d9b9b82278faca157f64c9682596a22638eb6efa",
+        "path": "src/agents/embedded-agent-runner/model-resolution-consistency.test.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "13606635cecef520cc2a8ebc4e10d7769559f59f",
+        "path": "packages/normalization-core/package.json",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "613cef0166be6e14ed563edd4e27a2b5134ca57b",
+        "path": "packages/model-catalog-core/package.json",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "2ee99c5de54591d5dcad3b7b29cde9fc07549718",
+        "path": "packages/ai/package.json",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "ff1d47f130b0695a5efec953100ccee5d70a70b5",
+        "path": "src/agents/model-selection.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "1c46418286644f4febcfd0deb94d7b81ceb01c02",
+        "path": "src/agents/model-selection-resolve.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "a98c02f4678c68c469147d079b7693d646c99f4b",
+        "path": "src/agents/model-selection-shared.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "e2b4cc262a782e9c968d87d2b0efe38772db1a5a",
+        "path": "src/agents/embedded-agent-runner/model-resolution.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "e9d494da1192bcd08fe872bde1e179083c6e3cea",
+        "path": "src/agents/embedded-agent-runner/run-entry-model-selection.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "ac8f21493649864348ab503fa7643b4600c5d821",
+        "path": "src/config/model-input.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      }
+    ],
+    "from_canonical_inventory_sha256": "72c936652facdc6844c1685c56363ba3b605079ebf3b0b8564056cbddf89bfbd"
+  },
   "project_id": "OCRM-001",
   "spec_revision": 2,
   "upstream": {

@@ -1985,7 +1985,7 @@ jobs:
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Build Grok-shaped Electron runtime
         run: npm --prefix desktop run build:electron -- --plugin-skills-contracts
-      - name: Test Plugin Skills SDK, Host boundary and routed MCP carrier
+      - name: Test Plugin Skills, model settings bridge and routed MCP carrier
         env:
           FABUSHI_COORDINATOR_CARRIER_ARTIFACT: ${{ github.workspace }}/desktop/dist/node-agent-coordinator/main.cjs
         run: >-
@@ -1994,6 +1994,7 @@ jobs:
           desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs
           desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs
           desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs
+          desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs
       - name: Record exact-subject Plugin Skills edge evidence
         shell: bash
         env:
@@ -2023,6 +2024,12 @@ jobs:
                       "source/electron-main/mcp/mcp-runtime.contract.test.ts",
                       "source/shared/rpc/coordinator-main.ts",
                       "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+                      "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+                      "source/electron-main/main-edge.ts",
+                      "source/electron-main/main-edge-model.contract.test.ts",
+                      "source/shared/agents/sand-agent-model.ts",
+                      "source/shared/node/settings/sand-settings-store.ts",
+                      "frontend/src/recovered/contracts/desktop-bridge.ts",
                   )
               },
               "desktop_mcp_intent_contract": "OCRM-MCP-DESKTOP-INTENT-v1",
@@ -2032,6 +2039,10 @@ jobs:
               "node_contract_result": "passed",
               "runner_mcp_carrier_target": "coordinator-control-server.contract.test",
               "runner_mcp_carrier_result": "passed",
+              "model_settings_bridge_contract": "OCRM-MODEL-BRIDGE-v1",
+              "model_settings_bridge_target": "main-edge-model.contract.test",
+              "model_settings_bridge_result": "passed",
+              "model_settings_bridge_scope": "Actual served default-model handler and file-backed display mirror with controlled Host acknowledgment/refusal. Provider field presence and value reach the Rust validation boundary without a desktop policy owner. Real provider, full picker UI and cross-process account acceptance remain open.",
               "mcp_account_retirement_contract": "MCP-ACCOUNT-LIST-RETIRE-v1",
               "mcp_account_retirement_result": "passed",
               "mcp_account_retirement_scope": "Real runtime reset, manager publication, captured-account projection, persistent settings and discovery denial under held I/O. Late first-load success/unavailable, established cache, held backend list, reentrant disposal and replacement-manager positives are local lifecycle evidence; live accounts, remote work cancellation and full Rust permission migration remain open.",

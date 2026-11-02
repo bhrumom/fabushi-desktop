@@ -137,6 +137,8 @@ export interface AgentModelSelection {
   modelId: string;
   maxMode: boolean;
   parameters: AgentModelParameter[];
+  /** Preserved as supplied; the Rust Settings owner validates provider identity. */
+  provider?: unknown;
 }
 
 export interface SidebarSection {

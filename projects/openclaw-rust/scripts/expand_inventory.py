@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from source_review import conservative_review_fields
+from source_review import apply_literal_read_observations, conservative_review_fields
 
 if os.environ.get("GITHUB_ACTIONS") != "true":
     raise SystemExit("Generator must run in GitHub Actions")
@@ -86,6 +86,22 @@ old_canonical = dict(payload, entries=old_rows)
 old_raw = (json.dumps(old_canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()
 if hashlib.sha256(old_raw).hexdigest() != m["canonical_inventory_sha256"]:
     raise AssertionError("Committed canonical inventory digest drift")
+
+observations_path = Path("projects/openclaw-rust/inventory/read-observations.json")
+if observations_path.is_file():
+    repo_root = Path.cwd().resolve()
+    def evidence_exists(ref):
+        path = repo_root / ref.split("#", 1)[0]
+        return path.resolve().is_relative_to(repo_root) and path.is_file()
+    def source_line_count(row):
+        raw = subprocess.check_output(["git", "-C", "upstream", "cat-file", "blob", row["sha"]])
+        return len(raw.decode("utf-8").splitlines())
+    observed_rows = apply_literal_read_observations(
+        old_rows, json.loads(observations_path.read_text()),
+        expected_identity=payload["upstream"], evidence_exists=evidence_exists,
+        source_line_count=source_line_count,
+    )
+    shard_map = {row["path"]: row for row in observed_rows}
 
 # The ledger is the canonical responsibility side of the bidirectional map.
 # Reconcile only exact path/blob matches here so stale or dangling references

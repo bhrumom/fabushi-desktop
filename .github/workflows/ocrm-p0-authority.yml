@@ -157,7 +157,7 @@ jobs:
           python3 -m pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'
           python3 projects/openclaw-rust/scripts/test_inventory_materialization.py
           # Refuse malformed committed history before any generated write.
-          python3 projects/openclaw-rust/scripts/verify_audit_integrity.py
+          python3 projects/openclaw-rust/scripts/verify_audit_integrity.py --before-expansion
           python3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json
           # Rebuild the source-derived shard manifest against this exact inventory
           # after canonical ledger reconciliation, then let validate_p0.py verify it.
