@@ -22,7 +22,14 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Prepare only reviewed deltas from the exact checkout
+      - name: Capture current checkpoint for data-only preparation
+        uses: actions/checkout@v6
+        with:
+          ref: checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1
+          path: preparation-current
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prepare only reviewed deltas from the captured exact checkout
         shell: bash
         run: |
           set -euo pipefail
@@ -36,6 +43,10 @@ jobs:
           const equal = (a,b) => JSON.stringify(a) === JSON.stringify(b);
           const opsBytes = fs.readFileSync('.github/checkpoint-round26-object-ops.json');
           const ops = JSON.parse(opsBytes);
+          const sourceRoot = 'preparation-current';
+          const sourceSha = execFileSync('git',['-C',sourceRoot,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          assert.match(sourceSha,/^[a-f0-9]{40}$/);
+          console.log('ROUND26_INPUT '+JSON.stringify({producer_sha:process.env.GITHUB_SHA,source_sha:sourceSha,ops_blob:hash(opsBytes)}));
           assert.equal(process.env.GITHUB_REPOSITORY, 'bhrumom/fabushi-desktop');
           assert.equal(process.env.GITHUB_REF, 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1');
           assert.equal(ops.repository, process.env.GITHUB_REPOSITORY);
@@ -59,8 +70,8 @@ jobs:
           fs.mkdirSync('artifacts/round26-objects', {recursive:true});
           const objects = [];
           function read(path) {
-            const bytes = fs.readFileSync(path);
-            const git = execFileSync('git',['rev-parse',process.env.GITHUB_SHA + ':' + path],{encoding:'utf8'}).trim();
+            const bytes = fs.readFileSync(sourceRoot+'/'+path);
+            const git = execFileSync('git',['-C',sourceRoot,'rev-parse',sourceSha + ':' + path],{encoding:'utf8'}).trim();
             assert.equal(hash(bytes), git, 'checkout differs from exact Git source: ' + path);
             return bytes;
           }
@@ -133,7 +144,8 @@ jobs:
             prepare(file.path,input,text);
           }
           fs.writeFileSync('artifacts/round26-objects/receipt.json',JSON.stringify({
-            task_id:ops.task_id,round:26,producer_sha:process.env.GITHUB_SHA,ops_blob:hash(opsBytes),objects,
+            task_id:ops.task_id,round:26,producer_sha:process.env.GITHUB_SHA,source_sha:sourceSha,
+            producer_run_attempt:Number(process.env.GITHUB_RUN_ATTEMPT),ops_blob:hash(opsBytes),objects,
             source_reviews_preserved:true,unrelated_rows_preserved:true,acceptance_fields_preserved:true,
             product_validation:false,source_acceptance:false,commit_created:false,ref_updated:false,
             integration:'Root reads full blobs and current inputs, then force=false expected_sha CAS; remove only this task transport.'
@@ -164,6 +176,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: round26-reviewed-objects-${{ github.sha }}
+          name: round26-reviewed-objects-${{ github.sha }}-attempt${{ github.run_attempt }}
           path: artifacts/round26-objects
           if-no-files-found: error

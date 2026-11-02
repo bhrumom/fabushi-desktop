@@ -148,6 +148,7 @@
     "ref_updated": false,
     "commit_created": false
   },
-  "transfer_generation": 4,
-  "transfer_rebase_observed": "3ab165561eb9fc7aba7b7bebff492cd105966b1a"
+  "transfer_generation": 5,
+  "transfer_rebase_observed": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+  "preparation_note": "Transforms immutable reviewed operations over a separately captured current checkpoint; exact source_sha recorded. Root retains all publication/CAS authority. No product validation."
 }
