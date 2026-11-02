@@ -10147,7 +10147,7 @@ fn start_routed_provider_task(
                 ProductionSendMessageSink {
                     host_tx: host_tx.clone(),
                     cloud_agents: Arc::clone(&worker_cloud_agents),
-                    sessions: worker_sessions,
+                    sessions: Arc::clone(&worker_sessions),
                     forever_box: Arc::clone(&forever_box),
                     transcript_manager: Arc::clone(&worker_transcript_manager),
                     events: worker_events.clone(),

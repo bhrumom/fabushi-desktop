@@ -143,3 +143,17 @@ identity and no extra turn settlement. The existing owner contract gains a
 facade oracle, and Actions also selects existing upgrade, automation wiring
 and cloud-worker contracts. No production model-identity implementation is
 included until this shared boundary is repaired.
+
+H5 `5dae743427127f3b154f2b86bfd89b2850b1fa4c` / tree
+`3b54e5d8e3fb7ecddbc140f4862d11cce14006d7` is also pushed/read back. Source
+run `41383826415` passed with exact-subject artifact `13114153766`, digest
+`sha256:bfc11b6103dc7bf2bcf54d92564d5a5cdecb32851ab6a93cb8b1c77451b9b175`;
+its structural-only scope and open flags are unchanged. Runtime `41384019149`,
+job `125080763324`, passed the prior seven app error sites but failed with one
+newly exposed E0382: `ProductionSendMessageSink` consumed `worker_sessions`
+before the generated-image persistence consumer cloned it. Exit 101; all
+behavior targets still skipped. Keep the same Session Arc for both consumers
+by cloning the handle at the sink boundary. This is a concrete ownership
+repair, not a retry of H5 or a budget reset; independent focused assessment
+checks both consumers before another exact-H shipping check. No gate or
+assertion is removed, and no earlier runtime result is relabeled as passing.
