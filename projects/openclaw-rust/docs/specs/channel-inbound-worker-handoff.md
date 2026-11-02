@@ -494,3 +494,77 @@ equality; the feature declaration in `Cargo.toml` blob
 `059ac2957d93da5de73e6203fdbf720b4e417dd0` distinguishes fixed-precision
 round trips from arbitrary-precision JSON preservation and documents its
 float-parsing cost. No unobserved timing or performance claim follows.
+
+
+### Exact committed JSON image — `SESSION-JSON-ROUNDTRIP-v1`
+
+Decision `SESSION-JSON-01` — **FIX / production configuration gap**, at
+`a514b70ab7901e9c8b4d87a8d29bf8e7d52be507`, with fixed U unchanged.
+Runtime 41446276172 / job 125280031635 at
+`364cca21ce04cbcf2d7ace69ce607fb4af95a1df` failed the valid Gateway
+`entries.contains(&echo.entry)` assertion after the expected three rows and
+unique physical IDs were present. That log does not identify the differing
+field; preserve that uncertainty and the original assertion. Source review
+shows a concrete candidate: Gateway returns the staged JSON image after COMMIT,
+SQLite stores its serialization, and public reads decode it again. Gateway's
+clock and supported `composedAtMs` carry fractional `f64` milliseconds; nested
+valid JSON values can also contain floats. Host currently requests default
+serde_json features, which promise only best-effort float parsing.
+
+- JR-01: a successfully committed supported JSON entry must preserve its exact
+  finite floating-point values through serialization and decoding. Returned
+  producer context, committed publication, raw-row decode and Session read must
+  agree. Preserve timestamp precision, nonce behavior, IDs, admission fencing,
+  rollback/unknown outcomes and lock-free publication; no post-COMMIT readback
+  becomes a new success condition.
+- JR-02: enable serde_json's existing `float_roundtrip` production dependency
+  feature in Host after a deterministic Actions baseline proves the gap. Do not
+  add arbitrary-precision representation, change wire/storage schemas, normalize
+  expected fixtures through the faulty parser, truncate timestamps, or replace
+  equality with a tolerance. No crate version, lock identity or fixed U changes.
+- JR-03: reuse the published FC-ECHO-OBSERVATION-01 Gateway/reopen control
+  unchanged, including the default-clock namespace assertions. Supplement it
+  through the existing Session fresh-append owner with nested positive/negative
+  epoch-millisecond neighbors and small/large finite values built directly from
+  fixed bit patterns; never derive expected values from JSON parsing. Require
+  exact context/publication/read equality,
+  one batch generation advance, unchanged raw rows/generation/publication on
+  same-nonce replay and empty append, and retained physical IDs. Keep all prior
+  attachment/opaque-row and rejection assertions.
+- JR-04: first publish the deterministic controls with the existing production
+  dependency and capture their exact-H failure plus Cargo's effective feature
+  graph in GitHub Actions. Then publish the production feature change and run
+  the same unchanged controls and affected shipping/contracts on that new H.
+  A later pass of the original clock-dependent test alone does not resolve the
+  earlier failure. Keep the baseline and fixed results separately; if the
+  baseline does not expose a mismatch, reassess before claiming causality.
+
+Ownership stays in Session/SQLite and the existing JSON dependency. Allowed
+paths are Host Cargo.toml, `session_gateway_contract.rs`, the existing Session
+`production_fresh_append_tests.rs`, this spec and the existing runtime workflow.
+Both test groups are already selected. A small feature-graph evidence command
+must retain ordinary failure propagation and existing selectors. Reviews cover
+all these paths and adjacent producer/read/publication consumers.
+
+Pinned dependency review: serde_json 1.0.154
+[feature contract](https://github.com/serde-rs/json/blob/20572a6d066958542d79cdd6cf1a7cd9f0c8e1f8/Cargo.toml#L67-L74),
+blob `059ac2957d93da5de73e6203fdbf720b4e417dd0`, and
+[float parser](https://github.com/serde-rs/json/blob/20572a6d066958542d79cdd6cf1a7cd9f0c8e1f8/src/de.rs#L623-L672),
+blob `d353b2d3ecb3146ef7f3ceb5a05a8d3a47144ea9`. The feature adds no dependency
+and retains MIT/Apache-2.0 licensing; its documented float-parsing cost is about
+twice the default path. Exact existing bytes are not rewritten, and rollback
+restores the precision gap. Historical already-rounded in-memory values cannot
+be recovered by this change. Final performance/soak, external protocol and
+cross-process execution acceptance remain open; no global flags advance.
+
+Integration decision `SESSION-JSON-INTEGRATION-01` reuses the published Gateway
+instrument from `73cf0269c5ccbbd1dff946e0949824a1bbbeffd4`; the unpublished
+overlapping Gateway instrument is archived rather than duplicated. Its real
+owner reopen, raw-text, complete-equality and nonce controls remain intact.
+Review decision `JR-03-NONCE-RAW-01 — FIX / TEST_FLAW` additionally requires
+ordered physical-row and write-generation snapshots immediately around that
+same integral/fractional nonce replay: decoded equality alone cannot detect a
+raw-byte rewrite. The additional Session corpus supplies nested-value and signed
+zero coverage plus one-generation/empty-append invariants. Every published
+Gateway assertion remains unchanged. No production precision repair is claimed
+by this baseline increment.

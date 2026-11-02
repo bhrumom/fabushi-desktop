@@ -254,6 +254,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT"
+          # SESSION-JSON-ROUNDTRIP-v1: retain the effective locked dependency
+          # feature graph with each baseline/fixed subject; do not infer it from Cargo.lock.
+          cargo tree --locked --manifest-path source/host/Cargo.toml --edges features --invert serde_json
           recovery_status=0
           cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test production_turn_input_projection_contract \

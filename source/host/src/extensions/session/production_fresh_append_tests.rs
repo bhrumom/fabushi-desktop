@@ -160,6 +160,119 @@ fn fresh_user_message_batch_preserves_frozen_ids_and_publishes_one_committed_bat
 }
 
 #[test]
+fn fresh_append_preserves_nested_finite_json_values() {
+    fn float_bits(entries: &[Value]) -> Vec<(String, u64)> {
+        fn visit(value: &Value, path: String, output: &mut Vec<(String, u64)>) {
+            match value {
+                Value::Number(number) if number.is_f64() => {
+                    output.push((path, number.as_f64().unwrap().to_bits()));
+                }
+                Value::Array(values) => {
+                    for (index, value) in values.iter().enumerate() {
+                        visit(value, format!("{path}/{index}"), output);
+                    }
+                }
+                Value::Object(fields) => {
+                    for (key, value) in fields {
+                        visit(value, format!("{path}/{key}"), output);
+                    }
+                }
+                _ => {}
+            }
+        }
+        let mut output = Vec::new();
+        for (index, entry) in entries.iter().enumerate() {
+            visit(entry, format!("/{index}"), &mut output);
+        }
+        output
+    }
+
+    let fixture = Fixture::new("nested-finite-json");
+    let events = Publications::new(&fixture.agent);
+    let before = fixture.generation();
+    let epoch_bits = 1_700_000_000_000_f64.to_bits();
+    let offsets = std::iter::once(6_u64)
+        .chain((0_u64..32).filter(|offset| *offset != 6)).collect::<Vec<_>>();
+    let epoch_values = offsets.iter().map(|offset| {
+        let bits = epoch_bits + *offset;
+        json!({
+            "positive":f64::from_bits(bits),
+            "negative":f64::from_bits(bits | (1_u64 << 63)),
+        })
+    }).collect::<Vec<_>>();
+    // Include signed zero, subnormal/normal minima, ordinary fractions, and
+    // both finite extrema without preparing any expected value through JSON.
+    let finite_bits = [
+        0_u64, 1_u64 << 63,
+        0x0000_0000_0000_0001, 0x8000_0000_0000_0001,
+        0x0010_0000_0000_0000, 0x8010_0000_0000_0000,
+        0x3fb9_9999_9999_999a, 0xbfb9_9999_9999_999a,
+        0x3ff0_0000_0000_0001, 0xbff0_0000_0000_0001,
+        0x7fef_ffff_ffff_ffff, 0xffef_ffff_ffff_ffff,
+    ];
+    let finite_values = finite_bits.iter().map(|bits| f64::from_bits(*bits)).collect::<Vec<_>>();
+    let mut drafts = [fixture.draft("fractional epoch values"), fixture.draft("finite JSON values")];
+    drafts[0]["payload"] = json!({"epoch":epoch_values});
+    drafts[1]["payload"] = json!({
+        "finite":finite_values,
+        "controls":{"unsigned":u64::MAX,"signed":i64::MIN,"boolean":true,"null":null,
+            "text":"synthetic \"quoted\"\n雪","array":[false,17,"kept"]},
+    });
+    for (index, offset) in offsets.iter().enumerate() {
+        let positive_bits = epoch_bits + *offset;
+        for (field, expected_bits) in [
+            ("positive", positive_bits), ("negative", positive_bits | (1_u64 << 63)),
+        ] {
+            assert_eq!(drafts[0]["payload"]["epoch"][index][field].as_f64().map(f64::to_bits),
+                Some(expected_bits), "fixture offset={offset}, field={field}");
+        }
+    }
+    for (index, bits) in finite_bits.iter().enumerate() {
+        assert_eq!(drafts[1]["payload"]["finite"][index].as_f64().map(f64::to_bits),
+            Some(*bits), "fixture finite index={index}");
+    }
+    let mut expected = drafts.to_vec();
+    expected[0]["id"] = json!("t0u");
+    expected[1]["id"] = json!("t1u");
+    let expected_bits = float_bits(&expected);
+    let committed = fixture.append(&drafts).unwrap();
+    assert_eq!(committed, expected,
+        "expected_float_bits={expected_bits:x?}; returned_float_bits={:x?}", float_bits(&committed));
+    assert_eq!(float_bits(&committed), expected_bits, "returned float bits, including signed zero");
+    assert_eq!(fixture.generation(), before + 1);
+    let publications = events.values();
+    assert_eq!(publications, vec![json!({
+        "kind":"entries-upserted", "agentId":fixture.agent, "entries":expected,
+    })]);
+    assert_eq!(float_bits(publications[0]["entries"].as_array().unwrap()), expected_bits,
+        "published float bits, including signed zero");
+
+    let rows = fixture.durable_rows();
+    assert_eq!(rows.len(), 2);
+    for (index, (_, id, raw)) in rows.iter().enumerate() {
+        assert_eq!(Some(id.as_str()), expected[index]["id"].as_str());
+        let decoded = serde_json::from_str::<Value>(raw).unwrap_or_else(|error| {
+            panic!("id={id}; decode={error}; raw={raw:?}; expected_float_bits={expected_bits:x?}")
+        });
+        let row_expected = std::slice::from_ref(&expected[index]);
+        let row_decoded = std::slice::from_ref(&decoded);
+        assert_eq!(decoded, expected[index],
+            "id={id}; raw={raw:?}; expected_float_bits={:x?}; decoded_float_bits={:x?}",
+            float_bits(row_expected), float_bits(row_decoded));
+        assert_eq!(float_bits(row_decoded), float_bits(row_expected),
+            "id={id}; raw float bits, including signed zero");
+    }
+    let visible = fixture.session.read_agent_transcript_entries(&fixture.agent).unwrap();
+    assert_eq!(visible, expected,
+        "expected_float_bits={expected_bits:x?}; visible_float_bits={:x?}", float_bits(&visible));
+    assert_eq!(float_bits(&visible), expected_bits, "visible float bits, including signed zero");
+    let unchanged = (rows, fixture.generation(), publications);
+    assert!(fixture.append(&[]).unwrap().is_empty());
+    assert_eq!((fixture.durable_rows(), fixture.generation(), events.values()), unchanged);
+    assert_eq!(fixture.session.read_agent_transcript_entries(&fixture.agent).unwrap(), visible);
+}
+
+#[test]
 fn fresh_allocation_reserves_physical_ids_hidden_from_presentation_reads() {
     let fixture = Fixture::new("opaque-id");
     let opaque = json!({"id": "t0u", "kind": "future-transcript-kind", "payload": "retain"});

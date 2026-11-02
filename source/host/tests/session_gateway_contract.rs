@@ -759,6 +759,7 @@ fn fresh_gateway_and_legacy_agent_messages_preserve_opaque_namespace_and_nonce_s
 
 #[test]
 fn gateway_echoes_preserve_fractional_timestamps_through_durable_reopen() {
+    use mahayana_host_runtime::storage::store_db::get_sand_agent_db_write_generation;
     use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -791,6 +792,15 @@ fn gateway_echoes_preserve_fractional_timestamps_through_durable_reopen() {
         let entries = reopened.read_agent_transcript_entries(&target.id).unwrap();
         let db = rusqlite::Connection::open(&db_path).unwrap();
         observe_durable_echo(&db, &entries, &echo, &format!("{case} after-reopen"));
+        let raw_rows = || {
+            let mut statement = db.prepare(
+                "SELECT seq, id, entry FROM transcript_entries ORDER BY seq",
+            ).unwrap();
+            let rows = statement.query_map([], |row| {
+                Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+            }).unwrap();
+            rows.collect::<Result<Vec<_>, _>>().unwrap()
+        };
         let events = Arc::new(AtomicUsize::new(0));
         let subscription = subscribe_transcript_mutations({
             let events = Arc::clone(&events);
@@ -801,6 +811,8 @@ fn gateway_echoes_preserve_fractional_timestamps_through_durable_reopen() {
                 }
             }
         });
+        let rows_before_replay = raw_rows();
+        let generation_before_replay = get_sand_agent_db_write_generation(&db_path);
         let replay = persist_accepted_send_prompt_context(&reopened, &args, &json!({"accepted":true}))
             .expect("the original nonce survives owner restart");
         assert_eq!(replay.echo_entry_id, context.echo_entry_id);
@@ -808,6 +820,9 @@ fn gateway_echoes_preserve_fractional_timestamps_through_durable_reopen() {
         assert_eq!(replay.recent_user_messages, context.recent_user_messages);
         assert!(replay.accepted_echoes.is_empty());
         assert!(!replay.accepted_durably && !replay.acceptance_effects_applied);
+        assert_eq!(raw_rows(), rows_before_replay, "nonce replay preserves physical rows: {case}");
+        assert_eq!(get_sand_agent_db_write_generation(&db_path), generation_before_replay,
+            "nonce replay preserves write generation: {case}");
         assert_eq!(events.load(Ordering::SeqCst), 0);
         assert_eq!(reopened.read_agent_transcript_entries(&target.id).unwrap(), entries);
         subscription.unsubscribe();
