@@ -349,32 +349,32 @@
     "rule": "Queued/in_progress/failure are not passing evidence."
   },
   "ledger_transport": {
-    "commit": "0c8c87f58ee153907b7214dce5de923c2fc01e78",
-    "run": 41518729235,
-    "job": 125528910110,
-    "conclusion": "success",
-    "base_blob": "026508e30187d3e6722beef3cc7241bbc5533df9",
-    "prepared_blob": "ac8b9f06dc98a267cae49ab92d55ce24424bb943",
-    "ledger_sha256": "4a476120da1231b3644f6e9d70c4c2634bc4ed17a7cd2d6179378977b82f109f",
-    "ledger_bytes": 3554081,
-    "artifact_id": 13177515309,
-    "artifact_digest": "sha256:f9f650c1697d283788adf3fa6ebdc71566c1e20c275598428383b8c93a785ab8",
+    "workflow_sha": "6715272797462217ea695e2a45763cbad9386043",
+    "base_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
+    "prepared_blob": "d44b094065722c5a70f92e21489887f86f5b2b0e",
+    "ledger_sha256": "cd7a63e392f6eef5723b9ff1c3025ab6ced3f9e6eb7a3b7639865b0e919ee4c9",
+    "ledger_bytes": 3569241,
     "changed_rows": [
       "FBCP-NMR-001",
       "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001"
     ],
-    "source_reviews_preserved": 6,
+    "source_review_records_preserved": 6,
+    "source_reviews_unchanged": true,
     "coverage_unchanged": true,
-    "acceptance_changed": false,
     "refs_written": false,
+    "acceptance_changed": false,
+    "run": 41520273150,
+    "job": 125534196535,
+    "artifact": [
+      {
+        "id": 13176473474,
+        "digest": "sha256:870c52b03d450c0f8a48d4a5c3ccffd943d138fcb43c9526a1e88662c63f7205"
+      }
+    ],
+    "full_log_sha256": "7e892a594206232ddcfe0216017119fb7cf5a69ef623025bbaf26dc63ad73281",
     "remote_blob_readback": true,
-    "scope": "Historical exact-base blob transport only. Later canonical input superseded this object; do not integrate it. Current temporary workflow remains until current input/output readback and scoped CAS integration.",
-    "superseded_transport": {
-      "head": "beed595f2bd8d0fc69ef148edb4b9188727f2cb6",
-      "run": 41518228586,
-      "blob": "938f4e1d77ac277acf56c07ddfb300f9b6dd3a92",
-      "reason": "current ledger gained concurrent updater evidence; old blob must not overwrite it"
-    }
+    "other_rows_and_data_unchanged": true,
+    "scope": "Scoped object transport; containing integration removes temporary workflow/operations. No product execution or acceptance."
   },
   "source_accounting_at_936": {
     "root_identities": 6895,
@@ -412,5 +412,66 @@
     "reason": "A newer concurrent round18 ledger was preserved; this exact commit rebinds the existing restricted object preparation job. Earlier prepared objects remain historical and will not replace newer rows.",
     "operations": ".github/checkpoint-ledger-ops-round27.json",
     "workflow": ".github/workflows/checkpoint-ledger-object-round27.yml"
+  },
+  "previous_ledger_transports": [
+    {
+      "commit": "0c8c87f58ee153907b7214dce5de923c2fc01e78",
+      "run": 41518729235,
+      "job": 125528910110,
+      "conclusion": "success",
+      "base_blob": "026508e30187d3e6722beef3cc7241bbc5533df9",
+      "prepared_blob": "ac8b9f06dc98a267cae49ab92d55ce24424bb943",
+      "ledger_sha256": "4a476120da1231b3644f6e9d70c4c2634bc4ed17a7cd2d6179378977b82f109f",
+      "ledger_bytes": 3554081,
+      "artifact_id": 13177515309,
+      "artifact_digest": "sha256:f9f650c1697d283788adf3fa6ebdc71566c1e20c275598428383b8c93a785ab8",
+      "changed_rows": [
+        "FBCP-NMR-001",
+        "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001"
+      ],
+      "source_reviews_preserved": 6,
+      "coverage_unchanged": true,
+      "acceptance_changed": false,
+      "refs_written": false,
+      "remote_blob_readback": true,
+      "scope": "Historical exact-base blob transport only. Later canonical input superseded this object; do not integrate it. Current temporary workflow remains until current input/output readback and scoped CAS integration.",
+      "superseded_transport": {
+        "head": "beed595f2bd8d0fc69ef148edb4b9188727f2cb6",
+        "run": 41518228586,
+        "blob": "938f4e1d77ac277acf56c07ddfb300f9b6dd3a92",
+        "reason": "current ledger gained concurrent updater evidence; old blob must not overwrite it"
+      }
+    },
+    {
+      "workflow_sha": "2d03120fe107b94f389409ac4f6890947940af4e",
+      "run": 41519971465,
+      "job": 125533154422,
+      "base_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+      "prepared_blob": "fa1eed4b244d8d68d7ac03546ce9b8da12544a02",
+      "superseded_by_concurrent_ledger": true
+    }
+  ],
+  "ledger_integration": {
+    "status": "integrated in containing commit",
+    "prepared_blob": "d44b094065722c5a70f92e21489887f86f5b2b0e",
+    "checked_parent": "19f631c5d74f342109859f8f1d509173b86305cc",
+    "expected_input_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
+    "source_reviews_unchanged": true,
+    "coverage_unchanged": true,
+    "acceptance_changed": false
+  },
+  "product_commit": "2d03120fe107b94f389409ac4f6890947940af4e",
+  "product_run": 41519971441,
+  "execution_at_ledger_integration": {
+    "ui": "completed/success: renderer, Transcript20, cursor/RPC17, settlement5, Chromium16; full log independently read",
+    "electron": "completed/success: carrier10/native8/fixture-copy3/update16/publisher28/macOS18/promotion-consumer6 and actual main/preload/carrier build",
+    "windows": "completed/success: native Authenticode11 with inert CI-only certificate",
+    "human": "queued/unassigned; Human53/journal12/resource3 not executed at observation",
+    "shipping": "queued/unassigned; no execution claimed"
+  },
+  "followup_defect": {
+    "scope": "Source-derived pre-marker row with missing/replaced entire context and unavailable source store can still fall through after an empty ownership scan",
+    "execution": "not reproduced by Actions yet",
+    "action": "Require positive readable-source legacy evidence and add combined unavailable-source/context-loss negatives; do not mark current53 case sufficient."
   }
 }
