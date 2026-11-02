@@ -5873,6 +5873,142 @@ fn shipping_human_historical_reply_aliases_require_unique_local_canonical_parent
         }
         fs::remove_dir_all(root).expect("remove historical alias fixture");
     }
+
+    // The strict message-ID contract applies to both a directly selected parent
+    // and a historical local alias before either may mutate a durable child.
+    let mut numeric_cases = Vec::new();
+    for (label, remote_id, canonical_suffix) in [
+        ("leading-zero", json!("0895001"), "0895001"),
+        ("padded", json!(" 895001 "), "895001"),
+        ("signed", json!("+895001"), "+895001"),
+        ("fractional", json!(895001.5), "895001.5"),
+        ("zero", json!(0), "0"),
+        ("negative", json!(-1), "-1"),
+        ("unsafe", json!(9_007_199_254_740_992_u64), "9007199254740992"),
+    ] {
+        for mode in ["direct", "historical"] {
+            numeric_cases.push((mode, label, remote_id.clone(), canonical_suffix));
+        }
+    }
+    numeric_cases.extend([
+        ("direct", "canonical-integer", json!(895001), "895001"),
+        ("historical", "max-safe-equivalence", json!("9007199254740991"), "9007199254740991"),
+        ("direct", "peer-canonical", json!("895001"), "895001"),
+    ]);
+    for (mode, label, remote_id, canonical_suffix) in numeric_cases {
+        let valid = matches!(label, "canonical-integer" | "max-safe-equivalence" | "peer-canonical");
+        let root = temp_root(&format!("nmr49-numeric-reply-{mode}-{label}"));
+        let parent_nonce = format!("nmr49-numeric-parent-{mode}-{label}");
+        let child_nonce = format!("nmr49-numeric-child-{mode}-{label}");
+        let old_parent = format!("human-message:{parent_nonce}");
+        let canonical_parent = format!("human-server-message:{canonical_suffix}");
+        let requested_reply = if mode == "historical" { old_parent.as_str() } else { canonical_parent.as_str() };
+        let mut remote = fixture_remote_human_message(895002, 1, 2, "numeric reply child", Some(&child_nonce), json!([]));
+        remote["replyToMessageId"] = if label == "max-safe-equivalence" {
+            json!(9_007_199_254_740_991_u64)
+        } else { json!(895001) };
+        let mut responses = Vec::new();
+        if valid {
+            responses.push(HumanMessageFixtureReply::Json(201, json!({"success":true,"message":remote})));
+        }
+        responses.push(HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[]}})));
+        let (url, server) = spawn_human_message_fixture(responses);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").unwrap()["id"].as_str().unwrap().to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        let mut peer = settled_reply_fixture_row(&parent_nonce, "peer with matching nonce", 895101);
+        peer["authorId"] = json!("2");
+        let mut parent = settled_reply_fixture_row(&parent_nonce, "numeric reply parent", 895001);
+        parent["id"] = json!(canonical_parent);
+        parent["remoteMessageId"] = remote_id;
+        if label == "peer-canonical" { parent["authorId"] = json!("2"); }
+        let pending = pending_reply_fixture_row(&child_nonce, "numeric reply child", Some(requested_reply));
+        let before = vec![peer.clone(), parent.clone(), pending];
+        assert_eq!(owner.append_transcript_entries(&before).unwrap(), 3);
+        assert_eq!(owner.get_transcript_entries().unwrap(), before, "{mode}/{label}: all fixture rows remain readable");
+        // Each row starts at 1234ms. The leading-zero fixture still sorts as
+        // numeric 895001 on read, despite being inadmissible as a reply ID.
+        // Padded/signed/fractional/nonpositive/unsafe IDs sort after peer 895101;
+        // MAX_SAFE is valid but also follows that peer. Equal fallback keys
+        // retain physical parent-before-child order. These are literal fixture
+        // expectations, independent of the production ordering implementation.
+        let parent_before_peer = matches!(label, "leading-zero" | "canonical-integer" | "peer-canonical");
+        let chronological_before = if parent_before_peer {
+            vec![before[1].clone(), before[0].clone(), before[2].clone()]
+        } else { before.clone() };
+        drop(owner); runtime.shutdown(); drop(runtime);
+        let recovered = human_message_fixture_runtime(&root, &url);
+        let result = dispatch_production_session_gateway_call(&recovered, "sendHumanMessage", &json!({
+            "conversationId":id,"text":"numeric reply child","clientNonce":child_nonce,
+            "replyToId":requested_reply,"attachments":[],"composedAtMs":1234.0
+        })).expect("registered numeric reply send");
+        let expected_physical;
+        let expected_canonical;
+        if valid {
+            let settled = result.expect("canonical numeric reply identity is admissible");
+            assert_eq!(settled["id"], "human-server-message:895002");
+            assert_eq!(settled["replyToId"], canonical_parent);
+            assert_eq!(settled["clientNonce"], child_nonce);
+            if label == "max-safe-equivalence" {
+                // The historical alias first used the canonical string boundary.
+                // Replaying the same child through a direct ID must also accept
+                // the identical safe integer representation without another POST.
+                parent["remoteMessageId"] = json!(9_007_199_254_740_991_u64);
+                assert_eq!(recovered.open_human_conversation_db_owner(&id).unwrap()
+                    .update_transcript_entry(&canonical_parent, &parent).unwrap(), Some(parent.clone()));
+            }
+            let replay = dispatch(&recovered, "sendHumanMessage", json!({
+                "conversationId":id,"text":"numeric reply child","clientNonce":child_nonce,
+                "replyToId":canonical_parent,"attachments":[],"composedAtMs":1234.0
+            }));
+            assert_eq!(replay, settled, "{mode}/{label}: direct canonical retry is idempotent");
+            expected_physical = vec![peer.clone(), parent.clone(), settled.clone()];
+            // The real HTTP settlement has an October 2026 timestamp, after
+            // both fixture parents. Their explicit relative order stays fixed.
+            expected_canonical = if parent_before_peer {
+                vec![parent.clone(), peer.clone(), settled]
+            } else { expected_physical.clone() };
+        } else {
+            let error = result.expect_err("noncanonical numeric reply must be refused before dispatch");
+            assert!(matches!(error, SessionGatewayError::Internal(message)
+                if message.contains("reply") && message.contains("canonical positive safe integer")),
+                "{mode}/{label}: the numeric admission guard must reject the complete parent");
+            expected_physical = before.clone();
+            expected_canonical = chronological_before;
+        }
+        assert_eq!(recovered.open_human_conversation_db_owner(&id).unwrap()
+            .get_transcript_entries().unwrap(), expected_physical,
+            "{mode}/{label}: ingress preserves every physical row except an admitted settlement");
+        assert_eq!(recovered.read_human_conversation_transcript(&id).unwrap(), expected_canonical,
+            "{mode}/{label}: ingress preserves the complete canonical projection");
+        let rows = recovered.sync_human_conversation(&id).expect("independent authorized history still progresses");
+        assert_eq!(recovered.open_human_conversation_db_owner(&id).unwrap()
+            .get_transcript_entries().unwrap(), expected_physical,
+            "{mode}/{label}: automatic replay cannot rewrite a refused numeric intent");
+        assert_eq!(rows, expected_canonical, "{mode}/{label}: sync keeps the specified canonical order");
+        recovered.shutdown(); drop(recovered);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reopened.open_human_conversation_db_owner(&id).unwrap()
+            .get_transcript_entries().unwrap(), expected_physical,
+            "{mode}/{label}: restart preserves exact durable payloads");
+        assert_eq!(reopened.read_human_conversation_transcript(&id).unwrap(), expected_canonical,
+            "{mode}/{label}: restart preserves canonical order");
+        reopened.shutdown(); drop(reopened);
+        let requests = server.join().expect("numeric reply HTTP");
+        assert_eq!(requests.len(), if valid { 2 } else { 1 }, "{mode}/{label}");
+        assert!(requests.last().unwrap().starts_with("GET /api/social/messages?"));
+        let posts = requests.iter().filter(|request| request.starts_with("POST /api/social/messages ")).collect::<Vec<_>>();
+        assert_eq!(posts.len(), usize::from(valid), "{mode}/{label}: exactly one admitted send and no retry duplicate");
+        if valid {
+            assert_eq!(fixture_request_json(posts[0])["replyToMessageId"], canonical_suffix);
+            assert_eq!(fixture_request_json(posts[0])["clientRequestId"], child_nonce);
+        } else {
+            assert!(requests.iter().all(|request| request.starts_with("GET ")),
+                "{mode}/{label}: invalid reply produces no POST or resource access");
+        }
+        fs::remove_dir_all(root).expect("cleanup numeric reply fixture");
+    }
+
 }
 
 #[test]
@@ -5887,7 +6023,12 @@ fn shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging() 
             settled_reply_fixture_row(&nonce, "parent", 895701)
         } else { pending_reply_fixture_row(&nonce, "parent", None) };
         match variant {
-            "canonical-non-message" | "local-non-message" => parent["kind"] = json!("event"),
+            "canonical-non-message" | "local-non-message" => {
+                // A valid non-message row must reach reply admission; an event
+                // without event.type would disappear during transcript parsing.
+                parent["kind"] = json!("notice");
+                parent["text"] = json!("retained non-message reply parent");
+            }
             "canonical-agent" | "local-agent" => parent["authorKind"] = json!("agent"),
             "canonical-pending" => parent["delivery"] = json!("pending"),
             "canonical-no-remote" => { parent.as_object_mut().unwrap().remove("remoteMessageId"); }
@@ -5908,6 +6049,7 @@ fn shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging() 
         let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
         assert!(owner.append_transcript_entry(&parent).unwrap());
         let before = owner.get_transcript_entries().unwrap();
+        assert_eq!(before, vec![parent.clone()], "{variant}: the complete fixture reaches reply admission");
         let result = dispatch_production_session_gateway_call(&runtime, "sendHumanMessage", &json!({
             "conversationId":id,"text":"child","clientNonce":format!("child-{variant}"),
             "replyToId":reply_id,"attachments":[],"composedAtMs":1234.0

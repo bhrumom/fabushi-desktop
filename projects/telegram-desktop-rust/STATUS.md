@@ -5,6 +5,16 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
+## Round31 — canonical reply identity recovery
+
+Retain the concurrent direct-parent guard, Ubuntu reconciliation and corrected
+reaction fixture. This round uses the existing strict message-ID parser for reply
+parents and extends existing real persistence/HTTP cases without changing owners
+or test-function counts. Complete old-H shipping logs and containing106bb recovery
+results are qualified separately; this new patch requires its own containing-H
+execution. Full migration and independent ACCEPT remain blocked. See
+`projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+
 ## Concurrent round16 — pinned package inputs and retained C wrapper qualification
 
 The original requested run41447812811 passed at exact

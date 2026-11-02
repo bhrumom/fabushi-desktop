@@ -1213,6 +1213,15 @@ recovery defect; no pre-fix runtime reproduction is claimed.
   exact `human-message:<its own nonempty nonce>` ID. A canonical-looking row
   missing remote identity, or a non-Human row with the same author ID, is not a
   local outbox intent; preserve it without HTTP dispatch or child-edge repair.
+  Directly selected canonical parents and historical local aliases must both
+  use the existing message-specific canonical positive safe-integer parser for
+  remote identity. Do not trim padded strings or accept leading-zero, signed,
+  fractional, nonpositive or unsafe numeric aliases. Keep exact canonical string
+  and integer equivalence, valid peer replies, and local pending/dispatching or
+  remote-less local-only sent parents. Reject malformed remote targets before
+  staging or HTTP, retaining complete durable rows through sync and reopen.
+  Non-message negative fixtures must be valid persisted entry shapes so they
+  actually reach the kind guard rather than disappear during decoding.
 - NMR-AC-40: Add actual Host/SQLite/loopback tests for A→B→C staging,
   failure/restart and ordered canonical replay; historical dangling local
   parent references with same-nonce peer and foreign-conversation negatives;

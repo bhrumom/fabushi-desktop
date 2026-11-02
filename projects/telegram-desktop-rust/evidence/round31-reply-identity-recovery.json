@@ -1,0 +1,1180 @@
+{
+  "format_version": 2,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 31,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "upstream_u": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "prepared_at_utc": "2026-11-02T20:59:31.673Z",
+  "initial_target": "2f89cd0276b122a4c354756911fdc7bbbe696caf",
+  "main_readback": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "publication_base": "425e05d20a54a5a7183ed62ba14b13c12300b139",
+  "requested_actions_audit": {
+    "observed_at_utc": "2026-11-02T20:59:57.521Z",
+    "runs": [
+      {
+        "id": 41516172127,
+        "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "status": "queued",
+        "conclusion": null,
+        "run_attempt": 1,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41516172127"
+      },
+      {
+        "id": 41512635210,
+        "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_attempt": 1,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41512635210"
+      }
+    ],
+    "requested_jobs": [
+      {
+        "id": 125520183684,
+        "run_id": 41516172127,
+        "name": "native-message-shipping-compile",
+        "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000259422,
+        "runner_name": "GitHub Actions 1000259422",
+        "labels": [
+          "macos-15"
+        ],
+        "started_at": "2026-11-02T20:11:39Z",
+        "completed_at": "2026-11-02T20:25:12Z",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41516172127/job/125520183684",
+        "complete_log": {
+          "available": true,
+          "retrieved_at_utc": "2026-11-02T20:47:57Z",
+          "local_path": "/workspace/scratch/2a678141916b/actions-audit/job-125520183684.log",
+          "decoded_utf8_bytes": 930704,
+          "sha256": "7ff82b7f05097deac87e429dca6be95b81e53cf31f30cd841ec0c9b2a8c02a21",
+          "prior_unavailable_observation_preserved_in_history": true
+        }
+      },
+      {
+        "id": 125520184194,
+        "run_id": 41516172127,
+        "name": "native-message-reconciliation",
+        "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "runner_name": "",
+        "labels": [
+          "macos-15"
+        ],
+        "started_at": "2026-11-02T20:06:44Z",
+        "completed_at": null,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41516172127/job/125520184194",
+        "complete_log": {
+          "available": false,
+          "retrieved_attempt_at_utc": "2026-11-02T20:16:26Z",
+          "response": "404 BlobNotFound",
+          "reason": "Queued without a runner or steps; no execution log."
+        }
+      },
+      {
+        "id": 125508112546,
+        "run_id": 41512635210,
+        "name": "native-message-reconciliation",
+        "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "runner_id": 0,
+        "runner_name": "",
+        "labels": [
+          "macos-15"
+        ],
+        "started_at": "2026-11-02T19:43:55Z",
+        "completed_at": "2026-11-02T20:14:09Z",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41512635210/job/125508112546",
+        "complete_log": {
+          "available": false,
+          "retrieved_attempt_at_utc": "2026-11-02T20:16:26Z",
+          "response": "404 BlobNotFound",
+          "reason": "Cancelled before any runner assignment or steps; no execution log."
+        }
+      }
+    ],
+    "classification": {
+      "old_reconciliation": "ENVIRONMENT_EXECUTION_UNAVAILABLE",
+      "cause_evidence": "runner_id=0, empty runner_name, no steps, terminal cancelled. The job did not execute implementation or test assertions.",
+      "precise_scheduler_or_provider_cause": "unknown",
+      "annotation_access": "check-runs metadata reports 4 annotations, but direct annotation endpoint is rejected by the connector's allowed GET families; no annotation body observed.",
+      "new_reconciliation": "QUEUED_NOT_RUN",
+      "new_shipping": "APPROVED_WITHIN_SHIPPING_CONTRACT_SCOPE",
+      "implementation_or_oracle_failure_proven": false
+    },
+    "requested_claims": {
+      "original_exact_ff6": "Human44/journal12 not executed because job remains queued",
+      "later_containing_H": "106bb95 actual Human62/journal12 passes named requested recovery scope; see containing_reconciliation"
+    },
+    "complete_logs": [
+      {
+        "job_id": 125520184146,
+        "run_id": 41516172127,
+        "name": "native-message-ui",
+        "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "status": "completed",
+        "conclusion": "success",
+        "decoded_utf8_bytes": 70934,
+        "sha256": "ded124c1dbbc8594eccfc502922bd6b9de8c3d9f6f048d3a92921990e3caf9bf",
+        "observed_counts": {
+          "transcript": {
+            "tests": 16,
+            "pass": 16,
+            "fail": 0
+          },
+          "forward_settlement": {
+            "tests": 5,
+            "pass": 5,
+            "fail": 0
+          },
+          "chromium_forward_dialog": {
+            "tests": 16,
+            "pass": 16,
+            "fail": 0
+          }
+        },
+        "actual_production_renderer_compiled": true
+      },
+      {
+        "job_id": 125520184125,
+        "run_id": 41516172127,
+        "name": "native-message-electron",
+        "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "status": "completed",
+        "conclusion": "success",
+        "decoded_utf8_bytes": 82400,
+        "sha256": "2410c0d0cb3db793fe71577c6e7f0353a7815c3ae0b1d343a16b5820c61a5cfc",
+        "observed_counts": {
+          "carrier": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0
+          },
+          "native_auth_retention": {
+            "tests": 8,
+            "pass": 8,
+            "fail": 0
+          },
+          "package_resources": {
+            "tests": 3,
+            "pass": 3,
+            "fail": 0
+          },
+          "update_source": {
+            "tests": 16,
+            "pass": 16,
+            "fail": 0
+          },
+          "windows_publisher_behavior": {
+            "tests": 28,
+            "pass": 28,
+            "fail": 0
+          },
+          "macos_metadata": {
+            "tests": 18,
+            "pass": 18,
+            "fail": 0
+          }
+        },
+        "actual_electron_main_preload_carrier_compiled": true,
+        "historical_installer_scope": "NMR-43 historical ZIP/DMG metadata reconciled with package bytes unchanged; no install or release"
+      },
+      {
+        "job_id": 125520184100,
+        "run_id": 41516172127,
+        "name": "windows-update-publisher",
+        "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "status": "completed",
+        "conclusion": "success",
+        "decoded_utf8_bytes": 35168,
+        "sha256": "6f2809e479113406be82ef2f6cb086c1d8055eae6859079c39c6fbfae9f5cb3f",
+        "observed_counts": {
+          "native_authenticode": {
+            "tests": 11,
+            "pass": 11,
+            "fail": 0
+          }
+        },
+        "scope": "actual Windows Authenticode via CI-only ephemeral certificate and inert fixture; no formal publisher authorization, installer execution or package acceptance"
+      },
+      {
+        "job_id": 125520183684,
+        "run_id": 41516172127,
+        "name": "native-message-shipping-compile",
+        "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "status": "completed",
+        "conclusion": "success",
+        "decoded_utf8_bytes": 930704,
+        "sha256": "7ff82b7f05097deac87e429dca6be95b81e53cf31f30cd841ec0c9b2a8c02a21",
+        "observed_counts": {
+          "apphost_composition": {
+            "passed": 12,
+            "failed": 0,
+            "ignored": 0
+          },
+          "native_startup_retention": {
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0
+          },
+          "featurehost_messaging_boundary": {
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0
+          },
+          "social_recovery": {
+            "passed": 9,
+            "failed": 0,
+            "ignored": 0
+          },
+          "http_owner": {
+            "passed": 6,
+            "failed": 0,
+            "ignored": 0
+          },
+          "host_legacy_handoff": {
+            "passed": 6,
+            "failed": 0,
+            "ignored": 0
+          },
+          "c_abi": {
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0
+          },
+          "cli": {
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0
+          },
+          "gateway_executable": {
+            "passed": 5,
+            "failed": 0,
+            "ignored": 0
+          },
+          "gateway_library": {
+            "passed": 11,
+            "failed": 0,
+            "ignored": 0
+          },
+          "dns_special_config_normalization": {
+            "passed": 6,
+            "failed": 0,
+            "ignored": 0
+          },
+          "future_salts": {
+            "passed": 2,
+            "failed": 0,
+            "ignored": 0
+          },
+          "protocol": {
+            "passed": 122,
+            "failed": 0,
+            "ignored": 0
+          },
+          "tcp_transport": {
+            "passed": 9,
+            "failed": 0,
+            "ignored": 0
+          },
+          "proxy_boundary": {
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0
+          },
+          "native_credential_schema": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "actual_package_resource_copy": {
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0
+          }
+        }
+      }
+    ],
+    "shipping_terminal": {
+      "job_id": 125520183684,
+      "run_id": 41516172127,
+      "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+      "status": "completed",
+      "conclusion": "success",
+      "completed_at": "2026-11-02T20:25:12Z",
+      "decoded_utf8_bytes": 930704,
+      "sha256": "7ff82b7f05097deac87e429dca6be95b81e53cf31f30cd841ec0c9b2a8c02a21",
+      "observed_counts": {
+        "apphost_composition": {
+          "passed": 12,
+          "failed": 0,
+          "ignored": 0
+        },
+        "native_startup_retention": {
+          "passed": 7,
+          "failed": 0,
+          "ignored": 0
+        },
+        "featurehost_messaging_boundary": {
+          "passed": 7,
+          "failed": 0,
+          "ignored": 0
+        },
+        "social_recovery": {
+          "passed": 9,
+          "failed": 0,
+          "ignored": 0
+        },
+        "http_owner": {
+          "passed": 6,
+          "failed": 0,
+          "ignored": 0
+        },
+        "host_legacy_handoff": {
+          "passed": 6,
+          "failed": 0,
+          "ignored": 0
+        },
+        "c_abi": {
+          "passed": 7,
+          "failed": 0,
+          "ignored": 0
+        },
+        "cli": {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        "gateway_executable": {
+          "passed": 5,
+          "failed": 0,
+          "ignored": 0
+        },
+        "gateway_library": {
+          "passed": 11,
+          "failed": 0,
+          "ignored": 0
+        },
+        "dns_special_config_normalization": {
+          "passed": 6,
+          "failed": 0,
+          "ignored": 0
+        },
+        "future_salts": {
+          "passed": 2,
+          "failed": 0,
+          "ignored": 0
+        },
+        "protocol": {
+          "passed": 122,
+          "failed": 0,
+          "ignored": 0
+        },
+        "tcp_transport": {
+          "passed": 9,
+          "failed": 0,
+          "ignored": 0
+        },
+        "proxy_boundary": {
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0
+        },
+        "native_credential_schema": {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        },
+        "actual_package_resource_copy": {
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0
+        }
+      },
+      "proxy_preference_matrix": {
+        "orders": 16,
+        "removals": 48,
+        "repeated_no_ops": 48,
+        "complete_permutations": 6,
+        "complete_permutation_removals": 18
+      },
+      "actual_apphost": {
+        "build_command": "cargo build --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml",
+        "production_normal_build_dependency_absence_check": "passed",
+        "defined_symbol_legacy_entry_absence_check": "passed",
+        "linked_library_legacy_absence_check": "passed"
+      },
+      "actual_package_copy": {
+        "target_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "source_sha256": "4ccdc508d884a9bdd4b30f2db9c3ba04eb5c1ba5a24ae253b1f15944da98892d",
+        "destination_sha256": "4ccdc508d884a9bdd4b30f2db9c3ba04eb5c1ba5a24ae253b1f15944da98892d",
+        "size_bytes": 160158560,
+        "mode_decimal": 493,
+        "excluded_control_count": 11,
+        "cmp_passed": true,
+        "copied_binary_legacy_symbols_and_libraries_absent": true,
+        "packager": "app-builder-lib",
+        "packager_version": "26.15.3",
+        "copy_implementation_sha256": "fb3f2039238d502a84eb1a465c77e14115d79c64d0069a30dc6cd65409e28c10",
+        "negative_controls": [
+          {
+            "case": "missing binary input",
+            "expected_nonzero_verified": true,
+            "observed_message": "FABUSHI_PACKAGE_APP_HOST_BINARY is required"
+          },
+          {
+            "case": "invalid build hash",
+            "expected_nonzero_verified": true,
+            "observed_message": "bind the hash recorded by the actual AppHost build step"
+          },
+          {
+            "case": "valid 64-character mismatched hash",
+            "expected_nonzero_verified": true,
+            "observed_message": "copy only the same binary whose hash was captured after build",
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0
+          }
+        ],
+        "scope": "Actual AppHost resource copy only; complete signed application/package acceptance remains open."
+      },
+      "artifact": {
+        "id": 13177600410,
+        "node_id": "MDg6QXJ0aWZhY3QxMzE3NzYwMDQxMA==",
+        "name": "native-message-shipping-compile-ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "size_in_bytes": 81496724,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177600410",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177600410/zip",
+        "expired": false,
+        "digest": "sha256:b6fa80ac9d4828d06537d83bf1d1c8c13139f4e3b35d4477ff2fbd3eb0e21b1c",
+        "created_at": "2026-11-02T20:24:58Z",
+        "updated_at": "2026-11-02T20:24:58Z",
+        "expires_at": "2027-01-31T20:06:44Z",
+        "workflow_run": {
+          "id": 41516172127,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2"
+        }
+      }
+    },
+    "historical_evidence": {
+      "retrieved_at_utc": "2026-11-02T20:50:25Z",
+      "base_run": {
+        "id": 41513767498,
+        "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498"
+      },
+      "claim_assessment": [
+        {
+          "claim": "dual SQLite connection CAS",
+          "base_result": "PASS",
+          "target_source_relation": "CAS test function and all journal production code are byte-identical; agent_db.rs, native_messaging.rs, host Cargo.toml/Cargo.lock blobs and the reconciliation workflow block are identical.",
+          "reuse": "Retain the scoped successful evidence at exact94dc for this unchanged CAS behavior. Do not relabel it as execution of ff6 or current HEAD."
+        },
+        {
+          "claim": "mixed stale whole-batch regression",
+          "base_result": "Earlier simpler stale-snapshot case passed.",
+          "target_source_relation": "The same test name gained seven lines that combine completed b regression with c progress after94dc.",
+          "reuse": "The mixed regression branch has no containing-H execution proof in this historical run. The identical journal12 count does not qualify it."
+        },
+        {
+          "claim": "corrupt journal cold/cached restart",
+          "base_result": "Existing process-kill and invalid hex/JSON/nonobject corruption-repair scenario passed.",
+          "target_source_relation": "The same Human test gained59 lines: restored baseline, eight valid-JSON journal/source corruption fixtures, cold/cached variations, byte-preservation assertions, and requested source identity guard in production.rs.",
+          "reuse": "Retain original scenario evidence only. New matrix, cached owner identity check and revised cold identity behavior require containing-H execution. Human44 count remains44 despite stronger assertions."
+        },
+        {
+          "claim": "Human44 and journal12 whole suites on requested H",
+          "base_result": "44/12 passed at94dc.",
+          "target_source_relation": "Source/test/production blobs differ atff6 even though names/counts match.",
+          "reuse": "Do not transfer whole-suite acceptance toff6 or latest live checkpoint."
+        }
+      ],
+      "log": {
+        "job_id": 125511939428,
+        "decoded_utf8_bytes": 274778,
+        "sha256": "27678cd44349f70b84ae138d373a0a68f1f9f1ecc6601e52774b9f55130e9f66"
+      },
+      "artifact": {
+        "id": 13174787047,
+        "size_in_bytes": 29308,
+        "sha256": "afe4bce96fa0acfaddea9f4c634186a16ed4b02dc64b85747d2d2cbf2b67f5df"
+      },
+      "scope": "Exact94 historicalHuman44/journal12 passed; only unchanged original dual-SQLite CAS scope may be reused for ff6. Later mixed stale and cold/cached corrupt recovery assertions were not run at94; containing106 now covers them."
+    },
+    "limits": [
+      "Queued or cancelled original jobs do not gain an execution result from later containing runs.",
+      "Full decoded logs were retrieved; artifact metadata/digests were read back, not binary ZIP contents.",
+      "Loopback/native contract evidence does not qualify full signed application acceptance or production service access."
+    ]
+  },
+  "nmr49_prior_execution": {
+    "code_sha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+    "run_id": 41517084885,
+    "jobs": [
+      {
+        "id": 125523272327,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125523272512,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125523272587,
+        "name": "native-message-reconciliation",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125523272600,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125523272728,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125523274921,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "ui_complete_log_review": {
+      "job_id": 125523272327,
+      "transcript": 18,
+      "forward_settlement": 5,
+      "chromium": 16,
+      "production_renderer_build": "success",
+      "scope": "Actual UI job logs reviewed; no Rust recovery pass implied"
+    },
+    "source_review_run": 41517085015,
+    "source_review_conclusion": "success",
+    "human47_journal12_execution": "not-run at observation; both macOS native jobs queued"
+  },
+  "containing_reconciliation": {
+    "observed_at_utc": "2026-11-02T20:54:05Z",
+    "run": {
+      "id": 41523018920,
+      "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+      "status": "queued",
+      "conclusion": null,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523018920"
+    },
+    "job": {
+      "id": 125543545349,
+      "name": "native-message-reconciliation",
+      "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+      "status": "completed",
+      "conclusion": "success",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "started_at": "2026-11-02T20:51:30Z",
+      "completed_at": "2026-11-02T20:54:03Z"
+    },
+    "complete_log": {
+      "decoded_utf8_bytes": 353176,
+      "sha256": "c10ca945da98d697a489463898f1f20fe522982bf25a1a32fe6c9c76e2715435"
+    },
+    "observed_counts": {
+      "human": {
+        "passed": 62,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 15
+      },
+      "resource_upload": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0
+      },
+      "sharebox": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      "journal": {
+        "passed": 12,
+        "failed": 0,
+        "ignored": 0
+      },
+      "agent_nonce": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      },
+      "settlement_credentials": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0
+      },
+      "forward_http": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "named_case_proof": [
+      {
+        "line": 139,
+        "text": "2026-11-02T20:51:35.5590273Z test \"$(git rev-parse HEAD)\" = \"106bb95ba97ef7722e9523285783824393039bc0\""
+      },
+      {
+        "line": 1112,
+        "text": "2026-11-02T20:52:50.8602816Z test shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging ... ok"
+      },
+      {
+        "line": 1141,
+        "text": "2026-11-02T20:52:51.2864780Z test shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok"
+      },
+      {
+        "line": 1151,
+        "text": "2026-11-02T20:52:51.6287747Z test shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok"
+      },
+      {
+        "line": 1159,
+        "text": "2026-11-02T20:52:51.9930821Z test shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok"
+      },
+      {
+        "line": 1172,
+        "text": "2026-11-02T20:52:52.3483083Z test shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok"
+      },
+      {
+        "line": 1192,
+        "text": "2026-11-02T20:53:36.6388972Z test result: ok. 62 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 46.11s"
+      },
+      {
+        "line": 1624,
+        "text": "2026-11-02T20:53:55.6005693Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.10s"
+      },
+      {
+        "line": 1626,
+        "text": "2026-11-02T20:53:55.6101735Z test shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok"
+      },
+      {
+        "line": 1627,
+        "text": "2026-11-02T20:53:55.6111207Z test shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok"
+      },
+      {
+        "line": 1628,
+        "text": "2026-11-02T20:53:55.6120962Z test shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok"
+      },
+      {
+        "line": 1629,
+        "text": "2026-11-02T20:53:55.6130398Z test shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok"
+      },
+      {
+        "line": 2053,
+        "text": "2026-11-02T20:53:55.8097974Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 138 filtered out; finished in 0.02s"
+      },
+      {
+        "line": 2481,
+        "text": "2026-11-02T20:53:56.0088675Z test extensions::session::forward_batch_journal::tests::concurrent_forward_metadata_writers_have_one_durable_winner_and_recover ... ok"
+      },
+      {
+        "line": 2488,
+        "text": "2026-11-02T20:53:56.0446682Z test extensions::session::forward_batch_journal::tests::stale_same_batch_snapshot_cannot_regress_completed_destination ... ok"
+      },
+      {
+        "line": 2491,
+        "text": "2026-11-02T20:53:57.0036327Z test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 127 filtered out; finished in 1.01s"
+      },
+      {
+        "line": 2493,
+        "text": "2026-11-02T20:53:57.0151810Z test extensions::session::forward_batch_journal::tests::stale_same_batch_snapshot_cannot_regress_completed_destination ... ok"
+      },
+      {
+        "line": 2494,
+        "text": "2026-11-02T20:53:57.0161268Z test extensions::session::forward_batch_journal::tests::concurrent_forward_metadata_writers_have_one_durable_winner_and_recover ... ok"
+      },
+      {
+        "line": 2938,
+        "text": "2026-11-02T20:53:58.1597716Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      },
+      {
+        "line": 3365,
+        "text": "2026-11-02T20:53:58.3506497Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.00s"
+      },
+      {
+        "line": 3807,
+        "text": "2026-11-02T20:53:59.7486181Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.07s"
+      }
+    ],
+    "artifact": {
+      "id": 13178302134,
+      "node_id": "MDg6QXJ0aWZhY3QxMzE3ODMwMjEzNA==",
+      "name": "native-message-reconciliation-106bb95ba97ef7722e9523285783824393039bc0",
+      "size_in_bytes": 35255,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178302134",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178302134/zip",
+      "expired": false,
+      "digest": "sha256:02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6",
+      "created_at": "2026-11-02T20:54:00Z",
+      "updated_at": "2026-11-02T20:54:00Z",
+      "expires_at": "2027-01-31T20:51:27Z",
+      "workflow_run": {
+        "id": 41523018920,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+      }
+    },
+    "source_bindings": [
+      {
+        "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+        "at_requested_ff6_blob": "7590d6cba0bbe14bdc93a76946967d086193ba4a",
+        "at_containing_106_blob": "0eb499fd4e47a37b8791425b7319694cccc6cef5"
+      },
+      {
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "at_requested_ff6_blob": "60ff35800454b395a6b8e412b9471813d00353a7",
+        "at_containing_106_blob": "2e032c705fcec8256dd66476807dd1fd683625db"
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "at_requested_ff6_blob": "824ebd415774d65458f28acc7db43b74d0d9c684",
+        "at_containing_106_blob": "7b2fd1bd349d6e810fe4af76875af49982d007ef"
+      },
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "at_requested_ff6_blob": "597d505b1da9a074ea96bdfe6bb6d93906161213",
+        "at_containing_106_blob": "963e16e7fbade71fbe4869096b87b6e62abb3bee"
+      }
+    ],
+    "function_comparison": [
+      {
+        "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+        "name": "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
+        "baseline_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "containing_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+        "baseline_chars": 1990,
+        "containing_chars": 6309,
+        "identical": false
+      },
+      {
+        "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+        "name": "stale_same_batch_snapshot_cannot_regress_completed_destination",
+        "baseline_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "containing_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+        "baseline_chars": 2131,
+        "containing_chars": 4465,
+        "identical": false
+      },
+      {
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "name": "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+        "baseline_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "containing_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+        "baseline_chars": 6175,
+        "containing_chars": 6175,
+        "identical": true
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "name": "open_human_conversation_db_owner",
+        "baseline_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "containing_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+        "baseline_chars": 2100,
+        "containing_chars": 2100,
+        "identical": true
+      }
+    ],
+    "scope": [
+      {
+        "claim": "Expanded corrupt-journal cold/cached restart plus requested owner identity revalidation",
+        "result": "PASS at106",
+        "basis": "The complete corruption recovery test body is byte-identical toff6; open_human_conversation_db_owner is also byte-identical. The named test passed. It includes invalid hex/JSON/nonobject plus eight valid-JSON journal/source corruptions, cold/cached paths, raw-byte preservation and repaired replay."
+      },
+      {
+        "claim": "Mixed stale-snapshot regression",
+        "result": "PASS at106 with stronger oracle",
+        "basis": "The original b-completed/c-advanced mixed stale rejection remains. The same test additionally proves whole-row byte preservation, unrelated batch/metadata preservation, retryable pending failure, second completed-target protection, idempotent terminal replay and disk reopen."
+      },
+      {
+        "claim": "Dual independent SQLite connection CAS",
+        "result": "PASS at106 with stronger oracle",
+        "basis": "The same test now prepares two independent owners before Barrier(3), uses valid immutable batches, requires zero busy-error callbacks and exactly one true outcome, binds the winner index to committed contents through an independent read-only SQLite connection, rejects the stale loser without changing bytes, then recovers both intents via a fresh retry and reopened database."
+      },
+      {
+        "claim": "NMR-49 parent/child reply recovery",
+        "result": "PASS for the cases present at106",
+        "basis": "Named pending_reply_chain_recovers_after_restart_in_canonical_order, historical_reply_aliases_require_unique_local_canonical_parent, reply_identity_transaction_rolls_back_children_and_recovers_after_reopen and direct_reply_targets_reject_corrupt_identity_before_staging all have actual ok lines."
+      }
+    ],
+    "remaining": {
+      "requested_ff6_reconciliation": "Its last observed job remains queued; do not rewrite its historical execution status based on this later run.",
+      "containing_shipping": {
+        "id": 125543545357,
+        "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0
+      },
+      "root_pending_change": "This evidence does not cover the additional strict reply-ID call-site changes or 28-case matrix currently being prepared after106.",
+      "final_acceptance": "Linux loopback/process/SQLite evidence only. Supported-platform shipping, signed packages, real service, full migration and independent ACCEPT remain separate gates."
+    }
+  },
+  "source_review": {
+    "lock_sha": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+    "upstream_tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "root_identities": 6895,
+    "recursive_identities": 16381,
+    "source_review_records": 6,
+    "complete_reviews": 2,
+    "pending_reviews": 4,
+    "unknown": null,
+    "unread": null,
+    "accepted": false,
+    "baseline_ready": false,
+    "contract": "FMEP-SOURCE-01 is implemented by parity-ledger.schema.json, tdrp-source-review.mjs and validate-tdrp-revision9-authority.mjs; no concrete conflict found in scope. Git-only cppgir tree acquisition is already evidenced; external/build/generated/LFS/legal and semantic/product closure remain open."
+  },
+  "implementation": {
+    "classification": "IMPL_BUG — source-observed numeric admission gap. Native send currently trims reply IDs without enforcing numeric canonical form, so generic target parsing can admit malformed IDs before staging and HTTP. Pre-fix runtime reproduction not claimed.",
+    "requirement_ids": [
+      "NMR-49c",
+      "NMR-AC-40",
+      "existing NMR-22 canonical message-ID contract"
+    ],
+    "frozen_scope_base": "558487b2faa4260453f81567b0f46591a77f7b4e",
+    "change": "Replace only the two remote reply target parsing uses of fabushi_identity_text with already imported fabushi_message_identity_text; retain reply context on strict parse errors. Preserve all concurrently landed author/kind/canonical/delivery guards.",
+    "existing_parser": {
+      "path": "source/host/src/extensions/session/native_messaging.rs",
+      "blob": "2c86ddf9c9432334e862a062d72a2de8903368dc",
+      "symbol": "fabushi_message_identity_text",
+      "domain": "canonical decimal positive integer <= 9007199254740991; JSON integer or canonical string"
+    },
+    "scoped_original_blobs": [
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "sha": "7b2fd1bd349d6e810fe4af76875af49982d007ef"
+      },
+      {
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "sha": "b84f6a3eec2994a8be84006823366a7f29f082d7"
+      }
+    ],
+    "integration_original_blobs": [
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "sha": "7b2fd1bd349d6e810fe4af76875af49982d007ef"
+      },
+      {
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "sha": "2e032c705fcec8256dd66476807dd1fd683625db"
+      }
+    ],
+    "production_path": "Composer/Reply -> Session gateway sendHumanMessage -> ProductionSessionWorkers::append_human_message_with_context -> normalize_human_reply_identity -> existing SandAgentDb/native HTTP -> transcript mutations -> production renderer projection",
+    "test_changes": {
+      "historical_existing_scenarios": 11,
+      "added_negative_id_categories": [
+        "leading-zero string",
+        "padded string",
+        "plus-signed string",
+        "fractional JSON number",
+        "zero JSON number",
+        "negative JSON number",
+        "above-MAX_SAFE JSON number"
+      ],
+      "paths_per_negative_category": [
+        "direct",
+        "historical"
+      ],
+      "added_negative_scenarios": 14,
+      "added_positive_scenarios": [
+        "canonical integer direct parent",
+        "MAX_SAFE canonical string historical alias followed by integer/direct idempotent replay",
+        "direct canonical peer parent"
+      ],
+      "historical_total_scenarios": 28,
+      "direct_existing_scenarios": 17,
+      "direct_oracle_correction": "Use a valid notice record with text for canonical/local non-message parents; assert full fixture remains readable before gateway admission.",
+      "new_test_functions": 0
+    },
+    "oracle": {
+      "physical": "Every complete fixture row must persist in its original physical slot; denied ingress, automatic pending replay and reopen preserve identical rows.",
+      "chronological": "Retain all existing literal chronology assertions. New equal-1234ms numeric fixtures explicitly order 895001 before peer895101; leading-zero raw text still has numeric895001 read order, although reply admission rejects it. Padded/signed/fractional/nonpositive/unsafe raw IDs use fallback physical order after peer895101; valid MAX_SAFE also follows that peer. Server child settles at an October2026 timestamp and therefore follows both fixture parents. No production comparator is used to compute expected order.",
+      "network": "Invalid numeric parent paths allow only the independently requested GET history; zero message/resource POSTs. Valid paths allow exactly one message POST and idempotent retry, then history GET.",
+      "restart": "All variants close/reopen before admission and after sync; durable physical payload and complete canonical order remain checked."
+    },
+    "concurrent_changes_preserved": [
+      "63c59566aae7fa9b424a364df1429176c792d249 direct canonical Human kind/author/delivery guards",
+      "106bb95ba97ef7722e9523285783824393039bc0 moved-runtime fixture correction",
+      "Existing Ubuntu24.04 reconciliation job and all gates",
+      "NMR22/24/26/50/51 identity/pagination/reaction work and later current live changes"
+    ],
+    "public_schema_or_owner_changes": false,
+    "user_data_deleted": false,
+    "local_validation_executed": false,
+    "exact_containing_H_result": "pending; prior106bb success does not execute this strict-ID patch",
+    "independent_source_review": {
+      "status": "PASS",
+      "review_kind": "independent source-only correctness and fixture review",
+      "validation_status": "not-run",
+      "accepted": false,
+      "scope": {
+        "repository": "bhrumom/fabushi-desktop",
+        "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "declared_base": "558487b2faa4260453f81567b0f46591a77f7b4e",
+        "adjacent_source_revision_independently_read": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "patch": "/workspace/scratch/2a678141916b/nmr49-fix-live/nmr49-numeric-reply.patch",
+        "patch_sha256": "cb18dae6e83b1b4ac9ba5b246cd4910934c80945d175a701bb0be7940b0bd3c0",
+        "production_file": "source/host/src/extensions/session/production.rs",
+        "production_blob": "7b2fd1bd349d6e810fe4af76875af49982d007ef",
+        "production_scope": "normalize_human_reply_identity",
+        "test_file": "source/host/tests/session_gateway_contract.rs",
+        "declared_base_test_blob": "b84f6a3eec2994a8be84006823366a7f29f082d7",
+        "latest_independently_read_test_blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+        "test_scopes": [
+          "shipping_human_historical_reply_aliases_require_unique_local_canonical_parent",
+          "shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging"
+        ],
+        "latest_scoped_source_disposition": "The production blob is unchanged, and both scoped original test functions were independently read at revision 9329aced33343e8e356ba34dfd0f474f3e767914 and agree with the handed-off original scope. The complete newer test file must be retained when integrating the scoped replacement.",
+        "artifact_sha256": {
+          "production.original.rs": "98ef9e12c55772ec293bc5c4384db8a868e778adf747d7f088e4244f1281ea5c",
+          "production.updated.rs": "331433a5d96f29737af87127974a74159dde7fa28d33f84fa816738f459b6dc1",
+          "test.original.rs": "ea76cd68ca36232e6df017297e1aa23d200ff16a5d2d86f22677e0365c22741d",
+          "test.updated.rs": "05d80debad7b88d3a362dc7dc69a008ff4a80cf859016fa1e27873b56062b4f7",
+          "metadata.json": "25354c2ffc0174618c875f4fe0aacdd075df332ac3b990e192571795c26057e2"
+        }
+      },
+      "findings": [],
+      "source_conclusions": [
+        {
+          "claim": "Both changed normalization calls enforce the intended existing numeric message-ID domain.",
+          "evidence": "native_messaging.rs:1422-1433 parses strings as u64 only when decimal round-trip equals the original raw string, uses Number::as_u64 for JSON integers, and requires 1..=9007199254740991. Leading zeros, padding, plus signs, fractional JSON numbers, zero, negative numbers and above-MAX_SAFE values are rejected. Canonical integer/string values normalize identically.",
+          "disposition": "PASS by source review"
+        },
+        {
+          "claim": "The production fix acts before durable child mutation, resource access and message HTTP.",
+          "evidence": "production.rs:3390-3395 normalizes the requested reply immediately after the read-only transcript snapshot, before attachment normalization, existing-child handling or shipping client dispatch. Existing-child persisted replies also use the same helper at 3439-3441. Staging and dispatch begin at 3487 onward. A normalization error therefore cannot enter the later pending-error mutation path.",
+          "disposition": "PASS by source review"
+        },
+        {
+          "claim": "Automatic pending replay uses the same fail-closed admission without preventing independent history progress.",
+          "evidence": "sync_human_conversation rereads each durable pending child at 2530-2537, preserves batch-owned exclusions, and calls append_human_message_with_context at 2548-2551 under the conversation guard. A rejected reply returns before mutation; sync then performs the independently requested history GET. The empty history fixture starts at afterId 0, so the latest-snapshot extra GET condition is false.",
+          "disposition": "PASS by source review"
+        },
+        {
+          "claim": "Existing direct/local/historical author, kind, nonce, canonical identity and delivery guards remain intact.",
+          "evidence": "The production patch changes only the two generic parser calls and adds reply context to the historical parse error. It does not modify the direct local-parent path, ambiguity filter, author/kind checks, sent-state condition or canonical ID equality. The existing already imported pub(super) helper is reused; no new owner, schema, transport or dependency is introduced.",
+          "disposition": "PASS by source review"
+        },
+        {
+          "claim": "All added numeric fixtures and corrected notice fixtures survive decoding in full.",
+          "evidence": "agent_db_serde.rs:135-166 accepts message rows with string content and notice rows with string text and returns the original Value intact. An event without event.type would be filtered. Every new numeric row retains valid message content; the two non-message fixtures now supply notice text. The added exact vector equality before admission prevents a disappearing fixture from satisfying the test accidentally.",
+          "disposition": "PASS by source review"
+        },
+        {
+          "claim": "The literal chronology vectors match the unchanged read contract while remaining independent of the implementation at test runtime.",
+          "evidence": "All fixture rows begin at timestamp 1234. The unchanged SQL allows digit-only leading-zero text to sort numerically as 895001, before peer 895101. Padded, signed, fractional, nonpositive and unsafe IDs use fallback 9007199254740992; their parent and pending child keep physical seq order after the peer. Valid MAX_SAFE sorts after the peer and before a pending fallback. The child HTTP settlement timestamp is October 2026, so it follows both parents. The tests use literal vector indices/labels and do not call the production comparator to compute an oracle.",
+          "disposition": "PASS by source review"
+        },
+        {
+          "claim": "The fixture HTTP scripts and termination match the intended synchronous paths.",
+          "evidence": "Invalid numeric cases script one history response; any earlier send/resource request consumes that response and causes the strict-error assertion or required sync GET to fail. Valid cases script one message response followed by one history response, assert one POST and its canonical string replyToMessageId/clientRequestId, and retry the same settled child before sync. spawn_human_message_fixture uses a 15-second accept/read/write deadline per scripted response and closes the listener after the finite script, so join does not wait for an unbounded accept. No deferred response is used here. These are authored assertions and source reasoning, not observed runtime counts.",
+          "disposition": "PASS by source review"
+        },
+        {
+          "claim": "Physical payload and reopen expectations are compatible with the existing persistence implementation.",
+          "evidence": "append_transcript_entries inserts fixtures in peer/parent/child order; get_transcript_entries uses ORDER BY seq. Identity settlement updates the existing child row in place, preserving its sequence, and returns the settled payload used for the expected child. The MAX_SAFE integer-equivalence step intentionally changes only the parent remoteMessageId representation with update_transcript_entry, whose expected result and complete later row set are asserted. Invalid cases compare all original rows after ingress, sync and reopen.",
+          "disposition": "PASS by source review"
+        },
+        {
+          "claim": "No apparent Rust type, visibility, move or borrow defect is present in the patch.",
+          "evidence": "The reused parser is already imported and has the same &Value -> Result<String,String> function shape required by map/transpose. Numeric fixtures form a homogeneous Vec<(&str,&str,Value,&str)>; u64 boundary literals are explicit. requested_reply borrows stable local Strings; json! and assert_eq! borrow their ordinary expression arguments, preserving later uses. Branches definitely assign expected_physical and expected_canonical with compatible Vec<Value> values. usize::from(valid), format captures and the test helper argument coercions are compatible with the declared Rust edition. No compilation was performed.",
+          "disposition": "PASS by source review"
+        }
+      ]
+    }
+  },
+  "failure_classification": [
+    {
+      "target": "06fb24c run41512635210/job125508112546",
+      "kind": "ENVIRONMENT_EXECUTION_UNAVAILABLE",
+      "evidence": "Cancelled with runner_id0/no steps/log404; exact scheduler cause unknown; neither code nor assertions executed"
+    },
+    {
+      "target": "ff6d49 run41516172127/job125520184194",
+      "kind": "QUEUED_NOT_RUN",
+      "evidence": "No execution result at last observation; later containing result is recorded separately"
+    },
+    {
+      "target": "afb34b49c5964524a887088f1095070b75cfdf8b run41522324008/job125541192099",
+      "kind": "TEST_FLAW",
+      "evidence": "Ubuntu dependencies and Host compiled; E0382 test fixture calls runtime.shutdown after drop(runtime), before Human tests can execute",
+      "resolution": "Concurrent106bb95 corrected to restarted.shutdown; source retained and containing Human62 actually passed"
+    },
+    {
+      "target": "Current NMR49 normalize_human_reply_identity",
+      "kind": "IMPL_BUG",
+      "evidence": "Source-observed generic parser allows noncanonical numeric remote IDs in both parent paths; native HTTP only trims reply IDs. No pre-fix runtime reproduction claimed",
+      "resolution": "Use existing strict message parser in the two call sites"
+    },
+    {
+      "target": "Direct-target non-message fixture",
+      "kind": "TEST_ORACLE_FLAW",
+      "evidence": "event without event.type is filtered by actual transcript deserializer, bypassing the intended kind guard",
+      "resolution": "Use persisted notice plus text and assert complete fixture row is readable before admission"
+    }
+  ],
+  "environment_recovery": {
+    "classification": "Runner admission/execution unavailable; original cancelled with runner_id=0/steps=[]; specific scheduling cause unknown",
+    "selected_instrument": "Preserve concurrently landed Ubuntu24.04 reconciliation; this round does not reimplement runner migration",
+    "independent_assessment": "No macOS-only API/cfg in selected tests. Unix SIGKILL/mode/symlink/O_NOFOLLOW/hardlink/fsync/CAS assertions remain active on Linux.",
+    "supporting_history": {
+      "sha": "7b20f96088ab1aa103e6a3e914a692f99974263b",
+      "run_id": 40508502362,
+      "job_id": 122203916271,
+      "conclusion": "success",
+      "full_log_characters": 139282,
+      "scope": "Historical native-auth Host Ubuntu compile and nine contract groups, not current-H evidence"
+    },
+    "unchanged": [
+      "Rust1.97.1",
+      "--locked",
+      "Selected test commands and all counts/named assertions",
+      "Exact checkout binding",
+      "Evidence artifacts",
+      "macos-15 shipping job",
+      "All final supported-platform gates"
+    ],
+    "new_result_status": "Containing106bb reconciliation actually passed, qualified separately",
+    "new_batch_status": "pending"
+  },
+  "ledger_transport": {
+    "reason": "Large connector payload was interrupted; no ref or ledger mutation resulted from that request. Reviewed Actions helper creates only one scoped Git blob, never a ref.",
+    "first_helper_commit": "558487b2faa4260453f81567b0f46591a77f7b4e",
+    "first_helper_run": 41522822982,
+    "first_helper_receipt": {
+      "bytes": 3597153,
+      "head_sha": "558487b2faa4260453f81567b0f46591a77f7b4e",
+      "input_blob": "f716580b22c6b6791b2e535e2b286df4f9257444",
+      "output_blob": "1c34512a4377549448f1ea75d14abbd9857fe331",
+      "output_sha256": "d4d8a9c5f21d68686cf181e57b0e11c206c085699805879468c9a93ed21b7a6b",
+      "path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "product_acceptance": false,
+      "ref_updated": false,
+      "round": 31,
+      "scope": "FBCP-NMR-001 notes and test_evidence append only",
+      "task_id": "20bf9475-a885-4314-b509-bea53ef8849f"
+    },
+    "first_blob_disposition": "not integrated: live ledger changed; never overwrite concurrent data with the old output",
+    "current_transport": "Rebase input and append-only note on final current ledger, then integrate its verified blob with force=false expected_sha and remove helper"
+  },
+  "backend_read_only": {
+    "repository": "bhrumom/fabushi-backend",
+    "pr": 137,
+    "status": "open",
+    "draft": true,
+    "merged": false,
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "base": "687718ce9e0083aa124d29005bcce4051d357919",
+    "reviews": [],
+    "contract_runs": [
+      41510861859,
+      41510852280
+    ],
+    "contract_conclusion": "success",
+    "production_readiness": "skipped",
+    "modified": false,
+    "merged_by_this_task": false,
+    "deployed_by_this_task": false
+  },
+  "verification": {
+    "permitted_environment": "GitHub Actions only",
+    "local_product_validation_executed": false,
+    "required": "Exact containing-H Human62/resource3/sharebox1/journal12/Agent4/credential3/forwardHTTP1 and affected shipping with current inherited gates; UI/Electron/Windows results qualify only their actual inputs",
+    "pending": "New strict-ID production/test patch exact-H execution"
+  },
+  "remaining_blockers": [
+    "This new batch exact-H execution and affected shipping",
+    "Complete applicable source/dependency/generated/resource/tool/legal disposition and semantic review",
+    "Authorized real Worker/authenticated multipage/empty/denied history and restart evidence",
+    "Remote forward provenance and actual service authorization",
+    "Supported signed installers, real publisher authority, install/update/rollback",
+    "Full Bot/UI/visual/a11y/temporal/security/performance/soak/upgrade/rollback evidence",
+    "Independent ACCEPT and formal release"
+  ],
+  "acceptance": {
+    "accepted": false,
+    "complete": false,
+    "release_authorized": false
+  },
+  "requirements_review": [
+    {
+      "requirement": "Current AGENTS, FBCP/TDRP SOT, both main specs, FMEP batch verification/FMEP-SOURCE-01",
+      "state": "read; core identities rechecked at live tree; no schema/validator conflict found; further whole-migration review remains open"
+    },
+    {
+      "requirement": "Live main/checkpoint/branches/uncommitted state; existing migration line, source lock/inventory/ledger/RTM",
+      "state": "main5528062177e3865eef60a073a066cca144f9e3e8; no preexisting local working tree; parallel branch advances preserved through fresh-head CAS; fixed U unchanged"
+    },
+    {
+      "requirement": "Complete source disposition without false deep-read claims",
+      "state": "root6895/recursive16381 registered identities; six review records2complete4pending; unknown/unread null; not accepted; full semantic/legal closure incomplete"
+    },
+    {
+      "requirement": "One logical authority and real production wiring",
+      "state": "same Session gateway/ProductionSessionWorkers/SandAgentDb/native HTTP/Transcript projection; two strict parser calls precede staging and resource/message dispatch; no parallel domain owner"
+    },
+    {
+      "requirement": "Batch lifecycle incl permissions/storage/events/UI/failure/restart",
+      "state": "reuse existing NMR49 send/replay/settlement/projection; added real SQLite/HTTP sync/reopen matrix; execution pending for new patch"
+    },
+    {
+      "requirement": "Preserve Agent/Coordinator/Host/Runner/Tools/approvals/tasks/artifacts/plugins/MCP/Computer/Automations and user data",
+      "state": "no owner/schema/protected capability/data deletion; retain live concurrent changes and shipping regressions; full Bot acceptance remains open"
+    },
+    {
+      "requirement": "Isolated delegated scopes / public contracts centrally integrated",
+      "state": "scoped normalizer and two existing test functions; independent source review; root integrates spec/RTM/status/ledger evidence on latest H"
+    },
+    {
+      "requirement": "Frozen batch, GitHub Actions-only validation; reuse only same-input valid results",
+      "state": "no local builds/tests/linters/schema checks; ff6 shipping, historical94 narrow CAS and containing106 recovery distinguished; new patch needs own H"
+    },
+    {
+      "requirement": "Classify implementation vs oracle vs environment; no rerun-to-green",
+      "state": "unassigned cancellation, E0382 test fixture, generic parser implementation and discarded fixture oracle recorded separately; no blind rerun"
+    },
+    {
+      "requirement": "Unique inventory/ledger/RTM, distinguish source/implementation/wiring/tests/execution/independent acceptance",
+      "state": "narrow existing FBCP-NMR-001 note/evidence append only; source counts/reviews/historical execution fields and acceptance not promoted"
+    },
+    {
+      "requirement": "Backend PR137 read-only",
+      "state": "open Draft unmerged52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23; exact contract CI pass, production-readiness skipped; no backend mutation/deploy"
+    },
+    {
+      "requirement": "force=false expected_sha CAS; remote commit/file/full-SHA readback",
+      "state": "scoped helper558487 verified; production publication and readback pending"
+    },
+    {
+      "requirement": "Final shipping H/artifacts, real service/platform/quality/Bot/upgrade/rollback and independent ACCEPT",
+      "state": "incomplete; status must remain next; no formal release"
+    }
+  ]
+}

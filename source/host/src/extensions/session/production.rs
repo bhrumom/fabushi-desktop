@@ -3286,7 +3286,7 @@ impl ProductionSessionWorkers {
                 return Ok(Some(reply_id.to_string()));
             }
             let remote_id = target.get("remoteMessageId")
-                .map(fabushi_identity_text).transpose()
+                .map(fabushi_message_identity_text).transpose()
                 .map_err(|error| format!("sendHumanMessage reply remote identity is invalid: {error}"))?
                 .ok_or_else(|| "sendHumanMessage reply has no canonical remote identity".to_string())?;
             if reply_id != format!("human-server-message:{remote_id}")
@@ -3315,7 +3315,8 @@ impl ProductionSessionWorkers {
         if candidates.next().is_some() {
             return Err("sendHumanMessage local reply nonce has ambiguous canonical identities".into());
         }
-        let remote_id = target.get("remoteMessageId").map(fabushi_identity_text).transpose()?
+        let remote_id = target.get("remoteMessageId").map(fabushi_message_identity_text).transpose()
+            .map_err(|error| format!("sendHumanMessage local reply remote identity is invalid: {error}"))?
             .ok_or_else(|| "sendHumanMessage local reply has no canonical remote identity".to_string())?;
         let canonical_id = format!("human-server-message:{remote_id}");
         if target.get("id").and_then(serde_json::Value::as_str) != Some(canonical_id.as_str())

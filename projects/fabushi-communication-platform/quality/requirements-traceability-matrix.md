@@ -43,6 +43,28 @@ Exact source/oracle/old-failure/execution boundary: `projects/telegram-desktop-r
 | Existing reply/resource behavior | NMR-49 current-row reply recovery and NMR-48 pinned-byte preflight retained; arbitrary ordinary reply metadata is not a forwarding identity | Retain all existing Human/Agent/credential/resource/journal gates; add exactly one selected Human case |
 | Evidence/acceptance | Original2a failed;59 message jobs passed;936 UI18/5/16 and source157/schema37 passed while two Native jobs queued | Source counters/reviews/ACCEPT unchanged; temporary ledger transport is not product validation |
 
+## Round31 — canonical reply remote identity and exact execution
+
+NMR-49c / NMR-AC-40: retain the concurrent direct-parent admission guard and
+use the existing strict message-ID parser for both direct and historical reply
+parents. Extend the existing historical-alias test with direct/alias numeric
+negatives and canonical positive controls; retain physical-storage and explicit
+chronological-order oracles. Correct non-message fixtures to valid persisted
+notice entries so the kind guard is exercised. No new owner or test function.
+Containing-H Actions execution remains required; authored scenarios are not pass
+results. Receipt: `projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+
+Original06 reconciliation was cancelled without a runner. Exactff6 shipping is
+successful with complete logs; its reconciliation is still unexecuted at the
+last observation. Exact94 CAS evidence is reusable only for unchanged scope;
+its unchanged44/12 totals do not execute later mixed-stale/corruption assertions.
+The Ubuntu exactafb fixture E0382 is TEST_FLAW, already corrected in concurrent
+106bb. Its run41523018920 reconciliation125543545349 actually passes Human62,
+resource3, sharebox1, journal12, Agent4, credential3 and forwardHTTP1, including
+the requested CAS, mixed-stale, corruption and NMR-49 recovery cases. Preserve
+that correction and all current gates. Backend PR137, full source,
+real services, platform packages and independent ACCEPT remain unaccepted.
+
 ## NMR-49 / NMR-AC-40 — pending-parent reply recovery
 
 Fixed U unchanged; integration base `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`.
