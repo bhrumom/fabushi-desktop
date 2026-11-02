@@ -1,0 +1,65 @@
+name: Round5 frozen ledger object transfer
+on:
+  push:
+    branches: [codex/tdrp-round5-object-transfer-dfbcda802f2a]
+permissions:
+  contents: read
+jobs:
+  frozen-ledger-object:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/codex/tdrp-round5-object-transfer-dfbcda802f2a'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Apply only the reviewed exact-base ledger delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object projects/telegram-desktop-rust/parity-ledger.json)" = a35e51575a9786c1e89694c170f7eb1e6c5f2467
+          git apply --check .github/round5-ledger-transfer.patch
+          git apply .github/round5-ledger-transfer.patch
+          test "$(git diff --name-only)" = projects/telegram-desktop-rust/parity-ledger.json
+          test "$(git hash-object projects/telegram-desktop-rust/parity-ledger.json)" = b8877c68a007b369c66104d62ee72a3b8eba5bcd
+      - name: Upload the exact frozen blob without moving any migration ref
+        id: upload
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os, urllib.request
+          data = Path('projects/telegram-desktop-rust/parity-ledger.json').read_bytes()
+          expected = 'b8877c68a007b369c66104d62ee72a3b8eba5bcd'
+          actual = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          if actual != expected or len(data) != 3539330:
+              raise SystemExit('frozen ledger identity mismatch')
+          body = json.dumps({'content': data.decode('utf-8'), 'encoding': 'utf-8'}).encode()
+          request = urllib.request.Request(
+              'https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs', data=body,
+              headers={'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN'],
+                       'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'},
+              method='POST')
+          with urllib.request.urlopen(request, timeout=60) as response:
+              result = json.load(response)
+          if result.get('sha') != expected:
+              raise SystemExit('GitHub returned a different blob identity')
+          receipt = {'repository': 'bhrumom/fabushi-desktop', 'blob': expected,
+                     'bytes': len(data), 'source_commit': os.environ['GITHUB_SHA'],
+                     'run_id': os.environ['GITHUB_RUN_ID'], 'migration_ref_modified': False}
+          Path('frozen-ledger-object.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('blob_sha=' + expected + '\n')
+          print(json.dumps(receipt))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: round5-frozen-ledger-object-${{ github.sha }}
+          path: frozen-ledger-object.json
+          if-no-files-found: error
