@@ -2754,13 +2754,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setWorkspaceRoute(null);
     setCommandPaletteOpen(false);
     if (hasLoadedEntries) {
-      // Reopening a cached conversation must restore its next page as well as
-      // its rows. Scope changes deliberately discard only the active request.
-      transcriptPaginationController.installInitialPage({
-        entries: [],
-        nextBeforeSeq: cachedCursor?.nextBeforeSeq,
-        nextBeforeCursor: cachedCursor?.nextBeforeCursor,
-      });
+      // A changed scope needs its cached cursor restored; reselecting the
+      // current scope must preserve its in-flight page and failure overlays.
+      if (transcriptPaginationController.getSnapshot().cursor.kind === "unprobed") {
+        transcriptPaginationController.installInitialPage({
+          entries: [],
+          nextBeforeSeq: cachedCursor?.nextBeforeSeq,
+          nextBeforeCursor: cachedCursor?.nextBeforeCursor,
+        });
+      }
       selectionStore.settle(agentId);
     }
     if (hasLoadedEntries || client == null) {
@@ -4267,7 +4269,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
                 entries={entries}
-                hasOlder={transcriptPaginationSnapshot.hasOlder}
+                hasOlder={transcriptPaginationSnapshot.cursor.kind === "more"}
                 isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
                 olderLoadFailed={transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot && transcriptPaginationSnapshot.olderFailure != null}
                 onViewportChanged={bindTranscriptViewport}

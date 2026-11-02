@@ -26,11 +26,28 @@ test.afterAll(async () => { await server?.close(); });
 const messageRow = (page: Page, id: string) => page.getByRole('log', { name: 'Conversation transcript' }).locator(`[data-entry-id="${id}"]`);
 const domIds = (page: Page) => page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id]').evaluateAll((entries) => entries.map((entry) => entry.getAttribute('data-entry-id')));
 
+async function scrollToOlderHistory(page: Page) {
+  // Cursor readiness must start the automatic page request before scrolling.
+  // The mounted viewport's scroll listener must keep that request single-flight.
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
+  await page.evaluate(async () => {
+    for (let frame = 0; frame < 8; frame += 1) await new Promise(requestAnimationFrame);
+  });
+  await page.getByRole('log', { name: 'Conversation transcript' }).evaluate((viewport) => {
+    viewport.scrollTop = 0;
+    viewport.dispatchEvent(new Event('scroll'));
+  });
+}
+
 async function openAlice(page: Page, theme = 'dark') {
   await page.goto(`${origin}/native-message-projection.html?theme=${theme}`);
   await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
+  // The roster opens Alice automatically. Reselecting it must retain this page.
+  await expect(messageRow(page, 'm3')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
   await page.getByRole('button', { name: 'Alice', exact: true }).click();
   await expect(messageRow(page, 'm3')).toBeVisible();
+  await scrollToOlderHistory(page);
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
 }
 
@@ -104,6 +121,7 @@ for (const theme of ['light', 'dark']) {
     await milestone(page, info, `returned-history-${theme}`);
     await page.reload();
     await expect(messageRow(page, 'm3')).toBeVisible();
+    await scrollToOlderHistory(page);
     await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
     await loadOlder(page);
     await expect(messageRow(page, 'm1')).toContainText('Updated while Alice is inactive');
@@ -132,6 +150,7 @@ test('NMR-26 an initial tail cannot overwrite an identity remap and later empty-
   await expect(messageRow(page, 'm4').locator('.sand-message')).not.toContainText('Tail fourth message');
   await expect(messageRow(page, 'm4')).toContainText('Partial update after clearing resources');
   await expect(messageRow(page, 'm4')).not.toContainText('tail-note.txt');
+  await scrollToOlderHistory(page);
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
   await loadOlder(page, ['m1', 'm2', 'm3-canonical', 'm4', 'm5']);
   await milestone(page, info, 'empty-row-after-late-initial');

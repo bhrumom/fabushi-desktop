@@ -1,4 +1,6 @@
 name: TDRP source review contract
+# Bind candidate consistency to each containing migration repair commit.
+# Earlier reports keep their original H after a repair; acceptance stays closed.
 on:
   push:
     branches: [codex/tdrp-risk-based-source-review-20261102, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-round17-auth-settings-20bf9475]

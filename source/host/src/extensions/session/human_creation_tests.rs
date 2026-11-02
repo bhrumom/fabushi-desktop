@@ -714,7 +714,7 @@ fn directory_file_bytes(path: &Path) -> Vec<(String, Vec<u8>)> {
 
 #[test]
 fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings() {
-    for corruption in ["notadb", "schema", "data-page-delete-mode"] {
+    for corruption in ["notadb", "short-header", "truncated-header", "notadb-full-header", "schema", "data-page-delete-mode"] {
         let root = test_root("corrupt-store-refusal");
         let mut workers = test_workers(&root);
         let (locked, observed) = mpsc::channel();
@@ -733,7 +733,7 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         let path = get_native_conversation_db_path(&root, &id).unwrap();
         let directory = path.parent().unwrap();
         fs::create_dir_all(directory).unwrap();
-        if corruption != "notadb" {
+        if matches!(corruption, "schema" | "data-page-delete-mode") {
             let previous = SandAgentDb::open_conversation_store(&path, 25).unwrap();
             seed_entries(&previous);
             previous.close(true);
@@ -744,14 +744,16 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
                 let db = Connection::open(&path).unwrap();
                 let mode: String = db.query_row("PRAGMA journal_mode=DELETE", [], |row| row.get(0)).unwrap();
                 assert_eq!(mode, "delete");
-                let page_size: usize = db.query_row("PRAGMA page_size", [], |row| row.get(0)).unwrap();
-                let root_page: usize = db.query_row(
+                let page_size: i64 = db.query_row("PRAGMA page_size", [], |row| row.get(0)).unwrap();
+                let root_page: i64 = db.query_row(
                     "SELECT rootpage FROM sqlite_schema WHERE name='transcript_entries'",
                     [], |row| row.get(0),
                 ).unwrap();
+                assert!(page_size > 0);
                 assert!(root_page > 1);
                 drop(db);
-                (root_page - 1) * page_size
+                usize::try_from(root_page - 1).unwrap()
+                    .checked_mul(usize::try_from(page_size).unwrap()).unwrap()
             } else { 100 };
             let mut bytes = fs::read(&path).unwrap();
             assert!(bytes.len() > damage_offset);
@@ -759,7 +761,18 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
             bytes[damage_offset] = 0; // Invalid B-tree type, with a valid SQLite header.
             fs::write(&path, bytes).unwrap();
         } else {
-            fs::write(&path, b"retained NOTADB bytes; never quarantine or replace").unwrap();
+            let retained_bytes: &[u8] = if corruption == "short-header" {
+                b"SQLite"
+            } else if corruption == "truncated-header" {
+                // Valid magic must not admit an incomplete main-file header.
+                b"SQLite format 3\0retained truncated database header"
+            } else if corruption == "notadb-full-header" {
+                // Full length alone must not admit a non-SQLite main file.
+                &[b'X'; 100]
+            } else {
+                b"retained NOTADB bytes; never quarantine or replace"
+            };
+            fs::write(&path, retained_bytes).unwrap();
             for suffix in ["-wal", "-shm", "-journal"] {
                 fs::write(PathBuf::from(format!("{}{suffix}", path.display())),
                     format!("retained original {suffix} bytes")).unwrap();
