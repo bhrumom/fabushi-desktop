@@ -1,0 +1,157 @@
+name: Round7 reviewed object transfer
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - .github/workflows/round7-reviewed-objects.yml
+      - .github/round7-reviewed.patch
+      - .github/round7-object-transfer.json
+permissions:
+  contents: read
+jobs:
+  store-reviewed-objects:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Materialize reviewed blobs without creating commits or moving refs
+        env:
+          TRANSFER_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import copy, hashlib, json, os, pathlib, re, subprocess, urllib.request
+
+          repository = 'bhrumom/fabushi-desktop'
+          branch = 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+          ledger_path = 'projects/telegram-desktop-rust/parity-ledger.json'
+          allowed_paths = {
+              '.github/workflows/native-service-contracts.yml',
+              'docs/specs/fbcp-native-message-reconciliation.md',
+              'frontend/src/production/ProductionRenderer.tsx',
+              'frontend/src/production/transcript-projection.contract.test.ts',
+              'frontend/src/production/transcript-projection.ts',
+              'frontend/src/recovered/features/conversation/workspace/pagination.ts',
+              'projects/fabushi-communication-platform/STATUS.md',
+              'projects/fabushi-communication-platform/owner-resolution-matrix.md',
+              'projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md',
+              'source/host/src/extensions/session/gateway.rs',
+              'source/host/src/extensions/session/native_messaging.rs',
+              'source/host/src/extensions/session/production.rs',
+              'source/host/tests/session_gateway_contract.rs',
+          }
+          append_fields = {
+              'requirement_ids', 'fabushi_target_paths', 'fabushi_target_symbols',
+              'production_evidence', 'test_evidence', 'integration_case_ids',
+              'fault_recovery_case_ids', 'temporal_case_ids', 'security_case_ids',
+              'ui_functional_case_ids', 'test_execution_evidence',
+          }
+
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+
+          def blob_id(data):
+              return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+
+          payload_bytes = pathlib.Path('.github/round7-object-transfer.json').read_bytes()
+          payload = json.loads(payload_bytes)
+          patch = pathlib.Path('.github/round7-reviewed.patch').read_bytes()
+          head = git('rev-parse', 'HEAD')
+          if head != os.environ['GITHUB_SHA']:
+              raise SystemExit('Checkout differs from exact workflow event')
+          if payload['repository'] != repository or payload['branch'] != branch:
+              raise SystemExit('Unexpected transfer repository or branch')
+          if hashlib.sha256(patch).hexdigest() != payload['patch_sha256']:
+              raise SystemExit('Reviewed patch identity differs')
+          files = payload['files']
+          if len(files) != len(allowed_paths) or {item['path'] for item in files} != allowed_paths:
+              raise SystemExit('Unexpected production/document path scope')
+          headers = re.findall(rb'^diff --git a/([^\n]+) b/([^\n]+)$', patch, re.M)
+          if len(headers) != len(allowed_paths) or {a.decode() for a, b in headers if a == b} != allowed_paths:
+              raise SystemExit('Patch headers exceed reviewed path scope')
+          for item in files:
+              if item['mode'] != '100644' or not re.fullmatch(r'[0-9a-f]{40}', item['target_blob']):
+                  raise SystemExit('Unexpected reviewed object identity or mode')
+              if git('rev-parse', 'HEAD:' + item['path']) != item['base_blob']:
+                  raise SystemExit('Source advanced; reconcile before another transfer: ' + item['path'])
+          ledger_op = payload['ledger']
+          if ledger_op['path'] != ledger_path or ledger_op['responsibility_id'] != 'FBCP-NMR-001':
+              raise SystemExit('Unexpected ledger responsibility')
+          if git('rev-parse', 'HEAD:' + ledger_path) != ledger_op['base_blob']:
+              raise SystemExit('Ledger advanced; reconcile the append before another transfer')
+          if set(ledger_op['append']) - append_fields or not isinstance(ledger_op['note'], str):
+              raise SystemExit('Unexpected ledger mutation fields')
+
+          subprocess.run(['git', 'apply', '--index', '--whitespace=nowarn', '.github/round7-reviewed.patch'], check=True)
+          if set(git('diff', '--cached', '--name-only').splitlines()) != allowed_paths:
+              raise SystemExit('Applied patch differs from the reviewed path set')
+          objects = []
+          for item in files:
+              data = pathlib.Path(item['path']).read_bytes()
+              if blob_id(data) != item['target_blob'] or git('ls-files', '-s', '--', item['path']).split()[0] != item['mode']:
+                  raise SystemExit('Applied object differs from the frozen review: ' + item['path'])
+              objects.append((item['path'], data, item['target_blob'], item['base_blob']))
+
+          before = json.loads(pathlib.Path(ledger_path).read_text())
+          after = copy.deepcopy(before)
+          indexes = [i for i, row in enumerate(after['rows']) if row.get('responsibility_id') == 'FBCP-NMR-001']
+          if len(indexes) != 1:
+              raise SystemExit('Ledger responsibility must be unique')
+          index = indexes[0]
+          row = after['rows'][index]
+          original_row = before['rows'][index]
+          for key, values in ledger_op['append'].items():
+              if not isinstance(row.get(key), list) or not isinstance(values, list) or any(not isinstance(v, str) for v in values):
+                  raise SystemExit('Append-only evidence requires existing string arrays')
+              for value in values:
+                  if value not in row[key]:
+                      row[key].append(value)
+          row['notes'] += ledger_op['note']
+          for key, value in original_row.items():
+              if key in ledger_op['append']:
+                  if row[key][:len(value)] != value:
+                      raise SystemExit('Existing evidence was changed or removed')
+              elif key == 'notes':
+                  if row[key] != value + ledger_op['note']:
+                      raise SystemExit('Existing note was changed')
+              elif row[key] != value:
+                  raise SystemExit('Unreviewed ledger field changed: ' + key)
+          comparison = copy.deepcopy(after)
+          comparison['rows'][index] = original_row
+          if comparison != before:
+              raise SystemExit('Other rows, source reviews or acceptance state changed')
+          encoded = (json.dumps(after, ensure_ascii=False, indent=2) + '\n').encode()
+          if blob_id(encoded) != ledger_op['target_blob']:
+              raise SystemExit('Ledger append differs from reviewed exact object')
+          objects.append((ledger_path, encoded, ledger_op['target_blob'], ledger_op['base_blob']))
+
+          transferred = []
+          for path, data, expected, base in objects:
+              request = urllib.request.Request(
+                  'https://api.github.com/repos/' + repository + '/git/blobs',
+                  data=json.dumps({'content': data.decode('utf-8'), 'encoding': 'utf-8'}).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['TRANSFER_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
+                           'X-GitHub-Api-Version': '2022-11-28'}, method='POST')
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  result = json.load(response)
+              if result.get('sha') != expected:
+                  raise SystemExit('GitHub object differs from the reviewed bytes: ' + path)
+              transferred.append({'path': path, 'base_blob': base, 'blob': expected, 'bytes': len(data)})
+          receipt = {'source_sha': head, 'review_base': payload['review_base'],
+                     'objects': transferred, 'patch_sha256': payload['patch_sha256'],
+                     'payload_sha256': hashlib.sha256(payload_bytes).hexdigest(),
+                     'refs_updated': False, 'product_validation': False, 'acceptance': False}
+          pathlib.Path('round7-reviewed-objects-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print('ROUND7_REVIEWED_OBJECTS ' + json.dumps(receipt))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: round7-reviewed-objects-${{ github.sha }}
+          path: round7-reviewed-objects-receipt.json
+          if-no-files-found: error
