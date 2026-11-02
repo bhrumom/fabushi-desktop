@@ -20,7 +20,7 @@ import { accountCacheScope } from "../../shared/node/cursor-token.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
 import { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
-import { createProductionMcpOAuthAdapter } from "../adapters/mcp-oauth.js";
+import { createProductionMcpOAuthAdapter, createProductionMcpOAuthRootPortProvider } from "../adapters/mcp-oauth.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import type { DesktopMcpManagerFacade } from "./desktop-mcp-manager.js";
 import { createMcpRuntime } from "./mcp-runtime.js";
@@ -1536,3 +1536,203 @@ for (const transport of ["http", "stdio"] as const) {
     }
   }
 }
+
+
+function desktopUninstallFixture(options: {
+  uninstall?: (request: unknown) => Promise<unknown>;
+  syncSettings?: (settings: Record<string, unknown>) => Promise<Record<string, any> | null>;
+} = {}) {
+  const root = mkdtempSync(join(tmpdir(), "fabushi-desktop-uninstall-"));
+  const settingsStore = new SandSettingsStore(join(root, "settings.json"));
+  const warmed = deferred<void>();
+  const owned = constructionManager();
+  const calls = { directUninstall: 0, refresh: 0, settings: [] as Record<string, unknown>[], edges: [] as unknown[] };
+  const manager = {
+    ...owned.manager,
+    async getCatalog() { warmed.resolve(); return []; },
+    async uninstallPlugin() {
+      calls.directUninstall += 1;
+      throw new Error("Desktop intent bypassed the Rust MCP owner");
+    },
+  };
+  const legs: Record<string, ((request: unknown) => Promise<unknown>) | undefined> = {
+    refreshMcp: async () => { calls.refresh += 1; return null; },
+    uninstallMcpPlugin: options.uninstall,
+  };
+  const context = {
+    machineId: "desktop-uninstall-machine",
+    settings: { settingsStore },
+    coordinatorLegs: { legs },
+    mcpHost: {
+      refreshMcp: () => { calls.refresh += 1; },
+      syncHostSettings: async (settings: Record<string, unknown>) => {
+        calls.settings.push(settings);
+        return options.syncSettings == null ? settings : await options.syncSettings(settings);
+      },
+    },
+    broadcast() {},
+    readTelemetry: () => undefined,
+    requireAccount: () => ({ subscribe: () => () => {} }),
+    getTrustedContents: () => undefined,
+    native: {},
+  } as unknown as ProductionServiceContext;
+  const adapter = createProductionMcpOAuthAdapter({
+    resolveRootPorts: createProductionMcpOAuthRootPortProvider,
+    resolveRuntimeDeps: () => ({
+      ...constructionDeps(async () => manager),
+      // Only catalog warming and runtime lifecycle use this controlled facade.
+      // The registered desktop handler and root port provider are production.
+      createManager: async () => manager as DesktopMcpManagerFacade,
+    }),
+    resolveDesktopDeps: () => ({
+      shell: { openExternal: async () => { throw new Error("Unexpected external URL"); } },
+      parseAllowedExternalUrl: () => null,
+      peekAccessToken: async () => null,
+      onEdgeFailure: (failure) => { calls.edges.push(failure); },
+    }),
+  }).create(context);
+  const handlers = new Map<string, (event: unknown, request?: unknown) => unknown>();
+  adapter.registerDesktopIpc({
+    handle(channel, handler) {
+      assert.equal(handlers.has(channel), false, "duplicate IPC registration");
+      handlers.set(channel, handler);
+    },
+  });
+  const handler = handlers.get("sand:mcp-uninstall-plugin");
+  assert.ok(handler, "the actual adapter must register desktop uninstall");
+  return {
+    calls, legs, settingsStore, warmed: warmed.promise,
+    invoke: async (request: unknown) => await handler(undefined, request),
+    async dispose() {
+      try { await adapter.dispose(); }
+      finally { rmSync(root, { recursive: true, force: true }); }
+    },
+  };
+}
+
+test("PS-DESKTOP-01/03/04 registered uninstall awaits one Rust intent and preserves its full response", { timeout: 10_000 }, async () => {
+  const entered = deferred<void>();
+  const held = deferred<unknown>();
+  const requests: unknown[] = [];
+  const fixture = desktopUninstallFixture({
+    uninstall: async (request) => { requests.push(request); entered.resolve(); return await held.promise; },
+  });
+  const request = { pluginId: "7" };
+  const response = {
+    removed: true, reason: "original remote reason",
+    state: { servers: [{ id: "unchanged", name: "Still installed", managedByTeamPluginPolicy: true }],
+      warnings: ["original warning"], futureStateField: { keep: true } },
+    futureOutcomeField: ["preserve", 7],
+  };
+  let pending: Promise<unknown> | undefined;
+  try {
+    await fixture.warmed;
+    pending = fixture.invoke(request);
+    await entered.promise;
+    assert.deepEqual(requests, [request]);
+    assert.equal(requests[0], request, "forward the original request object");
+    assert.deepEqual(fixture.calls.settings, [], "settings cannot precede the Host result");
+    assert.equal(fixture.calls.directUninstall, 0);
+    held.resolve(response);
+    assert.equal(await pending, response, "return the original same-response display projection");
+    assert.equal(fixture.calls.settings.length, 1);
+    assert.deepEqual(fixture.calls.settings[0], {
+      mcpCustomInstructionsByServerId: fixture.settingsStore.getMcpCustomInstructionsByServerId(),
+      mcpCustomInstructions: fixture.settingsStore.getMcpCustomInstructions(),
+      mcpDisabledToolsByServerId: fixture.settingsStore.getMcpDisabledToolsByServerId(),
+    });
+    assert.equal(requests.length, 1);
+    assert.equal(fixture.calls.directUninstall, 0);
+    assert.equal(fixture.calls.refresh, 0, "the Host service owns the uninstall refresh");
+    assert.deepEqual(fixture.calls.edges, []);
+  } finally {
+    held.resolve(response);
+    await Promise.allSettled(pending == null ? [] : [pending]);
+    await fixture.dispose();
+  }
+});
+
+test("PS-DESKTOP-04 settings failure after confirmation does not retry, fall back, or refresh again", { timeout: 10_000 }, async () => {
+  const order: string[] = [];
+  const failure = new Error("Controlled settings synchronization refusal");
+  const fixture = desktopUninstallFixture({
+    uninstall: async () => { order.push("host-confirmed"); return { removed: true, state: { servers: [] } }; },
+    syncSettings: async () => { order.push("settings"); throw failure; },
+  });
+  try {
+    await fixture.warmed;
+    await assert.rejects(fixture.invoke({ pluginId: "7" }), (error) => error === failure);
+    assert.deepEqual(order, ["host-confirmed", "settings"]);
+    assert.equal(fixture.calls.settings.length, 1);
+    assert.equal(fixture.calls.directUninstall, 0);
+    assert.equal(fixture.calls.refresh, 0);
+  } finally { await fixture.dispose(); }
+});
+
+for (const outcome of ["not-removed", "unknown-result", "invalid-args", "missing-leg"] as const) {
+  test("PS-DESKTOP-02/04 registered uninstall preserves " + outcome + " without local mutation", { timeout: 10_000 }, async () => {
+    const requests: unknown[] = [];
+    const failure = new Error(outcome === "invalid-args" ? "Host rejected unknown fields" : "Host execution outcome unknown");
+    const response = { removed: false, state: { servers: [] }, reason: "policy denied", retained: true };
+    const request = outcome === "invalid-args" ? { pluginId: "7", removed: true } : { pluginId: "7" };
+    const fixture = desktopUninstallFixture({
+      ...(outcome === "missing-leg" ? {} : {
+        uninstall: async (input: unknown) => {
+          requests.push(input);
+          if (outcome === "not-removed") return response;
+          throw failure;
+        },
+      }),
+    });
+    try {
+      await fixture.warmed;
+      if (outcome === "not-removed") assert.equal(await fixture.invoke(request), response);
+      else if (outcome === "missing-leg") await assert.rejects(fixture.invoke(request), /Coordinator MCP uninstall port is unavailable/);
+      else await assert.rejects(fixture.invoke(request), (error) => error === failure);
+      assert.deepEqual(requests, outcome === "missing-leg" ? [] : [request]);
+      if (outcome !== "missing-leg") assert.equal(requests[0], request, "unknown fields must reach Rust validation intact");
+      assert.deepEqual(fixture.calls.settings, []);
+      assert.equal(fixture.calls.directUninstall, 0);
+      assert.equal(fixture.calls.refresh, 0);
+    } finally { await fixture.dispose(); }
+  });
+}
+
+test("PS-DESKTOP-06 replacement Coordinator leg cannot replay an admitted uninstall", { timeout: 10_000 }, async () => {
+  const entered = deferred<void>();
+  const held = deferred<unknown>();
+  const oldRequests: unknown[] = [];
+  const replacementRequests: unknown[] = [];
+  const fixture = desktopUninstallFixture({
+    uninstall: async (request) => { oldRequests.push(request); entered.resolve(); return await held.promise; },
+  });
+  const firstReply = { removed: true, state: { servers: [] }, original: true };
+  let pending: Promise<unknown> | undefined;
+  try {
+    await fixture.warmed;
+    pending = fixture.invoke({ pluginId: "7" });
+    await entered.promise;
+    fixture.legs.uninstallMcpPlugin = async (request) => {
+      replacementRequests.push(request);
+      return { removed: false, state: { servers: [] }, reason: "later request" };
+    };
+    assert.deepEqual(replacementRequests, []);
+    held.resolve(firstReply);
+    assert.equal(await pending, firstReply);
+    assert.equal(oldRequests.length, 1);
+    assert.deepEqual(replacementRequests, [], "a changed leg is not replay authorization");
+    assert.equal(fixture.calls.settings.length, 1);
+    assert.deepEqual(await fixture.invoke({ pluginId: "8" }), {
+      removed: false, state: { servers: [] }, reason: "later request",
+    });
+    assert.deepEqual(replacementRequests, [{ pluginId: "8" }], "a new user invocation resolves the current leg");
+    assert.equal(oldRequests.length, 1);
+    assert.equal(fixture.calls.settings.length, 1);
+    assert.equal(fixture.calls.directUninstall, 0);
+    assert.equal(fixture.calls.refresh, 0);
+  } finally {
+    held.resolve(firstReply);
+    await Promise.allSettled(pending == null ? [] : [pending]);
+    await fixture.dispose();
+  }
+});

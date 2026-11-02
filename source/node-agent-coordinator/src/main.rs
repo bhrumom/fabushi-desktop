@@ -67,7 +67,7 @@ use mahayana_node_agent_coordinator::runner_tool_relay::{
 };
 use mahayana_node_agent_coordinator::mcp_lifecycle_relay::{
     HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
-    box_mcp_carrier_allowed, execute_host_mcp_lifecycle_request,
+    box_mcp_carrier_allowed, desktop_mcp_carrier_allowed, execute_host_mcp_lifecycle_request,
     host_mcp_lifecycle_resolution_failure,
 };
 use serde_json::{Value, json};
@@ -2713,6 +2713,16 @@ fn execute_actions(
                         &request_id,
                         ReplyOutcome::Failed {
                             failure: Failure::new("MCP_BOX_NATIVE_ONLY", "Box MCP requires native main-data carrier"),
+                        },
+                    );
+                    continue;
+                }
+                if !desktop_mcp_carrier_allowed(&method, channel) {
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Failed {
+                            failure: Failure::new("MCP_DESKTOP_NATIVE_ONLY", "MCP uninstall intent requires native main-data carrier"),
                         },
                     );
                     continue;

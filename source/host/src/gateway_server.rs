@@ -28,6 +28,9 @@ use crate::host_gateway_api::FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS;
 use crate::extensions::mcp::coordinator_relay::{
     HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
 };
+use crate::runner::coordinator_tool_relay::{
+    RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
+};
 
 pub const GATEWAY_API_PREFIX: &str = "/api";
 pub const GATEWAY_EVENTS_PATH: &str = "/events";
@@ -657,6 +660,9 @@ fn is_mutating_openclaw_command(method: &str) -> bool {
             | "sessions.delete"
             | "cron.trigger"
             | "config.set"
+            | "uninstallMcpPlugin"
+            | "refreshMcp"
+            | "syncPluginSkills"
     )
 }
 
@@ -684,6 +690,10 @@ fn is_operator_only_openclaw_command(method: &str) -> bool {
             | "system.info"
             | "node.status"
             | "node.list"
+            | "uninstallMcpPlugin"
+            | "refreshMcp"
+            | "syncPluginSkills"
+            | "getPluginSyncStatus"
     )
 }
 
@@ -947,7 +957,7 @@ fn serve_event_body<W: Write>(
     stop: &AtomicBool,
     channels: Option<Vec<String>>,
     slim_avatars: bool,
-    allow_internal_mcp_lifecycle: bool,
+    allow_internal_mcp_control: bool,
 ) -> io::Result<()> {
     sink.write_all(b"retry: 1000\n\n")?;
     sink.flush()?;
@@ -955,11 +965,15 @@ fn serve_event_body<W: Write>(
     while !stop.load(Ordering::Acquire) {
         match receiver.recv_timeout(heartbeat) {
             Ok(event) => {
-                // A paired device may watch public Gateway events, but Host MCP
-                // request IDs and methods are internal control-plane work.
-                // Filtering must apply even when the client omits channels.
-                if !allow_internal_mcp_lifecycle
-                    && event_channel(&event) == Some(HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL)
+                // Paired devices may watch ordinary Gateway events, but both
+                // MCP relay request channels belong to the native control plane.
+                // Filter before channel selection, slimming and serialization.
+                if !allow_internal_mcp_control
+                    && matches!(
+                        event_channel(&event),
+                        Some(HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL)
+                            | Some(RUNNER_TOOL_REQUEST_EVENT_CHANNEL)
+                    )
                 {
                     continue;
                 }
@@ -992,18 +1006,18 @@ fn serve_events(
     channels: Option<Vec<String>>,
     slim_avatars: bool,
     gzip: bool,
-    allow_internal_mcp_lifecycle: bool,
+    allow_internal_mcp_control: bool,
 ) -> io::Result<()> {
     let receiver = deps.events.subscribe();
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     write_sse_headers(stream, gzip)?;
     if gzip {
         let mut encoder = GzEncoder::new(stream, Compression::default());
-        let result = serve_event_body(&mut encoder, receiver, stop, channels, slim_avatars, allow_internal_mcp_lifecycle);
+        let result = serve_event_body(&mut encoder, receiver, stop, channels, slim_avatars, allow_internal_mcp_control);
         let _ = encoder.try_finish();
         result
     } else {
-        serve_event_body(stream, receiver, stop, channels, slim_avatars, allow_internal_mcp_lifecycle)
+        serve_event_body(stream, receiver, stop, channels, slim_avatars, allow_internal_mcp_control)
     }
 }
 
@@ -1317,14 +1331,18 @@ fn handle_connection(
         return respond_error(&mut stream, 401, "unauthorized");
     }
 
-    // The native desktop Coordinator authenticates with the Host Gateway
-    // secret (or a loopback-only no-secret development listener). Paired device
-    // tokens, including operator.write, are not authority for MCP receipts.
-    let native_mcp_control = if let Some(secret) = deps.config.auth_token.as_deref() {
-        bearer_token(&request).is_some_and(|token| is_authorized_token(token, secret))
-    } else {
-        is_loopback_host(&deps.config.host) && device_authorization.is_none()
-    };
+    let requested_role = request.headers.get("x-sand-role").map(String::as_str);
+    // Reuse Box's native authority for both MCP receipt routes and their SSE
+    // requests. Common authentication above already checks a configured secret;
+    // without one, retain the existing trusted-loopback bearer behavior.
+    // Recognized device credentials never gain this authority through headers.
+    let native_mcp_control = device_authorization.is_none()
+        && requested_role.is_none_or(|role| role == "operator")
+        && request
+            .headers
+            .get("x-sand-scope")
+            .is_none_or(|scope| scope == "operator.write")
+        && (deps.config.auth_token.is_some() || is_loopback_host(&deps.config.host));
     if method == MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD && !native_mcp_control {
         return respond_error(
             &mut stream,
@@ -1332,17 +1350,14 @@ fn handle_connection(
             "MCP_LIFECYCLE_NATIVE_ONLY: Host MCP lifecycle receipts require the native control plane",
         );
     }
-
-    let requested_role = request.headers.get("x-sand-role").map(String::as_str);
-    if FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS.contains(&method)
-        && (device_authorization.is_some()
-            || requested_role.is_some_and(|role| role != "operator")
-            || request
-                .headers
-                .get("x-sand-scope")
-                .is_some_and(|scope| scope != "operator.write")
-            || (deps.config.auth_token.is_none() && !is_loopback_host(&deps.config.host)))
-    {
+    if method == RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD && !native_mcp_control {
+        return respond_error(
+            &mut stream,
+            403,
+            "RUNNER_TOOL_NATIVE_ONLY: Routed MCP tool receipts require the native control plane",
+        );
+    }
+    if FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS.contains(&method) && !native_mcp_control {
         return respond_error(
             &mut stream,
             403,
@@ -1519,7 +1534,10 @@ fn handle_connection(
 
 #[cfg(test)]
 mod tests {
-    use super::{is_gateway_command, serve_event_body, HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL};
+    use super::{
+        is_gateway_command, serve_event_body, HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL,
+        RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
+    };
     use serde_json::json;
     use std::sync::{mpsc, atomic::AtomicBool};
 
@@ -1532,6 +1550,10 @@ mod tests {
                 "channel": HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL,
                 "payload": {"requestId": "private-mcp-request", "method": "installHostMcpPlugin"}
             })).unwrap();
+            sender.send(json!({
+                "channel": RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
+                "payload": {"requestId": "private-runner-request", "method": "executeRoutedMcpTool"}
+            })).unwrap();
             sender.send(json!({"channel": "public-status", "payload": {"ok": true}})).unwrap();
             drop(sender);
             let mut rendered = Vec::new();
@@ -1542,6 +1564,8 @@ mod tests {
             let body = String::from_utf8(rendered).expect("UTF-8 events");
             assert!(body.contains("public-status"), "{body}");
             assert_eq!(body.contains("private-mcp-request"), allow_internal, "{body}");
+            assert_eq!(body.contains("private-runner-request"), allow_internal, "{body}");
+            assert_eq!(body.contains(RUNNER_TOOL_REQUEST_EVENT_CHANNEL), allow_internal, "{body}");
             assert_eq!(
                 body.contains(HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL),
                 allow_internal,

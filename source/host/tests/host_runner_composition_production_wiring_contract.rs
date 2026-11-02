@@ -780,3 +780,120 @@ fn shipping_skills_cache_and_prompt_use_the_bound_session_store_and_root() {
             "a wrong root, unbound store or unrelated prompt projection must fail the wiring oracle");
     }
 }
+
+
+// This oracle recognizes one direct shipping Gateway dispatch shape. It is not
+// a general Rust control-flow or name-resolution proof.
+fn desktop_mcp_dispatch_precedes_host_fallback(source: &str) -> bool {
+    fn named(expr: &syn::Expr, name: &str) -> bool {
+        matches!(expr, syn::Expr::Path(path) if path.path.is_ident(name))
+    }
+    fn self_field(expr: &syn::Expr, name: &str) -> bool {
+        matches!(expr, syn::Expr::Field(field) if named(&field.base, "self")
+            && matches!(&field.member, syn::Member::Named(member) if member == name))
+    }
+    let Some(source) = production_host_source(source) else { return false; };
+    let Ok(parsed) = syn::parse_file(source) else { return false; };
+    let mut methods = parsed.items.iter().filter_map(|item| {
+        let syn::Item::Impl(item) = item else { return None; };
+        let Some((_, gateway_trait, _)) = &item.trait_ else { return None; };
+        let syn::Type::Path(owner) = item.self_ty.as_ref() else { return None; };
+        (gateway_trait.is_ident("GatewayApi") && owner.path.is_ident("UnifiedGatewayApi"))
+            .then_some(item)
+    }).flat_map(|owner| owner.items.iter()).filter_map(|item| {
+        let syn::ImplItem::Fn(method) = item else { return None; };
+        (method.sig.ident == "call").then_some(method)
+    });
+    let Some(method) = methods.next() else { return false; };
+    if methods.next().is_some() { return false; }
+    let Some((fallback, before)) = method.block.stmts.split_last() else { return false; };
+    let syn::Stmt::Expr(syn::Expr::Call(fallback), None) = fallback else { return false; };
+    if !named(&fallback.func, "call_host_lane") || fallback.args.len() != 3
+        || !matches!(fallback.args.first(), Some(syn::Expr::Reference(reference))
+            if reference.mutability.is_none() && self_field(&reference.expr, "host_tx"))
+        || !fallback.args.iter().nth(1).is_some_and(|expr| named(expr, "method"))
+        || !fallback.args.last().is_some_and(|expr| named(expr, "args"))
+    {
+        return false;
+    }
+    let Some(syn::Stmt::Expr(syn::Expr::If(dispatch), None)) = before.last() else { return false; };
+    if dispatch.else_branch.is_some() { return false; }
+    let syn::Expr::Let(binding) = dispatch.cond.as_ref() else { return false; };
+    let syn::Pat::TupleStruct(pattern) = binding.pat.as_ref() else { return false; };
+    if !pattern.path.is_ident("Some") || pattern.elems.len() != 1
+        || !matches!(pattern.elems.first(), Some(syn::Pat::Ident(name))
+            if name.ident == "result" && name.by_ref.is_none() && name.mutability.is_none()
+                && name.subpat.is_none())
+    {
+        return false;
+    }
+    let syn::Expr::MethodCall(call) = binding.expr.as_ref() else { return false; };
+    if call.method != "dispatch_desktop_command" || call.args.len() != 2
+        || !self_field(&call.receiver, "mcp_service")
+        || !call.args.first().is_some_and(|expr| named(expr, "method"))
+        || !matches!(call.args.last(), Some(syn::Expr::Reference(reference))
+            if reference.mutability.is_none() && named(&reference.expr, "args"))
+    {
+        return false;
+    }
+    let [syn::Stmt::Expr(syn::Expr::Return(returned), Some(_))] = dispatch.then_branch.stmts.as_slice()
+        else { return false; };
+    let Some(value) = &returned.expr else { return false; };
+    let syn::Expr::MethodCall(projected) = value.as_ref() else { return false; };
+    if projected.method != "map_err" || projected.args.len() != 1 || !named(&projected.receiver, "result") {
+        return false;
+    }
+    let Some(syn::Expr::Path(error)) = projected.args.first() else { return false; };
+    error.path.leading_colon.is_none()
+        && error.path.segments.len() == 2
+        && error.path.segments.first().is_some_and(|segment| segment.ident == "GatewayCommandError")
+        && error.path.segments.last().is_some_and(|segment| segment.ident == "Internal")
+}
+
+#[test]
+fn shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback() {
+    assert!(desktop_mcp_dispatch_precedes_host_fallback(SHIPPING_HOST),
+        "shipping UnifiedGatewayApi must return the existing MCP service result before Host fallback");
+}
+
+#[test]
+fn desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation() {
+    let delegate = "if let Some(result) = self.mcp_service.dispatch_desktop_command(method, &args) { return result.map_err(GatewayCommandError::Internal); }";
+    let fallback = "call_host_lane(&self.host_tx, method, args)";
+    let fixture = |body: &str| format!(
+        "fn main() {{}}\nimpl GatewayApi for UnifiedGatewayApi {{ fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {{ {body} }} }}\n#[cfg(test)]\nmod tests {{}}\n"
+    );
+    assert!(desktop_mcp_dispatch_precedes_host_fallback(&fixture(&format!("{delegate} {fallback}"))));
+    for body in [
+        format!("{} {fallback}", delegate.replace("self.mcp_service", "self.other_service")),
+        format!("if let Some(result) = self.mcp_service.dispatch_desktop_command(method, &args) {{ let _ = result; }} {fallback}"),
+        format!("let _unused = || {{ {delegate} }}; {fallback}"),
+        format!("let early = {fallback}; {delegate} early"),
+        format!("// {delegate}\n{fallback}"),
+    ] {
+        let source = fixture(&body);
+        assert!(syn::parse_file(&source).is_ok(), "negative control must remain syntactically valid");
+        assert!(!desktop_mcp_dispatch_precedes_host_fallback(&source),
+            "non-delegating production shape passed: {source}");
+    }
+    let test_only = fixture(fallback).replace("mod tests {}", &format!("mod tests {{ fn fixture() {{ {delegate} }} }}"));
+    assert!(!desktop_mcp_dispatch_precedes_host_fallback(&test_only));
+}
+
+#[test]
+fn desktop_uninstall_has_its_own_native_registry_group_without_changing_the_frozen_surface() {
+    use mahayana_host_runtime::host_gateway_api::{
+        FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS, FABUSHI_NATIVE_MCP_MANAGEMENT_GATEWAY_METHODS,
+        FROZEN_HOST_GATEWAY_METHODS, HostGatewayOwner, host_gateway_owner,
+    };
+    assert_eq!(FROZEN_HOST_GATEWAY_METHODS.len(), 122);
+    assert_eq!(FABUSHI_NATIVE_MCP_MANAGEMENT_GATEWAY_METHODS, &["uninstallMcpPlugin"]);
+    assert_eq!(host_gateway_owner("uninstallMcpPlugin"), Some(HostGatewayOwner::Mcp));
+    assert!(!FROZEN_HOST_GATEWAY_METHODS.contains(&"uninstallMcpPlugin"));
+    assert!(!FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS.contains(&"uninstallMcpPlugin"));
+    assert_eq!(FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS,
+        &["loadBoxMcpServers", "listBoxMcpToolsRaw", "executeBoxMcpToolRaw"]);
+    for method in ["uninstallMcpPlugin.extra", "UninstallMcpPlugin", "uninstallMcpPlugin "] {
+        assert_eq!(host_gateway_owner(method), None);
+    }
+}

@@ -606,3 +606,385 @@ fn plugin_skills_loader_uses_the_same_correlated_coordinator_relay() {
     assert_eq!(loaded.current_user_id, Some(11));
     assert_eq!(loaded.publisher_facts["41"].marketplace_team_id, Some(9));
 }
+
+mod desktop_service_contracts {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+
+    use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
+        CoordinatorMcpManagerBackend, MCP_UNINSTALL_PLUGIN_METHOD,
+    };
+    use mahayana_host_runtime::extensions::mcp::mcp_service::{
+        McpHostService, McpManagerBackend,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills::SandPluginSkillsService;
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        get_plugin_skills_cache_path, get_plugin_skills_dir,
+    };
+
+    struct TempRoot(PathBuf);
+    impl Drop for TempRoot {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    struct RealService {
+        root: TempRoot,
+        requests: mpsc::Receiver<Value>,
+        relay: Arc<CoordinatorMcpLifecycleRelay>,
+        backend: Arc<CoordinatorMcpManagerBackend>,
+        skills: Arc<SandPluginSkillsService>,
+        service: Arc<McpHostService>,
+        payload: Value,
+        skill_path: PathBuf,
+    }
+
+    impl RealService {
+        fn new() -> Self {
+            let root = TempRoot(std::env::temp_dir().join(format!(
+                "desktop-mcp-relay-{}", uuid::Uuid::new_v4(),
+            )));
+            let install = root.0.join("plugins/cache/cursor/calendar/abc123");
+            let skill_path = install.join("skills/Schedule/SKILL.md");
+            fs::create_dir_all(skill_path.parent().unwrap()).unwrap();
+            fs::write(&skill_path,
+                "---\nname: Schedule\ndescription: REAL_CALENDAR_DESCRIPTION\n---\nREAL_CALENDAR_BODY\n").unwrap();
+            let mut payload = plugin_skills_payload();
+            payload["plugins"][0]["installPath"] = json!(install);
+            let events = GatewayEventHub::default();
+            let requests = events.subscribe();
+            let relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(events, REQUEST_TIMEOUT));
+            let backend = Arc::new(CoordinatorMcpManagerBackend::new(
+                Arc::clone(&relay), Arc::new(|_, _| Ok(Vec::new())),
+            ));
+            let skills = Arc::new(SandPluginSkillsService::new(
+                &root.0, Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&relay))),
+            ));
+            let service = Arc::new(McpHostService::new(backend.clone(), Some(skills.clone())));
+            Self { root, requests, relay, backend, skills, service, payload, skill_path }
+        }
+
+        fn next(&self, method: &str) -> Value {
+            let event = self.requests.recv_timeout(ORACLE_TIMEOUT).expect("actual lifecycle request");
+            assert_eq!(event["channel"], HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL);
+            assert_eq!(event["payload"]["method"], method);
+            event
+        }
+
+        fn resolve(&self, event: &Value, value: Value) {
+            self.relay.resolve(&json!({
+                "requestId":event["payload"]["requestId"], "ok":true, "result":value,
+            })).unwrap();
+        }
+
+        fn cache_path(&self) -> PathBuf {
+            get_plugin_skills_cache_path(get_plugin_skills_dir(&self.root.0))
+        }
+
+        fn seed(&self) {
+            let skills = Arc::clone(&self.skills);
+            let (worker, result) = spawn_operation(move || skills.sync("seed"));
+            let request = self.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+            self.resolve(&request, self.payload.clone());
+            assert_eq!(finish(worker, result).unwrap().len(), 1);
+        }
+    }
+
+    fn spawn_operation<T: Send + 'static>(
+        operation: impl FnOnce() -> T + Send + 'static,
+    ) -> (thread::JoinHandle<()>, mpsc::Receiver<T>) {
+        let (tx, rx) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            let _ = tx.send(operation());
+        });
+        (worker, rx)
+    }
+
+    fn finish<T>(worker: thread::JoinHandle<()>, result: mpsc::Receiver<T>) -> T {
+        let value = result.recv_timeout(ORACLE_TIMEOUT).expect("bounded actual operation completion");
+        worker.join().unwrap();
+        value
+    }
+
+    #[test]
+    fn concrete_backend_preserves_raw_display_and_keeps_confirmation_on_display_failure() {
+        let fixture = RealService::new();
+        let raw = json!({
+            "removed":true, "reason":"  team-server  ",
+            "state":{"servers":[],"warnings":["original warning"],"futurePolicy":{"keep":true}},
+            "futureReply":{"keep":true},
+        });
+        for (reply, valid_display) in [
+            (raw.clone(), true),
+            (json!({"removed":true}), false),
+            (json!({"removed":true,"state":null}), false),
+            (json!({"removed":true,"state":{"servers":[{"id":"incomplete"}]}}), false),
+        ] {
+            let backend = Arc::clone(&fixture.backend);
+            let (worker, result) = spawn_operation(move || {
+                backend.uninstall_plugin_outcome("official:github/review-tools")
+            });
+            let request = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
+            assert_eq!(request["payload"]["args"], json!({"pluginId":"official:github/review-tools"}));
+            fixture.resolve(&request, reply.clone());
+            let outcome = finish(worker, result).unwrap();
+            assert!(outcome.removed);
+            if valid_display {
+                assert_eq!(outcome.reason.as_deref(), Some("team-server"));
+                assert_eq!(outcome.desktop_response.unwrap(), reply);
+            } else {
+                assert!(outcome.desktop_response.is_err());
+            }
+            assert_eq!(fixture.relay.pending_count(), 0);
+            assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+
+        // The legacy tuple projection also performs just one mutation and does
+        // not depend on the Desktop state shape.
+        let backend = Arc::clone(&fixture.backend);
+        let (worker, result) = spawn_operation(move || backend.uninstall_plugin("41"));
+        let request = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
+        fixture.resolve(&request, json!({"removed":true,"reason":"  unchanged reason  "}));
+        assert_eq!(finish(worker, result).unwrap(), (true, Some("unchanged reason".into())));
+        assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn canonical_desktop_ids_reach_the_concrete_backend_unchanged() {
+        let fixture = RealService::new();
+        for id in ["184467440737095516160", "official:github/review-tools"] {
+            let service = Arc::clone(&fixture.service);
+            let (worker, result) = spawn_operation(move || {
+                service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":id})).unwrap()
+            });
+            let catalog = fixture.next(MCP_LIST_CATALOG_METHOD);
+            fixture.resolve(&catalog, json!([]));
+            let uninstall = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
+            assert_eq!(uninstall["payload"]["args"], json!({"pluginId":id}));
+            let raw = json!({
+                "removed":false, "reason":"team-server",
+                "state":{"servers":[],"warnings":["original"]},
+            });
+            fixture.resolve(&uninstall, raw.clone());
+            assert_eq!(finish(worker, result).unwrap(), raw);
+            assert!(!fixture.skills.admission_reader().is_denied(id));
+            assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+    }
+
+    #[test]
+    fn service_close_during_catalog_lookup_prevents_the_uninstall_mutation() {
+        let fixture = RealService::new();
+        let service = Arc::clone(&fixture.service);
+        let (worker, result) = spawn_operation(move || {
+            service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"41"})).unwrap()
+        });
+        let catalog = fixture.next(MCP_LIST_CATALOG_METHOD);
+        fixture.service.dispose().unwrap();
+        fixture.resolve(&catalog, json!([]));
+        assert!(finish(worker, result).unwrap_err().contains("closed"));
+        assert!(!fixture.skills.admission_reader().is_denied("41"));
+        assert_eq!(fixture.relay.pending_count(), 0);
+        assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn desktop_refresh_and_sync_wait_for_the_actual_loader_and_status_reads_its_cache() {
+        let fixture = RealService::new();
+        for method in ["refreshMcp", "syncPluginSkills"] {
+            let service = Arc::clone(&fixture.service);
+            let (worker, result) = spawn_operation(move || {
+                service.dispatch_desktop_command(method, &json!({})).unwrap()
+            });
+            let request = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+            assert_eq!(request["payload"]["args"], json!({}));
+            assert_eq!(fixture.relay.pending_count(), 1);
+            assert!(matches!(result.try_recv(), Err(mpsc::TryRecvError::Empty)),
+                "acknowledgment cannot precede the actual sync result");
+            fixture.resolve(&request, fixture.payload.clone());
+            let response = finish(worker, result).unwrap();
+            if method == "refreshMcp" {
+                assert_eq!(response, Value::Null);
+            } else {
+                let records = response.as_array().unwrap();
+                assert_eq!(records.len(), 1);
+                assert_eq!(records[0]["id"], "plugin-41-schedule");
+                assert_eq!(records[0]["pluginId"], "41");
+                assert_eq!(records[0]["filePath"], json!(fixture.skill_path));
+            }
+        }
+        let denied = json!({
+            "plugins":[], "authBlocked":[{"pluginId":"41","pluginName":"Calendar"}],
+            "listedPluginIds":["41"],
+            "listedCacheKeys":[{"marketplaceSlug":"cursor","pluginId":"calendar"}],
+            "publisherFacts":{}, "currentUserId":11,
+        });
+        let service = Arc::clone(&fixture.service);
+        let (worker, result) = spawn_operation(move || {
+            service.dispatch_desktop_command("refreshMcp", &json!({})).unwrap()
+        });
+        let request = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+        fixture.resolve(&request, denied);
+        assert_eq!(finish(worker, result).unwrap(), Value::Null);
+        assert_eq!(fixture.service.dispatch_desktop_command("getPluginSyncStatus", &json!({}))
+            .unwrap().unwrap(), json!({
+                "authBlocked":[{"pluginId":"41","pluginName":"Calendar"}],
+            }));
+        assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        let before = fs::read(fixture.cache_path()).unwrap();
+        for method in ["refreshMcp", "syncPluginSkills"] {
+            let service = Arc::clone(&fixture.service);
+            let (worker, result) = spawn_operation(move || {
+                service.dispatch_desktop_command(method, &json!({})).unwrap()
+            });
+            let request = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+            fixture.relay.resolve(&json!({
+                "requestId":request["payload"]["requestId"], "ok":false, "error":"real loader failed",
+            })).unwrap();
+            assert!(finish(worker, result).unwrap_err().contains("real loader failed"));
+            assert_eq!(fs::read(fixture.cache_path()).unwrap(), before);
+        }
+        fixture.service.dispose().unwrap();
+        for method in ["refreshMcp", "syncPluginSkills", "getPluginSyncStatus"] {
+            assert!(fixture.service.dispatch_desktop_command(method, &json!({})).unwrap()
+                .unwrap_err().contains("closed"));
+        }
+        assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader() {
+        let fixture = RealService::new();
+        fixture.seed();
+        let before = fs::read(fixture.cache_path()).unwrap();
+        let skill_before = fs::read(&fixture.skill_path).unwrap();
+        let skills = Arc::clone(&fixture.skills);
+        let (old_worker, old_result) = spawn_operation(move || skills.sync("held-before-uninstall"));
+        let old_load = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+
+        let service = Arc::clone(&fixture.service);
+        let (worker, result) = spawn_operation(move || {
+            service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"41"})).unwrap()
+        });
+        let catalog = fixture.next(MCP_LIST_CATALOG_METHOD);
+        fixture.resolve(&catalog, json!([]));
+        let uninstall = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
+        fixture.resolve(&uninstall, json!({"removed":true,"state":null}));
+        assert!(finish(worker, result).unwrap_err().contains("requires servers"));
+        assert!(fixture.skills.admission_reader().is_denied("41"));
+        assert!(fixture.skills.current().is_empty());
+        assert_eq!(fixture.relay.pending_count(), 1);
+        assert!(matches!(old_result.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)),
+            "display failure must not start cleanup refresh");
+
+        fixture.resolve(&old_load, fixture.payload.clone());
+        assert!(finish(old_worker, old_result).unwrap_err().contains("superseded by a confirmed uninstall"));
+        assert_eq!(fs::read(fixture.cache_path()).unwrap(), before);
+        assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
+        assert!(fixture.skills.admission_reader().is_denied("41"));
+        assert!(fixture.skills.current().is_empty());
+
+        // Only a fresh post-fact materialization can release the actual reader.
+        let skills = Arc::clone(&fixture.skills);
+        let (worker, result) = spawn_operation(move || skills.sync("fresh-reinstall"));
+        let fresh = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+        fixture.resolve(&fresh, fixture.payload.clone());
+        assert_eq!(finish(worker, result).unwrap().len(), 1);
+        assert!(!fixture.skills.admission_reader().is_denied("41"));
+        assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
+    }
+
+    #[test]
+    fn late_desktop_uninstall_reply_cannot_settle_the_successor_service_request() {
+        let old = RealService::new();
+        let current = RealService::new();
+        old.seed();
+        current.seed();
+        let old_before = fs::read(old.cache_path()).unwrap();
+        let current_before = fs::read(current.cache_path()).unwrap();
+
+        let service = Arc::clone(&old.service);
+        let (old_worker, old_result) = spawn_operation(move || {
+            service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"41"})).unwrap()
+        });
+        let catalog = old.next(MCP_LIST_CATALOG_METHOD);
+        old.resolve(&catalog, json!([]));
+        let old_request = old.next(MCP_UNINSTALL_PLUGIN_METHOD);
+        old.relay.cancel_all("Host replaced");
+        old.skills.dispose();
+        old.service.dispose().unwrap();
+        assert!(finish(old_worker, old_result).unwrap_err().contains("closed"));
+
+        let service = Arc::clone(&current.service);
+        let (worker, result) = spawn_operation(move || {
+            service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"41"})).unwrap()
+        });
+        let catalog = current.next(MCP_LIST_CATALOG_METHOD);
+        current.resolve(&catalog, json!([]));
+        let request = current.next(MCP_UNINSTALL_PLUGIN_METHOD);
+        // Both relays have served seed, catalog and uninstall in that order;
+        // a sequence-only request identity would collide on this real waiter.
+        assert!(old_request["payload"]["requestId"].as_str().unwrap().ends_with("-3"));
+        assert!(request["payload"]["requestId"].as_str().unwrap().ends_with("-3"));
+        for stale in [
+            json!({"requestId":old_request["payload"]["requestId"],"ok":true,
+                "result":{"removed":true,"state":{"servers":[]}}}),
+            json!({"requestId":old_request["payload"]["requestId"],"ok":false,"error":"old failure"}),
+        ] {
+            assert!(current.relay.resolve(&stale).is_err());
+            assert_eq!(current.relay.pending_count(), 1);
+            assert!(matches!(result.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert!(!current.skills.admission_reader().is_denied("41"));
+            assert_eq!(fs::read(current.cache_path()).unwrap(), current_before);
+        }
+        current.resolve(&request, json!({"removed":true,"state":null}));
+        assert!(finish(worker, result).unwrap_err().contains("requires servers"));
+        assert!(current.skills.admission_reader().is_denied("41"));
+        assert!(!old.skills.admission_reader().is_denied("41"));
+        assert_eq!(fs::read(old.cache_path()).unwrap(), old_before);
+        assert_eq!(fs::read(current.cache_path()).unwrap(), current_before);
+        assert_eq!(current.relay.pending_count(), 0);
+        assert!(matches!(current.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        assert!(matches!(old.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work() {
+        let fixture = RealService::new();
+        fixture.seed();
+        let before = fs::read(fixture.cache_path()).unwrap();
+        let service = Arc::clone(&fixture.service);
+        let (worker, result) = spawn_operation(move || {
+            service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"41"})).unwrap()
+        });
+        let catalog = fixture.next(MCP_LIST_CATALOG_METHOD);
+        fixture.resolve(&catalog, json!([]));
+        let uninstall = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
+        assert_eq!(fixture.relay.pending_count(), 1);
+        fixture.relay.cancel_all("Host shutdown");
+        fixture.skills.dispose();
+        fixture.service.dispose().unwrap();
+        assert!(finish(worker, result).unwrap_err().contains("closed"));
+        assert!(!fixture.skills.admission_reader().is_denied("41"),
+            "an unknown remote outcome cannot manufacture a confirmed uninstall");
+        assert_eq!(fs::read(fixture.cache_path()).unwrap(), before);
+        assert!(fixture.relay.resolve(&json!({
+            "requestId":uninstall["payload"]["requestId"], "ok":true,
+            "result":{"removed":true,"state":{"servers":[]}},
+        })).is_err());
+        for (method, args) in [
+            ("uninstallMcpPlugin", json!({"pluginId":"41"})),
+            ("refreshMcp", json!({})),
+            ("syncPluginSkills", json!({})),
+            ("getPluginSyncStatus", json!({})),
+        ] {
+            assert!(fixture.service.dispatch_desktop_command(method, &args).unwrap()
+                .unwrap_err().contains("closed"));
+        }
+        assert_eq!(fixture.relay.pending_count(), 0);
+        assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+}

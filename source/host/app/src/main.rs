@@ -14007,6 +14007,9 @@ impl GatewayApi for UnifiedGatewayApi {
         if matches!(method, "getHostSettings" | "setHostSettings") {
             return self.call_public_settings_command(method, &args);
         }
+        if let Some(result) = self.mcp_service.dispatch_desktop_command(method, &args) {
+            return result.map_err(GatewayCommandError::Internal);
+        }
         call_host_lane(&self.host_tx, method, args)
     }
 

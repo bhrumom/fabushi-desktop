@@ -31510,7 +31510,24 @@
         "source/host/tests/workflow_commands_contract.rs",
         "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
         "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
-        "source/packages/cursor-plugins/loader.contract.test.ts"
+        "source/packages/cursor-plugins/loader.contract.test.ts",
+        "source/host/src/extensions/mcp/mcp_service.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
+        "source/host/src/gateway_server.rs",
+        "source/host/src/host_gateway_api.rs",
+        "source/host/app/src/main.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/electron-main/mcp/mcp-desktop.ts",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/host/tests/mcp_service_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        "source/host/tests/gateway_server_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
       ],
       "existing_owner_candidates": [
         {
@@ -31539,16 +31556,19 @@
       ],
       "id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
       "integration": {
-        "consumer": "Session workflow list/get/update and workflow_commands run/reference expansion; shipping main.rs workflow_store.list -> append_budgeted_workflows_system_prompt. Full library and live revocation lifecycle remain incomplete.",
-        "entrypoint": "McpExtension startup/refresh/auth and McpHostService install/uninstall -> SandPluginSkillsService::sync",
-        "owner": "FileWorkflowStore runtime projection; SandPluginSkillsService owns plugin cache publication and reconciliation",
-        "producer": "CoordinatorPluginSkillsLoader -> createHostPluginSkillsLoader -> existing effective-listing SDK; valid listing distinct from source failure"
+        "consumer": "Retained/new/reopened Session workflow list/get/update/run/reference and shipping workflow prompt consumer honor confirmed live refusal. Desktop preserves same-response state. Failed-publication process-loss durability, captured prompts, full library and ecosystem permission lifecycle remain incomplete.",
+        "entrypoint": "Existing desktop sand:mcp-uninstall-plugin -> Coordinator MainData uninstallMcpPlugin -> UnifiedGatewayApi -> McpHostService; existing Runner uninstall and refreshMcp/syncPluginSkills/getPluginSyncStatus share the same Skills owner.",
+        "owner": "McpHostService owns intent orchestration and calls SandPluginSkillsService admission observation before display projection or settings synchronization. FileWorkflowStore remains the Session/Runner projection; existing Host device/native authority and Coordinator carrier gates own ingress.",
+        "producer": "CoordinatorMcpManagerBackend/lifecycle relay confirms strict removed=true from the same desktop manager response; CoordinatorPluginSkillsLoader -> createHostPluginSkillsLoader retains authoritative listing and materialization ownership."
       },
       "invariants": [
         "Skills missing frontmatter boundary or name attribute are rejected",
         "Authoritative listing failure cannot retire the committed cache or prune materialized plugin files",
         "Only canonical committed permission-eligible plugin records reach workflow list/get/update and prompt consumers",
-        "Dispose before publication prevents late cache replacement; broader live revocation and restart acceptance remain open"
+        "Dispose before publication prevents late cache replacement; broader live revocation and restart acceptance remain open",
+        "Desktop and Runner uninstall share canonical identity validation; only strict correlated confirmation records a live refusal before display projection, cleanup and refresh.",
+        "Desktop settings errors or a replacement Coordinator leg cannot replay the uninstall or bypass the Rust service; malformed/unknown/false outcomes do not create confirmation.",
+        "Native lifecycle and routed-tool settlements/events retain their existing relay custody and are unavailable to paired credentials; external Coordinator Data/Control cannot acquire native settlement authority."
       ],
       "migration_rollback": "Keep the existing workflow and plugin cache owners. Version 1 distinguishes canonical denials from ambiguous legacy data; successful authoritative refresh migrates. Older binaries may ignore eligibility, so rollback is not permission acceptance.",
       "oracle_ids": [
@@ -31629,7 +31649,14 @@
         "source/host/tests/openclaw_snapshot_skills_contract.rs::test_ocrm_skills_runtime",
         "source/host/tests/workflow_store_contract.rs::committed_plugin_admission_is_shared_by_list_get_and_update",
         "source/host/tests/workflow_commands_contract.rs::committed_plugin_denial_reaches_session_commands_and_run_prompt_consumers",
-        "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs"
+        "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+        "source/host/tests/mcp_service_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        "source/host/tests/gateway_server_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs::shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs::desktop_uninstall_requires_main_data_without_expanding_the_reverse_allowlist",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
       ],
       "typed_contracts": [
         "SkillDefinition",

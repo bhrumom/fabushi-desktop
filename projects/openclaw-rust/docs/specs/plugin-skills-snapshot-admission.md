@@ -704,3 +704,155 @@ Already captured prompts, in-flight effects, stale remote-command completion,
 all MCP grants/OAuth and real ecosystem/UI/platform acceptance also remain open.
 Rollback loses this live protection. No OCRM source authority or global flag
 is promoted by this target-source correction.
+
+### Desktop MCP intents — OCRM-MCP-DESKTOP-INTENT-v1
+
+At base `485c388b082f71d9e6fb87535e87240551d19dde`, explicit desktop plugin
+removal calls the Electron manager directly. Settings synchronization can fail
+before its empty best-effort `refreshMcp` call. The latter and the existing
+renderer sync/status methods have no shipping Host handlers. Thus desktop
+removal bypasses the Rust service's PS-UNINSTALL observation. Fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. Implement this bounded wiring
+after the shared compile/contract gate is repaired; this specification is not
+execution evidence. Retain the preceding PS, PS-LIVE and PS-UNINSTALL contracts.
+
+| Method | Input | Existing owner and result |
+| --- | --- | --- |
+| `uninstallMcpPlugin` (new native intent) | `{pluginId: string}` | MCP service uninstall; original `{state, removed, reason?}` desktop result |
+| `refreshMcp` | `{}` | Await existing Skills sync; null acknowledgment or error |
+| `syncPluginSkills` | `{}` | Existing service's synchronized records array |
+| `getPluginSyncStatus` | `{}` | Existing service's status object |
+
+- **PS-DESKTOP-01 — one mutation path.** Desktop IPC sends one uninstall intent
+  through the existing Coordinator MainData leg. `UnifiedGatewayApi` delegates
+  before its Host-lane fallback to its existing `McpHostService` Arc. The service
+  uses the existing concrete backend/lifecycle relay and reverse
+  `uninstallHostMcpPlugin` callback. That callback continues calling the existing
+  manager, never the desktop intent. Preserve account/team checks; do not use
+  the separate `feature.plugin.uninstall` package installer.
+- **PS-DESKTOP-02 — exact identity.** The shared Rust service uninstall core,
+  used by Runner and Desktop, validates the ID before catalog or mutation calls:
+  a canonical, nonempty unpadded string with no control characters; numeric IDs
+  cannot contain leading-zero aliases. Padding includes downstream ECMAScript
+  trim whitespace, especially leading/trailing U+FEFF, which Rust's whitespace
+  property does not include. Reject these aliases before catalog, mutation or
+  observation; do not normalize them. Preserve exact opaque official IDs.
+  The Desktop intent separately requires exactly `{pluginId: string}` and rejects
+  caller-supplied outcome fields. Existing Runner tool-level catalog checks do
+  not replace this public service boundary: the legacy manager passes numeric
+  strings through `BigInt`, whereas Skills observations use the exact ID key.
+  Reject aliases without remote I/O or local observation; do not normalize a
+  different identity, duplicate the official catalog, or infer confirmation
+  from names, URLs or remaining rows.
+- **PS-DESKTOP-03 — confirmation before projection.** Preserve the backend's
+  confirmation and original display state separately. Only its correlated
+  boolean `removed=true` reaches the existing Skills observation, before any
+  display-state error is returned, legacy cleanup, refresh or desktop settings
+  synchronization. False, error, malformed confirmation and unknown outcome
+  create no uninstall fact. Preserve state from the same response, including
+  warnings and row policy fields; no extra list request or lossy reconstruction.
+  Share uninstall orchestration with the Runner entrypoint and retain its
+  existing removed/reason result. Keep the explicit unavailable/retired Skills
+  owner error after a known confirmation. A Desktop display projection error
+  returns after the observation and before cleanup/sync; the admission fence
+  remains. Runner's existing removed/reason projection does not depend on the
+  Desktop display shape and retains its current cleanup/sync follow-ups.
+- **PS-DESKTOP-04 — bridge and refresh.** The bridge awaits the Rust result
+  before its existing settings synchronization. A settings failure cannot skip
+  the confirmed observation. Do not directly fall back to a manager, resend the
+  intent to a replacement Host, or duplicate the service-owned refresh. The
+  three existing refresh/sync/status routes consume the actual Skills owner;
+  malformed arguments or a missing owner are errors. Completion-bearing
+  `refreshMcp` is explicitly unsupported here, not silently treated as empty.
+- **PS-DESKTOP-05 — existing ingress authority.** Coordinator accepts the new
+  uninstall intent only on MainData and refuses Data/Control before forwarding.
+  Renderer sync/status retain their Data route. Host HTTP retains its existing
+  local/admin and device-token authority; its context does not prove MainData
+  origin. Add uninstall/refresh/sync to the existing mutator scope predicate and
+  all four methods to the operator-only predicate. Read-only operators may read
+  status, cannot mutate; nodes cannot invoke these operator methods. Preserve
+  default local operation and existing bearer behavior, with no new credential,
+  native-origin header or permission registry. Register the new uninstall
+  intent in its own native management group, preserving the frozen public
+  inventory and existing Miniapp, Cloud Worker and Box groups. Do not put it
+  in the Box-only group, whose paired-device denial remains unchanged.
+- **PS-DESKTOP-06 — retained custody.** Reuse the existing one-attempt request,
+  separate HTTP/SSE/Control lanes, relay UUID and close/registration boundary.
+  Caller timeout does not cancel admitted remote work or authorize replay.
+  Late reverse resolution may contact a successor but cannot settle its UUID-
+  qualified waiter. No new retry loop, scheduler or disposal mechanism is added.
+- **PS-DESKTOP-07 — internal completion authority.** Exact `29669c8b` source
+  shows that paired read/write/node principals can obtain a pending lifecycle
+  request ID through SSE and forge its completion. Restrict
+  `mcp.resolveLifecycleRequest` and `host-mcp-lifecycle-request` events to the
+  existing native control-plane authority calculation used by Box methods:
+  configured shared secret or trusted loopback with no configured auth token,
+  using the same role, scope, host/origin and bearer checks. Preserve the current
+  Box behavior for an unknown bearer when no shared secret is configured;
+  this does not grant recognized paired tokens native authority. All paired credentials, including
+  `operator.write`, are denied for the resolver before delegation and cannot
+  receive that event. Event filtering applies before channel/slimming/gzip
+  projection; ordinary events remain available. UUIDs remain correlation,
+  not authorization. Do not change the relay's one-settlement, timeout, close
+  or successor rules or invent an extra credential/permission owner. This
+  internal authority is separate from PS-DESKTOP-05 management intent access.
+  The same boundary also covers the actual routed MCP execution pair
+  `runner.resolveRoutedToolRequest` / `runner-tool-request`: audited source
+  `812bf3a47b7ab16e49545446bd25f5e5ce8da27d` exposes the same known-UUID forgery path through `CoordinatorToolRelay`, whose
+  definitive-result check validates shape, not the caller's authority. Both
+  resolver/event pairs use the one existing native authority calculation;
+  preserve their own correlation, execution-unknown, close and successor rules.
+  The external Coordinator Data/Control ingress must likewise refuse both
+  settlement methods before forwarding with its native Host credential. Reuse
+  its existing MainData carrier gate; native reverse replies keep their current
+  route. The adopted `dda1467e2480ad730a684402f616802d06b8b277` already guards
+  lifecycle receipts at HTTP/SSE and Coordinator ingress. Preserve that work,
+  share its authority with the Box predicate, and extend the same boundary to
+  routed tool settlement without introducing a second permission owner.
+
+The shared Rust dispatch surface is `McpHostService::dispatch_desktop_command
+(&self, method: &str, args: &Value) -> Option<Result<Value, String>>`; unrelated
+methods return `None`. The internal backend result may retain display-state
+validation separately from confirmation so its error is propagated only after
+the existing observation boundary. The cache and admission algorithms remain
+with their current owners.
+
+The Actions oracle must exercise the real service, concrete lifecycle backend/
+relay, Skills cache and retained/new Session stores, with only remote/loader I/O
+controlled. Confirmed uninstall followed by failed refresh or malformed display
+state still excludes only the target from list/get/update, run/reference and the
+actual prompt builder while preserving cache/files and unrelated workflows.
+Retain false/error/unknown, canonical-ID, close/no-new-dispatch and successor
+controls. Invoke the actual registered desktop IPC handler and production port
+delegate: one intent, no manager fallback/retry, and settings failure only after
+the Host result. Actual Gateway HTTP with DevicePairingOwner-issued tokens must
+prove read/node negatives dispatch zero calls, status-read and local/admin
+positives work, and headers cannot upgrade token authority. Select
+`gateway_server_contract` alongside the existing MCP/Session/Coordinator and
+Electron targets; freeze H and review complete wiring plus negative controls.
+For PS-DESKTOP-07 use a real pending relay/backend request and its known real
+ID: each denied credential must reach zero resolver delegates, leave the waiter
+pending and deliver no result; a later authorized completion resolves it once
+with its original value. Apply the same real-waiter test to
+`CoordinatorToolRelay::request_tool_execution`, using a valid definitive MCP
+result shape so an unknown ID or malformed result cannot explain rejection. For SSE subscribe before publishing and read through
+an ordinary later marker, proving stream progress past both actual internal
+request events; paired clients receive neither request ID and native clients
+receive their unchanged payloads.
+An empty capture or timeout does not establish event filtering. Keep native
+secret/loopback positives and every existing Box authority assertion.
+
+Allowed production paths are existing `mcp_service.rs`, `coordinator_relay.rs`,
+`gateway_server.rs`, `host_gateway_api.rs`, shipping Host/Coordinator `main.rs`,
+Coordinator `mcp_lifecycle_relay.rs`, Desktop `mcp-desktop.ts`, its `mcp-oauth.ts`
+adapter and `shared/rpc/coordinator-main.ts`. Extend existing selected contract
+tests, workflow and OCRM responsibility references; add no owner or cache schema.
+Reuse the unchanged fixed-U review in the existing snapshot-skills and MCP
+dossiers, without new full-reading or acceptance claims.
+
+Process-loss durability after failed publication, post-response account changes,
+server-row removal, OAuth completion, SSE readiness, already captured prompts,
+unknown remote effects and real ecosystem/platform acceptance remain open.
+Rollback reintroduces the desktop bypass; it is not revocation acceptance.
+Current errors and sync status remain the observability surfaces. This bounded
+delivery cannot promote OCRM global flags or replace full FPM/OCRM acceptance.

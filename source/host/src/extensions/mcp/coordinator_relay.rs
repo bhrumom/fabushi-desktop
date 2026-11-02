@@ -1,7 +1,7 @@
 use crate::gateway_server::GatewayEventHub;
 use super::mcp_service::{
     BoxServerStatus, CatalogField, CatalogPlugin, CatalogSkill, EffectivePlugin,
-    McpManagerBackend, McpServerSummary,
+    McpManagerBackend, McpPluginUninstallOutcome, McpServerSummary,
 };
 use super::plugin_skills::{LoadedPlugins, PluginSkillsLoader};
 use serde_json::{Value, json};
@@ -404,11 +404,24 @@ impl McpManagerBackend for CoordinatorMcpManagerBackend {
     }
 
     fn uninstall_plugin(&self, plugin_id: &str) -> Result<(bool, Option<String>), String> {
+        self.uninstall_plugin_outcome(plugin_id)
+            .map(|outcome| (outcome.removed, outcome.reason))
+    }
+
+    fn uninstall_plugin_outcome(&self, plugin_id: &str) -> Result<McpPluginUninstallOutcome, String> {
         let result = self.relay
             .request(MCP_UNINSTALL_PLUGIN_METHOD, json!({"pluginId": plugin_id}))
             .map_err(|error| error.to_string())?;
-        let removed = result.get("removed").and_then(Value::as_bool).unwrap_or(false);
-        Ok((removed, optional_string(&result, "reason")))
+        let removed = result.get("removed").and_then(Value::as_bool)
+            .ok_or_else(|| "desktop MCP owner uninstallPlugin response requires boolean removed".to_string())?;
+        let reason = optional_string(&result, "reason");
+        let desktop_response = result.get("state").cloned()
+            .ok_or_else(|| "desktop MCP owner uninstallPlugin response requires state".to_string())
+            .and_then(decode_mcp_server_state)
+            // Validate with the existing decoder, but return the original reply
+            // without dropping warnings, row policy or future display fields.
+            .map(|_| result);
+        Ok(McpPluginUninstallOutcome { removed, reason, desktop_response })
     }
 
     fn install_plugin(
@@ -859,6 +872,115 @@ mod lifecycle_tests {
             assert_eq!(pause.attempts.load(Ordering::SeqCst), 1);
             assert_eq!(relay.pending_count(), 0);
             assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        });
+    }
+
+    #[test]
+    fn desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff() {
+        use crate::extensions::session::agent_session::SandAgentSessionStore;
+        use crate::extensions::session::production::ProductionSessionWorkers;
+
+        completes_without_deadlock(|| {
+            let root = TestRoot(std::env::temp_dir().join(format!(
+                "desktop-mcp-handoff-{}", uuid::Uuid::new_v4(),
+            )));
+            let mut records = Vec::new();
+            let mut files = Vec::new();
+            for id in ["41", "42"] {
+                let file = root.0.join(format!("plugins/cache/cursor/p{id}/v1/skills/retained/SKILL.md"));
+                fs::create_dir_all(file.parent().unwrap()).unwrap();
+                fs::write(&file, format!(
+                    "---\nname: Retained\ndescription: DESCRIPTION_{id}\n---\nBODY_{id}\n",
+                )).unwrap();
+                records.push(json!({
+                    "id":format!("plugin-{id}-retained"), "pluginId":id,
+                    "pluginName":format!("Plugin {id}"), "name":"Retained",
+                    "description":format!("DESCRIPTION_{id}"), "filePath":file,
+                }));
+                files.push(file);
+            }
+            let cache_dir = get_plugin_skills_dir(&root.0);
+            write_plugin_skills_cache(&cache_dir, &PluginSkillsCacheWriteIndex {
+                current_user_id: Some(Some(11)), skills: records, auth_blocked: Some(Vec::new()),
+            }, || 1_000.0).unwrap();
+            let cache_path = get_plugin_skills_cache_path(&cache_dir);
+            let before = fs::read(&cache_path).unwrap();
+            let file_before = fs::read(&files[0]).unwrap();
+            let events = GatewayEventHub::default();
+            let requests = events.subscribe();
+            let old_relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+                events.clone(), REQUEST_TIMEOUT,
+            ));
+            let old_skills = Arc::new(SandPluginSkillsService::new(
+                &root.0, Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&old_relay))),
+            ));
+            let old_service = Arc::new(McpHostService::new(
+                Arc::new(CoordinatorMcpManagerBackend::new(
+                    Arc::clone(&old_relay), Arc::new(|_, _| Ok(Vec::new())),
+                )), Some(old_skills.clone()),
+            ));
+            let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.0.join("agents"), 500));
+            let session = SandAgentSessionStore::new(Arc::clone(&workers));
+            let agent = session.create_session(None, "user", None).unwrap();
+            let retained = workers.open_workflow_store(&agent.id).unwrap();
+            workers.bind_plugin_skills_admission(old_skills.admission_reader()).unwrap();
+            assert_eq!(retained.get("plugin-41-retained").unwrap().body, "BODY_41");
+
+            let settle = |relay: &Arc<CoordinatorMcpLifecycleRelay>, method: &str, value: Value| {
+                let event = requests.recv_timeout(ORACLE_TIMEOUT).unwrap();
+                assert_eq!(event["payload"]["method"], method);
+                relay.resolve(&json!({
+                    "requestId":event["payload"]["requestId"], "ok":true, "result":value,
+                })).unwrap();
+            };
+            let dispatch = |service: Arc<McpHostService>, id: &'static str| {
+                let (tx, rx) = mpsc::channel();
+                let worker = thread::spawn(move || {
+                    let _ = tx.send(service.dispatch_desktop_command(
+                        "uninstallMcpPlugin", &json!({"pluginId":id}),
+                    ).unwrap());
+                });
+                (worker, rx)
+            };
+            let (worker, result) = dispatch(Arc::clone(&old_service), "41");
+            settle(&old_relay, MCP_LIST_CATALOG_METHOD, json!([]));
+            settle(&old_relay, MCP_UNINSTALL_PLUGIN_METHOD, json!({"removed":true,"state":null}));
+            assert!(result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err().contains("requires servers"));
+            worker.join().unwrap();
+            assert!(retained.get("plugin-41-retained").is_none());
+
+            let successor_relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+                events, REQUEST_TIMEOUT,
+            ));
+            let successor = Arc::new(old_skills.successor_with_loader(
+                Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&successor_relay))),
+            ).unwrap());
+            assert!(Arc::ptr_eq(&old_skills.admission_reader(), &successor.admission_reader()));
+            workers.bind_plugin_skills_admission(successor.admission_reader()).unwrap();
+            assert!(successor.admission_reader().is_denied("41"));
+            assert!(retained.get("plugin-41-retained").is_none());
+            assert!(workers.open_workflow_store(&agent.id).unwrap().get("plugin-41-retained").is_none());
+            assert_eq!(retained.get("plugin-42-retained").unwrap().body, "BODY_42");
+
+            // A retained predecessor can still receive a remote confirmation;
+            // the retired actual Skills port must refuse it, without writing
+            // through to its successor's live observation state.
+            let (worker, result) = dispatch(Arc::clone(&old_service), "42");
+            settle(&old_relay, MCP_LIST_CATALOG_METHOD, json!([]));
+            settle(&old_relay, MCP_UNINSTALL_PLUGIN_METHOD, json!({"removed":true,"state":null}));
+            let error = result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err();
+            worker.join().unwrap();
+            assert!(error.contains("uninstall confirmed") && error.contains("disposed"));
+            assert!(!successor.admission_reader().is_denied("42"));
+            assert_eq!(retained.get("plugin-42-retained").unwrap().body, "BODY_42");
+            assert_eq!(fs::read(&cache_path).unwrap(), before);
+            assert_eq!(fs::read(&files[0]).unwrap(), file_before);
+            assert!(matches!(requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            old_relay.cancel_all("fixture complete");
+            successor_relay.cancel_all("fixture complete");
+            old_service.dispose().unwrap();
+            successor.dispose();
+            workers.shutdown();
         });
     }
 }

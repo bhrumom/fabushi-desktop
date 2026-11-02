@@ -1,11 +1,21 @@
-use std::io::{Read, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use flate2::read::GzDecoder;
 use mahayana_host_runtime::device_pairing_owner::{DevicePairingOwner, DeviceTokenAuthorization};
+use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
+    CoordinatorMcpLifecycleRelay, CoordinatorMcpManagerBackend,
+    HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_AUTHENTICATE_SERVER_METHOD,
+    MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
+};
+use mahayana_host_runtime::extensions::mcp::mcp_service::McpManagerBackend;
+use mahayana_host_runtime::runner::coordinator_tool_relay::{
+    CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD,
+    RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
+};
 use mahayana_host_runtime::gateway_config::{GatewayServerConfig, GatewayTlsConfig};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayBridgeHub, GatewayCommandContext, GatewayCommandError,
@@ -668,10 +678,22 @@ fn issue_box_mcp_device_token(
     } else {
         vec![]
     };
+    issue_gateway_device_token(
+        owner, &device_id, &format!("box-mcp-public-key-{role}"), role, &scopes,
+    )
+}
+
+fn issue_gateway_device_token(
+    owner: &DevicePairingOwner,
+    device_id: &str,
+    public_key: &str,
+    role: &str,
+    scopes: &[&str],
+) -> (String, DeviceTokenAuthorization) {
     let pending = owner
         .handle_pair_request(&json!({
             "deviceId": device_id,
-            "publicKey": format!("box-mcp-public-key-{role}"),
+            "publicKey": public_key,
             "role": role,
             "roles": [role],
             "scopes": scopes,
@@ -1223,7 +1245,7 @@ fn gateway_mcp_lifecycle_receipts_require_native_auth_not_paired_operator_write(
         for (token, authorization) in issued {
             // Even an actual operator.write device credential is not the
             // Coordinator's native MCP lifecycle settlement authority.
-            for headers in ["", "x-sand-role: operator\\r\\nx-sand-scope: operator.write\\r\\n"] {
+            for headers in ["", "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n"] {
                 let before = api.recorded_calls();
                 let response = box_mcp_post(
                     server.port(), "mcp.resolveLifecycleRequest", Some(&token),
@@ -1251,6 +1273,524 @@ fn gateway_mcp_lifecycle_receipts_require_native_auth_not_paired_operator_write(
     assert!(admitted.starts_with("HTTP/1.1 200 OK"), "{admitted}");
     assert_eq!(json_body(&admitted)["method"], "mcp.resolveLifecycleRequest");
     server.close();
+}
+
+// This fixture controls only remote replies. Authentication, HTTP admission,
+// pending request ownership and completion use the production owners.
+struct McpControlApi {
+    pairing_owner: DevicePairingOwner,
+    lifecycle: Arc<CoordinatorMcpLifecycleRelay>,
+    tools: Arc<CoordinatorToolRelay>,
+    calls: Mutex<Vec<(String, Value)>>,
+}
+
+impl McpControlApi {
+    fn recorded_calls(&self) -> Vec<(String, Value)> {
+        self.calls.lock().expect("MCP control calls").clone()
+    }
+}
+
+impl GatewayApi for McpControlApi {
+    fn authenticate_device_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
+        self.pairing_owner.authenticate_device_token(token)
+    }
+
+    fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
+        self.calls
+            .lock()
+            .expect("record MCP control delegate")
+            .push((method.to_string(), args.clone()));
+        match method {
+            MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD => self.lifecycle.resolve(&args)
+                .map_err(|error| GatewayCommandError::BadRequest(error.to_string())),
+            RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD => self.tools.resolve(&args)
+                .map_err(|error| GatewayCommandError::BadRequest(error.to_string())),
+            "uninstallMcpPlugin" | "refreshMcp" | "syncPluginSkills" | "getPluginSyncStatus" => {
+                Ok(json!({"method": method, "args": args}))
+            }
+            _ => Err(GatewayCommandError::UnknownMethod(method.to_string())),
+        }
+    }
+}
+
+struct McpControlGateway {
+    server: GatewayServer,
+    api: Arc<McpControlApi>,
+    events: GatewayEventHub,
+    devices: Vec<(String, DeviceTokenAuthorization)>,
+}
+
+impl McpControlGateway {
+    fn new(configured_token: Option<&str>) -> Self {
+        let events = GatewayEventHub::default();
+        let pairing_owner = DevicePairingOwner::in_memory().expect("MCP test pairing owner");
+        let devices = [
+            ("mcp-read", "operator", vec!["operator.read"]),
+            ("mcp-write", "operator", vec!["operator.read", "operator.write"]),
+            ("mcp-node", "node", vec![]),
+        ].into_iter().map(|(device_id, role, scopes)| {
+            issue_gateway_device_token(
+                &pairing_owner, device_id, &format!("{device_id}-public-key"), role, &scopes,
+            )
+        }).collect();
+        let api = Arc::new(McpControlApi {
+            pairing_owner,
+            lifecycle: Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+                events.clone(), Duration::from_secs(60),
+            )),
+            tools: Arc::new(CoordinatorToolRelay::with_timeout(
+                events.clone(), Duration::from_secs(60),
+            )),
+            calls: Mutex::new(Vec::new()),
+        });
+        let server = start_gateway_server(GatewayServerDeps {
+            api: api.clone(),
+            events: events.clone(),
+            local_exec: None,
+            webauthn: None,
+            config: config(configured_token),
+            started_at: 1,
+        }).expect("MCP control gateway");
+        Self { server, api, events, devices }
+    }
+}
+
+impl Drop for McpControlGateway {
+    fn drop(&mut self) {
+        // Wake actual relay waiters even when an assertion unwinds the fixture.
+        self.api.lifecycle.cancel_all("MCP gateway contract fixture closed");
+        self.api.tools.cancel_all("MCP gateway contract fixture closed");
+    }
+}
+
+const MCP_CONTROL_RESOLVERS: [&str; 2] = [
+    MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
+    RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
+];
+
+struct PendingMcpControlRequests {
+    events: [Value; 2],
+    replies: [mpsc::Receiver<Result<Value, String>>; 2],
+    workers: Vec<thread::JoinHandle<()>>,
+}
+
+impl PendingMcpControlRequests {
+    fn start(gateway: &McpControlGateway) -> Self {
+        let published = gateway.events.subscribe();
+        let backend = CoordinatorMcpManagerBackend::new(
+            gateway.api.lifecycle.clone(), Arc::new(|_, _| Ok(Vec::new())),
+        );
+        let (lifecycle_tx, lifecycle_rx) = mpsc::channel();
+        let lifecycle_worker = thread::spawn(move || {
+            let result = backend.authenticate_server(
+                "fixture-server", "fixture-account", Some("fixture-agent"), true,
+            );
+            let _ = lifecycle_tx.send(result);
+        });
+        let lifecycle_event = published.recv_timeout(Duration::from_secs(5))
+            .expect("actual backend published its lifecycle request");
+        assert_eq!(lifecycle_event["channel"], HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL);
+        assert_eq!(lifecycle_event["payload"]["method"], MCP_AUTHENTICATE_SERVER_METHOD);
+        assert_eq!(lifecycle_event["payload"]["args"], json!({
+            "serverId": "fixture-server",
+            "accountKey": "fixture-account",
+            "requestingAgentId": "fixture-agent",
+            "forceReauth": true,
+        }));
+
+        let tools = gateway.api.tools.clone();
+        let tool_args = json!({"toolName": "fixture-tool", "args": {"opaque": ["a", 7, null]}});
+        let expected_tool_args = tool_args.clone();
+        let (tool_tx, tool_rx) = mpsc::channel();
+        let tool_worker = thread::spawn(move || {
+            let result = tools.request_tool_execution(tool_args).map_err(|error| error.to_string());
+            let _ = tool_tx.send(result);
+        });
+        let tool_event = published.recv_timeout(Duration::from_secs(5))
+            .expect("actual execution relay published its tool request");
+        assert_eq!(tool_event["channel"], RUNNER_TOOL_REQUEST_EVENT_CHANNEL);
+        assert_eq!(tool_event["payload"]["method"], ROUTED_TOOL_EXECUTE_METHOD);
+        assert_eq!(tool_event["payload"]["args"], expected_tool_args);
+        let pending = Self {
+            events: [lifecycle_event, tool_event],
+            replies: [lifecycle_rx, tool_rx],
+            workers: vec![lifecycle_worker, tool_worker],
+        };
+        assert!(pending.events[0]["payload"]["requestId"].as_str()
+            .expect("real lifecycle id").starts_with("host-mcp-"));
+        assert!(pending.events[1]["payload"]["requestId"].as_str()
+            .expect("real tool id").starts_with("runner-tool-"));
+        assert_ne!(pending.events[0]["payload"]["requestId"], pending.events[1]["payload"]["requestId"]);
+        pending.assert_pending(gateway);
+        pending
+    }
+
+    fn assert_pending(&self, gateway: &McpControlGateway) {
+        assert_eq!(gateway.api.lifecycle.pending_count(), 1, "lifecycle waiter retained");
+        assert_eq!(gateway.api.tools.pending_count(), 1, "execution waiter retained");
+        for reply in &self.replies {
+            assert!(matches!(reply.try_recv(), Err(mpsc::TryRecvError::Empty)),
+                "refused completion must not deliver a result");
+        }
+    }
+
+    fn complete(self, gateway: &McpControlGateway, native_bearer: Option<&str>) {
+        let results = [
+            json!({"authenticated": true, "state": {"opaque": [null, "native", 9]}}),
+            json!({
+                "content": [{"type": "text", "text": "original native tool completion"}],
+                "structuredContent": {"opaque": [null, "native", 9]},
+                "isError": false,
+            }),
+        ];
+        let mut expected_calls = gateway.api.recorded_calls();
+        for (index, method) in MCP_CONTROL_RESOLVERS.into_iter().enumerate() {
+            let request_id = self.events[index]["payload"]["requestId"].as_str().expect("real request id");
+            let args = json!({"requestId": request_id, "ok": true, "result": results[index]});
+            let response = box_mcp_post(
+                gateway.server.port(), method, native_bearer,
+                "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n", &args.to_string(),
+            );
+            assert!(response.starts_with("HTTP/1.1 200 OK"), "{method}: {response}");
+            assert_eq!(json_body(&response), json!({"resolved": true, "requestId": request_id}));
+            expected_calls.push((method.to_string(), args.clone()));
+            assert_eq!(gateway.api.recorded_calls(), expected_calls, "one native delegate per request");
+            assert_eq!(
+                self.replies[index].recv_timeout(Duration::from_secs(5))
+                    .expect("native completion reaches the original waiter")
+                    .expect("native completion has a definitive successful result"),
+                results[index],
+                "{method} must return the original value",
+            );
+
+            let duplicate = box_mcp_post(
+                gateway.server.port(), method, native_bearer, "", &args.to_string(),
+            );
+            assert!(duplicate.starts_with("HTTP/1.1 400 Bad Request"), "{duplicate}");
+            assert!(json_body(&duplicate)["error"].as_str().expect("duplicate error")
+                .contains("unknown or already-settled"), "{duplicate}");
+            expected_calls.push((method.to_string(), args));
+            assert_eq!(gateway.api.recorded_calls(), expected_calls, "duplicate is rejected by the real relay");
+        }
+        for worker in self.workers {
+            worker.join().expect("actual relay request worker");
+        }
+        for reply in self.replies {
+            assert!(matches!(reply.try_recv(), Err(mpsc::TryRecvError::Disconnected)),
+                "each real waiter must receive exactly one completion");
+        }
+        assert_eq!(gateway.api.lifecycle.pending_count(), 0);
+        assert_eq!(gateway.api.tools.pending_count(), 0);
+    }
+}
+
+fn assert_mcp_management_request(
+    gateway: &McpControlGateway,
+    method: &str,
+    args: &Value,
+    bearer: Option<&str>,
+    headers: &str,
+    denial: Option<&str>,
+) {
+    let mut expected_calls = gateway.api.recorded_calls();
+    let response = box_mcp_post(
+        gateway.server.port(), method, bearer, headers, &args.to_string(),
+    );
+    if let Some(code) = denial {
+        assert!(response.starts_with("HTTP/1.1 403 Forbidden"), "{method}: {response}");
+        assert!(json_body(&response)["error"].as_str().expect("management error")
+            .contains(code), "{response}");
+    } else {
+        assert!(response.starts_with("HTTP/1.1 200 OK"), "{method}: {response}");
+        assert_eq!(json_body(&response), json!({"method": method, "args": args}));
+        expected_calls.push((method.to_string(), args.clone()));
+    }
+    assert_eq!(gateway.api.recorded_calls(), expected_calls,
+        "{method}: refusals dispatch zero calls; admitted intents dispatch once with original arguments");
+}
+
+#[test]
+fn desktop_mcp_management_uses_issued_operator_scopes_without_header_escalation() {
+    for configured_token in [None, Some("native-mcp-management-secret")] {
+        let gateway = McpControlGateway::new(configured_token);
+        for (method, args) in [
+            ("uninstallMcpPlugin", json!({"pluginId": "official-plugin"})),
+            ("refreshMcp", json!({})),
+            ("syncPluginSkills", json!({})),
+            ("getPluginSyncStatus", json!({})),
+        ] {
+            let mutating = method != "getPluginSyncStatus";
+            for (token, authorization) in &gateway.devices {
+                let denial = if authorization.role == "node" {
+                    Some("ROLE_MISMATCH")
+                } else if mutating && !authorization.scopes.iter().any(|scope| scope == "operator.write") {
+                    Some("INSUFFICIENT_SCOPE")
+                } else {
+                    None
+                };
+                for headers in ["", "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n"] {
+                    assert_mcp_management_request(
+                        &gateway, method, &args, Some(token), headers, denial,
+                    );
+                }
+            }
+            for headers in ["", "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n"] {
+                assert_mcp_management_request(
+                    &gateway, method, &args, configured_token, headers, None,
+                );
+            }
+            assert_mcp_management_request(
+                &gateway, method, &args, configured_token, "x-sand-role: node\r\n",
+                Some("ROLE_MISMATCH"),
+            );
+            assert_mcp_management_request(
+                &gateway, method, &args, configured_token, "x-sand-scope: operator.read\r\n",
+                mutating.then_some("INSUFFICIENT_SCOPE"),
+            );
+        }
+    }
+}
+
+fn assert_mcp_receipts_refused(
+    gateway: &McpControlGateway,
+    pending: &PendingMcpControlRequests,
+    bearer: Option<&str>,
+    headers: &str,
+    status: &str,
+    common_error: Option<&str>,
+) {
+    for (index, method) in MCP_CONTROL_RESOLVERS.into_iter().enumerate() {
+        // Both IDs were emitted by live production relays. This is a valid
+        // definitive MCP result, so neither correlation nor result validation
+        // can explain the caller's refusal.
+        let args = json!({
+            "requestId": pending.events[index]["payload"]["requestId"],
+            "ok": true,
+            "result": {
+                "content": [{"type": "text", "text": "unauthorized fixture completion"}],
+                "structuredContent": {"fixture": true},
+                "isError": false,
+            },
+        });
+        let response = box_mcp_post(
+            gateway.server.port(), method, bearer, headers, &args.to_string(),
+        );
+        assert!(response.starts_with(status), "{method}: {response}");
+        let expected_error = common_error.unwrap_or(if index == 0 {
+            "MCP_LIFECYCLE_NATIVE_ONLY"
+        } else {
+            "RUNNER_TOOL_NATIVE_ONLY"
+        });
+        assert!(json_body(&response)["error"].as_str().expect("receipt refusal")
+            .contains(expected_error), "{response}");
+        assert!(gateway.api.recorded_calls().is_empty(), "refused receipt reached a resolver");
+        pending.assert_pending(gateway);
+    }
+}
+
+#[test]
+fn internal_mcp_receipts_preserve_real_waiters_until_native_completion() {
+    for (configured_token, native_bearer) in [
+        (None, None),
+        (None, Some("unrecognized-local-bearer")),
+        (Some("native-mcp-receipt-secret"), Some("native-mcp-receipt-secret")),
+    ] {
+        let gateway = McpControlGateway::new(configured_token);
+        let pending = PendingMcpControlRequests::start(&gateway);
+        for (token, _) in &gateway.devices {
+            for headers in ["", "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n"] {
+                assert_mcp_receipts_refused(
+                    &gateway, &pending, Some(token), headers, "HTTP/1.1 403 Forbidden", None,
+                );
+            }
+        }
+        for headers in [
+            "x-sand-role: node\r\n",
+            "x-sand-role: unknown\r\n",
+            "x-sand-role: \r\n",
+            "x-sand-scope: operator.read\r\n",
+            "x-sand-scope: unknown\r\n",
+            "x-sand-scope: \r\n",
+        ] {
+            assert_mcp_receipts_refused(
+                &gateway, &pending, native_bearer, headers, "HTTP/1.1 403 Forbidden", None,
+            );
+        }
+        assert_mcp_receipts_refused(
+            &gateway, &pending, native_bearer, "Origin: https://fixture.invalid\r\n",
+            "HTTP/1.1 403 Forbidden", Some("browser-origin gateway requests are not allowed"),
+        );
+        if configured_token.is_some() {
+            for bearer in [None, Some("incorrect-native-secret")] {
+                assert_mcp_receipts_refused(
+                    &gateway, &pending, bearer, "", "HTTP/1.1 401 Unauthorized", Some("unauthorized"),
+                );
+            }
+        } else {
+            assert_mcp_receipts_refused(
+                &gateway, &pending, native_bearer, "Host: fixture.invalid\r\n",
+                "HTTP/1.1 403 Forbidden", Some("untrusted gateway host"),
+            );
+        }
+        pending.complete(&gateway, native_bearer);
+    }
+}
+
+fn open_mcp_event_stream(
+    port: u16,
+    bearer: Option<&str>,
+    authority_headers: &str,
+    target: &str,
+    slim: bool,
+    gzip: bool,
+) -> Box<dyn BufRead> {
+    let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect MCP SSE");
+    stream.set_read_timeout(Some(Duration::from_secs(5))).expect("MCP SSE read bound");
+    let authorization = bearer.map(|token| format!("Authorization: Bearer {token}\r\n"))
+        .unwrap_or_default();
+    let slim_header = if slim { "x-sand-slim-avatars: 1\r\n" } else { "" };
+    let gzip_header = if gzip { "Accept-Encoding: gzip\r\n" } else { "" };
+    write!(
+        stream,
+        "GET {target} HTTP/1.1\r\nHost: 127.0.0.1\r\n{authorization}{authority_headers}{slim_header}{gzip_header}Connection: keep-alive\r\n\r\n"
+    ).expect("write MCP SSE request");
+    stream.flush().expect("flush MCP SSE request");
+    let mut reader = BufReader::new(stream);
+    let mut headers = String::new();
+    loop {
+        let mut line = String::new();
+        assert!(reader.read_line(&mut line).expect("read MCP SSE headers") > 0,
+            "MCP SSE closed before its headers");
+        let complete = line == "\r\n";
+        headers.push_str(&line);
+        assert!(headers.len() < 8192, "unexpected MCP SSE headers");
+        if complete {
+            break;
+        }
+    }
+    assert!(headers.starts_with("HTTP/1.1 200 OK"), "{headers}");
+    assert!(headers.to_ascii_lowercase().contains("content-type: text/event-stream"), "{headers}");
+    assert_eq!(headers.to_ascii_lowercase().contains("content-encoding: gzip"), gzip, "{headers}");
+    // Production subscribes before flushing these headers. Preserve any body
+    // already buffered and decode the actual ongoing stream, including gzip.
+    if gzip {
+        Box::new(BufReader::new(GzDecoder::new(reader)))
+    } else {
+        Box::new(reader)
+    }
+}
+
+fn read_mcp_events_through_marker(reader: &mut dyn BufRead, marker: &str) -> Vec<Value> {
+    let mut events = Vec::new();
+    let mut saw_retry = false;
+    let mut bytes = 0;
+    loop {
+        let mut line = String::new();
+        let count = reader.read_line(&mut line).expect("read MCP SSE through ordinary marker");
+        assert!(count > 0, "MCP SSE ended before the ordinary marker");
+        bytes += count;
+        assert!(bytes < 64 * 1024, "MCP SSE never reached its bounded marker");
+        if line.trim() == "retry: 1000" {
+            saw_retry = true;
+        }
+        if let Some(data) = line.strip_prefix("data: ") {
+            let event: Value = serde_json::from_str(data.trim_end()).expect("actual MCP SSE JSON");
+            let reached_marker = event["payload"]["marker"].as_str() == Some(marker);
+            events.push(event);
+            if reached_marker {
+                assert!(saw_retry, "must read the subscribed stream through the later marker");
+                return events;
+            }
+        }
+    }
+}
+
+#[test]
+fn internal_mcp_events_are_native_only_before_channel_slim_and_gzip_projection() {
+    let selected = format!(
+        "/events?channels={HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL},{RUNNER_TOOL_REQUEST_EVENT_CHANNEL},agent-upserted"
+    );
+    for (configured_token, native_bearer) in [
+        (None, None),
+        (None, Some("unrecognized-local-bearer")),
+        (Some("native-mcp-event-secret"), Some("native-mcp-event-secret")),
+    ] {
+        for (target, slim, gzip) in [
+            ("/events", false, false),
+            (selected.as_str(), false, false),
+            ("/events", true, false),
+            (selected.as_str(), true, true),
+        ] {
+            let gateway = McpControlGateway::new(configured_token);
+            let mut streams = vec![(
+                "native".to_string(),
+                true,
+                open_mcp_event_stream(
+                    gateway.server.port(), native_bearer,
+                    "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n", target, slim, gzip,
+                ),
+            )];
+            for (token, authorization) in &gateway.devices {
+                let headers = format!(
+                    "x-sand-role: {}\r\nx-sand-scope: operator.write\r\n", authorization.role,
+                );
+                streams.push((
+                    authorization.device_id.clone(),
+                    false,
+                    open_mcp_event_stream(gateway.server.port(), Some(token), &headers, target, slim, gzip),
+                ));
+            }
+            for (label, headers) in [
+                ("native-read-scope", "x-sand-scope: operator.read\r\n"),
+                ("native-node-role", "x-sand-role: node\r\n"),
+            ] {
+                streams.push((
+                    label.to_string(),
+                    false,
+                    open_mcp_event_stream(gateway.server.port(), native_bearer, headers, target, slim, gzip),
+                ));
+            }
+
+            // Every HTTP subscriber is established before either real relay
+            // publishes. Seeing the later marker proves progress past both IDs.
+            let pending = PendingMcpControlRequests::start(&gateway);
+            let marker = "mcp-control-stream-progress";
+            let marker_event = json!({
+                "channel": "agent-upserted",
+                "payload": {
+                    "marker": marker,
+                    "agent": {"id": "fixture-agent", "avatarDataUrl": "data:image/png;base64,Zml4dHVyZQ=="},
+                },
+            });
+            gateway.events.publish(marker_event.clone());
+            let mut projected_marker = marker_event;
+            if slim {
+                projected_marker["payload"]["agent"]["avatarDataUrl"] = Value::Null;
+            }
+            for (label, native, mut reader) in streams {
+                let received = read_mcp_events_through_marker(reader.as_mut(), marker);
+                let expected = if native {
+                    vec![pending.events[0].clone(), pending.events[1].clone(), projected_marker.clone()]
+                } else {
+                    vec![projected_marker.clone()]
+                };
+                assert_eq!(received, expected, "{label}: target={target}, slim={slim}, gzip={gzip}");
+                if !native {
+                    let encoded = serde_json::to_string(&received).expect("observed SSE frames");
+                    for event in &pending.events {
+                        assert!(!encoded.contains(event["payload"]["requestId"].as_str().expect("real id")),
+                            "{label} received an internal request ID");
+                    }
+                }
+            }
+            assert!(gateway.api.recorded_calls().is_empty(), "SSE must not settle either waiter");
+            pending.assert_pending(&gateway);
+            pending.complete(&gateway, native_bearer);
+        }
+    }
 }
 
 #[test]

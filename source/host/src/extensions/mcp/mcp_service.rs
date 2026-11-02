@@ -159,11 +159,30 @@ pub trait PluginSkillsPort: Send + Sync {
     fn remove_live_references(&self, source_urls: &[String]);
 }
 
+/// One backend mutation keeps its confirmation separate from the Desktop
+/// display projection. A malformed display must not discard a known removal.
+#[derive(Debug, Clone, PartialEq)]
+pub struct McpPluginUninstallOutcome {
+    pub removed: bool,
+    pub reason: Option<String>,
+    pub desktop_response: Result<Value, String>,
+}
+
 pub trait McpManagerBackend: Send + Sync {
     fn list_servers(&self) -> Result<Vec<McpServerSummary>, String>;
     fn list_catalog(&self, force_refresh: bool) -> Result<Vec<CatalogPlugin>, String>;
     fn list_effective_plugins(&self) -> Result<Vec<EffectivePlugin>, String>;
     fn uninstall_plugin(&self, plugin_id: &str) -> Result<(bool, Option<String>), String>;
+    fn uninstall_plugin_outcome(&self, plugin_id: &str) -> Result<McpPluginUninstallOutcome, String> {
+        let (removed, reason) = self.uninstall_plugin(plugin_id)?;
+        Ok(McpPluginUninstallOutcome {
+            removed,
+            reason,
+            // Existing tuple implementations retain their Runner contract. Only
+            // the actual backend reply can supply the Desktop display state.
+            desktop_response: Err("desktop MCP uninstall response is unavailable".into()),
+        })
+    }
     fn install_plugin(
         &self,
         plugin_id: &str,
@@ -219,6 +238,45 @@ impl McpHostService {
             backend,
             plugin_skills,
             state: Arc::new(Mutex::new(ServiceState::default())),
+        }
+    }
+
+    fn ensure_active(&self) -> Result<(), String> {
+        let state = self.state.lock()
+            .map_err(|_| "MCP service state is poisoned".to_string())?;
+        if state.disposed {
+            return Err("MCP service is closed".into());
+        }
+        Ok(())
+    }
+
+    pub fn dispatch_desktop_command(
+        &self,
+        method: &str,
+        args: &Value,
+    ) -> Option<Result<Value, String>> {
+        match method {
+            "uninstallMcpPlugin" => Some((|| {
+                let object = args.as_object().filter(|object| object.len() == 1)
+                    .ok_or_else(|| "uninstallMcpPlugin requires exactly {pluginId: string}".to_string())?;
+                let plugin_id = object.get("pluginId").and_then(Value::as_str)
+                    .ok_or_else(|| "uninstallMcpPlugin requires exactly {pluginId: string}".to_string())?;
+                self.uninstall_plugin_with_projection(plugin_id, |outcome| outcome.desktop_response)
+            })()),
+            "refreshMcp" | "syncPluginSkills" | "getPluginSyncStatus" => Some((|| {
+                self.ensure_active()?;
+                if !args.as_object().is_some_and(|object| object.is_empty()) {
+                    return Err(format!("{method} requires exactly {{}}"));
+                }
+                let skills = self.plugin_skills.as_ref()
+                    .ok_or_else(|| "plugin skills owner is unavailable".to_string())?;
+                match method {
+                    "refreshMcp" => skills.sync("desktop").map(|_| Value::Null),
+                    "syncPluginSkills" => skills.sync("desktop").map(Value::Array),
+                    _ => Ok(skills.status()),
+                }
+            })()),
+            _ => None,
         }
     }
 
@@ -296,6 +354,33 @@ impl McpHostService {
     }
 
     pub fn uninstall_plugin(&self, plugin_id: &str) -> Result<Value, String> {
+        self.uninstall_plugin_with_projection(plugin_id, |outcome| Ok(json!({
+            "removed": outcome.removed,
+            "reason": outcome.reason,
+        })))
+    }
+
+    fn uninstall_plugin_with_projection(
+        &self,
+        plugin_id: &str,
+        project: impl FnOnce(McpPluginUninstallOutcome) -> Result<Value, String>,
+    ) -> Result<Value, String> {
+        // The legacy remote manager converts decimal IDs through BigInt while
+        // admission uses exact strings. Reject aliases before any remote I/O.
+        let numeric_alias = plugin_id.len() > 1
+            && plugin_id.starts_with('0')
+            && plugin_id.bytes().all(|byte| byte.is_ascii_digit());
+        // JavaScript's downstream trim also removes U+FEFF; Rust's Unicode
+        // whitespace property does not. Refuse aliases instead of observing a
+        // different key from the plugin the remote manager actually removes.
+        let padded = plugin_id.trim_matches(|ch: char| ch.is_whitespace() || ch == '\u{feff}')
+            != plugin_id;
+        if plugin_id.is_empty() || padded
+            || plugin_id.chars().any(char::is_control) || numeric_alias
+        {
+            return Err("plugin uninstall requires a canonical plugin ID".into());
+        }
+        self.ensure_active()?;
         let source_urls = self
             .backend
             .list_catalog(false)
@@ -309,21 +394,30 @@ impl McpHostService {
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
-        let (removed, reason) = self.backend.uninstall_plugin(plugin_id)?;
-        if removed {
+        // Catalog lookup can await a remote owner. Do not start a mutation if
+        // this service closed while that lookup was in flight.
+        self.ensure_active()?;
+        let outcome = self.backend.uninstall_plugin_outcome(plugin_id)?;
+        let skills = if outcome.removed {
             let skills = self.plugin_skills.as_ref().ok_or_else(|| {
                 "plugin uninstall confirmed, but local skill admission could not be retired: plugin skills owner is unavailable".to_string()
             })?;
             skills.observe_confirmed_uninstall(plugin_id).map_err(|error| {
                 format!("plugin uninstall confirmed, but local skill admission could not be retired: {error}")
             })?;
+            Some(skills)
+        } else {
+            None
+        };
+        // A Desktop display error is returned only after the confirmation has
+        // reached admission, but before cleanup or refresh. Runner's projection
+        // ignores Desktop shape and keeps its existing follow-up behavior.
+        let result = project(outcome)?;
+        if let Some(skills) = skills {
             skills.remove_live_references(&source_urls);
             let _ = skills.sync("uninstall");
         }
-        Ok(json!({
-            "removed": removed,
-            "reason": reason,
-        }))
+        Ok(result)
     }
 
     pub fn install_plugin(

@@ -279,6 +279,18 @@ jobs:
               "source/host/tests/generated_occurrence_codec_contract.rs",
               "source/host/tests/production_checkpoint_restart_contract.rs",
               "source/host/tests/routed_send_acceptance_contract.rs",
+              "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+              "source/host/src/extensions/mcp/mcp_service.rs",
+              "source/host/src/extensions/mcp/coordinator_relay.rs",
+              "source/host/src/extensions/mcp/plugin_skills.rs",
+              "source/host/src/extensions/mcp/plugin_skills_cache.rs",
+              "source/host/src/gateway_server.rs",
+              "source/host/src/host_gateway_api.rs",
+              "source/host/app/src/main.rs",
+              "source/host/tests/mcp_service_contract.rs",
+              "source/host/tests/mcp_coordinator_relay_contract.rs",
+              "source/host/tests/gateway_server_contract.rs",
+              "source/host/tests/host_runner_composition_production_wiring_contract.rs",
           ]
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
@@ -724,6 +736,16 @@ jobs:
               "subject_commit": head,
               "subject_tree": git("rev-parse", "HEAD^{tree}"),
               "manifest": {"path": manifest.as_posix(), "git_blob": manifest_blob},
+              "source_inputs_sha256": {
+                  path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in (
+                      ".github/workflows/rust-desktop-runtime.yml",
+                      "source/node-agent-coordinator/src/main.rs",
+                      "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs",
+                      "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+                      "source/node-agent-coordinator/tests/production_protocol.rs",
+                      "source/shared/rpc/coordinator-main.ts",
+                  )
+              },
               "lock": {"path": lock.as_posix(), "artifact_file": "coordinator-Cargo.lock",
                        "git_blob": lock_blob, "sha256": hashlib.sha256(lock_bytes).hexdigest(),
                        "byte_length": len(lock_bytes), "committed_git_blob": committed_lock_blob,
@@ -1369,7 +1391,7 @@ jobs:
         run: |
           mkdir -p .evidence
           python3 - <<'PY'
-          import json, os, subprocess
+          import hashlib, json, os, subprocess
           from pathlib import Path
           head=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           assert head == os.environ["PLUGIN_EXPECTED_SHA"]
@@ -1382,6 +1404,20 @@ jobs:
               "run_id": os.environ["GITHUB_RUN_ID"],
               "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "shipping_electron_bundle": "passed",
+              "inputs_sha256": {
+                  path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in (
+                      ".github/workflows/rust-desktop-runtime.yml",
+                      "desktop/scripts/build-electron-runtime.mjs",
+                      "source/electron-main/adapters/mcp-oauth.ts",
+                      "source/electron-main/mcp/mcp-desktop.ts",
+                      "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+                      "source/shared/rpc/coordinator-main.ts",
+                      "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+                  )
+              },
+              "desktop_mcp_intent_contract": "OCRM-MCP-DESKTOP-INTENT-v1",
+              "desktop_mcp_intent_result": "passed",
+              "desktop_mcp_intent_scope": "Actual registered IPC, production adapter and lazy Coordinator port under controlled remote I/O: one uninstall request, retained arguments and display result, confirmation before settings, no fallback/retry or extra refresh after false/error/settings failure or replacement leg. Rust confirmation/admission and native ingress contracts execute separately on this H; live accounts and process-loss revocation remain open.",
               "node_contract_targets": ["host-plugin-skills-loader.contract.test", "loader.contract.test", "mcp-runtime.contract.test"],
               "node_contract_result": "passed",
               "runner_mcp_carrier_target": "coordinator-control-server.contract.test",

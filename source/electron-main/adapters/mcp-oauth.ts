@@ -27,7 +27,7 @@ import { open } from "node:fs/promises";
 type McpRuntimeDeps = Parameters<typeof createMcpRuntime<DesktopMcpManagerFacade>>[0];
 
 type ProductionMcpOAuthRootRuntimePorts = Pick<McpRuntimeDeps, "settingsStore" | "sandRootDir" | "reportConnectorAuth" | "broadcast" | "refreshHostMcp">;
-type ProductionMcpOAuthRootDesktopPorts = Pick<McpDesktopDeps, "createOAuthLoopback" | "fetchTeamPopularity" | "settings" | "wait" | "refreshMcp" | "syncHostSettings">;
+type ProductionMcpOAuthRootDesktopPorts = Pick<McpDesktopDeps, "createOAuthLoopback" | "fetchTeamPopularity" | "settings" | "wait" | "refreshMcp" | "syncHostSettings" | "uninstallMcpPlugin">;
 type ProductionMcpOAuthResolverDesktopPorts = Omit<McpDesktopDeps, "ipc" | "getManager" | keyof ProductionMcpOAuthRootDesktopPorts>;
 
 export interface ProductionMcpOAuthRootPortProvider {
@@ -176,6 +176,11 @@ export function createProductionMcpOAuthRootPortProvider(
         const refreshMcp = context.coordinatorLegs.legs.refreshMcp;
         if (typeof refreshMcp !== "function") throw new Error("Coordinator MCP refresh port is unavailable.");
         return await refreshMcp(options);
+      },
+      uninstallMcpPlugin: async (request) => {
+        const uninstallMcpPlugin = context.coordinatorLegs.legs.uninstallMcpPlugin;
+        if (typeof uninstallMcpPlugin !== "function") throw new Error("Coordinator MCP uninstall port is unavailable.");
+        return await uninstallMcpPlugin(request);
       },
       syncHostSettings: context.mcpHost.syncHostSettings,
       settings: {

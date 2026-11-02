@@ -93,7 +93,8 @@ macro_rules! define_host_gateway_registry {
     ($(($method:literal, $owner:ident)),+ $(,)?;
      native $(($native:literal, $native_owner:ident)),+ $(,)?;
      native_cloud_workers $(($cloud:literal, $cloud_owner:ident)),+ $(,)?;
-     native_box_mcp $(($box_mcp:literal, $box_mcp_owner:ident)),+ $(,)?) => {
+     native_box_mcp $(($box_mcp:literal, $box_mcp_owner:ident)),+ $(,)?;
+     native_mcp_management $(($mcp_management:literal, $mcp_management_owner:ident)),+ $(,)?) => {
         /// Frozen Grok 0.18 public Host gateway surface. Keep this list as the
         /// single public-method registry; protocol exposure and ownership
         /// contracts consume it instead of maintaining parallel string tables.
@@ -109,6 +110,9 @@ macro_rules! define_host_gateway_registry {
         pub const FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS: &[&str] = &[
             $($box_mcp),+
         ];
+        pub const FABUSHI_NATIVE_MCP_MANAGEMENT_GATEWAY_METHODS: &[&str] = &[
+            $($mcp_management),+
+        ];
 
         pub fn host_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
             if let Some(owner) = openclaw_gateway_owner(method) {
@@ -119,6 +123,7 @@ macro_rules! define_host_gateway_registry {
                 $($native => Some(HostGatewayOwner::$native_owner),)+
                 $($cloud => Some(HostGatewayOwner::$cloud_owner),)+
                 $($box_mcp => Some(HostGatewayOwner::$box_mcp_owner),)+
+                $($mcp_management => Some(HostGatewayOwner::$mcp_management_owner),)+
                 _ => None,
             }
         }
@@ -266,6 +271,9 @@ define_host_gateway_registry!(
     ("loadBoxMcpServers", Mcp),
     ("listBoxMcpToolsRaw", Mcp),
     ("executeBoxMcpToolRaw", Mcp),
+    ; native_mcp_management
+    // Desktop intents use the existing MCP owner and keep native Box authority separate.
+    ("uninstallMcpPlugin", Mcp),
 );
 
 pub fn is_sand_agent_purpose(value: &str) -> bool {

@@ -385,6 +385,111 @@ fn uninstall_without_skills_owner_reports_confirmed_removal_and_preserves_unconf
     }
 }
 
+#[test]
+fn desktop_dispatch_validates_exact_arguments_before_backend_or_skills_calls() {
+    let backend_state = Arc::new(Mutex::new(BackendState::default()));
+    let skills_state = Arc::new(Mutex::new(SkillsState::default()));
+    let service = McpHostService::new(
+        Arc::new(Backend(backend_state.clone())),
+        Some(Arc::new(Skills(skills_state.clone()))),
+    );
+    assert!(service.dispatch_desktop_command("unrelated", &Value::Null).is_none());
+    for args in [
+        Value::Null, json!([]), json!("9"), json!({}), json!({"id":"9"}),
+        json!({"pluginId":9}), json!({"pluginId":null}),
+        json!({"pluginId":"9","removed":true}),
+        json!({"pluginId":"9","state":{"servers":[]}}),
+    ] {
+        assert!(service.dispatch_desktop_command("uninstallMcpPlugin", &args).unwrap().is_err());
+    }
+    for method in ["refreshMcp", "syncPluginSkills", "getPluginSyncStatus"] {
+        for args in [Value::Null, json!([]), json!(""), json!({"completed":true})] {
+            assert!(service.dispatch_desktop_command(method, &args).unwrap().is_err());
+        }
+    }
+    assert!(backend_state.lock().unwrap().catalog_forced.is_empty());
+    assert!(backend_state.lock().unwrap().uninstall_ids.is_empty());
+    assert!(skills_state.lock().unwrap().confirmed_uninstalls.is_empty());
+    assert!(skills_state.lock().unwrap().syncs.is_empty());
+    assert!(skills_state.lock().unwrap().removed.is_empty());
+
+    let missing = McpHostService::new(Arc::new(Backend(backend_state.clone())), None);
+    for method in ["refreshMcp", "syncPluginSkills", "getPluginSyncStatus"] {
+        assert!(missing.dispatch_desktop_command(method, &json!({})).unwrap()
+            .unwrap_err().contains("owner is unavailable"));
+    }
+    service.dispose().unwrap();
+    for (method, args) in [
+        ("uninstallMcpPlugin", json!({"pluginId":"9"})),
+        ("refreshMcp", json!({})),
+        ("syncPluginSkills", json!({})),
+        ("getPluginSyncStatus", json!({})),
+    ] {
+        assert!(service.dispatch_desktop_command(method, &args).unwrap()
+            .unwrap_err().contains("closed"));
+    }
+    assert!(service.uninstall_plugin("9").unwrap_err().contains("closed"));
+    assert!(service.dispatch_desktop_command("unrelated", &json!({})).is_none());
+    assert!(backend_state.lock().unwrap().catalog_forced.is_empty());
+    assert!(backend_state.lock().unwrap().uninstall_ids.is_empty());
+    assert!(skills_state.lock().unwrap().syncs.is_empty());
+}
+
+#[test]
+fn both_uninstall_entrypoints_reject_identity_aliases_without_remote_io() {
+    let backend_state = Arc::new(Mutex::new(BackendState {
+        uninstall_result: Some(Ok((false, Some("still-present".into())))),
+        ..BackendState::default()
+    }));
+    let skills_state = Arc::new(Mutex::new(SkillsState::default()));
+    let service = McpHostService::new(
+        Arc::new(Backend(backend_state.clone())),
+        Some(Arc::new(Skills(skills_state.clone()))),
+    );
+    for id in [
+        "", " ", " 9", "9 ", "\u{a0}9", "9\n", "9\t0", "9\u{7f}", "9\u{85}",
+        "01", "00", "0009", "\u{feff}", "\u{feff}9", "9\u{feff}",
+        "\u{feff}9\u{feff}", " \u{feff}9\u{feff}\u{a0}",
+        "\u{feff}01", "01\u{feff}", "\u{feff}01\u{feff}",
+        "\u{feff}official:github/review-tools", "official:github/review-tools\u{feff}",
+    ] {
+        assert!(service.uninstall_plugin(id).unwrap_err().contains("canonical"));
+        assert!(service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":id}))
+            .unwrap().unwrap_err().contains("canonical"));
+    }
+    assert!(backend_state.lock().unwrap().catalog_forced.is_empty());
+    assert!(backend_state.lock().unwrap().uninstall_ids.is_empty());
+    assert!(skills_state.lock().unwrap().confirmed_uninstalls.is_empty());
+    for id in ["9", "184467440737095516160", "official:github/review-tools"] {
+        assert_eq!(service.uninstall_plugin(id).unwrap(),
+            json!({"removed":false,"reason":"still-present"}));
+    }
+    assert_eq!(backend_state.lock().unwrap().uninstall_ids,
+        vec!["9", "184467440737095516160", "official:github/review-tools"]);
+    assert_eq!(backend_state.lock().unwrap().catalog_forced, vec![false; 3]);
+    assert!(skills_state.lock().unwrap().confirmed_uninstalls.is_empty());
+    assert!(skills_state.lock().unwrap().syncs.is_empty());
+    assert!(skills_state.lock().unwrap().removed.is_empty());
+}
+
+#[test]
+fn tuple_backend_default_preserves_confirmation_without_fabricating_desktop_state() {
+    let backend_state = Arc::new(Mutex::new(BackendState::default()));
+    let skills_state = Arc::new(Mutex::new(SkillsState::default()));
+    let service = McpHostService::new(
+        Arc::new(Backend(backend_state.clone())),
+        Some(Arc::new(Skills(skills_state.clone()))),
+    );
+    let error = service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"9"}))
+        .unwrap().unwrap_err();
+    assert!(error.contains("desktop MCP uninstall response is unavailable"));
+    assert_eq!(backend_state.lock().unwrap().uninstall_ids, vec!["9"]);
+    let skills = skills_state.lock().unwrap();
+    assert_eq!(skills.confirmed_uninstalls, vec!["9"]);
+    assert!(skills.removed.is_empty());
+    assert!(skills.syncs.is_empty());
+}
+
 mod confirmed_uninstall_consumers {
     use super::*;
     use std::fs;
@@ -392,9 +497,13 @@ mod confirmed_uninstall_consumers {
     use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
         ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,
     };
-    use mahayana_host_runtime::extensions::mcp::plugin_skills::{
-        LoadedPlugins, PluginSkillsLoader, SandPluginSkillsService,
+    use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
+        CoordinatorMcpLifecycleRelay, CoordinatorMcpManagerBackend, CoordinatorPluginSkillsLoader,
+        HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_INSTALL_PLUGIN_METHOD,
+        MCP_LIST_CATALOG_METHOD, MCP_LOAD_PLUGIN_SKILLS_METHOD, MCP_UNINSTALL_PLUGIN_METHOD,
     };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills::SandPluginSkillsService;
+    use mahayana_host_runtime::gateway_server::GatewayEventHub;
     use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
         get_plugin_skills_cache_path, get_plugin_skills_dir,
     };
@@ -410,12 +519,27 @@ mod confirmed_uninstall_consumers {
     use mahayana_host_runtime::workflows::workflow_library::WorkflowSpec;
     use mahayana_host_runtime::workflows::workflow_store::FileWorkflowStore;
 
-    struct Loader(Mutex<Result<LoadedPlugins, String>>);
+    const LEGACY_SOURCE: &str = "https://github.com/example/private/blob/main/skills/private/SKILL.md";
 
-    impl PluginSkillsLoader for Loader {
-        fn load(&self) -> Result<LoadedPlugins, String> {
-            self.0.lock().unwrap().clone()
-        }
+    struct RemoteIo {
+        loaded: Result<Value, String>,
+        uninstall: Result<Value, String>,
+        calls: Vec<(String, Value)>,
+    }
+
+    fn desktop_state() -> Value {
+        json!({
+            "servers":[{
+                "id":"allowed-server", "name":"Allowed", "serverIdentifier":"allowed",
+                "accountKey":"default", "pluginId":"10", "isTeamServer":true,
+                "status":"connected", "transport":"http", "toolCount":2,
+                "customInstructions":"retained instructions", "isRequired":true,
+                "managedByTeamPluginPolicy":true, "rowServerIdentifier":"allowed-row",
+                "futurePolicy":{"keep":true},
+            }],
+            "warnings":["retain the original warning"],
+            "futureState":{"keep":true},
+        })
     }
 
     fn reference(id: &str) -> String {
@@ -461,6 +585,25 @@ mod confirmed_uninstall_consumers {
 
     #[test]
     fn confirmed_uninstall_reaches_retained_session_reads_and_prompt_before_failed_refresh() {
+        confirmed_uninstall_consumers_case(false, false);
+    }
+
+    #[test]
+    fn desktop_confirmed_uninstall_reaches_actual_cache_sessions_and_prompt_after_sync_failure() {
+        confirmed_uninstall_consumers_case(true, false);
+    }
+
+    #[test]
+    fn desktop_confirmed_uninstall_fences_actual_consumers_before_display_error() {
+        confirmed_uninstall_consumers_case(true, true);
+    }
+
+    #[test]
+    fn runner_ignores_desktop_display_error_and_keeps_cleanup_and_sync() {
+        confirmed_uninstall_consumers_case(false, true);
+    }
+
+    fn confirmed_uninstall_consumers_case(desktop: bool, malformed_display: bool) {
         let root = std::env::temp_dir().join(format!("mcp-uninstall-consumers-{}", uuid::Uuid::new_v4()));
         let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
         let session = SandAgentSessionStore::new(Arc::clone(&workers));
@@ -485,21 +628,65 @@ mod confirmed_uninstall_consumers {
             }));
             files.push(file);
         }
-        let published: LoadedPlugins = serde_json::from_value(json!({
+        let published = json!({
             "plugins":plugins,"authBlocked":[],"listedPluginIds":["9","10"],
             "listedCacheKeys":[{"marketplaceSlug":"market","pluginId":"p9"},
                 {"marketplaceSlug":"market","pluginId":"p10"}],
             "publisherFacts":{"9":{"publisherUserId":12},"10":{"publisherUserId":12}},
             "currentUserId":12,
-        })).unwrap();
-        let loader = Arc::new(Loader(Mutex::new(Ok(published.clone()))));
-        let skills = Arc::new(SandPluginSkillsService::new(&root, loader.clone()));
+        });
+        let raw_reply = json!({
+            "removed":true,
+            "state":if malformed_display {
+                json!({"servers":[{"id":"missing-required-display-fields"}]})
+            } else {
+                desktop_state()
+            },
+            "futureReply":{"keep":true},
+        });
+        let events = GatewayEventHub::default();
+        let relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+            events.clone(), std::time::Duration::from_secs(10),
+        ));
+        let remote = Arc::new(Mutex::new(RemoteIo {
+            loaded: Ok(published.clone()), uninstall: Ok(raw_reply.clone()), calls: Vec::new(),
+        }));
+        let weak_relay = Arc::downgrade(&relay);
+        let remote_io = Arc::clone(&remote);
+        let _subscription = events.subscribe_listener(move |event| {
+            if event["channel"] != HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL {
+                return;
+            }
+            let method = event["payload"]["method"].as_str().unwrap();
+            let result = {
+                let mut io = remote_io.lock().unwrap();
+                io.calls.push((method.to_string(), event["payload"]["args"].clone()));
+                match method {
+                    MCP_LIST_CATALOG_METHOD => Ok(json!([{
+                        "id":"9", "name":"private",
+                        "skills":[{"name":"Private","sourceUrl":LEGACY_SOURCE}],
+                    }])),
+                    MCP_UNINSTALL_PLUGIN_METHOD => io.uninstall.clone(),
+                    MCP_LOAD_PLUGIN_SKILLS_METHOD => io.loaded.clone(),
+                    MCP_INSTALL_PLUGIN_METHOD => Ok(desktop_state()),
+                    _ => Err(format!("unexpected remote method {method}")),
+                }
+            };
+            let reply = match result {
+                Ok(value) => json!({"requestId":event["payload"]["requestId"],"ok":true,"result":value}),
+                Err(error) => json!({"requestId":event["payload"]["requestId"],"ok":false,"error":error}),
+            };
+            weak_relay.upgrade().unwrap().resolve(&reply).unwrap();
+        });
+        let skills = Arc::new(SandPluginSkillsService::new(
+            &root, Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&relay))),
+        ));
         assert_eq!(skills.sync("seed").unwrap().len(), 2);
         workers.bind_plugin_skills_admission(skills.admission_reader()).unwrap();
-        let backend_state = Arc::new(Mutex::new(BackendState::default()));
-        let service = McpHostService::new(
-            Arc::new(Backend(backend_state.clone())), Some(skills.clone()),
-        );
+        let backend = Arc::new(CoordinatorMcpManagerBackend::new(
+            Arc::clone(&relay), Arc::new(|_, _| Ok(Vec::new())),
+        ));
+        let service = McpHostService::new(backend.clone(), Some(skills.clone()));
         write_managed_skills_cache(get_managed_skills_dir(&root), &[ManagedSkill {
             id: "managed-uninstall-control".into(), name: "Managed".into(),
             description: "MANAGED_PROVIDER_DESCRIPTION".into(), body: "MANAGED_RUN_RECIPE".into(),
@@ -509,6 +696,12 @@ mod confirmed_uninstall_consumers {
             body: "USER_RUN_RECIPE".into(), trigger: None, source_ref: None,
         }).unwrap().unwrap();
         let managed = retained.get("managed-uninstall-control").unwrap();
+        let legacy = retained.create(&WorkflowSpec {
+            name: "Legacy uninstall reference".into(), description: String::new(),
+            body: "This is a live reference to the skill at the source URL.".into(),
+            trigger: None, source_ref: Some(LEGACY_SOURCE.into()),
+        }).unwrap().unwrap();
+        let legacy_before = fs::read(&legacy.file_path).unwrap();
         let cache_path = get_plugin_skills_cache_path(get_plugin_skills_dir(&root));
 
         #[cfg(unix)]
@@ -535,10 +728,86 @@ mod confirmed_uninstall_consumers {
         let cache_before = fs::read(&cache_path).unwrap();
         let private_before = fs::read(&files[0]).unwrap();
         let allowed_before = fs::read(&files[1]).unwrap();
-        *loader.0.lock().unwrap() = Err("effective listing unavailable after confirmed uninstall".into());
+        // Strict confirmation negatives traverse the same real relay/backend,
+        // with an allowed committed snapshot and warm consumer retained.
+        for response in [
+            Ok(json!({"removed":false,"reason":"team-required","state":desktop_state()})),
+            Ok(json!({"state":desktop_state()})),
+            Ok(json!({"removed":null,"state":desktop_state()})),
+            Ok(json!({"removed":1,"state":desktop_state()})),
+            Ok(json!({"removed":"true","state":desktop_state()})),
+            Err("desktop owner unavailable".to_string()),
+        ] {
+            {
+                let mut io = remote.lock().unwrap();
+                io.uninstall = response.clone();
+                io.calls.clear();
+            }
+            let result = service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"9"}))
+                .unwrap();
+            if let Ok(value) = &response {
+                if value.get("removed").and_then(Value::as_bool) == Some(false) {
+                    assert_eq!(result.unwrap(), *value);
+                } else {
+                    assert!(result.unwrap_err().contains("boolean removed"));
+                }
+            } else {
+                assert!(result.unwrap_err().contains("desktop owner unavailable"));
+            }
+            assert_eq!(remote.lock().unwrap().calls.iter()
+                .map(|(method, _)| method.as_str()).collect::<Vec<_>>(),
+                vec![MCP_LIST_CATALOG_METHOD, MCP_UNINSTALL_PLUGIN_METHOD]);
+            assert_eq!(skills.current().len(), 2);
+            assert_eq!(retained.get("plugin-9-private").unwrap().body, "PRIVATE_RUN_RECIPE");
+            assert!(skill_prompt(&retained).contains("PRIVATE_PROVIDER_DESCRIPTION"));
+            assert_eq!(fs::read(&cache_path).unwrap(), cache_before);
+            assert_eq!(fs::read(&files[0]).unwrap(), private_before);
+            assert_eq!(fs::read(&files[1]).unwrap(), allowed_before);
+            assert_eq!(fs::read(&legacy.file_path).unwrap(), legacy_before);
+        }
+        {
+            let mut io = remote.lock().unwrap();
+            io.uninstall = Ok(raw_reply.clone());
+            io.loaded = Err("effective listing unavailable after confirmed uninstall".into());
+            io.calls.clear();
+        }
 
-        assert_eq!(service.uninstall_plugin("9").unwrap(), json!({"removed":true,"reason":null}));
-        assert_eq!(backend_state.lock().unwrap().uninstall_ids, vec!["9"]);
+        let missing = McpHostService::new(backend, None);
+        let error = missing.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"9"}))
+            .unwrap().unwrap_err();
+        assert!(error.contains("uninstall confirmed"));
+        assert!(error.contains("owner is unavailable"));
+        assert_eq!(skills.current().len(), 2);
+        assert_eq!(fs::read(&cache_path).unwrap(), cache_before);
+        assert_eq!(fs::read(&legacy.file_path).unwrap(), legacy_before);
+        remote.lock().unwrap().calls.clear();
+
+        let result = if desktop {
+            service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"9"})).unwrap()
+        } else {
+            service.uninstall_plugin("9")
+        };
+        if desktop && malformed_display {
+            assert!(result.unwrap_err().contains("MCP server requires"));
+            assert_eq!(fs::read(&legacy.file_path).unwrap(), legacy_before,
+                "Desktop display errors must return before legacy cleanup");
+        } else {
+            assert_eq!(result.unwrap(), if desktop {
+                raw_reply.clone()
+            } else {
+                json!({"removed":true,"reason":null})
+            });
+            assert!(!legacy.file_path.exists(), "successful projection keeps legacy cleanup");
+        }
+        let calls = remote.lock().unwrap().calls.clone();
+        assert_eq!(calls.iter().filter(|(method, _)| method == MCP_UNINSTALL_PLUGIN_METHOD)
+            .map(|(_, args)| args.clone()).collect::<Vec<_>>(), vec![json!({"pluginId":"9"})]);
+        let expected = if desktop && malformed_display {
+            vec![MCP_LIST_CATALOG_METHOD, MCP_UNINSTALL_PLUGIN_METHOD]
+        } else {
+            vec![MCP_LIST_CATALOG_METHOD, MCP_UNINSTALL_PLUGIN_METHOD, MCP_LOAD_PLUGIN_SKILLS_METHOD]
+        };
+        assert_eq!(calls.iter().map(|(method, _)| method.as_str()).collect::<Vec<_>>(), expected);
         assert_eq!(fs::read(&cache_path).unwrap(), cache_before);
         assert_eq!(fs::read(&files[0]).unwrap(), private_before);
         assert_eq!(fs::read(&files[1]).unwrap(), allowed_before);
@@ -546,7 +815,11 @@ mod confirmed_uninstall_consumers {
         assert_eq!(PluginSkillsPort::status(skills.as_ref()), json!({"authBlocked":[]}));
         assert_eq!(skills.current().iter().map(|row| row.plugin_id.as_str()).collect::<Vec<_>>(), vec!["10"]);
 
-        for store in [&retained, &workers.open_workflow_store(&agent.id).unwrap()] {
+        let reopened_workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        reopened_workers.bind_plugin_skills_admission(skills.admission_reader()).unwrap();
+        let reopened = SandAgentSessionStore::new(Arc::clone(&reopened_workers))
+            .workflow_store_for(&agent.id).unwrap();
+        for store in [&retained, &workers.open_workflow_store(&agent.id).unwrap(), &reopened] {
             assert!(store.get("plugin-9-private").is_none());
             assert!(!store.list().iter().any(|row| row.plugin_id.as_deref() == Some("9")));
             assert!(store.update("plugin-9-private", &WorkflowSpec {
@@ -585,7 +858,7 @@ mod confirmed_uninstall_consumers {
         assert_eq!(service.install_plugin("9", &HashMap::new()).unwrap().len(), 1);
         assert!(retained.get("plugin-9-private").is_none());
         assert_eq!(fs::read(&cache_path).unwrap(), cache_before);
-        *loader.0.lock().unwrap() = Ok(published);
+        remote.lock().unwrap().loaded = Ok(published);
         assert_eq!(service.install_plugin("9", &HashMap::new()).unwrap().len(), 1);
         assert_run_body(&workers, &agent.id, "plugin-9-private", "PRIVATE_RUN_RECIPE");
         let restored = skill_prompt(&retained);
@@ -597,6 +870,28 @@ mod confirmed_uninstall_consumers {
         }).unwrap().is_some());
         assert!(fs::read_to_string(&files[0]).unwrap().contains("AUTHORIZED_PUBLISHER_EDIT"));
         assert!(skills.current_auth_blocked().is_empty());
+        assert!(service.dispatch_desktop_command("syncPluginSkills", &json!({})).unwrap()
+            .unwrap().as_array().unwrap().iter().any(|row| row["pluginId"] == "9"));
+        assert_eq!(service.dispatch_desktop_command("refreshMcp", &json!({})).unwrap().unwrap(), Value::Null);
+        assert_eq!(service.dispatch_desktop_command("getPluginSyncStatus", &json!({})).unwrap().unwrap(),
+            PluginSkillsPort::status(skills.as_ref()));
+
+        // A retired Skills owner cannot accept a late confirmed result through
+        // an otherwise retained MCP service.
+        skills.dispose();
+        let before_retired = fs::read(&cache_path).unwrap();
+        remote.lock().unwrap().calls.clear();
+        let error = service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"9"}))
+            .unwrap().unwrap_err();
+        assert!(error.contains("uninstall confirmed") && error.contains("disposed"));
+        assert!(!skills.admission_reader().is_denied("9"));
+        assert_eq!(fs::read(&cache_path).unwrap(), before_retired);
+        assert_eq!(remote.lock().unwrap().calls.iter()
+            .map(|(method, _)| method.as_str()).collect::<Vec<_>>(),
+            vec![MCP_LIST_CATALOG_METHOD, MCP_UNINSTALL_PLUGIN_METHOD]);
+        service.dispose().unwrap();
+        relay.cancel_all("fixture complete");
+        reopened_workers.shutdown();
         workers.shutdown();
         fs::remove_dir_all(root).unwrap();
     }

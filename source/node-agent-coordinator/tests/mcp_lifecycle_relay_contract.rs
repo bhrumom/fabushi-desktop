@@ -7,10 +7,11 @@ use mahayana_node_agent_coordinator::mcp_lifecycle_relay::{
     MCP_SET_INSTRUCTIONS_METHOD, MCP_AUTHENTICATE_SERVER_METHOD, MCP_LOGOUT_ACCOUNT_METHOD,
     MCP_REMOVE_ACCOUNT_METHOD, MCP_RENAME_ACCOUNT_METHOD, MCP_NOTE_AUTH_COMPLETED_METHOD,
     MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD, MCP_UNINSTALL_PLUGIN_METHOD,
-    box_mcp_carrier_allowed, execute_host_mcp_lifecycle_request,
+    box_mcp_carrier_allowed, desktop_mcp_carrier_allowed, execute_host_mcp_lifecycle_request,
     parse_host_mcp_lifecycle_request,
 };
 use mahayana_node_agent_coordinator::protocol::Failure;
+use mahayana_node_agent_coordinator::runner_tool_relay::RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD;
 use serde_json::json;
 
 #[test]
@@ -20,11 +21,31 @@ fn box_mcp_raw_commands_require_the_native_main_data_carrier() {
         "listBoxMcpToolsRaw",
         "executeBoxMcpToolRaw",
         MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
+        RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
     ] {
         assert!(!box_mcp_carrier_allowed(method, CarrierChannel::Data), "{method}");
         assert!(!box_mcp_carrier_allowed(method, CarrierChannel::Control), "{method}");
         assert!(box_mcp_carrier_allowed(method, CarrierChannel::MainData), "{method}");
     }
+}
+
+#[test]
+fn desktop_uninstall_requires_main_data_without_expanding_the_reverse_allowlist() {
+    for channel in [CarrierChannel::Control, CarrierChannel::Data] {
+        assert!(!desktop_mcp_carrier_allowed("uninstallMcpPlugin", channel));
+    }
+    assert!(desktop_mcp_carrier_allowed("uninstallMcpPlugin", CarrierChannel::MainData));
+    for method in ["syncPluginSkills", "getPluginSyncStatus", "refreshMcp",
+        "uninstallMcpPlugin.extra", "uninstallMcpPlugin ", "UninstallMcpPlugin"] {
+        for channel in [CarrierChannel::Control, CarrierChannel::Data, CarrierChannel::MainData] {
+            assert!(desktop_mcp_carrier_allowed(method, channel), "{method} on {channel:?}");
+        }
+    }
+    let denied = parse_host_mcp_lifecycle_request(&json!({
+        "requestId": "desktop-intent-is-not-a-reverse-callback",
+        "method": "uninstallMcpPlugin", "args": {"pluginId": "7"},
+    })).expect_err("the desktop intent must not recurse through the reverse relay");
+    assert_eq!(denied.code, "MCP_LIFECYCLE_RELAY_METHOD_DENIED");
 }
 
 #[test]

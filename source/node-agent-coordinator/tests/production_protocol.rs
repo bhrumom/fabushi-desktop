@@ -414,6 +414,29 @@ mod unix {
                 200,
                 r#"{"accepted":true}"#,
             ),
+            ("POST", "/api/uninstallMcpPlugin") => {
+                let args: Value = serde_json::from_slice(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if args["pluginId"] == "policy-refused" {
+                    return write_fake_response(
+                        &mut stream, 400, r#"{"error":"original MCP uninstall refusal"}"#,
+                    );
+                }
+                write_fake_response(
+                    &mut stream, 200,
+                    r#"{"removed":true,"reason":"original reason","state":{"servers":[],"warnings":["keep"],"future":{"value":7}},"futureOutcome":true}"#,
+                )
+            }
+            ("POST", "/api/syncPluginSkills") => write_fake_response(
+                &mut stream, 200, r#"[{"pluginId":"7","skills":[]}]"#,
+            ),
+            ("POST", "/api/getPluginSyncStatus") => write_fake_response(
+                &mut stream, 200, r#"{"syncing":false,"authBlocked":[]}"#,
+            ),
+            ("POST", "/api/mcp.resolveLifecycleRequest")
+            | ("POST", "/api/runner.resolveRoutedToolRequest") => write_fake_response(
+                &mut stream, 200, r#"{"settled":true}"#,
+            ),
             ("POST", "/api/loadBoxMcpServers") => {
                 let args: Value = serde_json::from_slice(&request[header_end..total])
                     .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
@@ -809,6 +832,84 @@ mod unix {
         expected_http
     }
 
+    fn assert_desktop_mcp_http_requests(requests: &[GatewayApiRequest], expected: &[(&str, Value)]) {
+        let observed: Vec<_> = requests.iter().filter(|request| matches!(
+            request.path.as_str(),
+            "/api/uninstallMcpPlugin" | "/api/uninstallMcpPlugin.extra"
+                | "/api/syncPluginSkills" | "/api/getPluginSyncStatus"
+                | "/api/mcp.resolveLifecycleRequest" | "/api/runner.resolveRoutedToolRequest"
+        )).collect();
+        assert_eq!(observed.len(), expected.len(), "unexpected or repeated MCP HTTP request: {observed:?}");
+        for (request, (method, args)) in observed.iter().zip(expected) {
+            assert_eq!(request.http_method, "POST");
+            assert_eq!(request.path, format!("/api/{method}"));
+            let body: Value = serde_json::from_slice(
+                request.body.as_deref().expect("complete desktop MCP HTTP body"),
+            ).expect("desktop MCP HTTP JSON");
+            assert_eq!(&body, args, "{method} must preserve the original arguments");
+        }
+    }
+
+    fn exercise_desktop_mcp_native_routing(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+    ) -> Vec<(&'static str, Value)> {
+        // The real Coordinator must reject Data before using its native Host
+        // credential. The final joined HTTP observation proves zero forwarding.
+        for (method, code) in [
+            ("uninstallMcpPlugin", "MCP_DESKTOP_NATIVE_ONLY"),
+            ("mcp.resolveLifecycleRequest", "MCP_BOX_NATIVE_ONLY"),
+            ("runner.resolveRoutedToolRequest", "MCP_BOX_NATIVE_ONLY"),
+        ] {
+            let request_id = format!("r-mcp-denied-{method}");
+            send(stdin, CarrierChannel::Data, &CoordinatorFrame::Request {
+                request_id: request_id.clone(), method: method.into(),
+                args: json!({"pluginId":"7","requestId":"native-pending","ok":true,"result":{}}),
+            });
+            match recv_request_reply(rx, stdin, seen_control_methods, CarrierChannel::Data, &request_id) {
+                ReplyOutcome::Failed { failure } => assert_eq!(failure.code, code),
+                other => panic!("Data must not become native authority for {method}: {other:?}"),
+            }
+        }
+        let mut expected = Vec::new();
+        for (channel, method, args, reply) in [
+            (CarrierChannel::MainData, "uninstallMcpPlugin", json!({"pluginId":"7"}),
+                ReplyOutcome::Ok { value: json!({
+                    "removed":true,"reason":"original reason",
+                    "state":{"servers":[],"warnings":["keep"],"future":{"value":7}},
+                    "futureOutcome":true,
+                }) }),
+            (CarrierChannel::MainData, "uninstallMcpPlugin", json!({"pluginId":"policy-refused"}),
+                ReplyOutcome::Failed { failure: Failure::new("gateway-command-failed", "original MCP uninstall refusal") }),
+            (CarrierChannel::Data, "syncPluginSkills", json!({}),
+                ReplyOutcome::Ok { value: json!([{"pluginId":"7","skills":[]}]) }),
+            (CarrierChannel::Data, "getPluginSyncStatus", json!({}),
+                ReplyOutcome::Ok { value: json!({"syncing":false,"authBlocked":[]}) }),
+            (CarrierChannel::Data, "uninstallMcpPlugin.extra", json!({"pluginId":"7"}),
+                ReplyOutcome::Failed { failure: Failure::new(
+                    "gateway-command-failed", "gateway uninstallMcpPlugin.extra failed with HTTP 404",
+                ) }),
+            (CarrierChannel::MainData, "mcp.resolveLifecycleRequest",
+                json!({"requestId":"native-lifecycle","ok":true,"result":{"keep":7}}),
+                ReplyOutcome::Ok { value: json!({"settled":true}) }),
+            (CarrierChannel::MainData, "runner.resolveRoutedToolRequest",
+                json!({"requestId":"native-routed","ok":true,"result":{"keep":8}}),
+                ReplyOutcome::Ok { value: json!({"settled":true}) }),
+        ] {
+            let request_id = format!("r-mcp-allowed-{}", expected.len());
+            send(stdin, channel, &CoordinatorFrame::Request {
+                request_id: request_id.clone(), method: method.into(), args: args.clone(),
+            });
+            assert_eq!(
+                recv_request_reply(rx, stdin, seen_control_methods, channel, &request_id), reply,
+                "{method} must preserve the original HTTP result",
+            );
+            expected.push((method, args));
+        }
+        expected
+    }
+
     fn pump_control_until_webauthn_result(
         rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
         stdin: &mut impl Write,
@@ -1198,6 +1299,9 @@ exit 17
             &mut seen_control_methods,
             &gateway,
         );
+        let expected_desktop_mcp_requests = exercise_desktop_mcp_native_routing(
+            &rx, &mut stdin, &mut seen_control_methods,
+        );
 
         send(
             &mut stdin,
@@ -1332,6 +1436,7 @@ exit 17
         // all three Data requests are absent, and even the uncertain execution
         // failure reached HTTP exactly once without a transport retry.
         assert_box_mcp_http_requests(&gateway.api_requests(), &expected_box_mcp_requests);
+        assert_desktop_mcp_http_requests(&gateway.api_requests(), &expected_desktop_mcp_requests);
         drop(gateway);
         let _ = fs::remove_dir_all(data_dir);
     }
