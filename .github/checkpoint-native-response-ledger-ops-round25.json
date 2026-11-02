@@ -27,12 +27,12 @@
           "source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs"
         ],
         "fabushi_target_symbols": [
-          "ProductClient::native_send",
-          "ProductClient::complete_native_response",
-          "ProductClient::platform_request_with_owner",
-          "ProductClient::get_json",
-          "ProductClient::post_json",
-          "ProductClient::publish_plugin",
+          "MahayanaProductClient::native_send",
+          "MahayanaProductClient::complete_native_response",
+          "MahayanaProductClient::platform_request_with_owner",
+          "MahayanaProductClient::get_json",
+          "MahayanaProductClient::post_json",
+          "MahayanaProductClient::publish_plugin",
           "NativeCredential::same_binding"
         ],
         "production_entrypoints": [
