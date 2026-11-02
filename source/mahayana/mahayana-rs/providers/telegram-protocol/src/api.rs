@@ -1696,7 +1696,8 @@ mod mtproto_service_builder_contract_tests {
         MSGS_STATE_INFO_CONSTRUCTOR, MSGS_STATE_REQ_CONSTRUCTOR, MSG_RESEND_REQ_CONSTRUCTOR,
         PING_CONSTRUCTOR, PING_DELAY_DISCONNECT_CONSTRUCTOR, PONG_CONSTRUCTOR, REQ_PQ_CONSTRUCTOR, RPC_RESULT_CONSTRUCTOR,
     };
-    use crate::tl::TlWriter;
+    use super::ApiRequestError;
+    use crate::tl::{TlError, TlWriter};
 
     #[test]
     fn msgs_ack_parses_fixed_u_message_id_vector() {
