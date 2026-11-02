@@ -20,11 +20,12 @@ const TAIL = "getHumanConversationTranscriptTail";
 const FULL = "getHumanConversationTranscript";
 const ERROR_NAME = "Older messages unavailable";
 // Controlled Host-shaped walk tokens remain opaque to every renderer owner.
-// All eight Human cases use the stable path; legacy numeric-only compatibility
+// These Human cases use the stable path; legacy numeric-only compatibility
 // remains in the existing shared RPC and pagination contract gates.
 const ALPHA_41 = "htp1:11111111111111111111111111111111:23:41";
 const ALPHA_21 = "htp1:11111111111111111111111111111111:43:21";
 const ALPHA_1 = "htp1:11111111111111111111111111111111:63:1";
+const BETA_41 = "htp1:33333333333333333333333333333333:23:41";
 const ACCOUNT_B_101 = "htp1:22222222222222222222222222222222:0:101";
 let server;
 let browser;
@@ -144,10 +145,10 @@ async function fixture(t) {
     const initial = await request(TAIL, { conversationId: A, beforeSeq: null });
     await resolveRequest(initial, historyPage(entries, 41, ALPHA_41));
     await expectRows(entries.map((entry) => entry.id));
-    // unprobed -> more retains hasOlder=true. Request history through the
-    // mounted viewport's scroll listener, without assuming an effect reruns.
+    // The initial row commit must activate the existing near-top rule even
+    // though unprobed -> more keeps hasOlder=true. No synthetic scroll is
+    // needed to make a ready continuation usable.
     await frames();
-    await scroll(0);
     return initial;
   };
   const failedRetry = async () => {
@@ -163,6 +164,76 @@ async function fixture(t) {
   };
   return { page, call, count, request, frames, rows, expectRows, resolveRequest, rejectRequest, scroll, error, retry, loadInitial, failedRetry };
 }
+
+test("UI-NMR-CURSOR-ACTIVATION-001 initial and scope commits activate near-top history without scroll while pending and failed reads remain fenced", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t);
+  const alphaInitial = await f.request(TAIL, { conversationId: A, beforeSeq: null });
+  // Let the mounted transcript's unprobed effect run before the delayed tail
+  // arrives. This case never calls scroll(), changes scrollTop or emits scroll.
+  await f.frames();
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 0);
+  await f.resolveRequest(alphaInitial, historyPage([message("m41", "ALPHA_INITIAL")], 41, ALPHA_41));
+  await f.expectRows(["m41"]);
+  const alphaOlder = await f.request(TAIL, { conversationId: A, beforeSeq: 41, beforeCursor: ALPHA_41 }, alphaInitial.id);
+  assert.ok(await f.page.getByRole("log", { name: "Conversation transcript" }).evaluate((node) => node.scrollTop <= 600));
+  for (let commit = 0; commit < 3; commit++) {
+    await f.call("event", "transcript", { type: "updated", agentId: A, entry: message("m41", `ALPHA_PENDING_${commit}`) });
+    await f.frames();
+    assert.match(await f.page.locator('[data-entry-id="m41"]').innerText(), new RegExp(`ALPHA_PENDING_${commit}`));
+    assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 1,
+      "committed row updates must not duplicate the active continuation");
+  }
+  await f.rejectRequest(alphaOlder);
+  await f.error().waitFor();
+  for (let commit = 0; commit < 2; commit++) {
+    await f.call("event", "transcript", { type: "updated", agentId: A, entry: message("m41", `ALPHA_FAILED_${commit}`) });
+    await f.frames();
+    assert.match(await f.page.locator('[data-entry-id="m41"]').innerText(), new RegExp(`ALPHA_FAILED_${commit}`));
+    assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 1,
+      "row commits cannot restart a failed continuation");
+  }
+
+  // Alpha retains a more cursor; Beta's unprobed -> more transition also
+  // leaves hasOlder true. Its distinct rows must activate its own opaque walk.
+  await f.page.getByRole("button", { name: "Beta", exact: true }).click();
+  const betaInitial = await f.request(TAIL, { conversationId: B, beforeSeq: null }, alphaOlder.id);
+  await f.frames();
+  assert.equal(await f.count(TAIL, { conversationId: B, beforeSeq: 41 }), 0);
+  await f.resolveRequest(betaInitial, historyPage([message("b41", "BETA_INITIAL")], 41, BETA_41));
+  await f.expectRows(["b41"]);
+  const betaOlder = await f.request(TAIL, { conversationId: B, beforeSeq: 41, beforeCursor: BETA_41 }, betaInitial.id);
+  assert.ok(await f.page.getByRole("log", { name: "Conversation transcript" }).evaluate((node) => node.scrollTop <= 600));
+  for (let commit = 0; commit < 3; commit++) {
+    await f.call("event", "transcript", { type: "updated", agentId: B, entry: message("b41", `BETA_PENDING_${commit}`) });
+    await f.frames();
+    assert.match(await f.page.locator('[data-entry-id="b41"]').innerText(), new RegExp(`BETA_PENDING_${commit}`));
+    assert.equal(await f.count(TAIL, { conversationId: B, beforeSeq: 41 }), 1);
+  }
+  await f.rejectRequest(betaOlder, "PRIVATE_BETA_ACTIVATION_FAILURE");
+  await f.error().waitFor();
+  for (let commit = 0; commit < 2; commit++) {
+    await f.call("event", "transcript", { type: "updated", agentId: B, entry: message("b41", `BETA_FAILED_${commit}`) });
+    await f.frames();
+    assert.match(await f.page.locator('[data-entry-id="b41"]').innerText(), new RegExp(`BETA_FAILED_${commit}`));
+    assert.equal(await f.count(TAIL, { conversationId: B, beforeSeq: 41 }), 1);
+  }
+  assert.equal(await f.page.getByText("PRIVATE_BETA_ACTIVATION_FAILURE", { exact: false }).count(), 0);
+  await f.retry().focus();
+  await f.page.keyboard.press("Enter");
+  const retry = await f.request(TAIL, { conversationId: B, beforeSeq: 41, beforeCursor: BETA_41 }, betaOlder.id);
+  await f.frames();
+  assert.equal(await f.count(TAIL, { conversationId: B, beforeSeq: 41 }), 2, "only explicit Retry starts another read");
+  await f.resolveRequest(retry, historyPage([message("b1", "BETA_OLDER"), message("b41", "STALE_BETA_PAGE")]));
+  await f.expectRows(["b1", "b41"]);
+  assert.match(await f.page.locator('[data-entry-id="b41"]').innerText(), /BETA_FAILED_1/);
+  assert.equal(await f.page.getByText("STALE_BETA_PAGE", { exact: false }).count(), 0);
+  assert.equal(await f.error().count(), 0);
+  await f.frames();
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: null }), 1);
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 1);
+  assert.equal(await f.count(TAIL, { conversationId: B, beforeSeq: null }), 1);
+  assert.equal(await f.count(TAIL, { conversationId: B, beforeSeq: 41 }), 2);
+});
 
 test("UI-NMR-OLDER-RETRY-001 failure pauses automatic pages; keyboard and single-flight retries preserve the root cache", { timeout: 60_000 }, async (t) => {
   const f = await fixture(t);

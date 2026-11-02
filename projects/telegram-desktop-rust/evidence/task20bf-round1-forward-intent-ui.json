@@ -130,7 +130,7 @@
     },
     {
       "id": 4,
-      "done": "Existing forwarding entry through durable owner is extended with retry/error/cancel presentation behavior and corresponding negatives. NMR-48d now closes persisted privacy consistency at the existing recovery ingress with authored cold/cached/repaired intent cases. PS-UI-01..05 now implements canonical proxy preference settlement, failure/lifetime/read-after-write handling in the existing Settings production path with 18 authored actual-surface browser cases. This integration repairs before-frame Forward lifetime admission, existing-send forward provenance and failed-page overlay recovery through actual current owners, with corresponding tests authored.",
+      "done": "Existing forwarding entry through durable owner is extended with retry/error/cancel presentation behavior and corresponding negatives. NMR-48d now closes persisted privacy consistency at the existing recovery ingress with authored cold/cached/repaired intent cases. PS-UI-01..05 now implements canonical proxy preference settlement, failure/lifetime/read-after-write handling in the existing Settings production path with 18 authored actual-surface browser cases. This integration repairs before-frame Forward lifetime admission, existing-send forward provenance and failed-page overlay recovery through actual current owners, with corresponding tests authored. NMR-50a/b/c now has applied current-owner synchronization/credential fixes and four actual authored integration cases.",
       "open": "Exact containing-H execution, full Human Retry and all remaining applicable product functions and final acceptance."
     },
     {
@@ -145,12 +145,12 @@
     },
     {
       "id": 7,
-      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification. H73 source157/schema37/candidate and UI16/Transcript16/settlement5/Electron83/Windows11 succeeded; six UI screenshots actually reviewed. H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1. H531UI39/Electron89/Windows11 and H124source157/schema37/candidate now passed with API-read job/artifact identities. No local or htch validation was executed. H531 reconciliation74 now passed including Human49/journal13; Hbeb original renderer127 and both strict architecture checks passed. Settings18 remains unexecuted at its freeze. ExactH2ac UI76 includes18 actual Settings cases, Electron89/Windows11/reconciliation80 passed; exactH531 shipping has now completed successfully. ExactHdb27 renderer132 and source170/Python37/current-candidate contracts now passed with full API log readback; prior H2ac loader failure remains retained.",
-      "open": "Containing integrated217 H requires its own selected Actions; H2ac shipping still queued at last observation. All final product gates remain open."
+      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification. H73 source157/schema37/candidate and UI16/Transcript16/settlement5/Electron83/Windows11 succeeded; six UI screenshots actually reviewed. H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1. H531UI39/Electron89/Windows11 and H124source157/schema37/candidate now passed with API-read job/artifact identities. No local or htch validation was executed. H531 reconciliation74 now passed including Human49/journal13; Hbeb original renderer127 and both strict architecture checks passed. Settings18 remains unexecuted at its freeze. ExactH2ac UI76 includes18 actual Settings cases, Electron89/Windows11/reconciliation80 passed; exactH531 shipping has now completed successfully. ExactHdb27 renderer132 and source170/Python37/current-candidate contracts now passed with full API log readback; prior H2ac loader failure remains retained. H7f actual renderer132/Electron100/Windows11/source171+37+candidate passed; UI114 preceding the failed actual-root group and Feature10 are recorded separately.",
+      "open": "H7f reconciliation test compilation, Social named-output oracle and actual-root initial older-page activation failed; repair-H Human69 and all affected existing gates, same-H shipping and full final acceptance remain required."
     },
     {
       "id": 8,
-      "done": "Continued independent source and product review; repaired actual pending-schema compatibility defect before dependent candidate use. While macOS jobs waited, independent current-source review identified and implemented the persisted privacy P2; prior passing checks are retained with their exact H. H531candidate skip classified TEST_FLAW and fixed atH124; actual H124candidate passed. Full-source authority failure remains an unmet source-closure gate. Actual architecture registration drift was reviewed and repaired without changing frozen reference identities or deleting the gate. H2ac renderer failure classified from complete log as a raw Node test-loader defect; its actual selected dependency graph is now bundled with no deleted test or gate. Independent source review identified and repaired stale-U Qt identities in the real validator. Independent reviews identified the active provenance bypass and unbounded failed-page event accumulation; both now have applied owner fixes and real regression cases. The coalescing no-nonce alias corner was corrected before publication.",
+      "done": "Continued independent source and product review; repaired actual pending-schema compatibility defect before dependent candidate use. While macOS jobs waited, independent current-source review identified and implemented the persisted privacy P2; prior passing checks are retained with their exact H. H531candidate skip classified TEST_FLAW and fixed atH124; actual H124candidate passed. Full-source authority failure remains an unmet source-closure gate. Actual architecture registration drift was reviewed and repaired without changing frozen reference identities or deleting the gate. H2ac renderer failure classified from complete log as a raw Node test-loader defect; its actual selected dependency graph is now bundled with no deleted test or gate. Independent source review identified and repaired stale-U Qt identities in the real validator. Independent reviews identified the active provenance bypass and unbounded failed-page event accumulation; both now have applied owner fixes and real regression cases. The coalescing no-nonce alias corner was corrected before publication. Classified exactH7f Human compile and Social log-oracle failures from complete logs and repaired their checks without changing production error contracts or removing gates; actual-root UI failure remains a separate production activation recovery.",
       "open": "Classify any actual Actions failure and proceed only after repair; external service/publisher prerequisites remain."
     },
     {
@@ -1128,7 +1128,7 @@
   "next_dependency_gated_gap": {
     "spec": "docs/specs/fbcp-human-message-retry.md / NMR-HUMAN-RETRY-01 / HRR-01..06, HRR-AC-01..03",
     "implemented": false,
-    "gate": "NMR-AC-06 still requires reconciliation and shipping success on the same containing H before dependent message batches. H2ac shipping125549342176 remained queued, runner0, steps[] at2026-11-02T21:26:37Z. The current prerequisite/integration repairs require new-H execution.",
+    "gate": "NMR-AC-06 still requires reconciliation and shipping success on the same containing H before dependent HumanRetry consumers. ExactH7f reconciliation failed to compile its test target; shipping125566773414 was still queued at21:45:49Z. Current NMR50 and activation work repairs prerequisite defects, not the absent retryHumanMessage API.",
     "current_inspected_input": "217d1499dbd541274ba11f8f1fdb092a85e8bc7b",
     "confirmed_gap": "Full retryHumanMessage is still absent. resendFailedSend makes a new nonce, omits reply and restages committed resources; persisted lastDispatchError is still not a failed local-Human projection. This batch repairs the prerequisite ordinary-send provenance bypass and introduces genuine before-frame admission for Forward, but does not implement the two-identity retry command or consumer.",
     "required_constraints": "Use HRR-01..06 exactly: only conversationId/clientNonce; strict unique current-author intent lookup and no-create staging recheck; original nonce/text/time/reply/resources; short-lived per-target retry lane without HTTP-spanning conversation mutex; proven forward targets use original deliver_forward_batch subset, unknown/corrupt intent never falls back to a fresh send. Reuse the now-authored optional Coordinator admission predicate plus account/selection/response/deferred-updater fences; never mutate the current composer draft."
@@ -1297,5 +1297,300 @@
     },
     "semantic_registry_review": "Preserve the immutable architecture manifest/validator; rebind reviewed ProductionRenderer, model, Transcript, pagination and Coordinator semantic adaptations to their actual production blobs, and register the existing submission reset adaptation with its actual caller and renderer tests. Source and test evidence remain distinct.",
     "independent_incoming_review": "Separate Host/security, frontend/lifecycle and workflow reviewers read the frozen222-to217 deltas. Creation no-salvage is bounded to its new creation opener, not all Human read/recovery. All incoming provenance and selected tests are retained. Existing broader HRR/NMR-50 gaps remain open."
+  },
+  "checkpoint_7f8_execution": {
+    "head": "7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18",
+    "tree": "aea1b43ad479d69482309338a4f317eae7ff7681",
+    "parents": [
+      "db27ec9c4b36f6bc47e04bee46d8f53b5ec45e23",
+      "217d1499dbd541274ba11f8f1fdb092a85e8bc7b"
+    ],
+    "delivery": {
+      "api_commit_ref_tree_readback": true,
+      "changed_entries_against_217": 37,
+      "new_combined_file_bodies_compared": 25,
+      "ledger_full_blob_readback": "e40360856922fae6246e1e8ac93ff9ec9c592f19",
+      "draft_pr": 189
+    },
+    "native_run": 41529811801,
+    "attempt": 1,
+    "renderer": {
+      "run": 41529811605,
+      "job": 125566772687,
+      "conclusion": "success",
+      "Electron": 56,
+      "product": 14,
+      "recovered": 62,
+      "total_passed": 132,
+      "inventory_modules": 2002,
+      "strict_modules": 2002,
+      "actual_build_co_stage_bundle": true,
+      "artifact": "Original workflow has no artifact upload; complete terminal log read."
+    },
+    "source": {
+      "run": 41529811606,
+      "contract_job": 125566771909,
+      "candidate_job": 125567871612,
+      "conclusion": "success",
+      "Node": 171,
+      "Python": 37,
+      "ledger_schema_errors": 0,
+      "candidate": "unaccepted-candidate-consistent; accepted mode explicitly rejects rebaseline candidate",
+      "source_entries": 16381,
+      "responsibility_rows": 184,
+      "source_reviews": 6,
+      "complete_reviews": 2,
+      "unknown": null,
+      "unread": null,
+      "source_closure_ready": false,
+      "artifacts": [
+        {
+          "id": 13181641772,
+          "bytes": 7319,
+          "digest": "sha256:0171d4a18bffe4a01df65b8afcf17320a3321a8d50d1fff7aa9efe3aa7a0c518"
+        },
+        {
+          "id": 13180749718,
+          "bytes": 79137,
+          "digest": "sha256:b4eb77730f8b5e579752f14c13f7eb39bc3e08cd706ead3ce58127967d53a16d"
+        }
+      ]
+    },
+    "electron": {
+      "job": 125566773379,
+      "conclusion": "success",
+      "passed": 100,
+      "groups": [
+        10,
+        8,
+        3,
+        16,
+        28,
+        18,
+        10,
+        7
+      ],
+      "artifact": 13182291141,
+      "bytes": 14829,
+      "digest": "sha256:2c38f8ccbc6ecade2d8386d2c6eb3b5608cadf94bc4fe30732570511f6d45750",
+      "scope": "Actual main/preload/carrier build; historical package control still belongs to9d16483f70df9af06db97b17bb02a24dc507e459, installed_or_released=false."
+    },
+    "windows": {
+      "job": 125566773856,
+      "conclusion": "success",
+      "passed": 11,
+      "executedFixtureExecutables": 0,
+      "remainingOwnedCertificates": 0,
+      "artifact": 13182286256,
+      "bytes": 1831,
+      "digest": "sha256:e29656cc76fe242176b9f7d9b94ab3b997a718ddcf8804ad512d6e2db14de64a"
+    },
+    "retained_ffi": {
+      "job": 125566773328,
+      "conclusion": "success",
+      "passed": 15,
+      "ignored": 1,
+      "ignored_scope": "live Telegram production DC; not accepted",
+      "artifact": 13181017484,
+      "bytes": 3922,
+      "digest": "sha256:f476c5e9c972ac8ecd587b49056625d0e026ddd4df53ef2269faff81ee113ff1"
+    },
+    "reconciliation": {
+      "job": 125566772865,
+      "conclusion": "failure",
+      "transcript_passed": 3,
+      "Human_executed": 0,
+      "Human_selected": 65,
+      "classification": "TEST_FLAW",
+      "signature": "E0599/E0277 at session_gateway_contract.rs:7119; SessionGatewayError has no Display/ToString; cargo101. Subsequent selected groups not executed.",
+      "repair": "Use Internal(message) and preserve forward refusal plus every zero-I/O/retained SQLite/reopen oracle; unexpected variants still fail. Do not change the production error enum.",
+      "artifact": 13181532526,
+      "bytes": 14986,
+      "digest": "sha256:b87651c175713c7b919dff6b57d426032fb2e31b9f01b2199b2eb0ca7ac83b85"
+    },
+    "social": {
+      "job": 125566773268,
+      "conclusion": "failure",
+      "FeatureHost_passed": 10,
+      "Runtime_executed": 0,
+      "HTTP_executed": 0,
+      "classification": "TEST_FLAW",
+      "signature": "Expected catch_unwind poison output under --nocapture split the named success line; second grep exited1 after10 actual passing tests.",
+      "repair": "Only capture that Ubuntu test output by removing --nocapture; keep locked one-thread execution,10/0/0 summary and all three named gates. Shipping summary-only command unchanged.",
+      "artifact": 13182076642,
+      "bytes": 14738,
+      "digest": "sha256:e6c5285ec3f8b16b22ff2964a7668047ec4228d18026126ad16df4c6855e56a6"
+    },
+    "ui": {
+      "job": 125566773513,
+      "conclusion": "failure",
+      "passed_before_renderer": {
+        "projection": 38,
+        "cursor": 17,
+        "Coordinator": 13,
+        "settlement": 5,
+        "ForwardChromium": 23,
+        "SettingsChromium": 18,
+        "total": 114
+      },
+      "ProductionRenderer": {
+        "executed": 11,
+        "passed": 1,
+        "failed": 10,
+        "retries": 0,
+        "signature": "Nine openAlice:34 and one initial-tail:135 timed out waiting for pending older=1 after the visible initial tail; observed0."
+      },
+      "Transcript_executed": 0,
+      "classification_at_observation": "IMPL_BUG in initial-page activation. Exact frozen-artifact extraction confirms no browser errors and no continuation request in the two observed failing cases; production effect misses the initial unprobed-to-more transition. BeforeSeq/opaque mismatch hypothesis was withdrawn; no cursor-bearing frame was sent.",
+      "artifact": 13182506705,
+      "bytes": 22171403,
+      "digest": "sha256:02639d5054c501f9dcb7a94bd451d65f3fbce4dd7ef780e4f7f55d6360a0a24a",
+      "visual_independent_review": false
+    },
+    "shipping": {
+      "job": 125566773414,
+      "status": "queued",
+      "observed_at": "2026-11-02T21:45:49Z",
+      "runner_id": 0,
+      "steps": []
+    },
+    "preservation_auxiliary": {
+      "HostOwner": {
+        "run": 41529811719,
+        "job": 125566773256,
+        "conclusion": "success",
+        "groups": [
+          9,
+          3,
+          10,
+          5,
+          6
+        ],
+        "passed": 33,
+        "artifact": 13182541061,
+        "bytes": 5192,
+        "digest": "sha256:406a3a71488d451bf7f054035b7e3e00821c2a5b9038f3e528d2b10e266b8098"
+      },
+      "tsnet": {
+        "run": 41529811821,
+        "Ubuntu": {
+          "job": 125566773645,
+          "conclusion": "success",
+          "passed": 18,
+          "vet_build": true,
+          "artifact": 13180509110,
+          "digest": "sha256:24effea61854128776268f48690c07020be1af7763be65c940d7e246a53cd622"
+        },
+        "Windows": {
+          "job": 125566774063,
+          "conclusion": "success",
+          "passed": 18,
+          "vet_build": true,
+          "artifact": 13181392603,
+          "digest": "sha256:0a90fe2210d7a20c33de7efdb05ee9dd068d87c0740b633234e72402ffc171c1"
+        },
+        "RustSupervisor": {
+          "job": 125566774318,
+          "conclusion": "success",
+          "passed": 3
+        },
+        "macOS": {
+          "job": 125566774104,
+          "status": "queued"
+        }
+      }
+    },
+    "acceptance": "Partial exact-H evidence; no Native combined success, real-service/package/UI visual/a11y/full Bot or independent ACCEPT. No test rerun or local/htch execution."
+  },
+  "current_nmr50_sync_repair": {
+    "base": "7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18",
+    "requirements": [
+      "NMR-50a",
+      "NMR-50b",
+      "NMR-50c"
+    ],
+    "spec": "docs/specs/fbcp-native-message-reconciliation.md#nmr-50--forward-recovery-must-not-stall-history-or-cross-account-boundaries",
+    "production": "Explicit source batch delivery retains blocking serialization; automatic recovery try_lock skips only an active executor and retains its same guard through the shared delivery helper. Poison/corrupt/storage/CAS errors remain failures, source and account/issuer permission rechecks remain. Top-level roster scans once, per-friend history does not rescan; direct sync still scans once. Friends native bound API rejects wrong local user before HTTP and fences user/device/token/session/expiry/raw issuer after consuming the full body, before any roster reaches Session. Compatibility list_friends wrapper remains.",
+    "blobs": {
+      "source/host/src/extensions/session/production.rs": "d4f4964b06b893c6b820fe2b27505d428417fff2",
+      "source/host/src/extensions/session/native_messaging.rs": "fdf565e749246faac0c1edfc2b270c3e50c0d96b",
+      "source/host/tests/session_gateway_contract.rs": "f541e42bdb429cade9f4cf802d13c64b813f1492"
+    },
+    "authored_tests": [
+      "shipping_human_forward_active_batch_recovery_does_not_block_history",
+      "shipping_human_forward_roster_sync_recovers_once_per_invocation",
+      "shipping_human_roster_bound_request_rejects_wrong_user_before_http",
+      "shipping_human_roster_rejects_streamed_body_credential_rotation_and_recovers"
+    ],
+    "oracles": "Real Host/gateway/native HTTP/SQLite. Held POST permits both destination and unrelated history with exactly one POST; failed roster recovery one POST per invocation, durable restart and identical successful payload; wrong-user native boundary observes zero HTTP; all six streamed-body credential changes preserve raw SQLite/roster/events and prevent downstream requests, then exact credential restoration and reopen admit only the authorized roster. Barriers release before assertions/joins.",
+    "selected_Human_expected": 69,
+    "execution": "not-run-at-repair-freeze; require containing-H GitHub Actions",
+    "review": "Independent reviewer read exact production/native/test blobs plus callers/locks/classifier/journal and new real fixture; no identified P1/P2 within bounded scope. Root read the same actual diff. No execution or independent ACCEPT.",
+    "rollback": "Ordinary code revert; no schema or user-data migration/deletion, no new owner or store.",
+    "full_HRR_command_implemented": false,
+    "ledger_object_transport": {
+      "head": "f3ae543cd27d90c18bd31380756cb12438fbf94c",
+      "run": 41532150347,
+      "job": 125574809543,
+      "conclusion": "success",
+      "input_blob": "e40360856922fae6246e1e8ac93ff9ec9c592f19",
+      "output_blob": "0860ab72f0714f1e09a5a98d2f67f8ef052f8058",
+      "api_full_blob_readback": true,
+      "scope": "Git object preparation only. Root read complete output before assembly; no test/source/product acceptance."
+    }
+  },
+  "pending_forward_source_current_review": {
+    "reviewed_head": "7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18",
+    "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "complete_cached_bodies_read": {
+      "history/view/controls/history_view_forward_panel.h": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+      "history/view/controls/history_view_forward_panel.cpp": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+      "chat_helpers/share_message_phrase_factory.h": "86865db47439dbce848fc812df2554335d3e004c",
+      "chat_helpers/share_message_phrase_factory.cpp": "1437bbfbd86b9d6649faae0bed7eed755e06337e"
+    },
+    "status": "Four existing source records remain pending with no invented responsibility mapping or source completion.",
+    "actual_path": "ForwardMessageDialog -> ProductionRenderer -> Coordinator Session -> ProductionSessionWorkers/HumanForwardBatch -> dialog onSettled -> settleForwardProjection -> existing composer notice.",
+    "confirmed_gaps": [
+      "Ordinary one/two/many receiver-name feedback is absent; current settlement displays counts.",
+      "Retry settlement feedback uses only the last attempt subset; initial3 targets with2 successes then final1 success produces Forwarded to1, not the complete immutable intent.",
+      "No existing typed self/saved/premium forwarding-navigation contract.",
+      "Source invalidation before submission, per-thread forward drafts and full forced-provenance/rich-page eligibility are not closed.",
+      "Panel source preview/authors/media/spoiler responsibilities remain unmapped; current clearReply does not cover full topic/suggestion/cloud draft semantics."
+    ],
+    "permission_boundary": "These UI gaps do not bypass current Host membership/protection/source checks; presentation retirement must not revoke an already admitted durable batch."
+  },
+  "current_initial_history_activation_repair": {
+    "requirement": "UI-NMR-CURSOR-ACTIVATION-001",
+    "base": "7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18",
+    "classification": "IMPL_BUG identified in actual current owner activation; original UI failure evidence retained, recovery execution pending.",
+    "cause": "The initial near-top effect can observe unprobed and loadOlder returns without a request. Installing a ready cursor retains hasOlder=true; original effect had no dependency that changes with the initial rows. Current commit/scope changes must trigger reevaluation.",
+    "production": "Existing ConversationTranscript effect additionally depends on committed entries. No new cursor/controller/state, no modified threshold, anchor, failure pause or Host boundary.",
+    "blobs": {
+      "frontend/src/recovered/features/conversation/workspace/transcript.tsx": "68eb88a950d8c48f674566efbfad335a6bf620af",
+      "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs": "bbb9a3206b65929e4bad43a620f7525bdae55378"
+    },
+    "authored": "Keep original11 actual Renderer scenarios and8 Transcript cases; add1 actual-root activation case. No synthetic scroll/scrollTop manipulation triggers the new case. Delayed A and B initial tails must activate their own opaque walks; pending commits cannot duplicate, failed commits cannot retry, keyboard Retry retains continuation and latest committed row.",
+    "review": "Independent source and frozen-diff review found no identified P1/P2. Root read actual two-file diff and sole production caller; controller single-flight remains authoritative across effect cleanup and layout-phase anchor precedes passive reevaluation.",
+    "selected_Transcript_expected": 9,
+    "selected_UI_total_expected": 134,
+    "execution": "not-run-at-repair-freeze; require exact containing-H Actions",
+    "independent_acceptance": false,
+    "prior_artifact_readback": {
+      "helper_head": "f3ae543cd27d90c18bd31380756cb12438fbf94c",
+      "run": 41532150347,
+      "job": 125574809543,
+      "conclusion": "success",
+      "input_head": "7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18",
+      "input_artifact": 13182506705,
+      "input_digest": "sha256:02639d5054c501f9dcb7a94bd451d65f3fbce4dd7ef780e4f7f55d6360a0a24a",
+      "observed_cases": [
+        "first light paged-history failure",
+        "delayed initial-tail identity-remap failure"
+      ],
+      "observations": "Both renderer-errors and approval-clears empty. Each filtered request record contains only syncHumanConversations{}, syncHumanConversation{conversationId:human:a}, and getHumanConversationTranscriptTail{conversationId:human:a,limit:200}; no continuation or Agent-tail frame. Original10 failed/1 passed results remain unchanged; this is evidence reading, not test execution.",
+      "artifact_id": 13182862322,
+      "artifact_bytes": 1520,
+      "artifact_digest": "sha256:832ca40fc689c2e3765cc05bfe0c0bf96d2a550c88c6fd694a3d1ef87841083c"
+    }
   }
 }

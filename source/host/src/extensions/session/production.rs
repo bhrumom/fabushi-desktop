@@ -2523,9 +2523,16 @@ impl ProductionSessionWorkers {
         &self,
         conversation_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
-        // Resume the source-owned plan before taking a destination mutation
-        // lock. Forward delivery itself takes destination locks and performs HTTP.
+        // Attempt recovery once before taking a destination mutation lock.
+        // Active forward executors are skipped so history can settle their send.
         self.resume_human_forward_batches()?;
+        self.sync_human_conversation_history(conversation_id)
+    }
+
+    fn sync_human_conversation_history(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
         const PAGE_LIMIT: usize = 200;
         const MAX_GAP_PAGES: usize = 32;
         const MAX_SAFE_ID: u64 = 9_007_199_254_740_991;
@@ -2681,7 +2688,7 @@ impl ProductionSessionWorkers {
             ));
         }
         self.resume_human_forward_batches()?;
-        for friend in client.list_friends()? {
+        for friend in client.list_friends_for_user(self.local_human_id()?)? {
             let peer_human_id = fabushi_identity_text(&friend.user_id)?;
             let title = friend.display_name.trim();
             let conversation = self.create_human_conversation(
@@ -2692,7 +2699,9 @@ impl ProductionSessionWorkers {
                 .get("id")
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "synced Human conversation omitted its id".to_string())?;
-            self.sync_human_conversation(conversation_id)?;
+            // The top-level invocation already attempted every durable batch.
+            // A failed target is retried by the next invocation, not each friend.
+            self.sync_human_conversation_history(conversation_id)?;
         }
         self.sync_human_calls()?;
         self.list_human_conversations()
@@ -3140,12 +3149,31 @@ impl ProductionSessionWorkers {
     fn deliver_forward_batch(
         &self, source_id: &str, request_id: &str, requested: Option<&[String]>,
     ) -> Result<HumanForwardBatch, String> {
-        let (account, issuer) = self.human_forward_scope()?;
+        let scope = self.human_forward_scope()?;
+        let (account, issuer) = &scope;
         let serial = self.human_message_lock(&format!("forward-batch:{account}:{issuer}:{request_id}"))?;
-        let _exclusive = serial.lock().map_err(|_| "Human forward batch lock poisoned".to_string())?;
+        let exclusive = serial.lock().map_err(|_| "Human forward batch lock poisoned".to_string())?;
+        self.deliver_forward_batch_locked(source_id, request_id, requested, &scope, &exclusive)
+    }
+
+    // Both explicit delivery and automatic recovery hold their admitted batch
+    // guard throughout dispatch. Recovery must never drop a successful try_lock
+    // and enter the blocking wrapper again.
+    fn deliver_forward_batch_locked(
+        &self,
+        source_id: &str,
+        request_id: &str,
+        requested: Option<&[String]>,
+        scope: &(String, String),
+        _batch_guard: &std::sync::MutexGuard<'_, ()>,
+    ) -> Result<HumanForwardBatch, String> {
+        if &self.human_forward_scope()? != scope {
+            return Err("Fabushi native messaging credential changed Human account or issuer".into());
+        }
+        let (account, issuer) = scope;
         let owner = self.open_human_conversation_db_owner(source_id)?;
         let mut batch = load_forward_batches(&owner, source_id)?.into_iter().find(|item|
-            item.account_id == account && item.issuer == issuer && item.request_id == request_id
+            item.account_id == *account && item.issuer == *issuer && item.request_id == request_id
         ).ok_or_else(|| "forwardHumanMessage durable request was not found".to_string())?;
         if let Some(subset) = requested {
             if !batch.contains_requested(subset) {
@@ -3177,7 +3205,7 @@ impl ProductionSessionWorkers {
                 }
                 Err(ForwardSourceFailure::Storage(error)) => return Err(error),
             }
-            if self.human_forward_scope()? != (account.clone(), issuer.clone()) {
+            if &self.human_forward_scope()? != scope {
                 return Err("Fabushi native messaging credential changed Human account or issuer".into());
             }
             let destination_id = target.conversation_id.clone();
@@ -3225,7 +3253,8 @@ impl ProductionSessionWorkers {
 
     fn resume_human_forward_batches(&self) -> Result<(), String> {
         if self.shipping_native_messaging()?.is_none() { return Ok(()); }
-        let (account, issuer) = self.human_forward_scope()?;
+        let scope = self.human_forward_scope()?;
+        let (account, issuer) = &scope;
         // Unlike the visible roster, recovery cannot omit revoked sources or
         // silently skip corrupt stored metadata. Reuse the strict source scan
         // semantics of find_forward_request, without filtering by request ID.
@@ -3246,10 +3275,22 @@ impl ProductionSessionWorkers {
             if !db_path.is_file() { continue; }
             let owner = self.open_human_conversation_db_owner(&source_id)?;
             for batch in load_forward_batches(&owner, &source_id)? {
-                if batch.account_id != account || batch.issuer != issuer
+                if batch.account_id != *account || batch.issuer != *issuer
                     || batch.destinations.iter().all(|target| target.completed)
                 { continue; }
-                self.deliver_forward_batch(&source_id, &batch.request_id, None)?;
+                let serial = self.human_message_lock(&format!(
+                    "forward-batch:{account}:{issuer}:{}", batch.request_id,
+                ))?;
+                let exclusive = match serial.try_lock() {
+                    Ok(guard) => guard,
+                    Err(std::sync::TryLockError::WouldBlock) => continue,
+                    Err(std::sync::TryLockError::Poisoned(_)) => {
+                        return Err("Human forward batch lock poisoned".into());
+                    }
+                };
+                self.deliver_forward_batch_locked(
+                    &source_id, &batch.request_id, None, &scope, &exclusive,
+                )?;
             }
         }
         Ok(())

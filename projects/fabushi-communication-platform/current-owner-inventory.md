@@ -71,6 +71,14 @@ before reusing an existing row without context, preserving source-authorized bat
 recovery and retained bytes. Pagination coalesces failed-read updates by identity
 and keeps explicit author-checked alias candidates through the same root cache.
 The full two-identity Human message Retry contract remains unimplemented.
+The current NMR-50a/b/c repair keeps automatic recovery and explicit forwarding
+in the same Session owner: try-lock skips only an active executor, while the same
+held guard covers the existing delivery helper. Roster sync scans once and then
+uses the private history helper; the native friends request binds the Host user
+before HTTP and all six credential fields after the complete body. Transcript
+row commits reactivate its current near-top loading rule, with the same controller,
+failure pause and viewport anchor. No second writer, history store or permission
+authority is introduced; exact containing-H execution remains required.
 Settings still uses SettingsDesktopSurface → DesktopBridge → Main RPC → Coordinator
 MainData → Native ProductSettingsOwner; no proxy routing or second settings store
 is inferred from its canonical mutation/publication UI. See the existing task receipt

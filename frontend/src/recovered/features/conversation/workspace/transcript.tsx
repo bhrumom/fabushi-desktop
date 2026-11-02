@@ -661,6 +661,9 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     if (transcriptHandleRef == null) return;
     for (const listener of [...viewCommitListenersRef.current]) listener();
   }, [entries, transcriptHandleRef]);
+  // An initial tail or scope replacement can commit rows while hasOlder
+  // remains true (unprobed -> more). Recheck the real viewport after that
+  // commit; the existing failure and single-flight guards still govern reads.
   useEffect(() => {
     const transcript = transcriptRef.current;
     if (transcript == null || !hasOlder || olderLoadFailed || loadOlder == null) return;
@@ -686,7 +689,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       transcript.removeEventListener("scroll", maybeLoadOlder);
       olderLoadInFlightRef.current = false;
     };
-  }, [hasOlder, isLoadingOlder, olderLoadFailed, loadOlder]);
+  }, [entries, hasOlder, isLoadingOlder, olderLoadFailed, loadOlder]);
   const [expandedToolCalls, setExpandedToolCalls] = useState<ReadonlySet<string>>(() => new Set());
   const [expandedThinking, setExpandedThinking] = useState<ReadonlySet<string>>(() => new Set());
   const toggleToolCall = (id: string) => {

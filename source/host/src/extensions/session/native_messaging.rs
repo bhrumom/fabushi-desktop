@@ -789,7 +789,23 @@ impl FabushiNativeMessagingClient {
     }
 
     pub fn list_friends(&self) -> Result<Vec<FabushiRemoteHumanContact>, String> {
+        self.list_friends_bound(None)
+    }
+
+    /// Bind roster admission to the same local Human owner as history reads.
+    pub fn list_friends_for_user(
+        &self,
+        expected_user_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanContact>, String> {
+        self.list_friends_bound(Some(expected_user_id))
+    }
+
+    fn list_friends_bound(
+        &self,
+        expected_user_id: Option<&str>,
+    ) -> Result<Vec<FabushiRemoteHumanContact>, String> {
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let response = self
             .client
             .get(self.endpoint("/api/social/friends")?)
@@ -805,6 +821,9 @@ impl FabushiNativeMessagingClient {
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human contact sync response could not be read: {error}"))?;
+        // Headers may arrive before account/session rotation. No roster may
+        // escape to the Session owner until the complete body is fenced.
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: FriendEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human contact sync response was invalid JSON (HTTP {}): {error}",

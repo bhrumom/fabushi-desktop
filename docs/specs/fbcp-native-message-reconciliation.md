@@ -1948,3 +1948,23 @@ Keep the ordinary 15-pass/1-ignored C compatibility gate, native shipping and
 all current message gates intact. Store exact run/job/artifact identities;
 retain all final service, package, migration and independent-ACCEPT gaps.
 The one-purpose workflow may be removed after its immutable evidence is saved.
+
+### NMR-26 initial-page and scope activation recovery
+
+Exact `7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18` / run `41529811801`
+executed all eleven actual Renderer scenarios; ten timed out waiting for the
+first older-page request after the visible initial tail. The existing transcript
+effect can run while the cursor is unprobed and never run again when the initial
+page becomes ready, because `hasOlder` stays true. This is an existing owner
+activation defect; changing the tests to require an extra scroll would not close it.
+
+**UI-NMR-CURSOR-ACTIVATION-001:** Reevaluate the existing near-top loading rule
+after committed transcript rows change, including a delayed initial tail and a
+conversation switch whose old and new cursors both report more history. Keep the
+same viewport, cursor, pending-anchor, failure-pause and single-flight owners.
+An in-flight read must not be duplicated by row commits; a failed read must remain
+paused through further commits until explicit Retry. Preserve the original
+eleven Renderer scenarios and eight Transcript scenarios and add one actual-root
+activation case without synthetic scroll as its trigger. All execution remains
+exact-H GitHub Actions; no local run, weaker oracle, source completion or final
+UI/accessibility acceptance is implied.

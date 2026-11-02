@@ -245,13 +245,17 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 65 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 69 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_forward_ordinary_send_rejects_lost_provenance_before_dispatch ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_forward_active_batch_recovery_does_not_block_history ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_forward_roster_sync_recovers_once_per_invocation ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_roster_bound_request_rejects_wrong_user_before_http ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_roster_rejects_streamed_body_credential_rotation_and_recovers ... ok' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
@@ -365,7 +369,9 @@ jobs:
           set -euo pipefail
           rustc --version > artifacts/desktop-social-owner/toolchain.txt
           cargo --version >> artifacts/desktop-social-owner/toolchain.txt
-          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          # Capture expected caught-panic output so each named success remains
+          # one libtest line. Failures still print their captured diagnostics.
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/featurehost-messaging-boundary.log
           grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored; 0 measured;' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
           grep -F 'desktop_social_intents_refuse_before_auth_runtime_context_io_and_events ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
           grep -F 'desktop_social_refusal_does_not_lock_state_or_touch_retained_context ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
@@ -844,8 +850,9 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# tests 8' artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# pass 8' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 9' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 9' artifacts/native-message-ui/production-transcript.log
+          grep -F 'ok 1 - UI-NMR-CURSOR-ACTIVATION-001 initial and scope commits activate near-top history without scroll while pending and failed reads remain fenced' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log

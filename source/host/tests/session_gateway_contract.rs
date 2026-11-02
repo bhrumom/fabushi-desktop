@@ -7116,7 +7116,11 @@ fn shipping_human_forward_ordinary_send_rejects_lost_provenance_before_dispatch(
                 fs::rename(&unavailable, &source_path).unwrap();
             }
             let error = direct.expect_err("ordinary send must not adopt lost forwarding provenance");
-            assert!(error.to_string().contains("forward"), "{fault}: {error}");
+            match error {
+                SessionGatewayError::Internal(message) =>
+                    assert!(message.contains("forward"), "{fault}: {message}"),
+                other => panic!("{fault}: unexpected gateway error {other:?}"),
+            }
             assert_eq!(server.post_count(), 1, "{fault}: no second message POST");
             assert_eq!(server.resource_post_count(), 1, "{fault}: no resource upload");
             assert_eq!(server.history_count(), 0, "target refusal cannot trigger unrelated history");
@@ -7799,6 +7803,551 @@ fn shipping_human_reaction_gateway_rejects_invalid_targets_and_emoji_before_stag
     assert_eq!(owner.get_metadata("humanReactionIntent").expect("positive reopen acknowledgement"), Some(json!(null)));
     reopened.shutdown(); drop(owner); drop(reopened);
     let _ = fs::remove_dir_all(root);
+}
+
+// NMR-50 uses the existing real HTTP/Session/SQLite harness with a bounded
+// request router. A held response owns only its socket, so it cannot prevent
+// the listener from serving the history that must settle an in-flight send.
+enum HumanSyncHttpReply {
+    Json(u16, serde_json::Value),
+    Held {
+        status: u16,
+        body: serde_json::Value,
+        started: std::sync::mpsc::Sender<()>,
+        release: std::sync::mpsc::Receiver<()>,
+        stream_body: bool,
+    },
+}
+
+struct HumanSyncHttpFixture {
+    url: String,
+    requests: Arc<std::sync::Mutex<Vec<String>>>,
+    stop: Option<std::sync::mpsc::Sender<()>>,
+    worker: Option<thread::JoinHandle<()>>,
+}
+
+impl HumanSyncHttpFixture {
+    fn start(mut reply: impl FnMut(&str) -> HumanSyncHttpReply + Send + 'static) -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind Human sync fixture");
+        listener.set_nonblocking(true).expect("bounded Human sync accept");
+        let url = format!("http://{}", listener.local_addr().expect("Human sync address"));
+        let requests = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let recorded = Arc::clone(&requests);
+        let (stop, stopped) = std::sync::mpsc::channel();
+        let worker = thread::spawn(move || {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(90);
+            let mut writers = Vec::new();
+            loop {
+                assert!(std::time::Instant::now() < deadline, "Human sync fixture was not stopped");
+                let mut stream = match listener.accept() {
+                    Ok((stream, _)) => stream,
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        match stopped.recv_timeout(std::time::Duration::from_millis(5)) {
+                            Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
+                        }
+                    }
+                    Err(error) => panic!("Human sync fixture accept: {error}"),
+                };
+                stream.set_nonblocking(false).expect("blocking Human sync request");
+                stream.set_write_timeout(Some(std::time::Duration::from_secs(15)))
+                    .expect("bounded Human sync response");
+                let request = read_fixture_http_request_before(&mut stream, Some(deadline));
+                recorded.lock().expect("record Human sync request").push(request.clone());
+                let response = reply(&request);
+                writers.push(thread::spawn(move || {
+                    let (status, body, held) = match response {
+                        HumanSyncHttpReply::Json(status, body) => (status, body, None),
+                        HumanSyncHttpReply::Held { status, body, started, release, stream_body } =>
+                            (status, body, Some((started, release, stream_body))),
+                    };
+                    let body = body.to_string();
+                    let headers = format!(
+                        "HTTP/1.1 {status} Fixture\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len(),
+                    );
+                    let mut offset = 0;
+                    if let Some((started, release, stream_body)) = held {
+                        if stream_body {
+                            stream.write_all(headers.as_bytes()).expect("stream Human sync headers");
+                            stream.write_all(&body.as_bytes()[..1]).expect("stream first body byte");
+                            stream.flush().expect("publish incomplete response body");
+                            offset = 1;
+                        }
+                        started.send(()).expect("report held Human sync response");
+                        release.recv_timeout(std::time::Duration::from_secs(45))
+                            .expect("explicitly release Human sync response");
+                    }
+                    if offset == 0 {
+                        stream.write_all(headers.as_bytes()).expect("write Human sync headers");
+                    }
+                    stream.write_all(&body.as_bytes()[offset..]).expect("write complete Human sync body");
+                    stream.flush().expect("flush Human sync body");
+                }));
+            }
+            for writer in writers { writer.join().expect("Human sync response writer"); }
+        });
+        Self { url, requests, stop: Some(stop), worker: Some(worker) }
+    }
+
+    fn requests(&self) -> Vec<String> {
+        self.requests.lock().expect("Human sync request snapshot").clone()
+    }
+
+    fn finish(&mut self) -> Vec<String> {
+        if let Some(stop) = self.stop.take() { let _ = stop.send(()); }
+        if let Some(worker) = self.worker.take() { worker.join().expect("Human sync fixture"); }
+        self.requests()
+    }
+}
+
+impl Drop for HumanSyncHttpFixture {
+    fn drop(&mut self) {
+        if let Some(stop) = self.stop.take() { let _ = stop.send(()); }
+        if let Some(worker) = self.worker.take() { let _ = worker.join(); }
+    }
+}
+
+fn human_sync_query(request: &str, key: &str) -> Option<u64> {
+    request.split_whitespace().nth(1)?.split_once('?')?.1.split('&').find_map(|item| {
+        let (name, value) = item.split_once('=')?;
+        (name == key).then(|| value.parse::<u64>().ok()).flatten()
+    })
+}
+
+fn human_sync_history(request: &str, messages: Vec<serde_json::Value>) -> serde_json::Value {
+    let after = human_sync_query(request, "afterId").expect("ascending Human sync cursor");
+    let messages = messages.into_iter()
+        .filter(|message| message["id"].as_u64().expect("fixture message id") > after)
+        .collect::<Vec<_>>();
+    let next = messages.last().map(|message| message["id"].clone()).unwrap_or(json!(after));
+    json!({"success":true,"data":{
+        "messages":messages,"historyCursor":{"mode":"after-id","afterId":after},"nextAfterId":next
+    }})
+}
+
+fn human_sync_friend(peer: u64, title: &str) -> serde_json::Value {
+    json!({"id":peer,"userId":peer,"username":format!("peer-{peer}"),
+        "displayName":title,"avatarUrl":null,"status":"accepted"})
+}
+
+fn human_sync_forward_ack(request: &str, id: u64) -> serde_json::Value {
+    let submitted = fixture_request_json(request);
+    fixture_remote_human_message(
+        id, 1,
+        submitted["targetUserId"].as_str().expect("submitted target").parse().expect("numeric target"),
+        submitted["text"].as_str().expect("submitted text"),
+        Some(submitted["clientRequestId"].as_str().expect("submitted nonce")), json!([]),
+    )
+}
+
+fn seed_human_sync_forward(
+    runtime: &Arc<ProductionSessionWorkers>, source_peer: u64, target_peer: u64, nonce: &str,
+) -> serde_json::Value {
+    let source = runtime.create_human_conversation(&source_peer.to_string(), "Recovery source")
+        .expect("source conversation")["id"].as_str().expect("source id").to_string();
+    let target = runtime.create_human_conversation(&target_peer.to_string(), "Recovery destination")
+        .expect("destination conversation")["id"].as_str().expect("destination id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&source).expect("source owner");
+    assert!(owner.append_transcript_entry(&json!({
+        "id":"human-server-message:41","kind":"message","role":"user",
+        "authorKind":"human","authorId":source_peer.to_string(),"authorName":"Recovery source",
+        "content":"immutable recovery payload","timestampMs":1000.0,"delivery":"sent",
+        "remoteMessageId":"41","remoteCreatedAt":"1970-01-01T00:00:01Z"
+    })).expect("durable forward source"));
+    json!({"sourceConversationId":source,"sourceEntryId":"human-server-message:41",
+        "destinationConversationIds":[target],"clientNonce":nonce,"dropSenderNames":false,"dropCaptions":false})
+}
+
+#[test]
+fn shipping_human_forward_active_batch_recovery_does_not_block_history() {
+    let root = temp_root("human-active-forward-history");
+    let accepted = Arc::new(std::sync::Mutex::new(None::<serde_json::Value>));
+    let service_accepted = Arc::clone(&accepted);
+    let (post_started, wait_for_post) = std::sync::mpsc::channel();
+    let (release_post, post_release) = std::sync::mpsc::channel();
+    let mut first_post = Some((post_started, post_release));
+    let mut server = HumanSyncHttpFixture::start(move |request| {
+        if request.starts_with("POST /api/social/messages ") {
+            let message = human_sync_forward_ack(request, 90);
+            *service_accepted.lock().expect("accepted forward") = Some(message.clone());
+            let body = json!({"success":true,"message":message});
+            if let Some((started, release)) = first_post.take() {
+                HumanSyncHttpReply::Held { status:201, body, started, release, stream_body:false }
+            } else {
+                HumanSyncHttpReply::Json(201, body)
+            }
+        } else if request.starts_with("GET /api/social/messages?") {
+            let messages = match human_sync_query(request, "contactId") {
+                Some(2502) => service_accepted.lock().expect("service canonical forward").clone()
+                    .map(|mut message| {
+                        message["readAt"] = json!("2026-10-05T02:00:00Z");
+                        message["reactions"] = json!([{"emoji":"👍","count":1,"reactedByMe":false}]);
+                        message
+                    }).into_iter().collect(),
+                Some(2503) => vec![fixture_remote_human_message(91, 2503, 1, "unrelated history", None, json!([]))],
+                _ => Vec::new(),
+            };
+            HumanSyncHttpReply::Json(200, human_sync_history(request, messages))
+        } else {
+            HumanSyncHttpReply::Json(503, json!({"success":false,"error":"unexpected active-forward request"}))
+        }
+    });
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let args = seed_human_sync_forward(&runtime, 2501, 2502, "active-forward-history");
+    let source = args["sourceConversationId"].as_str().unwrap().to_string();
+    let target = args["destinationConversationIds"][0].as_str().unwrap().to_string();
+    let unrelated = runtime.create_human_conversation("2503", "Independent history").expect("unrelated")["id"]
+        .as_str().expect("unrelated id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&source).expect("source owner");
+    let forwarding = {
+        let runtime = Arc::clone(&runtime);
+        let args = args.clone();
+        thread::spawn(move || forward_gateway_result(&runtime, &args))
+    };
+    let post_observed = wait_for_post.recv_timeout(std::time::Duration::from_secs(10));
+    let before_history = owner.get_metadata("humanForwardBatches");
+    let mut history_workers = Vec::new();
+    let mut history_observers = Vec::new();
+    for id in [target.clone(), unrelated.clone()] {
+        let runtime = Arc::clone(&runtime);
+        let (finished, result) = std::sync::mpsc::channel();
+        history_workers.push(thread::spawn(move || {
+            let synced = runtime.sync_human_conversation(&id);
+            let _ = finished.send(synced.clone());
+            synced
+        }));
+        history_observers.push(result);
+    }
+    let observations = history_observers.into_iter().map(|result|
+        result.recv_timeout(std::time::Duration::from_secs(10))
+    ).collect::<Vec<_>>();
+    let after_history = owner.get_metadata("humanForwardBatches");
+    // Cleanup precedes every behavioral assertion and join, including timeout
+    // results: the old blocking implementation must fail without a deadlock.
+    let released = release_post.send(());
+    let forwarded = forwarding.join();
+    let histories = history_workers.into_iter().map(|worker| worker.join()).collect::<Vec<_>>();
+    assert!(post_observed.is_ok(), "original forward reached HTTP: {post_observed:?}");
+    assert!(released.is_ok(), "release original forward response: {released:?}");
+    for (index, observation) in observations.iter().enumerate() {
+        assert!(matches!(observation, Ok(Ok(_))), "history {index} completes while POST is held: {observation:?}");
+    }
+    assert_eq!(before_history.expect("journal before history"), after_history.expect("journal after history"),
+        "skipping an active executor cannot rewrite its journal");
+    forwarded.expect("forward worker").expect("late acknowledgement settles");
+    let mut histories = histories.into_iter().map(|result|
+        result.expect("history worker").expect("independent history result")
+    ).collect::<Vec<_>>();
+    let destination_history = histories.remove(0);
+    assert_eq!(destination_history.len(), 1);
+    assert_eq!(destination_history[0]["id"], "human-server-message:90");
+    assert_eq!(destination_history[0]["delivery"], "sent");
+    assert_eq!(destination_history[0]["readAt"], "2026-10-05T02:00:00Z");
+    assert_eq!(destination_history[0]["reactions"], json!([{"emoji":"👍","by":"2502"}]));
+    assert_eq!(histories[0][0]["content"], "unrelated history");
+    assert_eq!(runtime.read_human_conversation_transcript(&target).expect("canonical destination"), destination_history,
+        "late POST cannot replace newer history receipts or create another row");
+    let journal = owner.get_metadata("humanForwardBatches").expect("settled journal").expect("batch");
+    assert_eq!(journal[0]["destinations"][0]["completed"], true);
+    assert_eq!(journal[0]["destinations"][0]["clientNonce"], destination_history[0]["clientNonce"]);
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    assert_eq!(reopened.sync_human_conversation(&target).expect("completed forward stays idempotent after restart"), destination_history);
+    reopened.shutdown(); drop(reopened);
+    let requests = server.finish();
+    assert_eq!(requests.iter().filter(|request| request.starts_with("POST /api/social/messages ")).count(), 1,
+        "automatic recovery must not dispatch the active batch again");
+    assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/messages?")).count(), 3);
+    assert_eq!(requests.len(), 4, "no resource, call or other duplicate request");
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_forward_roster_sync_recovers_once_per_invocation() {
+    let root = temp_root("human-roster-one-forward-recovery");
+    let allow_delivery = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let service_allowed = Arc::clone(&allow_delivery);
+    let mut accepted = None::<serde_json::Value>;
+    let mut server = HumanSyncHttpFixture::start(move |request| {
+        if request.starts_with("POST /api/social/messages ") {
+            if !service_allowed.load(std::sync::atomic::Ordering::Acquire) {
+                return HumanSyncHttpReply::Json(503, json!({"success":false,"error":"retry on a later invocation"}));
+            }
+            let message = human_sync_forward_ack(request, 100);
+            accepted = Some(message.clone());
+            HumanSyncHttpReply::Json(201, json!({"success":true,"message":message}))
+        } else if request.starts_with("GET /api/social/friends ") {
+            HumanSyncHttpReply::Json(200, json!({"success":true,"data":{"friends":[
+                human_sync_friend(2602, "Recovery destination"), human_sync_friend(2603, "Independent friend")
+            ]}}))
+        } else if request.starts_with("GET /api/social/messages?") {
+            let messages = match human_sync_query(request, "contactId") {
+                Some(2602) => accepted.clone().into_iter().collect(),
+                Some(2603) => vec![fixture_remote_human_message(101, 2603, 1, "roster history progressed", None, json!([]))],
+                _ => Vec::new(),
+            };
+            HumanSyncHttpReply::Json(200, human_sync_history(request, messages))
+        } else if request.starts_with("GET /api/social/calls?") {
+            HumanSyncHttpReply::Json(200, json!({"success":true,"calls":[]}))
+        } else {
+            HumanSyncHttpReply::Json(503, json!({"success":false,"error":"unexpected roster recovery request"}))
+        }
+    });
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let args = seed_human_sync_forward(&runtime, 2601, 2602, "roster-once-recovery");
+    let source = args["sourceConversationId"].as_str().unwrap().to_string();
+    let target = args["destinationConversationIds"][0].as_str().unwrap().to_string();
+    let unrelated = runtime.create_human_conversation("2603", "Independent friend").expect("other friend")["id"]
+        .as_str().expect("other id").to_string();
+    forward_gateway_result(&runtime, &args).expect("initial failure is a durable destination result");
+    let owner = runtime.open_human_conversation_db_owner(&source).expect("source owner");
+    let admitted = owner.get_metadata("humanForwardBatches").expect("initial journal").expect("batch");
+    assert_eq!(admitted[0]["destinations"][0]["completed"], false);
+    assert!(admitted[0]["destinations"][0]["error"].is_string());
+    assert_eq!(server.requests().iter().filter(|request| request.starts_with("POST /api/social/messages ")).count(), 1);
+
+    dispatch_production_session_gateway_call(&runtime, "syncHumanConversations", &json!({}))
+        .expect("registered roster gateway").expect("failed destination does not block roster history");
+    let first_requests = server.requests();
+    assert_eq!(first_requests.iter().filter(|request| request.starts_with("POST /api/social/messages ")).count(), 2,
+        "two friends add one recovery attempt for the whole roster invocation");
+    let failed = owner.get_metadata("humanForwardBatches").expect("retry journal").expect("batch");
+    assert_eq!(failed[0]["destinations"][0]["completed"], false);
+    assert!(failed[0]["destinations"][0]["error"].is_string());
+    assert_eq!(failed[0]["requestId"], admitted[0]["requestId"]);
+    assert_eq!(failed[0]["destinations"][0]["clientNonce"], admitted[0]["destinations"][0]["clientNonce"]);
+    let independent_rows = runtime.read_human_conversation_transcript(&unrelated).expect("unrelated history");
+    assert_eq!(independent_rows.len(), 1);
+    assert_eq!(independent_rows[0]["content"], "roster history progressed");
+
+    runtime.sync_human_conversation(&unrelated).expect("direct sync still attempts recovery once");
+    assert_eq!(server.requests().iter().filter(|request| request.starts_with("POST /api/social/messages ")).count(), 3,
+        "direct sync retains one independent retry opportunity");
+    let failed_before_restart = owner.get_metadata("humanForwardBatches").expect("failed before restart");
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let resumed = human_message_fixture_runtime(&root, &server.url);
+    let owner = resumed.open_human_conversation_db_owner(&source).expect("reopened source owner");
+    assert_eq!(owner.get_metadata("humanForwardBatches").expect("durable failed batch"), failed_before_restart);
+    allow_delivery.store(true, std::sync::atomic::Ordering::Release);
+    dispatch_production_session_gateway_call(&resumed, "syncHumanConversations", &json!({}))
+        .expect("registered resumed roster gateway").expect("later invocation recovers original durable batch");
+    let settled = owner.get_metadata("humanForwardBatches").expect("settled journal").expect("batch");
+    assert_eq!(settled[0]["destinations"][0]["completed"], true);
+    assert!(settled[0]["destinations"][0]["error"].is_null());
+    assert_eq!(settled[0]["requestId"], admitted[0]["requestId"]);
+    assert_eq!(settled[0]["destinations"][0]["clientNonce"], admitted[0]["destinations"][0]["clientNonce"]);
+    let delivered = resumed.read_human_conversation_transcript(&target).expect("canonical recovered target");
+    assert_eq!(delivered.len(), 1);
+    assert_eq!(delivered[0]["id"], "human-server-message:100");
+    assert_eq!(delivered[0]["clientNonce"], admitted[0]["destinations"][0]["clientNonce"]);
+    assert_eq!(delivered[0]["content"], "immutable recovery payload");
+    assert_eq!(resumed.read_human_conversation_transcript(&unrelated).expect("unrelated rows remain"), independent_rows);
+    resumed.shutdown(); drop(owner); drop(resumed);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    assert_eq!(reopened.read_human_conversation_transcript(&target).expect("pure reopen recovered target"), delivered);
+    assert_eq!(reopened.open_human_conversation_db_owner(&source).expect("reopened settled owner")
+        .get_metadata("humanForwardBatches").expect("reopened settled batch"), Some(settled));
+    reopened.shutdown(); drop(reopened);
+    let requests = server.finish();
+    let posts = requests.iter().filter(|request| request.starts_with("POST /api/social/messages "))
+        .map(|request| fixture_request_json(request)).collect::<Vec<_>>();
+    assert_eq!(posts.len(), 4, "initial + one per roster invocation + one direct invocation");
+    assert!(posts.iter().all(|post| post == &posts[0]), "every retry preserves exact nonce, destination and payload");
+    assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/friends ")).count(), 2);
+    assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/messages?")).count(), 5);
+    assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/calls?")).count(), 2);
+    assert_eq!(requests.len(), 13, "no per-friend retry, resource request or duplicate delivery");
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_roster_bound_request_rejects_wrong_user_before_http() {
+    let root = temp_root("human-roster-bound-wrong-user");
+    let mut server = HumanSyncHttpFixture::start(|request| {
+        if request.starts_with("GET /api/social/friends ") {
+            HumanSyncHttpReply::Json(200, json!({"success":true,"data":{"friends":[human_sync_friend(2701, "Authorized friend")]}}))
+        } else {
+            HumanSyncHttpReply::Json(503, json!({"success":false,"error":"unexpected wrong-user request"}))
+        }
+    });
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let credential_path = root.join("host-credential.json");
+    let original = fs::read(&credential_path).expect("original credential bytes");
+    let mut wrong: serde_json::Value = serde_json::from_slice(&original).expect("credential JSON");
+    wrong["userId"] = json!(999);
+    fs::write(&credential_path, wrong.to_string()).expect("wrong-user credential");
+    let client = FabushiNativeMessagingClient::new(&server.url, &credential_path).expect("native client");
+    let direct = client.list_friends_for_user("1").expect_err("bound native entry must reject before HTTP");
+    assert!(direct.contains("Human account"), "{direct}");
+    assert!(runtime.sync_human_conversations().expect_err("Host binding also rejects wrong user").contains("identity"));
+    assert!(server.requests().is_empty(), "an active listener observed no request for the wrong account");
+    assert!(runtime.list_human_conversations().expect("no discovered conversation").is_empty());
+
+    fs::write(&credential_path, original).expect("restore original credential");
+    assert_eq!(client.list_friends_for_user("1").expect("restored bound request").len(), 1);
+    assert_eq!(client.list_friends().expect("compatible native API remains usable").len(), 1);
+    let requests = server.finish();
+    assert_eq!(requests.len(), 2, "only the two restored positive requests reach HTTP");
+    assert!(requests.iter().all(|request| request.starts_with("GET /api/social/friends ")));
+    runtime.shutdown(); drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}
+
+fn human_sync_persisted_stores(root: &std::path::Path)
+    -> std::collections::BTreeMap<String, (Vec<(String, String)>, Vec<String>)>
+{
+    let mut stores = std::collections::BTreeMap::new();
+    for entry in fs::read_dir(root.join("agents/.conversations")).expect("persisted Human store directory") {
+        let entry = entry.expect("persisted Human directory entry");
+        let path = entry.path().join("store.db");
+        if !path.is_file() { continue; }
+        let db = rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .expect("independent persisted Human SQLite reader");
+        let metadata = db.prepare("SELECT key, value FROM kv ORDER BY key").expect("raw metadata query")
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+            .expect("read raw metadata").collect::<Result<Vec<_>, _>>().expect("all raw metadata rows");
+        let rows = db.prepare("SELECT entry FROM transcript_entries ORDER BY id").expect("raw transcript query")
+            .query_map([], |row| row.get::<_, String>(0)).expect("read raw transcript")
+            .collect::<Result<Vec<_>, _>>().expect("all raw transcript rows");
+        stores.insert(entry.file_name().to_string_lossy().into_owned(), (metadata, rows));
+    }
+    stores
+}
+
+#[test]
+fn shipping_human_roster_rejects_streamed_body_credential_rotation_and_recovers() {
+    for (index, field) in ["userId", "deviceId", "accessToken", "sessionId", "expiresAtMs", "issuer"]
+        .into_iter().enumerate()
+    {
+        let root = temp_root(&format!("human-roster-streamed-{field}"));
+        let existing_peer = 2800 + index as u64 * 10;
+        let stale_peer = existing_peer + 1;
+        let authorized_peer = existing_peer + 2;
+        let marker = format!("roster-body-{field}-{}", root.file_name().unwrap().to_string_lossy());
+        let service_marker = marker.clone();
+        let (body_started, wait_for_body) = std::sync::mpsc::channel();
+        let (release_body, body_release) = std::sync::mpsc::channel();
+        let mut first_body = Some((body_started, body_release));
+        let mut server = HumanSyncHttpFixture::start(move |request| {
+            if request.starts_with("GET /api/social/friends ") {
+                if let Some((started, release)) = first_body.take() {
+                    HumanSyncHttpReply::Held {
+                        status:200,
+                        body:json!({"success":true,"data":{"friends":[
+                            human_sync_friend(existing_peer, "Unaccepted replacement title"),
+                            human_sync_friend(stale_peer, "Unaccepted new conversation")
+                        ]}}),
+                        started, release, stream_body:true,
+                    }
+                } else {
+                    HumanSyncHttpReply::Json(200, json!({"success":true,"data":{"friends":[
+                        human_sync_friend(authorized_peer, "Authorized recovered friend")
+                    ]}}))
+                }
+            } else if request.starts_with("GET /api/social/messages?") {
+                let peer = human_sync_query(request, "contactId").expect("history peer");
+                HumanSyncHttpReply::Json(200, human_sync_history(request, vec![fixture_remote_human_message(
+                    120 + index as u64, peer, 1, &service_marker, None, json!([]),
+                )]))
+            } else if request.starts_with("GET /api/social/calls?") {
+                HumanSyncHttpReply::Json(200, json!({"success":true,"calls":[]}))
+            } else {
+                HumanSyncHttpReply::Json(503, json!({"success":false,"error":"unexpected roster body request"}))
+            }
+        });
+        let runtime = human_message_fixture_runtime(&root, &server.url);
+        let existing = runtime.create_human_conversation(&existing_peer.to_string(), "Persisted original title")
+            .expect("existing conversation")["id"].as_str().expect("existing id").to_string();
+        let owner = runtime.open_human_conversation_db_owner(&existing).expect("existing owner");
+        assert!(owner.set_metadata("retainedRosterBoundary", json!({"case":field,"keep":true})).expect("retained metadata"));
+        assert!(owner.append_transcript_entry(&json!({
+            "id":format!("roster-sentinel-{field}"),"kind":"message","role":"user","authorKind":"human",
+            "authorId":existing_peer.to_string(),"content":"persisted sentinel","timestampMs":1.0,"delivery":"sent"
+        })).expect("persisted sentinel"));
+        let before = human_sync_persisted_stores(&root);
+        let original_roster = runtime.list_human_conversations().expect("original roster");
+        let credential_path = root.join("host-credential.json");
+        let mut original: serde_json::Value = serde_json::from_slice(&fs::read(&credential_path).expect("credential bytes"))
+            .expect("credential JSON");
+        original["sessionId"] = json!("original-roster-session");
+        original["expiresAtMs"] = json!(4_000_000_000_000_u64);
+        fs::write(&credential_path, original.to_string()).expect("complete original credential");
+        let events = Arc::new(std::sync::Mutex::new(Vec::<serde_json::Value>::new()));
+        let captured = Arc::clone(&events);
+        let event_existing = existing.clone();
+        let event_marker = marker.clone();
+        let subscription = mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations(move |mutation| {
+            if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(event_existing.as_str())
+                || mutation.get("entries").and_then(serde_json::Value::as_array).is_some_and(|entries| {
+                    entries.iter().any(|entry| entry.get("content").and_then(serde_json::Value::as_str) == Some(event_marker.as_str()))
+                })
+            {
+                captured.lock().expect("record roster mutation").push(serde_json::Value::Object(mutation.clone()));
+            }
+        });
+        let syncing = {
+            let runtime = Arc::clone(&runtime);
+            thread::spawn(move || runtime.sync_human_conversations())
+        };
+        let body_observed = wait_for_body.recv_timeout(std::time::Duration::from_secs(10));
+        let mut rotated = original.clone();
+        rotated[field] = match field {
+            "userId" => json!(999),
+            "deviceId" => json!("replacement-roster-device"),
+            "accessToken" => json!("replacement-roster-token"),
+            "sessionId" => json!("replacement-roster-session"),
+            "expiresAtMs" => json!(4_000_000_001_000_u64),
+            // The origin remains valid; only the complete raw credential fence
+            // can detect this otherwise accepted issuer representation change.
+            "issuer" => json!(format!("{}/", server.url)),
+            _ => unreachable!(),
+        };
+        let rotation = fs::write(&credential_path, rotated.to_string());
+        let released = release_body.send(());
+        let result = syncing.join();
+        assert!(body_observed.is_ok(), "headers and partial body before rotation: {field}: {body_observed:?}");
+        rotation.expect("rotate only after response body starts");
+        assert!(released.is_ok(), "release body before assertions and worker inspection: {field}: {released:?}");
+        let error = result.expect("roster worker").expect_err("changed credential must reject the completed body");
+        assert!(error.contains("credential"), "{field}: {error}");
+        assert_eq!(server.requests().len(), 1, "no history, call or resource request after rejection: {field}");
+        assert_eq!(human_sync_persisted_stores(&root), before, "all actual SQLite stores and raw metadata remain unchanged: {field}");
+        assert_eq!(runtime.list_human_conversations().expect("unmodified roster"), original_roster, "{field}");
+        assert!(events.lock().expect("rejected roster events").is_empty(), "no publication for rejected roster: {field}");
+        assert!(!root.join("agents/human-message-resources").exists(), "no resource side effect: {field}");
+        runtime.shutdown(); drop(owner); drop(runtime);
+
+        let resumed = human_message_fixture_runtime(&root, &server.url);
+        fs::write(&credential_path, original.to_string()).expect("restore exact original credential after runtime construction");
+        assert_eq!(human_sync_persisted_stores(&root), before, "reopen retained unchanged stores: {field}");
+        let recovered = resumed.sync_human_conversations().expect("restored credentials admit only the authorized roster");
+        assert_eq!(recovered.len(), 2, "existing plus one authorized friend, no stale-roster conversation: {field}");
+        let recovered_id = recovered.iter().find(|conversation| conversation["title"] == "Authorized recovered friend")
+            .expect("authorized recovered friend")["id"].as_str().expect("recovered id").to_string();
+        let rows = resumed.read_human_conversation_transcript(&recovered_id).expect("authorized friend history");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0]["authorId"], authorized_peer.to_string());
+        assert_eq!(rows[0]["content"], marker);
+        assert_eq!(events.lock().expect("successful roster events").len(), 1, "one authorized history publication: {field}");
+        let after_recovery = human_sync_persisted_stores(&root);
+        assert_eq!(after_recovery.get(&existing), before.get(&existing), "existing raw store remains untouched: {field}");
+        resumed.shutdown(); drop(resumed);
+        let reopened = human_message_fixture_runtime(&root, &server.url);
+        fs::write(&credential_path, original.to_string()).expect("restore credential for pure reopen");
+        assert_eq!(reopened.read_human_conversation_transcript(&recovered_id).expect("reopen authorized history"), rows);
+        assert_eq!(human_sync_persisted_stores(&root), after_recovery, "pure reopen has no extra durable mutation: {field}");
+        assert_eq!(events.lock().expect("events after reopen").len(), 1);
+        subscription.unsubscribe();
+        reopened.shutdown(); drop(reopened);
+        let requests = server.finish();
+        assert_eq!(requests.len(), 4, "one rejected roster plus authorized roster/history/calls only: {field}");
+        assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/friends ")).count(), 2);
+        assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/messages?")).count(), 1);
+        assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/calls?")).count(), 1);
+        assert!(requests.iter().all(|request| !request.starts_with("POST ")), "roster discovery must not send: {field}");
+        let _ = fs::remove_dir_all(root);
+    }
 }
 
 #[test]

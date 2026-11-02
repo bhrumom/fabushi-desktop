@@ -651,3 +651,16 @@ or its reload/retry UI. All newly combined input requires containing-H Actions;
 previous results keep their original SHA. The existing task receipt records the
 reviewed production paths, test selections, failures and later execution separately.
 Full source/service/package/quality/Bot/upgrade/rollback and independent ACCEPT remain open.
+
+### Task20bf current recovery after exact7f8 failures
+
+| Requirement | Existing production chain | Authored oracle and current evidence boundary |
+| --- | --- | --- |
+| NMR-50a/b/c | Session sync → nonblocking automatic batch admission / one held delivery guard → current source/target policy and native send; roster → one scan/private history helper → native bound friends/full completed-body credential fence | Four real Host/HTTP/SQLite/barrier/reopen cases; expected Human69 at repair H. Explicit sends retain serialization, corrupt/storage/poison errors fail, wrong user gives zero HTTP, six credential rotations preserve persisted state and recover. Static review passed within scope; execution pending. |
+| UI-NMR-CURSOR-ACTIVATION-001 | ProductionRenderer committed initial/cache/feed rows → existing Transcript near-top effect → unchanged pagination cursor/single-flight/anchor owner | Original Renderer11 retained, original Transcript8 plus1 no-scroll A/B activation/pending/failure/keyboard Retry case. H7f actual first114 UI cases passed but Renderer1/10 failed and Transcript8 did not execute; repair-H expected UI134, not a current pass. |
+| Preserved test/oracle gates | Existing native-service workflow and structured gateway error | H7f Human compile E0599/E0277 repaired in test only; Social Feature10 actually passed and its expected caught-panic line capture is repaired without removing three named gates. Runtime9/HTTP6, Human69 and same-H shipping must execute successfully. |
+
+Exact run/job/artifact identities and independently reviewed blobs remain in the
+existing `task20bf-round1-forward-intent-ui.json` receipt. Fixed U, unique inventory,
+source review counters, final service/package/Bot/quality and independent ACCEPT
+are unchanged; no partial suite or authored case is promoted to full acceptance.

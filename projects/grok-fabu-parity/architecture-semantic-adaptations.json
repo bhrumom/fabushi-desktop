@@ -68,22 +68,24 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+      "targetBlobSha": "68eb88a950d8c48f674566efbfad335a6bf620af",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/production/ForwardMessageDialog.tsx",
-        "frontend/src/recovered/features/conversation/workspace/pagination.ts"
+        "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+        "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "desktop/e2e/grok-parity.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/src/extensions/session/production.rs",
         "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
-        "frontend/src/production/transcript-projection.contract.test.ts"
+        "frontend/src/production/transcript-projection.contract.test.ts",
+        "desktop/e2e/native-message-projection.spec.ts",
+        ".github/workflows/native-service-contracts.yml"
       ],
-      "rationale": "Preserves the frozen Grok ConversationTranscript as the single shipping transcript owner while adding one source-neutral message-action seam: an optional onForward callback. MessageActionAnchor exposes Forward only for settled ordinary messages when the shipping Conversation owner supplies that callback, including attachment-bearing messages, while preserving read-only gating, reply/thread/reaction actions, transcript identity, rendering and lifecycle. ProductionRenderer supplies this callback only for canonical Human conversations and execution crosses the existing Coordinator/Host message owner; no Telegram/ShareBox transcript, route, Message store, or renderer-side forward truth is introduced. The same Transcript now reports its actual mounted viewport by callback, exposes one accessible older-history failure/Retry control, and pauses automatic history reads after failure until explicit retry. ProductionRenderer binds this viewport to the existing pagination and Find owners across initial failure/replacement; it does not query an obsolete DOM node or create another transcript surface. Message Resend remains the separate unclosed Human Retry responsibility."
+      "rationale": "Preserves the frozen Grok ConversationTranscript as the single shipping transcript owner while adding one source-neutral message-action seam: an optional onForward callback. MessageActionAnchor exposes Forward only for settled ordinary messages when the shipping Conversation owner supplies that callback, including attachment-bearing messages, while preserving read-only gating, reply/thread/reaction actions, transcript identity, rendering and lifecycle. ProductionRenderer supplies this callback only for canonical Human conversations and execution crosses the existing Coordinator/Host message owner; no Telegram/ShareBox transcript, route, Message store, or renderer-side forward truth is introduced. The same Transcript now reports its actual mounted viewport by callback, exposes one accessible older-history failure/Retry control, and pauses automatic history reads after failure until explicit retry. ProductionRenderer binds this viewport to the existing pagination and Find owners across initial failure/replacement; it does not query an obsolete DOM node or create another transcript surface. Message Resend remains the separate unclosed Human Retry responsibility. UI-NMR-CURSOR-ACTIVATION-001 reevaluates the existing near-top rule after committed entries change, so an initial unprobed-to-more cursor and a same-hasOlder conversation replacement activate their current continuation without an artificial scroll. Existing loading/failure guards, controller single-flight, viewport callback and layout-phase pending-anchor ownership remain. The actual-root no-scroll case and retained Renderer scenarios are authored recovery evidence; containing-H Actions execution is separate."
     },
     {
       "referencePath": "frontend/src/production/model.ts",

@@ -140,19 +140,25 @@ Evidence: `projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-
 
 ## Retained concurrent batch — task20bf round1 resumed, immutable forward intent
 
-Current task20bf update: exact `db27ec9c4b36f6bc47e04bee46d8f53b5ec45e23`
-passed renderer132 (including the repaired original test loader), both2002-module
-architecture gates and source170/Python37/candidate checks. Exact `2ac00f9` UI76
-includes all18 actual Settings proxy settlement/lifetime cases; its reconciliation80,
-Electron89 and Windows11 passed while shipping remained queued at21:20:15 UTC.
-The new integration freezes shared `217d1499dbd541274ba11f8f1fdb092a85e8bc7b`,
-preserves all existing owners and adds no second state truth. Its union gates
-Human65/journal13/Transcript38/cursor17/Coordinator13/Forward5+23/Settings18/Renderer11/Transcript8
-are authored and require containing-H Actions. The same existing owners now reject
-ordinary resend of unresolved source-owned forwarding, fence Forward after ready
-before its frame, and coalesce failed-page updates without losing alias/clear semantics. Human message Retry remains the
-explicit HRR-01..06 consumer gap; older-page Retry does not close it. Source/legal,
-service/package/Bot/quality/upgrade/rollback and independent ACCEPT remain open.
+Current task20bf execution is bound to `7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18`,
+which preserves frozen shared `217d1499dbd541274ba11f8f1fdb092a85e8bc7b`.
+Renderer132/strict inventory, Electron100, Windows11 and source171/Python37/current
+schema/candidate checks passed. Native UI passed its first114 cases; actual
+Renderer11 then had1 pass/10 initial-history activation failures, and Transcript8
+was not executed. Human65 did not run because a test used an unsupported error
+Display. Social Feature10 passed but its named-output oracle failed; Runtime9/HTTP6
+were not executed. These failures retain their artifacts and are not combined success.
+
+The current repair retains every gate: structured Human error matching and captured
+expected Social poison output repair the two test defects. Existing Session/native
+owners now skip active forward batches during automatic recovery, scan once per
+roster sync and bind the friends response to the entire credential snapshot.
+Four real HTTP/SQLite/barrier/reopen cases bring the authored Human selection to69.
+The same Transcript now reevaluates its near-top rule after committed rows, with
+one new no-scroll activation case and the original Renderer11/Transcript8 retained.
+These changes require the new containing-H Actions; full Human Retry, same-H
+shipping, source/legal, service/platform/quality/Bot/upgrade/rollback and independent
+ACCEPT remain open. No new state owner or data deletion is introduced.
 
 The following paragraphs retain the original H73/H531 authoring history.
 
