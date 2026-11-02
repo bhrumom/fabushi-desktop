@@ -8,7 +8,9 @@ import type {
   DesktopTimeZoneState,
   DesktopUiPreferences,
   ProductNetworkProxyMutation,
+  ProductNetworkProxyMutationResult,
   ProductNetworkProxySettings,
+  ProductSettingsSnapshot,
   DesktopUpdateStatus,
   ThemePreference,
   ThemeState,
@@ -184,7 +186,7 @@ export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordin
     ),
     experimentSnapshot,
     loadEgressTunnelState(bridge, coordinatorClient, experimentSnapshot),
-    bridge.networkProxy.get()
+    readNetworkProxySettings(bridge)
   ]);
   return {
     account: accountStateFromCursorStatus(status, typeof avatar === "string" ? avatar : undefined),
@@ -412,7 +414,46 @@ export function usageMetersFromSummary(summary: CursorUsageSummary | null, nowMs
 }
 
 
-export async function mutateNetworkProxySettings(bridge: DesktopBridge, mutation: ProductNetworkProxyMutation): Promise<ProductNetworkProxySettings> {
-  const result = await bridge.networkProxy.mutate(mutation);
-  return result.settings.network.proxy;
+// Only an in-flight write is retained here. The bridge remains the sole source
+// of committed preferences, including when a different Settings surface opens.
+const networkProxyWrites = new WeakMap<DesktopBridge, Promise<ProductNetworkProxyMutationResult>>();
+
+export type NetworkProxyPublicationAvailability = "unavailable" | "unconfirmed";
+
+export function networkProxyPublicationAvailability(publication: unknown): NetworkProxyPublicationAvailability {
+  return isRecord(publication) && publication.available === false ? "unavailable" : "unconfirmed";
+}
+
+export async function readNetworkProxySettings(bridge: DesktopBridge): Promise<ProductSettingsSnapshot> {
+  for (;;) {
+    const pending = networkProxyWrites.get(bridge);
+    if (pending == null) {
+      try {
+        return await bridge.networkProxy.get();
+      } catch {
+        throw new Error("Could not load proxy preferences. Please try again.");
+      }
+    }
+    try {
+      await pending;
+    } catch {
+      // A rejected write is not a snapshot. Reopening must still read the
+      // canonical owner, without replaying an uncertain mutation.
+    }
+  }
+}
+
+export function mutateNetworkProxySettings(
+  bridge: DesktopBridge,
+  mutation: ProductNetworkProxyMutation,
+): Promise<ProductNetworkProxyMutationResult> {
+  if (networkProxyWrites.has(bridge)) return Promise.reject(new Error("A proxy preference save is already in progress."));
+  // Establish coordination before invoking the bridge, including a synchronous
+  // throw or a reentrant caller. No settings snapshot is cached in this map.
+  const request = Promise.resolve().then(() => bridge.networkProxy.mutate(mutation));
+  const pending = request.finally(() => {
+    if (networkProxyWrites.get(bridge) === pending) networkProxyWrites.delete(bridge);
+  });
+  networkProxyWrites.set(bridge, pending);
+  return pending;
 }

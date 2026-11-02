@@ -2,7 +2,7 @@ name: Rust desktop runtime
 
 on:
   push:
-    branches: [main, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild]
+    branches: [main, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - '.github/workflows/release-macos-main.yml'
       - 'desktop/**'
@@ -50,7 +50,11 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # The isolated migration checkpoint needs the unchanged renderer gate even
+  # while concurrent base changes prevent PR workflows. Its native batch runs
+  # in native-service-contracts; main, other pushes and every PR keep all jobs.
   rust-host:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/checkpoint/tdrp-forward-privacy-task20bf-r1'
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -153,6 +157,7 @@ jobs:
           cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff
 
   pressure-profiler-platform:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/checkpoint/tdrp-forward-privacy-task20bf-r1'
     name: Pressure profiler / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -204,6 +209,7 @@ jobs:
           -- --exact --nocapture
 
   platform-worker:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/checkpoint/tdrp-forward-privacy-task20bf-r1'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

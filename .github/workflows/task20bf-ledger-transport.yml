@@ -22,9 +22,9 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)" = e88c75896bd0dce29b2d8b89e949c9231dad872c
+          test "$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)" = 6cf30e86c00e8ef5a780d389003b883384d24331
           git apply --index .github/task20bf-ledger-transport.patch
-          test "$(git rev-parse :projects/telegram-desktop-rust/parity-ledger.json)" = 6cf30e86c00e8ef5a780d389003b883384d24331
+          test "$(git rev-parse :projects/telegram-desktop-rust/parity-ledger.json)" = 9855272e8d385d6d90b7d0c024025a16a9b87af9
           python - <<'PY'
           import json, os
           from pathlib import Path
@@ -34,7 +34,7 @@ jobs:
           PY
           mkdir -p artifacts/ledger-transport
           gh api --method POST repos/bhrumom/fabushi-desktop/git/blobs --input "$RUNNER_TEMP/task20bf-ledger-object.json" --jq .sha > artifacts/ledger-transport/blob-sha.txt
-          test "$(cat artifacts/ledger-transport/blob-sha.txt)" = 6cf30e86c00e8ef5a780d389003b883384d24331
+          test "$(cat artifacts/ledger-transport/blob-sha.txt)" = 9855272e8d385d6d90b7d0c024025a16a9b87af9
           git rev-parse HEAD > artifacts/ledger-transport/transport-sha.txt
           printf '%s\n' 'Object transport only; no source/product acceptance or branch promotion.' > artifacts/ledger-transport/scope.txt
       - uses: actions/upload-artifact@v4

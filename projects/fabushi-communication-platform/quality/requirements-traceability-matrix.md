@@ -83,12 +83,19 @@ batch requires Human47 and retains journal12.
 | FWD-UI-04 | Existing privacy controls plus shared ForwardPrivacy | Hiding captions hides names; showing names restores captions; first dispatch locks snapshot |
 | FWD-UI-05 | Existing account/dialog lifetime and Session durable recovery | Close while pending retires callback only; late result cannot settle/close reopened presentation |
 | FMEP-SOURCE-01 | Unique source_reviews and existing source candidate checker | Two exact option-source records complete, four fully read panel/phrase records pending decomposition; pending records never counted complete and full acceptance still requires the entire source set |
+| NMR-48d / NMR-AC-39b | HumanForwardBatch::validate on existing Session journal load/store | `forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent` and `shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair`; three semantic contradictions, cold/cached owners, exact damaged-byte retention, no target I/O, repair/same-nonce continuation and text-only positive control |
 
 Existing Chromium12 cases are retained and extended to16, alongside settlement5,
-the original Transcript16 plus two reply-projection cases (Transcript18), and
-current Host/Agent/shipping/Electron/Windows gates. Current-H
-execution is pending at authoring; no local executable verification or independent
-ACCEPT. Evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
+the original Transcript16 plus two concurrent reply-projection cases (Transcript18),
+and current Host/Agent/shipping/Electron/Windows gates. At H
+`73cc6e1cc9fa871e5f80931979606ac9ee810551`, source157/schema37/candidate,
+Chromium16/settlement5/Transcript16, Electron83, Windows11 and reconciliation
+Human44/sharebox1/journal12/Agent4/credential3/Gateway1 passed. Six actual UI
+screenshots were viewed. Shipping was still queued at this observation.
+NMR-48d's containing H preserves the concurrent reply cases and requires
+Human49/journal13; new execution is not-run at authoring. No local executable
+verification or independent ACCEPT.
+Evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
 
 ## Historical round 28 — actual forwarding crash tests and persistence repair
 
@@ -453,3 +460,18 @@ The actual production path is the existing Human workspace -> Coordinator `getHu
 | NMR-ACTIVITY-01 | History and Agent handoff serialize at the existing lane; older timestamps cannot regress activity; failed metadata commits report failure and replay repairs the durable row/metadata gap | `shipping_human_agent_handoff_and_history_download_keep_activity_monotonic`; `shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_restart` |
 
 The existing exact-H Actions job retains every current message, credential, reply/forward, upload, AppHost/shipping, UI/Chromium/Electron and Windows gate. At the integrated freeze the authored selected counts are Human52, projection20 and cursor/RPC17; execution remains pending until the containing-H logs show the actual results. Two concurrent NMR49 cases retain their complete physical-row/atomic/permission assertions and separately assert the new public canonical ordering. Existing prerequisite results are provenance only; see `projects/telegram-desktop-rust/evidence/task20bf-round6-resumed-stable-pagination.json`. Full source/legal, deployed Worker, supported signed packages, UI/a11y/temporal/Bot/soak and independent ACCEPT remain open.
+
+## PS-UI-01..05 canonical proxy preference settlement
+
+Spec: `docs/specs/fabushi-product-settings-owner.md` §14. Responsibility remains
+`TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` in the unique TDRP ledger.
+
+| Requirement | Actual production owner/path | Authored evidence and remaining gate |
+| --- | --- | --- |
+| PS-UI-01 / PS-UI-02 | Existing SettingsDesktopSurface → GeneralSettingsPanel → networkProxy adapter → DesktopBridge → Main RPC → Coordinator MainData → Native ProductSettingsOwner; full result preserves canonical settings and separate publication | Actual-surface timeout same-value normalization and five publication cases; unavailable/unconfirmed never claims connected routing |
+| PS-UI-03 / PS-UI-04 | Surface lifetime/write tokens plus adapter in-flight promise barrier; accepted Host write continues after close, reopened read waits then gets canonical state | Duplicate/pending controls with independent Theme, failed endpoint/timeout drafts, close/unmount/bridge ABA, pending success/error reopening and fixed read-error Retry; 18 authored Chromium cases total |
+| PS-UI-05 | Existing native-message-ui Actions job, production Settings fixture and unchanged Native Settings persistence/restart contracts | Containing-H execution pending at freeze; complete Native proxy transport, supported packages, visual/a11y/security/upgrade/rollback and independent ACCEPT remain open |
+
+Test: `frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs`.
+Current-H results stay in `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`;
+no source-review count, historical Rust execution or independent acceptance is promoted.

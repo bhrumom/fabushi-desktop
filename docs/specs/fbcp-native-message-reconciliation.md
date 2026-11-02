@@ -1123,6 +1123,38 @@ full source/legal, signed-platform packages and independent ACCEPT remain open.
 Rollback retains snapshots and journal metadata; an older binary must not be
 used to resume newly pinned attachments without the same integrity checks.
 
+### Persisted forward privacy consistency (task20bf round1 / NMR-48d)
+
+At `73cc6e1cc9fa871e5f80931979606ac9ee810551`, new requests normalize privacy,
+but `HumanForwardBatch::validate` only requires two boolean fields. A valid-JSON
+journal can therefore contradict its privacy declaration and ordinary sync can
+consume its retained caption or origin for an unfinished destination. This is
+a persisted semantic-integrity defect, not a claim that ordinary new requests
+violate privacy or that arbitrary database tampering can be detected.
+
+- NMR-48d: The existing batch validator must reject non-normalized privacy,
+  any `origin` field when sender names are hidden, and nonempty submitted text
+  when captions are hidden and the batch has attachments. Apply this gate on
+  existing load/store paths before recovery or any target dispatch. Do not
+  normalize, scrub, overwrite or silently discard an already accepted intent.
+  Text-only forwards may retain their body with both hide options true; a body
+  without attachments is not a media caption. No schema version, command,
+  service, permission owner, database or resource owner is added.
+- NMR-AC-39b: Add focused journal tests and one real Session/SQLite/HTTP restart
+  case. Preserve a completed first target, then inject each contradictory but
+  valid-JSON privacy state into an incomplete attachment batch and exercise
+  both cold and already-cached source owners. Require rejection before any new
+  resource/message POST or history progress, unchanged damaged metadata and
+  completed target, and successful same-nonce continuation after restoring
+  the exact original metadata. Include the text-only hide-caption positive
+  control and verify invalid writes do not replace a valid journal. Actions
+  must execute Human49 and journal13 after retaining the concurrent NMR-49
+  reply and NMR-51 upload cases, with all existing affected gates.
+
+Rollback is an ordinary code revert retaining all journals and snapshots; it
+reopens this recovery gap. The existing external service, signed package,
+source/legal and independent acceptance requirements remain unchanged.
+
 ### Auxiliary packaged executable source locks (FMEP-SOURCE-01)
 
 The four-file desktop resource boundary also depends on the independent

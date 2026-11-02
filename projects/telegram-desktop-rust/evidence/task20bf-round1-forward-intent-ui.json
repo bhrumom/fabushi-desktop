@@ -1,8 +1,8 @@
 {
   "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
-  "batch": "immutable shipping forward picker intent",
-  "status_at_authoring": "implemented-tests-authored-current-H-execution-pending",
+  "batch": "immutable shipping forward intent, persisted privacy recovery and canonical Settings proxy settlement",
+  "status_at_authoring": "forward-reconciliation-and-renderer-gates-passed-settings-extension-frozen-Actions-pending-final-acceptance-open",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
@@ -101,14 +101,14 @@
     "scope": "Remote run/jobs reread; predecessor evidence only, not execution of this extension."
   },
   "execution": {
-    "status": "pending-at-authoring",
+    "status": "H531-reconciliation74-UI39-Electron89-Windows11-passed-shipping-cleanup-in-progress-Hbeb-renderer127-and-strict-architecture-passed-Settings18-new-H-pending",
     "runner": "GitHub Actions only",
     "target_identity": "Exact containing github.sha asserted by workflow and stored in artifact target-sha.txt; no self-referential future SHA is invented.",
     "workflows": [
       ".github/workflows/native-service-contracts.yml",
       ".github/workflows/tdrp-source-review-contract.yml"
     ],
-    "minimum_new_assertions": "Chromium16, unchanged settlement5/Transcript16, preserved Human44/journal12 and Host/Agent/shipping/Electron/Windows gates; existing schema and fixed source candidate plus new subset/pending negative cases.",
+    "minimum_new_assertions": "Containing-H integrated Human55 plus existing resource/sharebox/journal13/Agent4/credential3/Gateway1 and shipping/Electron/Windows gates; UI Transcript20/cursor17/settlement5/ForwardChromium16/SettingsChromium18. Source contract/candidate and original renderer strict architecture remain required. Previous exact-H results are scoped evidence only.",
     "local_or_htch_validation_run": false
   },
   "rollback": "Revert this picker/checker extension normally while preserving all existing Host journals, databases, resources and credentials. Reverting restores known UI limitations; it does not delete or cancel accepted sends and does not constitute complete upgrade/rollback acceptance.",
@@ -130,7 +130,7 @@
     },
     {
       "id": 4,
-      "done": "Existing forwarding entry through durable owner is extended with retry/error/cancel presentation behavior and corresponding negatives.",
+      "done": "Existing forwarding entry through durable owner is extended with retry/error/cancel presentation behavior and corresponding negatives. NMR-48d now closes persisted privacy consistency at the existing recovery ingress with authored cold/cached/repaired intent cases. PS-UI-01..05 now implements canonical proxy preference settlement, failure/lifetime/read-after-write handling in the existing Settings production path with 18 authored actual-surface browser cases.",
       "open": "Current-H execution plus remote provenance, eligibility, precise feedback and remaining options."
     },
     {
@@ -145,17 +145,17 @@
     },
     {
       "id": 7,
-      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification.",
-      "open": "Containing-H successful Actions evidence."
+      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification. H73 source157/schema37/candidate and UI16/Transcript16/settlement5/Electron83/Windows11 succeeded; six UI screenshots actually reviewed. H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1. H531UI39/Electron89/Windows11 and H124source157/schema37/candidate now passed with API-read job/artifact identities. No local or htch validation was executed. H531 reconciliation74 now passed including Human49/journal13; Hbeb original renderer127 and both strict architecture checks passed. Settings18 remains unexecuted at its freeze.",
+      "open": "Exact containing-H Settings18/renderer and current integrated Human55/shipping gates; H531 shipping was still in cleanup at 20:59:03 UTC. Full-product gates remain open."
     },
     {
       "id": 8,
-      "done": "Continued independent source and product review; repaired actual pending-schema compatibility defect before dependent candidate use.",
+      "done": "Continued independent source and product review; repaired actual pending-schema compatibility defect before dependent candidate use. While macOS jobs waited, independent current-source review identified and implemented the persisted privacy P2; prior passing checks are retained with their exact H. H531candidate skip classified TEST_FLAW and fixed atH124; actual H124candidate passed. Full-source authority failure remains an unmet source-closure gate. Actual architecture registration drift was reviewed and repaired without changing frozen reference identities or deleting the gate.",
       "open": "Classify any actual Actions failure and proceed only after repair; external service/publisher prerequisites remain."
     },
     {
       "id": 9,
-      "done": "Updated unique ledger/dossier/RTM and active checker, kept source review/implementation/authoring/execution/acceptance separate.",
+      "done": "Updated unique ledger/dossier/RTM and active checker, kept source review/implementation/authoring/execution/acceptance separate. Existing architecture overlay now records reviewed semantic changes and separates production consumers from test evidence in touched records; current execution evidence stays in this existing task receipt. Unique existing proxy responsibility and RTM now bind PS-UI-01..05, authored tests and exact production entry; source counts and acceptance remain unchanged.",
       "open": "Complete source disposition, production responsibility and independent acceptance."
     },
     {
@@ -171,5 +171,770 @@
     "conclusion": "success",
     "scope": "Exact object transport only; run and job steps reread through GitHub API. No product verification or acceptance."
   },
-  "delivery": "Product commit continues the existing migration branch using current-ref compare-and-swap and connector/API readback of full commit/tree/files. After direct 3.5MB object upload did not return and the object was confirmed absent, a temporary Actions-only transport branch at f81409edc0f962ba55ed1ae139004e91ebbfe17f applies the reviewed ledger delta and uploads only exact blob 81e9d4009231b07d78a851cbdff3a4cc0ef29796. It cannot promote the migration ref or grant acceptance; its helper files are excluded from the product tree."
+  "delivery": "H73 was published to the existing migration branch and API reread. The privacy extension preserves that lineage and all current reply/upload/CLI work. Three expected-head updates encountered concurrent head advances; no force update was used. Product commit 8b4594b5dba71164d978eea1e1bb9fdb639a82b3 is now saved on checkpoint/tdrp-forward-privacy-task20bf-r1 for a stable exact-H Actions campaign and pull-request integration into the same migration branch. The two existing workflow push filters add only this exact batch branch, retaining all checks and final acceptance gates.",
+  "execution_history": [
+    {
+      "head": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+      "tree": "304d825eb8ee67faa4d7058841c2268e2db25412",
+      "remote_readback": {
+        "full_commit": true,
+        "full_tree_not_truncated": true,
+        "changed_blob_identities": 14,
+        "contents_read": [
+          "shipping picker",
+          "shared review helper",
+          "unique ledger",
+          "round evidence"
+        ]
+      },
+      "source_run": {
+        "id": 41514576605,
+        "attempt": 1,
+        "conclusion": "success",
+        "contract_job": 125514708293,
+        "candidate_job": 125514843188,
+        "node_tests": 157,
+        "schema_tests": 37,
+        "ledger_schema_errors": 0,
+        "authored_source_reviews": 6,
+        "completed_source_reviews": 2,
+        "source_accepted": false
+      },
+      "native_run": {
+        "id": 41514576570,
+        "attempt": 1,
+        "conclusion": null,
+        "jobs": [
+          {
+            "id": 125514709141,
+            "name": "native-message-ui",
+            "conclusion": "success",
+            "checks": {
+              "Transcript": 16,
+              "forward_settlement": 5,
+              "Chromium": 16,
+              "renderer_build": "success"
+            }
+          },
+          {
+            "id": 125514709195,
+            "name": "native-message-electron",
+            "conclusion": "success",
+            "tests": 83,
+            "scope": "Electron build and bounded carrier/auth/package/update contracts; no installation or release"
+          },
+          {
+            "id": 125514709410,
+            "name": "windows-update-publisher",
+            "conclusion": "success",
+            "tests": 11,
+            "scope": "Windows Authenticode/Unicode with a temporary CI certificate; not the production publisher"
+          },
+          {
+            "id": 125514708818,
+            "name": "native-message-reconciliation",
+            "status_at_readback": "completed",
+            "conclusion": "success",
+            "scope": "Full job log/API reread; 65 selected checks passed, zero failed/ignored; loopback/SQLite boundaries, not deployed-service acceptance.",
+            "checks": {
+              "Human": 44,
+              "sharebox": 1,
+              "journal": 12,
+              "Agent_nonce": 4,
+              "settlement_credential": 3,
+              "authenticated_gateway": 1
+            }
+          },
+          {
+            "id": 125514709378,
+            "name": "native-message-shipping-compile",
+            "status_at_readback": "queued",
+            "conclusion": null
+          },
+          {
+            "id": 125514710824,
+            "name": "native-auth-and-journal",
+            "conclusion": "skipped",
+            "scope": "Existing push event condition; not a pass"
+          }
+        ]
+      },
+      "artifacts": [
+        {
+          "id": 13173513610,
+          "name": "tdrp-source-review-contract-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:482b1c1b0fabca5e1888c5e5ab3b1adde8f122e8ad45e205cefe45d38b230440"
+        },
+        {
+          "id": 13173503665,
+          "name": "tdrp-source-candidate-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:c12fe26dd7164b4004f098009b9cb41bfbc51757a83f104e50f34bb05631224a"
+        },
+        {
+          "id": 13174992345,
+          "name": "native-message-ui-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:5e74e7f2364d4617535fb3679349e98e3903701e2f0eb89a402bbe40b7df4bc5"
+        },
+        {
+          "id": 13174044080,
+          "name": "native-message-electron-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:0fc533df4095c82ad648c21177ae0e110afe9e08e2f3f1a82c426f785aff1042"
+        },
+        {
+          "id": 13173833468,
+          "name": "windows-update-publisher-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+          "digest": "sha256:d73ab6369a98dc748f955e8a1642af28a2dffbed3d9727e7e526b20eeb1147a5"
+        },
+        {
+          "id": 13175795865,
+          "digest": "sha256:109f352139eaee2bf911fe5c706ba4ea16a6883be4c14541c2c24cbb06ddb873",
+          "scope": "H73 reconciliation logs; GitHub metadata and complete log readback"
+        }
+      ],
+      "visual_readback": {
+        "artifact": 13174992345,
+        "target_sha_txt": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+        "images": [
+          "forward-light-wide.png",
+          "forward-light-narrow.png",
+          "forward-dark-wide.png",
+          "forward-dark-narrow.png",
+          "forward-immutable-retry-wide.png",
+          "forward-immutable-retry-narrow.png"
+        ],
+        "observation": "All six actual Actions screenshots viewed. No visible clipping/overlap; retry actions remain inside the 390x844 viewport. This is a bounded component review, not full visual/accessibility or packaged acceptance."
+      },
+      "evidence_scope": "API run/job/log and artifact metadata readback. Root also downloaded and read the UI ZIP target/logs/images. Other artifact interior inspection is not claimed. No local product/test execution or final ACCEPT."
+    }
+  ],
+  "privacy_recovery_extension": {
+    "base": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+    "spec": "docs/specs/fbcp-native-message-reconciliation.md#persisted-forward-privacy-consistency-task20bf-round1--nmr-48d",
+    "requirements": [
+      "NMR-48d",
+      "NMR-AC-39b"
+    ],
+    "finding": "P2: valid JSON could contain non-normalized flags, hidden sender with retained origin, or hidden media captions with retained text, and ordinary recovery consumed it. Normal new-request admission was already correct; this is not a claim of protection against arbitrary database tampering.",
+    "implementation": "HumanForwardBatch::validate reuses ForwardPrivacy::normalized and rejects all three contradictions on existing load/store paths. It never rewrites or discards the accepted journal; text without attachments is preserved even with both hide options true.",
+    "production_chain": "ordinary sync/forward retry -> load_forward_batches -> decode_forward_batches -> HumanForwardBatch::validate -> existing Session delivery/append/native HTTP; invalid state returns before target I/O",
+    "unit_case": "forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent",
+    "integration_case": "shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair",
+    "oracle": "Completed first target retained; three semantic damage classes x cold/cached owners; no new resource/message POST or history progress; exact damaged metadata retained; repair original metadata then continue unfinished target under original nonce. Text-only both-hide restart positive control.",
+    "static_review": {
+      "journal_blob": "126205768557935b7200480562d2ca4538bdbbde",
+      "integration_blob": "ba47a59d2381122e04ddc5830bfd89039fcc914b",
+      "reviewer": "root integrator, separate from implementation author",
+      "result": "No identified P1/P2 in bounded diff, adjacent shared privacy implementation and actual test fixture consumers.",
+      "execution": false,
+      "acceptance": false,
+      "merged_review": "Main integrator reread the 2e436318 current owner and exact two-file delta after the three-way merge. NMR-49 reply identity code/tests, cached Human identity checks and pre-existing corruption/stale-writer negatives remain unchanged. Privacy admission and new test bodies retain the reviewed behavior. No execution or independent ACCEPT is inferred. The next 76a84e8a merge changes the attachment size bound and adds an independent upload test; privacy fixtures use tiny immutable bytes and remain within the bound."
+    },
+    "execution": "not-run-at-authoring; containing H requires Human49 and journal13 plus resource-upload3 in GitHub Actions, retaining concurrent reply and upload cases",
+    "rollback": "Ordinary revert preserves all journal/snapshot/user data and reopens this recovery gap; no schema version or service change.",
+    "concurrent_preservation": "Preserved source-transport and NMR-49/NMR-50 spec additions, c438df83/ff6d49da cached/cold Human identity validation and extended malformed-journal/stale-writer tests, plus round13 evidence. Three-way merge retained the complete current base; privacy production logic and two new test bodies remain the reviewed delta. Later d78ba3c1 lock-diagnostic-only workflow/spec changes were merged without altering either privacy owner/test blob. The final publication parent is the exact Git commit parent, checked by expected-head CAS and remote readback. Integration onto 2e436318 retains NMR-49 implementation and its Human47/Transcript18 gates; with this privacy case the Human gate is48. The unique ledger merge preserves the complete eddd11c7 NMR-49 append. 76a84e8a service25MiB upload/snapshot correction and its same-nonce recovery plus three reader contracts are preserved; no weaker resource budget is restored.",
+    "frozen_review_base": "2e436318f4d06bccb3bee462beee7e96e554aa3f",
+    "ledger_transport_history": [
+      {
+        "head": "915402c779e079dc7e5ec70a5f644fa5ee2d45ca",
+        "run": 41516275526,
+        "conclusion": "success",
+        "base_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
+        "result_blob": "e494ba34eaaa0dbd06429a367554d9114a793236",
+        "scope": "Same temporary transport branch; only exact Git object creation, no product verification/ref update."
+      },
+      {
+        "head": "e880fdc944006268f1608de8ea123bc5dd687091",
+        "run": 41517503125,
+        "job": 125524685557,
+        "conclusion": "success",
+        "base_blob": "eddd11c7db0e8be8cfa26a58fb177901ce09b55e",
+        "result_blob": "4a4660291628a9bdb65a9ac387defae16f7c50f1",
+        "scope": "Exact append preserves concurrent NMR-49 canonical ledger; object-only transport, no ref writes or acceptance."
+      }
+    ],
+    "ledger_transport": {
+      "head": "5d391cf131e3b270f576fd2e234d2e3ac120c44f",
+      "run": 41518276457,
+      "job": 125527348636,
+      "object_step_conclusion": "success",
+      "base_blob": "a95d76c46119474e36134456442aebe39f4e9760",
+      "result_blob": "097e28e2c276db9926e9a183995d939a1ef97d8e",
+      "scope": "Exact privacy-row patch preserves concurrent reply/upload ledger. Remote product tree references this object; no Actions ref writes or acceptance."
+    },
+    "independent_review": {
+      "base": "8a20566eb48a7056d932f3f34667f89a2e6a4a4a",
+      "product_head": "8b4594b5dba71164d978eea1e1bb9fdb639a82b3",
+      "validation_head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+      "scope": "Independent read-only general/security review of complete changed privacy methods/tests and adjacent actual journal, metadata, source authorization, batch dispatch/recovery, process/HTTP/SQLite fixture and workflow consumers. Same production/test blobs at validation head.",
+      "verdict": "No P0/P1/P2 findings in the bounded review",
+      "execution_performed": false,
+      "product_acceptance": false
+    }
+  },
+  "concurrent_integration": {
+    "base": "2e436318f4d06bccb3bee462beee7e96e554aa3f",
+    "preserved": "NMR-49 reply identity settlement, three Human and two projection cases; NMR-50 spec, unique CLI/package specs, NMR-51 service upload spec and all temporary object-only workflows. Root reconciled exact journal row append; no source or acceptance promotion.",
+    "required_counts": {
+      "Human": 49,
+      "journal": 13,
+      "Transcript": 18,
+      "resource_upload": 3
+    },
+    "subsequent_preserved_base": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+    "subsequent_preservation": "CLI native Host features, real production binary/process controls, installer receipt delivery and six promotion-consumer contracts retained. No journal/test/ledger delta from this later base.",
+    "publication_parent": "8a20566eb48a7056d932f3f34667f89a2e6a4a4a",
+    "publication_delta": "76a84e8a..8a20566e changed only nine disjoint object-transport/task-spec paths; all are preserved in the published base tree."
+  },
+  "isolated_batch_delivery": {
+    "branch": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+    "pull_request": "https://github.com/bhrumom/fabushi-desktop/pull/189",
+    "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+    "tree": "a4328ecc38bd6a3a7b8093ae4b8e91e1c687769f",
+    "remote_readback": {
+      "full_commit": true,
+      "full_tree_not_truncated": true,
+      "changed_blob_identities": 11,
+      "production_journal_contents": true,
+      "canonical_ledger_blob_contents": true,
+      "workflow_and_evidence_contents": true
+    },
+    "native_run": 41518713768,
+    "source_run": 41518713832,
+    "integration": "draft PR into the existing migration branch; concurrent conflicts remain to reconcile after bounded qualification",
+    "acceptance": false
+  },
+  "verification_recovery": {
+    "classification": "TEST_FLAW",
+    "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+    "source_run": 41518713832,
+    "contract_job": 125528856020,
+    "contract_result": "157 Node and37 Python schema cases passed; canonical ledger0 errors",
+    "candidate_job": 125529038672,
+    "candidate_result": "skipped because the job condition omitted the newly allowed isolated push branch",
+    "fix": "Add only the same exact isolated ref to fixed-source-candidate.if, preserving the existing ref and every candidate/accepted-refusal gate. No same-H rerun can correct this predicate.",
+    "retained_evidence": "H531 contract and product-job results remain bound to H531. The predicate-only follow-up executes source checks at its own exact H; native code/fixtures and their in-flight run are unchanged.",
+    "acceptance": false
+  },
+  "checkpoint_124_execution_and_architecture_repair": {
+    "reviewed_target": "124437659dc6168b2dabadee940d5110c6568917",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "native_execution": {
+      "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+      "run": 41518713768,
+      "attempt": 1,
+      "jobs": [
+        {
+          "id": 125528855821,
+          "name": "native-message-shipping-compile",
+          "status": "in_progress",
+          "conclusion": null,
+          "runner_id": 1000259668,
+          "started_at": "2026-11-02T20:36:11Z",
+          "completed_at": null
+        },
+        {
+          "id": 125528856151,
+          "name": "native-message-ui",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_id": 1000259467,
+          "started_at": "2026-11-02T20:23:14Z",
+          "completed_at": "2026-11-02T20:25:09Z"
+        },
+        {
+          "id": 125528856168,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_id": 1000259470,
+          "started_at": "2026-11-02T20:23:16Z",
+          "completed_at": "2026-11-02T20:25:00Z"
+        },
+        {
+          "id": 125528856183,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_id": 1000259469,
+          "started_at": "2026-11-02T20:23:14Z",
+          "completed_at": "2026-11-02T20:24:18Z"
+        },
+        {
+          "id": 125528856286,
+          "name": "native-message-reconciliation",
+          "status": "queued",
+          "conclusion": null,
+          "runner_id": 0,
+          "started_at": "2026-11-02T20:23:12Z",
+          "completed_at": null
+        },
+        {
+          "id": 125528858099,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped",
+          "runner_id": null,
+          "started_at": "2026-11-02T20:23:12Z",
+          "completed_at": "2026-11-02T20:23:12Z"
+        }
+      ],
+      "passed_scope": {
+        "ui": "39 cases = Transcript18 + settlement5 + mounted Chromium Forward16; renderer build",
+        "electron": "89 cases including existing source/publisher/attachment/promotion contracts; actual Electron build",
+        "windows": "11 native Authenticode cases with ephemeral CI-only certificate and actual UTF-8/CP437 fixture; fixture executable never launched"
+      },
+      "pending_scope": "Human49/resource3/sharebox1/journal13/Agent4/credential3/Gateway1 recovery execution remains queued at this read. Shipping AppHost/CLI job has acquired a macOS runner and is in progress; neither is a pass.",
+      "artifacts": [
+        {
+          "id": 13177445395,
+          "name": "native-message-electron-531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+          "digest": "sha256:b6d3fae4adccb923a95bb106716a75dd7b1173db5f7a3f7120b3f52d39abd119",
+          "size_in_bytes": 14015,
+          "expired": false,
+          "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a"
+        },
+        {
+          "id": 13176901715,
+          "name": "windows-update-publisher-531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+          "digest": "sha256:2f4cf6149a83f59db2037e95b76985d7c47218ca257994a6e5261dea2826803f",
+          "size_in_bytes": 1828,
+          "expired": false,
+          "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a"
+        },
+        {
+          "id": 13176292291,
+          "name": "native-message-ui-531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+          "digest": "sha256:c22e4500e7406c70891aa2e1179026264a40a01e44b55c8a0a9499c48e00bb70",
+          "size_in_bytes": 200013,
+          "expired": false,
+          "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a"
+        }
+      ],
+      "acceptance": false
+    },
+    "source_candidate_execution": {
+      "head": "124437659dc6168b2dabadee940d5110c6568917",
+      "run": 41519116497,
+      "attempt": 1,
+      "conclusion": "success",
+      "contract_job": 125530252117,
+      "candidate_job": 125530585187,
+      "result": "157 Node cases and37 schema cases passed, current ledger0schema errors; actual fixed-source candidate ran after the isolated-ref condition repair. It reports16381Git identities,184responsibilities,6authored reviews/2complete, null unknown/unread and false acceptance flags.",
+      "artifacts": [
+        {
+          "id": 13177815278,
+          "name": "tdrp-source-review-contract-124437659dc6168b2dabadee940d5110c6568917",
+          "digest": "sha256:86279d8b6dc40fb157f4a4d7b863f79fb59d61f4f72a3dcb699b178b1b1dc200",
+          "size_in_bytes": 6768,
+          "expired": false,
+          "head": "124437659dc6168b2dabadee940d5110c6568917"
+        },
+        {
+          "id": 13176377338,
+          "name": "tdrp-source-candidate-124437659dc6168b2dabadee940d5110c6568917",
+          "digest": "sha256:596d6eacb6f69cfac57b3952f2fcad01e7ea79fb5bd23c44ef24c1c943e32a6b",
+          "size_in_bytes": 79136,
+          "expired": false,
+          "head": "124437659dc6168b2dabadee940d5110c6568917"
+        }
+      ],
+      "acceptance": false
+    },
+    "separate_source_closure_gate": {
+      "head": "124437659dc6168b2dabadee940d5110c6568917",
+      "run": 41519126061,
+      "job": 125530284506,
+      "conclusion": "failure",
+      "classification": "unmet-full-source-prerequisite",
+      "detail": "Revision9 authority requires complete integer unknown/unread counts; candidate retains null. The exact failure is full source authority coverage is unestablished; run the focused candidate consistency gate. Candidate consistency success does not satisfy or remove this final closure gate.",
+      "gate_preserved": true,
+      "acceptance": false,
+      "completed_result": "Run41519126061 completed failure:60of61jobs succeeded; the original full authority coverage failure remains.",
+      "gitlink_candidate": {
+        "job": 125536715893,
+        "scanned_authorities": 203,
+        "unresolved_gitlink_authorities": 0,
+        "gitlink_fixed_point_status": "closed",
+        "recursive_disposition_status": "open",
+        "source_closure_ready": false,
+        "artifact": 13176179252,
+        "sha256": "0068823a0e42310d326f0c539bd4852f3b77b1149282a8cf0e37f257c0d0426e"
+      },
+      "build_reachability_candidate": {
+        "job": 125536917139,
+        "authorities": 203,
+        "proven_non_reachable": 108,
+        "open": 95,
+        "status": "partial-audited-open",
+        "source_closure_ready": false,
+        "artifact": 13177062813,
+        "sha256": "403cbcea70c9b1d3f7c9c8ad9a7d736be370406a433b329d0c29bd41a6dbc7a1",
+        "scope": "Candidate acquisition/reachability enumeration; not a replacement source-review inventory and not product progress or acceptance. Observed by independent API/log reader."
+      }
+    },
+    "architecture_repair": {
+      "head_that_failed": "124437659dc6168b2dabadee940d5110c6568917",
+      "run": 41519126044,
+      "job": 125530745785,
+      "conclusion": "failure",
+      "classification": "IMPL_BUG in the semantic-adaptation registration",
+      "failure": "14 targetBlobSha declarations were stale and9 approved semantically adapted files still used byte-copy declarations.",
+      "change": "Update the existing semantic-adaptations overlay after exact old/current blob, caller, owner, specification and adjacent-test review. The frozen architecture manifest, its referenceBlobSha values, module statuses and both architecture validators remain unchanged. No functionality or source acceptance is inferred from file counts.",
+      "entries": [
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "frontend/src/production/ProductionRenderer.tsx",
+          "expected": "26dcb2aad353551e6e8f8468f7ce3a63335730ce",
+          "actual": "0e4ad13defc5191f9d3f8ac780315042043618b1"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "frontend/src/production/model.ts",
+          "expected": "a8607a383ec32f6fba7142bd7ce8ae93f6af7dc5",
+          "actual": "dd0a5167382616faa9d087687c8173d67bed8502"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "source/electron-preload/preload.ts",
+          "expected": "4d4aadb62aacb85cae559c4cb6aa01885a9990b8",
+          "actual": "ed4e49ae6f6ef4ae4af3086ddf30716f22d95b51"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "source/electron-main/production-binding-providers.ts",
+          "expected": "e65c2b1e9160d30dad1b549558e3d01826069dce",
+          "actual": "6cb54a6178cca81b9324df18aeb123915c7af38c"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "source/shared/rpc/coordinator-main.ts",
+          "expected": "9ee4b210ea92fbaeb4933b41ccb8e22ae5f3f4f3",
+          "actual": "da1c1f13b6ab5d8147242bf9856a53c81dcf8b8a"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "source/electron-main/main-production-services.ts",
+          "expected": "8ca982cf2401d31a4782870b37688703e7f96895",
+          "actual": "f9b474db6c062f631c8bda693cbf45ee4930c454"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "frontend/src/recovered/runtime/coordinator-source.ts",
+          "expected": "db7859728adba5129fab1d0572720390807dabad",
+          "actual": "5a95feacfb79fc8aca30922dd91d1a589e684ce3"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "frontend/src/recovered/contracts/surface-notice.ts",
+          "expected": "0ddf77339c4ea91f49cada27b0bf54bc563994d4",
+          "actual": "b0e89f60fd7eac7052d902993419f17b54ea0058"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+          "expected": "2ccb6c4f94c094495c24907be32cee6447796d6d",
+          "actual": "f5450c500e7b5429f030a561b9c8804700a28deb"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+          "expected": "ff8e61b13ea9475c502da6ed58a0906fd44538d6",
+          "actual": "e0a0e7a16218affe4706fc708ca640fc2c584905"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "frontend/src/recovered/features/settings/overlay/panels.tsx",
+          "expected": "994d0e009430e6dfb0b1edb39f717b673be40a8f",
+          "actual": "1cb5508daf79ea12458124b09ee497c4c08fd618"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "source/electron-main/main-edge.ts",
+          "expected": "34ebc09f00048d16649fb7b326b2335d85d03734",
+          "actual": "e4f060662317644ddaad8632d5745f3ad2b42f5b"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "source/electron-main/adapters/main-rpc.ts",
+          "expected": "2ae92ffde6e817c146a272f21ceee0e448ad6297",
+          "actual": "d91e41255f7c4f8750269ec2555eca1074bf0973"
+        },
+        {
+          "kind": "semantic adaptation target drifted",
+          "path": "frontend/src/recovered/features/settings/overlay/updates.ts",
+          "expected": "2da4ba45f821bec3242ff88ae2b82f1246219182",
+          "actual": "6ed2a5a43b8f08699f3570b159a60d97a41ccd27"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "frontend/src/production/coordinator-client.ts",
+          "expected": "f120b9f600861560409d9a9cac6487cb5ec79e63",
+          "actual": "1f9e386e391ec9504c82dbc47662a95a3ef811eb"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+          "expected": "31b5d5e5078d31bb756bc44075c518876d40a54e",
+          "actual": "889b7d0da3d56abd7e0efb5838daafcfa1855d34"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "source/electron-main/coordinator/coordinator-main-legs.ts",
+          "expected": "52a924ad99d57cca64fbd23856d5eccf8655f137",
+          "actual": "b32b8efcbe3c9477cb40f6cfbbf790a3f33b57be"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "source/electron-main/coordinator/coordinator-main-port-client.ts",
+          "expected": "80c74f9116b39b91b18cf6ca95f41ee88e7fed62",
+          "actual": "6c581e0d6c0c644e186190b45e191725295c1a6e"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "source/electron-main/update/sand-update-service.ts",
+          "expected": "7faf203c88d33f116abf7cef4ce8758007a730d2",
+          "actual": "74f708492d282f386a759c6b5c6136ad1aca1846"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "source/electron-main/update/update-feed.ts",
+          "expected": "89093a2273ce3d1b1320098827e7527bfe36e16a",
+          "actual": "b27636414be28290ec9ee221ea8e06fb8e0a3db2"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "source/electron-main/update/update-telemetry.ts",
+          "expected": "3c2fed1856378609ba02c489e7d3679b1a9bb564",
+          "actual": "79695b9457f9fd94823b07cc28ca6171839a3ecf"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "source/electron-main/update/update-wiring.ts",
+          "expected": "9165ea7349bbaf6c55424ba8c61b99a37275e037",
+          "actual": "40632119b745a0bfea88b89405c2448e155fcd93"
+        },
+        {
+          "kind": "reference-copy target diverged",
+          "path": "source/electron-main/update/win32-installer.ts",
+          "expected": "b337cd7ab8e9ca7d112dd9c18a309912b2de30d7",
+          "actual": "e975f9bafde36000ee9b47b25039c49f32089c5c"
+        }
+      ],
+      "review": {
+        "overlay_blob": "09f95c30ff4f998fd2f17029d327488a89661789",
+        "author_review": "Root inspected13 main/shared/preload/update old-to-current diffs, actual consumers, existing owner/specification and adjacent behavioral contracts; independent reader inspected10frontend old-to-current diffs.",
+        "independent_result": "A separate review reread all23 actual overlay records and the13 root source diffs, confirmed all23 target blobs match the staged product blobs, product files are unchanged fromH124, frozen manifest is unchanged and evidence paths exist. No identified P1/P2 declaration defect in this bounded overlay.",
+        "limits": "No test/build/validator executed locally. Adjacent MainData lifecycle/preload tests do not establish before-ready/after-terminal event negatives or end-to-end adoption callbacks. No source or product ACCEPT."
+      },
+      "new_execution": "Required on the containing exact commit in the original Rust desktop runtime renderer job. H124 renderer typecheck/build, co-staged runtime, built-bundle and strict architecture steps were skipped after the inventory failure.",
+      "residual_product_gaps": [
+        "Typed legacy Telegram authorization methods remain explicit AppHost refusals, not a working alternate login owner.",
+        "ProductSettingsOwner persists proxy preferences, but publish_network_proxy returns available:false/telegramClientUnavailable; current renderer discards that publication result.",
+        "Proxy rotation timeout input uses defaultValue while Host normalizes nonpositive seconds to10; mounted returned-snapshot convergence is not covered or accepted.",
+        "Ordinary Human Retry still needs a durable identity-only owner call and real renderer/Host/resource recovery tests; current forwarding work does not close that independent gap.",
+        "Production consumer paths in touched overlay testEvidence were moved to behavioralEvidence; adjacent tests do not establish mounted Settings failure/reopen/concurrency or real proxy connectivity."
+      ],
+      "acceptance": false
+    },
+    "other_pr_evidence": {
+      "head": "124437659dc6168b2dabadee940d5110c6568917",
+      "native_auth_run": 41519126048,
+      "ubuntu_job": 125530283885,
+      "windows_job": 125530284193,
+      "native_auth_result": "Each platform passed88cases across13binaries; loopback/native control-owner evidence only, macOS not accepted.",
+      "platform_worker": {
+        "run": 41519126044,
+        "job": 125530746354,
+        "result": "30cases passed and wasm32cargo check passed"
+      },
+      "official_mcp": {
+        "run": 41519126086,
+        "result": "19fixture contracts passed, not deployed provider acceptance"
+      },
+      "pressure_limits": "Linux/Windows capture smoke succeeded, but the Linux oracle uses header-only perf parsing and the Windows oracle file presence/extension. Neither is performance, full capture semantic validation or long-running stability acceptance.",
+      "acceptance": false
+    },
+    "integration": {
+      "own_branch": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+      "pr": 189,
+      "draft": true,
+      "preserved_merge_parent": "97f75a74627bc90d6626f21b4d38cb293522bccc",
+      "later_shared_ref_observed": "63c59566aae7fa9b424a364df1429176c792d249",
+      "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+      "method": "Non-forced API expected-head CAS on isolated continuation; merge includes97f without replaying or overwriting later shared-branch work. Shared PR base may continue advancing and requires fresh integration before promotion.",
+      "ledger_object_transport": {
+        "head": "11d70fe55b55d358bcb1750da70e20daa1460362",
+        "run": 41520013956,
+        "job": 125533301076,
+        "conclusion": "success",
+        "input_blob": "59d18f5de12fe6c4fe72bb110996c0cb0e07e9f4",
+        "output_blob": "ccd53e8c7c73afd13d4ca59b6ad0056dabee15b4",
+        "remote_blob_content_reread": true,
+        "scope": "Only exact reviewed Git object creation; no product validation, commit or branch update from Actions."
+      }
+    },
+    "local_or_htch_validation_run": false,
+    "all_original_requirements_complete": false,
+    "independent_acceptance": false
+  },
+  "settings_proxy_settlement_extension": {
+    "requirements": [
+      "PS-UI-01",
+      "PS-UI-02",
+      "PS-UI-03",
+      "PS-UI-04",
+      "PS-UI-05"
+    ],
+    "spec": "docs/specs/fabushi-product-settings-owner.md#14-desktop-proxy-preference-settlement-task20bf-round1",
+    "responsibility_id": "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001",
+    "input": {
+      "own_head": "beb72d82e8bc74751e1667fa7a4cfd1f7c651f67",
+      "concurrent_migration_parent": "222371af3d0c2241697c5a57b0160ecb336edbab",
+      "live_main_readback": "5528062177e3865eef60a073a066cca144f9e3e8"
+    },
+    "production_chain": "ProductionRenderer Settings entry -> SettingsDesktopSurface -> GeneralSettingsPanel -> NetworkProxySettingsPanel -> existing desktop adapter -> DesktopBridge.networkProxy -> Main RPC -> Coordinator MainData -> Native AppHost ProductSettingsOwner -> product-settings.json",
+    "unique_authority": "ProductSettingsOwner v2 remains the sole durable proxy settings owner. Renderer drafts and per-bridge in-flight promises are transient; no new transport, provider, storage schema or credentials owner.",
+    "implemented": [
+      "Complete existing mutation result and canonical same-value timeout normalization",
+      "Fixed unavailable/unconfirmed publication status without claiming active routing or exposing opaque data",
+      "Single proxy mutation and disabled pending controls while unrelated Settings remain usable",
+      "Failed drafts retained for explicit retry; fixed read/write failure messages and no automatic replay",
+      "Close/unmount/bridge ABA retire callbacks; reopened reads wait for dispatched writes then get canonical owner state"
+    ],
+    "blobs": {
+      "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx": "a514cefecb2dfbbdd04ad711b75ed72a2601bf56",
+      "frontend/src/recovered/features/settings/overlay/desktop.ts": "1263d86c1837cd62b85f5ef4d6ef559332b3b139",
+      "frontend/src/recovered/features/settings/overlay/panels.tsx": "3d078e6a197074e49ab9aff2f63393b07fdf974b",
+      "frontend/src/recovered/features/settings/overlay/network-proxy.tsx": "98b37966844e7609dd23fc021e4afbbbedba4d85",
+      "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs": "92029534c2be2057c3bf6193b6c3a32a285ce8f6",
+      "desktop/network-proxy-settings-test.html": "afe909831c182cb5e689122583550168464f0e89",
+      "desktop/network-proxy-settings-test.tsx": "0843401ecdbd44f90a9aeb6fa94a51e7c764a146"
+    },
+    "tests_authored": {
+      "path": "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs",
+      "cases": 18,
+      "fixture": "Actual SettingsDesktopSurface through production GeneralSettingsPanel and adapter, controlled DesktopBridge outcomes only; no duplicate normalization or lifecycle reducer",
+      "dimensions": [
+        "same-value canonical normalization",
+        "five publication descriptor cases",
+        "no-op blur and rapid duplicate/pending controls with independent Theme",
+        "endpoint and timeout failed retry",
+        "close and unmount times success and error",
+        "bridge A-B-A times success and error with independent B write",
+        "pending success before reopen or remount",
+        "pending failure before reopen and explicit save",
+        "read failure with safe Retry and zero mutation"
+      ],
+      "workflow": ".github/workflows/native-service-contracts.yml#native-message-ui"
+    },
+    "independent_static_review": {
+      "reviewer": "actions_audit",
+      "scope": "Four changed production Settings files, true ProductionRenderer caller, spec and 18 authored fixture cases at the listed identities",
+      "result": "No identified P1/P2 within bounded static scope; callback lifetime, write ordering, read barrier, draft retention, publication and error privacy reviewed",
+      "accepted": false
+    },
+    "execution": {
+      "status": "not-run-at-freeze",
+      "required_head": "Exact containing github.sha; bind commit, logs, artifacts and case totals after push",
+      "local_or_htch_validation": false
+    },
+    "source_accounting": "Current-owner defect repair only. Existing fixed-U proxy responsibility/source identities retained; no new upstream full-read, source count or acceptance claim.",
+    "rollback": "Revert the scoped renderer/adapter extension normally without touching product-settings.json or cancelling an accepted Host write. Existing canonical Settings owner remains available; full upgrade/rollback qualification is open.",
+    "remaining": [
+      "Containing-H 18 Chromium cases and production renderer compilation",
+      "Current integrated Host55 and shipping gates after concurrent222 changes",
+      "Native proxy/rotation transport; controlled UI persistence results do not prove routing",
+      "Full supported-platform, real-service, visual/accessibility, security/secret-at-rest, migration/rollback and independent ACCEPT"
+    ]
+  },
+  "current_222_integration": {
+    "base": "222371af3d0c2241697c5a57b0160ecb336edbab",
+    "preserved": "Concurrent native call scope admission, stable Human history cursor/pagination, author-scoped nonce projection, pending forward ownership, plugin overlay changes, locked dependency inputs and their original evidence remain intact.",
+    "conflicts_resolved": "Both full sets of session_gateway_contract tests retained. Native reconciliation oracle is Human55: concurrent54 plus this round persisted-privacy recovery case. No test gate removed.",
+    "architecture": "Six incoming semantic target mappings were source-reviewed and registered; three changed Settings mappings now bind actual new blobs and mounted behavior tests. Frozen manifest/reference identities and strict validator are unchanged.",
+    "untracked_files": "Pre-existing evidence transport files left untouched and excluded from staging; no broad git add or destructive reset.",
+    "ledger_transport": {
+      "head": "b71a9de69ac4baa8e30700694e5939948c747f36",
+      "run": 41523987813,
+      "job": 125546879566,
+      "conclusion": "success",
+      "input_blob": "e88c75896bd0dce29b2d8b89e949c9231dad872c",
+      "output_blob": "6cf30e86c00e8ef5a780d389003b883384d24331",
+      "artifact": 13178753182,
+      "artifact_digest": "sha256:b1b7f3e14a8ee3c52ad0833694129613f6739600c4f064b4ad2bc875fd144860",
+      "api_full_blob_readback": true,
+      "scope": "Git object upload only, no test/source/product acceptance and no branch promotion. Helper files remain outside the product tree."
+    }
+  },
+  "checkpoint_beb_renderer_execution": {
+    "head": "beb72d82e8bc74751e1667fa7a4cfd1f7c651f67",
+    "run": 41521929161,
+    "attempt": 1,
+    "job": 125539867866,
+    "conclusion": "success",
+    "selected_cases": {
+      "electron_boundary": 56,
+      "product_policy": 14,
+      "recovered_window_chrome": 57,
+      "total": 127
+    },
+    "architecture": "Both inventory and strict final checks passed modules=2002; module count is not product progress. Actual renderer build, co-staged runtime and emitted bundle boundary passed.",
+    "artifact": "Original job has no artifact upload; API artifacts=[]; evidence is exact-H terminal job log and steps.",
+    "skipped": [
+      "rust-host",
+      "platform-worker",
+      "pressure matrix"
+    ],
+    "scope": "23 reviewed semantic mapping repairs validated; unrelated skipped jobs are not passes and this does not execute the new Settings/222 integration."
+  },
+  "checkpoint_531_reconciliation_execution": {
+    "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+    "run": 41518713768,
+    "attempt": 1,
+    "job": 125528856286,
+    "conclusion": "success",
+    "selected_cases": {
+      "Human": 49,
+      "resource": 3,
+      "sharebox": 1,
+      "journal": 13,
+      "Agent_nonce": 4,
+      "credential": 3,
+      "authenticated_gateway": 1,
+      "total": 74
+    },
+    "artifact_id": 13178876245,
+    "artifact_digest": "sha256:505f576290e33e9980a80c8d56e1c9ae65e459199f448c7799efd79e9fee38be",
+    "artifact_bytes": 37562,
+    "api_job_and_artifact_readback": true,
+    "log_readback": "Complete terminal log read by independent read-only agent; each selected group 0 failed/ignored, filtered-out tests not counted.",
+    "shipping_status_at_2026_11_02_205903_UTC": "in_progress; post-cache cleanup remained. Artifact13178163829 exists, but no completed shipping pass is claimed at this observation."
+  },
+  "checkpoint_8778_source_execution": {
+    "head": "8778c9eb7ca6ac9ab7c670f277b156aea2908015",
+    "run": 41521465672,
+    "attempt": 1,
+    "conclusion": "success",
+    "contract_job": 125538275334,
+    "candidate_job": 125538544730,
+    "executed": [
+      "Node157",
+      "Python37",
+      "ledger schema errors0",
+      "candidate consistency; accepted-mode rejects incomplete/rebaseline candidate"
+    ],
+    "artifacts": [
+      {
+        "id": 13176744798,
+        "bytes": 6801,
+        "digest": "sha256:a8d2be5c9cbabbaab5de1c9d43a0a4c20cc89f51540a8f6c42c0223fe0e9b00a"
+      },
+      {
+        "id": 13176564644,
+        "bytes": 79138,
+        "digest": "sha256:a908d066bc61c58d873894dafb1d657e9d0b4cd781ed2b2bf1a92c1b12aa11e2"
+      }
+    ],
+    "scope": "Two actual jobs, no skip. Fixed inputs reused with their originating SHA. Git-only entries16381/rows184/reviews6/complete2, unknown/unread null and all acceptance false. Python top-level jsonschema pin does not establish locked transitive packages. No source or product acceptance."
+  }
 }
