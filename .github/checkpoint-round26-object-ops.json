@@ -1,0 +1,151 @@
+{
+  "format_version": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 26,
+  "observed_head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "ledger_path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "rows": [
+    {
+      "id": "FBCP-NMR-001",
+      "append": {
+        "fabushi_target_paths": [
+          "frontend/src/production/ForwardMessageDialog.fixture.tsx",
+          "frontend/src/production/ForwardMessageDialog.behavior.test.mjs",
+          "frontend/src/production/forward-account-scope.ts",
+          "frontend/src/production/forward-settlement.ts",
+          "frontend/src/production/forward-settlement.contract.test.ts",
+          "desktop/forward-dialog-test.html"
+        ],
+        "requirement_ids": [
+          "NMR-46",
+          "NMR-AC-37"
+        ],
+        "oracle_ids": [
+          "NMR-AC-37"
+        ],
+        "temporal_case_ids": [
+          "ForwardMessageDialog.behavior.test.mjs#live account invalidation before render; old finally during new submit; parent-layout before child-passive"
+        ],
+        "contract_case_ids": [
+          "forward-settlement.contract.test.ts#six contracts including synchronous notice invalidation before roster read"
+        ],
+        "ui_functional_case_ids": [
+          "ForwardMessageDialog.behavior.test.mjs#19 current Vite/actual-component cases, retaining16 plus3 lifecycle controls; authored task round26"
+        ],
+        "accessibility_case_ids": [
+          "ForwardMessageDialog.behavior.test.mjs#existing light/dark wide/narrow case with Tab/Shift+Tab containment, Escape and return focus; focused only"
+        ],
+        "regression_ids": [
+          "REG-NMR-FORWARD-ACCOUNT-001"
+        ],
+        "production_evidence": [
+          "evidence:projects/telegram-desktop-rust/evidence/round26-forward-account-lifetime.json"
+        ],
+        "test_evidence": [
+          "authored-not-run:task round26 after afb:Chromium19/projection6 with current immutable intent, actual production hook/helper and preserved Vite; all current gates remain required"
+        ],
+        "test_execution_evidence": [
+          "exact:a1196f00230f3307ce0bd9c704ef5c4a7c9a4044:run41496846317:attempt1:shipping125453933989 success:Social9 HTTP-owner6 AppHost12 Native7 FeatureHost7 directHost6 C_ABI7 CLI3 gateway5/library11 DNS6 salts2 protocol122 TCP9 proxy4 credential1 copy4;3 fixtures+1 actual Darwin AppHost;missing binary input,invalid format and valid64hex unequal hash rejected;log sha256:869386bb89f6fe4579a36e57025ce350034f1cc477f5d16a52b20c9dc15995e6;artifact13168315468 sha256:ca33662dcf934c86ce14e2755c2fdeab0aa513c5b1533e8813373d5cbcdc0eda",
+          "exact:a1196f00230f3307ce0bd9c704ef5c4a7c9a4044:run41496846317:attempt1:reconciliation125453934163 success:Human33 AgentNonce4 private3 Gateway Bearer HTTP1;fail0 ignored0;log sha256:06fcfd08bd24a16c154f8b03fac081b45bc69e0688fa7a4e223f525a74f1d579;artifact13167751045 sha256:68c6502f7072d40f052b8ced3d9beff7d8bd3a771a789ba33c46c4eb9ac65a20",
+          "exact:a1196f00230f3307ce0bd9c704ef5c4a7c9a4044:run41496846317:attempt1:UI125453933781 Transcript16/renderer;Electron125453934276 carrier10/auth8/copy3/source16/publisher28/metadata18/build pass;not the later Chromium instrument",
+          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1:reconciliation125494011040 Human38/sharebox1/journal3/Agent4/private3/Gateway1 pass,fail0 ignored0;log sha256:2738f30344ec997b7abf6e7ab00e150e5fab774d040651e52eaa0da0d632fd54;artifact13173116303 sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22;bounded process/SQLite recovery,not all concurrency/cancellation/provenance",
+          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1:UI125494010641 Vite Chromium12/roster5/Transcript16/renderer pass;artifact13172281518 sha256:0d4273fe211f1cac1b64cc55b4c991274d6b9f586bf228685ac7651113ae0998;does not execute original unpublished stronger layout/pre-render/busy instrument",
+          "exact:afb34b49c5964524a887088f1095070b75cfdf8b:run41522324008:reconciliation125541192099 TEST_FLAW E0382 in restarted fixture cleanup;Human62 did not execute, downstream steps skipped. Preserve log; correct shutdown owner and qualify containing H."
+        ]
+      },
+      "note": "\nTask round26 live-head integration preserves all later owners/source reviews/legal identities. Requested a119 logs now have bounded exact evidence. Original unpublished and later equal-count UI instruments differ; keep current16 plus3 lifecycle oracles and projection5 plus1 admission negative, requiring new-H Actions. Fix afb E0382 test cleanup to use restarted owner without changed assertions. Consolidate duplicate owner documents and restore receipt. No Backend write, data deletion, source/product/release acceptance or complete Bot/package/service claim."
+    },
+    {
+      "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+      "append": {
+        "production_evidence": [
+          "evidence:projects/telegram-desktop-rust/evidence/round26-forward-account-lifetime.json"
+        ],
+        "test_execution_evidence": [
+          "exact:a1196f00230f3307ce0bd9c704ef5c4a7c9a4044:run41496846317:attempt1:Windows125453934371 success:native Authenticode11 pass11 fail0 cancelled0 skipped0;remainingOwnedCertificates0;log sha256:552d46aa3e52b007b64bd3118f3c19fbef3e1b7fd2b639bf4f17262d3814a0db;artifact13165904661 sha256:0f69e796d4f4246e837faabeffa5117e2ab3d4742f578e5686eb15d95dce4545;ephemeral CI signer/captured launch,not formal publisher/signed installer",
+          "exact:a1196f00230f3307ce0bd9c704ef5c4a7c9a4044:run41496846317:attempt1:Electron125453934276 controlled publisher28/source16/carrier10/auth8/copy3/metadata18,historical immutable package metadata experiment/build pass;artifact13165819778 sha256:1996bf78fe154ec209e7b37510a1022eff9f9a02f2d04c1e075af2944c3d8bbd;preserve later source/execution records"
+        ]
+      },
+      "note": "\nTask round26 adds only requested a119 native/controlled publisher execution. Preserve current corrected upstream updater identities and all complete/pending source reviews. CI fixture trust is not formal publisher, real feed, signed install/upgrade/rollback or independent ACCEPT."
+    }
+  ],
+  "files": [
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "replacements": [
+        {
+          "before": "grep -Fx '# tests 16' artifacts/native-message-ui/forward-dialog.log",
+          "after": "grep -Fx '# tests 19' artifacts/native-message-ui/forward-dialog.log"
+        },
+        {
+          "before": "grep -Fx '# pass 16' artifacts/native-message-ui/forward-dialog.log",
+          "after": "grep -Fx '# pass 19' artifacts/native-message-ui/forward-dialog.log"
+        },
+        {
+          "before": "grep -Fx '# tests 5' artifacts/native-message-ui/forward-settlement.log",
+          "after": "grep -Fx '# tests 6' artifacts/native-message-ui/forward-settlement.log"
+        },
+        {
+          "before": "grep -Fx '# pass 5' artifacts/native-message-ui/forward-settlement.log",
+          "after": "grep -Fx '# pass 6' artifacts/native-message-ui/forward-settlement.log"
+        },
+        {
+          "before": "grep -Fx '# fail 0' artifacts/native-message-ui/forward-settlement.log\n          grep -Fx '# skipped 0' artifacts/native-message-ui/forward-settlement.log",
+          "after": "grep -Fx '# fail 0' artifacts/native-message-ui/forward-settlement.log\n          grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-settlement.log\n          grep -Fx '# skipped 0' artifacts/native-message-ui/forward-settlement.log"
+        }
+      ]
+    },
+    {
+      "path": "source/host/tests/session_gateway_contract.rs",
+      "replacements": [
+        {
+          "before": "        \"recovery never publishes an inactive or partial intermediate row\");\n    runtime.shutdown(); drop(owner); drop(restarted);",
+          "after": "        \"recovery never publishes an inactive or partial intermediate row\");\n    restarted.shutdown(); drop(owner); drop(restarted);"
+        }
+      ]
+    },
+    {
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "append": {
+        "marker": "### NMR-46 task round 26 — live-head lifecycle oracle reconciliation",
+        "text": "\n### NMR-46 task round 26 — live-head lifecycle oracle reconciliation\n\nThe requested a1196f00230f3307ce0bd9c704ef5c4a7c9a4044/run41496846317\ncompleted successfully. Subsequent checkpoint work changed the UI instrument\nand added immutable forwarding intent, journal/resource/reply/message contracts.\nPreserve those changes; equal counts cannot transfer the original instrument's\nreviewed oracles to the later Vite fixture.\n\nAt observed afb34b49c5964524a887088f1095070b75cfdf8b retain all sixteen\ncurrent Chromium cases and add three actual-component/hook/helper cases:\nlive account invalidation before another React render; old success/rejection/\nfinally while a reopened scope has a new busy submission and a valid-success\npositive; and synchronous parent-layout observation after child deletion but\nbefore child-passive cleanup, with mounted roster success and stale-roster\nsuppression. Extend the existing theme/viewport case with Tab/Shift+Tab focus\ncontainment, Escape and return focus. Keep Vite and immutable-intent cases.\nThis is focused evidence, not full Renderer/account-service or packaged a11y.\n\nRecheck the account generation after notice and before starting roster I/O.\nAdd that synchronous-invalidation negative alongside the five existing roster\ncontracts. Require Chromium19/projection6, zero failed/cancelled/skipped, and\nretain all current Human/Transcript/pagination/shipping/Electron/Windows/source\ngates. Execution remains GitHub Actions only; no local executable validation.\n\nExact afb reconciliation125541192099 failed test compilation: the first runtime\nwas already dropped when the restarted phase called it again. Use\nrestarted.shutdown() there, preserving every HTTP/message/event assertion.\nThis is TEST_FLAW E0382, not lock/environment or product assertion failure.\nHuman62 and its downstream tests did not execute at that failed head.\n\nAppend this scope to the existing canonical ledger/RTM/root owner inventory;\npreserve all concurrent source reviews and acquired identities. Consolidate\nunique observations from nested duplicate inventories before leaving pointers.\nFixed U and source/product/release/independent ACCEPT stay blocked. Backend137\nremains read-only; no merge, deployment or release authorization.\n"
+      }
+    },
+    {
+      "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+      "append": {
+        "marker": "## Task round 26 — exact historical execution and current lifetime checks",
+        "text": "\n## Task round 26 — exact historical execution and current lifetime checks\n\nReceipt: `projects/telegram-desktop-rust/evidence/round26-forward-account-lifetime.json`.\nAt exact a119/run41496846317, Social9/HTTP6, Human33/Agent4/private3/Gateway1,\nWindows native11 and AppHost copy4 plus all three input/hash negatives passed.\nCopy4 is three fixtures plus one actual Darwin resource; the signer is CI-only.\nAt exact59/run41508537631, Human38/sharebox1/journal3 and retained gates passed.\nAt afb, UI Chromium16/projection5/Transcript29/pagination17 passed, but Human62\nfailed fixture compilation (E0382) before any Human test executed. Old-H counts\nare not later-head evidence. Keep the current sixteen UI cases and add three\nlifecycle oracles, plus one roster admission case: new Chromium19/projection6\nremain authored/not-run until containing-H Actions. Focus/layout checks are\nbounded. Full source/service/signed packages/Bot/UI/a11y/performance/soak and\nindependent ACCEPT stay blocked.\n"
+      }
+    },
+    {
+      "path": "projects/fabushi-communication-platform/current-owner-inventory.md",
+      "append": {
+        "marker": "## Preserved bounded owner observations — task round 26 reconciliation",
+        "text": "\n## Preserved bounded owner observations — task round 26 reconciliation\n\nRound26/28 observations duplicated in inventory/current-owners.md and\ninventory/current-owner-inventory.md are consolidated here; those paths become\ncompatibility pointers and original snapshots remain in Git history.\nAt a119, Transcript action -> ForwardMessageDialog -> coordinator -> Gateway ->\nSession/ProductionSessionWorkers -> existing native client/SandAgentDb is the\nactual forward path. Electron owns identity; renderer generation is a lifetime\nprojection. Layout invalidation suppresses stale UI and does not cancel an\naccepted durable send. Social9/HTTP6/Gateway1/copy4/Windows11 are bounded evidence.\nThe later exact59 scope places whole intent/progress in source SandAgentDb\nmetadata, local delivery in destination outbox, remote IDs in Native service;\nordinary sync recovers it. Expected-value CAS and persisted source denial were\nexercised by Human38/sharebox1/journal3. This supersedes the old whole-plan gap.\nPreserve subsequent journal/resource/immutable-intent work and its own scope.\nNew NMR46 controls strengthen live pre-render/new-busy/layout timing and roster\nadmission. They add no identity/message writer, schema, data deletion, source\nacceptance or Backend write. Remote provenance and full acceptance stay open.\n"
+      }
+    },
+    {
+      "path": "projects/fabushi-communication-platform/STATUS.md",
+      "append": {
+        "marker": "## Task round 26 bounded lifecycle reconciliation",
+        "text": "\n## Task round 26 bounded lifecycle reconciliation\n\nRequested a119/run41496846317 is verified completed/success with complete\nshipping/reconciliation/Windows logs and all three AppHost input/hash negatives.\nThe referenced round26-forward-account-lifetime.json receipt is restored.\nPreserve subsequent Session/immutable-intent/resource/reply/message work.\nCurrent refinement requires Chromium19/projection6 and all current gates at its\ncontaining H; the afb Human62 test-cleanup E0382 is fixed without weakening an\nassertion. Source/product/release/independent ACCEPT remain blocked.\n"
+      }
+    },
+    {
+      "path": "projects/telegram-desktop-rust/STATUS.md",
+      "append": {
+        "marker": "## Task round 26 bounded lifecycle reconciliation",
+        "text": "\n## Task round 26 bounded lifecycle reconciliation\n\nRequested a119/run41496846317 is verified completed/success with complete\nshipping/reconciliation/Windows logs and all three AppHost input/hash negatives.\nThe referenced round26-forward-account-lifetime.json receipt is restored.\nPreserve subsequent Session/immutable-intent/resource/reply/message work.\nCurrent refinement requires Chromium19/projection6 and all current gates at its\ncontaining H; the afb Human62 test-cleanup E0382 is fixed without weakening an\nassertion. Source/product/release/independent ACCEPT remain blocked.\n"
+      }
+    }
+  ],
+  "conditions": {
+    "product_validation": false,
+    "source_acceptance": false,
+    "ref_updated": false,
+    "commit_created": false
+  }
+}
