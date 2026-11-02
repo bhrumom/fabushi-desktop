@@ -51247,6 +51247,18 @@
           "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
           "path": ".github/workflows/mac_packaged.yml",
           "object": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/update_verify.cpp",
+          "object": "5d970cf882ec3870fa36d079ff94bd50eb703a37"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/_other/updater_win.cpp",
+          "object": "bf935373b2577570c0268de1c151ba479206569d"
         }
       ],
       "source_kind": "source",
@@ -51390,7 +51402,8 @@
       "test_evidence": [
         "authored-not-run:source/electron-main/update/update-source.contract.test.mjs@bf17bf7b3f6aa964aafff1d5eeba204d12d51315:16 controlled-port cases; exact containing-H Actions pending",
         "exact-base:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:attempt1:electron125384978181:16 update-source pass; no Windows publisher test in base",
-        "authored-not-run:5d271ff0c03d8f01368ca44026d14cd7519ad6bd:windows-publisher.contract.test.mjs 28; windows-publisher.native.test.mjs 11; real-AppHost well-formed unequal hash negative"
+        "authored-not-run:5d271ff0c03d8f01368ca44026d14cd7519ad6bd:windows-publisher.contract.test.mjs 28; windows-publisher.native.test.mjs 11; real-AppHost well-formed unequal hash negative",
+        "recovered-execution:round22-windows-publisher-authority.json#interruption_recovery; preserves original8f cancellation/recovery, initial44f Windows fixture failure and exact59f complete logs/artifact evidence separately from subsequent qualified73cc component records"
       ],
       "target_commit": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
       "workflow_run": 41514576570,
@@ -51576,13 +51589,16 @@
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570@73cc6e1cc9fa871e5f80931979606ac9ee810551:attempt1:job125514709141:completed/success:Transcript16/forward-settlement5/actual Chromium forward-dialog16; all zero fail/cancel/skip; actual renderer build; artifact13174992345 sha256:5e74e7f2364d4617535fb3679349e98e3903701e2f0eb89a402bbe40b7df4bc5; bounded component proof, no formal release ACCEPT",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570@73cc6e1cc9fa871e5f80931979606ac9ee810551:attempt1:job125514709410:completed/success:native Authenticode/PowerShell/Unicode11; all zero fail/cancel/skip; CI-only inert fixture, capturedSpawns1/executedFixtureExecutables0/remainingOwnedCertificates0; artifact13173833468 sha256:d73ab6369a98dc748f955e8a1642af28a2dffbed3d9727e7e526b20eeb1147a5; bounded component proof, no formal release ACCEPT",
         "projects/telegram-desktop-rust/evidence/round23-baseline-audit.json: exact44f5203 Windows native job125412051125 had11 shared-hook failures and zero native assertions due setup timeout; controlled28 passed in Electron125412051252",
-        "projects/telegram-desktop-rust/evidence/round23-native-current.json: exact59f5fa and94dcf7a native Windows11/controlled28 succeeded after the actual ephemeral-runner trust fixture correction; first ten use default probe, Unicode case observes actual CP437 prelude, fixture EXE never launched. CurrentUser/My private key plus public LocalMachine/Root and TrustedPublisher cleanup verified. Formal publisher and real signed-package install/upgrade/rollback remain open"
+        "projects/telegram-desktop-rust/evidence/round23-native-current.json: exact59f5fa and94dcf7a native Windows11/controlled28 succeeded after the actual ephemeral-runner trust fixture correction; first ten use default probe, Unicode case observes actual CP437 prelude, fixture EXE never launched. CurrentUser/My private key plus public LocalMachine/Root and TrustedPublisher cleanup verified. Formal publisher and real signed-package install/upgrade/rollback remain open",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011030:success source16/publisher28/carrier10/auth8/fixture-copy3/metadata18 and actual Electron build; artifact13172586742 sha256:e0e79f55e371aea4c35b813fb6f828a1c2d4017e8664ed05d9b7baa4207881b1. Historical component proof only, not later-H execution.",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011118:success native Windows11 failed0 skipped0 cancelled0; actual CP437/UTF8, Valid/Authenticode, same-entry subject/DER pin, owned-certificate cleanup remaining0, fixture executions0; artifact13171043513 sha256:fff7082f8e3fdcc907bf379d978b4b2f17dbd0511079d57797b86e9203024f25. Fixture-only, no formal publisher or install acceptance.",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011097:success gateway-library11/protocol122/TCP9/resource-copy4; artifact13173112803 ZIP digest a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f independently read. Real Darwin AppHost160061040 bytes sha256:5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb equals archived source/destination; missing binary, invalid format and valid64hex unequal digest rejected. Three fixtures plus one real binary, no full package acceptance."
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Primary product source is telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/core/update_checker.cpp@73eee14f179d769854237640b246858959808736. Exact additional identities and actual selected deep-read ranges are in the partial audit in projects/telegram-desktop-rust/evidence/round21-update-source-authority.json. Prior mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc was read fully as tooling context; its floating build acquisitions remain open. No whole-file or full-updater review, legal closure, Telegram endpoint/key authorization or formal Fabushi release acceptance is asserted. All earlier recovered-source and Windows provenance remains.",
       "reviewer": null,
-      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open. Round22: Existing Windows updater formerly default-trusted historical Anysphere names. Current code commit 5d271ff0c03d8f01368ca44026d14cd7519ad6bd removes that default, requires approved exact subject and certificate DER SHA-256, valid embedded signature and unchanged bytes before a one-use launch, preserving markers/recovery. Formal publisher identity absent. 28 controlled / 11 native Windows contracts and a well-formed unequal AppHost digest negative authored only; new-H Actions required. Historical exact8f run41476964752 attempt2 success is scoped to its unchanged earlier code. See projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json.\nRound21 source/evidence reconciliation: primary mapping now names the actual partial core discovery logic; macOS packaging remains contextual provenance. Fixed-U selected ranges were deeply read, without claiming the full source file/updater complete. Exact73cc/run41514576570 supplies actual EUS16/publisher28/native-Windows11 and Electron/renderer build evidence. Earlier authored/pending statements remain dated history; target_commit now binds the executed Electron component, not a complete migration or later checkpoint execution. Existing six source_reviews (two complete, four pending), other183 responsibility rows, counters, source candidate, locks and acceptance states are unchanged. Current Rust recovery changes after73cc require their own exact-H evidence. This source-map correction is not another product feature. Official feed/publisher authorization, package provenance, signed install/upgrade/rollback, full source/legal closure and independent ACCEPT remain open. See resumption in the same receipt.\nRound23 preserves the original Windows hook-timeout evidence and later actual native11 success under their exact SHAs. The spec's obsolete CurrentUser-only description is corrected to the current reviewed three-store fixture. No production identity, certificate approval, real package installation, deployment or independent ACCEPT is supplied."
+      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open. Round22: Existing Windows updater formerly default-trusted historical Anysphere names. Current code commit 5d271ff0c03d8f01368ca44026d14cd7519ad6bd removes that default, requires approved exact subject and certificate DER SHA-256, valid embedded signature and unchanged bytes before a one-use launch, preserving markers/recovery. Formal publisher identity absent. 28 controlled / 11 native Windows contracts and a well-formed unequal AppHost digest negative authored only; new-H Actions required. Historical exact8f run41476964752 attempt2 success is scoped to its unchanged earlier code. See projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json.\nRound21 source/evidence reconciliation: primary mapping now names the actual partial core discovery logic; macOS packaging remains contextual provenance. Fixed-U selected ranges were deeply read, without claiming the full source file/updater complete. Exact73cc/run41514576570 supplies actual EUS16/publisher28/native-Windows11 and Electron/renderer build evidence. Earlier authored/pending statements remain dated history; target_commit now binds the executed Electron component, not a complete migration or later checkpoint execution. Existing six source_reviews (two complete, four pending), other183 responsibility rows, counters, source candidate, locks and acceptance states are unchanged. Current Rust recovery changes after73cc require their own exact-H evidence. This source-map correction is not another product feature. Official feed/publisher authorization, package provenance, signed install/upgrade/rollback, full source/legal closure and independent ACCEPT remain open. See resumption in the same receipt.\nRound23 preserves the original Windows hook-timeout evidence and later actual native11 success under their exact SHAs. The spec's obsolete CurrentUser-only description is corrected to the current reviewed three-store fixture. No production identity, certificate approval, real package installation, deployment or independent ACCEPT is supplied.\nRound22 resumption: preserve every later updater/source, Social, forward, reply, resource and packaging change. The two fixed-U updater source records added here are product/high/deep-required/pending selected-section reviews, not complete reads; all prior source_reviews remain unchanged. Historical exact59f run41508537631 is terminal success, with actual publisher28/native11 and the real AppHost well-formed unequal64hex negative. This append does not supersede the later73cc target/evidence already in this row or qualify newer message/package heads. Formal publisher approval, real signed installation/upgrade/rollback, complete source/legal and independent ACCEPT stay blocked. Full audit at the same round22 receipt."
     }
   ],
   "rebaseline_candidate": {
@@ -51592,7 +51608,7 @@
     "nested_gitlinks_discovered": 4,
     "nested_gitlinks_resolved": 4,
     "nested_gitlinks_blocked": 0,
-    "source_responsibility_rows": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Six source review records comprise two complete option contracts and four pending draft/feedback mappings; global review counts remain undetermined and acceptance is false.",
+    "source_responsibility_rows": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Source review records: 16 total, 2 complete and 14 pending. This batch adds two pending updater selected-section reviews while preserving all prior records; global review counts remain undetermined and acceptance is false.",
     "unknown": null,
     "unread": null,
     "omitted_known": 0,
@@ -51818,6 +51834,40 @@
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
       "responsibility_ids": []
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/core/update_verify.cpp",
+      "object": "5d970cf882ec3870fa36d079ff94bd50eb703a37",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Deep review required, incomplete: only527–605 and741–940 semantically inspected (manifest/key/channel authorization); full parser, key inputs/consumers and revocation lifetime remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json#source_review"
+      ],
+      "responsibility_ids": [
+        "TDRP-UPDATER-DISCOVERY-AUTHORITY-001"
+      ]
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/_other/updater_win.cpp",
+      "object": "bf935373b2577570c0268de1c151ba479206569d",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Deep review required, incomplete: only102–210 and241–399 semantically inspected (PID creation-time fencing/apply/copy/retry); full callers, atomic recovery and rollback remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json#source_review"
+      ],
+      "responsibility_ids": [
+        "TDRP-UPDATER-DISCOVERY-AUTHORITY-001"
+      ]
     }
   ]
 }
