@@ -7,7 +7,7 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -18,14 +18,20 @@ use mahayana_host_runtime::extensions::inference::codex_direct_responses::{
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
+use mahayana_host_runtime::gateway_server::GatewayEventHub;
+use mahayana_host_runtime::host_event_bus::HostEventSubscription;
+use mahayana_host_runtime::runner::coordinator_tool_relay::{
+    CoordinatorToolRelay, CoordinatorToolRelayError, ROUTED_TOOL_EXECUTE_METHOD,
+    ROUTED_TOOL_LIST_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
+};
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryOutcome,
     ProviderRetryReport, RoutedProviderAttemptControl, RoutedProviderAttemptExecutor,
-    RoutedProviderCheckpointStore, ToolEffectUnknownResult,
+    RoutedProviderCheckpointStore, ToolEffectCustodySnapshot, ToolEffectUnknownResult,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge,
-    start_routed_mcp_server_for_attempt,
+    coordinator_tool_execution_error, start_routed_mcp_server_for_attempt,
 };
 use mahayana_host_runtime::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout_ms;
 use mahayana_host_runtime::runner::{StreamAttemptPolicy, StreamAttemptRuntime};
@@ -128,6 +134,12 @@ impl CodexDirectTransport for Responses {
 type ToolAction = Arc<dyn Fn(&RoutedProviderAttemptControl, &str) + Send + Sync>;
 type ControlSlot = Arc<Mutex<Option<RoutedProviderAttemptControl>>>;
 
+struct GuardReturn {
+    tool: String,
+    outcome_unknown: bool,
+    custody: ToolEffectCustodySnapshot,
+}
+
 /// Only transport is scripted. This executor delegates tool selection, result
 /// pairing, cancellation and checkpoint production to the real Responses loop.
 struct ResponsesExecutor {
@@ -138,6 +150,8 @@ struct ResponsesExecutor {
     timeout_ms: u64,
     attempts: usize,
     resumed: Vec<Option<RoutedProviderCheckpoint>>,
+    relay: Option<Arc<CoordinatorToolRelay>>,
+    guard_returns: Vec<GuardReturn>,
 }
 
 impl RoutedProviderAttemptExecutor for ResponsesExecutor {
@@ -171,21 +185,37 @@ impl RoutedProviderAttemptExecutor for ResponsesExecutor {
         let effects = Arc::clone(&self.effects);
         let action = Arc::clone(&self.action);
         let timeout_ms = self.timeout_ms;
+        let relay = self.relay.clone();
+        let guard_returns = &mut self.guard_returns;
         run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             &mut self.transport,
             &options,
             resume,
-            &mut |tool, _args, _call_id| {
+            &mut |tool, args, call_id| {
                 let name = tool.name.clone();
                 let worker_name = name.clone();
                 let effects = Arc::clone(&effects);
                 let action = Arc::clone(&action);
                 let worker_attempt = attempt.clone();
-                execute_routed_tool_with_timeout_ms(attempt, name, timeout_ms, move || {
+                let relay = relay.clone();
+                let call_id = call_id.to_string();
+                let result = execute_routed_tool_with_timeout_ms(attempt, name, timeout_ms, move || {
                     effects.lock().expect("effect receipt").push(worker_name.clone());
                     action(&worker_attempt, &worker_name);
-                    Ok(json!({"effect":worker_name}))
-                }).map_err(|error| CodexDirectError::Tool(error.to_string()))
+                    match relay {
+                        Some(relay) => relay.request_tool_execution(json!({
+                            "providerIdentifier":"custody-contract", "name":worker_name,
+                            "toolName":worker_name, "args":args, "toolCallId":call_id,
+                        })).map_err(coordinator_tool_execution_error),
+                        None => Ok(json!({"effect":worker_name})),
+                    }
+                });
+                guard_returns.push(GuardReturn {
+                    tool: tool.name.clone(),
+                    outcome_unknown: matches!(&result, Err(ProviderSessionError::ToolOutcomeUnknown(_))),
+                    custody: attempt.effect_custody(),
+                });
+                result.map_err(|error| CodexDirectError::Tool(error.to_string()))
             },
             on_text_delta,
             &mut |checkpoint| {
@@ -278,6 +308,7 @@ impl Harness {
                 transport: Responses { pending: script.into(), requests: Vec::new() },
                 effects, action, control, timeout_ms: 4_000,
                 attempts: 0, resumed: Vec::new(),
+                relay: None, guard_returns: Vec::new(),
             },
         }
     }
@@ -455,6 +486,334 @@ impl Drop for ReleaseOnDrop {
     fn drop(&mut self) {
         self.0.release();
     }
+}
+
+#[derive(Clone)]
+enum DownstreamReply {
+    Timeout,
+    Close,
+    Remote(&'static str),
+    MissingResult,
+    Value(Value),
+}
+
+/// The event subscriber starts a real, separately owned non-idempotent worker.
+/// Publication waits only for its entry receipt, so the relay timeout starts
+/// after the effect. The external worker remains gated after the Host returns.
+struct GatedDownstream {
+    relay: Arc<CoordinatorToolRelay>,
+    events: mpsc::Receiver<Value>,
+    effects: Arc<AtomicUsize>,
+    gate: Arc<ReleaseGate>,
+    workers: Arc<Mutex<Vec<thread::JoinHandle<Result<Value, CoordinatorToolRelayError>>>>>,
+    _subscription: HostEventSubscription,
+}
+
+impl GatedDownstream {
+    fn new(reply: DownstreamReply, receipt: PathBuf) -> Self {
+        let events = GatewayEventHub::default();
+        let event_rx = events.subscribe();
+        let timeout = if matches!(&reply, DownstreamReply::Timeout) {
+            Duration::from_millis(250)
+        } else {
+            Duration::from_secs(3)
+        };
+        let relay = Arc::new(CoordinatorToolRelay::with_timeout(events.clone(), timeout));
+        let effects = Arc::new(AtomicUsize::new(0));
+        let gate = Arc::new(ReleaseGate::default());
+        let workers = Arc::new(Mutex::new(Vec::new()));
+        let worker_effects = Arc::clone(&effects);
+        let worker_gate = Arc::clone(&gate);
+        let worker_handles = Arc::clone(&workers);
+        let weak_relay = Arc::downgrade(&relay);
+        let subscription = events.subscribe_listener(move |event| {
+            if event["channel"] != RUNNER_TOOL_REQUEST_EVENT_CHANNEL { return; }
+            assert_eq!(event["payload"]["method"], ROUTED_TOOL_EXECUTE_METHOD);
+            let relay = weak_relay.upgrade().expect("live execution relay");
+            let request_id = event["payload"]["requestId"].as_str().expect("request ID").to_string();
+            let name = event["payload"]["args"]["toolName"].as_str().expect("actual Responses tool");
+            if name == "a" {
+                relay.resolve(&json!({
+                    "requestId":request_id,"ok":true,
+                    "result":{"success":{"content":[],"structuredContent":{"receipt":"c0"}}},
+                })).expect("settled C0 result");
+                return;
+            }
+            assert_eq!(name, "b");
+            let call_id = event["payload"]["args"]["toolCallId"].as_str()
+                .expect("real Responses call ID").to_string();
+            let late_relay = Arc::clone(&relay);
+            let late_id = request_id.clone();
+            let receipt = receipt.clone();
+            let effects = Arc::clone(&worker_effects);
+            let gate = Arc::clone(&worker_gate);
+            let (entered_tx, entered_rx) = mpsc::channel();
+            let worker = thread::spawn(move || {
+                let mut file = fs::OpenOptions::new().create(true).append(true).open(receipt)
+                    .expect("external non-idempotent effect receipt");
+                writeln!(file, "{call_id}").expect("append external effect");
+                file.sync_all().expect("durable external effect");
+                effects.fetch_add(1, Ordering::AcqRel);
+                entered_tx.send(()).expect("observe actual external entry");
+                gate.wait();
+                late_relay.resolve(&json!({
+                    "requestId":late_id,"ok":true,
+                    "result":{"success":{"content":[],"structuredContent":{"late":true}}},
+                }))
+            });
+            worker_handles.lock().expect("owned external workers").push(worker);
+            entered_rx.recv_timeout(BOUND).expect("effect starts before local reply or timeout");
+            match &reply {
+                DownstreamReply::Timeout => {}
+                DownstreamReply::Close => relay.cancel_all("Host closes after external dispatch"),
+                DownstreamReply::Remote(message) => {
+                    relay.resolve(&json!({"requestId":request_id,"ok":false,"error":message}))
+                        .expect("remote failure ends only the local waiter");
+                }
+                DownstreamReply::MissingResult => {
+                    relay.resolve(&json!({"requestId":request_id,"ok":true}))
+                        .expect("control success without an execution result");
+                }
+                DownstreamReply::Value(value) => {
+                    relay.resolve(&json!({"requestId":request_id,"ok":true,"result":value}))
+                        .expect("successful control reply carrying uncertain MCP outcome");
+                }
+            }
+        });
+        Self { relay, events: event_rx, effects, gate, workers, _subscription: subscription }
+    }
+
+    fn release(&mut self) -> Vec<Result<Value, CoordinatorToolRelayError>> {
+        self.gate.release();
+        let workers = std::mem::take(&mut *self.workers.lock().expect("owned external workers"));
+        workers.into_iter().map(|worker| {
+            wait_until("external worker late return", || worker.is_finished());
+            worker.join().expect("owned external worker result")
+        }).collect()
+    }
+}
+
+impl Drop for GatedDownstream {
+    fn drop(&mut self) {
+        self.gate.release();
+        if let Ok(mut workers) = self.workers.lock() {
+            let deadline = Instant::now() + BOUND;
+            for worker in workers.drain(..) {
+                while !worker.is_finished() && Instant::now() < deadline {
+                    thread::sleep(Duration::from_millis(1));
+                }
+                if worker.is_finished() { let _ = worker.join(); }
+            }
+        }
+    }
+}
+
+#[test]
+fn downstream_unknown_outcomes_block_responses_checkpoint_and_replay_after_local_return() {
+    let cases = [
+        ("Host timeout", DownstreamReply::Timeout),
+        ("post-publication close", DownstreamReply::Close),
+        ("Coordinator timeout", DownstreamReply::Remote("COORDINATOR_DISCONNECTED: command timed out")),
+        ("opaque remote error", DownstreamReply::Remote("la demande a échoué; opaque response 42")),
+        ("plain MCP error", DownstreamReply::Value(json!({
+            "result":{"case":"error","value":{"error":"adapter failed after dispatch"}},
+        }))),
+        ("protobuf MCP error", DownstreamReply::Value(json!({"error":{"error":"opaque adapter failure"}}))),
+        ("missing control result", DownstreamReply::MissingResult),
+        ("null MCP result", DownstreamReply::Value(Value::Null)),
+        ("untyped object", DownstreamReply::Value(json!({"receipt":"not a definitive result"}))),
+        ("malformed success", DownstreamReply::Value(json!({"success":{"content":"not an array"}}))),
+        ("missing oneof payload", DownstreamReply::Value(json!({"result":{"case":"success"}}))),
+        ("competing oneof arms", DownstreamReply::Value(json!({"success":{},"error":{"error":"ambiguous"}}))),
+    ];
+    for (label, reply) in cases {
+        for with_c0 in [false, true] {
+            let mut script = Vec::new();
+            if with_c0 { script.push(calls(&["a"])); }
+            script.extend([calls(&["b"]), calls(&["b"]), Response::Text]);
+            let mut harness = Harness::new(
+                script, Arc::new(|_, _| {}), StoreFault::None, Duration::from_secs(3),
+            );
+            let receipt = harness._root.0.join("downstream-effects.txt");
+            let mut downstream = GatedDownstream::new(reply.clone(), receipt.clone());
+            harness.executor.relay = Some(Arc::clone(&downstream.relay));
+            let (result, retries, reports) = harness.run();
+            assert_custody_refusal(result, &retries, &reports);
+            assert!(!reports.last().expect("custody report").watchdog_expired,
+                "{label}: relay uncertainty must precede the provider watchdog");
+            assert_eq!(harness.executor.attempts, 1, "{label}");
+            assert_eq!(harness.executor.transport.requests.len(), 1 + usize::from(with_c0), "{label}");
+            assert_eq!(harness.effects(), if with_c0 { vec!["a", "b"] } else { vec!["b"] });
+            assert_eq!(downstream.effects.load(Ordering::Acquire), 1, "{label}");
+            assert_eq!(fs::read_to_string(&receipt).expect("durable external receipt"), "call-b\n");
+            {
+                let workers = downstream.workers.lock().expect("external worker custody");
+                assert_eq!(workers.len(), 1);
+                assert!(!workers[0].is_finished(), "{label}: external worker must outlive Host return");
+            }
+            let returned = harness.executor.guard_returns.last().expect("actual guarded return");
+            assert_eq!(returned.tool, "b");
+            assert!(returned.outcome_unknown, "{label}: typed result must reach the common guard");
+            assert_eq!(returned.custody.pending_effects, 0, "the local Host worker has ended");
+            assert_eq!(returned.custody.unknown_result, Some(ToolEffectUnknownResult::DownstreamOutcomeUnknown));
+            let custody = harness.runtime.effect_custody();
+            assert_eq!(custody, returned.custody, "error serialization cannot erase unknown custody");
+            assert_eq!(custody.started_revision, 1 + u64::from(with_c0));
+            assert_eq!(custody.checkpoint_revision, u64::from(with_c0));
+            assert_eq!(harness.store.writes.load(Ordering::Acquire), usize::from(with_c0),
+                "the real checkpoint owner must reject the uncertain result before persistence");
+            let checkpoints = harness.checkpoints();
+            assert_eq!(checkpoints.len(), usize::from(with_c0));
+            for checkpoint in checkpoints {
+                let RoutedProviderCheckpoint::Fabushi(checkpoint) = checkpoint else { panic!("provider changed") };
+                assert_eq!(checkpoint.model.as_deref(), Some(MODEL));
+                assert!(checkpoint.input.iter().any(|item| item["call_id"] == "call-a"));
+                assert!(!checkpoint.input.iter().any(|item| item["call_id"] == "call-b"));
+            }
+            assert!(harness.executor.transport.requests.iter().all(|request| request["model"] == MODEL));
+            let checkpoint_bytes = if with_c0 {
+                let path = fs::read_dir(harness.store.production.directory()).expect("C0 directory")
+                    .next().expect("C0 file").expect("C0 entry").path();
+                Some((path.clone(), fs::read(path).expect("original C0 bytes")))
+            } else { None };
+            let published = downstream.events.try_iter().collect::<Vec<_>>();
+            assert_eq!(published.len(), 1 + usize::from(with_c0));
+            assert_eq!(downstream.relay.pending_count(), 0);
+            let replacement = RoutedProviderAttemptControl::new(
+                Arc::clone(&harness.runtime), harness.runtime.begin_attempt(), harness.cancellation.clone(),
+            );
+            assert!(replacement.admit_tool().is_err(), "replacement attempt cannot bypass unknown custody");
+            let late = downstream.release();
+            assert_eq!(late.len(), 1);
+            assert!(matches!(&late[0], Err(CoordinatorToolRelayError::Protocol(_))));
+            assert!(matches!(downstream.relay.resolve(&json!({
+                "requestId":published.last().expect("published B request")["payload"]["requestId"],
+                "ok":false,"error":"late external failure",
+            })), Err(CoordinatorToolRelayError::Protocol(_))));
+            assert_eq!(harness.runtime.effect_custody(), custody, "{label}: late completion cannot clear unknown");
+            let relay = Arc::clone(&downstream.relay);
+            assert!(execute_routed_tool_with_timeout_ms(&replacement, "b".into(), 1_000, move || {
+                relay.request_tool_execution(json!({"toolName":"b","args":{}}))
+                    .map_err(coordinator_tool_execution_error)
+            }).is_err(), "the real guard must refuse another dispatch after the late result");
+            assert_eq!(harness.runtime.effect_custody(), custody);
+            assert_eq!(downstream.effects.load(Ordering::Acquire), 1);
+            assert_eq!(fs::read_to_string(&receipt).expect("final external receipt"), "call-b\n");
+            assert!(matches!(downstream.events.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert_eq!(harness.checkpoints().len(), usize::from(with_c0));
+            if let Some((path, bytes)) = checkpoint_bytes {
+                assert_eq!(fs::read(path).expect("retained C0 bytes"), bytes, "late reply cannot corrupt C0");
+            }
+        }
+    }
+}
+
+#[test]
+fn definitive_relay_results_remain_checkpoint_eligible_and_preserve_returned_data() {
+    for (value, executes) in [
+        (json!({"result":{"case":"success","value":{"content":[],"isError":false}}}), true),
+        (json!({"result":{"case":"success","value":{"content":[],"isError":true}}}), true),
+        (json!({"success":{}}), true),
+        (json!({"success":{"content":[{"text":{"text":"server error"}}],"isError":true}}), true),
+        (json!({"content":[{"type":"text","text":"timeout is genuine tool data"}],"isError":true}), true),
+        (json!({"structuredContent":{
+            "error":"connection reset is user data", "result":{"case":"error","value":null},
+        }}), true),
+        (json!({"result":{"case":"rejected","value":{"reason":"explicit preflight denial","isReadonly":false}}}), false),
+        (json!({"permissionDenied":{"error":"known refusal","isReadonly":true}}), false),
+    ] {
+        let mut harness = Harness::new(
+            vec![calls(&["b"]), Response::Text], Arc::new(|_, _| {}),
+            StoreFault::None, Duration::from_secs(3),
+        );
+        let events = GatewayEventHub::default();
+        let event_rx = events.subscribe();
+        let relay = Arc::new(CoordinatorToolRelay::with_timeout(events.clone(), BOUND));
+        let weak_relay = Arc::downgrade(&relay);
+        let effects = Arc::new(AtomicUsize::new(0));
+        let worker_effects = Arc::clone(&effects);
+        let returned_value = value.clone();
+        let _subscription = events.subscribe_listener(move |event| {
+            if event["channel"] != RUNNER_TOOL_REQUEST_EVENT_CHANNEL { return; }
+            assert_eq!(event["payload"]["method"], ROUTED_TOOL_EXECUTE_METHOD);
+            if executes { worker_effects.fetch_add(1, Ordering::AcqRel); }
+            weak_relay.upgrade().expect("live relay").resolve(&json!({
+                "requestId":event["payload"]["requestId"],"ok":true,"result":returned_value,
+            })).expect("definitive external response");
+        });
+        harness.executor.relay = Some(relay);
+        let (result, retries, reports) = harness.run();
+        assert_eq!(result.expect("known result remains usable"), "done");
+        assert!(retries.is_empty());
+        assert!(reports.is_empty());
+        assert_eq!(harness.executor.attempts, 1);
+        assert_eq!(event_rx.try_iter().count(), 1);
+        assert_eq!(effects.load(Ordering::Acquire), usize::from(executes));
+        let returned = harness.executor.guard_returns.last().expect("known guarded return");
+        assert!(!returned.outcome_unknown);
+        assert_eq!(returned.custody.pending_effects, 0);
+        assert!(returned.custody.unknown_result.is_none());
+        let custody = harness.runtime.effect_custody();
+        assert_eq!((custody.started_revision, custody.checkpoint_revision), (1, 1));
+        assert!(custody.retry_block_reason().is_none());
+        let checkpoints = harness.checkpoints();
+        assert_eq!(checkpoints.len(), 1);
+        let RoutedProviderCheckpoint::Fabushi(checkpoint) = &checkpoints[0] else { panic!("provider changed") };
+        assert_eq!(checkpoint.model.as_deref(), Some(MODEL));
+        let output = checkpoint.input.iter().find(|item| {
+            item["type"] == "function_call_output" && item["call_id"] == "call-b"
+        }).expect("actual Responses output paired in the production checkpoint");
+        assert_eq!(serde_json::from_str::<Value>(output["output"].as_str().expect("serialized output"))
+            .expect("tool result JSON"), value, "checkpoint preserves every returned field");
+        assert!(harness.executor.transport.requests.iter().all(|request| request["model"] == MODEL));
+    }
+}
+
+#[test]
+fn prepublication_refusal_and_list_failure_add_no_unknown_effect_custody() {
+    let mut harness = Harness::new(
+        vec![calls(&["b"]), Response::Text], Arc::new(|_, _| {}),
+        StoreFault::None, Duration::from_secs(3),
+    );
+    let events = GatewayEventHub::default();
+    let event_rx = events.subscribe();
+    let relay = Arc::new(CoordinatorToolRelay::with_timeout(events, BOUND));
+    relay.cancel_all("closed before execution publication");
+    harness.executor.relay = Some(Arc::clone(&relay));
+    let (result, retries, reports) = harness.run();
+    assert_eq!(result.expect("known refusal may be returned to the provider"), "done");
+    assert!(retries.is_empty());
+    assert!(reports.is_empty());
+    let returned = harness.executor.guard_returns.last().expect("guarded preflight refusal");
+    assert!(!returned.outcome_unknown);
+    assert_eq!(returned.custody.pending_effects, 0);
+    assert!(returned.custody.unknown_result.is_none());
+    let custody = harness.runtime.effect_custody();
+    assert_eq!(custody.checkpoint_revision, 1);
+    assert!(custody.retry_block_reason().is_none());
+    assert_eq!(harness.checkpoints().len(), 1);
+    assert!(matches!(relay.request(ROUTED_TOOL_LIST_METHOD, json!({})),
+        Err(CoordinatorToolRelayError::Closed(_))));
+    assert_eq!(harness.runtime.effect_custody(), custody, "discovery must not create execution custody");
+    assert_eq!(relay.pending_count(), 0);
+    assert!(matches!(event_rx.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+    let discovery_events = GatewayEventHub::default();
+    let discovery_rx = discovery_events.subscribe();
+    let discovery = Arc::new(CoordinatorToolRelay::with_timeout(discovery_events.clone(), BOUND));
+    let weak_discovery = Arc::downgrade(&discovery);
+    let _subscription = discovery_events.subscribe_listener(move |event| {
+        if event["channel"] != RUNNER_TOOL_REQUEST_EVENT_CHANNEL { return; }
+        assert_eq!(event["payload"]["method"], ROUTED_TOOL_LIST_METHOD);
+        weak_discovery.upgrade().expect("live discovery relay").resolve(&json!({
+            "requestId":event["payload"]["requestId"],"ok":false,"error":"opaque discovery failure",
+        })).expect("published discovery failure");
+    });
+    assert!(matches!(discovery.request(ROUTED_TOOL_LIST_METHOD, json!({})),
+        Err(CoordinatorToolRelayError::Remote { .. })));
+    assert_eq!(discovery_rx.try_iter().count(), 1);
+    assert_eq!(discovery.pending_count(), 0);
+    assert_eq!(harness.runtime.effect_custody(), custody, "remote discovery failure is not an effect");
 }
 
 #[test]

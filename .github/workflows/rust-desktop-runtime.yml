@@ -210,6 +210,7 @@ jobs:
               tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary \
               tests::automation_deadline_retains_real_run_ownership_until_worker_terminal \
               tests::automation_deadline_preserves_queued_runner_success \
+              tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate \
               tests::automation_terminal_event_maps_runner_settlement_without_guessing; do
               cargo test --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
                 "$admission_test" -- --exact || admission_status=1
@@ -306,10 +307,10 @@ jobs:
             recovery_status=1
           fi
           exit "$recovery_status"
-      - name: Test scoped Coordinator MCP relay correlation
+      - name: Test scoped Coordinator MCP and Runner relay correlation
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
-        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml --test mcp_lifecycle_relay_contract
+        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract
       - name: Verify OpenClaw migration audit integrity
         shell: bash
         run: |
@@ -395,6 +396,9 @@ jobs:
               "routed_tool_waiter_result": "passed",
               "runner_effect_custody_contract": "OCRM-RUNNER-EFFECT-CUSTODY-v1",
               "runner_effect_custody_result": "passed",
+              "runner_downstream_custody_contract": "REC-07/08/09",
+              "runner_downstream_custody_result": "passed",
+              "runner_downstream_custody_scope": "Real Host execution relay, guarded Responses/checkpoint owner and shipping private bridge preserve unknown post-publication outcomes, reject replay and isolate relay incarnations. Coordinator echo covers opaque legacy/new IDs. No original-turn restart, external termination or durable outcome reconciliation is claimed.",
               "runner_effect_custody_scope": "In-process per-run effect custody and immutable direct/MCP attempt admission, post-persistence checkpoint fencing, and refusal to replay uncovered or unknown tool effects, including known MCP HTTP response loss and Unix TCP reset control. Actual Responses loopback and local MCP oracles are not external service acceptance, original-turn disk recovery, or proof that detached tools terminated.",
               "automation_history_contract": "OCRM-AUTOMATION-HISTORY-ACK-v1",
               "automation_history_result": "passed",
@@ -550,11 +554,14 @@ jobs:
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Build Grok-shaped Electron runtime
         run: npm --prefix desktop run build:electron -- --plugin-skills-contracts
-      - name: Test Plugin Skills SDK and Host boundary
+      - name: Test Plugin Skills SDK, Host boundary and routed MCP carrier
+        env:
+          FABUSHI_COORDINATOR_CARRIER_ARTIFACT: ${{ github.workspace }}/desktop/dist/node-agent-coordinator/main.cjs
         run: >-
           node --test
           desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs
           desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs
+          desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs
       - name: Record exact-subject Plugin Skills edge evidence
         shell: bash
         env:
@@ -577,6 +584,9 @@ jobs:
               "shipping_electron_bundle": "passed",
               "node_contract_targets": ["host-plugin-skills-loader.contract.test", "loader.contract.test"],
               "node_contract_result": "passed",
+              "runner_mcp_carrier_target": "coordinator-control-server.contract.test",
+              "runner_mcp_carrier_result": "passed",
+              "runner_mcp_carrier_scope": "Actual generated/backend MCP result producers, control server, native MessageChannel clone and shipping carrier JSON I/O. A bounded local echo peer is not the Rust Coordinator binary, real Electron utilityProcess or external MCP service acceptance.",
               "compiler": "Existing shipping esbuild common options and dependency resolution; not a whole-graph TypeScript strict typecheck",
               "scope": "Actual Host loader and SDK listing/materialization boundaries with controlled transport/cache inputs. Rust admission evidence belongs to the separate rust-host job on this same H. Real marketplace/accounts, live revocation on persistence failure, all MCP permissions and final acceptance remain pending.",
               "independent_acceptance": "pending",

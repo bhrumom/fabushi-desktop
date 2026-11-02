@@ -210,6 +210,82 @@ for this repair, not full Runner/source closure. Rollback requires reverting
 the whole shared custody contract and its wiring together; retaining old raw
 checkpoint files never grants them recovery eligibility.
 
+### Downstream tool outcome custody — REC-07/08/09
+
+Continuation base `4eb0d25ade0d06b8a467e240440a5691ec36efc8`; fixed U is
+unchanged. A Host relay waiter can return while its Coordinator/Electron tool
+still runs. Coordinator's control command can itself time out after writing
+the request and report an ordinary remote failure. The official and legacy
+MCP adapters also encode transport/authorization-change failures as the
+existing `McpResult.error` value. None proves that an external effect stopped.
+
+- REC-07: retain the existing `CoordinatorToolRelay::request` result contract,
+  correlation owner, close/registration fence and callback-outside-lock rule.
+  Add an effect-aware execution entry using that same implementation. An
+  unsupported/closed/poisoned-registration refusal before publication is
+  known not dispatched. Every execution error after publication, including
+  an untyped remote failure, has an explicit unknown outcome. Discovery keeps
+  its existing behavior. Do not classify localized error strings or trust a
+  new caller-supplied completion flag.
+- REC-08: at the routed MCP execution boundary, recognize the existing plain
+  oneof `result: {case, value}` produced by the shipping structured-clone
+  carrier, and the explicitly supported protobuf JSON oneof representation.
+  `success` with a valid content array (or omitted protobuf default empty
+  content) is a settled result, including its server-returned `isError`;
+  existing explicit rejection/permission-denial/
+  tool-not-found/server-not-found/approval variants keep their known-result
+  behavior. A wrapper `error`, absent/malformed/ambiguous oneof or malformed
+  success is unknown. A valid native MCP result with top-level content or
+  structuredContent remains a result; nested user payload fields cannot be
+  interpreted as wrapper authority. Preserve all known result bytes.
+- REC-09: a late reply from a replaced or simultaneous tool-relay instance
+  cannot settle a new instance's first request. Reuse the existing lifecycle
+  relay's per-instance UUID plus non-recycling checked sequence pattern in
+  this tool relay. Keep the request ID opaque to Coordinator; old opaque IDs
+  remain parseable. Refuse sequence exhaustion before publication, preserve
+  pending requests, and do not claim that UUID isolation terminates old work.
+
+Carry unknown through `ProviderSessionError::ToolOutcomeUnknown` into the
+existing guarded worker. Mark the same effect's sticky
+`ToolEffectUnknownResult::DownstreamOutcomeUnknown` before completing its
+local receipt. Provider error serialization cannot erase custody; accepted
+checkpoint and automatic retry remain ineligible even when the local waiter
+has returned. Map the new error to nonretryable tool/protocol failure through
+existing Responses/Transcript/retry conversions, retaining cancellation
+precedence. The shipping `CoordinatorRoutedToolBridge` must call this entry.
+Keep its existing review gate, activity updates and list discovery. No new
+runtime, wire flag, permission truth, store or durable schema is introduced.
+
+Actions oracles must drive real relay publication/resolution, the actual
+guard, Responses loop and production checkpoint owner with a counted effect.
+Cover timeout/close, Coordinator-style remote failure, both typed synthetic
+error encodings and malformed results; require sticky unknown, no accepted
+checkpoint, no new attempt and no second effect even after a late response.
+Pair them with pre-publication refusal, list compatibility, ordinary success,
+server `isError`, explicit rejection and nested payload controls. Exercise the
+actual shipping bridge in an app test; existing assertions remain intact.
+Also cover replacement/simultaneous relay isolation, sequence exhaustion and
+Coordinator's exact opaque-ID success/error echo through its existing owner.
+Independent full-scope review and exact-H Actions are required. These controls
+do not prove physical termination, remote idempotency, reconciliation after
+Host loss, original-turn disk recovery, or Automation settlement of unknown
+effects; those obligations remain open.
+
+Necessary target authority is the existing Host relay/bridge/guard plus
+Coordinator `control_command`, `runner_tool_relay`, Electron's control server
+and MessageChannel carrier, generated `McpResult` oneof and its official/
+backend producers. This is contract review of generated representation and
+bounded deep review of failure/call paths, not a new whole-file reading claim.
+The fixed-U started-tool settlement ranges above remain scoped authority.
+Rollback must revert the error variant, its producers and all consumers
+together; retaining an error-bearing raw checkpoint never grants eligibility.
+
+The internal entry is `CoordinatorToolRelay::request_tool_execution(args)`;
+its `CoordinatorToolExecutionError` retains the original relay error and an
+`outcome_unknown()` fact determined by the owner, not request JSON. Existing
+Runner `coordinator_tool_execution_error` maps that fact to provider errors.
+No other caller changes the original generic `request(method, args)` contract.
+
 ## Actions oracles and limits
 
 Use the existing scoped GitHub Actions workflow, on one frozen H. No local or

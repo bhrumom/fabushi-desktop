@@ -196,6 +196,14 @@ where
         .name(format!("mahayana-tool-guard-{}", sanitize_thread_label(&tool_name)))
         .spawn(move || {
             let result = worker_attempt.check().and_then(|()| operation());
+            if matches!(&result, Err(ProviderSessionError::ToolOutcomeUnknown(_))) {
+                // The Host waiter ended, but the downstream execution has no
+                // definitive result. Preserve that fact before releasing the
+                // local worker receipt or serializing an ordinary tool error.
+                worker_result_tracker.mark_unknown(
+                    ToolEffectUnknownResult::DownstreamOutcomeUnknown,
+                );
+            }
             receipt.complete();
             if sender.send(result).is_err() {
                 worker_result_tracker.mark_unknown(ToolEffectUnknownResult::DiscardedResult);

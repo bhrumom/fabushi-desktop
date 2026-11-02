@@ -255,6 +255,8 @@ pub enum ProviderSessionError {
     Protocol(String),
     #[error("{0}")]
     Tool(String),
+    #[error("tool execution outcome is unknown: {0}")]
+    ToolOutcomeUnknown(String),
     #[error("provider refusal: {0:?}")]
     ProviderRefusal(CodexProviderRefusal),
     #[error("{0}")]
@@ -355,6 +357,9 @@ fn codex_provider_error(error: ProviderSessionError) -> CodexDirectError {
         ProviderSessionError::Cancelled(message) => CodexDirectError::Cancelled(message),
         ProviderSessionError::Protocol(message) => CodexDirectError::Protocol(message),
         ProviderSessionError::Tool(message) => CodexDirectError::Tool(message),
+        error @ ProviderSessionError::ToolOutcomeUnknown(_) => {
+            CodexDirectError::Tool(error.to_string())
+        }
         ProviderSessionError::ProviderRefusal(refusal) => CodexDirectError::ProviderRefusal(refusal),
         other => CodexDirectError::Transport(other.to_string()),
     }

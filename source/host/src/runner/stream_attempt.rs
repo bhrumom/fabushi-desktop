@@ -19,6 +19,7 @@ pub enum ToolEffectUnknownResult {
     TimedOut,
     WorkerLost,
     DiscardedResult,
+    DownstreamOutcomeUnknown,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

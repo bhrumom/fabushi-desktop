@@ -410,7 +410,7 @@ use mahayana_host_runtime::runner::turn_observation::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge,
-    RunnerRequestContextSource,
+    RunnerRequestContextSource, coordinator_tool_execution_error,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderTokenUsage, merge_provider_token_usage,
@@ -428,7 +428,7 @@ use mahayana_host_runtime::runner::shell_terminal_watch::{
     ShellWatchStatus, poll_shell_terminal_file,
 };
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
-    CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
+    CoordinatorToolRelay, ROUTED_TOOL_LIST_METHOD,
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
 };
 use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
@@ -7617,8 +7617,7 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
             started_at_ms(),
         );
         let result = self.relay
-            .request(
-                ROUTED_TOOL_EXECUTE_METHOD,
+            .request_tool_execution(
                 serde_json::json!({
                     "providerIdentifier": tool.provider_identifier,
                     "name": tool.name,
@@ -7628,7 +7627,7 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
                     "agentId": self.agent_id,
                 }),
             )
-            .map_err(|error| ProviderSessionError::Tool(error.to_string()));
+            .map_err(coordinator_tool_execution_error);
         self.transcript_runtime.track_runner_activity_update(
             &self.agent_id,
             &ActivityUpdate::ToolCall {
@@ -18096,6 +18095,101 @@ mod tests {
             fs::remove_dir_all(root).expect("remove terminal fixture");
         }
     }
+
+    #[test]
+    fn coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate() {
+        use mahayana_host_runtime::runner::coordinator_tool_relay::{
+            CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
+        };
+        use super::{CoordinatorRoutedToolBridge, ProviderSessionError, RoutedToolBridge};
+        use serde_json::json;
+        use std::sync::{Arc, Mutex, mpsc};
+        use std::time::Duration;
+
+        let fixture = RoutedProviderTerminalFixture::new();
+        let tool = RoutedToolDefinition {
+            name: "mcp_write".into(),
+            provider_identifier: "mcp-server".into(),
+            tool_name: "write".into(),
+            description: Some("Counted execution boundary".into()),
+            input_schema: json!({"type":"object","properties":{"value":{"type":"string"}}}),
+        };
+        let server_error = json!({"result":{"case":"success","value":{
+            "content":[{"type":"text","text":"server returned a tool error"}],"isError":true,
+        }}});
+        for (ok, returned, unknown) in [
+            (true, server_error, false),
+            (true, json!({"result":{"case":"error","value":{"error":"transport interrupted"}}}), true),
+            (true, json!({"error":{"error":"transport interrupted"}}), true),
+            (true, json!({"result":{"case":"success","value":{"content":"malformed"}}}), true),
+            (false, serde_json::Value::Null, true),
+        ] {
+            let events = super::GatewayEventHub::default();
+            let relay = Arc::new(CoordinatorToolRelay::with_timeout(events.clone(), Duration::from_secs(5)));
+            let weak = Arc::downgrade(&relay);
+            let requests = Arc::new(Mutex::new(Vec::new()));
+            let observed = Arc::clone(&requests);
+            let reply = returned.clone();
+            let listener = events.subscribe_listener(move |event| {
+                let payload = &event["payload"];
+                observed.lock().unwrap().push(payload.clone());
+                let request_id = payload["requestId"].as_str().expect("actual relay request ID");
+                let answer = if payload["method"] == ROUTED_TOOL_LIST_METHOD {
+                    json!({"requestId":request_id,"ok":true,"result":[]})
+                } else {
+                    assert_eq!(payload["method"], ROUTED_TOOL_EXECUTE_METHOD);
+                    json!({"requestId":request_id,"ok":ok,"result":reply.clone(),"error":"COORDINATOR_DISCONNECTED: external worker may still run"})
+                };
+                weak.upgrade().expect("live shipping bridge relay").resolve(&answer)
+                    .expect("resolve actual shipping bridge waiter");
+            });
+            let bridge = CoordinatorRoutedToolBridge {
+                relay,
+                transcript_runtime: Arc::clone(&fixture.runtime),
+                telemetry_logs: fixture.telemetry.logs.clone(),
+                agent_id: "bridge-agent".into(),
+                mcp_review: None,
+            };
+            assert!(bridge.list_tools().expect("list discovery keeps its original result contract").is_empty());
+            let result = bridge.call_tool(&tool, json!({"value":"write once"}), "call-boundary");
+            if unknown {
+                assert!(matches!(&result, Err(ProviderSessionError::ToolOutcomeUnknown(_))),
+                    "shipping execution must carry downstream uncertainty: {result:?}");
+            } else {
+                assert_eq!(result.expect("a server-declared tool error is a returned result"), returned);
+            }
+            let observed = requests.lock().unwrap();
+            assert_eq!(observed.len(), 2);
+            assert_eq!(observed[1]["args"], json!({
+                "providerIdentifier":"mcp-server","name":"mcp_write","toolName":"write",
+                "args":{"value":"write once"},"toolCallId":"call-boundary","agentId":"bridge-agent",
+            }));
+            assert_eq!(bridge.relay.pending_count(), 0);
+            drop(observed);
+            drop(listener);
+            drop(bridge);
+        }
+
+        let events = super::GatewayEventHub::default();
+        let receiver = events.subscribe();
+        let relay = Arc::new(CoordinatorToolRelay::new(events));
+        relay.cancel_all("closed before execution");
+        let mut bridge = CoordinatorRoutedToolBridge {
+            relay,
+            transcript_runtime: Arc::clone(&fixture.runtime),
+            telemetry_logs: fixture.telemetry.logs.clone(),
+            agent_id: "review-agent".into(),
+            mcp_review: Some(Arc::new(|_, _, _| Ok(Some("Review rejected this request".into())))),
+        };
+        assert_eq!(bridge.call_tool(&tool, json!({}), "reviewed").unwrap(), json!("Review rejected this request"));
+        assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        bridge.mcp_review = None;
+        assert!(matches!(bridge.call_tool(&tool, json!({}), "preclosed"), Err(ProviderSessionError::Tool(_))));
+        assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        drop(bridge);
+        fixture.close();
+    }
+
 
     #[derive(Default)]
     struct TerminalRecordingSpan {

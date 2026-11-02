@@ -468,7 +468,11 @@ impl ProductionTurnRunShellAdapter {
             let progress = progress.into_inner();
             resume_from = accepted_resume.into_inner();
             let custody = runtime.effect_custody();
-            let result = if timed_out {
+            let result = if matches!(&result, Err(ProviderSessionError::ToolOutcomeUnknown(_))) {
+                // Preserve explicit execution uncertainty even when the
+                // watchdog fired while the downstream waiter was returning.
+                result
+            } else if timed_out {
                 Err(ProviderSessionError::Transport(
                     "Runner first-output watchdog timed out before provider output.".into(),
                 ))
@@ -703,6 +707,9 @@ fn retry_error_type(
     error: &ProviderSessionError,
     watchdog_expired: bool,
 ) -> &'static str {
+    if matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)) {
+        return "ToolOutcomeUnknownError";
+    }
     if watchdog_expired {
         return "FirstTokenStallError";
     }
@@ -712,6 +719,7 @@ fn retry_error_type(
         ProviderSessionError::Configuration(_) => "ConfigurationError",
         ProviderSessionError::Protocol(_) => "ProtocolError",
         ProviderSessionError::Tool(_) => "ToolError",
+        ProviderSessionError::ToolOutcomeUnknown(_) => "ToolOutcomeUnknownError",
         ProviderSessionError::ProviderRefusal(_) => "ProviderRefusalError",
         ProviderSessionError::Transport(_) => "TransportError",
     }
@@ -734,6 +742,15 @@ fn classify_provider_failure(
     error: &ProviderSessionError,
     watchdog_expired: bool,
 ) -> TransientStreamError {
+    // A simultaneous watchdog expiry cannot turn an explicit unknown tool
+    // outcome into permission to issue a transient provider retry.
+    if matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)) {
+        return TransientStreamError {
+            kind: StreamFailureKind::Protocol,
+            message: error.to_string(),
+            retry_after_ms: None,
+        };
+    }
     if watchdog_expired {
         return TransientStreamError {
             kind: StreamFailureKind::Timeout,
@@ -761,6 +778,7 @@ fn classify_provider_failure(
         },
         ProviderSessionError::Protocol(_)
         | ProviderSessionError::Tool(_)
+        | ProviderSessionError::ToolOutcomeUnknown(_)
         | ProviderSessionError::ProviderRefusal(_) => {
             TransientStreamError {
                 kind: StreamFailureKind::Protocol,
@@ -802,6 +820,58 @@ mod tests {
 
     struct PostToolStallExecutor {
         attempts: u32,
+    }
+
+    struct UnknownOutcomeAfterWatchdogExecutor {
+        attempts: u32,
+    }
+
+    impl RoutedProviderAttemptExecutor for UnknownOutcomeAfterWatchdogExecutor {
+        fn run_attempt(
+            &mut self,
+            _attempt: &RoutedProviderAttemptControl,
+            _resume_from: Option<&RoutedProviderCheckpoint>,
+            _on_text_delta: &mut dyn FnMut(&str, &str),
+            _on_checkpoint: &mut dyn FnMut(&RoutedProviderCheckpoint) -> Result<(), ProviderSessionError>,
+            should_cancel: &dyn Fn() -> bool,
+        ) -> Result<String, ProviderSessionError> {
+            self.attempts += 1;
+            let started = Instant::now();
+            while !should_cancel() && started.elapsed() < Duration::from_secs(5) {
+                thread::sleep(Duration::from_millis(1));
+            }
+            assert!(should_cancel(), "actual watchdog must expire before the unknown result");
+            Err(ProviderSessionError::ToolOutcomeUnknown("first-output watchdog; downstream still runs".into()))
+        }
+    }
+
+    #[test]
+    fn explicit_unknown_outcome_remains_nonretryable_after_actual_watchdog_expiry() {
+        let adapter = ProductionTurnRunShellAdapter {
+            policy: StreamAttemptPolicy {
+                first_output_timeout: Duration::from_millis(20),
+                max_attempts: 2,
+                initial_backoff: Duration::from_millis(1),
+                max_backoff: Duration::from_millis(1),
+                max_retry_after: Duration::from_millis(1),
+            },
+            watchdog_poll_interval: Duration::from_millis(1),
+        };
+        let mut executor = UnknownOutcomeAfterWatchdogExecutor { attempts: 0 };
+        let mut retries = Vec::new();
+        let result = adapter.run_with_retry(
+            &RoutedProviderCancellation::default(),
+            &MemoryCheckpointStore,
+            &mut executor,
+            &mut |_, _| {},
+            &mut |event| retries.push(event.clone()),
+        );
+        let error = result.expect_err("unknown outcome cannot become a watchdog retry");
+        assert!(matches!(&error, ProviderSessionError::ToolOutcomeUnknown(_)));
+        assert_eq!(executor.attempts, 1);
+        assert!(retries.is_empty());
+        assert_eq!(retry_error_type(&error, true), "ToolOutcomeUnknownError");
+        assert_eq!(crate::extensions::transcript::turn_runtime::classify_agent_error(&error).code, "SAND-E0407");
     }
 
     impl RoutedProviderAttemptExecutor for PostToolStallExecutor {

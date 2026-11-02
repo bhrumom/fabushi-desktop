@@ -23,6 +23,7 @@ use crate::extensions::inference::provider_session::{
     run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps,
 };
 use crate::host_request_context::HostRequestContext;
+use crate::runner::coordinator_tool_relay::CoordinatorToolExecutionError;
 use crate::runner::production_turn_run_shell_adapter::{
     ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryReport,
     RoutedProviderAttemptControl, RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
@@ -220,6 +221,17 @@ impl RoutedProviderTaskRegistry {
 
     pub fn active_count(&self) -> usize {
         self.active.lock().map(|active| active.len()).unwrap_or_default()
+    }
+}
+
+/// Preserve the relay owner's execution disposition across the provider edge.
+pub fn coordinator_tool_execution_error(error: CoordinatorToolExecutionError) -> ProviderSessionError {
+    let unknown = error.outcome_unknown();
+    let message = error.into_error().to_string();
+    if unknown {
+        ProviderSessionError::ToolOutcomeUnknown(message)
+    } else {
+        ProviderSessionError::Tool(message)
     }
 }
 

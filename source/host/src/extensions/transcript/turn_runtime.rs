@@ -211,6 +211,9 @@ pub fn shape_closing_send_nudge_turn_input(
 }
 
 pub fn classify_agent_error(error: &ProviderSessionError) -> SandErrorValue {
+    if matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)) {
+        return SandErrorValue::new("SAND-E0407");
+    }
     let message = error.to_string();
     let lower = message.to_ascii_lowercase();
 
@@ -254,11 +257,13 @@ pub fn classify_agent_error(error: &ProviderSessionError) -> SandErrorValue {
             message,
             retry_after_ms: None,
         },
-        ProviderSessionError::Tool(_) => TransientStreamError {
-            kind: StreamFailureKind::Unknown,
-            message,
-            retry_after_ms: None,
-        },
+        ProviderSessionError::Tool(_) | ProviderSessionError::ToolOutcomeUnknown(_) => {
+            TransientStreamError {
+                kind: StreamFailureKind::Unknown,
+                message,
+                retry_after_ms: None,
+            }
+        }
         ProviderSessionError::ProviderRefusal(_) => TransientStreamError {
             kind: StreamFailureKind::Protocol,
             message,

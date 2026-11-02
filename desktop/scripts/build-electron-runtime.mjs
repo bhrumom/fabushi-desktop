@@ -94,6 +94,7 @@ if (process.argv.includes("--plugin-skills-contracts")) {
   for (const [entry, filename] of [
     ["source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts", "host-plugin-skills-loader.contract.test.cjs"],
     ["source/packages/cursor-plugins/loader.contract.test.ts", "loader.contract.test.cjs"],
+    ["source/electron-main/coordinator/coordinator-control-server.contract.test.ts", "coordinator-control-server.contract.test.cjs"],
   ]) {
     await build({
       ...common,
