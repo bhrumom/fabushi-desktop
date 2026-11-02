@@ -37,32 +37,11 @@ fn dispatch(
 
 
 fn spawn_remote_history_server() -> (String, thread::JoinHandle<Vec<String>>) {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("bind messaging fixture");
-    let address = listener.local_addr().expect("fixture address");
-    let handle = thread::spawn(move || {
-        let mut requests = Vec::new();
-        for page_index in 0..3 {
-            let (mut stream, _) = listener.accept().expect("accept messaging request");
-            let mut request = Vec::new();
-            let mut chunk = [0_u8; 4096];
-            loop {
-                let read = stream.read(&mut chunk).expect("read messaging request");
-                if read == 0 {
-                    break;
-                }
-                request.extend_from_slice(&chunk[..read]);
-                if request.windows(4).any(|window| window == b"\r\n\r\n") {
-                    break;
-                }
-            }
-            requests.push(String::from_utf8_lossy(&request).into_owned());
-
-            let (low, high) = match page_index {
-                0 => (1_u64, 200_u64),
-                1 => (201_u64, 400_u64),
-                2 => (401_u64, 401_u64),
-                _ => unreachable!(),
-            };
+    // Three ascending-ID coverage pages, then the existing latest snapshot.
+    // Use the bounded fixture so a missing or unexpected request fails causally.
+    let replies = [(1_u64, 200_u64), (201, 400), (401, 401), (202, 401)]
+        .into_iter()
+        .map(|(low, high)| {
             let messages = (low..=high)
                 .map(|id| {
                     let minute = id / 60;
@@ -81,23 +60,13 @@ fn spawn_remote_history_server() -> (String, thread::JoinHandle<Vec<String>>) {
                     })
                 })
                 .collect::<Vec<_>>();
-            let body = json!({
+            HumanMessageFixtureReply::Json(200, json!({
                 "success": true,
                 "data": { "messages": messages }
-            })
-            .to_string();
-            write!(
-                stream,
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                body.len(),
-                body
-            )
-            .expect("write messaging response");
-            stream.flush().expect("flush messaging response");
-        }
-        requests
-    });
-    (format!("http://{address}"), handle)
+            }))
+        })
+        .collect();
+    spawn_human_message_fixture(replies)
 }
 
 #[test]
@@ -1620,11 +1589,12 @@ fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
     );
 
     let requests = server.join().expect("messaging fixture");
-    assert_eq!(requests.len(), 3);
-    assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
+    assert_eq!(requests.len(), 4);
+    assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 "));
     assert!(requests[0].contains("&afterId=0"));
     assert!(requests[1].contains("&afterId=200"));
     assert!(requests[2].contains("&afterId=400"));
+    assert!(requests[3].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
 
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
@@ -2244,6 +2214,7 @@ fn shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_a
     );
     remote["reactions"] = summary.clone();
     let (base_url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[remote.clone()]}})),
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[remote]}})),
     ]);
     let runtime = human_message_fixture_runtime(&root, &base_url);
@@ -2273,8 +2244,9 @@ fn shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_a
     restarted.shutdown();
     drop(restarted);
     let requests = server.join().expect("bounded Human fixture");
-    assert_eq!(requests.len(), 1, "reopen must not perform sync or resource requests");
-    assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
+    assert_eq!(requests.len(), 2, "only coverage and refresh; pure reopen must not request HTTP");
+    assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 "));
+    assert!(requests[1].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
     let _ = fs::remove_dir_all(root);
 }
 

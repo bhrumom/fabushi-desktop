@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–6
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–7
 
 ## Context and goal
 
@@ -158,4 +158,23 @@ production refresh semantics to satisfy the stale oracle. Before dependent
 history/reaction implementation, both required jobs must pass on the new
 exact H with Human 14 and Agent nonce 4 actually executed, plus the existing
 shipping/protocol/TCP gates. Preserve the failed run as evidence.
+
+### Round 7 prerequisite recovery — history refresh fixture protocol
+
+At exact H `63da06b025fdf57088b432602fa35e3761d62c9b`, run
+`41409695104`, Human job `125159664070` executed 16 tests: 14 passed,
+2 failed, 0 ignored. Both failures are `TEST_FLAW`: the valid-reaction
+fixture and 401-message history fixture close before the production
+post-coverage latest-snapshot GET. Their old request-prefix assertions
+also omit the required `afterId=0` query. The full job log retains the
+HTTP request failure; this is not evidence of a service outage or a
+production admission defect. Agent nonce execution was skipped.
+
+NMR-AC-14: script the real ascending-ID coverage requests and the final
+latest-snapshot request explicitly, assert their different query shapes,
+and preserve every Unicode, content, stable-ID, order and pure-reopen
+assertion. Keep all 16 Human cases and require both message jobs to pass
+at the repaired exact H before dependent history/reaction implementation.
+Do not remove the refresh, ignore HTTP failures or adopt diagnostic
+lockfile upgrades to make the fixture pass.
 
