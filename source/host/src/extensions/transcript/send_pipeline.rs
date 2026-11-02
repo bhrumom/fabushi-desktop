@@ -125,13 +125,20 @@ impl SendPipelineState {
             });
         };
 
-        if self.in_flight.contains_key(&nonce) {
+        let digest = send_input_digest(input);
+        if let Some(in_flight) = self.in_flight.get(&nonce) {
+            // Only a byte-for-byte equivalent admission may share an in-flight
+            // nonce. Different Agent/session or message content must fail
+            // closed instead of inheriting the first send's settlement.
+            if in_flight.digest != digest {
+                return Err(PromptAcceptanceError::DigestMismatch {
+                    client_nonce: nonce,
+                });
+            }
             return Ok(SendBegin::Coalesced {
                 client_nonce: nonce,
             });
         }
-
-        let digest = send_input_digest(input);
         match ledger.admit_send(HOST_ACCOUNT_SLOT, &nonce, &digest)? {
             SendAdmission::Duplicate(record) => Ok(SendBegin::DuplicateNoop { record }),
             SendAdmission::Dispatch => {
