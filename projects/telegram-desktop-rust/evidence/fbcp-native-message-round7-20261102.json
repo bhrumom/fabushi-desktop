@@ -227,6 +227,11 @@
     {
       "scope": "Later inherited682/d261 compatibility",
       "result": "Independent read-only review found no blocker in preserved Plugins frame changes, strict legacy-forward recovery and the combined source/context-loss and real legacy nonce oracle. R7 code/cases unchanged; no local validation or acceptance."
+    },
+    {
+      "scope": "Actions-discovered restart fixture lifecycle",
+      "finding": "The previous source review did not detect the use-after-drop test fixture. Compiler E0382 is the authority for the failed execution.",
+      "decision": "Keep all assertions; shutdown restarted, then drop its owner/runtime before pure reopen. Read-only focused re-review found this exact repair correct; actual106 Human62 passed."
     }
   ],
   "actual_route": "Existing Human reaction control / transcript -> Coordinator -> Session gateway -> ProductionSessionWorkers -> issuer/account-bound Native client -> existing SandAgentDb and durable intent -> transcript events -> same cached/older-page projection and single Transcript.",
@@ -238,8 +243,8 @@
     "behavior_batch": "Actual target admission, stable page/restart negatives and renderer completion/viewport fixes plus tests; no plan-only product claim.",
     "preservation": "No user-data deletion/migration; existing Agent, forward, credential, CLI/package and shipping tests preserved. Full Bot acceptance remains open.",
     "shared_contracts": "Root integration retains gateway/spec/workflow/unique ledger; isolated tests/UI diffs reviewed. Existing NMR49/50/51 meanings preserved.",
-    "actions_only": "No local or htch-runtime build/test/lint/typecheck/schema/acceptance execution. New exact-H Actions required, no rerun-for-green.",
-    "causal_recovery": "Initial failures classified TEST_FLAW; independent review implementation gaps fixed. Later exact-H failures must be classified separately.",
+    "actions_only": "All execution above is exact-H GitHub Actions; no local or htch-runtime executable validation. The shipping job remains queued, and no final acceptance is promoted.",
+    "causal_recovery": "Initial63da fixtures repaired and passed30b4. Newafb failure was compile-only TEST_FLAW with zero Human execution; concurrent106 one-line lifecycle repair preserved, Human62 actually passed. Do not rerun failingafb or count compilation as tests.",
     "single_accounting": "Append only to existing FBCP-NMR-001; all other rows/source_reviews/source and acceptance fields retained. Current SOURCE01 validator changes preserved.",
     "final_acceptance": "Incomplete: source/legal/product/realservice/packages/platform/visual/a11y/temporal/security/performance/soak/upgrade/rollback/Bot and independent ACCEPT remain open.",
     "delivery": "Use temporary exact-object transport only after interrupted large connector write; final root publication requires force=false, expected_sha CAS, remote full SHA/content readback, and exact-H gates."
@@ -276,5 +281,215 @@
       "product_validation": false,
       "disposition": "Real owner objects transferred and receipt read back. Preserve later78c artifact-only package policy in workflow/spec before root CAS; no gate or full service acceptance removed."
     }
-  ]
+  ],
+  "publication": {
+    "commit": "afb34b49c5964524a887088f1095070b75cfdf8b",
+    "parent": "78c375cef3f27e4a355cb8c206681c2b7edc9c66",
+    "tree": "dfcbd418dc7875f55c4d0453501d28c22351eda3",
+    "ref_update": {
+      "force": false,
+      "expected_sha": "78c375cef3f27e4a355cb8c206681c2b7edc9c66"
+    },
+    "remote_full_commit_and_contents_verified": true,
+    "verified_changed_files": 15,
+    "removed_only_own_transport_paths": [
+      ".github/workflows/round7-reviewed-objects.yml",
+      ".github/round7-reviewed.patch",
+      ".github/round7-object-transfer.json"
+    ]
+  },
+  "execution_attempts": [
+    {
+      "head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+      "run": 41522324008,
+      "attempt": 1,
+      "human": {
+        "job": 125541192099,
+        "conclusion": "failure",
+        "executed": 0,
+        "authored": 62,
+        "classification": "TEST_FLAW",
+        "failure": "Rust E0382: session_gateway_contract.rs:6889 used runtime after drop(runtime) in shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling.",
+        "full_log_characters": 106403,
+        "full_log_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125541192099/logs",
+        "later_steps": "resource/sharebox/journal/Agent/credential/forward HTTP skipped; zero executed"
+      },
+      "ui": {
+        "job": 125541191705,
+        "conclusion": "success",
+        "passed": {
+          "transcript": 29,
+          "cursor_rpc": 17,
+          "forward_settlement": 5,
+          "chromium_forward": 16
+        },
+        "renderer_compile": "success",
+        "full_log_characters": 84153
+      },
+      "electron": {
+        "job": 125541192169,
+        "conclusion": "success",
+        "passed": {
+          "carrier": 10,
+          "auth": 8,
+          "fixture_copy": 3,
+          "update_source": 16,
+          "publisher": 28,
+          "metadata": 18,
+          "package_scope": 10,
+          "promotion": 7
+        },
+        "compile": "success",
+        "full_log_characters": 92478
+      },
+      "windows": {
+        "job": 125541192065,
+        "conclusion": "success",
+        "passed": 11,
+        "scope": "Native API with temporary inert fixtures; not production signing acceptance",
+        "full_log_characters": 35887
+      },
+      "shipping": {
+        "job": 125541192009,
+        "status_at_read": "queued",
+        "executed_evidence": false
+      },
+      "source": {
+        "run": 41522324060,
+        "contract_job": 125541191917,
+        "contract_conclusion": "success",
+        "node_passed": 157,
+        "python_passed": 37,
+        "candidate_job": 125541405509,
+        "candidate_conclusion": "success",
+        "candidate_status": "unaccepted-candidate-consistent",
+        "source_entries": 16381,
+        "root_entries": 6895,
+        "responsibility_rows": 184,
+        "source_reviews": 6,
+        "completed_reviews": 2,
+        "unknown": null,
+        "unread": null,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false,
+        "candidate_artifact": 13178725452,
+        "candidate_digest": "sha256:d6677209e541d8290b82a6c05d5cd2770cef0ab94e94bbf0d3f4eb8c32c8fb54"
+      }
+    },
+    {
+      "head": "106bb95ba97ef7722e9523285783824393039bc0",
+      "run": 41523018920,
+      "attempt": 1,
+      "repair": "Concurrent checkpoint commit changed only the incorrect shutdown receiver to restarted; remotely reread test blob 2e032c705fcec8256dd66476807dd1fd683625db. Identical local repair retained separately, not republished or attributed as a second implementation.",
+      "human": {
+        "job": 125543545349,
+        "conclusion": "success",
+        "executed": 62,
+        "passed": 62,
+        "failed": 0,
+        "ignored": 0,
+        "full_log_characters": 353174,
+        "additional_passed": {
+          "resource_bound": 3,
+          "sharebox": 1,
+          "forward_journal": 12,
+          "agent_nonce": 4,
+          "credential_settlement": 3,
+          "authenticated_forward_http": 1
+        }
+      },
+      "ui": {
+        "job": 125543545453,
+        "conclusion": "success",
+        "passed": {
+          "transcript": 29,
+          "cursor_rpc": 17,
+          "forward_settlement": 5,
+          "chromium_forward": 16
+        },
+        "renderer_compile": "success",
+        "full_log_characters": 84065
+      },
+      "electron": {
+        "job": 125543544935,
+        "conclusion": "success",
+        "passed": {
+          "carrier": 10,
+          "auth": 8,
+          "fixture_copy": 3,
+          "update_source": 16,
+          "publisher": 28,
+          "metadata": 18,
+          "package_scope": 10,
+          "promotion": 7
+        },
+        "compile": "success",
+        "full_log_characters": 92401
+      },
+      "windows": {
+        "job": 125543545542,
+        "conclusion": "success",
+        "passed": 11,
+        "full_log_characters": 35053
+      },
+      "shipping": {
+        "job": 125543545357,
+        "status_at_read": "queued",
+        "executed_evidence": false,
+        "runner_id": 0,
+        "runner_name": "",
+        "labels": [
+          "macos-15"
+        ],
+        "boundary": "GitHub job API confirms no assigned runner at this read; no compile or shipping test execution is claimed."
+      },
+      "artifacts": [
+        {
+          "id": 13178302134,
+          "name": "native-message-reconciliation-106bb95ba97ef7722e9523285783824393039bc0",
+          "digest": "sha256:02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6",
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178302134",
+          "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+        },
+        {
+          "id": 13178197604,
+          "name": "windows-update-publisher-106bb95ba97ef7722e9523285783824393039bc0",
+          "digest": "sha256:0250f74f9bfae47441b52b57ea3edb7f6af0ab7649ab317abc08a3c0d8d0435d",
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178197604",
+          "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+        },
+        {
+          "id": 13177893490,
+          "name": "native-message-electron-106bb95ba97ef7722e9523285783824393039bc0",
+          "digest": "sha256:a99d09534076db006a7994168d789ab95bf019fe505eaabca35eba9c0016ee00",
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177893490",
+          "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+        },
+        {
+          "id": 13177349232,
+          "name": "native-message-ui-106bb95ba97ef7722e9523285783824393039bc0",
+          "digest": "sha256:50f70023d81daebde007f7ee6aba9b0e6a6353b340c72ea08b88d6b9cd9757ef",
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177349232",
+          "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+        }
+      ],
+      "boundary": "Full terminal job logs read. Counts are real suite results, not grep expectations and not duplicate summary echoes. 32-full-page, short/empty32, stable cursor/restart, malformed identity, target admission and reaction-recovery cases all passed. macOS shipping is unexecuted at this observation; later H is not qualified by this predecessor."
+    }
+  ],
+  "consumer_follow_up": {
+    "status": "Confirmed gap now reserved by concurrent active NMR-HUMAN-RETRY-01; preserve that owner and do not duplicate implementation",
+    "source_base": "43dd738ca92965deb109681fdf5d521deae566e4",
+    "paths": [
+      "frontend/src/production/ProductionRenderer.tsx",
+      "frontend/src/production/model.ts"
+    ],
+    "gap": "Human Resend makes a fresh nonce, omits reply and recommits staged-only attachments. Durable pending+lastDispatchError becomes pending after reopen. A roster-refresh failure after confirmed send can incorrectly mark that same canonical row failed.",
+    "existing_owner": "Host same-nonce durable intent already supports retry with original text/reply/attachments and reuses persisted remoteDispatchAttachments after ambiguous message POST. Existing renderer queue, account/event fences and projection must consume that contract.",
+    "boundary": "No full partial-upload deduplication, real deployed service idempotency or isolated issuer identity acceptance is claimed. Preserve concurrent NMR26 full-renderer work and source-owned forwarding.",
+    "active_spec": "docs/specs/fbcp-human-message-retry.md",
+    "spec_commit": "1daaf0e248ee5cd75b3549e8df4fe960c0fe28e2",
+    "coordination": "Read the complete live retry spec, NMR-UI-01 and expanded NMR26b before claiming further work. Unpublished duplicate contract preparation was not installed; only this existing R7 execution receipt is updated."
+  }
 }
