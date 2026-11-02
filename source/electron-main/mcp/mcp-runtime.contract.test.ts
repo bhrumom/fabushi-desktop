@@ -4,12 +4,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { McpResult, McpSuccess } from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
+import {
+  McpResult,
+  McpSuccess,
+  McpTextContent,
+  McpToolResultContentItem,
+} from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
 import {
   fetchAccountMcpServers,
   type AccountMcpClient,
   type AvailableMcpServer,
 } from "../../shared/node/cursor-backend/account-mcp.js";
+import type { createDashboardSandBackendMcpExec } from "../../shared/node/cursor-backend/backend-mcp-exec.js";
 import { accountCacheScope } from "../../shared/node/cursor-token.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
@@ -108,6 +114,8 @@ test("shipping MCP runtime preserves connector-auth reports through the dedicate
 
 type AccountServerResponse = Awaited<ReturnType<AccountMcpClient["getAvailableMcpServers"]>>;
 type Discovery = ReturnType<typeof createMcpToolsDiscovery>;
+type BackendToolRequest = Parameters<ReturnType<typeof createDashboardSandBackendMcpExec>["executeTool"]>[0];
+type RoutedToolRequest = Parameters<DesktopMcpManagerFacade["executeRoutedTool"]>[0];
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -934,6 +942,14 @@ const accountResponse = (account: "a" | "b"): AccountServerResponse => ({
 function createAccountRetirementFixture(
   root: string,
   readServers: (token: string) => Promise<AccountServerResponse>,
+  ports: {
+    readConfig?: AccountMcpClient["getMcpConfig"];
+    executeTool?: (request: BackendToolRequest) => Promise<McpResult>;
+    boxMcpExec?: {
+      loadServers(configJson: string): Promise<unknown>;
+      executeTool(request: RoutedToolRequest): Promise<McpResult>;
+    };
+  } = {},
 ) {
   const store = new SandSettingsStore(join(root, "settings.json"));
   const rpcTokens: string[] = [];
@@ -962,8 +978,9 @@ function createAccountRetirementFixture(
         })),
       }));
     },
-    async executeTool(request: { serverIdentifier: string; toolName: string }) {
+    async executeTool(request: BackendToolRequest) {
       executions.push({ serverIdentifier: request.serverIdentifier, toolName: request.toolName });
+      if (ports.executeTool != null) return ports.executeTool(request);
       return new McpResult({
         result: { case: "success", value: new McpSuccess({ content: [] }) },
       });
@@ -990,7 +1007,7 @@ function createAccountRetirementFixture(
               rpcTokens.push(token);
               return readServers(token);
             },
-            getMcpConfig: unexpectedAccountRpc,
+            getMcpConfig: ports.readConfig ?? unexpectedAccountRpc,
             getEffectiveUserPlugins: unexpectedAccountRpc,
             setMcpConfig: unexpectedAccountRpc,
             installUserPlugin: unexpectedAccountRpc,
@@ -1004,6 +1021,11 @@ function createAccountRetirementFixture(
         lastAccountDisplayConfig: () => manager.lastAccountDisplayConfigView(),
         settingsStore: () => manager.settingsStoreView(),
         backendMcpExec: backend,
+      }, {
+        boxMcpExec: ports.boxMcpExec == null ? undefined : {
+          ...ports.boxMcpExec,
+          listTools: backend.listTools,
+        },
       });
       manager.setBoxRuntime(discovery);
       discoveries.set(manager, discovery);
@@ -1247,3 +1269,270 @@ test("MCP account retirement during the scope callback cannot restore account pr
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("MD-01/03/05 a cold current owner rechecks retained tools against persisted same-account disable", { timeout: 10_000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), "fabushi-mcp-dispatch-cold-"));
+  const started = deferred<void>();
+  const held = deferred<AccountServerResponse>();
+  const requests: BackendToolRequest[] = [];
+  const payload = new McpToolResultContentItem({
+    content: { case: "text", value: new McpTextContent({ text: "connector payload" }) },
+  });
+  const success = new McpResult({
+    result: { case: "success", value: new McpSuccess({ content: [payload] }) },
+  });
+  let holdAccount = false;
+  const fixture = createAccountRetirementFixture(root, async (token) => {
+    assert.equal(token, ACCOUNT_B);
+    if (holdAccount) {
+      started.resolve();
+      return held.promise;
+    }
+    return accountResponse("b");
+  }, { executeTool: async (request) => { requests.push(request); return success; } });
+  fixture.selectAccount(ACCOUNT_B);
+  const pending: Promise<unknown>[] = [];
+  try {
+    const previous = await fixture.runtime.ensureMcpManager();
+    const advertised = await fixture.discovery(previous).getTools();
+    const disabledTool = advertised.find((tool) => tool.toolName === DISABLED_TOOL);
+    const enabledTool = advertised.find((tool) => tool.toolName === ENABLED_TOOL);
+    assert.ok(disabledTool);
+    assert.ok(enabledTool);
+    await previous.toggleMcpToolDisabled({ serverId: "71", toolName: DISABLED_TOOL });
+    const committed = readFileSync(fixture.store.settingsPath, "utf8");
+    const reopened = new SandSettingsStore(fixture.store.settingsPath);
+    assert.equal(reopened.getMcpCustomInstructionsAccountScope(), accountCacheScope(ACCOUNT_B));
+    assert.deepEqual(reopened.getMcpDisabledToolsByServerId(), { "71": [DISABLED_TOOL] });
+
+    await fixture.runtime.resetMcpManager();
+    holdAccount = true;
+    const current = await fixture.runtime.ensureMcpManager();
+    await started.promise;
+    assert.notEqual(current, previous);
+    assert.equal(current.lastAccountDisplayConfigView(), null);
+    assert.equal(current.definitionSourceView().peekHttpServerNames(), undefined);
+    const discovery = fixture.discovery(current);
+    const args = { nested: { enabled: true }, ids: [1, 2] };
+    const denied = discovery.executeTool(undefined, {
+      ...disabledTool, args, toolCallId: "cold-disabled",
+    }, { agentId: "cold-agent" });
+    const allowed = discovery.executeTool(undefined, {
+      ...enabledTool, args, toolCallId: "cold-enabled",
+    }, { agentId: "cold-agent" });
+    pending.push(denied, allowed);
+    assert.deepEqual(requests, [], "identity preparation is still held");
+    held.resolve(accountResponse("b"));
+    const [denial, result] = await Promise.all([denied, allowed]);
+    assert.equal(denial.result.case, "error");
+    assert.equal(denial.result.value.error, `Tool "${DISABLED_TOOL}" is disabled for "Retirement b".`);
+    assert.equal(result, success);
+    assert.deepEqual(requests, [{
+      serverIdentifier: enabledTool.providerIdentifier, toolName: enabledTool.name,
+      args, toolCallId: "cold-enabled", agentId: "cold-agent",
+    }]);
+    assert.equal(readFileSync(fixture.store.settingsPath, "utf8"), committed);
+    assert.equal(reopened.getMcpCustomInstructionsAccountScope(), accountCacheScope(ACCOUNT_B));
+    assert.deepEqual(reopened.getMcpDisabledToolsByServerId(), { "71": [DISABLED_TOOL] });
+
+    // A warm denial uses toolName, while the backend still receives name.
+    const warmDenial = await discovery.executeTool(undefined, {
+      ...disabledTool, name: ENABLED_TOOL, args, toolCallId: "warm-disabled-alias",
+    }, { agentId: "warm-agent" });
+    assert.deepEqual(warmDenial, denial);
+    assert.equal(requests.length, 1);
+    fixture.store.setMcpCustomInstructionByServerId({
+      serverId: "71", displayName: "Retirement b", value: "Preserve this configured note.", mirrorLegacyName: false,
+    });
+    const warmResult = await discovery.executeTool(undefined, {
+      ...enabledTool, name: "wire-safe-alias", args, toolCallId: "warm-enabled-alias",
+    }, { agentId: "warm-agent" });
+    assert.deepEqual(requests[1], {
+      serverIdentifier: enabledTool.providerIdentifier, toolName: "wire-safe-alias",
+      args, toolCallId: "warm-enabled-alias", agentId: "warm-agent",
+    });
+    assert.equal(requests.length, 2);
+    assert.equal(warmResult.result.case, "success");
+    const content = (warmResult.result.value as McpSuccess).content;
+    assert.equal(content.length, 2);
+    assert.equal(content[0]!.content.case, "text");
+    assert.equal((content[0]!.content.value as McpTextContent).text,
+      'Custom instructions for the "Retirement b" connector (always follow them when using this tool):\nPreserve this configured note.');
+    assert.deepEqual(content[1], payload);
+  } finally {
+    held.resolve(accountResponse("b"));
+    await Promise.allSettled(pending);
+    await fixture.runtime.dispose();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+const STDIO_ACCOUNT_CONFIG = '{"mcpServers":{"retirement-b":{"command":"fixture-command","args":["--stdio"]}}}';
+const stdioAccountResponse = (): AccountServerResponse => ({
+  servers: [{ ...accountServer("b"), type: "stdio", command: "fixture-command", args: ["--stdio"] }],
+});
+const readStdioAccountConfig: AccountMcpClient["getMcpConfig"] = async (request) => {
+  assert.deepEqual(request, { teamScope: false, redactSecrets: false });
+  return { configJson: STDIO_ACCOUNT_CONFIG, serverMetadataByName: { "retirement-b": { serverId: 71n } } };
+};
+
+for (const outcome of ["success", "failure"] as const) {
+  test("MD-02/03/06 Box preparation " + outcome + " preserves a disable committed before execution", { timeout: 10_000 }, async () => {
+    const root = mkdtempSync(join(tmpdir(), "fabushi-mcp-dispatch-box-"));
+    const started = deferred<void>();
+    const held = deferred<void>();
+    const configs: string[] = [];
+    const requests: RoutedToolRequest[] = [];
+    const failure = new Error("Controlled Box configuration failure");
+    const success = new McpResult({ result: { case: "success", value: new McpSuccess({ content: [] }) } });
+    let holdPush = true;
+    const fixture = createAccountRetirementFixture(root, async () => stdioAccountResponse(), {
+      readConfig: readStdioAccountConfig,
+      boxMcpExec: {
+        async loadServers(config) {
+          configs.push(config);
+          if (holdPush) { started.resolve(); await held.promise; }
+        },
+        async executeTool(request) { requests.push(request); return success; },
+      },
+    });
+    fixture.selectAccount(ACCOUNT_B);
+    let pending: Promise<unknown> | undefined;
+    try {
+      const manager = await fixture.runtime.ensureMcpManager();
+      assert.deepEqual(await manager.definitionSourceView().getStdioServerConfigs(), {
+        "retirement-b": { command: "fixture-command", args: ["--stdio"] },
+      });
+      const discovery = fixture.discovery(manager);
+      const request = {
+        providerIdentifier: "retirement-b", name: "wire-dangerous-alias", toolName: DISABLED_TOOL,
+        args: { target: "held-preparation" }, toolCallId: "box-held-call",
+      };
+      const execution = discovery.executeTool(undefined, request, { agentId: "box-agent" });
+      pending = execution;
+      await started.promise;
+      assert.deepEqual(configs, [STDIO_ACCOUNT_CONFIG]);
+      assert.deepEqual(requests, []);
+      fixture.store.setMcpDisabledToolsByServerId({ "71": [DISABLED_TOOL] });
+      const committed = readFileSync(fixture.store.settingsPath, "utf8");
+      if (outcome === "success") held.resolve();
+      else held.reject(failure);
+      const result = await execution;
+      assert.equal(result.result.case, "error");
+      assert.equal(result.result.value.error, outcome === "success"
+        ? `Tool "${DISABLED_TOOL}" is disabled for "Retirement b".`
+        : "Could not load MCP servers onto Fabushi's computer: Controlled Box configuration failure");
+      assert.deepEqual(requests, [], "no Box execution may follow the held preparation");
+      assert.deepEqual(fixture.executions, [], "stdio must not fall through to HTTP execution");
+      assert.equal(readFileSync(fixture.store.settingsPath, "utf8"), committed);
+
+      holdPush = false;
+      const enabled = { ...request, name: "wire-safe-alias", toolName: ENABLED_TOOL, toolCallId: "box-enabled-call" };
+      assert.equal(await discovery.executeTool(undefined, enabled, { agentId: "box-agent" }), success);
+      assert.equal(requests.length, 1);
+      assert.equal(requests[0], enabled, "Box receives the original request unchanged");
+      assert.equal(configs.length, outcome === "success" ? 1 : 2);
+      assert.equal(readFileSync(fixture.store.settingsPath, "utf8"), committed);
+    } finally {
+      held.resolve();
+      await Promise.allSettled(pending == null ? [] : [pending]);
+      await fixture.runtime.dispose();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
+
+for (const preparation of ["missing", "unavailable"] as const) {
+  test("MD-03/06 cold " + preparation + " identity retains unavailable outcome and permissions", { timeout: 10_000 }, async () => {
+    const root = mkdtempSync(join(tmpdir(), "fabushi-mcp-dispatch-unavailable-"));
+    const started = deferred<void>();
+    const held = deferred<AccountServerResponse>();
+    const fixture = createAccountRetirementFixture(root, async () => {
+      started.resolve();
+      return held.promise;
+    });
+    fixture.selectAccount(ACCOUNT_B);
+    fixture.store.scopeToAccount(accountCacheScope(ACCOUNT_B));
+    fixture.store.setMcpDisabledToolsByServerId({ "71": [DISABLED_TOOL] });
+    const committed = readFileSync(fixture.store.settingsPath, "utf8");
+    let pending: Promise<unknown> | undefined;
+    try {
+      const manager = await fixture.runtime.ensureMcpManager();
+      await started.promise;
+      assert.equal(manager.lastAccountDisplayConfigView(), null);
+      const execution = executeFixtureTool(fixture.discovery(manager), DISABLED_TOOL);
+      pending = execution;
+      if (preparation === "missing") held.resolve({ servers: [] });
+      else held.reject(new Error("Controlled account listing failure"));
+      const result = await execution;
+      assert.equal(result.result.case, "error");
+      assert.match(result.result.value.error, /MCP server "retirement-b" is not available here/);
+      assert.deepEqual(fixture.executions, []);
+      assert.equal(readFileSync(fixture.store.settingsPath, "utf8"), committed);
+      assert.equal(fixture.store.getMcpCustomInstructionsAccountScope(), accountCacheScope(ACCOUNT_B));
+      assert.deepEqual(fixture.store.getMcpDisabledToolsByServerId(), { "71": [DISABLED_TOOL] });
+    } finally {
+      held.resolve({ servers: [] });
+      await Promise.allSettled(pending == null ? [] : [pending]);
+      await fixture.runtime.dispose();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
+
+for (const transport of ["http", "stdio"] as const) {
+  for (const retirement of ["disable", "reset"] as const) {
+    for (const outcome of ["success", "rejection"] as const) {
+      test("MD-04/06 admitted " + transport + " keeps late " + outcome + " after " + retirement, { timeout: 10_000 }, async () => {
+        const root = mkdtempSync(join(tmpdir(), "fabushi-mcp-dispatch-entered-"));
+        const entered = deferred<void>();
+        const held = deferred<McpResult>();
+        const requests: unknown[] = [];
+        const failure = new Error("Controlled entered execution failure");
+        const success = new McpResult({ result: { case: "success", value: new McpSuccess({ content: [] }) } });
+        const execute = (request: unknown) => {
+          requests.push(request);
+          entered.resolve();
+          return held.promise;
+        };
+        const fixture = createAccountRetirementFixture(root,
+          async () => transport === "http" ? accountResponse("b") : stdioAccountResponse(), {
+            executeTool: execute,
+            ...(transport === "stdio" ? {
+              readConfig: readStdioAccountConfig,
+              boxMcpExec: { loadServers: async () => {}, executeTool: execute },
+            } : {}),
+          });
+        fixture.selectAccount(ACCOUNT_B);
+        let completion: Promise<unknown> | undefined;
+        try {
+          const manager = await fixture.runtime.ensureMcpManager();
+          const discovery = fixture.discovery(manager);
+          const descriptor = (await discovery.getTools()).find((tool) => tool.toolName === DISABLED_TOOL);
+          assert.ok(descriptor);
+          const execution = discovery.executeTool(undefined, {
+            ...descriptor, args: { target: "already-entered" }, toolCallId: "entered-call",
+          }, { agentId: "entered-agent" });
+          completion = outcome === "rejection" ? assert.rejects(execution, (error) => error === failure) : execution;
+          await entered.promise;
+          assert.equal(requests.length, 1);
+          fixture.store.setMcpDisabledToolsByServerId({ "71": [DISABLED_TOOL] });
+          const committed = readFileSync(fixture.store.settingsPath, "utf8");
+          if (retirement === "reset") await fixture.runtime.resetMcpManager();
+          if (outcome === "success") held.resolve(success);
+          else held.reject(failure);
+          const result = await completion;
+          if (outcome === "success") assert.equal(result, success);
+          assert.equal(requests.length, 1, "disable/retirement cannot replay an entered call");
+          assert.equal(fixture.executions.length, transport === "http" ? 1 : 0);
+          assert.equal(readFileSync(fixture.store.settingsPath, "utf8"), committed);
+        } finally {
+          held.resolve(success);
+          await Promise.allSettled(completion == null ? [] : [completion]);
+          await fixture.runtime.dispose();
+          rmSync(root, { recursive: true, force: true });
+        }
+      });
+    }
+  }
+}

@@ -398,11 +398,31 @@ export function createMcpToolsDiscovery(
     }
   }
 
+  function disabledToolResult(args: any): McpResultLike | undefined {
+    const displayServer = displayRowForIdentifier(args.providerIdentifier);
+    if (
+      displayServer != null &&
+      (core
+        .settingsStore()
+        .getMcpDisabledToolsByServerId()
+        [displayServer.id]?.includes(args.toolName) ??
+        false)
+    ) {
+      return resultFactory.error(
+        `Tool "${args.toolName}" is disabled for "${displayServer.name ?? args.providerIdentifier}".`,
+      );
+    }
+    return undefined;
+  }
+
   async function executeToolRaw(
     args: any,
     auditIdentity: any,
   ): Promise<McpResultLike> {
     if (await isHttpProvider(args.providerIdentifier)) {
+      // Provider resolution can publish the cold manager's account identity.
+      const disabled = disabledToolResult(args);
+      if (disabled != null) return disabled;
       const result = await core.backendMcpExec.executeTool({
         serverIdentifier: args.providerIdentifier,
         toolName: args.name,
@@ -425,6 +445,9 @@ export function createMcpToolsDiscovery(
           `Could not load MCP servers onto Fabushi's computer: ${errorMessage(error)}`,
         );
       }
+      // Re-read after the configuration push, immediately before dispatch.
+      const disabled = disabledToolResult(args);
+      if (disabled != null) return disabled;
       return boxMcpExec.executeTool(args);
     }
     return resultFactory.error(
@@ -486,18 +509,8 @@ export function createMcpToolsDiscovery(
     ): Promise<McpResultLike> {
       const displayServer = displayRowForIdentifier(args.providerIdentifier);
       const displayName = displayServer?.name ?? args.providerIdentifier;
-      if (
-        displayServer != null &&
-        (core
-          .settingsStore()
-          .getMcpDisabledToolsByServerId()
-          [displayServer.id]?.includes(args.toolName) ??
-          false)
-      ) {
-        return resultFactory.error(
-          `Tool "${args.toolName}" is disabled for "${displayName}".`,
-        );
-      }
+      const disabled = disabledToolResult(args);
+      if (disabled != null) return disabled;
       const raw = await executeToolRaw(args, auditIdentity);
       return applyCustomInstructionsToMcpResult(
         raw,

@@ -189,3 +189,72 @@ mutations, official OAuth callbacks and restart reconciliation retain their
 separate existing limits. No schema, dependency, wire or storage change is
 needed; rollback restores late bridge dispatch without rewriting user data.
 Reuse only the fixed-U closing/lifetime evidence and read bounds above.
+
+## Resolved MCP dispatch bridge — `MCP-DISPATCH-READY-v1`
+
+Investigated H: `48a9132ed496bd755919cb79555705b7b18f447f`; implementation
+base `485c388b082f71d9e6fb87535e87240551d19dde` changes only the independent
+Session guard oracle. Fixed U remains unchanged. Classification is a
+source-demonstrated implementation defect; no executable failure is claimed.
+
+The real Rust Runner/Host routed tool bridge crosses the existing Coordinator
+relay and Electron production binding into the current desktop MCP facade.
+For legacy account connectors, `createMcpToolsDiscovery.executeTool` reads a
+display row before provider resolution. A cold current manager has no row yet,
+so it skips the existing persisted disabled-tool predicate. Provider/account
+resolution can then publish the row before the execution RPC is called, without
+another check. The tool can have been disabled before invocation; this defect
+does not depend on retroactively canceling admitted work.
+
+The existing SAND `settings.json` field `mcpDisabledToolsByServerId` remains
+the only durable record. This batch corrects bridge sequencing around its
+existing predicate; it adds no grant, registry, policy rule, storage or execution
+owner. The actual legacy per-tool predicate is still in this adapter. Rust
+Settings exposes the same record but the real routed execution currently has
+no Rust per-server/account/tool semantic admission API. This correction does
+not complete that migration; its identity/currentness contract remains required.
+
+- MD-01: when identity/provider preparation completes, apply the current existing
+  disabled-tool predicate to the current matching display row immediately before
+  calling the HTTP execution port. Do not capture a null initial row or old map
+  across the awaited preparation and treat it as a grant.
+- MD-02: apply the same rule to Box execution after its awaited configuration
+  preparation/push. A disable committed while preparation is held must prevent
+  the subsequent execution-port call. Preserve an existing known-disabled early
+  refusal when useful; no new policy semantics or alternate predicate owner.
+- MD-03: preserve original provider/tool names, arguments, audit identity,
+  established denial/error shape, custom-instruction behavior and existing
+  unavailable/failed-preparation paths. Do not invent a server identity, retry
+  against a replacement account, or change built-in/local configuration
+  compatibility. Keep MR, MC and MB current-attempt/account retirement checks.
+- MD-04: after a call has crossed its execution port, preserve its actual late
+  success or rejection and original caller even if disable/retirement follows.
+  Do not replay, synthesize cancellation, discard the result, or infer that a
+  local denial undid an external effect. Broader Rust custody remains unchanged.
+- MD-05: use the real runtime, manager, definition source, persisted Settings and
+  discovery owner, with controlled account/backend/Box I/O only. Hold the first
+  account response; establish the same-scope disabled record before the call;
+  prove the actual initial row is unavailable; release valid identity and
+  require the existing disabled refusal with zero execution calls and unchanged
+  permission/scope values. Include an enabled sibling and a retained real
+  descriptor through a fresh current owner. A synthetic null-row core alone
+  cannot establish this production case.
+- MD-06: cover current warm denial, Box preparation paused across a committed
+  disable, failed/unavailable preparation, and already-entered late success and
+  error. Keep all existing MR/MC/MB assertions. Controlled promises, not sleeps,
+  establish order; helper predicates may not replace production enforcement.
+
+Allowed source paths are `source/shared/node/mcp/tools-discovery.ts` and the
+existing `source/electron-main/mcp/mcp-runtime.contract.test.ts`; root owns
+this specification and integration. The existing complete MCP contract
+bundle/build lane already selects this target. Freeze and independently review
+the full three-path scope; execute only in Actions on the final integrated H.
+No new dependency, schema or wire field is required. Rollback restores the
+cold-dispatch gap without rewriting user settings.
+
+Reuse only the exact-U lifetime/admission-versus-drain references above and
+the bounded MCP investigation's explicit read ranges; no full upstream review
+or global flag is promoted. Real remote effects, provider accounts, OAuth,
+durable cross-process revocation, authoritative Rust account/registration
+handoff and all full OCRM/FPM acceptance gates remain open.
+
