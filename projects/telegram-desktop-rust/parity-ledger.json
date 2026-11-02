@@ -9,7 +9,7 @@
     "unknown": 16098,
     "unread": 16071,
     "omitted": 0,
-    "responsibilities_total": 182,
+    "responsibilities_total": 183,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -17059,8 +17059,8 @@
         "MTProtoAuthKey"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/evidence/round58-mtproto-future-salts-wire-20261101.md",
-      "behavior_contract": "A received future_salts#ae500895 object must be fully decoded as req_msg_id:long, now:int, a TL Vector constructor/count, and exact future_salt#0949d9dc entries (valid_since:int, valid_until:int, salt:long) before it may settle the current RPC. Wrong top-level/vector/nested constructors, any truncation, impossible declared vector length for the remaining fixed-size entries, or trailing bytes fail closed. A valid response settles only when req_msg_id equals the one outstanding request and returns the exact validated raw object through the existing RpcResult.",
-      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession authenticated/decrypted receive -> telegram-protocol parse_future_salts validates entire object and nested vector before allocation/settlement -> valid unrelated req_msg_id continues waiting -> valid matching req_msg_id returns existing RpcResult raw body -> malformed object fails InvalidServiceMessage",
+      "behavior_contract": "A received future_salts#ae500895 object is decoded as req_msg_id:long, now:int, a bare signed vector count and bare future_salt field bodies (valid_since:int, valid_until:int, salt:long; exactly 16 bytes per element). The outer object is boxed; salts:vector<future_salt> contains neither a Vector constructor nor per-element future_salt constructors. Reject a wrong outer constructor, negative or over-budget counts, truncation, a count inconsistent with the remaining fixed-size bodies and trailing bytes before settlement. A valid response settles only when req_msg_id equals the one outstanding request and returns the exact validated raw object through the existing RpcResult.",
+      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession authenticated/decrypted receive -> telegram-protocol parse_future_salts validates the outer constructor, bare count, all 16-byte element bodies and EOF before allocation/settlement -> valid unrelated req_msg_id continues waiting -> valid matching req_msg_id returns existing RpcResult raw body -> malformed object fails InvalidServiceMessage",
       "side_effects": [
         "Moves future_salts wire validation into the existing shared telegram-protocol owner",
         "Prevents truncated/malformed/trailing future_salts objects from settling the current RPC",
@@ -17069,12 +17069,12 @@
         "Authors exact and malformed contracts without executing them in Stage A"
       ],
       "failure_cases": [
-        "Raw req_msg_id offset read accepts truncated now/vector/nested salt fields",
-        "Wrong TL vector or future_salt constructor is accepted",
-        "Untrusted vector count drives allocation without structural remaining-byte validation",
-        "Trailing bytes are ignored before RPC settlement",
-        "An unrelated historical request id mutates or settles the current call",
-        "Implementation invents multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers history"
+        "Raw req_msg_id offset reads accept truncated now/count/salt fields.",
+        "The incorrect boxed Vector or per-element constructor layout is accepted for fixed-U salts:vector<future_salt>.",
+        "A negative, over-budget or structurally impossible count drives allocation without validation.",
+        "Trailing bytes are ignored before RPC settlement.",
+        "An unrelated historical request id mutates or settles the current call.",
+        "Implementation invents multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers history."
       ],
       "ui_disposition": "No UI change. This is authenticated receive-side MTProto service/result validation inside the existing embedded runtime.",
       "non_ui_responsibilities": [
@@ -17145,7 +17145,7 @@
         "Complete updates difference/differenceSlice decoding and canonical application remain open/fail-closed.",
         "Outbound/multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open and fail-closed.",
         "Broader fixed-U source/legal/release closure remains open.",
-        "TDRP-ROUND3-QUALIFICATION: aggregate implementation claim is held at mapped until the cited authored-case/source-evidence gaps close; existing implementation and prior evidence are preserved. Nested constructor/count/selected-boundary failures and current-request predicate are real fault/unit cases."
+        "TDRP-ROUND3-QUALIFICATION: aggregate implementation claim is held at mapped until the cited authored-case/source-evidence gaps close; existing implementation and prior evidence are preserved. The prior boxed-vector/element oracle was incorrect; corrected bare-count/body boundaries and the current-request predicate require new exact-H execution."
       ],
       "production_entrypoints": [
         "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
@@ -17177,11 +17177,13 @@
         "platform-core-round90-final-spec-blob:c9617bb2c8e40f3ff4d070121ccb95c4d9ddff16"
       ],
       "test_evidence": [
-        "platform-core native/telegram-protocol/src/api.rs exact future_salts/future_salt parse contract authored, not run",
-        "platform-core native/telegram-protocol/src/api.rs wrong top-level/vector/nested constructor, truncation, impossible-count and trailing rejection contracts authored, not run",
-        "platform-core native/telegram-network/src/lib.rs current-request-only future_salts correlation contract authored, not run",
-        "desktop synchronized protocol/network contracts authored, not run",
-        "round90 canonical/desktop external future_salt element 4/4/8 field-boundary contracts authored, byte-identical, not run"
+        "Historical boxed-oracle evidence, superseded by 2026-11-02 bare-wire correction: platform-core native/telegram-protocol/src/api.rs exact future_salts/future_salt parse contract authored, not run",
+        "Historical boxed-oracle evidence, superseded by 2026-11-02 bare-wire correction: platform-core native/telegram-protocol/src/api.rs wrong top-level/vector/nested constructor, truncation, impossible-count and trailing rejection contracts authored, not run",
+        "Historical boxed-oracle evidence, superseded by 2026-11-02 bare-wire correction: platform-core native/telegram-network/src/lib.rs current-request-only future_salts correlation contract authored, not run",
+        "Historical boxed-oracle evidence, superseded by 2026-11-02 bare-wire correction: desktop synchronized protocol/network contracts authored, not run",
+        "Historical boxed-oracle evidence, superseded by 2026-11-02 bare-wire correction: round90 canonical/desktop external future_salt element 4/4/8 field-boundary contracts authored, byte-identical, not run",
+        "Corrected fixed-U bare-wire behavior authored: source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs#future_salt_bare_vector_elements_preserve_exact_signed_4_4_8_field_boundaries; exact-H execution pending.",
+        "Corrected fixed-U bare-wire behavior authored: source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs#future_salt_bare_vector_elements_fail_closed_at_count_and_each_field_boundary; exact-H execution pending."
       ],
       "target_commit": "a3329a8c948cbffab1d6843c78abc8024afa87b4",
       "workflow_run": null,
@@ -17267,7 +17269,8 @@
       ],
       "property_state_case_ids": [],
       "contract_case_ids": [
-        "CONTRACT-TDRP-MTPROTO-FUTURE-SALTS-WIRE-001"
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs#future_salt_bare_vector_elements_preserve_exact_signed_4_4_8_field_boundaries",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs#future_salt_bare_vector_elements_fail_closed_at_count_and_each_field_boundary"
       ],
       "integration_case_ids": [
         "INT-TDRP-MTPROTO-FUTURE-SALTS-CURRENT-RPC-001"
@@ -17282,7 +17285,7 @@
       "visual_case_ids": [],
       "accessibility_case_ids": [],
       "fault_recovery_case_ids": [
-        "FAULT-TDRP-MTPROTO-FUTURE-SALTS-MALFORMED-001"
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs#future_salt_bare_vector_elements_fail_closed_at_count_and_each_field_boundary"
       ],
       "performance_case_ids": [],
       "security_case_ids": [
@@ -17312,7 +17315,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and the adjacent authenticated service-message handling boundary in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes complete future_salts/future_salt wire validation and current-one-RPC correlation; it does not claim arbitrary historical request bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round90 adjacent revalidation confirms the live parser already enforces each future_salt nested constructor plus signed 4/4/8 field widths, fixed 20-byte vector element boundaries, pre-allocation remaining-byte bounds and strict EOF; no production behavior delta was made. Canonical/desktop external element-boundary contracts were added and remain not run. Future-salt adoption/rotation/scheduling/persistence and arbitrary request lifecycle remain outside this wire-only disposition. Final round90 source-level compliance is recorded at platform-core commit b6c7f4ad9a7e40bc4ffe24b6ee7a5e33ae134b83/spec blob c9617bb2c8e40f3ff4d070121ccb95c4d9ddff16; executable validation remains not-run.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[69]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n2026-11-02 independent authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: previous implementation_status=implemented; current aggregate stage=mapped. Nested constructor/count/selected-boundary failures and current-request predicate are real fault/unit cases. No property generator/model or actual malformed/foreign-response zero-settlement state sequence was found; static count<=remaining guard is not its own qualification. Existing source/implementation history and planned case IDs are retained; these references assert inspected test bodies only, not current-H execution or ACCEPT.",
+      "notes": "Stage A implementation only. This row closes complete future_salts/future_salt wire validation and current-one-RPC correlation; it does not claim arbitrary historical request bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round90 adjacent revalidation confirms the live parser already enforces each future_salt nested constructor plus signed 4/4/8 field widths, fixed 20-byte vector element boundaries, pre-allocation remaining-byte bounds and strict EOF; no production behavior delta was made. Canonical/desktop external element-boundary contracts were added and remain not run. Future-salt adoption/rotation/scheduling/persistence and arbitrary request lifecycle remain outside this wire-only disposition. Final round90 source-level compliance is recorded at platform-core commit b6c7f4ad9a7e40bc4ffe24b6ee7a5e33ae134b83/spec blob c9617bb2c8e40f3ff4d070121ccb95c4d9ddff16; executable validation remains not-run.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[69]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n2026-11-02 independent authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: previous implementation_status=implemented; current aggregate stage=mapped. Nested constructor/count/selected-boundary failures and current-request predicate are real fault/unit cases. No property generator/model or actual malformed/foreign-response zero-settlement state sequence was found; static count<=remaining guard is not its own qualification. Existing source/implementation history and planned case IDs are retained; these references assert inspected test bodies only, not current-H execution or ACCEPT.\n2026-11-02 current correction: run 41400057867 at f3b00a552dbc14536a26c7b19492319d3445fd1c passed handshake and encrypted ping, then the live get_future_salts RPC failed InvalidServiceMessage. Independent fixed-U scheme and pinned lib_tl primitive/boxed/generator inspection proves that salts:vector<future_salt> has a bare count and 16-byte bare elements. The earlier constructor/20-byte statements above describe an incorrect historical implementation and repeated test oracle, not the current contract. The same-batch parser and oracle correction preserves the outer constructor, signed count/budget, structural byte bounds, exact EOF and existing req_msg_id correlation. The aggregate stage remains mapped; corrected test execution and full source/product acceptance are not claimed by this edit.",
       "test_execution_evidence": []
     },
     {
@@ -50059,6 +50062,382 @@
       "lifecycle_owner": "Existing Fabushi repository process/security/evidence gates and Electron updater lifecycle",
       "persistence_and_restart": "Source cache/artifact state is CI-hosted and noncanonical; target Stage A adds repository governance/evidence only. Product update persistence remains with existing Fabushi updater owner.",
       "concurrency_and_cancellation": "No source concurrency/timeout/retry/rollback; matrix/cache partial state requires fresh qualification. Target publication remains non-force expected-SHA CAS."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+      "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67",
+      "additional_source_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/data/data_session.cpp",
+          "object": "baac09c9c320d748d008867dc4ec3ec560c6681b"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/history_item.cpp",
+          "object": "b753d3ea7bd5fde15cdad206d17ab3eee6d68cab"
+        }
+      ],
+      "source_kind": "source",
+      "module_id": "tdesktop.api.updates",
+      "responsibility_id": "FBCP-NMR-001",
+      "source_symbols": [
+        "applyUpdateNoPtsCheck",
+        "feedDifference",
+        "differenceDone"
+      ],
+      "capability_ids": [
+        "MSG-SEND-SETTLEMENT",
+        "MSG-HISTORY-ORDER-GAP",
+        "MSG-REACTION",
+        "NETWORK-SYNC-REALTIME"
+      ],
+      "dependency_ids": [
+        "ACCOUNT-AUTH-MULTI",
+        "MSG-RELATION",
+        "MEDIA-TRANSFER"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md",
+      "behavior_contract": "Bounded source-informed Human direct-message admission and settlement in the existing Fabushi Session/Transcript owner. Before resource access, transcript mutation, acknowledgement settlement or overlap use, a returned row must match the authenticated local/selected-peer pair. Only a local-authored request nonce may settle its local intent; canonical-ID and nonce lookup both preserve immutable sender, text, dispatched reply and resource identities. Peer request provenance remains separate. Independent deterministic rejections may coexist with valid progress, but retryable resource/storage failure stops ordered replay. These selected target security and durability rules are not a claim of identical Telegram API semantics or full history/reaction parity.",
+      "state_machine": "Existing Human conversation -> durable local pending -> persisted dispatching/resource references -> native HTTP result -> validated canonical server identity settles the existing transcript row; ambiguous failure retains pending retry data. Sync first retries pending work, fetches bounded pages, admits peer-scoped rows, reverses page windows for ordered materialization and stops at retryable resource/storage failure. Current known-ID overlap cutoff and pre-retry anchor risks remain open; this row does not claim they are repaired.",
+      "side_effects": [
+        "Authenticated direct-message list/send and message-resource HTTP calls through the existing FabushiNativeMessagingClient.",
+        "Existing SandAgentDb transcript append/update/identity settlement and metadata writes.",
+        "Existing transcript mutation publication only after the corresponding durable write.",
+        "Existing renderer command-result and transcript-feed projection; no additional store or UI root."
+      ],
+      "failure_cases": [
+        "Foreign/self-only participant pairing or canonical identity with a conflicting persisted author is rejected before resource access and mutation.",
+        "Peer-authored clientRequestId cannot acknowledge or shadow a local-author nonce.",
+        "Missing/changed local acknowledgement nonce, text, reply or dispatched resources fails closed and leaves retry evidence.",
+        "Ambiguous send preserves pending state and uploaded-resource identities across reopen/retry.",
+        "Deterministic row rejection is reported after permitted independent progress; retryable resource/storage failure prevents later rows from hiding the gap.",
+        "Known-only reaction/read refresh, trustworthy persisted history coverage, bounded reaction count validation, GET/POST freshness and broader cancellation remain unresolved."
+      ],
+      "ui_disposition": "Reuse the existing Human conversation, Composer acknowledgement and transcript/reaction surfaces. This Host boundary adds no screen, route or UI owner. Visible read receipts are not implemented by merely storing readAt.",
+      "non_ui_responsibilities": [
+        "Authenticated participant admission",
+        "Author-scoped nonce correlation",
+        "Immutable acknowledgement checks",
+        "Durable local outbox settlement",
+        "Ordered retryable-failure boundary",
+        "Transcript mutation publication"
+      ],
+      "platform_delta": "Existing cross-platform Rust Host/SQLite and native HTTP code are reused. The focused workflow uses macos-15; this row makes no supported-platform package, installer, signing or complete Windows/Linux acceptance claim.",
+      "existing_owner_candidates": [
+        "Host Session production workers and SandAgentDb transcript store",
+        "Existing Composer/transcript acknowledgement projection",
+        "FabushiNativeMessagingClient transport boundary",
+        "fabushi_messaging_core shared forwarding/recipient policies"
+      ],
+      "existing_owner": "Existing Host Session/Transcript durable Human-message owner with existing native HTTP client and renderer projection",
+      "rejected_existing_owners": [
+        "A new Human message database or communication root",
+        "A second reaction/read-state owner",
+        "MessagingService as an asserted shipping send/sync owner: the observed native Human path does not invoke that engine",
+        "Legacy Telegram conversation adapter as the authority for Fabushi native Human messaging"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/native_messaging.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/transcript_mutation_events.rs",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "source/host/tests/session_gateway_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "validate_remote_human_message",
+        "materialize_remote_human_message",
+        "append_human_message_with_context",
+        "sync_human_conversation",
+        "toggle_human_message_reaction",
+        "send_direct_message",
+        "list_direct_messages",
+        "settle_transcript_entry_identity",
+        "publish_transcript_mutation",
+        "sendComposerPrompt"
+      ],
+      "target_language": "Rust Host/service boundary with existing TypeScript renderer projection",
+      "language_rationale": "Extend the existing production owners in their current implementation languages; no upstream C++ runtime copy, alternate message engine or new owner is introduced.",
+      "command_event_contracts": [
+        "ProductionRenderer sendComposerPrompt -> sendHumanMessage -> append_human_message -> existing native direct-message POST.",
+        "Renderer reconnect/open -> syncHumanConversation or syncHumanConversations -> sync_human_conversation -> native direct-message GET -> admitted ordered materialization.",
+        "reactHumanMessage -> toggle_human_message_reaction -> native reaction POST -> existing transcript update.",
+        "SandAgentDb append/update emits entries-upserted after durable mutation; identity settlement emits deletion of the former local identity followed by canonical upsert."
+      ],
+      "state_owner": "SandAgentDb opened by ProductionSessionWorkers::open_human_conversation_db_owner owns the canonical local Human transcript and retry intent. The authenticated Fabushi service owns remote message/resource identity and service authorization. Renderer state is a projection.",
+      "lifecycle_owner": "Existing Host Session production lifecycle; existing account binding and private native credential lifecycle supply the local identity and issuer-bound HTTP client. No additional process or persistent owner.",
+      "persistence_and_restart": "Persist pending before dispatch, persist dispatch resource identities before send, and settle through the existing transcript identity mutation. Ambiguous dispatch and resource failures retain retryable state; current authored reopen cases verify recovery without a second upload and byte preservation. Known-ID presence is not yet durable evidence of a completely synchronized history interval.",
+      "concurrency_and_cancellation": "Existing DB writes serialize per owner; this does not serialize the preceding HTTP read/modify/write interval. This batch preserves existing cancellation boundaries and does not close stale refresh versus local reaction races, rapid supersession, arbitrary pending-send concurrency or cancellation recovery.",
+      "security_boundary": "Authenticated local identity and selected conversation participant metadata constrain ingress; request nonces are author-scoped correlation values, never authorization credentials. Reject mismatched acknowledgements before downloading untrusted attachments. Private bearer/device credentials remain inside the native client, and this row grants no permission to log credentials or message bodies.",
+      "network_service_dependencies": [
+        "Existing authenticated /api/social/messages GET/POST contract",
+        "Existing /api/social/message-resources upload/download contract",
+        "Existing /api/social/messages/{message_id}/reactions contract",
+        "Existing private issuer/account/device-bound native credentials"
+      ],
+      "service_owner": "Existing Fabushi native social direct-message service; this repository extends its Host consumer. Service deployment, authorization policy implementation and real-service acceptance are not established by loopback tests.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Whole NMR gate remains pending: exact final H must have terminal-success native-message-reconciliation and native-message-shipping-compile plus all required protocol/TCP/live, normalization, proxy and credential cases; never infer pass from workflow definitions.",
+        "The strengthened existing AC02/AC03 test bodies are frozen at target Git blob 127700079e9ae9d5c2155cd1d8a218a47f2f8075 and independently statically reviewed, but are not execution evidence. Publish the exact blob and run the unchanged ten-case selector in Actions at the final H.",
+        "RTM and owner-row amendments plus this canonical responsibility require publication/readback and exact-H Actions; NMR-AC-05 is pending until applied.",
+        "Known-overlap refresh/coverage, reaction bounds and freshness, monotonic receipt semantics and read-receipt UI remain separate unimplemented or unqualified work.",
+        "Full source/legal closure, legacy caller/data-safe retirement, live native-service acceptance, packages, UI/a11y, performance/soak, complete Bot regression and independent ACCEPT remain open."
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx#sendComposerPrompt -> source/host/src/extensions/session/gateway.rs#sendHumanMessage -> ProductionSessionWorkers::append_human_message_with_context -> FabushiNativeMessagingClient::send_direct_message -> /api/social/messages -> validate_remote_human_message/materialize_remote_human_message -> SandAgentDb::settle_transcript_entry_identity -> existing transcript mutation/renderer projection.",
+        "ProductionRenderer reconnect/open -> syncHumanConversation(s) -> ProductionSessionWorkers::sync_human_conversation -> FabushiNativeMessagingClient::list_direct_messages -> per-row admission -> ordered materialization -> existing SandAgentDb update/append.",
+        "Existing Human reaction action -> reactHumanMessage -> toggle_human_message_reaction -> service response -> same transcript row; legacy peer nonce metadata is separated without changing stored content."
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs@948db9d624ebc7ad492d962e8f66e006323e60b5#validate_remote_human_message",
+        "path:source/host/src/extensions/session/production.rs@948db9d624ebc7ad492d962e8f66e006323e60b5#append_human_message_with_context",
+        "path:source/host/src/extensions/session/production.rs@948db9d624ebc7ad492d962e8f66e006323e60b5#sync_human_conversation",
+        "path:source/host/src/extensions/session/native_messaging.rs@08e0921e9826006e109ed4253d518fad8bf4c68c#send_direct_message",
+        "path:source/host/src/extensions/session/gateway.rs@e77e6bc40d9b12a020b7ad5eec1fcb6d11c68550#sendHumanMessage",
+        "path:source/host/src/extensions/session/agent_db.rs@91ed720449b8e171a94887d032343103be6c829b#settle_transcript_entry_identity",
+        "path:source/host/src/transcript_mutation_events.rs@842d4d06d8f0d788b0b730ea3aef942d75f673a2#publish_transcript_mutation",
+        "path:frontend/src/production/ProductionRenderer.tsx@26dcb2aad353551e6e8f8468f7ce3a63335730ce#sendComposerPrompt",
+        "spec:docs/specs/fbcp-native-message-reconciliation.md@587690f5b6e462da2ad7a40705216184a2b42ba9"
+      ],
+      "test_evidence": [
+        "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
+        "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+        "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript",
+        "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap",
+        "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+        "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+        "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
+        "workflow:.github/workflows/native-service-contracts.yml@0341842c79225152bccaadbb0eca5d9120c3f3db#native-message-reconciliation",
+        "workflow:.github/workflows/native-service-contracts.yml@0341842c79225152bccaadbb0eca5d9120c3f3db#native-message-shipping-compile",
+        "The existing round3 receipt records complete historical executions and failures separately. None of those prior-H results qualify the strengthened test blob or the final NMR gate.",
+        "authored-frozen-target-blob:127700079e9ae9d5c2155cd1d8a218a47f2f8075:source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart; publication/exact-H execution pending",
+        "authored-frozen-target-blob:127700079e9ae9d5c2155cd1d8a218a47f2f8075:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access; publication/exact-H execution pending",
+        "authored-frozen-target-blob:127700079e9ae9d5c2155cd1d8a218a47f2f8075:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce; publication/exact-H execution pending"
+      ],
+      "target_commit": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Existing Host Session production composition beneath ProductionRenderer",
+      "composition_slot": "Existing Human conversation command, durable transcript and native HTTP boundary",
+      "capability_component": "Human message admission, author-scoped reconciliation and ordered failure recovery",
+      "variation_axes": [
+        "local versus peer author",
+        "pending versus dispatching versus settled identity",
+        "valid versus conflicting peer/nonce/text/reply/resources",
+        "normal versus ambiguous dispatch",
+        "independent deterministic rejection versus retryable resource/storage failure",
+        "initial load versus reconnect versus reopen"
+      ],
+      "shared_owner_contracts": [
+        "Authenticated local Human identity",
+        "Canonical Human conversation participant pair",
+        "Existing transcript message identity and sequence",
+        "Existing durable dispatch resource references",
+        "Existing transcript mutation publication",
+        "Existing Composer acknowledgement and reaction projection"
+      ],
+      "duplicate_root_check": "Read shipping Human send/sync/reaction paths at 6cf. They use existing Session/SandAgentDb and Fabushi native HTTP; no new root/store is introduced. Shared forwarding/recipient policy functions are reused separately; full MessagingService dispatch and legacy-runtime retirement are not claimed.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Existing Human conversation workspace",
+      "primary_navigation_target": "Existing selected Human conversation",
+      "collection_surface": "Existing mixed conversation sidebar and transcript",
+      "creation_flow": "Not changed by this boundary; existing createHumanConversation/Composer entries remain authoritative.",
+      "object_action_scope": "Existing Human send, retry, sync and reaction actions",
+      "detail_section": "Not applicable: this admission/reconciliation change adds no separate detail section.",
+      "capability_surface": "Existing Composer acknowledgement, transcript messages and Human reaction pills",
+      "route_contract": "Existing conversationId routing is retained; no new route or navigation root.",
+      "search_scope": "Not changed by this row; native Human transcript content remains under the existing conversation-scoped search.",
+      "search_provider": "No provider is added here. Existing ProductionSessionWorkers::search_human_messages reads the same durable transcript; recipient search reuses its existing shared policy separately.",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No new search permission rule is implemented here; message ingress remains scoped to the authenticated local/selected-peer pair. Broader canonical Search acceptance remains separate.",
+      "search_local_remote_contract": "Not applicable as a new search contract: this row changes message ingestion/settlement, not local or remote search indexing/querying.",
+      "responsive_disposition": "Reuse existing conversation workspace responsive behavior; no new layout. Responsive acceptance is not claimed.",
+      "accessibility_contract": "Reuse existing Composer, transcript and reaction affordances; no new accessible control. Full UI/accessibility verification remains pending.",
+      "keyboard_contract": "Existing conversation/Composer keyboard behavior is unchanged; no new shortcut or keyboard owner.",
+      "state_continuity_contract": "Canonical local transcript sequence remains on the existing DB row during pending-to-server identity settlement. Peer provenance cannot consume a local nonce; rejected acknowledgement preserves prior content and retry state. Metadata refresh and complete chronological history coverage are explicitly not closed.",
+      "ui_acceptance_scenarios": [
+        "Required later: pending/failed/sent projection remains consistent with durable Host state.",
+        "Required later: peer nonce collisions do not remove a distinct local optimistic message in the renderer.",
+        "Required later: existing Human reaction action projects the returned authoritative row.",
+        "Visible read receipts, visual/accessibility and packaged UI acceptance are not established by this Host loopback batch."
+      ],
+      "design_system_version": "Existing FBCP shared conversation UI design contract; this backend boundary introduces no design-system revision.",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Existing conversation workspace; no new screen pattern",
+      "screen_slots": [
+        "Existing Composer",
+        "Existing transcript",
+        "Existing reaction affordances"
+      ],
+      "visual_state_matrix": [
+        "Existing pending send",
+        "Existing settled Human message",
+        "Existing reaction state",
+        "Existing sync failure notice; no new visual baseline is claimed"
+      ],
+      "density_contract": "Existing transcript density unchanged.",
+      "icon_asset_contract": "No new icon or asset is introduced by this boundary.",
+      "avatar_contract": "Existing Human identity/avatar projection unchanged.",
+      "content_copy_keys": [],
+      "motion_contract": "No new motion behavior; existing workspace behavior remains.",
+      "reduced_motion_contract": "No new animation; existing application reduced-motion contract remains.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "critical",
+      "requirement_ids": [
+        "FBCP-NMR-001",
+        "NMR-01",
+        "NMR-02",
+        "NMR-03",
+        "NMR-04",
+        "NMR-05",
+        "NMR-06",
+        "NMR-09",
+        "NMR-AC-01",
+        "NMR-AC-02",
+        "NMR-AC-03",
+        "NMR-AC-04",
+        "NMR-AC-05",
+        "AC-02",
+        "AC-11",
+        "AC-19",
+        "AC-44",
+        "AC-47"
+      ],
+      "oracle_ids": [
+        "NMR-AC-01",
+        "NMR-AC-02",
+        "NMR-AC-03",
+        "NMR-AC-04"
+      ],
+      "invariant_ids": [
+        "NMR-01",
+        "NMR-02",
+        "NMR-03",
+        "NMR-04",
+        "NMR-05",
+        "NMR-09"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap"
+      ],
+      "contract_case_ids": [
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap"
+      ],
+      "integration_case_ids": [
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap"
+      ],
+      "fault_recovery_case_ids": [
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send"
+      ],
+      "regression_ids": [
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "NMR-AC-05",
+        "NMR-AC-06",
+        "NMR-AC-07",
+        "NMR-AC-08",
+        "NMR-AC-09",
+        "NMR-AC-10",
+        "NMR-AC-11"
+      ],
+      "test_fixture_ids": [
+        "source/host/tests/session_gateway_contract.rs#spawn_human_message_fixture",
+        "source/host/tests/session_gateway_contract.rs#human_message_fixture_runtime",
+        "source/host/tests/session_gateway_contract.rs#fixture_remote_human_message",
+        "source/host/tests/session_gateway_contract.rs#spawn_ambiguous_human_send_server"
+      ],
+      "test_environment_ids": [
+        ".github/workflows/native-service-contracts.yml#native-message-reconciliation:macos-15:Rust-stable-as-selected-by-workflow:loopback HTTP and real Host/SQLite",
+        ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:exact-H locked AppHost/protocol/TCP/live/normalization/proxy/credential checks"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "blocked",
+      "license_and_provenance": "Behavioral references are selected source sections at frozen U recorded in the existing known-overlap research dossier. Primary api_updates.cpp and additional data_session.cpp/history_item.cpp are only partially read as explicitly documented. Upstream LEGAL references are retained; no code-copy or full legal approval is asserted. Exact Fabushi target blobs and authored cases are independent implementation evidence. This responsibility mapping does not modify source_reviews, unknown/unread, source acceptance or inventory closure.",
+      "reviewer": null,
+      "notes": "Production-path baseline is exact 6cf9d2e5979f236ba75e49a3b1a85e935b62bf70. Existing native code and ten loopback test symbols are real. The subsequently frozen test delta at Git blob 127700079e9ae9d5c2155cd1d8a218a47f2f8075 strengthens real pending-local/peer nonce coexistence, independent text/reply/resource-ID/resource-order/missing-resource rejection and correct-ack recovery after reopen, plus isolated canonical nonce rejection with a positive control. Independent static review corrected two test-oracle integer assumptions to the production f64 timestamp type and found no remaining blocker to focused Actions. This is implemented/tests-authored, not verified; no new test execution is claimed. Whole NMR gate remains pending until all required exact-H jobs/tests are terminal-success, and independent/full-product acceptance remains false. Upstream peer-scoped dispatch and ordered application inform the bounded target contract; they do not prove that Telegram uses Fabushi JSON nonces, SQL durability, fixed append slots or the selected direct-pair API. Primary and additional upstream files remain partially read exactly as the source dossier states. Do not import proposed known-overlap/reaction/read cases from that dossier as existing tests. Source inventories, source_reviews, unknown/unread and source acceptance remain untouched. Empty UI/visual/a11y/performance/soak/E2E/deployment evidence arrays mean no such evidence is claimed for this Host boundary; final applicable gates remain open. No visual/token/asset/route changes are introduced, so there are no new semantic token, copy-key, search-result/filter or design-exception entries. The production symbols ProductionRenderer, ConversationTranscript and ReactionPills are actual source projections, but their registration as canonical component IDs has not been verified; canonical_component_ids is deliberately empty. The final test blob also includes independently reviewed bounded Human fixture acceptance/request reads and per-socket-write timeout; these are test liveness protections, not a production behavior or whole-fixture-family acceptance claim."
     }
   ],
   "rebaseline_candidate": {

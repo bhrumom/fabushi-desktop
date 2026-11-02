@@ -933,11 +933,24 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
 
 
 fn read_fixture_http_request(stream: &mut std::net::TcpStream) -> String {
+    read_fixture_http_request_before(stream, None)
+}
+
+fn read_fixture_http_request_before(
+    stream: &mut std::net::TcpStream,
+    deadline: Option<std::time::Instant>,
+) -> String {
     let mut request = Vec::new();
     let mut chunk = [0_u8; 4096];
     let mut header_end = None;
     let mut content_length = 0usize;
     loop {
+        if let Some(deadline) = deadline {
+            let remaining = deadline.checked_duration_since(std::time::Instant::now())
+                .filter(|remaining| !remaining.is_zero())
+                .expect("fixture request exceeded its total read deadline");
+            stream.set_read_timeout(Some(remaining)).expect("bound fixture request read");
+        }
         let read = stream.read(&mut chunk).expect("read fixture request");
         if read == 0 {
             break;
@@ -1632,12 +1645,28 @@ fn spawn_human_message_fixture(
     responses: Vec<HumanMessageFixtureReply>,
 ) -> (String, thread::JoinHandle<Vec<String>>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind Human message fixture");
+    listener.set_nonblocking(true).expect("bound Human fixture accept");
     let address = listener.local_addr().expect("Human fixture address");
     let handle = thread::spawn(move || {
         let mut requests = Vec::new();
-        for response in responses {
-            let (mut stream, _) = listener.accept().expect("accept Human message fixture call");
-            requests.push(read_fixture_http_request(&mut stream));
+        for (response_index, response) in responses.into_iter().enumerate() {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((stream, _)) => break stream,
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        assert!(std::time::Instant::now() < deadline,
+                            "Human fixture timed out waiting for response {response_index}; received {} requests",
+                            requests.len());
+                        thread::sleep(std::time::Duration::from_millis(5));
+                    }
+                    Err(error) => panic!("Human fixture accept failed for response {response_index}: {error}"),
+                }
+            };
+            stream.set_nonblocking(false).expect("restore blocking Human fixture stream");
+            stream.set_write_timeout(Some(std::time::Duration::from_secs(15)))
+                .expect("bound Human fixture response write");
+            requests.push(read_fixture_http_request_before(&mut stream, Some(deadline)));
             let (status, content_type, body) = match response {
                 HumanMessageFixtureReply::Json(status, body) => (
                     status, "application/json", body.to_string().into_bytes(),
@@ -1780,84 +1809,229 @@ fn shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_re
     let root = temp_root("nmr-peer-nonce");
     let incoming = fixture_remote_human_message(13, 2, 1, "peer text", Some("shared-nonce"), json!([]));
     let outgoing = fixture_remote_human_message(14, 1, 2, "local text", Some("shared-nonce"), json!([]));
+    let failed_dispatch = json!({"success":false,"error":"temporary dispatch failure"});
     let (base_url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(503, failed_dispatch.clone()),
+        HumanMessageFixtureReply::Json(503, failed_dispatch),
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[incoming]}})),
         HumanMessageFixtureReply::Json(201, json!({"success":true,"deduplicated":false,"message":outgoing})),
     ]);
     let runtime = human_message_fixture_runtime(&root, &base_url);
     let id = runtime.create_human_conversation("2", "Peer")
         .expect("Human conversation")["id"].as_str().expect("id").to_owned();
-    let peer_rows = runtime.sync_human_conversation(&id).expect("peer sync");
-    assert_eq!(peer_rows.len(), 1);
-    assert_eq!(peer_rows[0]["remoteClientRequestId"], "shared-nonce");
-    assert!(peer_rows[0].get("clientNonce").is_none());
-    let sent = runtime.append_human_message(
+
+    runtime.append_human_message(
         &id, "local text", "shared-nonce", Some(1800.0), None, &[],
-    ).expect("local nonce is distinct from peer provenance");
-    assert_eq!(sent["id"], "human-server-message:14");
-    let entries = runtime.read_human_conversation_transcript(&id).expect("transcript");
-    assert_eq!(entries.len(), 2);
-    assert_eq!(entries[0]["id"], "human-server-message:13");
-    assert_eq!(entries[1]["clientNonce"], "shared-nonce");
+    ).expect_err("failed dispatch must leave a durable local intent before peer sync");
+    let pending_rows = runtime.read_human_conversation_transcript(&id).expect("pending transcript");
+    assert_eq!(pending_rows.len(), 1);
+    assert_eq!(pending_rows[0]["id"], "human-message:shared-nonce");
+    assert_eq!(pending_rows[0]["authorId"], "1");
+    assert_eq!(pending_rows[0]["clientNonce"], "shared-nonce");
+    assert_eq!(pending_rows[0]["content"], "local text");
+    assert_eq!(pending_rows[0]["delivery"], "pending");
+    assert!(pending_rows[0].get("remoteMessageId").is_none());
+
+    let peer_rows = runtime.sync_human_conversation(&id)
+        .expect("peer sync progresses despite a separate failed local retry");
+    assert_eq!(peer_rows.len(), 2, "peer provenance must not settle or replace the pending local row");
+    // The retry may update its failure clock; every other pending field remains identical.
+    assert!(peer_rows[0]["lastDispatchFailedAtMs"].as_f64()
+        .is_some_and(|timestamp| timestamp.is_finite() && timestamp >= 0.0));
+    let mut expected_pending = pending_rows[0].clone();
+    expected_pending["lastDispatchFailedAtMs"] = peer_rows[0]["lastDispatchFailedAtMs"].clone();
+    assert_eq!(peer_rows[0], expected_pending);
+    assert_eq!(peer_rows[1]["id"], "human-server-message:13");
+    assert_eq!(peer_rows[1]["authorId"], "2");
+    assert_eq!(peer_rows[1]["content"], "peer text");
+    assert_eq!(peer_rows[1]["remoteClientRequestId"], "shared-nonce");
+    assert!(peer_rows[1].get("clientNonce").is_none());
     runtime.shutdown();
+    drop(runtime);
 
     let restarted = human_message_fixture_runtime(&root, &base_url);
-    assert_eq!(restarted.read_human_conversation_transcript(&id).expect("restart read"), entries);
+    assert_eq!(
+        restarted.read_human_conversation_transcript(&id).expect("restart pending and peer"),
+        peer_rows,
+    );
+    let sent = restarted.append_human_message(
+        &id, "local text", "shared-nonce", Some(1800.0), None, &[],
+    ).expect("only the matching local acknowledgement may settle the pending intent");
+    assert_eq!(sent["id"], "human-server-message:14");
+    assert_eq!(sent["authorId"], "1");
+    assert_eq!(sent["clientNonce"], "shared-nonce");
+    assert_eq!(sent["content"], "local text");
+    assert_eq!(sent["delivery"], "sent");
+    assert!(sent.get("lastDispatchError").is_none());
+    let entries = restarted.read_human_conversation_transcript(&id).expect("settled transcript");
+    assert_eq!(entries, vec![sent, peer_rows[1].clone()], "settlement retains the local slot and the peer row");
     restarted.shutdown();
+    drop(restarted);
+
+    let reopened = human_message_fixture_runtime(&root, &base_url);
+    assert_eq!(reopened.read_human_conversation_transcript(&id).expect("restart settled rows"), entries);
+    reopened.shutdown();
     let requests = server.join().expect("Human fixture");
-    assert_eq!(requests.len(), 2);
-    assert!(requests[0].starts_with("GET /api/social/messages?"));
+    assert_eq!(requests.len(), 4);
+    assert!(requests[0].starts_with("POST /api/social/messages "));
     assert!(requests[1].starts_with("POST /api/social/messages "));
+    assert!(requests[2].starts_with("GET /api/social/messages?"));
+    assert!(requests[3].starts_with("POST /api/social/messages "));
+    assert_eq!(fixture_request_json(&requests[0]), fixture_request_json(&requests[1]));
+    assert_eq!(fixture_request_json(&requests[0]), fixture_request_json(&requests[3]));
+    assert_eq!(fixture_request_json(&requests[3])["clientRequestId"], "shared-nonce");
     let _ = fs::remove_dir_all(root);
 }
 
 #[test]
 fn shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access() {
-    let root = temp_root("nmr-conflict");
-    let resource = json!([{
-        "resourceId":"untrusted-conflict","name":"conflict.txt","contentType":"text/plain",
-        "size":4,"createdAt":"2026-10-05T01:00:21Z"
-    }]);
-    let conflict = fixture_remote_human_message(21, 1, 2, "wrong text", Some("pending-nonce"), resource);
-    let (base_url, server) = spawn_human_message_fixture(vec![
-        HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"temporary dispatch failure"})),
-        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[conflict]}})),
-    ]);
-    let runtime = human_message_fixture_runtime(&root, &base_url);
-    let id = runtime.create_human_conversation("2","Peer")
-        .expect("Human conversation")["id"].as_str().expect("id").to_owned();
-    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
-    assert!(owner.append_transcript_entry(&json!({
-        "id":"human-message:pending-nonce","kind":"message","role":"user",
-        "authorKind":"human","authorId":"1","clientNonce":"pending-nonce",
-        "content":"expected text","timestampMs":1000.0,"delivery":"pending"
-    })).expect("pending"));
-    let error = runtime.sync_human_conversation(&id).expect_err("conflicting local ack");
-    assert!(error.contains("acknowledgement"), "{error}");
-    let rows = owner.get_transcript_entries().expect("durable rows");
-    assert_eq!(rows.len(), 1);
-    assert_eq!(rows[0]["id"], "human-message:pending-nonce");
-    assert_eq!(rows[0]["content"], "expected text");
-    assert_eq!(rows[0]["delivery"], "pending");
-    let requests = server.join().expect("Human fixture");
-    assert_eq!(requests.len(), 2, "conflicting resource may not be downloaded");
-    assert!(requests[0].starts_with("POST /api/social/messages "));
-    assert!(requests[1].starts_with("GET /api/social/messages?"));
-    runtime.shutdown();
-    let _ = fs::remove_dir_all(root);
+    for (difference, expected_error) in [
+        ("text", "remote Human acknowledgement conflicts with the local send identity or text"),
+        ("reply", "remote Human acknowledgement changed the dispatched reply"),
+        ("resource-id", "remote Human acknowledgement changed dispatched resources"),
+        ("resource-order", "remote Human acknowledgement changed dispatched resources"),
+        ("missing-resource", "remote Human acknowledgement changed dispatched resources"),
+    ] {
+        let root = temp_root(&format!("nmr-conflict-{difference}"));
+        let dispatched = json!([
+            {
+                "resourceId":"expected-resource-a","name":"first.txt","contentType":"text/plain",
+                "size":4,"createdAt":"2026-10-05T01:00:19Z"
+            },
+            {
+                "resourceId":"expected-resource-b","name":"second.txt","contentType":"text/plain",
+                "size":4,"createdAt":"2026-10-05T01:00:20Z"
+            },
+        ]);
+        let mut matching_ack = fixture_remote_human_message(
+            21, 1, 2, "expected text", Some("pending-nonce"), dispatched.clone(),
+        );
+        matching_ack["replyToMessageId"] = json!(10);
+        let mut conflict = matching_ack.clone();
+        // Each rejected response differs in exactly one immutable acknowledgement field.
+        match difference {
+            "text" => conflict["text"] = json!("wrong text"),
+            "reply" => conflict["replyToMessageId"] = json!(11),
+            "resource-id" => conflict["attachments"][0]["resourceId"] = json!("untrusted-conflict"),
+            "resource-order" => conflict["attachments"].as_array_mut().expect("resources").reverse(),
+            "missing-resource" => {
+                conflict["attachments"].as_array_mut().expect("resources").pop();
+            }
+            _ => unreachable!(),
+        }
+        let (base_url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"temporary dispatch failure"})),
+            HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[conflict]}})),
+            HumanMessageFixtureReply::Json(201, json!({"success":true,"deduplicated":true,"message":matching_ack})),
+            HumanMessageFixtureReply::Bytes(200, vec![1, 2, 3, 4]),
+            HumanMessageFixtureReply::Bytes(200, vec![5, 6, 7, 8]),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &base_url);
+        let id = runtime.create_human_conversation("2","Peer")
+            .expect("Human conversation")["id"].as_str().expect("id").to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+        let anchor = json!({
+            "id":"human-server-message:10","kind":"message","role":"user",
+            "authorKind":"human","authorId":"2","content":"reply anchor",
+            "timestampMs":500.0,"delivery":"sent","remoteMessageId":"10",
+            "remoteCreatedAt":"2026-10-05T01:00:10Z"
+        });
+        let attachments = vec![
+            json!({"path":root.join("first.txt").to_string_lossy(),"name":"first.txt"}),
+            json!({"path":root.join("second.txt").to_string_lossy(),"name":"second.txt"}),
+        ];
+        fs::write(root.join("first.txt"), [1_u8, 2, 3, 4]).expect("first local attachment");
+        fs::write(root.join("second.txt"), [5_u8, 6, 7, 8]).expect("second local attachment");
+        let pending = json!({
+            "id":"human-message:pending-nonce","kind":"message","role":"user",
+            "authorKind":"human","authorId":"1","clientNonce":"pending-nonce",
+            "content":"expected text","composedAtMs":1000.0,"timestampMs":1000.0,
+            "delivery":"pending","replyToId":"human-server-message:10",
+            "attachments":attachments,"remoteDispatchAttachments":dispatched
+        });
+        assert!(owner.append_transcript_entry(&anchor).expect("reply anchor"));
+        assert!(owner.append_transcript_entry(&pending).expect("durable pending dispatch"));
+
+        let error = runtime.sync_human_conversation(&id).expect_err("conflicting local ack");
+        assert_eq!(error, expected_error, "{difference} must reach its own admission guard");
+        let rows = owner.get_transcript_entries().expect("durable rows after rejection");
+        assert_eq!(rows.len(), 2, "{difference} must not append a conflicting canonical row");
+        assert_eq!(rows[0], anchor);
+        assert!(rows[1]["lastDispatchError"].as_str().is_some());
+        assert!(rows[1]["lastDispatchFailedAtMs"].as_f64()
+            .is_some_and(|timestamp| timestamp.is_finite() && timestamp >= 0.0));
+        let mut expected_pending = pending.clone();
+        expected_pending["lastDispatchError"] = rows[1]["lastDispatchError"].clone();
+        expected_pending["lastDispatchFailedAtMs"] = rows[1]["lastDispatchFailedAtMs"].clone();
+        assert_eq!(rows[1], expected_pending, "{difference} must preserve the complete pending intent");
+        assert!(rows[1].get("remoteMessageId").is_none());
+        runtime.shutdown();
+        drop(owner);
+        drop(runtime);
+
+        let restarted = human_message_fixture_runtime(&root, &base_url);
+        assert_eq!(
+            restarted.read_human_conversation_transcript(&id).expect("restart rejected pending"),
+            rows,
+            "{difference} must remain rejected durably",
+        );
+        let sent = restarted.append_human_message(
+            &id, "expected text", "pending-nonce", Some(1000.0),
+            Some("human-server-message:10"), &attachments,
+        ).expect("a fully matching acknowledgement must recover the same pending intent");
+        assert_eq!(sent["id"], "human-server-message:21");
+        assert_eq!(sent["clientNonce"], "pending-nonce");
+        assert_eq!(sent["content"], "expected text");
+        assert_eq!(sent["replyToId"], "human-server-message:10");
+        assert_eq!(sent["remoteReplyToMessageId"], "10");
+        assert_eq!(sent["delivery"], "sent");
+        assert_eq!(sent["attachments"][0]["resourceId"], "expected-resource-a");
+        assert_eq!(sent["attachments"][1]["resourceId"], "expected-resource-b");
+        assert_eq!(sent["attachments"].as_array().expect("settled resources").len(), 2);
+        assert!(sent.get("remoteDispatchAttachments").is_none());
+        assert!(sent.get("lastDispatchError").is_none());
+        assert_eq!(
+            fs::read(sent["attachments"][0]["path"].as_str().expect("first resource path"))
+                .expect("first materialized bytes"),
+            [1_u8, 2, 3, 4],
+        );
+        assert_eq!(
+            fs::read(sent["attachments"][1]["path"].as_str().expect("second resource path"))
+                .expect("second materialized bytes"),
+            [5_u8, 6, 7, 8],
+        );
+        let settled_rows = restarted.read_human_conversation_transcript(&id).expect("recovered transcript");
+        assert_eq!(settled_rows, vec![anchor, sent]);
+        restarted.shutdown();
+        drop(restarted);
+
+        let reopened = human_message_fixture_runtime(&root, &base_url);
+        assert_eq!(reopened.read_human_conversation_transcript(&id).expect("restart recovered rows"), settled_rows);
+        reopened.shutdown();
+        let requests = server.join().expect("Human fixture");
+        assert_eq!(requests.len(), 5, "{difference} must be rejected before any resource download");
+        assert!(requests[0].starts_with("POST /api/social/messages "));
+        assert!(requests[1].starts_with("GET /api/social/messages?"));
+        assert!(requests[2].starts_with("POST /api/social/messages "));
+        assert_eq!(fixture_request_json(&requests[0]), fixture_request_json(&requests[2]));
+        assert!(requests[3].starts_with("GET /api/social/message-resources/expected-resource-a "));
+        assert!(requests[4].starts_with("GET /api/social/message-resources/expected-resource-b "));
+        let _ = fs::remove_dir_all(root);
+    }
 }
 
 #[test]
 fn shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce() {
     for nonce in [None, Some("changed")] {
         let root = temp_root("nmr-duplicate-canonical-id");
-        let conflict = fixture_remote_human_message(21, 1, 2, "already sent", nonce, json!([{
-            "resourceId":"forged-resource", "name":"forged.pdf",
-            "contentType":"application/pdf","size":4,
-            "createdAt":"2026-10-05T01:00:21Z"
-        }]));
+        let matching_ack = fixture_remote_human_message(
+            21, 1, 2, "already sent", Some("original"), json!([]),
+        );
+        let mut conflict = matching_ack.clone();
+        conflict["clientRequestId"] = json!(nonce);
         let (base_url, server) = spawn_human_message_fixture(vec![
-            HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[conflict]}}))
+            HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[conflict]}})),
+            HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[matching_ack]}})),
         ]);
         let runtime = human_message_fixture_runtime(&root, &base_url);
         let id = runtime.create_human_conversation("2","Peer")
@@ -1871,12 +2045,26 @@ fn shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_
         });
         assert!(owner.append_transcript_entry(&settled).expect("settled row"));
         let error = runtime.sync_human_conversation(&id)
-            .expect_err("canonical id does not excuse nonce mismatch");
-        assert!(error.contains("acknowledgement"), "{error}");
-        assert_eq!(owner.get_transcript_entries().expect("rows"), vec![settled]);
-        let requests = server.join().expect("Human fixture");
-        assert_eq!(requests.len(), 1, "canonical conflict must preclude resource GET");
+            .expect_err("canonical id does not excuse a nonce mismatch on its own");
+        assert_eq!(error, "remote Human acknowledgement conflicts with the local send identity or text");
+        assert_eq!(owner.get_transcript_entries().expect("rows"), vec![settled.clone()]);
         runtime.shutdown();
+        drop(owner);
+        drop(runtime);
+
+        let restarted = human_message_fixture_runtime(&root, &base_url);
+        assert_eq!(
+            restarted.read_human_conversation_transcript(&id).expect("restart canonical row"),
+            vec![settled.clone()],
+        );
+        assert_eq!(
+            restarted.sync_human_conversation(&id).expect("unchanged nonce is an admissible overlap"),
+            vec![settled],
+        );
+        restarted.shutdown();
+        let requests = server.join().expect("Human fixture");
+        assert_eq!(requests.len(), 2, "nonce admission must not dispatch or fetch resources");
+        assert!(requests.iter().all(|request| request.starts_with("GET /api/social/messages?")));
         let _ = fs::remove_dir_all(root);
     }
 }

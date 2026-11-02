@@ -119,7 +119,7 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-correct-six-case-selection-and-complete-message-gates",
+    "status": "pending-correct-bare-future-salts-and-complete-exact-H-message-gates",
     "local_executable_validation": "not-run",
     "dependent_message_batches": "blocked-until-all-NMR-required-jobs-and-tests-pass",
     "full_product_acceptance": false,
@@ -681,6 +681,196 @@
             "head_repository_id": 1375312893,
             "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
             "head_sha": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70"
+          }
+        }
+      ]
+    },
+    {
+      "id": 41399722398,
+      "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41399722398",
+      "jobs": [
+        {
+          "id": 125128702849,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0
+            }
+          },
+          "full_log_read": true
+        },
+        {
+          "id": 125128702575,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "app_host_compile": "success",
+          "normalization": {
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "filtered_out": 62
+          },
+          "protocol": "skipped",
+          "tcp": "skipped",
+          "proxy_and_credential": "skipped",
+          "classification": "TEST_SELECTION_BUG",
+          "cause": "Four tests selected while six required; broaden scope to include sibling HTTP-date module without lowering guard.",
+          "full_log_read": true
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13121266760,
+          "name": "native-message-shipping-compile-606ee80daf10743b79c6c1c43541584a8af2260d",
+          "size_in_bytes": 12733,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121266760",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121266760/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:26:49Z",
+          "expires_at": "2027-01-31T06:24:38Z",
+          "updated_at": "2026-11-02T06:26:49Z",
+          "digest": "sha256:bc61552e864f7583d964f1f96714a5016c6f340c0dab6337cd021c38302deedc",
+          "workflow_run": {
+            "id": 41399722398,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d"
+          }
+        },
+        {
+          "id": 13120103821,
+          "name": "native-message-reconciliation-606ee80daf10743b79c6c1c43541584a8af2260d",
+          "size_in_bytes": 10026,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13120103821",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13120103821/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:27:13Z",
+          "expires_at": "2027-01-31T06:24:38Z",
+          "updated_at": "2026-11-02T06:27:13Z",
+          "digest": "sha256:a7db7d1d9396c40f821d0dc8233d86fde348715560f4e913a7b8bf4771eace47",
+          "workflow_run": {
+            "id": 41399722398,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "606ee80daf10743b79c6c1c43541584a8af2260d"
+          }
+        }
+      ]
+    },
+    {
+      "id": 41400057867,
+      "attempt": 1,
+      "head_sha": "f3b00a552dbc14536a26c7b19492319d3445fd1c",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41400057867",
+      "jobs": [
+        {
+          "id": 125129748868,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            }
+          },
+          "full_log_read": true,
+          "log_characters": 117314
+        },
+        {
+          "id": 125129749167,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "app_host_compile": "success",
+          "normalization": {
+            "passed": 6,
+            "failed": 0,
+            "ignored": 0,
+            "filtered_out": 60
+          },
+          "protocol": {
+            "passed": 122,
+            "failed": 0,
+            "ignored": 0,
+            "filtered_out": 0
+          },
+          "tcp": {
+            "passed": 8,
+            "failed": 1,
+            "ignored": 0,
+            "failed_case": "live_session_exchanges_encrypted_ping_and_service_rpc",
+            "failure": "providers/telegram-network/tests/tcp_transport.rs:121:47; invoke_raw(get_future_salts) returned InvalidServiceMessage after successful handshake and encrypted ping"
+          },
+          "proxy_and_credential": "skipped",
+          "classification": "IMPLEMENTATION_AND_TEST_ORACLE_BUG",
+          "full_log_read": true,
+          "log_characters": 206089
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13120723463,
+          "name": "native-message-shipping-compile-f3b00a552dbc14536a26c7b19492319d3445fd1c",
+          "size_in_bytes": 17230,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13120723463",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13120723463/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:32:40Z",
+          "expires_at": "2027-01-31T06:27:55Z",
+          "updated_at": "2026-11-02T06:32:40Z",
+          "digest": "sha256:9cb7b7e2f564fe5c018790d4c7b8b617a1e77db8c16ff3cbf381b32828e84c31",
+          "workflow_run": {
+            "id": 41400057867,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f3b00a552dbc14536a26c7b19492319d3445fd1c"
+          }
+        },
+        {
+          "id": 13120623251,
+          "name": "native-message-reconciliation-f3b00a552dbc14536a26c7b19492319d3445fd1c",
+          "size_in_bytes": 10026,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13120623251",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13120623251/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:30:21Z",
+          "expires_at": "2027-01-31T06:27:55Z",
+          "updated_at": "2026-11-02T06:30:21Z",
+          "digest": "sha256:cfa840c4a8d77c62c00a3ba5615041da7fe49c6275254fee68a736e2aea0fd50",
+          "workflow_run": {
+            "id": 41400057867,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f3b00a552dbc14536a26c7b19492319d3445fd1c"
           }
         }
       ]
@@ -4716,6 +4906,25 @@
       "blob": "d772c4cf01b7019b1dde6a5154401e4eef5ba0cc",
       "change": "Existing req_pq lib-test imports restored; no production logic or assertions changed",
       "readback": true
+    },
+    {
+      "sha": "c12e247d63392512b13873accb9ac0c7b00ae859",
+      "parent": "f3b00a552dbc14536a26c7b19492319d3445fd1c",
+      "files": [
+        "projects/telegram-desktop-rust/evidence/fbcp-native-message-round4-20261102.json"
+      ],
+      "action": "Read complete compare patch and commit; preserve independent round4 evidence without rewriting its historical snapshot. No product path changed."
+    },
+    {
+      "sha": "3386755e992d4b6d80b41211975903a3c9d5c839",
+      "parent": "c12e247d63392512b13873accb9ac0c7b00ae859",
+      "files": [
+        ".github/workflows/native-service-contracts.yml",
+        "docs/specs/fbcp-native-message-reconciliation.md",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "action": "Read complete compare, commit and all four changed files. Adopt the already-published minimal production bare-count parser instead of overwriting it with an unpublished helper refactor. Preserve new NMR17/AC11, two parser-library cases and exact 122 protocol/9 TCP guards. Integrate stronger independent external oracles while retaining concurrent renamed cases/positive and precise error assertions. Correct new guard's literal backslash over-escape and actual fixed-U scheme source path."
     }
   ],
   "tcp_fixture_repair": {
@@ -5093,5 +5302,160 @@
     "protocol_tcp_proxy_credentials": "skipped",
     "new_execution_status": "pending",
     "gate_lowered": false
+  },
+  "human_behavior_oracle_strengthening": {
+    "path": "source/host/tests/session_gateway_contract.rs",
+    "base_blob": "4913a378f626a2763be8e0c80a14712ea9efb28f",
+    "authored_case_only_blob": "ce61868303f27a1dd05cd60747342a96ff03f57e",
+    "final_with_bounded_human_fixture_blob": "127700079e9ae9d5c2155cd1d8a218a47f2f8075",
+    "changes": [
+      "Real failed-dispatch pending local message coexists with peer row sharing its request nonce; DB reopen preserves both and only matching local acknowledgement settles the pending slot.",
+      "Independent text, reply, resource identity, resource order and missing-resource acknowledgement differences reject before resource access; pending/anchor content is preserved; reopening and a matching acknowledgement recover with correct resource bytes and no second upload.",
+      "Canonical acknowledgement nonce negative cases change only the nonce and have a correct-nonce positive control after reopen.",
+      "Only the shared Human fixture gains a per-expected-response absolute 15-second accept/read deadline and a 15-second per-socket-write timeout; missing requests fail rather than block join."
+    ],
+    "test_names_count": 10,
+    "independent_static_review": "production_chain_review and spec_evidence_review reviewed case changes; production_chain_review reviewed final fixture bounds, no blocking finding; no executable local validation",
+    "execution_status": "not-run-at-final-test-blob",
+    "product_acceptance": false
+  },
+  "nmr_traceability_reconciliation": {
+    "paths": [
+      "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+      "projects/fabushi-communication-platform/owner-resolution-matrix.md",
+      "projects/telegram-desktop-rust/parity-ledger.json"
+    ],
+    "new_responsibility_id": "FBCP-NMR-001",
+    "existing_owner_rows": [
+      "MSG-SEND-SETTLEMENT",
+      "MSG-REACTION",
+      "NETWORK-SYNC-REALTIME"
+    ],
+    "change": "Record observed current native Human production owner/call chain, ten actual authored tests and explicit remaining coverage/freshness/read/UI/full-acceptance gaps. Remove stale claims of pre-dispatch sent, already-refreshed known rows and first transport waiting for P0.",
+    "production_baseline": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+    "source_scope": "Only selected fixed-U source sections in the existing known-overlap research dossier; no full-source review",
+    "canonical_component_ids": "Empty: actual rendering symbols are not yet verified canonical registry IDs",
+    "ledger_responsibilities_total": 183,
+    "source_counters_changed": false,
+    "source_reviews_changed": false,
+    "execution_evidence_promoted": false,
+    "acceptance_promoted": false,
+    "status": "authored-awaiting-publication-and-Actions"
+  },
+  "future_salts_wire_repair": {
+    "base": "3386755e992d4b6d80b41211975903a3c9d5c839",
+    "failed_execution": {
+      "run_id": 41400057867,
+      "head": "f3b00a552dbc14536a26c7b19492319d3445fd1c",
+      "job_id": 125129749167,
+      "stage": "Live handshake and encrypted ping succeeded; invoke_raw(get_future_salts) returned InvalidServiceMessage at tcp_transport.rs:121:47"
+    },
+    "root_cause": "Both parse_future_salts and its prior test oracle consumed a boxed Vector constructor and a constructor for every element, while fixed-U salts:vector<future_salt> requires a bare signed count and 16-byte bare field bodies.",
+    "fix": "Retain concurrently published signed/default-1M count checks, 16-byte bare field bodies, outer constructor, checked multiplication/remaining before allocation and strict EOF; generic boxed reader remains untouched. Add independent literal/complete-boundary external oracle coverage while preserving concurrent named cases and constructor-shaped timestamp positive control.",
+    "paths": [
+      "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+      "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs",
+      ".github/workflows/native-service-contracts.yml",
+      "docs/specs/fbcp-native-message-reconciliation.md"
+    ],
+    "tests": "Retain concurrent two internal parser fixtures and the two renamed external behavior cases. Add independent literal52/36-byte oracles, all proper prefixes, empty/nonempty, negative/impossible/default-1M over-limit count, three wrong boxed layouts and exact trailing1/4-byte errors; retain constructor-shaped timestamp positive control and all concurrent precise error assertions. Full protocol_contract remains122 tests; no common-reader refactor or corresponding unpublished helper tests are delivered.",
+    "network_and_tcp": "Unchanged: preserved exact f3 network and newer bounded TCP fixture, including mandatory live test.",
+    "source_evidence": [
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+        "blob": "76225965bfc794388db241f3f760db8ab79e84f8",
+        "read_scope": "Full 5663 characters; relevant definitions lines80-81"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": ".gitmodules",
+        "blob": "2a71e861fab57dfd74d66e787867f2ede203a099",
+        "read_scope": "Exact lib_tl declaration and matching recursive tree gitlink"
+      },
+      {
+        "repository": "desktop-app/lib_tl",
+        "commit": "29746d31247c915a9ec870241399a9d103c39f87",
+        "path": "tl/tl_basic_types.h",
+        "blob": "52891fc53841125404c2fc70c9a2492bb2defa3e",
+        "read_scope": "Selected lines531-578 only"
+      },
+      {
+        "repository": "desktop-app/lib_tl",
+        "commit": "29746d31247c915a9ec870241399a9d103c39f87",
+        "path": "tl/tl_boxed.h",
+        "blob": "dfbd9ea7532b8eedcde06946366adf3931de9702",
+        "read_scope": "Full 1451 characters"
+      },
+      {
+        "repository": "desktop-app/lib_tl",
+        "commit": "29746d31247c915a9ec870241399a9d103c39f87",
+        "path": "tl/generate_tl.py",
+        "blob": "55e4f3c81733ecdc768bfb39a04d23b80e34b4c2",
+        "read_scope": "Selected lines445-477,787-824,1270-1344; not full77248 characters"
+      }
+    ],
+    "independent_review": "production_chain_review independently read fixed-U definitions and pinned primitive/boxed/generator semantics. After concurrent338 landed, the reviewer reread both exact338 complete files and the final merged files: API differs only by the source-path comment; only the two renamed external cases gain literal and boundary assertions; all concurrent production guards, constructor-shaped timestamp positive control and exact errors are preserved. Final target blobs6f92b8987a981700be6587c1093df0c11cf93462 and8fa08785d3052f22137b99407c8dfafc921c0dc0 have no static blocker. tl.rs remains untouched at89256ab35184b6dc06a095ab34abb9f44e95a264. Root also read the complete merged external-test diff. This is not execution or independent ACCEPT.",
+    "canonical_contract": "Existing TDRP-R9-MTPROTO-FUTURE-SALTS-WIRE-001 contract/oracle references corrected in the sole ledger; historical boxed claims explicitly superseded. Aggregate stage stays mapped and execution/source/product acceptance remain unpromoted.",
+    "local_executable_validation": "not-run",
+    "production_repair_adopted_from": "3386755e992d4b6d80b41211975903a3c9d5c839",
+    "unpublished_alternative": "A local common bare-vector reader refactor was independently reviewed but discarded after observing concurrent equivalent minimal production repair. No tl.rs change is delivered.",
+    "workflow_repair": "Keep new two-library-case gate and exact 122/9 protocol/TCP counts. Replace its accidental two-backslash ERE before the dot with one, so it matches actual Cargo result text rather than a nonexistent literal backslash.",
+    "final_target_blobs": [
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "chars": 94163,
+        "bytes": 94163,
+        "git_blob": "6f92b8987a981700be6587c1093df0c11cf93462"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs",
+        "chars": 188086,
+        "bytes": 188098,
+        "git_blob": "8fa08785d3052f22137b99407c8dfafc921c0dc0"
+      }
+    ]
+  },
+  "fixed_upstream_build_input_export": {
+    "status": "authored-awaiting-exact-H-Actions",
+    "paths": [
+      {
+        "path": "scripts/tdrp-scan-fixed-build-inputs.py",
+        "chars": 57562,
+        "bytes": 57562,
+        "git_blob": "729e11b6b24f8b31f86d14c02dc46901f4aa6f7b"
+      },
+      {
+        "path": "scripts/test-tdrp-scan-fixed-build-inputs.py",
+        "chars": 36382,
+        "bytes": 36382,
+        "git_blob": "70300499861da46f32de9e646bf02a37ad440efd"
+      },
+      {
+        "path": ".github/workflows/tdrp-fixed-upstream-inventory.yml",
+        "chars": 6555,
+        "bytes": 6555,
+        "git_blob": "d804bc53d63b9cbfc29626775b5e9f15bfdab7cd"
+      }
+    ],
+    "behavior_tests_authored": 35,
+    "local_executable_validation": "not-run",
+    "uses_existing_fixed_U_inventory": {
+      "producer_head": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+      "run_id": 41397005716,
+      "artifact_id": 13118749668,
+      "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+      "reacquisition": false
+    },
+    "scope": "Enumerated fixed-U root build paths plus root CMake entrypoints and pinned desktop-app/cmake_helpers component. Read only exact immutable GitHub blob objects; no source command execution and no floating ref resolution.",
+    "provenance": "Existing bounded artifact recovery verifies complete ZIP and all member identities; new exporter rebinds producer/run/artifact/digest/four member bytes, exact U/tree, complete repository/edge/canonical identities and Git blob hashes.",
+    "opaque_inputs": "Two already-enumerated pinned DirectX compiler DLLs are explicitly registered with path/OID/size as unread opaque inputs. Text scan completion does not claim all selected source bytes were read.",
+    "limits": "512 selected files, 2MiB per text blob, 32MiB source bytes, 64MiB HTTP response bytes, 16MiB per JSON, cooperative900s budget/per-socket timeout/20min job hard limit; fail nonzero and preserve false-complete outputs.",
+    "independent_review": "production_chain_review read artifact schema, real canonical shapes and workflow/helper/tests; corrected precreated output directory, canonical no-ID format, opaque DLL handling, fetch-not-checkout semantics and read1 deadline boundaries; no remaining static blocker.",
+    "source_acceptance": false,
+    "product_acceptance": false,
+    "independent_acceptance": false
   }
 }

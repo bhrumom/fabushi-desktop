@@ -1033,7 +1033,7 @@ pub fn parse_bad_server_salt(input: &[u8]) -> Result<BadServerSalt, ApiRequestEr
 }
 
 pub fn parse_future_salts(input: &[u8]) -> Result<FutureSalts, ApiRequestError> {
-    // Fixed-U mtproto_api.tl declares salts:vector<future_salt>:
+    // Fixed-U mtproto/scheme/mtproto.tl declares salts:vector<future_salt>:
     // both the vector and its elements are bare (count, then 4+4+8 bytes).
     const FUTURE_SALT_WIRE_BYTES: usize = 16;
     const MAX_FUTURE_SALTS: usize = 1_000_000;

@@ -3478,7 +3478,22 @@ fn future_salt_bare_vector_elements_preserve_exact_signed_4_4_8_field_boundaries
     encoded.write_i32(3);
     encoded.write_i64(i64::MAX);
 
+    // Independent fixed-U wire oracle: top constructor, req_msg_id, now,
+    // bare count, and two bare 4+4+8-byte elements.
+    let literal: [u8; 52] = [
+        0x95, 0x08, 0x50, 0xae,
+        0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
+        0xff, 0xff, 0xff, 0xff,
+        0x02, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x80,
+        0xff, 0xff, 0xff, 0x7f,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
+        0xfe, 0xff, 0xff, 0xff,
+        0x03, 0x00, 0x00, 0x00,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+    ];
     let bytes = encoded.into_bytes();
+    assert_eq!(bytes.as_slice(), literal.as_slice());
     assert_eq!(bytes.len(), 52);
     assert_eq!(&bytes[16..20], &2_i32.to_le_bytes());
     assert_eq!(&bytes[20..24], &i32::MIN.to_le_bytes());
@@ -3488,7 +3503,7 @@ fn future_salt_bare_vector_elements_preserve_exact_signed_4_4_8_field_boundaries
     assert_eq!(&bytes[40..44], &3_i32.to_le_bytes());
     assert_eq!(&bytes[44..52], &i64::MAX.to_le_bytes());
 
-    let parsed = fabushi_telegram_protocol::parse_future_salts(&bytes).unwrap();
+    let parsed = fabushi_telegram_protocol::parse_future_salts(&literal).unwrap();
     assert_eq!(parsed.request_message_id, 0x0102_0304_0506_0708_i64);
     assert_eq!(parsed.now, -1);
     assert_eq!(parsed.salts.len(), 2);
@@ -3502,16 +3517,24 @@ fn future_salt_bare_vector_elements_preserve_exact_signed_4_4_8_field_boundaries
 
 #[test]
 fn future_salt_bare_vector_elements_fail_closed_at_count_and_each_field_boundary() {
-    let mut encoded = TlWriter::new();
-    encoded.write_u32(fabushi_telegram_protocol::FUTURE_SALTS_CONSTRUCTOR);
-    encoded.write_i64(9);
-    encoded.write_i32(10);
-    encoded.write_i32(1);
-    encoded.write_i32(11);
-    encoded.write_i32(12);
-    encoded.write_i64(13);
-    let exact = encoded.into_bytes();
+    // This one-element fixture is independent of TlWriter and the parser.
+    let exact = vec![
+        0x95, 0x08, 0x50, 0xae,
+        0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x0a, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+        0x0b, 0x00, 0x00, 0x00,
+        0x0c, 0x00, 0x00, 0x00,
+        0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
     assert_eq!(exact.len(), 36);
+    let parsed = fabushi_telegram_protocol::parse_future_salts(&exact).unwrap();
+    assert_eq!(parsed.request_message_id, 9);
+    assert_eq!(parsed.now, 10);
+    assert_eq!(parsed.salts.len(), 1);
+    assert_eq!(parsed.salts[0].valid_since, 11);
+    assert_eq!(parsed.salts[0].valid_until, 12);
+    assert_eq!(parsed.salts[0].salt, 13);
 
     // Bare fields must not reject a valid signed timestamp just because
     // it has the same bits as the boxed future_salt constructor.
@@ -3524,12 +3547,51 @@ fn future_salt_bare_vector_elements_fail_closed_at_count_and_each_field_boundary
         fabushi_telegram_protocol::FUTURE_SALT_CONSTRUCTOR as i32
     );
 
+    let mut wrong_top = exact.clone();
+    wrong_top[..4].copy_from_slice(&0_u32.to_le_bytes());
+    assert_eq!(
+        fabushi_telegram_protocol::parse_future_salts(&wrong_top).unwrap_err(),
+        ApiRequestError::Tl(TlError::UnexpectedConstructor {
+            expected: fabushi_telegram_protocol::FUTURE_SALTS_CONSTRUCTOR,
+            actual: 0,
+        })
+    );
+
     let mut boxed_vector = exact.clone();
     boxed_vector[16..20].copy_from_slice(&0x1cb5_c415_u32.to_le_bytes());
     assert!(fabushi_telegram_protocol::parse_future_salts(&boxed_vector).is_err());
 
-    for cut in [0_usize, 4, 12, 16, 19, 20, 21, 23, 24, 27, 28, 31, 32, 35] {
-        assert!(fabushi_telegram_protocol::parse_future_salts(&exact[..cut]).is_err());
+    // Insert actual boxed layout words, preserving the count and payload.
+    // A constructor-shaped timestamp alone above remains valid.
+    let mut inserted_boxed_vector = exact[..16].to_vec();
+    inserted_boxed_vector.extend_from_slice(&0x1cb5_c415_u32.to_le_bytes());
+    inserted_boxed_vector.extend_from_slice(&exact[16..]);
+    assert!(fabushi_telegram_protocol::parse_future_salts(&inserted_boxed_vector).is_err());
+
+    let mut boxed_element = exact[..20].to_vec();
+    boxed_element.extend_from_slice(
+        &fabushi_telegram_protocol::FUTURE_SALT_CONSTRUCTOR.to_le_bytes(),
+    );
+    boxed_element.extend_from_slice(&exact[20..]);
+    assert_eq!(
+        fabushi_telegram_protocol::parse_future_salts(&boxed_element).unwrap_err(),
+        ApiRequestError::TrailingBytes(4)
+    );
+
+    let mut old_boxed_layout = exact[..16].to_vec();
+    old_boxed_layout.extend_from_slice(&0x1cb5_c415_u32.to_le_bytes());
+    old_boxed_layout.extend_from_slice(&exact[16..20]);
+    old_boxed_layout.extend_from_slice(
+        &fabushi_telegram_protocol::FUTURE_SALT_CONSTRUCTOR.to_le_bytes(),
+    );
+    old_boxed_layout.extend_from_slice(&exact[20..]);
+    assert!(fabushi_telegram_protocol::parse_future_salts(&old_boxed_layout).is_err());
+
+    for cut in 0..exact.len() {
+        assert!(
+            fabushi_telegram_protocol::parse_future_salts(&exact[..cut]).is_err(),
+            "accepted truncated future_salts at byte {cut}"
+        );
     }
 
     let mut negative_count = exact.clone();
@@ -3546,11 +3608,42 @@ fn future_salt_bare_vector_elements_fail_closed_at_count_and_each_field_boundary
         ApiRequestError::InvalidFutureSalts
     );
 
-    let mut trailing = exact;
+    for count in [1_000_001_i32, i32::MAX] {
+        let mut over_limit = exact.clone();
+        over_limit[16..20].copy_from_slice(&count.to_le_bytes());
+        assert_eq!(
+            fabushi_telegram_protocol::parse_future_salts(&over_limit).unwrap_err(),
+            ApiRequestError::Tl(TlError::VectorLengthLimit {
+                length: count as usize,
+                maximum: 1_000_000,
+            })
+        );
+    }
+
+    let mut zero_with_payload = exact.clone();
+    zero_with_payload[16..20].copy_from_slice(&0_i32.to_le_bytes());
+    assert_eq!(
+        fabushi_telegram_protocol::parse_future_salts(&zero_with_payload).unwrap_err(),
+        ApiRequestError::TrailingBytes(16)
+    );
+    let empty = &zero_with_payload[..20];
+    let parsed_empty = fabushi_telegram_protocol::parse_future_salts(empty).unwrap();
+    assert_eq!(parsed_empty.request_message_id, 9);
+    assert_eq!(parsed_empty.now, 10);
+    assert!(parsed_empty.salts.is_empty());
+
+    let mut trailing = exact.clone();
     trailing.push(0);
     assert_eq!(
         fabushi_telegram_protocol::parse_future_salts(&trailing).unwrap_err(),
         ApiRequestError::TrailingBytes(1)
+    );
+
+    let mut trailing_word = exact;
+    trailing_word.extend_from_slice(&0_u32.to_le_bytes());
+    assert_eq!(
+        fabushi_telegram_protocol::parse_future_salts(&trailing_word).unwrap_err(),
+        ApiRequestError::TrailingBytes(4)
     );
 }
 

@@ -186,7 +186,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-protocol --lib mtproto_service_builder_contract_tests::future_salts_ 2>&1 | tee artifacts/native-message-shipping/telegram-future-salts.log
-          grep -Eq 'test result: ok\\. 2 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-future-salts.log
+          grep -Eq 'test result: ok\. 2 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-future-salts.log
       - name: Verify protocol and TCP compatibility behavior
         shell: bash
         run: |
