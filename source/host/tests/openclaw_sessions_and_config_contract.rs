@@ -876,6 +876,8 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
         11,
         "all transaction edges and the original-turn terminal fence must validate admission identity"
     );
+    assert!(original_turn_fence_has_admission_guard(owner_source),
+        "the additional original-turn fence must retain its own actual admission guard");
     for (method, expected_guards) in [
         ("commit_session_work_result", 2),
         ("append_transcript_entries_if_session_admitted", 1),
@@ -940,6 +942,70 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
         admission_cas.find("BEGIN IMMEDIATE")
             < admission_cas.find("let current = db")
     );
+}
+
+fn original_turn_fence_has_admission_guard(source: &str) -> bool {
+    fn condition_rejects_malformed_admission(condition: &syn::Expr) -> bool {
+        if let syn::Expr::Binary(binary) = condition {
+            if matches!(binary.op, syn::BinOp::Or(_)) {
+                return condition_rejects_malformed_admission(&binary.left);
+            }
+        }
+        let syn::Expr::Unary(negated) = condition else { return false; };
+        if !matches!(negated.op, syn::UnOp::Not(_)) { return false; }
+        let syn::Expr::Call(call) = negated.expr.as_ref() else { return false; };
+        let syn::Expr::Path(callee) = call.func.as_ref() else { return false; };
+        if callee.qself.is_some()
+            || !callee.path.is_ident("session_admission_identity_is_well_formed")
+            || call.args.len() != 1
+        { return false; }
+        let Some(syn::Expr::Reference(argument)) = call.args.first() else { return false; };
+        let syn::Expr::Path(identity) = argument.expr.as_ref() else { return false; };
+        argument.mutability.is_none() && identity.qself.is_none()
+            && identity.path.is_ident("admission")
+    }
+
+    let Ok(parsed) = syn::parse_file(source) else { return false; };
+    let mut fences = parsed.items.into_iter().filter_map(|item| match item {
+        syn::Item::Fn(function) if function.sig.ident == "capture_original_turn_terminal_fence" => Some(function),
+        _ => None,
+    });
+    let Some(fence) = fences.next() else { return false; };
+    if fences.next().is_some() { return false; }
+    fence.block.stmts.iter().filter(|statement| match statement {
+        syn::Stmt::Expr(syn::Expr::If(branch), _) =>
+            condition_rejects_malformed_admission(&branch.cond),
+        _ => false,
+    }).count() == 1
+}
+
+#[test]
+fn original_turn_admission_guard_oracle_rejects_removed_and_comment_only_guards() {
+    let source = include_str!("../src/extensions/session/agent_db.rs");
+    assert!(original_turn_fence_has_admission_guard(source));
+    let signature = "fn capture_original_turn_terminal_fence(";
+    let guard = "!session_admission_identity_is_well_formed(&admission)";
+    let (prefix, fence_and_tail) = source.split_once(signature).expect("actual terminal fence");
+    let removed = format!("{prefix}{signature}{}", fence_and_tail.replacen(guard, "false", 1));
+    assert_ne!(removed, source, "the negative must remove the actual guard");
+    let comment_only = format!("// {guard}\n{removed}");
+    assert_eq!(comment_only.matches("session_admission_identity_is_well_formed(&admission)").count(), 11,
+        "the comment preserves the global count but cannot replace the fence guard");
+    let body_marker = ") -> Result<OriginalTurnTerminalFence, AgentDbProjectionError> {";
+    let (before_body, body_and_tail) = removed.split_once(body_marker).expect("actual fence body");
+    let doc_comment_only = format!(
+        "{before_body}{body_marker}\n    /// if{guard}||\n    fn guard_spelling_only() {{}}\n{body_and_tail}"
+    );
+    assert_eq!(doc_comment_only.matches("session_admission_identity_is_well_formed(&admission)").count(), 11,
+        "the in-body doc comment preserves the global count but is not a predicate call");
+    for (label, candidate) in [
+        ("removed", &removed),
+        ("ordinary comment only", &comment_only),
+        ("in-body doc comment only", &doc_comment_only),
+    ] {
+        assert!(syn::parse_file(candidate).is_ok(), "counterfactual must remain valid Rust: {label}");
+        assert!(!original_turn_fence_has_admission_guard(candidate), "missing actual guard: {label}");
+    }
 }
 
 #[test]

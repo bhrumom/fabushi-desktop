@@ -877,7 +877,7 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
     });
     let accepted = runtime.accept_routed_send(&args, |accepted| {
         persist_accepted_send_prompt_context(sessions, &args, accepted)
-            .map_err(|error| ProductionSendError::Internal(error.to_string()))
+            .map_err(|error| ProductionSendError::Internal(format!("{error:?}")))
     }).expect("actual routed admission and gateway persistence");
     assert!(!accepted.duplicate);
     let admission = sessions.read_session_work_admission(&request.agent_id)

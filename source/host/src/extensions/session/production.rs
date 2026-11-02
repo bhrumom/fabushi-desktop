@@ -6493,6 +6493,7 @@ mod original_turn_terminal_tests {
             let fixture = Fixture::new(kind);
             fixture.publish();
             let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+            let mut pending_media_path = None;
             let (key, raw) = match kind {
                 "memory" => ("pendingExternalMemoryMutation", serde_json::to_string(&PendingMemoryMutation {
                     mutation_id: "pending-memory".into(), operation: "clear".into(),
@@ -6511,31 +6512,80 @@ mod original_turn_terminal_tests {
                     }).unwrap())
                 }
                 "media" => {
-                    let mut admission = owner.read_session_work_admission().unwrap().unwrap();
-                    admission.admitted_media_work_id = Some("pending-media".into());
+                    let media_path = fixture.db_path().parent().unwrap()
+                        .join("attachments").join("pending-original-turn.bin");
+                    fs::create_dir_all(media_path.parent().unwrap()).unwrap();
+                    fs::write(&media_path, b"owned pending original-turn media").unwrap();
+                    fixture.workers.capture_session_media_admission(
+                        &fixture.original.agent_id, &fixture.original.session_key,
+                        "pending-media", Some(&media_path),
+                    ).unwrap();
+                    let admission = owner.read_session_work_admission().unwrap().unwrap();
+                    assert_eq!(admission.admitted_media_work_id.as_deref(), Some("pending-media"));
+                    assert_eq!(admission.admitted_media_paths,
+                        vec![media_path.to_str().unwrap().to_string()]);
+                    pending_media_path = Some(media_path);
                     ("sessionWorkAdmission", serde_json::to_string(&admission).unwrap())
                 }
                 _ => unreachable!(),
             };
             drop(owner);
             fixture.workers.shutdown_with_checkpoint();
-            fixture.raw_db().execute(SET_KV_SQL, params![key, raw]).unwrap();
+            if kind != "media" {
+                fixture.raw_db().execute(SET_KV_SQL, params![key, raw]).unwrap();
+            }
+            assert_eq!(fixture.raw_kv(key).as_deref(), Some(raw.as_str()));
             let before = fixture.rows();
             let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
             assert!(restarted.read_original_turn_terminal_candidate(&fixture.original).is_err(), "{kind}");
             assert!(restarted.prepare_original_turn_terminal_view(&fixture.original, &fixture.root_id).is_err(), "{kind}");
             assert_eq!(fixture.rows(), before, "strict inspection cannot recover {kind}");
             assert_eq!(fixture.raw_kv(key).as_deref(), Some(raw.as_str()));
+            if let Some(media_path) = &pending_media_path {
+                assert_eq!(fs::read(media_path).unwrap(), b"owned pending original-turn media");
+            }
             // This is the existing ordinary recovery owner, deliberately
             // called only after the strict path has retained the input.
             let ordinary = restarted.open_agent_db_owner(&fixture.original.agent_id).unwrap();
             if kind == "media" {
-                assert!(ordinary.read_session_work_admission().unwrap().unwrap().admitted_media_work_id.is_none());
+                let admission = ordinary.read_session_work_admission().unwrap().unwrap();
+                assert!(admission.admitted_media_work_id.is_none());
+                assert!(admission.admitted_media_paths.is_empty());
+                assert!(!pending_media_path.as_ref().unwrap().exists());
             } else {
                 assert!(ordinary.read_kv(key).unwrap().is_none());
             }
             restarted.shutdown();
         }
+    }
+
+    #[test]
+    fn strict_and_ordinary_first_open_retain_unknown_media_without_durable_paths() {
+        let fixture = Fixture::new("unknown-media-no-paths");
+        fixture.publish();
+        let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+        let mut admission = owner.read_session_work_admission().unwrap().unwrap();
+        assert!(admission.admitted_media_work_id.is_none());
+        assert!(admission.admitted_media_paths.is_empty());
+        admission.admitted_media_work_id = Some("unknown-pending-media".into());
+        let raw = serde_json::to_string(&admission).unwrap();
+        drop(owner);
+        fixture.workers.shutdown_with_checkpoint();
+        fixture.raw_db().execute(SET_KV_SQL, params!["sessionWorkAdmission", raw]).unwrap();
+        let before = fixture.rows();
+        let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
+        for _ in 0..2 {
+            assert!(restarted.read_original_turn_terminal_candidate(&fixture.original).is_err());
+            assert!(restarted.prepare_original_turn_terminal_view(&fixture.original, &fixture.root_id).is_err());
+            let error = restarted.open_agent_db_owner(&fixture.original.agent_id)
+                .err().expect("unknown media custody must not be cleared by ordinary open");
+            assert_eq!(error, "pending outgoing media has no durable materialized paths");
+            assert_eq!(fixture.rows(), before);
+            assert_eq!(fixture.raw_kv("sessionWorkAdmission").as_deref(), Some(raw.as_str()));
+            assert_eq!(restarted.active_agent_db_owner_count(), 0,
+                "failed inspection or recovery cannot cache an unrecovered owner");
+        }
+        restarted.shutdown();
     }
 
     #[test]

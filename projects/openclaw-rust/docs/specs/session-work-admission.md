@@ -1737,6 +1737,47 @@ The original log SHA-256 is
 Require the affected Settings gate and retained recovery contracts on the new
 exact H in Actions; later steps skipped at 0f are not passing evidence.
 
+The supplemental `SWA-ADMISSION-COUNT-01` observation retains this exact total
+and private-fence count, then locates the actual unique fence in parsed Rust
+and checks its condition's predicate-call expression with the existing parser
+features. Do not add a dependency or print attributes to establish the guard.
+Removing the guard from the actual shipping source must fail the observation
+even if an ordinary comment or an in-body doc comment retains its spelling;
+each counterfactual must first pass a Rust syntax assertion. These source-only
+controls supplement, without replacing, the existing invalid-admission,
+unchanged-row, replay and rollback behavior tests. Independent review and
+new exact-H Actions remain required; no runtime or global acceptance follows
+from source observation alone.
+
+### SWA-RECOVERY-ORACLE-02 — restart compilation and media recovery inputs
+
+At `485c388b082f71d9e6fb87535e87240551d19dde`, Actions `41488259141`,
+Host job `125430075302`, the direct Recovery artifact `13164862050` records
+two **TEST_FLAW / FIX** decisions. Its archive SHA-256 is
+`b253d72f9c553432999f339e39b53819577edc78920c2a43f4fd7be15990853b`.
+The restart fixture calls `to_string()` on the Debug-only `SessionGatewayError`,
+preventing the integration command from compiling. Use the existing App
+fixture's Debug conversion and preserve every actual process, original-turn,
+model, one-effect and completion-receipt assertion. No integration test or
+fresh-App restart execution is established by this failed command.
+
+The strict-first-open media fixture records a work ID without a materialized
+path, then incorrectly expects the ordinary recovery owner to clear it. The
+production capture owner requires a path for new media work; the recovery owner
+must keep an unknown work-only fence. Exercise the positive case through
+`capture_session_media_admission` with a real file under the agent media root.
+Strict terminal inspection must retain all database rows, the serialized input
+and file bytes; only the ordinary owner may remove that proven owned file and
+clear both custody fields. Retain memory/profile controls. Add a separate
+work-only negative requiring repeated strict and ordinary opens to refuse
+without changing the exact rows or stored fence. Do not relax either production
+refusal, synthesize settlement, or remove the invalid-admission controls.
+
+These repairs and the supplemental guard observation require fresh complete
+scope review and the affected compile, actual fresh-App restart and private
+recovery filters in Actions on the integrated H. Source review, an App binary
+compiled with `--no-run`, and skipped downstream steps are not runtime proof.
+
 ## References
 
 - `projects/openclaw-rust/decisions/2026-11-01-session-work-admission-owner-contract.md`
