@@ -86,7 +86,7 @@ jobs:
           if-no-files-found: error
   fixed-source-candidate:
     needs: contract
-    if: github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    if: github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1' || github.ref == 'refs/heads/checkpoint/tdrp-forward-privacy-task20bf-r1'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
