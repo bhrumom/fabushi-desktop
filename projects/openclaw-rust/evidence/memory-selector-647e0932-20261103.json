@@ -121,5 +121,115 @@
       ".github/workflows/ocrm-stage-reviewed-objects.yml"
     ],
     "scope": "Remote source identity only; Actions status remains independent"
+  },
+  "continuedRecovery": {
+    "previewOracleRepair": {
+      "contract": "LPG-APP-ORACLE-01",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "reason": "The old whole-Gateway absence assertion rejected valid inherited Automation/Workflow Host-lane branches; the replacement pins only the actual final shared-service fallback and retains all behavioral/AST negatives.",
+      "subject": "93130e0a4e1e4753043e714bb64802e5572d863e",
+      "tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+      "parent": "f5f6d88fd5e1f96e27558d2a17e490964c6d57a5",
+      "githubReadback": {
+        "commit": true,
+        "branch": true,
+        "fullFileContents": true,
+        "files": [
+          {
+            "path": "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
+            "blob": "84f3e31c52302d243232e203803394bf17070a1a",
+            "mode": "100644"
+          },
+          {
+            "path": "source/host/app/src/tests/link_preview_gateway_tests.rs",
+            "blob": "553f0675015cee1d3a7beebd054d69f787536882",
+            "mode": "100644"
+          }
+        ]
+      },
+      "sourceReviews": [
+        {
+          "tree": "6992f0a6275250851ec7635e073accd84266a1dd",
+          "result": "P1 TEST_FLAW LPG-APP-ORACLE-01; runner recorded FIX before changing source"
+        },
+        {
+          "tree": "0cfcf4eec91d1ce37df8124b74b8de5220d25223",
+          "result": "fresh focused fix review approved; no additional findings"
+        },
+        {
+          "tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+          "result": "focused integration review approved; nine incoming Automation files preserved"
+        }
+      ],
+      "execution": {
+        "sourceRun": 41530832703,
+        "runtimeRun": 41530832715,
+        "verdict": "pending",
+        "scope": "Run creation and queued observation are not execution success; later MGS subject includes this fix."
+      }
+    },
+    "memoryRuntimeObservation": {
+      "subject": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+      "tree": "d119b337cf4f1d00ab00bb26144998e2c378ee86",
+      "observedAt": "2026-11-02T21:54:43Z",
+      "sourceRun": 41531742497,
+      "runtimeRun": 41531742609,
+      "sourceJobs": [
+        {
+          "id": 125573404762,
+          "name": "source-authority",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573407198,
+          "name": "recover-original-host-log",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "runtimeJobs": [
+        {
+          "id": 125573405387,
+          "name": "sqlite-native-path",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573405761,
+          "name": "rust-host",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573405782,
+          "name": "OCRM installation key restore boundary / Linux",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573406034,
+          "name": "renderer",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573407134,
+          "name": "Pressure profiler / ${{ matrix.os }}",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 125573484174,
+          "name": "platform-worker",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "verdict": "pending; queued or skipped is not success"
+    },
+    "preservation": "The incoming MGS record already preserves the exact frozen source and publication. Retain it as the canonical Memory evidence path instead of committing a duplicate full task-history appendix.",
+    "sourceBoundary": "New RSU-v1 work is independent and not included in the two published subjects above; its own frozen H and execution will be required."
   }
 }
