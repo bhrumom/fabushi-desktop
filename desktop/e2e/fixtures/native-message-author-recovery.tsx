@@ -79,6 +79,8 @@ const refreshes: Pending[] = [];
 const sends: Pending[] = [];
 const retries: Pending[] = [];
 const agentSends: Pending[] = [];
+const agentRosters: Pending[] = [];
+const heldAgentTails: Pending[] = [];
 // The external protocol retains the original admitted request body. This is
 // an in-memory service control, not a second renderer queue or durable Host.
 const humanIntents = new Map<string, Pending>();
@@ -101,6 +103,8 @@ const humanHistoryRejections: Array<{ request: FixtureRequest; message: string }
 let account: CursorAuthStatus = { kind: 'logged-in', authId: '1', email: 'one@example.test', displayName: 'Local' };
 let accountEpoch = 0;
 let holdOlder = true;
+let holdAgentRoster = query.get('holdAgentRoster') === '1';
+let holdAgentTails = false;
 let holdInitial = query.get('holdInitial') === '1';
 let holdApprovalClears = false;
 let holdNextSubmissionBindingWrite = false;
@@ -284,7 +288,11 @@ function receive(endpoint: Endpoint, frame: { requestId: string; method: string;
   const transcript = rows.get(id) ?? [];
   const pending: Pending = { request, endpoint, value: null, settled: false };
   switch (request.method) {
-    case 'listAgents': case 'searchAgents': pending.value = clone(agents()); break;
+    case 'listAgents':
+      pending.value = clone(agents());
+      if (holdAgentRoster) { agentRosters.push(pending); return; }
+      break;
+    case 'searchAgents': pending.value = clone(agents()); break;
     case 'getTrays': case 'listAllAutomations':
     case 'getAgentAutomations': case 'getAgentWorkflows':
     case 'getAsyncTasks': case 'getSubagents': case 'listHumanCalls': case 'syncHumanCalls':
@@ -325,7 +333,9 @@ function receive(endpoint: Endpoint, frame: { requestId: string; method: string;
       if (holdInitial && id === 'human:a') { initials.push(pending); return; }
       break;
     case 'openAgentTail': case 'getAgentTranscriptTail':
-      pending.value = { entries: clone(transcript) }; break;
+      pending.value = { entries: clone(transcript) };
+      if (holdAgentTails) { heldAgentTails.push(pending); return; }
+      break;
     case 'sendHumanMessage': {
       reservedNonce = null;
       const intentKey = JSON.stringify([request.accountEpoch, id, request.args.clientNonce]);
@@ -563,6 +573,8 @@ const fixture = {
     sends: sends.filter((entry) => !entry.settled).length,
     retries: retries.filter((entry) => !entry.settled).length,
     agentSends: agentSends.filter((entry) => !entry.settled).length,
+    agentRosters: agentRosters.filter((entry) => !entry.settled).length,
+    agentTails: heldAgentTails.filter((entry) => !entry.settled).length,
     reactions: reactions.filter((entry) => !entry.settled).length,
     sendRequests: sends.length, reactionRequests: reactions.length,
     retryRequests: retries.length, agentSendRequests: agentSends.length,
@@ -574,6 +586,8 @@ const fixture = {
   diagnostics: () => clone({
     account, accountEpoch, mountCount, requests, frames, unhandledRequests, desktopCalls, storageWrites,
     humanHistoryReads, humanHistoryRejections, attachmentCommits,
+    heldAgentRosters: agentRosters.map(({ request, settled }) => ({ request, settled })),
+    heldAgentTails: heldAgentTails.map(({ request, settled }) => ({ request, settled })),
     humanHistoryWalks: [...humanHistoryWalks.values()],
     approvalClears: approvalClears.map(({ index, accountId, accountEpoch, settled }) => ({ index, accountId, accountEpoch, settled })),
     draftPersistenceWrites: draftPersistenceWrites.map(({ index, key, value, containsSubmissionBinding, state, failure }) => ({ index, key, value, containsSubmissionBinding, state, failure })),
@@ -583,6 +597,18 @@ const fixture = {
     canonicalServiceRows: [...rows],
   }),
   releaseInitial() { holdInitial = false; for (const pending of initials) if (!pending.settled) reply(pending); },
+  releaseAgentRosters() {
+    holdAgentRoster = false;
+    for (const pending of agentRosters) if (!pending.settled) reply(pending);
+  },
+  holdAgentTranscriptReads() {
+    if (holdAgentTails) throw new Error('Agent transcript reads are already held');
+    holdAgentTails = true;
+  },
+  releaseAgentTranscriptReads() {
+    holdAgentTails = false;
+    for (const pending of heldAgentTails) if (!pending.settled) reply(pending);
+  },
   releaseOlder() { holdOlder = false; for (const pending of older) if (!pending.settled) reply(pending); },
   releaseRefreshes() { for (const pending of refreshes) if (!pending.settled) reply(pending); },
   holdApprovalClears() {

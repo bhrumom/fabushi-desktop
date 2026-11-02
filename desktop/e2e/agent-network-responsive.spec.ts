@@ -782,7 +782,58 @@ async function launchHumanLifetime(appDataDir: string, label: string, capture: H
   page.on('response', (response) => capture.pageEvents.push({
     at: Date.now(), lifetime: label, kind: 'renderer-response', url: response.url(), status: response.status(),
   }));
-  await app.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
+  let readinessPhase = 'video-recorder';
+  try {
+    const video = page.video();
+    expect(video, 'Each Human Electron lifetime must retain its requested video capture').not.toBeNull();
+    // In pinned Playwright, a failed page initialization can still emit a
+    // firstWindow with a dummy frame. The video handle alone is lazy; path()
+    // proves the recorder actually created its artifact before target resume.
+    const videoPath = await withPluginsDeadline('Human Electron video recorder initialization', video!.path(), 5_000);
+    readinessPhase = 'production-document';
+    await page.waitForURL(/^(app:|file:)/, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+    readinessPhase = 'preload-ipc';
+    await page.waitForFunction(() => {
+      const desktop = (window as unknown as {
+        desktop?: {
+          cursorAccount?: { getStatus?: unknown };
+          onboarding?: { setSeen?: unknown };
+        };
+      }).desktop;
+      return typeof desktop?.cursorAccount?.getStatus === 'function'
+        && typeof desktop?.onboarding?.setSeen === 'function';
+    }, undefined, { timeout: 15_000 });
+    capture.evidence.push({
+      kind: 'electron-capture-ready', lifetime: label, at: Date.now(),
+      url: page.url(), videoArtifact: path.basename(videoPath), documentReady: 'domcontentloaded', preloadReady: true,
+    });
+    readinessPhase = 'trace-start';
+    // Electron.launch in pinned Playwright does not enter the test runner's
+    // automatic context trace hook. This explicit per-process trace is its
+    // only capture owner; failure here must fail the case, never skip tracing.
+    await withPluginsDeadline('Human Electron trace start',
+      app.context().tracing.start({ screenshots: true, snapshots: true, sources: true }), 15_000);
+    capture.evidence.push({ kind: 'electron-trace-started', lifetime: label, at: Date.now() });
+  } catch (error) {
+    let windows: unknown;
+    try {
+      windows = await withPluginsDeadline('Human Electron startup diagnostics', app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows().map((window) => ({
+          destroyed: window.isDestroyed(),
+          rendererDestroyed: window.webContents.isDestroyed(),
+          url: window.webContents.isDestroyed() ? null : window.webContents.getURL(),
+          loading: window.webContents.isDestroyed() ? null : window.webContents.isLoading(),
+        }))), 5_000);
+    } catch (diagnosticError) {
+      windows = { diagnosticError: String(diagnosticError) };
+    }
+    capture.evidence.push({
+      kind: 'electron-capture-startup-failure', lifetime: label, at: Date.now(),
+      phase: readinessPhase, url: page.url(), closed: page.isClosed(), windows,
+      error: error instanceof Error ? error.stack ?? error.message : String(error),
+    });
+    throw error;
+  }
   const runtime = await app.evaluate(({ app, safeStorage }) => ({
     pid: process.pid, electron: process.versions.electron, node: process.versions.node,
     appPath: app.getAppPath(), userData: app.getPath('userData'), packaged: app.isPackaged,
@@ -972,7 +1023,7 @@ async function closeHumanLifetime(lifetime: HumanLifetime, capture: HumanCapture
     prior.pid === entry.pid && prior.started === entry.started && prior.command === entry.command)) lifetime.identities.push(entry);
   capture.evidence.push({ kind: 'owned-processes-before-shutdown', lifetime: lifetime.label, processes: lifetime.identities });
   const tracePath = capture.info.outputPath(lifetime.label + '-trace.zip');
-  await lifetime.app.context().tracing.stop({ path: tracePath });
+  await withPluginsDeadline('Human Electron trace stop', lifetime.app.context().tracing.stop({ path: tracePath }), 15_000);
   lifetime.traceStopped = true;
   await capture.info.attach(lifetime.label + '-trace', { path: tracePath, contentType: 'application/zip' });
   const started = Date.now();
@@ -999,12 +1050,14 @@ async function finishHumanCapture(appDataDir: string, scenario: HumanElectronSce
     try {
       if (!lifetime.traceStopped) {
         const failureTrace = capture.info.outputPath(lifetime.label + '-failure-trace.zip');
-        await lifetime.app.context().tracing.stop({ path: failureTrace })
+        await withPluginsDeadline('Failed Human Electron trace preservation',
+          lifetime.app.context().tracing.stop({ path: failureTrace }), 5_000)
           .then(() => capture.info.attach(lifetime.label + '-failure-trace', { path: failureTrace, contentType: 'application/zip' }))
           .catch((error: unknown) => capture.evidence.push({ kind: 'failure-trace-error', lifetime: lifetime.label, error: String(error) }));
       }
       if (!lifetime.page.isClosed()) {
-        await humanMilestone(lifetime, capture, lifetime.label + '-failure').catch((error: unknown) =>
+        await withPluginsDeadline('Failed Human renderer diagnostics',
+          humanMilestone(lifetime, capture, lifetime.label + '-failure'), 6_000).catch((error: unknown) =>
           capture.evidence.push({ kind: 'failure-capture-error', lifetime: lifetime.label, error: String(error) }));
       }
       const current = observedLiveProcessTree(await readProcessTable(), lifetime);

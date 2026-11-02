@@ -32,6 +32,17 @@ export function assertNoOpenSourceCandidate(ledger) {
   }
 }
 
+// Shared with the full authority entrypoint. This checks trace links only;
+// it does not grant source, implementation or independent acceptance.
+export function assertResponsibilityTraceability(row, rtm, dossier) {
+  const traceText = rtm + '\n' + dossier;
+  for (const id of [...row.requirement_ids, ...row.oracle_ids, ...row.invariant_ids]) {
+    if (!traceText.includes(id)) {
+      throw new Error('traceability id ' + id + ' missing from RTM/dossier for ' + row.responsibility_id);
+    }
+  }
+}
+
 // Necessary accepted-mode conditions only; this returns no acceptance verdict.
 // Detailed external/generated/LFS/legal evidence remains independently required.
 export function assertSourceAcquisitionClosure(lock, acquisition) {

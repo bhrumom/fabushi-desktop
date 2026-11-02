@@ -1009,7 +1009,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const asyncTasksReturnFocusRef = useRef<HTMLElement | null>(null);
   const [globalShortcutController] = useState(() => createGlobalKeyboardShortcutController([]));
   const createAgentRef = useRef<() => void | Promise<unknown>>(() => {});
-  const openAgentRef = useRef<(agentId: string) => void | Promise<unknown>>(() => {});
+  const openAgentRef = useRef<(agentId: string, options?: { background?: boolean }) => void | Promise<unknown>>(() => {});
   const acknowledgementScopeRef = useRef<{ accountSlot: string | null; agentId: string | null }>({ accountSlot: null, agentId: null });
   const rosterAttemptRef = useRef(0);
   const hasLoadedAgentsRef = useRef(hasLoadedAgents);
@@ -2944,7 +2944,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           // enough type information to address the Human transcript. Once the
           // canonical Human roster arrives, retry that same selection instead of
           // leaving the workspace permanently unloaded until the user changes chats.
-          void openAgentRef.current(activeHumanId);
+          void openAgentRef.current(activeHumanId, { background: true });
         } else if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
           const accountNow = accountRef.current;
           const requestGeneration = openAgentRequestGenerationRef.current;
@@ -3052,11 +3052,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
   }, [client]);
 
-  const openAgent = useCallback(async (agentId: string) => {
+  const openAgent = useCallback(async (agentId: string, options?: { background?: boolean }) => {
     const conversationGeneration = transcriptConversationGenerationsRef.current.get(agentId) ?? 0;
     const accountScopeGeneration = accountScopeGenerationRef.current;
     const transportScopeGeneration = transportScopeGenerationRef.current;
     if (accountRef.current?.kind !== "logged-in") return;
+    if (options?.background === true && selectionStore.get().currentAgentId !== agentId) return;
+    if (options?.background !== true) {
+      // Explicit navigation owns the surface change, including reselecting a
+      // conversation whose first page is already loading. Background roster,
+      // restore and clear recovery must not dismiss a user's open surface.
+      setOverlay(null);
+      setWorkspaceRoute(null);
+      setCommandPaletteOpen(false);
+    }
     const isHumanTranscript = humanConversationsRef.current.some((conversation) => conversation.id === agentId);
     if (initialTranscriptRequestRef.current?.agentId === agentId
       && initialTranscriptRequestRef.current.accountGeneration === accountScopeGeneration
@@ -3071,9 +3080,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       && cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot;
     transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
     selectionStore.select(agentId);
-    setOverlay(null);
-    setWorkspaceRoute(null);
-    setCommandPaletteOpen(false);
     if (hasLoadedEntries) {
       // A changed scope needs its cached cursor restored; reselecting the
       // current scope must preserve its in-flight page and failure overlays.
@@ -3350,7 +3356,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         transcriptPaginationController.reset();
         // An initial load can still have no cache entry to delete. Schedule
         // its replacement directly instead of depending on a cache re-render.
-        if (activeAgentIdRef.current === ownerId) void openAgentRef.current(ownerId);
+        if (activeAgentIdRef.current === ownerId) void openAgentRef.current(ownerId, { background: true });
       },
       onAppended: ({ agentId: ownerId, entry: event }) => {
       if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
@@ -3556,7 +3562,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [account?.kind, client, sidebarSectionsStore]);
 
   useEffect(() => {
-    if (activeAgentId && entriesByAgent[activeAgentId] == null) void openAgent(activeAgentId);
+    if (activeAgentId && entriesByAgent[activeAgentId] == null) void openAgent(activeAgentId, { background: true });
   }, [activeAgentId, entriesByAgent, openAgent]);
 
   useEffect(() => {

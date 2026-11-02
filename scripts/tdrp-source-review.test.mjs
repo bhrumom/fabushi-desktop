@@ -9,6 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {readRecoveredCandidateDocuments, main as sourceCandidateMain} from './validate-tdrp-source-candidate.mjs';
 import {
   assertNoOpenSourceCandidate,
+  assertResponsibilityTraceability,
   assertSourceAcquisitionClosure,
   validateSourceCandidate,
   validateResponsibilitySources,
@@ -1051,4 +1052,83 @@ test('focused candidate CLI rejects local execution before reading inputs', asyn
   t.after(() => { if (before === undefined) delete process.env.GITHUB_ACTIONS; else process.env.GITHUB_ACTIONS = before; });
   process.env.GITHUB_ACTIONS = 'false';
   await assert.rejects(sourceCandidateMain([]), /only in GitHub Actions/);
+});
+
+test('responsibility traceability requires every requirement oracle and invariant from RTM or dossier', () => {
+  const row = {
+    responsibility_id: 'fixture-message',
+    requirement_ids: ['REQ-TRACE-01'],
+    oracle_ids: ['ORACLE-TRACE-01'],
+    invariant_ids: ['Durable settlement precedes notification'],
+  };
+  const before = JSON.stringify(row);
+  assert.doesNotThrow(() => assertResponsibilityTraceability(
+    row, row.requirement_ids[0], [...row.oracle_ids, ...row.invariant_ids].join('\n'),
+  ));
+  for (const field of ['requirement_ids', 'oracle_ids', 'invariant_ids']) {
+    const missing = row[field][0];
+    const remaining = [...row.requirement_ids, ...row.oracle_ids, ...row.invariant_ids]
+      .filter(id => id !== missing).join('\n');
+    assert.throws(
+      () => assertResponsibilityTraceability(row, remaining, ''),
+      new Error('traceability id ' + missing + ' missing from RTM/dossier for fixture-message'),
+    );
+  }
+  assert.equal(JSON.stringify(row), before);
+});
+
+test('responsibility traceability cannot substitute abbreviated requirement or oracle identifiers', () => {
+  for (const [field, id, abbreviated] of [
+    ['requirement_ids', 'NMR-02', 'NMR-01/02'],
+    ['requirement_ids', 'NMR-47b', 'NMR-47a/b'],
+    ['oracle_ids', 'NMR-AC-33', 'NMR-42 / AC-33'],
+  ]) {
+    const row = {
+      responsibility_id: 'fixture-message',
+      requirement_ids: [], oracle_ids: [], invariant_ids: [],
+      [field]: [id],
+    };
+    assert.throws(
+      () => assertResponsibilityTraceability(row, abbreviated, ''),
+      new Error('traceability id ' + id + ' missing from RTM/dossier for fixture-message'),
+    );
+    assert.doesNotThrow(() => assertResponsibilityTraceability(row, abbreviated, id));
+  }
+});
+
+test('canonical NMR traceability uses current checkout without promoting candidate source acceptance', async () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const ledger = JSON.parse(await fs.readFile(
+    path.join(root, 'projects/telegram-desktop-rust/parity-ledger.json'), 'utf8',
+  ));
+  const matching = ledger.rows.filter(row => row.responsibility_id === 'FBCP-NMR-001');
+  assert.equal(matching.length, 1, 'the current canonical NMR responsibility must be unique');
+  const row = matching[0];
+  const [rtm, dossier] = await Promise.all([
+    fs.readFile(path.join(root, 'projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md'), 'utf8'),
+    fs.readFile(path.join(root, row.source_analysis_path), 'utf8'),
+  ]);
+  const before = JSON.stringify(ledger);
+  assert.ok(Array.isArray(row.fabushi_target_paths) && row.fabushi_target_paths.length > 0,
+    'target path missing for ' + row.responsibility_id);
+  assert.ok(Array.isArray(row.fabushi_target_symbols) && row.fabushi_target_symbols.length > 0,
+    'target symbol missing for ' + row.responsibility_id);
+  const targetTexts = [];
+  for (const targetPath of row.fabushi_target_paths) {
+    const target = path.join(root, targetPath);
+    assert.ok(await fs.stat(target).then(() => true).catch(() => false),
+      'target path missing: ' + targetPath);
+    targetTexts.push(await fs.readFile(target, 'utf8'));
+  }
+  const combinedTarget = targetTexts.join('\n');
+  for (const symbol of row.fabushi_target_symbols) {
+    assert.ok(combinedTarget.includes(symbol),
+      'target symbol ' + symbol + ' not found for ' + row.responsibility_id);
+  }
+  assert.doesNotThrow(() => assertResponsibilityTraceability(row, rtm, dossier));
+  assert.throws(
+    () => assertNoOpenSourceCandidate(ledger),
+    /accepted source accounting cannot contain a rebaseline candidate/,
+  );
+  assert.equal(JSON.stringify(ledger), before, 'trace links cannot change source reviews, counters or acceptance');
 });

@@ -19,7 +19,7 @@ const browserDiagnostics = new WeakMap<Page, {
 let server: ViteDevServer | undefined;
 let origin = '';
 
-// Twenty-one actual Chromium cases. No skip, retry or mock renderer path.
+// Twenty-two actual Chromium cases. No skip, retry or mock renderer path.
 test.describe.configure({ retries: 0, timeout: 90_000 });
 test.use({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
 
@@ -173,7 +173,13 @@ async function openFixture(page: Page, info: TestInfo, options: Record<string, s
     const response = await page.goto(origin + '/native-message-author-recovery.html?' + params, { waitUntil: 'domcontentloaded' });
     expect(response?.ok(), 'Vite must serve the fixture HTML successfully').toBe(true);
     await page.waitForFunction(() => window.nativeMessageAuthorRecoveryFixture != null && document.getElementById('root')!.childElementCount > 0, undefined, { timeout: 30_000 });
-    await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
+    if (options.holdAgentRoster === '1') {
+      // Plugins is a shell capability while the real roster RPC is pending.
+      await expect(page.getByRole('region', { name: 'Agent list', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Plugins', exact: true })).toBeVisible();
+    } else {
+      await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
+    }
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'cursor-' + params.get('theme'));
   } catch (error) {
     await milestone(page, info, 'bootstrap-failure');
@@ -1141,4 +1147,64 @@ test('NMR-UI-01 the same renderer keeps Agent tool expansion and real attachment
     { method: 'discardStagedAttachment', path: 'memory:staged/staged.txt' },
   ]);
   await milestone(page, info, 'agent-tools-and-attachment-controls');
+});
+
+test('NMR-UI-01 background transcript recovery preserves Plugins until explicit navigation', async ({ page }, info) => {
+  await openFixture(page, info, { agent: '1', holdAgentRoster: '1' });
+  const plugins = page.getByRole('button', { name: 'Plugins', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Plugins', exact: true });
+  const close = dialog.getByRole('button', { name: 'Close', exact: true });
+  const agentTailRequests = () => page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.requests.filter(
+    (request) => request.method === 'openAgentTail' && request.args.id === 'agent:helper',
+  ).length);
+
+  await expect.poll(() => page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.pending().agentRosters)).toBeGreaterThan(0);
+  expect(await agentTailRequests()).toBe(0);
+  await plugins.click();
+  await expect(dialog).toBeVisible();
+  await expect(close).toHaveCount(1);
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.releaseAgentRosters());
+  await expect.poll(() => page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.pending().agentRosters)).toBe(0);
+  await expect.poll(agentTailRequests).toBeGreaterThan(0);
+  await expect(messageRow(page, 'agent-answer')).toContainText('The Agent answer is intact.');
+  await drainUi(page);
+  await expect(dialog).toBeVisible();
+  await expect(close).toBeVisible();
+  await milestone(page, info, 'Plugins-survives-late-roster-and-actual-tail');
+  await close.click();
+  await expect(dialog).toHaveCount(0);
+
+  // Clearing the selected transcript invokes the existing background reload.
+  // Hold only that external tail response so user actions occur while the same
+  // Agent is still loading; no component state or callback is injected.
+  await plugins.click();
+  await expect(dialog).toBeVisible();
+  await page.evaluate(() => {
+    window.nativeMessageAuthorRecoveryFixture.holdAgentTranscriptReads();
+    window.nativeMessageAuthorRecoveryFixture.clear('agent:helper');
+  });
+  await expect.poll(() => page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.pending().agentTails)).toBe(1);
+  const heldTailCount = await agentTailRequests();
+  await drainUi(page);
+  await expect(dialog).toBeVisible();
+  await expect(close).toHaveCount(1);
+  await close.click();
+  await expect(dialog).toHaveCount(0);
+  await milestone(page, info, 'Plugins-Close-remains-actionable-during-background-clear-reload');
+
+  // The normal Mod+1 shortcut explicitly reselects the only Agent. It must
+  // dismiss Plugins even though the background first-page request is pending.
+  await plugins.click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Control+1');
+  await expect(dialog).toHaveCount(0);
+  expect(await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.pending().agentTails)).toBe(1);
+  expect(await agentTailRequests()).toBe(heldTailCount);
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.releaseAgentTranscriptReads());
+  await expect.poll(() => page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.pending().agentTails)).toBe(0);
+  await expect.poll(() => domIds(page)).toEqual([]);
+  await expect(editor(page)).toBeEditable();
+  expect(await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.requests.filter((request) =>
+    request.method === 'sendPrompt' || request.method === 'sendHumanMessage' || request.method === 'retryHumanMessage'))).toEqual([]);
+  await milestone(page, info, 'explicit-navigation-closes-Plugins-without-duplicating-pending-tail');
 });

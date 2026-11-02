@@ -51,6 +51,8 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci --no-audit --no-fund
+      - name: Install locked Playwright video capture dependency
+        run: npx --no-install playwright install ffmpeg
       - name: Verify installed Electron runtime
         run: node -e "const fs=require('node:fs'); const electron=require('electron'); if (!electron || !fs.existsSync(electron)) process.exit(1)"
       - run: npm run build:electron

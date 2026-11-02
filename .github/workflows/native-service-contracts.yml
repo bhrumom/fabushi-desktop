@@ -998,21 +998,21 @@ jobs:
           import fs from 'node:fs';
           import assert from 'node:assert/strict';
           const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/author-recovery.json', 'utf8'));
-          fs.writeFileSync('../artifacts/native-message-ui/author-recovery-counts.json', JSON.stringify({ required: 21, actual: report.stats, errors: report.errors }, null, 2) + '\n');
-          assert.equal(report.stats.expected, 21, 'all twenty-one author and recovery cases must actually pass');
+          fs.writeFileSync('../artifacts/native-message-ui/author-recovery-counts.json', JSON.stringify({ required: 22, actual: report.stats, errors: report.errors }, null, 2) + '\n');
+          assert.equal(report.stats.expected, 22, 'all twenty-two author and recovery cases must actually pass');
           for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
           assert.deepEqual(report.errors, []);
           const cases = [];
           const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
           for (const suite of report.suites) walk(suite);
-          assert.equal(cases.length, 21);
+          assert.equal(cases.length, 22);
           for (const item of cases) {
             assert.equal(item.expectedStatus, 'passed');
             assert.equal(item.results.length, 1);
             assert.equal(item.results[0].status, 'passed');
             assert.equal(item.results[0].retry, 0);
           }
-          console.log('actual ProductionRenderer author/recovery: 21 passed, 0 failed, 0 skipped, 0 retries');
+          console.log('actual ProductionRenderer author/recovery: 22 passed, 0 failed, 0 skipped, 0 retries');
           NODE
       - name: Preserve exact renderer evidence
         if: always()

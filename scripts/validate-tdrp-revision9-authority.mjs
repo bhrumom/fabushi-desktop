@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { validateResponsibilitySources, validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate, assertSourceAcquisitionClosure } from './tdrp-source-review.mjs';
+import { validateResponsibilitySources, validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate, assertSourceAcquisitionClosure, assertResponsibilityTraceability } from './tdrp-source-review.mjs';
 import { canonicalNestedRepository, assertNestedGitlinkPins } from './tdrp-nested-pin-identity.mjs';
 
 const root = process.cwd();
@@ -582,8 +582,7 @@ for (const row of ledger.rows) {
     if (prior && prior!==row.responsibility_id) fail(false,'target symbol has multiple responsibility owners without explicit split: '+key);
     targetSymbolOwners.set(key,row.responsibility_id);
   }
-  const traceText=rtm+'\n'+await read(row.source_analysis_path);
-  for (const id of [...row.requirement_ids,...row.oracle_ids,...row.invariant_ids]) fail(traceText.includes(id),'traceability id '+id+' missing from RTM/dossier for '+row.responsibility_id);
+  assertResponsibilityTraceability(row, rtm, await read(row.source_analysis_path));
   if (['implemented','verified'].includes(row.implementation_status)) {
     fail(row.production_entrypoints.length>0,'implemented row lacks shipping entrypoint: '+row.responsibility_id);
     fail(row.production_evidence.length>0,'implemented row lacks production evidence: '+row.responsibility_id);

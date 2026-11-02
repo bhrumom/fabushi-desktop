@@ -2,12 +2,12 @@
   "format_version": 1,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 8,
-  "recorded_at": "2026-11-02 23:12:55 UTC",
+  "recorded_at": "2026-11-02T23:07:00Z",
   "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "repository": "bhrumom/fabushi-desktop",
   "intended_checkpoint": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
   "temporary_review_ref": "historical only; containing change targets original checkpoint",
-  "parent": "1ad2f319a72976e2698bf64bc1239db61bfa1312",
+  "parent": "10b9e42435f8d6e834088321fdeea78b9b6c0154",
   "scope": "Actual Human IPC / SQLite and process reopen through current existing owner",
   "spec": "docs/specs/fbcp-native-message-reconciliation.md#nmr-electron-01--actual-human-ipc-and-process-restart-qualification",
   "production_code_change": "Same batch adds durable original-draft binding in the existing account owner and common canonical observer; no additional message owner.",
@@ -373,7 +373,7 @@
   "acceptance": {
     "accepted": false,
     "independent_acceptance": false,
-    "current_containing_head": "not-run"
+    "current_containing_head": "pending; exact808 failure retained"
   },
   "limitations": [
     "This is static review of authored tests, not evidence of any executed test, compiler success or product acceptance.",
@@ -490,5 +490,140 @@
       "Supported signed platform packages and upgrade/rollback",
       "Full visual/accessibility/security/long-term stability and independent ACCEPT"
     ]
+  },
+  "observed_exact_808_execution": {
+    "schemaVersion": 1,
+    "kind": "NMR-ELECTRON-01/FPM-UI-CLOSE-01 exact-H execution failure evidence",
+    "repository": "bhrumom/fabushi-desktop",
+    "headSha": "808a8605b876f979427ebac11ca7e512aeffeefa",
+    "run": {
+      "id": 41543732546,
+      "attempt": 1,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41543732546",
+      "jobId": 125613992913,
+      "jobName": "plugins-close-pointer",
+      "conclusion": "failure"
+    },
+    "source": {
+      "workflow": ".github/workflows/plugins-window-close.yml",
+      "spec": "desktop/e2e/agent-network-responsive.spec.ts",
+      "specBlob": "bc3ae9da7fba50ec1baea9ff15cd7426d19cea7a",
+      "lockBlob": "1655189b893de0d2d09648bdd37a176cc90a5c8d",
+      "playwrightVersion": "1.62.1",
+      "electronVersion": "43.4.0"
+    },
+    "build": {
+      "electron": "success",
+      "controlledNetworkWorker": "success",
+      "host": "success",
+      "renderer": "success",
+      "desktopRuntime": "success",
+      "exactHumanBinaryBinding": "success"
+    },
+    "counts": {
+      "basis": "Complete GitHub job log: both groups report Running 2 tests; each lists both numbered cases and ends 2 failed. Command line workers=1 and retries=0; no case passed or retry was logged. Artifact Playwright JSON has not been separately extracted.",
+      "plugins": {
+        "executed": 2,
+        "passed": 0,
+        "failed": 2
+      },
+      "human": {
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "timedOut": 2,
+        "completedMessageBehaviorCases": 0
+      }
+    },
+    "cases": [
+      {
+        "title": "shipping Plugins close 1024x684 uses a real pointer and preserves the window-control band",
+        "status": "failed",
+        "assertion": "geometry.closeCount expected 1, received 0",
+        "sourceLine": 1083,
+        "classification": "Product overlay lifecycle investigation; the authenticated shell and Plugins dialog were reached."
+      },
+      {
+        "title": "shipping Plugins close 1280x900 uses a real pointer and preserves the window-control band",
+        "status": "failed",
+        "assertion": "Plugins dialog Close locator.click timed out after 5000 ms",
+        "sourceLine": 1096,
+        "classification": "Product overlay lifecycle investigation; initial geometry assertions passed, then Close could no longer be located."
+      },
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+        "status": "timedOut",
+        "timeoutMs": 240000,
+        "timeline": {
+          "firstWindow": "2026-11-02T23:18:20.7710200Z",
+          "traceStart": "2026-11-02T23:18:20.7726660Z",
+          "testTimeout": "2026-11-02T23:22:19.5427570Z"
+        },
+        "classification": "Capture fixture initialization blocked at explicit tracing.start before login and Human message behavior."
+      },
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen",
+        "status": "timedOut",
+        "timeoutMs": 240000,
+        "timeline": {
+          "firstWindow": "2026-11-02T23:22:22.3306030Z",
+          "traceStart": "2026-11-02T23:22:22.3321920Z",
+          "testTimeout": "2026-11-02T23:26:21.0091100Z"
+        },
+        "classification": "Capture fixture initialization blocked at explicit tracing.start before login and Human message behavior."
+      }
+    ],
+    "originalEvidence": {
+      "fullLog": "GitHub Actions job 125613992913 decoded log, read in full as 190624 characters / 2258 split lines; retained at source, not republished here.",
+      "artifact": {
+        "id": 13188895814,
+        "name": "plugins-close-pointer-808a8605b876f979427ebac11ca7e512aeffeefa",
+        "sizeBytes": 311600,
+        "digest": "sha256:ed680210548d14891f9c2fa6c64f03764ab93dbb81165159e6bb92ab7a645245"
+      }
+    },
+    "analysis": {
+      "automaticTrace": "Pinned Electron.launch does not call runAfterCreateBrowserContext; the recorder hook is used by Browser.newContext and persistent contexts. Existing trace state would immediately throw Tracing has been already started. This failure does not establish a duplicate trace owner.",
+      "mediaDependencyInference": "The workflow does not install Playwright ffmpeg. In pinned source, automatic recordVideo starts before Runtime.runIfWaitingForDebugger and synchronously requires the pinned ffmpeg executable. A startup error still emits a Page with a dummy main frame; firstWindow alone cannot prove initialization. This is a source-supported explanation for the observed hang, not a direct filesystem measurement of the runner.",
+      "primarySources": [
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/client/electron.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright/src/index.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/server/chromium/crPage.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/server/videoRecorder.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/server/page.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/server/trace/recorder/tracing.ts"
+      ]
+    },
+    "scope": "No rerun, no local execution, no passing recovery claim, no signed/deployed/kill-crash acceptance."
+  },
+  "capture_repair": {
+    "spec_blob": "1761c8c91622bd0eda1b1f69ee4c543ef344e540",
+    "workflow": "Install pinned Playwright ffmpeg with npx --no-install playwright install ffmpeg.",
+    "phase_checks": [
+      "video artifact initialized",
+      "production app/file DOMContentLoaded",
+      "real preload IPC ready",
+      "explicit full trace started"
+    ],
+    "capture_retained": "screenshots/snapshots/sources/video/trace;240000ms per Human case; retries0; all original business assertions unchanged",
+    "primary_source_inference": {
+      "automaticTrace": "Pinned Electron.launch does not call runAfterCreateBrowserContext; the recorder hook is used by Browser.newContext and persistent contexts. Existing trace state would immediately throw Tracing has been already started. This failure does not establish a duplicate trace owner.",
+      "mediaDependencyInference": "The workflow does not install Playwright ffmpeg. In pinned source, automatic recordVideo starts before Runtime.runIfWaitingForDebugger and synchronously requires the pinned ffmpeg executable. A startup error still emits a Page with a dummy main frame; firstWindow alone cannot prove initialization. This is a source-supported explanation for the observed hang, not a direct filesystem measurement of the runner.",
+      "primarySources": [
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/client/electron.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright/src/index.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/server/chromium/crPage.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/server/videoRecorder.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/server/page.ts",
+        "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/server/trace/recorder/tracing.ts"
+      ]
+    },
+    "actual_execution": "pending at preparation"
+  },
+  "production_overlay_repair": {
+    "owner": "ProductionRenderer::openAgent",
+    "blob": "2bd5e660ec352366d6e77fab5cdb04e3a2afeb68",
+    "actual_browser_case22": "NMR-UI-01 background transcript recovery preserves Plugins until explicit navigation",
+    "scope": "Separate background transcript restoration from explicit navigation. Actual Mac Plugins2 still required at containing H."
   }
 }

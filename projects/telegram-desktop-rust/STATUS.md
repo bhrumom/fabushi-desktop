@@ -465,11 +465,27 @@ message, draft or persistence authority is introduced.
 
 The current checkpoint's original-nonce Human retry, partial attachment commits,
 opaque history, pointer corridor, named forward feedback and all Agent owners
-are preserved. Authored gates are projection42/draft14/persistence5/reply5,
-current cursor19/retry40/Forward9+17/history13/Transcript8, author/recovery21,
-and two actual Electron Human process cases alongside existing Plugins2.
-These counts are requirements until the containing commit's Actions terminal
-logs establish actual execution.
+are preserved. Exact808a8605b876f979427ebac11ca7e512aeffeefa/run41543732585
+actually passed UI193: projection42/draft14/persistence5/reply5/cursor19/retry40/
+Forward9+17/history13/Transcript8/author21, with compiled Renderer and no
+failed/skipped/retried cases. Its Host reconciliation passed116 including
+Human72 and actual6400/32-page, concurrency and restart cases; peer Linux23
+and Windows23, carrier100, Windows11 and Social37 also passed.
+
+Exact808 Mac run41543732546 failed Plugins0/2 and Human0/2; the latter never
+entered message behavior because capture startup blocked. The follow-up fixes
+background roster/restore/clear navigation dismissing Plugins in the existing
+Renderer, adds a22nd deterministic real-UI case, and installs the locked
+Playwright video dependency with bounded fail-closed capture initialization.
+Actual Electron2/Plugins2 and author22 require the new frozen-H Actions.
+The exact808 macOS shipping job was still queued at the observation.
+
+The existing authority trace check is shared with an actual canonical NMR
+checkout test. Thirty-three RTM links, four target paths and sixteen symbol
+spellings are reconciled to their real definitions/files/declarations; no
+accepted guard or source counter is loosened. Source158/schema37/candidate
+passed at808 without source acceptance; the follow-up requires its own
+three added contract cases (nominal combined161), not an old green result.
 
 Original H5d534898/run41413368942 message and shipping gates passed. Review
 H375936fb compiled and passed pure41/cursor17/Forward5+16, but historical
