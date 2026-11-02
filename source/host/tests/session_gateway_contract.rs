@@ -4050,3 +4050,170 @@ fn shipping_human_read_receipts_compare_rfc3339_instants_and_reject_invalid_ingr
     reopened.shutdown(); drop(reopened);
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn shipping_human_reaction_rejects_midflight_credential_rotation_and_recovers_after_restart() {
+    // The account-bound HTTP request is already dispatched when the private
+    // credential rotates. A late 200 response must not settle the old intent.
+    for (label, changed) in [
+        ("token", json!({"accessToken":"replacement-token"})),
+        ("device", json!({"deviceId":"replacement-device"})),
+        ("account", json!({"userId":99})),
+        ("session", json!({"sessionId":"replacement-session"})),
+        ("expiry", json!({"expiresAtMs":12345})),
+        ("issuer", json!({"issuer":"https://other.example"})),
+    ] {
+        let root = temp_root(&format!("human-reaction-credential-rotation-{label}"));
+        let (request_seen, wait_for_request) = std::sync::mpsc::channel();
+        let (release_response, wait_for_release) = std::sync::mpsc::channel();
+        let successful = json!({
+            "success":true,"messageId":777,
+            "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
+        });
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Deferred(
+                Box::new(HumanMessageFixtureReply::Json(200, successful.clone())),
+                request_seen, wait_for_release,
+            ),
+            HumanMessageFixtureReply::Json(200, successful),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer")
+            .expect("conversation")["id"].as_str().expect("id").to_string();
+        let entry_id = "human-server-message:777";
+        let original = json!({
+            "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+            "authorId":"2","content":"retain on credential rotation","timestampMs":1000.0,
+            "delivery":"sent","remoteMessageId":"777","remoteReactions":[],"reactions":[]
+        });
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("durable owner");
+        assert!(owner.append_transcript_entry(&original).expect("seed"));
+        let running = {
+            let runtime = Arc::clone(&runtime);
+            let id = id.clone();
+            thread::spawn(move || runtime.toggle_human_message_reaction(&id, entry_id, "👍"))
+        };
+        wait_for_request.recv_timeout(std::time::Duration::from_secs(15))
+            .expect("old credential POST is in flight");
+        let credential_path = root.join("host-credential.json");
+        let mut credential: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(&credential_path).expect("original private credential")
+        ).expect("credential JSON");
+        for (key, value) in changed.as_object().expect("credential patch") {
+            credential[key] = value.clone();
+        }
+        fs::write(&credential_path, credential.to_string()).expect("rotate credential");
+        release_response.send(()).expect("release obsolete success response");
+        let error = running.join().expect("reaction thread")
+            .expect_err("obsolete response must not commit");
+        assert!(error.contains("credential"), "{label}: {error}");
+        assert_eq!(owner.get_transcript_entries().expect("no stale projection"), vec![original.clone()], "{label}");
+        assert_eq!(owner.get_metadata("humanReactionIntent").expect("retained intent"), Some(json!({
+            "entryId":entry_id,"remoteMessageId":"777",
+            "emoji":"👍","active":true,"localHumanId":"1"
+        })), "{label}");
+        runtime.shutdown();
+        drop(owner);
+        drop(runtime);
+
+        // Restoring the same account's valid credential after restart must
+        // retry the desired state, never toggle it back or duplicate the row.
+        let resumed = human_message_fixture_runtime(&root, &url);
+        let settled = resumed.toggle_human_message_reaction(&id, entry_id, "👍")
+            .expect("restart replays durable intent");
+        assert_eq!(settled["remoteReactions"], json!([
+            {"emoji":"👍","count":1,"reactedByMe":true}
+        ]), "{label}");
+        let owner = resumed.open_human_conversation_db_owner(&id).expect("reopen");
+        assert_eq!(owner.get_metadata("humanReactionIntent").expect("ack"), Some(serde_json::Value::Null), "{label}");
+        assert_eq!(owner.get_transcript_entries().expect("single settled entry"), vec![settled], "{label}");
+        let requests = server.join().expect("both authenticated POSTs");
+        assert_eq!(requests.len(), 2, "{label}");
+        for request in requests {
+            assert!(request.starts_with("POST /api/social/messages/777/reactions "), "{label}");
+            assert_eq!(fixture_request_json(&request), json!({"emoji":"👍","active":true}), "{label}");
+        }
+        resumed.shutdown();
+        drop(owner);
+        drop(resumed);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn shipping_human_reaction_rejects_credential_change_while_response_body_is_streaming() {
+    let root = temp_root("human-reaction-credential-body-race");
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind streaming reaction fixture");
+    let url = format!("http://{}", listener.local_addr().expect("bound address"));
+    let (body_started, wait_for_body) = std::sync::mpsc::channel();
+    let (release_body, wait_for_release) = std::sync::mpsc::channel();
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("accept reaction POST");
+        let request = read_fixture_http_request(&mut stream);
+        let body = json!({
+            "success":true,"messageId":778,
+            "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
+        }).to_string();
+        write!(stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            body.len()
+        ).expect("write headers");
+        stream.write_all(&body.as_bytes()[..1]).expect("partial response body");
+        stream.flush().expect("send headers and first body byte");
+        body_started.send(()).expect("notify response is streaming");
+        wait_for_release.recv_timeout(std::time::Duration::from_secs(15))
+            .expect("explicitly release final response body");
+        stream.write_all(&body.as_bytes()[1..]).expect("remaining body");
+        stream.flush().expect("flush response");
+        request
+    });
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2","Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    let entry_id = "human-server-message:778";
+    let original = json!({
+        "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+        "authorId":"2","content":"body-read race","timestampMs":1000.0,
+        "delivery":"sent","remoteMessageId":"778","remoteReactions":[],"reactions":[]
+    });
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    assert!(owner.append_transcript_entry(&original).expect("seed"));
+    let running = {
+        let runtime = Arc::clone(&runtime);
+        let id = id.clone();
+        thread::spawn(move || runtime.toggle_human_message_reaction(&id, entry_id, "👍"))
+    };
+    wait_for_body.recv_timeout(std::time::Duration::from_secs(15))
+        .expect("HTTP headers received while body is incomplete");
+    let credential_path = root.join("host-credential.json");
+    let mut credential: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&credential_path).expect("private credential")
+    ).expect("credential JSON");
+    credential["accessToken"] = json!("rotated-during-body");
+    fs::write(&credential_path, credential.to_string()).expect("rotate during body");
+    release_body.send(()).expect("release body");
+    let error = running.join().expect("reaction thread").expect_err("stale body response");
+    assert!(error.contains("credential"), "{error}");
+    assert_eq!(owner.get_transcript_entries().expect("unmodified target"), vec![original]);
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("pending intent")["active"], true);
+    assert!(server.join().expect("old POST").starts_with("POST /api/social/messages/778/reactions "));
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+
+    let (recovered_url, replay_server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":778,
+            "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
+        }))
+    ]);
+    let resumed = human_message_fixture_runtime(&root, &recovered_url);
+    let recovered = resumed.toggle_human_message_reaction(&id, entry_id, "👍")
+        .expect("durable desired state replayed");
+    assert_eq!(recovered["reactions"], json!([{"emoji":"👍","by":"me"}]));
+    assert_eq!(replay_server.join().expect("single replay").len(), 1);
+    resumed.shutdown();
+    drop(resumed);
+    let _ = fs::remove_dir_all(root);
+}
+

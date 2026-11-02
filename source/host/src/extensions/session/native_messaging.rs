@@ -723,10 +723,14 @@ impl FabushiNativeMessagingClient {
             .json(&ReactionRequest { emoji, active })
             .send()
             .map_err(|error| format!("Fabushi Human reaction mutation failed: {error}"))?;
+        // A successful HTTP response is not permission to settle an older
+        // account/device request. Preserve the durable intent for replay.
+        self.ensure_request_credential_stable(&credentials)?;
         let status = response.status();
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human reaction response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: ReactionEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human reaction response was invalid JSON (HTTP {}): {error}",
@@ -1178,6 +1182,9 @@ impl FabushiNativeMessagingClient {
         if current.user_id != original.user_id
             || current.device_id != original.device_id
             || current.access_token != original.access_token
+            || current.session_id != original.session_id
+            || current.expires_at_ms != original.expires_at_ms
+            || current.issuer != original.issuer
         {
             return Err("Fabushi native messaging credential changed during Human request".into());
         }
