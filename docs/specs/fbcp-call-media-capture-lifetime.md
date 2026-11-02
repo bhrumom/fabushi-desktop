@@ -1,7 +1,7 @@
 # Human call media capture lifetime
 
 Spec ID: FBCP-CALL-MEDIA-CAPTURE-001
-Status: active; implementation and execution pending
+Status: implemented and independently source-reviewed; containing-H execution and full acceptance pending
 Task: 20bf9475-a885-4314-b509-bea53ef8849f, round 1
 Date: 2026-11-02
 Fixed upstream: f985723b552b30fe1c17d377d57f44e61a15a8c4
@@ -24,7 +24,7 @@ The existing component is reused across conversations. Its boolean disposedRef i
 
 ## Source and owner responsibility
 
-The fixed-U calls_call.cpp capture owner explicitly deactivates and resets screencast capture on stop; calls_instance.cpp binds the Call lifetime to its account session, and camera permission callbacks are guarded by the current Call. Exact paths/blobs/ranges and dependency-interface limits belong in the existing call dossier. Automatically restoring Fabushi's retained camera is a target-specific continuity rule, not a claim about Telegram behavior.
+The fixed-U calls_call.cpp capture owner explicitly deactivates and resets screencast capture on stop; calls_instance.cpp binds the Call lifetime to its account session. Call-level successful camera/answer continuations use crl::guard(this), with an answer-state check; Instance permission denial acts on the current Call. These observations do not establish that every deferred callback remains bound to its originating operation or Call across reuse. Exact paths/blobs/ranges and dependency-interface limits belong in the existing call dossier. Automatically restoring Fabushi's retained camera is a target-specific continuity rule, not a claim about Telegram behavior.
 
 The canonical ledger currently has a call proxy-consumer responsibility and the selected-peer/account CALL-SCOPE responsibility; neither owns acquisition/attachment/release. Add a distinct FBCP-CALL-MEDIA-CAPTURE-001 responsibility in the one existing ledger after the scoped source/owner review, retaining all current rows and source-review/acceptance state. This adds traceability responsibility under existing owners, not a new module or ADR. Root owns schema/workflows/ledger/RTM and integration.
 

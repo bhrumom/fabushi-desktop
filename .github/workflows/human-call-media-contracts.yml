@@ -1,0 +1,69 @@
+name: Human call media contracts
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-native-call-scope-20bf9475-r1]
+    paths:
+      - 'frontend/src/production/human-call-media*'
+      - 'desktop/human-call-media-test.html'
+      - 'desktop/human-call-media-test.ts'
+      - 'desktop/package.json'
+      - 'desktop/package-lock.json'
+      - 'desktop/tsconfig.json'
+      - 'desktop/vite.config.ts'
+      - '.github/workflows/human-call-media-contracts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  call-media:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Bind exact call-media source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/call-media
+          git rev-parse HEAD > artifacts/call-media/target-sha.txt
+          printf '%s\n' 'FBCP-CALL-MEDIA-CAPTURE-001; fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; actual component with synthetic browser tracks and controlled bridge/peer; hardware/packaged/full media acceptance pending' > artifacts/call-media/scope.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Compile actual production renderer and media fixture
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          npm run build:renderer 2>&1 | tee ../artifacts/call-media/renderer-build.log
+      - name: Install locked Chromium
+        working-directory: desktop
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Actual call capture lifetime and recovery behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/human-call-media.behavior.test.mjs 2>&1 | tee artifacts/call-media/capture-contract.log
+          grep -Fx '# tests 14' artifacts/call-media/capture-contract.log
+          grep -Fx '# pass 14' artifacts/call-media/capture-contract.log
+          grep -Fx '# fail 0' artifacts/call-media/capture-contract.log
+          grep -Fx '# cancelled 0' artifacts/call-media/capture-contract.log
+          grep -Fx '# skipped 0' artifacts/call-media/capture-contract.log
+          grep -Fx '# todo 0' artifacts/call-media/capture-contract.log
+      - name: Preserve exact media evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: human-call-media-${{ github.sha }}
+          path: artifacts/call-media
+          if-no-files-found: error

@@ -3,7 +3,7 @@
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "FBCP-CALL-SCOPE-001",
-  "status": "two-bounded-call-contract-batches-qualified; media-capture-implementation-active; final-gates-open",
+  "status": "Two bounded Native admission/credential batches executed; media capture source-reviewed and awaiting exact-H execution/canonical-row registration; full migration unaccepted.",
   "repository": "bhrumom/fabushi-desktop",
   "branch": "checkpoint/tdrp-native-call-scope-20bf9475-r1",
   "upstream": {
@@ -299,7 +299,7 @@
     {
       "id": 2,
       "condition": "Risk-based evidenced source depth without omitting product capabilities or claiming unread sources read",
-      "evidence": "Bounded selected-peer chain and permissions/state/failure/recovery ranges recorded in call dossier. No full-file source_reviews completion or global unknown/unread decrement.",
+      "evidence": "Bounded selected-peer chain and permissions/state/failure/recovery ranges recorded in call dossier. No full-file source_reviews completion or global unknown/unread decrement. Media batch adds seven bounded fixed-U capture/product/interface source reads with explicit upstream limits; no whole-file completion.",
       "complete": false
     },
     {
@@ -311,7 +311,7 @@
     {
       "id": 4,
       "condition": "User-behavior batches include ingress/rules/permissions/persistence/service/events/UI/failure/cancel/restart and tests",
-      "evidence": "Existing-owner canonical-pair and credential-lifetime batches passed exact523 Native15 total call cases, including6 new body-barrier/recovery cases. Media capture acquire/attach/stop/dispose batch is implementing under committed spec1094. Full call/media and final gates remain open.",
+      "evidence": "Existing-owner call account/peer and credential batches passed exact523 Native15 call cases. Existing HumanCallControls capture/stop/dispose/late-result batch now has independently source-reviewed implementation and14 authored actual-component tests; exact-H execution and canonical row append remain. Full lifecycle/service/platform closure open.",
       "complete": false
     },
     {
@@ -323,7 +323,7 @@
     {
       "id": 6,
       "condition": "Stable common contracts and disjoint scoped parallel work; root integrates public contracts/locks/ledger",
-      "evidence": "Disjoint Native-call/test author and root-owned eight production bindings; distinct frozen code/test and merge reviewers. Root integrates workflows, canonical existing row, owner/RTM and evidence on pinned shared00036927. No new public schema or owner.",
+      "evidence": "Disjoint Native-call/test author and root-owned eight production bindings; distinct frozen code/test and merge reviewers. Root integrates workflows, canonical existing row, owner/RTM and evidence on pinned shared00036927. No new public schema or owner. Media owner edits are confined to one component and its fixture/bootstrap/test paths; root owns workflow/contract/ledger/RTM. Distinct frozen reviewer required two FIXes and approved source resolution; no local execution.",
       "complete": true
     },
     {
@@ -341,7 +341,7 @@
     {
       "id": 9,
       "condition": "Unique inventory/ledger/RTM separates source, implementation, wiring, authored tests, execution and independent acceptance; schema/validator aligned",
-      "evidence": "Canonical185-row ledgerdcfd04a8 records exact523 credential/scope execution and bounded independent assessment. Actions41526975395 validates unchanged schemae52 and original-document reconstruction; all other184 rows, sixreviews/counters and acceptance statuses preserved. Complete source/product acceptance remains false; containing-ledger source gate still required.",
+      "evidence": "Canonical185-row ledgerdcfd04a8 records exact523 proof and passed a7 containing-ledger source run41527234303. New media row will append with all prior rows/reviews/counters/acceptance retained. Latest FMEP01dc and matching source-test3ef07 imported with unchanged schemae52/validatorad5; containing-H validation pending.",
       "complete": false
     },
     {
@@ -353,7 +353,7 @@
     {
       "id": "delivery",
       "condition": "Current-round result committed/pushed and remote readback verifies exact SHA and files before final",
-      "evidence": "Production/test work published on derived migration-line branch; exact8bcfd commit and11 file contents plus ledger blob reread through GitHub. PR191 exists; shipping and shared-line integration open.",
+      "evidence": "Current-round production/test/evidence commits through a7e03787dcfe7310c2e28bedcfa226c212eafe0b were pushed and commit/files remotely reread; PR191 draft/unmerged. Media code publication and readback are pending for this new checkpoint.",
       "complete": true
     }
   ],
@@ -372,10 +372,10 @@
     "Complete source dispositions and generated/build/external/LFS/legal closure remain unaccepted; global unknown/unread remain null and all acceptance flags false.",
     "HumanCallControls capture acquisition/stop/disposal/lifetime repair is implementing under committed spec1094; no media implementation execution or hardware acceptance is claimed yet."
   ],
-  "next_action": "Finish and independently review current HumanCallControls capture lifetime implementation/tests, then qualify its containing H in Actions; retain queued shipping gate.",
+  "next_action": "Publish the reviewed media freeze on the existing isolated migration branch, run exact-H renderer/14 browser/source gates, then append its exact scoped responsibility/execution to the canonical ledger and validate all seven source identities.",
   "github_delivery": {
-    "commit": "523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
-    "url": "https://github.com/bhrumom/fabushi-desktop/commit/523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
+    "commit": "a7e03787dcfe7310c2e28bedcfa226c212eafe0b",
+    "url": "https://github.com/bhrumom/fabushi-desktop/commit/a7e03787dcfe7310c2e28bedcfa226c212eafe0b",
     "remote_commit_and_files_reread": true,
     "review_pr": "https://github.com/bhrumom/fabushi-desktop/pull/191",
     "main_changed": false,
@@ -639,10 +639,127 @@
     }
   },
   "media_capture_batch": {
-    "spec_commit": "1094ce758bef0ca937e0a75721994c05c2e1019b",
+    "responsibility_id": "FBCP-CALL-MEDIA-CAPTURE-001",
     "spec": "docs/specs/fbcp-call-media-capture-lifetime.md",
-    "source_owner_review": "existing owners approved; distinct responsibility needed",
-    "status": "implementation in progress; no execution claim",
-    "prior_target_blob": "8e5c4cbe5b3c9fb7f0d51d43300ccdeb2d2ac99e"
+    "spec_before_implementation_commit": "1094ce758bef0ca937e0a75721994c05c2e1019b",
+    "base": "523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
+    "integration_parent": "a7e03787dcfe7310c2e28bedcfa226c212eafe0b",
+    "prior_target_blob": "8e5c4cbe5b3c9fb7f0d51d43300ccdeb2d2ac99e",
+    "status": "implemented/source-reviewed/tests-authored; execution pending",
+    "frozen_files": {
+      "frontend/src/production/human-call-media.tsx": "45641d86e7c2c5adcd0fa7b70609f3a0e28bff78",
+      "frontend/src/production/human-call-media.fixture.tsx": "ad9c9f52fb467f8849a23f528f8857cb5fc1b1d7",
+      "frontend/src/production/human-call-media.behavior.test.mjs": "31f7ad37d08623dc55534d1f99def9dc129a8623",
+      "desktop/human-call-media-test.html": "d8aedc6cf7af015802b77d2445cb3b2a4ab96cec",
+      "desktop/human-call-media-test.ts": "41d68e59999432b7f31e046b4ea65d34b0a8dcb3",
+      ".github/workflows/human-call-media-contracts.yml": "bf3f4667a43996d926e3cc33f5bc720d7a794690"
+    },
+    "source_identities": [
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/calls/calls_call.cpp",
+        "object": "a67723f5827e56be3f36033f3ad59bc37d0acf7b"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/calls/calls_instance.cpp",
+        "object": "256ac969efa07be95c3248551f79257b9d9744f6"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/calls/calls_call.h",
+        "object": "73baeb3b50212b151e50ac4f12de30c9b7175a8a"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/calls/calls_panel.cpp",
+        "object": "b5b1388be4ac7194b009b3046cda9bf2f29f1633"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/calls/group/ui/desktop_capture_choose_source.cpp",
+        "object": "c0cd83b07d496b885ca93c70fb38ddafb4257431"
+      },
+      {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "path": "tgcalls/VideoCaptureInterface.h",
+        "object": "93445f94fadca31e2ff4c7001a29a6101133a882"
+      },
+      {
+        "repository": "desktop-app/lib_crl",
+        "commit": "de724667d7bdfbf906f78fc405af1ee9f7723d49",
+        "path": "crl/common/crl_common_on_main_guarded.h",
+        "object": "f6bf6ebc0098ecea56d1e4b718f641bd8adc8d44"
+      }
+    ],
+    "source_review_scope": "Seven bounded product sections/dependency interfaces; exact ranges and limits in existing dossier. No complete source_reviews record or unknown/unread decrement.",
+    "owners": {
+      "ephemeral_media": "Existing HumanCallControls: local/display/remote tracks and peer/attempt lifetime.",
+      "permission_sources": "Existing DesktopBridge/Electron callMedia permissions, device preferences and listDisplaySources.",
+      "persistent_call": "Existing Host Session/CallSessionStore: call identity/generation/lifecycle/media metadata."
+    },
+    "production_entrypoint": "Existing ProductionRenderer Human conversation mount -> HumanCallControls buttons/polling -> existing permission/source bridge and browser capture/peer -> existing Coordinator call commands -> Host.",
+    "behavior_changes": [
+      "Display capture is explicitly owned and physically released on Stop/ended/terminal/disposal before waiting for remote termination.",
+      "Stop restores retained camera or null; same-call peer/generation replacement retains the local stopped-display metadata obligation.",
+      "Monotonic lifetime/capture/peer-attempt guards release late streams and fence success and rejection before stale follow-on work or failure of a newer peer.",
+      "Camera/mute/sharing state changes retain the current lifetime; valid controls and retry use the existing owner."
+    ],
+    "authored_cases": [
+      "video start accept and camera mute rerenders retain the active media owner",
+      "voice camera acquisition serializes overlap and preserves its original microphone",
+      "share stop and reshare release display tracks restore camera and ignore an old ended handler",
+      "voice sharing clears its sender on device ended and reuses that sender for the next capture",
+      "display denial missing video and replacement refusal release capture and permit retry",
+      "metadata refusal cannot retain display capture on either share or stop",
+      "End releases local and display tracks before a held Host hangup response",
+      "late permission preferences and display-source results cannot acquire after End",
+      "late local camera display and metadata completion after End preserve a newer call",
+      "unmount and same-instance scope A B A dispose pending camera and display acquisitions",
+      "late ICE and admitted camera or display replacement cannot reopen ended or unmounted peers",
+      "remote terminal client replacement and call failure release media and permit fresh acquisition",
+      "stopped sharing reconciles current-generation metadata after reconnect or remote generation change",
+      "obsolete Accept ICE rejection preserves the current peer in same and newer generations"
+    ],
+    "expected_case_count": 14,
+    "execution": null,
+    "independent_source_review": {
+      "reviewer": "/root/current_gap_read/call_media_frozen_review",
+      "result": "CAPTURE-REVIEW-01/02 source-resolved; no additional concrete defect in fixed five-file freeze; no execution claim"
+    },
+    "root_decisions": [
+      "CAPTURE-SOURCE-01 FIX: bounded upstream path/callback evidence wording, no whole-file/restart claim.",
+      "CAPTURE-REVIEW-01 FIX: same-call stopped-display obligation survives peer/generation replacement.",
+      "CAPTURE-REVIEW-02 FIX: rejected await admission binds exact peer attempt, including same generation."
+    ],
+    "workflow": ".github/workflows/human-call-media-contracts.yml",
+    "ledger_registration": {
+      "canonical_path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "base_blob": "dcfd04a8b4f02b0a089ace937c93c5880d1ac1f3",
+      "status": "distinct scoped row prepared; append with exact execution subject and canonical candidate validation before batch qualification",
+      "source_reviews_changed": false,
+      "acceptance_changed": false
+    },
+    "contract_reconciliation": {
+      "shared_snapshot": "f3ee5d8874ab74b07c60c0751035843b24319deb",
+      "fmep_blob": "01dc632975eca100c9bdc80746efdc2b0b044a57",
+      "source_test_blob": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+      "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "validator_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+      "reviewer": "/root/call_media_integration_review",
+      "change": "Exact latest FMEP entrypoint negative and matching source-test additions; unchanged validator/schema and all existing gates. Containing-H source execution required."
+    },
+    "limitations": [
+      "Native synthetic browser MediaStream/Track with controlled bridge/peer; no real device/OS permission, WebRTC/TURN/network/media-quality or supported packaged-platform acceptance.",
+      "Active-call rejoin after process restart and complete Coordinator pending-dispatch account epoch remain open.",
+      "No public schema/data migration/new owner/legacy deletion; normal revert reopens the defect.",
+      "Whole source/legal/generated/external/LFS, final UI/visual/a11y/temporal/security/performance/soak/upgrade/rollback/Bot and independent product ACCEPT remain open."
+    ]
   }
 }
