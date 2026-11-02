@@ -35,6 +35,15 @@ impl Fixture {
     }
 
     fn bytes(&self) -> Vec<u8> { fs::read(self.owner.get_settings_path()).unwrap() }
+
+    fn entries(&self) -> Vec<std::ffi::OsString> {
+        let mut entries = fs::read_dir(&self.root)
+            .expect("read private installation directory")
+            .map(|entry| entry.expect("read installation entry").file_name())
+            .collect::<Vec<_>>();
+        entries.sort();
+        entries
+    }
 }
 
 impl Drop for Fixture {
@@ -204,6 +213,181 @@ fn public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_c
         assert!(fixture.bytes() == original, "refusal must preserve settings bytes");
         assert_eq!(notifications.load(Ordering::SeqCst), 0);
     }
+}
+
+#[test]
+fn public_config_set_rejects_malformed_base_hash_before_owner_effects() {
+    let malformed_values = [
+        Value::Null,
+        json!(true),
+        json!(false),
+        json!(0),
+        json!(1.5),
+        json!([]),
+        json!(["synthetic-untrusted-revision"]),
+        json!({}),
+        json!({"hash":"synthetic-untrusted-revision"}),
+        json!(""),
+    ];
+    for shape in ["raw", "config", "settings"] {
+        let fixture = Fixture::new();
+        let mut stored: Value = serde_json::from_slice(&fixture.bytes()).unwrap();
+        stored["notifications"] = json!({"isEnabled":true,"legacy":"preserve-before-validation"});
+        fs::write(fixture.owner.get_settings_path(), stored.to_string()).unwrap();
+        // Do not call a Settings getter: it could normalize these bytes or create a key.
+        let original = fixture.bytes();
+        let entries = fixture.entries();
+        let key_path = fixture.root.join(HOST_CONFIG_REVISION_KEY_FILE_NAME);
+        assert!(!key_path.exists());
+        assert_eq!(entries, vec![std::ffi::OsString::from("settings.json")]);
+
+        let notifications = Arc::new(AtomicUsize::new(0));
+        let sink = Arc::clone(&notifications);
+        let _changes = fixture.owner.subscribe_to_changes(Arc::new(move |_| {
+            sink.fetch_add(1, Ordering::SeqCst);
+        }));
+        let sink = Arc::clone(&notifications);
+        let _time_zone = fixture.owner.subscribe_to_user_time_zone(Arc::new(move |_| {
+            sink.fetch_add(1, Ordering::SeqCst);
+        }));
+        let sink = Arc::clone(&notifications);
+        let _features = fixture.owner.subscribe_to_feature_flag_overrides(Arc::new(move |_| {
+            sink.fetch_add(1, Ordering::SeqCst);
+        }));
+        let update = json!({
+            "userTimeZone":"Asia/Tokyo",
+            "localToolPermission":"allow",
+            "featureFlagOverrides":{"syntheticRevisionInputOracle":true},
+        });
+        for malformed in &malformed_values {
+            let mut args = json!({"baseHash":malformed});
+            args[shape] = if shape == "raw" { json!(update.to_string()) } else { update.clone() };
+            let error = dispatch_public_settings_command(&fixture.owner, "config.set", &args, |_, _| {
+                panic!("invalid revision input must not reach trusted commit consumers")
+            }).expect_err("present malformed revision must be refused");
+            assert!(matches!(&error, GatewayCommandError::BadRequest(_)));
+            assert_eq!(error.status(), 400);
+            assert_eq!(error.to_string(), "config.set baseHash must be a non-empty string");
+            assert!(fixture.bytes() == original, "refusal must preserve unnormalized settings bytes");
+            assert_eq!(notifications.load(Ordering::SeqCst), 0);
+            assert!(!key_path.exists(), "invalid input must not create revision-key material");
+            assert_eq!(fixture.entries(), entries, "invalid input must leave no key or staging files");
+        }
+    }
+}
+
+#[test]
+fn public_config_set_revision_input_preserves_newer_commit_and_legacy_controls() {
+    let fixture = Fixture::new();
+    let old_model = json!({
+        "provider":"fabushi", "modelId":"Model/A", "maxMode":true, "parameters":[],
+    });
+    let newer_model = json!({
+        "provider":"fabushi", "modelId":"Model/B", "maxMode":true, "parameters":[],
+    });
+    fixture.owner.set_host_settings(&json!({"agentDefaultModel":old_model})).unwrap();
+    let old_read = fixture.call("config.get", &json!({})).unwrap();
+    let old_form = old_read["config"].clone();
+    let old_hash = old_read["hash"].as_str().unwrap().to_string();
+    assert_eq!(old_form["agentDefaultModel"], old_model);
+
+    fixture.owner.set_host_settings(&json!({"agentDefaultModel":newer_model})).unwrap();
+    let current_read = fixture.call("config.get", &json!({})).unwrap();
+    let current_hash = current_read["hash"].as_str().unwrap().to_string();
+    assert_ne!(old_hash, current_hash);
+    assert_eq!(current_read["settings"]["agentDefaultModel"], newer_model);
+    let committed_bytes = fixture.bytes();
+    let key_path = fixture.root.join(HOST_CONFIG_REVISION_KEY_FILE_NAME);
+    let key_bytes = fs::read(&key_path).unwrap();
+    let entries = fixture.entries();
+    let notifications = Arc::new(AtomicUsize::new(0));
+    let sink = Arc::clone(&notifications);
+    let _subscription = fixture.owner.subscribe_to_changes(Arc::new(move |_| {
+        sink.fetch_add(1, Ordering::SeqCst);
+    }));
+
+    for malformed in [Value::Null, json!({"hash":old_hash}), json!("")] {
+        let error = dispatch_public_settings_command(&fixture.owner, "config.set", &json!({
+            "baseHash":malformed, "config":old_form,
+        }), |_, _| {
+            panic!("malformed stale form must not call committed consumers")
+        }).expect_err("malformed old precondition must not overwrite a newer commit");
+        assert_eq!(error.status(), 400);
+        assert_eq!(error.to_string(), "config.set baseHash must be a non-empty string");
+        assert!(fixture.bytes() == committed_bytes, "newer model bytes must survive malformed input");
+        assert!(fs::read(&key_path).unwrap() == key_bytes, "revision key must remain unchanged");
+        assert_eq!(fixture.entries(), entries);
+        assert_eq!(notifications.load(Ordering::SeqCst), 0);
+    }
+
+    // Nonempty strings still reach the existing opaque CAS without trimming.
+    for token in [old_hash.clone(), format!(" \t{current_hash}\n"), " \t\n ".to_string()] {
+        let error = dispatch_public_settings_command(&fixture.owner, "config.set", &json!({
+            "baseHash":token, "settings":old_form,
+        }), |_, _| {
+            panic!("a conflicting revision must not call committed consumers")
+        }).expect_err("stale or whitespace-modified token must conflict");
+        assert_eq!(error.status(), 409);
+        assert_eq!(error.to_string(), "config baseHash mismatch");
+        assert!(fixture.bytes() == committed_bytes, "conflict must preserve the newer commit");
+        assert!(fs::read(&key_path).unwrap() == key_bytes, "conflict must preserve the key");
+        assert_eq!(fixture.entries(), entries);
+        assert_eq!(notifications.load(Ordering::SeqCst), 0);
+    }
+
+    let reopened = SettingsService::new(fixture.owner.get_settings_path().to_path_buf());
+    assert_eq!(reopened.get_agent_default_model_checked().unwrap(), Some(newer_model.clone()));
+    assert!(fixture.bytes() == committed_bytes, "reopening must read the retained commit");
+    assert!(fs::read(&key_path).unwrap() == key_bytes);
+
+    assert_eq!(fixture.call("config.get", &json!({"baseHash":current_hash})).unwrap()["matches"], true);
+    assert_eq!(fixture.call("config.get", &json!({"baseHash":old_hash})).unwrap()["matches"], false);
+    assert_eq!(fixture.call("config.get", &json!({"baseHash":""})).unwrap()["matches"], false);
+    let unconditioned_read = fixture.call("config.get", &json!({"baseHash":null})).unwrap();
+    assert!(unconditioned_read.get("matches").is_none(), "read arguments retain their existing semantics");
+    assert_eq!(unconditioned_read["hash"], current_hash);
+    assert_eq!(unconditioned_read["settings"]["agentDefaultModel"], newer_model);
+    assert!(fixture.bytes() == committed_bytes);
+    assert_eq!(notifications.load(Ordering::SeqCst), 0);
+
+    let mut callbacks = 0;
+    for (index, (method, args, zone)) in [
+        ("config.set", json!({
+            "baseHash":current_hash, "settings":{"userTimeZone":"Asia/Tokyo"},
+        }), "Asia/Tokyo"),
+        ("config.set", json!({
+            "raw":json!({"userTimeZone":"Europe/London"}).to_string(),
+        }), "Europe/London"),
+        ("setHostSettings", json!({
+            "baseHash":null, "userTimeZone":"America/New_York",
+        }), "America/New_York"),
+    ].into_iter().enumerate() {
+        let reply = dispatch_public_settings_command(&fixture.owner, method, &args, |trusted, permission| {
+            callbacks += 1;
+            assert!(!permission);
+            assert_eq!(trusted["agentDefaultModel"], newer_model);
+            assert_eq!(trusted["userTimeZone"], zone);
+        }).expect("current, omitted and legacy revisions retain accepted writes");
+        let view = settings_view(method, &reply);
+        assert_eq!(view["agentDefaultModel"], newer_model);
+        assert_eq!(view["userTimeZone"], zone);
+        assert_public(&reply, &[AGENT_SECRET, SKILL_SECRET, ENV_SECRET]);
+        if method == "config.set" {
+            assert_eq!(reply["ok"], true);
+        } else {
+            assert!(reply.get("ok").is_none() && reply.get("hash").is_none());
+        }
+        let durable: Value = serde_json::from_slice(&fixture.bytes()).unwrap();
+        assert_eq!(durable["agentDefaultModel"], newer_model);
+        assert_eq!(durable["userTimeZone"], zone);
+        assert_eq!(callbacks, index + 1);
+        assert_eq!(notifications.load(Ordering::SeqCst), index + 1);
+        assert!(fs::read(&key_path).unwrap() == key_bytes, "accepted writes retain the installation key");
+        assert_eq!(fixture.entries(), entries);
+    }
+    let final_read = fixture.call("config.get", &json!({})).unwrap();
+    assert_eq!(fixture.call("getHostSettings", &json!({})).unwrap(), final_read["settings"]);
+    assert_eq!(fixture.call("config.get", &json!({"baseHash":final_read["hash"]})).unwrap()["matches"], true);
 }
 
 #[test]

@@ -1,0 +1,745 @@
+{
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "kind": "bounded-model-bridge-implementation-evidence",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "live_main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "implementation": {
+    "commit": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+    "tree": "2b49afdaa8d83e9b3503e9f33d71ac91ed5f68c1",
+    "parent": "86719a3786b0f1fbadab5c2f1e22688375332be7",
+    "github_ref_and_commit_verified": true,
+    "temporary_delivery_files_removed": true,
+    "files": [
+      {
+        "path": ".github/workflows/ocrm-p0-authority.yml",
+        "sha": "2d22dce2d6067e7f4c16c3c01ed95c58cd3354df",
+        "characters": 45615,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "d775ef7262f50ac216a1b9f0c8d0e874d3ac6880",
+        "characters": 174705,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "desktop/scripts/build-electron-runtime.mjs",
+        "sha": "69f512db2d9ba91e587b9599801b37fba8e54823",
+        "characters": 3687,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "sha": "9b634d8d8e3d51a4e60424ebb55a17cb89432ca4",
+        "characters": 20090,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "sha": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+        "characters": 50810,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "sha": "bc16959a3d0b75c61bac4861ed3e2511a51b5647",
+        "characters": 61833,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "sha": "8ba93d03aa710d1a70aeafe6863c0fc5e5f42271",
+        "characters": 36192,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/index.json",
+        "sha": "959685a4e106165eefabaa0b9e17df832084bf7e",
+        "characters": 9002,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "sha": "9310ce5254aaec058266e4ba89e28f74997eef59",
+        "characters": 0,
+        "full": false,
+        "content_read": true,
+        "content_route": "exact-git-blob-api"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "sha": "c8715a7b671ca115b59add79a1e49f8211471ec9",
+        "characters": 109592,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/expand_inventory.py",
+        "sha": "49b7313151e9d5602a9edf9de4c82050b65cc98d",
+        "characters": 9638,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/shard_inventory.py",
+        "sha": "3f2e86c61793b1f9d3cbeefac621f7b55de279f7",
+        "characters": 11547,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/source_review.py",
+        "sha": "143e310f263d474a3a711a8b992013f5ded74b85",
+        "characters": 20450,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/test_inventory_materialization.py",
+        "sha": "9a7357193f2aa03f419bb0cadeb181b58b6fa901",
+        "characters": 20045,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/test_source_review.py",
+        "sha": "cda4a8319d82a599491c965bd55fdc412bad8110",
+        "characters": 17084,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/validate_p0.py",
+        "sha": "2bf4350bf6f4220ee3be1b82a21a65ea4ee52014",
+        "characters": 23240,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/verify_audit_integrity.py",
+        "sha": "d6001d6c9bab9860e8ba7e0f1434d48581c9c42d",
+        "characters": 7378,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "source/electron-main/main-edge.ts",
+        "sha": "4cd237de1f36e48d0fbb6070aafe72f50bf68794",
+        "characters": 24817,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "source/shared/agents/sand-agent-model.ts",
+        "sha": "884157ba4f04ae3c126fad9c3a6b317acc0d9452",
+        "characters": 1657,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "source/shared/node/settings/sand-settings-store.ts",
+        "sha": "f45786daa8f7851bf967877e86e04d0d76e6d166",
+        "characters": 25451,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/read-observations.json",
+        "sha": "94a4948eb4bc1e06741021402c0d900713806438",
+        "characters": 14085,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "sha": "7e64ad5b1384d6881e99254495002b1266f0a1d1",
+        "characters": 8046,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      },
+      {
+        "path": "source/electron-main/main-edge-model.contract.test.ts",
+        "sha": "6c2506a1ec27ded7a0edcadff067de08912c4ddf",
+        "characters": 14937,
+        "full": true,
+        "content_read": true,
+        "content_route": "commit-file"
+      }
+    ]
+  },
+  "independent_static_reviews": {
+    "bridge-verdict.json": {
+      "format_version": 1,
+      "reviewer": "/root/bridge_review_55c",
+      "lenses": [
+        "general",
+        "security",
+        "lifecycle",
+        "oracle"
+      ],
+      "repo": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+      "base": "55c23059ed28c34a087ec91eda17ae8376b75acb",
+      "snapshot_tree": "96dc68f49c59557cdef0f7e2e5fe84410a600f1d",
+      "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+      "requested_effort": "xhigh",
+      "model_and_effort_application": "Parent session configuration inherited; no separate model or effort override and no secondary worker was started by this reviewer.",
+      "verdict": "STATIC_CONVERGED",
+      "verdict_scope": "Desktop default-model bridge, shared and renderer DTOs, settings display mirror and migration, new bridge contract tests, shipping bundler/workflow wiring, and adjacent actual preload/dispatcher/Coordinator/Rust Settings/Inference/Runner/Responses consumers. All 23 changed-path diffs were inspected. Source-materialization tools were read for context, but their separate deep-review verdict is not issued or borrowed here.",
+      "findings": [],
+      "assessments": [
+        {
+          "requirement": "MB-01",
+          "result": "static-consistent",
+          "evidence": [
+            "source/electron-preload/preload.ts:302-303 passes the model unchanged to the existing generated edge.",
+            "source/electron-preload/rpc-edge-runtime.ts:52-71 forwards object arguments and surfaces failed reply envelopes.",
+            "source/electron-main/main-edge.ts:79-91 preserves own provider field presence/value for default models and explicitly rejects own undefined before Host dispatch.",
+            "source/electron-main/coordinator/coordinator-resync.ts:8 and coordinator-main-port-client.ts:20-45 retain the update arguments; rust-coordinator-carrier.ts:64-69 applies the existing JSON boundary.",
+            "source/host/app/src/main.rs:1529-1597 sends setHostSettings to the existing public Settings writer and returns the committed settings snapshot.",
+            "source/host/src/extensions/settings/settings_service.rs:1453-1458 validates any supplied provider binding before mutation; 1588-1595 retains the selected object; 2072-2093 rejects invalid provider values."
+          ]
+        },
+        {
+          "requirement": "MB-02",
+          "result": "static-consistent",
+          "evidence": [
+            "source/electron-main/main-edge.ts:127-128 writes the mirror only after Host read/write acknowledgment and maps absent/null whole models to undefined, without coalescing a provider inside the object.",
+            "source/shared/node/settings/sand-settings-store.ts:45 and 132-133 retain provider and acknowledged unknown metadata through setters/getters and the existing fast-parameter migration.",
+            "source/shared/node/settings/sand-settings-store.ts:47-114 preserves compatible model objects through file reload and uses the existing write/rename path.",
+            "source/shared/node/settings/sand-settings-store.ts:145-146 retains existing account scope/clear behavior.",
+            "No production inference consumer of the TypeScript default-model mirror was found; the inspected Rust inference owner reads its existing SettingsService."
+          ]
+        },
+        {
+          "requirement": "MB-03",
+          "result": "static-consistent",
+          "evidence": [
+            "source/shared/agents/sand-agent-model.ts:5-6 and frontend/src/recovered/contracts/desktop-bridge.ts:135-142 add only an optional opaque transport field.",
+            "source/electron-main/main-edge-wiring.ts:17-26 and generated/main-rpc.ts:72-104 enforce the existing trusted appWindow top-frame predicate before invoking handlers.",
+            "source/electron-main/main-edge.ts:130 continues to use the original Computer Use parsing mode; the new preserveProvider option is enabled only for the default-model setter.",
+            "source/host/src/extensions/inference/production.rs:214-273 keeps provider-route isolation and resolves the authorized Fabushi model from the checked Rust Settings view.",
+            "source/host/app/src/main.rs:1407-1443 preserves the existing accepted-lease guard and model admission order; provider_session.rs:440-473 and 1573-1587 preserve frozen model and checkpoint identity before transport."
+          ]
+        },
+        {
+          "requirement": "MB-04",
+          "result": "static-consistent; execution not assessed",
+          "evidence": [
+            "source/electron-main/main-edge-model.contract.test.ts uses serveMainEdge plus the production generated dispatcher and a real SandSettingsStore file. Its 10 authored tests cover acknowledgment timing, raw invalid bindings, own undefined, Host failures, absent/null replies, legacy/base-shape compatibility, migration/reopen, sequential account clearing, Computer Use controls, and foreign/nested-frame refusal.",
+            "The Host port in that test is deliberately controlled; it forwards via JSON serialization and injects acknowledgment/refusal without pretending to implement Rust provider validation.",
+            "desktop/scripts/build-electron-runtime.mjs:89-106 builds the new test with the existing shipping common esbuild options.",
+            ".github/workflows/rust-desktop-runtime.yml:1682-1720 binds the exact checked-out subject, builds the shipping Electron bundles, and includes the new bundle in node --test. The model bridge receipt step is downstream of that command.",
+            "The same workflow retains existing Settings, Inference, provider, Runner and shipping admission contract targets. Relevant authored Rust tests were read, including settings_service_contract.rs and fabushi_model_identity_production_contract.rs.",
+            "The actual Rust runtime path carries fabushi_model through production composition and routed_provider_runtime.rs into provider_session.rs; codex_direct_responses.rs:509-510 serializes options.model and 675-676 captures it in accepted checkpoints."
+          ]
+        }
+      ],
+      "changed_paths_inspected": [
+        ".github/workflows/ocrm-p0-authority.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/scripts/build-electron-runtime.mjs",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/inventory/index.json",
+        "projects/openclaw-rust/inventory/read-observations.json",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/parity-ledger.json",
+        "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "projects/openclaw-rust/scripts/expand_inventory.py",
+        "projects/openclaw-rust/scripts/shard_inventory.py",
+        "projects/openclaw-rust/scripts/source_review.py",
+        "projects/openclaw-rust/scripts/test_inventory_materialization.py",
+        "projects/openclaw-rust/scripts/test_source_review.py",
+        "projects/openclaw-rust/scripts/validate_p0.py",
+        "projects/openclaw-rust/scripts/verify_audit_integrity.py",
+        "source/electron-main/main-edge.ts",
+        "source/electron-main/main-edge-model.contract.test.ts",
+        "source/shared/agents/sand-agent-model.ts",
+        "source/shared/node/settings/sand-settings-store.ts"
+      ],
+      "evidence_limits": [
+        "This is an independent read-only static review, not an executable test result or Actions approval.",
+        "No local test, build, generator, validator, lint, push, or workflow dispatch was performed.",
+        "No reviewed source file was modified. Only this reviewer result was written outside the reviewed repository.",
+        "Existing Actions run identifiers and workflow-authored passed fields were not treated as evidence that this frozen tree passed.",
+        "The exact-U literal read observations were inspected as declared historical evidence; this reviewer did not reread all 34 upstream sources and does not claim their complete semantic dependency closure.",
+        "Real provider compatibility, full picker UI, cross-process account acceptance, interrupted provider continuation after restart, package/platform acceptance and global OCRM completion remain outside this static verdict as already declared by the task/spec."
+      ]
+    },
+    "source-verdict.json": {
+      "review_kind": "independent-read-only-source-integrity",
+      "base": "55c23059ed28c34a087ec91eda17ae8376b75acb",
+      "tree": "96dc68f49c59557cdef0f7e2e5fe84410a600f1d",
+      "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+      "effort": {
+        "requested": "xhigh",
+        "applied": "inherited parent session; no model or effort override applied",
+        "reason": "Exact-source identity, bidirectional mappings, irreversible audit-history loss, and workflow evidence semantics interact across the complete frozen scope."
+      },
+      "verdict": "changes-requested",
+      "findings": [
+        {
+          "id": "SOURCE-HISTORY-001",
+          "priority": "P2",
+          "title": "Preserve complete historical read-range objects when merging new observations",
+          "path": "projects/openclaw-rust/scripts/source_review.py",
+          "start_line": 169,
+          "end_line": 170,
+          "trigger": "A valid prior canonical row contains a read_ranges member such as {\"start_line\":1,\"end_line\":1,\"content_digest\":\"sha256:historical-content\"}, and read-observations.json adds an exact-source observation for that row. The content_digest member is explicitly allowed by source-inventory.schema.json:203-205.",
+          "cause": "apply_literal_read_observations reduces every prior and new range to a two-element start/end tuple, then constructs fresh objects containing only those two fields. Thus an existing content_digest is discarded even when the old span and source identity are unchanged.",
+          "effect": "The materializer silently deletes permitted historical per-range evidence. The normal source schema and subsequent strict gates still accept the derived row because content_digest is optional; the generated candidate and persisted shards therefore no longer retain the original range record. This contradicts the task and helper contract to preserve existing reading history. The present 34 observed rows have empty prior ranges, so this finding does not claim that this exact batch has already destroyed a stored digest.",
+          "fix": "Preserve the original range objects, including their metadata, and append only genuinely new observation ranges with deterministic, idempotent handling. Deduplication must not collapse or erase different historical records that share endpoints. Keep the existing identity, depth, pending-mapping and strict post-materialization gates unchanged.",
+          "required_oracle": "Extend the existing Actions-only materialization contract with a digest-bearing prior range plus an overlapping or identical new observation; assert the complete historical range object survives both the first and second expand/shard pass. The current preservation test uses only start/end ranges and therefore cannot detect this loss.",
+          "proof_type": "Static source and schema counterexample; no local executable validation performed",
+          "confidence": "high"
+        }
+      ],
+      "scope_reviewed": {
+        "changed_paths": 23,
+        "primary_source_tools": [
+          "projects/openclaw-rust/scripts/expand_inventory.py",
+          "projects/openclaw-rust/scripts/shard_inventory.py",
+          "projects/openclaw-rust/scripts/source_review.py",
+          "projects/openclaw-rust/scripts/test_inventory_materialization.py",
+          "projects/openclaw-rust/scripts/test_source_review.py",
+          "projects/openclaw-rust/scripts/validate_p0.py",
+          "projects/openclaw-rust/scripts/verify_audit_integrity.py"
+        ],
+        "other_changed_scope": "Both workflows, source-of-truth/spec/task/dossier, index and all 34 literal observations, new ledger responsibility and all RTM changes, desktop build/DTO/handler/mirror deltas and the complete new bridge contract test were read from the immutable tree.",
+        "adjacent_authorities": "Repository AGENTS, OCRM-001 section 17, model task, source-inventory/parity-ledger schema, full expand/shard/review/audit consumers, relevant workflow job selection and evidence production.",
+        "independence": "No other reviewer verdicts read. No subagents spawned."
+      },
+      "static_observations": [
+        "The 34 newly declared path/blob identities match the frozen canonical shard records. All 34 prior rows are unread, unclassified and review pending, with no prior ranges. The declaration retains 31 explicit full reads and three partial reads without claiming fresh recovery rereads.",
+        "The pending declaration is anchored to unchanged canonical digest 72c936652facdc6844c1685c56363ba3b605079ebf3b0b8564056cbddf89bfbd and contains the exact new responsibility/path/blob triples. Its consumer permits only mapped/not-run/pending missing reverse links before expansion.",
+        "The ordinary audit rejects an unconsumed pending declaration. The source workflow runs the pre-expansion history gate, materialization, structural validation and the ordinary strict gate in sequence. The Runtime workflow retains the ordinary audit.",
+        "The narrow ledger responsibility remains mapping=mapped, verification=not-run, acceptance=pending. Broad picker obligations and global completion flags are not promoted. Existing ledger/RTM entries remain in the diff's unchanged context.",
+        "The shipping Electron bundler and renderer workflow select the new main-edge-model contract target and record controlled bridge evidence separately from real-provider, UI, account and final acceptance.",
+        "Exact-U connector reads corroborate the resolved persisted-selection branch, its string helper, and the dossier's onPayload/Azure request-identity limitations. These limited independent reads are not a claim to reread all 34 source files in full."
+      ],
+      "execution_and_acceptance_limits": {
+        "tests_builds_generators_validators_linters_formatters_run_locally": false,
+        "reviewed_source_modified": false,
+        "push_or_dispatch_performed": false,
+        "actions_verdict": "not assessed or granted by this static review",
+        "ac_acceptance": "not granted; all original acceptance requirements remain applicable",
+        "history_note": "Historical runs 41510754055 and 41509828695 are not reassigned to the frozen review tree or any later materialized commit."
+      }
+    },
+    "review-decisions.json": {
+      "reviewed_tree": "96dc68f49c59557cdef0f7e2e5fe84410a600f1d",
+      "base": "55c23059ed28c34a087ec91eda17ae8376b75acb",
+      "decisions": [
+        {
+          "id": "SOURCE-HISTORY-001",
+          "decision": "FIX",
+          "reason": "The schema permits content_digest on historical ranges; rebuilding endpoint-only objects silently deletes valid reading evidence. Preserve every historical range object and append only genuinely new coordinate pairs, with a real two-pass materialization oracle. The current 34 empty-range rows are not asserted to have suffered loss."
+        },
+        {
+          "id": "DELIVERY-CARRIER-001",
+          "decision": "FIX",
+          "reason": "Bind the temporary publication carrier itself to exactly three newly added paths before staging any object. Rename the receipt flag to describe this job, not unrelated workflows; final product tree equality remains the integrator's publication gate."
+        }
+      ]
+    },
+    "fix-verdict.json": {
+      "review_kind": "fresh-independent-focused-static-review",
+      "reviewer": "/root/focused_fix_review_1b980",
+      "verdict": "STATIC_CONVERGED",
+      "findings": [],
+      "repo": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+      "base_commit": "1b9803de2283322a7809dc626a5ca35a52eb834e",
+      "frozen_tree": "a57df9aff68827e4b86e7dbfef803aaf34f5c244",
+      "previous_review_tree": "96dc68f49c59557cdef0f7e2e5fe84410a600f1d",
+      "previous_base_commit": "55c23059ed28c34a087ec91eda17ae8376b75acb",
+      "effort": {
+        "requested": "xhigh",
+        "reason": "Source-evidence preservation, shared integration and publication identity interact across the frozen 23-path scope.",
+        "effective_setting": "Inherited native session settings; no model or effort override was attempted, and the host does not expose an independently inspectable effective-effort receipt."
+      },
+      "method": {
+        "source": "git show and git diff against the frozen tree, with adjacent schema, materializer, gate, bridge and workflow consumers",
+        "read_review_decisions": true,
+        "read_other_reviewer_verdicts": false,
+        "executed_product_tests_builds_validators_generators_linters": false,
+        "applied_patch_under_review": false,
+        "modified_reviewed_source": false,
+        "pushed_or_dispatched": false,
+        "identity_operations": "Read-only Git tree/blob/diff inspection and SHA-256 of the existing patch and exact Git diff. No patch application or project executable validation."
+      },
+      "accepted_fix_assessments": [
+        {
+          "id": "SOURCE-HISTORY-001",
+          "verdict": "STATIC_RESOLVED",
+          "evidence": [
+            "projects/openclaw-rust/schemas/source-inventory.schema.json:186-208 permits content_digest on historical read_ranges objects.",
+            "projects/openclaw-rust/scripts/source_review.py:126 deep-copies prior rows; lines 169-177 retain every historical range object and append only genuinely new endpoint pairs. Same-endpoint historical objects and their metadata are not reconstructed or deduplicated away.",
+            "projects/openclaw-rust/scripts/expand_inventory.py reads and schema-checks the committed rows before applying observations, then carries their read_ranges into the canonical candidate; shard_inventory.py serializes the complete rows.",
+            "projects/openclaw-rust/scripts/test_inventory_materialization.py:237-254 seeds a schema-valid digest-bearing historical range, applies the same-endpoint observation through the real pipeline twice, checks complete range-object equality, and checks unchanged canonical and shard bytes on pass two.",
+            "The pipeline at test_inventory_materialization.py:107-113 invokes the actual expand_inventory.py and shard_inventory.py commands. It is not a helper-only oracle.",
+            "The P0 workflow runs these contracts, pre-expansion integrity, expansion, shard writing, structural validation and ordinary strict integrity in sequence at .github/workflows/ocrm-p0-authority.yml:157-166."
+          ],
+          "limits": "The oracle was reviewed statically and was not executed locally. No claim is made that the current 34 empty-range rows had already lost evidence. Literal reading, required semantic review, verification and acceptance remain separate."
+        },
+        {
+          "id": "DELIVERY-CARRIER-001",
+          "verdict": "STATIC_RESOLVED_FOR_REVIEWED_CARRIER",
+          "evidence": [
+            "cloud-object-staging/workflow.yml:37-50 binds repository, task, round, checked-out carrier and its single parent, and requires exactly the three named paths with status A before applying the patch or uploading an object.",
+            "The local carrier tree 6d7e93ff86c3026513c7198e339b263d1a42f15d differs from 1b9803de2283322a7809dc626a5ca35a52eb834e only by those three added regular 100644 blobs.",
+            "The staging job checks old ledger blob, patch digest, single changed index path, resulting byte length and resulting Git blob before its sole repository-write request, POST /repos/bhrumom/fabushi-desktop/git/blobs; returned sha must match.",
+            "The job does not create a Git tree, commit or ref and does not claim product validation. Its receipt field is product_validation_executed_by_staging_job=false at workflow.yml:72."
+          ],
+          "limits": "This reviews staging code and frozen objects, not an executed Actions job or a published product tree. The candidate_tree field alone is not a final-product equality proof."
+        }
+      ],
+      "incoming_preservation": {
+        "range": "55c23059ed28c34a087ec91eda17ae8376b75acb..1b9803de2283322a7809dc626a5ca35a52eb834e",
+        "path_count": 10,
+        "unchanged_from_newbase": [
+          "projects/openclaw-rust/docs/specs/media-input-url-admission.md",
+          "projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md",
+          "projects/openclaw-rust/dossiers/media-input-files-staged-inputs-scoped.md",
+          "source/host/src/extensions/attachments/input_files.rs",
+          "source/host/src/extensions/attachments/media_fetch.rs",
+          "source/host/tests/openclaw_input_files_contract.rs",
+          "source/host/tests/openclaw_media_fetch_contract.rs"
+        ],
+        "overlapping_paths": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "assessment": "The candidate delta from newbase is confined to the Electron bridge test selector and receipt around lines 1756-1814. Incoming media URL commands, projection test, positive/negative assertion names, subject-input paths, Linux lane and bounded evidence wording remain intact."
+          },
+          {
+            "path": "projects/openclaw-rust/parity-ledger.json",
+            "assessment": "The candidate delta from newbase consists only of the added model-identity responsibility at the front of the responsibility array. Existing media-fetch and input-file responsibility objects, including incoming MURL invariants, evidence, tests, typed contracts and risk text, are preserved."
+          },
+          {
+            "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+            "assessment": "New model-identity responsibility/oracle/evidence associations retain existing values. Incoming media-input-url-admission references in OCRM-R24 and OCRM-AC24 are unchanged. The eight global completion flags are not promoted."
+          }
+        ],
+        "verdict": "PRESERVED_IN_FROZEN_TREE"
+      },
+      "staging_identity": {
+        "base_commit": "1b9803de2283322a7809dc626a5ca35a52eb834e",
+        "base_tree": "7ffa987205bbc71af80114f6c15267937f2cf09a",
+        "carrier_tree": "6d7e93ff86c3026513c7198e339b263d1a42f15d",
+        "candidate_tree": "a57df9aff68827e4b86e7dbfef803aaf34f5c244",
+        "target_path": "projects/openclaw-rust/parity-ledger.json",
+        "before_blob": "6dbb561052d0b03e3565bc6c6e383c69f9af3e5e",
+        "after_blob": "98540397e0440e92804fa245aeb58c5459c47b2a",
+        "after_bytes": 1375809,
+        "patch_sha256": "ec2292004e6e29c884643296da54fd4c01d932d0fca7595b934da73d76193cc1",
+        "patch_equals_exact_base_to_frozen_ledger_diff": true,
+        "carrier_paths": [
+          ".github/ocrm-reviewed-objects/ledger.patch",
+          ".github/ocrm-reviewed-objects/manifest.json",
+          ".github/workflows/ocrm-stage-reviewed-objects.yml"
+        ]
+      },
+      "complete_frozen_scope_context": [
+        ".github/workflows/ocrm-p0-authority.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/scripts/build-electron-runtime.mjs",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/inventory/index.json",
+        "projects/openclaw-rust/inventory/read-observations.json",
+        "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "projects/openclaw-rust/parity-ledger.json",
+        "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "projects/openclaw-rust/scripts/expand_inventory.py",
+        "projects/openclaw-rust/scripts/shard_inventory.py",
+        "projects/openclaw-rust/scripts/source_review.py",
+        "projects/openclaw-rust/scripts/test_inventory_materialization.py",
+        "projects/openclaw-rust/scripts/test_source_review.py",
+        "projects/openclaw-rust/scripts/validate_p0.py",
+        "projects/openclaw-rust/scripts/verify_audit_integrity.py",
+        "source/electron-main/main-edge-model.contract.test.ts",
+        "source/electron-main/main-edge.ts",
+        "source/shared/agents/sand-agent-model.ts",
+        "source/shared/node/settings/sand-settings-store.ts"
+      ],
+      "additional_context": [
+        "AGENTS.md",
+        "docs/specs/openclaw-rust-equivalence-migration.md sections 6, 11.1, 12 and 17",
+        "projects/openclaw-rust/module-map.md owner and scope context",
+        "projects/openclaw-rust/schemas/source-inventory.schema.json",
+        "source/electron-main/main-edge-wiring.ts",
+        "source/electron-main/adapters/main-rpc.ts",
+        "fusion-review/review-decisions.json",
+        "fusion-review/cloud-object-staging/workflow.yml",
+        "fusion-review/cloud-object-staging/manifest.json",
+        "fusion-review/cloud-object-staging/ledger.patch",
+        "fusion-review/cloud-object-staging/carrier-snapshot.json"
+      ],
+      "remaining_integration_gates": [
+        "The integrator must compare the actual formal Git tree with the applicable final reviewed tree, bind its parent to the actual carrier, and remove all three temporary carrier paths. This static report does not substitute for that check.",
+        "Any newer incoming commit requires reconciliation and an updated frozen tree before publication. The subsequently reported f890002148f122aacdfc78fe39530a7e9c1bef6e is outside this report's frozen scope.",
+        "The resulting implementation H and any later materialized H require their own applicable exact-subject Actions evidence. No local execution or status promotion is supported by this report."
+      ]
+    },
+    "f890-verdict.json": {
+      "review_kind": "independent-additional-static-integration-review",
+      "reviewer": "/root/focused_fix_review_1b980",
+      "verdict": "STATIC_CONVERGED",
+      "findings": [],
+      "repo": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+      "base_commit": "f890002148f122aacdfc78fe39530a7e9c1bef6e",
+      "base_tree": "81f60c54ccf1c88698db3df41e3071445aa5b63b",
+      "frozen_tree": "2b49afdaa8d83e9b3503e9f33d71ac91ed5f68c1",
+      "previous_review": {
+        "base_commit": "1b9803de2283322a7809dc626a5ca35a52eb834e",
+        "frozen_tree": "a57df9aff68827e4b86e7dbfef803aaf34f5c244",
+        "report": "/workspace/scratch/a707eb82cd6b/fusion-review/fix-verdict.json",
+        "separate_conclusion_retained": true
+      },
+      "effort": {
+        "requested": "xhigh",
+        "reason": "Review the new integration delta, typed Automation caller boundary and exact publication object identities while preserving the complete prior 23-path context.",
+        "effective_setting": "Inherited native session settings; no model or effort override attempted."
+      },
+      "scope_assessment": {
+        "complete_changed_path_count_against_newbase": 23,
+        "unchanged_original_scope_paths_against_previous_frozen_tree": 19,
+        "changed_original_scope_paths": [
+          ".github/workflows/rust-desktop-runtime.yml",
+          "projects/openclaw-rust/parity-ledger.json",
+          "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md"
+        ],
+        "assessment": "The original 23-path scope remains intact. Excluding the task document, the complete zero-context added/deleted text for oldbase-to-oldtree and newbase-to-newtree is identical after removing only Git index identity lines and hunk-position headers. The task delta changes its integration base and adds an incoming-preservation statement. The source-history fix, real two-pass oracle and desktop bridge logic remain byte-identical to the previous reviewed tree.",
+        "normalized_scope_delta_sha256": "623db9cd39baf8343745f67d3924964535f1b9665f8ca279e9ad52cd0d6f4568",
+        "new_join_conflict_found": false
+      },
+      "incoming_preservation": {
+        "commit": "f890002148f122aacdfc78fe39530a7e9c1bef6e",
+        "single_parent": "1b9803de2283322a7809dc626a5ca35a52eb834e",
+        "path_count": 12,
+        "nonoverlapping_paths_byte_identical_to_newbase": [
+          "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+          "projects/openclaw-rust/evidence/full-fusion-batch-647e0932-20261102.json",
+          "source/host/app/src/main.rs",
+          "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+          "source/host/src/extensions/transcript/automation_run_path.rs",
+          "source/host/src/extensions/transcript/automation_runtime.rs",
+          "source/host/tests/automation_run_path_contract.rs",
+          "source/host/tests/automation_run_production_wiring_contract.rs",
+          "source/host/tests/host_runner_composition_production_wiring_contract.rs"
+        ],
+        "shared_paths": [
+          ".github/workflows/rust-desktop-runtime.yml",
+          "projects/openclaw-rust/parity-ledger.json",
+          "projects/openclaw-rust/requirements-traceability-matrix.json"
+        ],
+        "shared_delta_evidence": "The incoming 1b980-to-f890 zero-context added/deleted text for all three shared paths equals the a57-to-2b49 added/deleted text after removing only index identity lines and hunk-position headers. This is read-only textual evidence of preservation, independently of the integrator's merge-file exit result.",
+        "normalized_shared_incoming_delta_sha256": "353b25ada3069ec962337db252e44cf2e24b541dff6e139eda26c62fd02effcf",
+        "shared_content_review": [
+          "Runtime retains incoming typed Automation App selectors, both added Linux execution/evidence steps, exact-subject inputs, success/failure assertions, and failure-fixture preservation. The model bridge selector and receipt remain in the renderer job at frozen lines 1985-2045. Existing media URL evidence remains present.",
+          "Ledger retains the complete incoming Automation and Session evidence/test/typed-contract additions and their stated limits. Newbase-to-candidate still adds only the previously reviewed model responsibility; existing source mapping and completion flags are not rewritten.",
+          "RTM retains the incoming Automation evidence additions in OCRM-R21 and OCRM-AC21 alongside the reviewed model associations. Prior media associations remain intact."
+        ],
+        "verdict": "ALL_12_INCOMING_PATHS_PRESERVED"
+      },
+      "adjacent_boundary_review": {
+        "authority": "Read the incoming AUTO-BACKEND-ADMISSION-v1 specification delta and actual changes to Host main, automation_run_path and automation_runtime from the frozen objects.",
+        "observations": [
+          "Host scheduled worker uses run_server_scheduled_automation_attempt_with and passes its actual result into automation_fire_completion at frozen main.rs:3656-3672.",
+          "The event path explicitly wraps its legacy result in AutomationRunAttempt::Outcome before the same mapper; typed refusal maps to None while legacy outcomes and outer errors retain their existing mapping.",
+          "RunPath and Runtime preserve legacy facade signatures via into_legacy_outcome, and the new typed facade remains in the existing owners. The incoming delta does not edit default-model admission, Settings/Inference selection, desktop transport or the literal-read materializer.",
+          "No new source responsibility or reverse-link requirement is introduced by these incoming ledger annotations; the pending model mapping declaration and its pre/post materialization gates are unchanged."
+        ],
+        "limit": "This is an integration and preservation review of the new coordination delta. It does not replace the incoming batch's required executable evidence or confer product acceptance."
+      },
+      "staging_identity": {
+        "capsule": "/workspace/scratch/a707eb82cd6b/fusion-review/cloud-object-staging-f890",
+        "carrier_tree": "b54ddbd76a49d8691f9a78e200314be99cfa6249",
+        "base_commit": "f890002148f122aacdfc78fe39530a7e9c1bef6e",
+        "candidate_tree": "2b49afdaa8d83e9b3503e9f33d71ac91ed5f68c1",
+        "target_path": "projects/openclaw-rust/parity-ledger.json",
+        "before_blob": "9e7d16b92b16b3cddc6959005735dfbbd20927c1",
+        "after_blob": "9310ce5254aaec058266e4ba89e28f74997eef59",
+        "after_bytes": 1377257,
+        "patch_sha256": "97434961bd110313326a7e8d52762eceb32b563734309cf6c6c71fc399ba5331",
+        "patch_identity_method": "Saved patch SHA-256 equals git diff --binary --full-index from the exact new base to the frozen tree for parity-ledger.json. The full-index header binds the complete before and after blob SHAs. No patch was applied locally.",
+        "carrier_changes": [
+          {
+            "status": "A",
+            "mode": "100644",
+            "path": ".github/ocrm-reviewed-objects/ledger.patch",
+            "blob": "9cee3af337322ff3bc006fe3e13c431597da6165"
+          },
+          {
+            "status": "A",
+            "mode": "100644",
+            "path": ".github/ocrm-reviewed-objects/manifest.json",
+            "blob": "a41160a1b3d594c42ea3c9f125c0c9652c879290"
+          },
+          {
+            "status": "A",
+            "mode": "100644",
+            "path": ".github/workflows/ocrm-stage-reviewed-objects.yml",
+            "blob": "dacdcc291ea38ab659b0f0117ab83e889cd0ac54"
+          }
+        ],
+        "exactly_three_added_paths": true,
+        "capsule_files_match_carrier_blobs": true,
+        "workflow_assessment": "Workflow is byte-identical to the previously reviewed staging code. Before upload it binds checked-out carrier and its single parent, exact three A paths, old blob, patch digest, single staged ledger path, output bytes and output Git hash. Its sole repository-write API is POST /git/blobs; it creates no commit/tree/ref. Receipt explicitly states product_validation_executed_by_staging_job=false.",
+        "verdict": "STATIC_IDENTITY_CONVERGED"
+      },
+      "execution_and_independence": {
+        "tests_builds_generators_validators_linters_run": false,
+        "local_patch_apply_run": false,
+        "reviewed_source_modified": false,
+        "other_reviewer_reports_read": false,
+        "push_dispatch_or_remote_mutation": false,
+        "report_only_write": "/workspace/scratch/a707eb82cd6b/fusion-review/f890-verdict.json"
+      },
+      "remaining_integrator_gates": [
+        "The actual formal Git tree must equal 2b49afdaa8d83e9b3503e9f33d71ac91ed5f68c1, its parent must be the actual published carrier, and all three temporary carrier paths must be removed. The root must verify those actual remote objects, not infer equality from the manifest's candidate_tree label.",
+        "A further advanced base or changed carrier/candidate requires another exact identity and integration reconciliation.",
+        "Staging execution and the implementation/materialized exact-H Actions remain separate evidence obligations. This static verdict does not promote verification, acceptance or global completion flags."
+      ]
+    }
+  },
+  "object_staging": {
+    "base_commit": "f890002148f122aacdfc78fe39530a7e9c1bef6e",
+    "bytes": 1377257,
+    "candidate_tree": "2b49afdaa8d83e9b3503e9f33d71ac91ed5f68c1",
+    "carrier_commit": "86719a3786b0f1fbadab5c2f1e22688375332be7",
+    "git_blob": "9310ce5254aaec058266e4ba89e28f74997eef59",
+    "kind": "reviewed-git-object-staging",
+    "patch_sha256": "97434961bd110313326a7e8d52762eceb32b563734309cf6c6c71fc399ba5331",
+    "path": "projects/openclaw-rust/parity-ledger.json",
+    "product_validation_executed_by_staging_job": false,
+    "run_id": 41527850852,
+    "job_id": 125560093717,
+    "result": "success",
+    "artifact_id": 13181260281,
+    "artifact_sha256": "947287c0e8df9a7b9a549d1655db205b5734037b5d77c823e4c19ec337c90995"
+  },
+  "source_validation": {
+    "subject_commit": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+    "validation_workspace": "The source job expanded and materialized eight derived paths after checkout. Its strict integrity result applies to that candidate working tree, subsequently committed as 0375dfa54378b97fb4b9ca01ae77f04d7643b817, not to e96's unmaterialized original tree.",
+    "unmaterialized_subject_strict_integrity": "not established; the original tree retains 34 declared pending forward links and ordinary Runtime audit must reject them",
+    "run_id": 41528132399,
+    "job_id": 125561057634,
+    "result": "success",
+    "risk_tests": 33,
+    "materialization_tests": 21,
+    "tracked_paths": 62130,
+    "mapped_paths": 850,
+    "literal_unread_or_partial_paths": 62099,
+    "pending_forward_links": 0,
+    "artifact_id": 13180851228,
+    "artifact_sha256": "04ba25738ea5056376a60082ce7320e141e7e58ca34b4e9b307f91ca4db9f534",
+    "scope": "Tracked identity/history/risk contract, actual expand/shard controls and strict post-materialization integrity. No recursive dependency, semantic or final product acceptance."
+  },
+  "materialized_subject": {
+    "commit": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+    "tree": "cf695e47ee28872c08ce29913aeffd1b59a15059",
+    "parent": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+    "changed_paths": [
+      {
+        "path": "projects/openclaw-rust/inventory/index.json",
+        "blob": "4fd77c02bc31f19fd933c3ff340a507dfbcd4d55"
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/shards/manifest.json",
+        "blob": "c49dc6fd0db9bbb0aad129f8c45ba1fb407b8786"
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/shards/part-0018.jsonl.gz",
+        "blob": "f4bf3189c433b75af3ad6f995988db92bce5e594"
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/shards/part-0019.jsonl.gz",
+        "blob": "f81fc5903fd959b2719c74611c4d09023047eb5d"
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/shards/part-0024.jsonl.gz",
+        "blob": "dcc7aada97a34bfb76d1a99d7236f98e19f5b6f6"
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/shards/part-0026.jsonl.gz",
+        "blob": "bfbb209102d31aa3e7901dad7f48395d22ef9d3b"
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/shards/part-0033.jsonl.gz",
+        "blob": "01f72c39e2dba1173359fd58a0142d20428b5565"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "blob": "6d08ac1861c627a128d391c6a0fe6da9938f6891"
+      }
+    ],
+    "source_run_id": 41528520518,
+    "source_job_id": 125562388883,
+    "source_result": "success",
+    "renderer_run_id": 41528523432,
+    "renderer_job_id": 125562400721,
+    "renderer_result": "success",
+    "rust_host_status_at_collection": "queued"
+  },
+  "desktop_bridge_validation": {
+    "subject_commit": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+    "run_id": 41528132530,
+    "job_id": 125561059482,
+    "result": "success",
+    "total_tests": 104,
+    "new_model_bridge_tests": 10,
+    "failed": 0,
+    "skipped": 0,
+    "artifact_id": 13180188645,
+    "artifact_sha256": "2515e11a7e75228b57f279d386dbacae8703589782173a76b70bbcdc47396a69",
+    "scope": "Actual served desktop handler, JSON boundary and file mirror with controlled Host acknowledgement/refusal; not real provider, full picker UI, account or package acceptance."
+  },
+  "evidence_rules": [
+    "This file is an evidence carrier; its own commit is not the subject of the recorded runs.",
+    "Repeated 104-case runs are the same suite and are not added together.",
+    "Static review is not executable verification.",
+    "No unit verification, acceptance or global flags are promoted by these records.",
+    "All executable validation ran in GitHub Actions; none ran locally or on htch-runtime."
+  ]
+}

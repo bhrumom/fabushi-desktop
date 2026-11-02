@@ -517,6 +517,8 @@ jobs:
               tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry \
               tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret \
               tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization \
+              tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects \
+              tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls \
               tests::original_turn_recovery_tests::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work \
               tests::original_turn_recovery_tests::original_turn_completed_marker_retains_fresh_pending_corrupt_ack_and_live_work \
               tests::original_turn_recovery_tests::original_turn_marker_retains_unbound_missing_and_foreign_original_references \
@@ -1156,6 +1158,10 @@ jobs:
               "media_http_error_scope": "Actual AttachmentsService buffer/save dispatch stops failed-response diagnostics at the bounded prefix without awaiting EOF, preserves remote status, formats Unicode safely, redacts the existing bot-token pattern and leaves the store unchanged. Controlled HTTP fixtures and supplied-byte cases do not establish outer Host HTTP registration, general SSRF, redirect/proxy, idle-timeout, redaction, chat-wiring or real provider parity.",
               "media_input_policy_scope": "Actual AttachmentsService file RPCs reject malformed explicit resolved policy before decoding or URL processing, preserve omitted/null defaults and valid restrictive limits, and shared file/image source handling rejects '=' and '==' without arithmetic panic or underflow-generated size errors. Longer malformed input retains upstream size-before-validation precedence. This does not establish URL allowlist/redirect/cancellation parity, real PDF or HEIC behavior, accepted-turn multimodal composition, or real service acceptance.",
               "config_public_secret_contract": "OCRM-CONFIG-PUBLIC-SECRET-v1",
+              "config_revision_input_contract": "CS05-INPUT-v1",
+              "config_revision_input_app_tests": ["tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects", "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls"],
+              "config_revision_input_result": "passed",
+              "config_revision_input_scope": "Actual shipping config.set dispatcher rejects present nonstring or empty revision input before Settings/key/notification/commit-consumer effects, retains an intervening durable default across reopen, and preserves current/stale/omitted/legacy token controls. Nonempty strings retain existing normalized HMAC comparison without trimming. Not mandatory raw-source CAS or complete external method-schema compatibility.",
               "config_public_secret_app_tests": ["tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization", "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests", "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers", "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry", "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret", "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization"],
               "config_public_secret_library_filters": ["extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "config_public_secret_owner_targets": ["settings_service_contract", "openclaw_sessions_and_config_contract", "host_secret_store_contract", "host_foundation_contract", "box_store_download_frozen_parity_contract", "box_store_transfer_frozen_parity_contract", "box_copy_in_production_wiring_contract", "box_store_sync_production_wiring_contract"],
@@ -1982,7 +1988,7 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
           PY
-      - name: Check and execute the actual Automation App owners on Linux
+      - name: Check and execute the actual Automation and Settings App owners on Linux
         id: automation_app
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         env:
@@ -2002,9 +2008,14 @@ jobs:
           inputs = [
               ".github/workflows/rust-desktop-runtime.yml",
               "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+              "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
               "source/host/Cargo.toml", "source/host/Cargo.lock",
               "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
               "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+              "source/host/app/src/tests/config_secret_boundary_tests.rs",
+              "source/host/src/extensions/settings/settings_service.rs",
+              "source/host/src/extensions/settings/public_projection.rs",
+              "source/host/src/gateway_command_error.rs",
               "source/host/src/extensions/transcript/automation_run_path.rs",
               "source/host/src/extensions/transcript/automation_runtime.rs",
               "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs",
@@ -2015,7 +2026,7 @@ jobs:
               "source/host/tests/host_runner_composition_production_wiring_contract.rs",
           ]
           receipt = {
-              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1",
+              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -2026,7 +2037,7 @@ jobs:
               "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "commands": [], "cases": [], "result": "failed",
-              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair. Not a linked production package/startup, real external provider/backend, macOS or whole-platform acceptance. Legacy covered-slot, metadata/open races and unknown write effects remain open.",
+              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Not a linked production package/startup, real external provider/backend/client, macOS or whole-platform acceptance. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
           }
           def save():
               (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -2094,6 +2105,16 @@ jobs:
                   "backend_fire_typed_executed_failure_and_settlement_error_keep_completion",
                   "backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
               ]] + ["tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes"]
+              required += ["tests::config_secret_boundary_tests::" + name for name in [
+                  "all_public_settings_routes_mask_values_and_internal_digests",
+                  "masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization",
+                  "public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers",
+                  "public_settings_response_and_trusted_callback_keep_their_commit_after_reentry",
+                  "legacy_public_masked_write_restores_the_current_committed_secret",
+                  "public_key_refusal_precedes_all_four_routes_and_read_normalization",
+                  "public_config_set_rejects_malformed_base_hash_before_owner_effects",
+                  "public_config_set_revision_input_preserves_newer_commit_and_legacy_controls",
+              ]]
               receipt["required_tests"] = required
               save()
               for index, name in enumerate(required):

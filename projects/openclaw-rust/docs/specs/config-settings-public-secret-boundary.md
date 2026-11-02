@@ -257,3 +257,39 @@ attachments on the old Agent. Keep all route, missing-boundary and stale-read
 negatives above; add an actual-source relocation control that moves the same
 chain before dispatch and must fail the wiring oracle. Production code and the
 original delayed-receipt runtime assertions remain unchanged.
+
+### Explicit revision input — CS05-INPUT-v1
+
+At `e96c39ebe5b1c3fc318b20579bc38595d4d588a3`, the shipping `config.set`
+adapter turns a present nonstring `baseHash` into `None`, bypassing the existing
+owner's conditional comparison. A stale form with a malformed precondition can
+therefore overwrite a newer acknowledged default model. In the same adapter,
+distinguish absence from presence: absent retains CS-05's unconditional behavior;
+present must be a nonempty JSON string. All other types and the empty string
+return static BadRequest/400 before calling Settings or creating revision-key
+material. Refusal preserves settings bytes, notifications and trusted callbacks.
+Do not trim valid strings or change `config.get`, `setHostSettings`, normalized
+HMAC comparison, locking, schema or persistence. Nonempty mismatches still
+return 409 through the existing owner. Restart reads the last successful commit;
+there is no new cancellation or rollback mechanism.
+
+Exact-U schema `packages/gateway-protocol/src/schema/config.ts`
+(`17477ed9580bb3b21f0c5a45b99fe51676d5032a`) uses optional `NonEmptyString`;
+`packages/gateway-protocol/src/schema/primitives.ts`
+(`0502ec6fe62b42480fef13060e3931b222e03e89`) defines
+minLength 1, without trimming. `src/gateway/server-methods/config.ts`
+(`bd22ddfc3c88cc63bb6b01d24a3130bcc9aea695`) calls the validator before preparing
+a replacement; `src/gateway/server-methods/validation.ts`
+(`499cdf4a73d9e7a8c2a71b27da16ecf9c4fc82b4`)
+returns immediately on invalid parameters. These exact identities were matched
+to the existing inventory. This bounded contract does not claim fixed-U raw CAS,
+mandatory revisions, whitespace normalization or complete method-schema parity.
+
+Extend the existing actual-dispatcher App fixture with malformed-value tests
+for raw/config/settings envelopes, no-key/no-normalization refusal, a newer
+persisted default surviving an old malformed form and reopening, and current,
+stale, omitted and legacy token controls. Keep all existing public-secret tests
+and run the added named cases plus affected locked shipping compilation in the
+existing Actions scope. Existing OCRM-RESP-CONFIG-IO-SNAPSHOT-001 and
+OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001 already anchor this spec and test module;
+their verification and acceptance state remains unchanged pending evidence.

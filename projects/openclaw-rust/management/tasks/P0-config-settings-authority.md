@@ -1235,3 +1235,13 @@ remains required. A single receipt lists both scopes without duplicate keys.
 Cancellation after the DB's final token read does not undo its commit; no
 unknown-effect or original-turn resume acceptance is inferred. Fresh focused
 integration review and the final H's Actions union remain mandatory.
+
+### Public revision input continuation — CS05-INPUT-v1
+
+At integration base `e96c39ebe5b1c3fc318b20579bc38595d4d588a3`, implement the
+present-versus-absent revision guard in the existing shipping Settings adapter,
+with the actual App fixture and explicit Actions selectors. The current
+`config-settings-public-secret-boundary.md` contract defines the exact source,
+refusal/no-effect and newer-model/reopen controls. HMAC/redaction already exists;
+retain its owner and existing ledger/RTM anchors. Implementation and named tests
+require immutable review and exact-H Actions; no scope or status is promoted.
