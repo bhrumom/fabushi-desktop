@@ -102,9 +102,14 @@ fn runner_provider_registry_cancels_by_stream_and_retires_finished_runs() {
     assert!(registry.cancel("stream-cancel", "user cancelled"));
     assert!(cancellation.is_cancelled());
     assert_eq!(cancellation.reason().as_deref(), Some("user cancelled"));
+    assert_eq!(registry.active_count(), 1, "a request does not retire the worker");
+    assert!(!registry.cancel("stream-cancel", "duplicate request"));
+    assert_eq!(cancellation.reason().as_deref(), Some("user cancelled"));
     assert!(!registry.cancel("missing-stream", "ignored"));
     registry.finish("stream-cancel");
     assert_eq!(registry.active_count(), 0);
+    assert!(!registry.cancel("stream-cancel", "late request"));
+    assert_eq!(cancellation.reason().as_deref(), Some("user cancelled"));
 }
 
 #[test]

@@ -207,6 +207,84 @@ schedule/event and execution-error/interruption branches through their existing
 owners. Existing valid assertions remain. Source review and these checks do not
 establish real backend delivery, crash recovery or full cron equivalence.
 
+## Runner cancellation request and terminal publication — 2026-11-02
+
+Contract: `OCRM-RUNNER-CANCEL-TERMINAL-v1`. Exact target base:
+`d94aeb372c2fe4483bcf60ebbc5aaae4e6db52ef`; integration parent is
+`58f1fb359c71e203cb82a6fe43cb52336f4542e5`, preserving the intervening channel,
+strict checkpoint, MCP lifecycle and Plugin Skills snapshot changes. Fixed upstream U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. This bounded repair extends the
+existing Host Runner composition and terminal projection; it adds no runtime,
+registry, scheduler, durable state or event type.
+
+The Gateway currently publishes `runner-inference/cancelled` immediately after
+the registry accepts a cancellation token request. The provider task and routed
+turn lease can still be active. Automation/background waits, Coordinator and
+the outline bridge consume that event as execution terminal. The actual Runner
+finalizer also re-reads cancellation after choosing its structured terminal,
+so a late request can produce contradictory terminal facts for one turn.
+
+- CANCEL-01: `runner.cancelRoutedProvider` retains its `{streamId,cancelled}`
+  response, validation/default reason, first-request cancellation reason,
+  superseded connector wake bookkeeping and interrupt telemetry. `cancelled`
+  acknowledges a newly accepted token request only. Neither accepted,
+  duplicate, missing-stream nor post-finalization requests publish a terminal
+  event. Do not add `cancel_requested` to the existing event channel; current
+  Coordinator parsing rejects unknown event types.
+- CANCEL-02: after final Human handoff persistence has made its last possible
+  change to the provider result, capture cancellation, result and delivery
+  counters once. The immutable terminal snapshot uses the existing
+  `project_turn_terminal` policy: waiting-user before cancellation before
+  success/failure. Structured turn status, trace and the terminal event use
+  that same frozen kind. A later accepted cancellation cannot rewrite frozen
+  completed/failed/waiting facts.
+- CANCEL-03: provider-review continuation settlement consumes the same frozen
+  inputs while retaining its existing owner policy: cancellation first;
+  otherwise waiting-user is explicitly `OutcomeUnknown`; otherwise completed
+  or failed. This distinct continuation policy does not change the visible
+  terminal priority or imply that waiting is a completed provider review.
+- CANCEL-04: the existing finalizer is the sole routed task terminal publisher.
+  Preserve activity, computer-use, provider, registry, permission, ack, routed
+  lease and live-session cleanup ordering. Publish only after those existing
+  boundaries, through a production seam that consumes the frozen event once.
+  Retain `sentMessageCount` and `reacted` on every terminal type, empty content
+  plus `waitingUser: true` for waiting, known failure details/trays/telemetry,
+  and existing successful-run update behavior. Cancellation does not undo
+  delivered messages or reactions.
+- CANCEL-05: deterministic shipping tests use the real registry, event hub and
+  routed lease owner with a channel/barrier held worker. Cancellation leaves
+  active ownership and no terminal for the Automation parser; release produces
+  one truthful terminal after retirement. Include duplicate/wrong/late-stream
+  requests, cancellation after frozen success/failure, waiting priority,
+  provider-review `OutcomeUnknown` and cancellation priority, known failure,
+  delivery facts and nonterminal deltas. Source wiring checks may supplement
+  these behavioral oracles, never replace them; retain all existing tests.
+
+Implementation is confined to `source/host/app/src/main.rs`, this amendment,
+the existing `runner_routed_provider_contract.rs` registry and
+`turn_telemetry_production_wiring_contract.rs` telemetry oracles, and the
+scoped workflow/receipt and current task record. No persisted format or public
+event schema changes, migration or new dependencies are
+required. Rollback is the bounded patch; a rollback also restores the known
+premature-event defect. Existing telemetry remains the observation surface.
+
+The separate Automation 30-minute deadline still fabricates an interrupted
+execution terminal after requesting cancellation and remains open. Event-loss
+and unknown-outcome durable custody, load/claim/settle reconciliation, restart
+and backend redelivery policy also remain open. This patch does not establish
+full cancellation, restart, cron/reaper or OCRM acceptance.
+
+Definition of Done: the exact integrated H passes the selected shipping app
+tests and registry/terminal/outline contract targets in GitHub Actions, with
+independent review against CANCEL-01--05 and all pre-existing assertions
+retained. Until that evidence exists, authored tests and source review are
+implementation evidence only; U and all global acceptance flags are unchanged.
+
+Provenance: the canonical Host Gateway/finalizer, TranscriptRunnerRegistry,
+turn_runtime terminal projection and actual Automation/Coordinator/outline
+consumers at the exact target base above, under OCRM-001 Revision 2 §17.
+This target repair does not add an upstream full-file read or acceptance claim.
+
 ## Verification and Definition of Done
 
 - A source-backed architecture decision names the existing owners and all

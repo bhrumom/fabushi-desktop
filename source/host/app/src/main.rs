@@ -234,7 +234,8 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     ConnectorAuthGatewayError, HostBundleIdentity, HostProductAnalytics, HostStructuredLogTelemetry,
-    HostTelemetryApi, MessageSentReport, McpDiscoveryFailedGatewayError, dispatch_connector_auth_gateway,
+    HostStructuredLogTurnTelemetry, HostTelemetryApi, MessageSentReport,
+    McpDiscoveryFailedGatewayError, dispatch_connector_auth_gateway,
     dispatch_mcp_discovery_failed_gateway,
 };
 use mahayana_host_runtime::extensions::telemetry::mcp_discovery_telemetry::McpDiscoveryFailedReport;
@@ -295,7 +296,7 @@ use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::Jou
 use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    REPLY_NUDGE_PROMPT, TurnTerminalKind, build_turn_empty_delivery_report,
+    REPLY_NUDGE_PROMPT, TurnTerminalKind, TurnTerminalProjection, build_turn_empty_delivery_report,
     classify_agent_error, is_delivery_owed, project_turn_terminal,
     shape_closing_send_nudge_turn_input, shape_reply_nudge_turn_input, should_attempt_reply_nudge,
 };
@@ -7872,6 +7873,187 @@ fn starts_new_local_tool_direction(
         && !has_generated_parent
 }
 
+/// A cancellation command acknowledges the token request. The worker retains
+/// its registry entry and routed lease until its actual finalizer runs.
+fn request_routed_provider_cancellation(
+    args: &serde_json::Value,
+    runner_registry: &TranscriptRunnerRegistry,
+    transcript_runtime: &ProductionTranscriptRuntime,
+    background_wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
+    telemetry_logs: &HostStructuredLogTelemetry,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    let stream_id = args
+        .get("streamId")
+        .and_then(serde_json::Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| GatewayCommandError::Internal(
+            "runner.cancelRoutedProvider requires streamId".into()
+        ))?;
+    let reason = args
+        .get("reason")
+        .and_then(serde_json::Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or("Runner provider request cancelled");
+    let cancelled_agent_id = runner_registry.agent_id_for_stream(stream_id);
+    let was_in_flight = cancelled_agent_id
+        .as_deref()
+        .is_some_and(|agent_id| transcript_runtime.is_agent_running(agent_id));
+    if reason.to_ascii_lowercase().contains("superseded") {
+        if let Some(agent_id) = cancelled_agent_id.as_deref() {
+            if transcript_runtime.active_turn_source(agent_id).as_deref() == Some("connector") {
+                background_wakes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .dm_preempted_wake_agent_ids
+                    .insert(agent_id.to_string());
+            }
+        }
+    }
+    let cancelled = runner_registry.cancel_stream(stream_id, reason);
+    if reason.to_ascii_lowercase().contains("superseded") {
+        if let Some(agent_id) = cancelled_agent_id.as_deref() {
+            let fields = TurnInterruptFields {
+                conversation_id: agent_id.to_string(),
+                reason: "superseded".into(),
+                had_active_run: cancelled,
+                was_in_flight,
+            };
+            if let Err(error) = telemetry_logs.report_turn_interrupt(&fields) {
+                eprintln!(
+                    "mahayana-host superseded_turn_interrupt_telemetry_failed agent={} error={error}",
+                    agent_id
+                );
+            }
+        }
+    }
+    Ok(serde_json::json!({
+        "streamId": stream_id,
+        "cancelled": cancelled,
+    }))
+}
+
+/// Captured after the last result-changing handoff write. This is a value
+/// owned by the existing worker finalizer, not another task/state owner.
+/// Consuming publication prevents that finalizer from publishing it twice.
+struct RoutedProviderTerminal {
+    projection: TurnTerminalProjection,
+    provider_review_outcome: ProviderReviewContinuationOutcome,
+    succeeded: bool,
+    error: Option<ProviderSessionError>,
+    event: serde_json::Value,
+}
+
+impl RoutedProviderTerminal {
+    fn capture(
+        stream_id: &str,
+        waiting_user: bool,
+        cancellation: &RoutedProviderCancellation,
+        result: Result<String, ProviderSessionError>,
+        sent_message_count: u64,
+        reacted: bool,
+    ) -> Self {
+        let cancelled = cancellation.is_cancelled();
+        let succeeded = result.is_ok();
+        let projection = project_turn_terminal(
+            waiting_user, cancelled, succeeded, sent_message_count, reacted,
+        );
+        // Provider-review custody has its own existing cancellation-first
+        // policy; a non-cancelled wait remains explicitly unknown there.
+        let provider_review_outcome = if cancelled {
+            ProviderReviewContinuationOutcome::Cancelled
+        } else if waiting_user {
+            ProviderReviewContinuationOutcome::OutcomeUnknown
+        } else if succeeded {
+            ProviderReviewContinuationOutcome::Completed
+        } else {
+            ProviderReviewContinuationOutcome::Failed
+        };
+        let mut payload = serde_json::json!({
+            "streamId": stream_id,
+            "sentMessageCount": sent_message_count,
+            "reacted": reacted,
+        });
+        let error = match (projection.kind, result) {
+            (TurnTerminalKind::WaitingUser, result) => {
+                payload["type"] = serde_json::json!("completed");
+                payload["content"] = serde_json::json!("");
+                payload["waitingUser"] = serde_json::json!(true);
+                result.err()
+            }
+            (TurnTerminalKind::Cancelled, result) => {
+                payload["type"] = serde_json::json!("cancelled");
+                payload["message"] = serde_json::json!("Runner provider request cancelled");
+                result.err()
+            }
+            (_, Ok(content)) => {
+                payload["type"] = serde_json::json!("completed");
+                payload["content"] = serde_json::json!(content);
+                None
+            }
+            (_, Err(error)) => {
+                payload["type"] = serde_json::json!("failed");
+                payload["message"] = serde_json::json!(error.to_string());
+                Some(error)
+            }
+        };
+        Self {
+            projection,
+            provider_review_outcome,
+            succeeded,
+            error,
+            event: serde_json::json!({
+                "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                "payload": payload,
+            }),
+        }
+    }
+
+    fn finalize_observations(
+        &self,
+        structured_turn: &Mutex<HostStructuredLogTurnTelemetry>,
+        turn_trace: Option<&HostTrace>,
+    ) {
+        if let Ok(mut turn) = structured_turn.lock() {
+            if self.projection.kind == TurnTerminalKind::Failed {
+                if let Some(error) = self.error.as_ref() {
+                    let classified = classify_agent_error(error);
+                    let detail = sand_error_detail(error);
+                    turn.finalize(
+                        self.projection.kind.as_str(),
+                        Some(&classified),
+                        Some((&detail.message, detail.stack.as_deref())),
+                    );
+                } else {
+                    turn.finalize(self.projection.kind.as_str(), None, None);
+                }
+            } else {
+                turn.finalize(self.projection.kind.as_str(), None, None);
+            }
+        }
+        let trace_outcome = match self.projection.kind {
+            TurnTerminalKind::WaitingUser => Some("awaiting_user"),
+            TurnTerminalKind::Cancelled => Some("aborted"),
+            TurnTerminalKind::Completed => Some("success"),
+            TurnTerminalKind::Failed => None,
+        };
+        if let Some(outcome) = trace_outcome {
+            set_turn_trace_attributes(
+                turn_trace,
+                &BTreeMap::from([("sand.outcome".into(), serde_json::json!(outcome))]),
+            );
+        } else if let Some(error) = self.error.as_ref() {
+            mark_turn_trace_error(turn_trace, error);
+        }
+        if let Some(trace) = turn_trace {
+            trace.span.end();
+        }
+    }
+
+    fn publish(self, events: &GatewayEventHub) {
+        events.publish(self.event);
+    }
+}
+
 fn start_routed_provider_task(
     routed_tool_relay: Arc<CoordinatorToolRelay>,
     mcp_service: Arc<McpHostService>,
@@ -11929,18 +12111,15 @@ fn start_routed_provider_task(
                 }
             }
 
-            let sent_message_count = send_message_delivery_counter.count();
-            let reacted = reaction_delivery_counter.count() > 0;
+            let terminal = RoutedProviderTerminal::capture(
+                &worker_stream_id,
+                waiting_user,
+                &worker_cancellation,
+                result,
+                send_message_delivery_counter.count(),
+                reaction_delivery_counter.count() > 0,
+            );
             if worker_request_source.as_deref() == Some("provider-review") {
-                let outcome = if worker_cancellation.is_cancelled() {
-                    ProviderReviewContinuationOutcome::Cancelled
-                } else if waiting_user {
-                    ProviderReviewContinuationOutcome::OutcomeUnknown
-                } else if result.is_ok() {
-                    ProviderReviewContinuationOutcome::Completed
-                } else {
-                    ProviderReviewContinuationOutcome::Failed
-                };
                 if let Some(expected_revision) =
                     worker_provider_review_lifecycle_revision.as_deref()
                 {
@@ -11948,7 +12127,7 @@ fn start_routed_provider_task(
                         &agent_id,
                         expected_revision,
                         &worker_stream_id,
-                        outcome,
+                        terminal.provider_review_outcome,
                     ) {
                         eprintln!(
                             "mahayana-host provider_review_settlement_failed agent={} run={} error={error}",
@@ -11962,13 +12141,6 @@ fn start_routed_provider_task(
                     );
                 }
             }
-            let terminal_projection = project_turn_terminal(
-                waiting_user,
-                worker_cancellation.is_cancelled(),
-                result.is_ok(),
-                sent_message_count,
-                reacted,
-            );
             worker_transcript_runtime.track_runner_activity_update(
                 &agent_id,
                 &ActivityUpdate::TurnEnded,
@@ -12015,7 +12187,7 @@ fn start_routed_provider_task(
                 &agent_id,
                 worker_ack_token.as_deref(),
             );
-            if result.is_ok() {
+            if terminal.succeeded {
                 if worker_is_upgrade_resume {
                     let _ = worker_transcript_manager.emit_agent_update(&agent_id);
                 }
@@ -12026,141 +12198,45 @@ fn start_routed_provider_task(
                 .retire_idle_live_session(&worker_retire_sessions, &agent_id);
             let _ = worker_box_store_sync.schedule_store_db_snapshot(&agent_id);
 
-            if let Ok(mut turn) = structured_turn.lock() {
-                match terminal_projection.kind {
-                    TurnTerminalKind::WaitingUser
-                    | TurnTerminalKind::Cancelled
-                    | TurnTerminalKind::Completed => {
-                        turn.finalize(terminal_projection.kind.as_str(), None, None);
-                    }
-                    TurnTerminalKind::Failed => {
-                        if let Err(error) = result.as_ref() {
-                            let classified = classify_agent_error(error);
-                            let detail = sand_error_detail(error);
-                            turn.finalize(
-                                terminal_projection.kind.as_str(),
-                                Some(&classified),
-                                Some((&detail.message, detail.stack.as_deref())),
+            terminal.finalize_observations(&structured_turn, turn_trace.as_ref());
+
+            if terminal.projection.kind == TurnTerminalKind::Failed {
+                if let Some(error) = terminal.error.as_ref() {
+                    let message = error.to_string();
+                    if worker_is_ack_redrive || worker_is_upgrade_resume {
+                        let report = AgentErrorReport {
+                            source: if worker_is_upgrade_resume {
+                                "resume".into()
+                            } else {
+                                "ack_redrive".into()
+                            },
+                            conversation_id: agent_id.clone(),
+                            request_id: Some(worker_stream_id.clone()),
+                            error: classify_agent_error(error),
+                            detail: Some(sand_error_detail(error)),
+                        };
+                        if let Err(telemetry_error) =
+                            worker_telemetry_logs.report_agent_error(&report)
+                        {
+                            eprintln!(
+                                "mahayana-host-ack agent_error_telemetry_failed agent={agent_id} error={telemetry_error}"
                             );
-                        } else {
-                            turn.finalize(terminal_projection.kind.as_str(), None, None);
                         }
+                    }
+                    if !worker_is_kickstart && !worker_is_handoff_resume {
+                        let mut tray = provider_failure_tray(
+                            &agent_id,
+                            &message,
+                            started_at_ms() as i64,
+                        );
+                        if worker_is_upgrade_resume {
+                            tray.title = "Agent failed to resume after host update".into();
+                        }
+                        worker_trays.push_error(tray);
                     }
                 }
             }
-
-            if worker_cancellation.is_cancelled() {
-                set_turn_trace_attributes(
-                    turn_trace.as_ref(),
-                    &BTreeMap::from([(
-                        "sand.outcome".into(),
-                        serde_json::json!("aborted"),
-                    )]),
-                );
-            } else if waiting_user {
-                set_turn_trace_attributes(
-                    turn_trace.as_ref(),
-                    &BTreeMap::from([(
-                        "sand.outcome".into(),
-                        serde_json::json!("awaiting_user"),
-                    )]),
-                );
-            } else if let Some(error) = result.as_ref().err() {
-                mark_turn_trace_error(turn_trace.as_ref(), error);
-            } else {
-                set_turn_trace_attributes(
-                    turn_trace.as_ref(),
-                    &BTreeMap::from([(
-                        "sand.outcome".into(),
-                        serde_json::json!("success"),
-                    )]),
-                );
-            }
-            if let Some(trace) = turn_trace.as_ref() {
-                trace.span.end();
-            }
-
-            if waiting_user {
-                worker_events.publish(serde_json::json!({
-                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
-                    "payload": {
-                        "streamId": stream_id,
-                        "type": "completed",
-                        "content": "",
-                        "waitingUser": true,
-                        "sentMessageCount": sent_message_count,
-                        "reacted": reacted
-                    }
-                }));
-            } else if worker_cancellation.is_cancelled() {
-                worker_events.publish(serde_json::json!({
-                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
-                    "payload": {
-                        "streamId": stream_id,
-                        "type": "cancelled",
-                        "message": "Runner provider request cancelled",
-                        "sentMessageCount": sent_message_count,
-                        "reacted": reacted
-                    }
-                }));
-            } else {
-                match result {
-                    Ok(content) => worker_events.publish(serde_json::json!({
-                        "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
-                        "payload": {
-                            "streamId": stream_id,
-                            "type": "completed",
-                            "content": content,
-                            "sentMessageCount": sent_message_count,
-                            "reacted": reacted
-                        }
-                    })),
-                    Err(error) => {
-                        let message = error.to_string();
-                        if worker_is_ack_redrive || worker_is_upgrade_resume {
-                            let report = AgentErrorReport {
-                                source: if worker_is_upgrade_resume {
-                                    "resume".into()
-                                } else {
-                                    "ack_redrive".into()
-                                },
-                                conversation_id: agent_id.clone(),
-                                request_id: Some(worker_stream_id.clone()),
-                                error: classify_agent_error(&error),
-                                detail: Some(sand_error_detail(&error)),
-                            };
-                            if let Err(telemetry_error) =
-                                worker_telemetry_logs.report_agent_error(&report)
-                            {
-                                eprintln!(
-                                    "mahayana-host-ack agent_error_telemetry_failed agent={agent_id} error={telemetry_error}"
-                                );
-                            }
-                        }
-                        if !worker_is_kickstart && !worker_is_handoff_resume {
-                            let mut tray = provider_failure_tray(
-                                &agent_id,
-                                &message,
-                                started_at_ms() as i64,
-                            );
-                            if worker_is_upgrade_resume {
-                                tray.title = "Agent failed to resume after host update".into();
-                            }
-                            worker_trays.push_error(tray);
-                        }
-                        worker_events.publish(serde_json::json!({
-                            "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
-                            "payload": {
-                                "streamId": stream_id,
-                                "type": "failed",
-                                "message": message,
-                                "sentMessageCount": sent_message_count,
-                                "reacted": reacted
-                            }
-                        }))
-                    },
-                }
-            }
+            terminal.publish(&worker_events);
         });
     if let Err(error) = spawn {
         transcript_runtime.end_provider_run_with_kind(
@@ -13450,66 +13526,13 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map_err(|error| GatewayCommandError::Internal(error.to_string()));
         }
         if method == RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD {
-            let stream_id = args
-                .get("streamId")
-                .and_then(serde_json::Value::as_str)
-                .filter(|value| !value.trim().is_empty())
-                .ok_or_else(|| GatewayCommandError::Internal(
-                    "runner.cancelRoutedProvider requires streamId".into()
-                ))?;
-            let reason = args
-                .get("reason")
-                .and_then(serde_json::Value::as_str)
-                .filter(|value| !value.trim().is_empty())
-                .unwrap_or("Runner provider request cancelled");
-            let cancelled_agent_id = self.runner_registry.agent_id_for_stream(stream_id);
-            let was_in_flight = cancelled_agent_id
-                .as_deref()
-                .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
-            if reason.to_ascii_lowercase().contains("superseded") {
-                if let Some(agent_id) = cancelled_agent_id.as_deref() {
-                    if self.transcript_runtime.active_turn_source(agent_id).as_deref()
-                        == Some("connector")
-                    {
-                        self.background_wakes
-                            .lock()
-                            .unwrap_or_else(|poisoned| poisoned.into_inner())
-                            .dm_preempted_wake_agent_ids
-                            .insert(agent_id.to_string());
-                    }
-                }
-            }
-            let cancelled = self.runner_registry.cancel_stream(stream_id, reason);
-            if reason.to_ascii_lowercase().contains("superseded") {
-                if let Some(agent_id) = cancelled_agent_id.as_deref() {
-                    let fields = TurnInterruptFields {
-                        conversation_id: agent_id.to_string(),
-                        reason: "superseded".into(),
-                        had_active_run: cancelled,
-                        was_in_flight,
-                    };
-                    if let Err(error) = self.telemetry_logs.report_turn_interrupt(&fields) {
-                        eprintln!(
-                            "mahayana-host superseded_turn_interrupt_telemetry_failed agent={} error={error}",
-                            agent_id
-                        );
-                    }
-                }
-            }
-            if cancelled {
-                self.events.publish(serde_json::json!({
-                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
-                    "payload": {
-                        "streamId": stream_id,
-                        "type": "cancelled",
-                        "message": reason
-                    }
-                }));
-            }
-            return Ok(serde_json::json!({
-                "streamId": stream_id,
-                "cancelled": cancelled,
-            }));
+            return request_routed_provider_cancellation(
+                &args,
+                &self.runner_registry,
+                &self.transcript_runtime,
+                &self.background_wakes,
+                &self.telemetry_logs,
+            );
         }
         if method == "acceptAgentInboundMessage" {
             let agent_id = args
@@ -17398,6 +17421,392 @@ mod tests {
             "payload": {"streamId":"automation-2","type":"completed"}
         });
         assert_eq!(automation_terminal_from_event(&other, "automation-1"), None);
+    }
+
+    struct RoutedProviderTerminalFixture {
+        root: std::path::PathBuf,
+        runtime: std::sync::Arc<super::ProductionTranscriptRuntime>,
+        registry: std::sync::Arc<TranscriptRunnerRegistry>,
+        events: super::GatewayEventHub,
+        background_wakes: std::sync::Mutex<super::BackgroundWakes<serde_json::Value>>,
+        telemetry: mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService,
+    }
+
+    impl RoutedProviderTerminalFixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "fabushi-runner-terminal-{}", uuid::Uuid::new_v4()
+            ));
+            fs::create_dir_all(&root).expect("fixture root");
+            let telemetry = mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService::open_with_identity_tags(
+                root.join("telemetry.jsonl"), std::collections::BTreeMap::new(),
+            ).expect("real local telemetry sink");
+            Self {
+                runtime: std::sync::Arc::new(super::ProductionTranscriptRuntime::new(Some(&root))),
+                registry: std::sync::Arc::new(TranscriptRunnerRegistry::default()),
+                events: super::GatewayEventHub::default(),
+                background_wakes: std::sync::Mutex::new(super::BackgroundWakes::default()),
+                root,
+                telemetry,
+            }
+        }
+
+        fn admit(
+            &self,
+            agent_id: &str,
+            stream_id: &str,
+        ) -> (super::RoutedProviderCancellation, super::RoutedTurnLeaseGuard) {
+            self.runtime.accept_routed_send(&serde_json::json!({
+                "agentId": agent_id, "prompt": "continue the connector turn",
+                "streamId": stream_id, "clientNonce": stream_id,
+                "requestSource": "connector",
+            }), |_| Ok(super::PersistedSendContext::default())).expect("admitted routed lease");
+            self.runtime.begin_provider_run_with_kind(agent_id, false);
+            let cancellation = self.registry.register_routed_provider(agent_id, stream_id)
+                .expect("real registry task");
+            let lease = super::RoutedTurnLeaseGuard::new(
+                std::sync::Arc::clone(&self.runtime), agent_id.into(), stream_id.into(),
+                self.events.clone(),
+            );
+            (cancellation, lease)
+        }
+
+        fn request(&self, args: &serde_json::Value) -> serde_json::Value {
+            super::request_routed_provider_cancellation(
+                args, &self.registry, &self.runtime, &self.background_wakes, &self.telemetry.logs,
+            ).expect("cancellation command")
+        }
+
+        fn records(&self) -> Vec<serde_json::Value> {
+            fs::read_to_string(self.telemetry.records_path()).expect("telemetry records")
+                .lines().map(|line| serde_json::from_str(line).expect("telemetry record"))
+                .collect()
+        }
+
+        fn close(self) {
+            let root = self.root.clone();
+            drop(self);
+            fs::remove_dir_all(root).expect("remove terminal fixture");
+        }
+    }
+
+    #[derive(Default)]
+    struct TerminalRecordingSpan {
+        attributes: std::sync::Mutex<std::collections::BTreeMap<String, serde_json::Value>>,
+        exceptions: std::sync::Mutex<Vec<String>>,
+        statuses: std::sync::Mutex<Vec<u8>>,
+        ends: std::sync::Mutex<usize>,
+    }
+
+    impl mahayana_host_runtime::send_trace_host::TraceSpan for TerminalRecordingSpan {
+        fn set_attribute(&self, key: &str, value: serde_json::Value) {
+            self.attributes.lock().unwrap().insert(key.into(), value);
+        }
+        fn record_exception(&self, error: &str) {
+            self.exceptions.lock().unwrap().push(error.into());
+        }
+        fn set_status(&self, code: u8) {
+            self.statuses.lock().unwrap().push(code);
+        }
+        fn end(&self) {
+            *self.ends.lock().unwrap() += 1;
+        }
+    }
+
+    fn terminal_recording_trace() -> (std::sync::Arc<TerminalRecordingSpan>, super::HostTrace) {
+        let span = std::sync::Arc::new(TerminalRecordingSpan::default());
+        let trace = super::HostTrace {
+            span: span.clone(), context: None, trace_id: None, span_id: None,
+        };
+        (span, trace)
+    }
+
+    #[test]
+    fn routed_provider_cancel_request_waits_for_worker_terminal() {
+        use std::sync::{Arc, Mutex, mpsc};
+        use std::time::Duration;
+        use serde_json::json;
+
+        let fixture = RoutedProviderTerminalFixture::new();
+        let receiver = fixture.events.subscribe();
+        for args in [json!({}), json!({"streamId":""}), json!({"streamId":"  "}), json!({"streamId":7})] {
+            assert!(super::request_routed_provider_cancellation(
+                &args, &fixture.registry, &fixture.runtime,
+                &fixture.background_wakes, &fixture.telemetry.logs,
+            ).is_err());
+        }
+        let (cancellation, mut lease) = fixture.admit("held-agent", "held-stream");
+        let other = fixture.registry.register_routed_provider("other-agent", "other-stream")
+            .expect("independent stream");
+        let terminal_ownership = Arc::new(Mutex::new(Vec::new()));
+        let observed = Arc::clone(&terminal_ownership);
+        let registry = Arc::clone(&fixture.registry);
+        let runtime = Arc::clone(&fixture.runtime);
+        let listener = fixture.events.subscribe_listener(move |event| {
+            if automation_terminal_from_event(event, "held-stream").is_some() {
+                observed.lock().unwrap().push((
+                    registry.active_stream_ids_for_agent("held-agent"),
+                    runtime.has_routed_turn_lease("held-agent", "held-stream"),
+                    runtime.is_agent_running("held-agent"),
+                ));
+            }
+        });
+        let worker_registry = Arc::clone(&fixture.registry);
+        let worker_runtime = Arc::clone(&fixture.runtime);
+        let worker_events = fixture.events.clone();
+        let worker_cancellation = cancellation.clone();
+        let structured = Mutex::new(fixture.telemetry.logs.start_turn("held-agent", "connector", None));
+        let (release, held) = mpsc::channel();
+        let (ready, worker_ready) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            ready.send(()).expect("announce held worker");
+            held.recv_timeout(Duration::from_secs(10)).expect("release held worker");
+            let terminal = super::RoutedProviderTerminal::capture(
+                "held-stream", false, &worker_cancellation,
+                Ok("provider returned after delivery".into()), 2, true,
+            );
+            worker_runtime.end_provider_run_with_kind("held-agent", false);
+            worker_registry.finish_routed_provider("held-stream");
+            lease.settle();
+            terminal.finalize_observations(&structured, None);
+            terminal.publish(&worker_events);
+        });
+        worker_ready.recv_timeout(Duration::from_secs(10)).expect("worker is held");
+        assert_eq!(fixture.request(&json!({
+            "streamId":"held-stream", "reason":"Superseded by a newer request",
+        })), json!({"streamId":"held-stream","cancelled":true}));
+        assert_eq!(fixture.request(&json!({
+            "streamId":"held-stream", "reason":"superseded duplicate request",
+        })), json!({"streamId":"held-stream","cancelled":false}));
+        assert_eq!(fixture.request(&json!({"streamId":"missing-stream"})),
+            json!({"streamId":"missing-stream","cancelled":false}));
+        assert!(cancellation.is_cancelled());
+        assert_eq!(cancellation.reason().as_deref(), Some("Superseded by a newer request"));
+        assert!(!other.is_cancelled());
+        assert_eq!(fixture.registry.active_stream_ids_for_agent("held-agent"), vec!["held-stream"]);
+        assert!(fixture.runtime.has_routed_turn_lease("held-agent", "held-stream"));
+        assert!(fixture.runtime.is_agent_running("held-agent"));
+        assert!(fixture.background_wakes.lock().unwrap().dm_preempted_wake_agent_ids.contains("held-agent"));
+        assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)),
+            "the actual cancellation command must not publish any terminal event");
+        fixture.events.publish(json!({
+            "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+            "payload":{"streamId":"held-stream","type":"delta","content":"still unwinding"},
+        }));
+        let delta = receiver.recv_timeout(Duration::from_secs(10)).expect("nonterminal delta");
+        assert_eq!(automation_terminal_from_event(&delta, "held-stream"), None);
+        assert!(terminal_ownership.lock().unwrap().is_empty());
+
+        release.send(()).expect("allow actual terminal boundary");
+        let terminal = receiver.recv_timeout(Duration::from_secs(10)).expect("worker terminal");
+        worker.join().expect("worker finalizer");
+        assert_eq!(terminal["payload"]["type"], "cancelled");
+        assert_eq!(terminal["payload"]["message"], "Runner provider request cancelled");
+        assert_eq!(terminal["payload"]["sentMessageCount"], 2);
+        assert_eq!(terminal["payload"]["reacted"], true);
+        assert!(matches!(automation_terminal_from_event(&terminal, "held-stream"),
+            Some(Ok(AutomationExecutionResult::Interrupted { .. }))));
+        assert_eq!(*terminal_ownership.lock().unwrap(), vec![(Vec::<String>::new(), false, false)]);
+        assert_eq!(fixture.request(&json!({"streamId":"held-stream"}))["cancelled"], false);
+        assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)),
+            "duplicate and late requests must not add a second terminal");
+
+        let records = fixture.records();
+        let interrupts = records.iter().filter(|record| record["event"] == "sand.turn.interrupt")
+            .collect::<Vec<_>>();
+        assert_eq!(interrupts.len(), 2);
+        assert_eq!(interrupts[0]["payload"]["metadata"]["had_active_run"], "true");
+        assert_eq!(interrupts[1]["payload"]["metadata"]["had_active_run"], "false");
+        for record in interrupts {
+            assert_eq!(record["payload"]["metadata"]["reason"], "superseded");
+            assert_eq!(record["payload"]["metadata"]["was_in_flight"], "true");
+        }
+        assert_eq!(fixture.request(&json!({"streamId":"other-stream", "reason":"  "}))["cancelled"], true);
+        assert_eq!(other.reason().as_deref(), Some("Runner provider request cancelled"));
+        fixture.registry.finish_routed_provider("other-stream");
+        assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        drop(listener);
+        fixture.close();
+    }
+
+    #[test]
+    fn routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation() {
+        use std::sync::{Mutex, mpsc};
+        use super::{ProviderReviewContinuationOutcome, ProviderSessionError, TurnTerminalKind};
+        use serde_json::json;
+
+        let fixture = RoutedProviderTerminalFixture::new();
+        let receiver = fixture.events.subscribe();
+        for failed in [false, true] {
+            let stream_id = if failed { "frozen-failure" } else { "frozen-success" };
+            let (cancellation, mut lease) = fixture.admit(stream_id, stream_id);
+            let result = if failed {
+                Err(ProviderSessionError::Tool("could not persist Human handoff Agent result: unavailable".into()))
+            } else {
+                Ok("completed before late cancellation".into())
+            };
+            let terminal = super::RoutedProviderTerminal::capture(
+                stream_id, false, &cancellation, result, 3, true,
+            );
+            let expected_kind = if failed { TurnTerminalKind::Failed } else { TurnTerminalKind::Completed };
+            assert_eq!(terminal.projection.kind, expected_kind);
+            assert_eq!(terminal.provider_review_outcome, if failed {
+                ProviderReviewContinuationOutcome::Failed
+            } else {
+                ProviderReviewContinuationOutcome::Completed
+            });
+            assert_eq!(fixture.request(&json!({"streamId":stream_id,"reason":"late cancellation"}))["cancelled"], true);
+            assert!(cancellation.is_cancelled());
+            assert!(fixture.runtime.has_routed_turn_lease(stream_id, stream_id));
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+            fixture.runtime.end_provider_run_with_kind(stream_id, false);
+            fixture.registry.finish_routed_provider(stream_id);
+            lease.settle();
+            let structured = Mutex::new(fixture.telemetry.logs.start_turn(stream_id, "connector", None));
+            let (span, trace) = terminal_recording_trace();
+            terminal.finalize_observations(&structured, Some(&trace));
+            terminal.publish(&fixture.events);
+            let event = receiver.try_recv().expect("one frozen terminal");
+            assert_eq!(event["payload"]["type"], if failed { "failed" } else { "completed" });
+            assert_eq!(event["payload"]["sentMessageCount"], 3);
+            assert_eq!(event["payload"]["reacted"], true);
+            assert_eq!(span.attributes.lock().unwrap()["sand.outcome"], if failed { "error" } else { "success" });
+            assert_eq!(*span.ends.lock().unwrap(), 1);
+            if failed {
+                assert_eq!(event["payload"]["message"], "could not persist Human handoff Agent result: unavailable");
+                assert_eq!(*span.statuses.lock().unwrap(), vec![2]);
+                assert_eq!(span.exceptions.lock().unwrap().len(), 1);
+                assert!(matches!(automation_terminal_from_event(&event, stream_id),
+                    Some(Ok(AutomationExecutionResult::Failed { .. }))));
+            } else {
+                assert_eq!(event["payload"]["content"], "completed before late cancellation");
+                assert!(span.statuses.lock().unwrap().is_empty());
+                assert!(span.exceptions.lock().unwrap().is_empty());
+                assert_eq!(automation_terminal_from_event(&event, stream_id),
+                    Some(Ok(AutomationExecutionResult::Completed)));
+            }
+            let records = fixture.records();
+            let outcomes = records.iter().filter(|record| record["event"] == "sand.turn.outcome"
+                && record["payload"]["metadata"]["conversation_id"] == stream_id).collect::<Vec<_>>();
+            assert_eq!(outcomes.len(), 1);
+            assert_eq!(outcomes[0]["payload"]["metadata"]["outcome"], if failed { "error" } else { "completed" });
+            assert_eq!(fixture.request(&json!({"streamId":stream_id}))["cancelled"], false);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+        fixture.close();
+    }
+
+    #[test]
+    fn routed_provider_terminal_preserves_waiting_review_and_delivery_facts() {
+        use std::sync::{Mutex, mpsc};
+        use super::{ProviderReviewContinuationOutcome, ProviderSessionError, TurnTerminalKind};
+        use serde_json::json;
+
+        let fixture = RoutedProviderTerminalFixture::new();
+        let receiver = fixture.events.subscribe();
+        use ProviderReviewContinuationOutcome as Review;
+        use TurnTerminalKind::{Cancelled, Completed, Failed, WaitingUser};
+        for (index, (inputs, expected)) in [
+            ((true, false, true, 0, false), (WaitingUser, Review::OutcomeUnknown, "awaiting_user", false, false)),
+            ((true, false, false, 1, true), (WaitingUser, Review::OutcomeUnknown, "awaiting_user", true, false)),
+            ((true, true, true, 1, false), (WaitingUser, Review::Cancelled, "awaiting_user", true, false)),
+            ((true, true, false, 0, true), (WaitingUser, Review::Cancelled, "awaiting_user", true, false)),
+            ((false, true, true, 2, true), (Cancelled, Review::Cancelled, "aborted", true, false)),
+            ((false, true, false, 0, false), (Cancelled, Review::Cancelled, "aborted", false, false)),
+            ((false, false, true, 0, false), (Completed, Review::Completed, "success", false, true)),
+            ((false, false, false, 0, true), (Failed, Review::Failed, "error", true, false)),
+        ].into_iter().enumerate() {
+            let (waiting, cancelled, succeeded, sent, reacted) = inputs;
+            let (expected_kind, review_outcome, trace_outcome, delivered, nudge_owed) = expected;
+            let stream_id = format!("terminal-facts-{index}");
+            let (cancellation, mut lease) = fixture.admit(&stream_id, &stream_id);
+            if cancelled {
+                assert_eq!(fixture.request(&json!({"streamId":stream_id}))["cancelled"], true);
+            }
+            let result = if succeeded { Ok("provider result".into()) }
+                else { Err(ProviderSessionError::Transport("known provider failure".into())) };
+            let terminal = super::RoutedProviderTerminal::capture(
+                &stream_id, waiting, &cancellation, result, sent, reacted,
+            );
+            assert_eq!(terminal.projection.kind, expected_kind);
+            assert_eq!(terminal.projection.delivered, delivered);
+            assert_eq!(terminal.projection.reply_nudge_owed, nudge_owed);
+            assert_eq!(terminal.provider_review_outcome, review_outcome);
+            assert_eq!(terminal.succeeded, succeeded);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+            fixture.runtime.end_provider_run_with_kind(&stream_id, false);
+            fixture.registry.finish_routed_provider(&stream_id);
+            lease.settle();
+            let structured = Mutex::new(fixture.telemetry.logs.start_turn(&stream_id, "connector", None));
+            let (span, trace) = terminal_recording_trace();
+            terminal.finalize_observations(&structured, Some(&trace));
+            terminal.publish(&fixture.events);
+            let event = receiver.try_recv().expect("terminal event");
+            assert_eq!(event["payload"]["sentMessageCount"], sent);
+            assert_eq!(event["payload"]["reacted"], reacted);
+            if waiting {
+                assert_eq!(event["payload"]["type"], "completed");
+                assert_eq!(event["payload"]["waitingUser"], true);
+                assert_eq!(event["payload"]["content"], "");
+                assert!(event["payload"].get("message").is_none());
+                assert_eq!(span.attributes.lock().unwrap()["sand.outcome"], "awaiting_user");
+                assert!(span.exceptions.lock().unwrap().is_empty());
+            } else {
+                assert_eq!(event["payload"]["type"], expected_kind.as_str());
+                assert!(event["payload"].get("waitingUser").is_none());
+                assert_eq!(span.attributes.lock().unwrap()["sand.outcome"], trace_outcome);
+            }
+            let records = fixture.records();
+            let outcomes = records.iter().filter(|record| record["event"] == "sand.turn.outcome"
+                && record["payload"]["metadata"]["conversation_id"] == stream_id).collect::<Vec<_>>();
+            assert_eq!(outcomes.len(), 1);
+            assert_eq!(outcomes[0]["payload"]["metadata"]["outcome"],
+                if expected_kind == TurnTerminalKind::Failed { "error" } else { expected_kind.as_str() });
+            assert_eq!(*span.ends.lock().unwrap(), 1);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+        fixture.close();
+    }
+
+    #[test]
+    fn routed_provider_terminal_shipping_wiring_preserves_finalization_boundary() {
+        let source = include_str!("main.rs").split("\n#[cfg(test)]\nmod tests {").next().unwrap();
+        let gateway = source.split("if method == RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD {")
+            .nth(1).unwrap().split("if method == \"acceptAgentInboundMessage\" {").next().unwrap();
+        assert!(gateway.contains("return request_routed_provider_cancellation("));
+        assert!(!gateway.contains(".publish("));
+        let request = source.split("fn request_routed_provider_cancellation(").nth(1).unwrap()
+            .split("struct RoutedProviderTerminal {").next().unwrap();
+        assert!(request.contains("runner_registry.cancel_stream(stream_id, reason)"));
+        assert!(!request.contains(".publish("));
+        let runner = source.split("fn start_routed_provider_task(").nth(1).unwrap()
+            .split("impl GatewayApi for UnifiedGatewayApi").next().unwrap();
+        let handoff = runner.rfind("append_human_agent_message(").unwrap();
+        let capture = runner.find("let terminal = RoutedProviderTerminal::capture(").unwrap();
+        assert!(handoff < capture, "freeze only after the result-changing Human handoff write");
+        let finalizer = &runner[capture..runner.find("if let Err(error) = spawn {").unwrap()];
+        assert!(!finalizer.contains("worker_cancellation.is_cancelled()"));
+        let mut previous = 0;
+        for step in [
+            "settle_provider_review_continuation(",
+            "track_runner_activity_update(", "finish_computer_use_turn(",
+            "end_provider_run_with_kind(", "finish_routed_provider(",
+            "auto_review_service.unbind_runner(", "unbind_local_permission_surface(",
+            "retire_ack_run_token(", "worker_routed_turn_lease.settle()",
+            "retire_idle_live_session(", "schedule_store_db_snapshot(",
+            "terminal.finalize_observations(", "terminal.publish(&worker_events)",
+        ] {
+            let position = finalizer.find(step).unwrap_or_else(|| panic!("missing finalizer step {step}"));
+            assert!(position > previous, "finalizer ordering changed at {step}");
+            previous = position;
+        }
+        assert_eq!(finalizer.matches("terminal.publish(&worker_events)").count(), 1);
+        assert!(finalizer.contains("terminal.provider_review_outcome"));
+        assert!(finalizer.contains("if terminal.succeeded"));
+        assert!(finalizer.contains("if terminal.projection.kind == TurnTerminalKind::Failed"));
+        assert!(finalizer.contains("worker_trays.push_error(tray)"));
     }
 
     #[test]

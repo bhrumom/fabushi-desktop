@@ -8,6 +8,22 @@ Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
 Last updated: 2026-10-31（Asia/Shanghai）
 
+### 2026-11-02 production batch: cancellation request and terminal custody
+
+On integration parent `58f1fb359c71e203cb82a6fe43cb52336f4542e5`,
+`OCRM-RUNNER-CANCEL-TERMINAL-v1` keeps Gateway cancellation as a request
+acknowledgment and reserves terminal publication for the actual Runner finalizer.
+The finalizer captures its result after Human handoff persistence, then uses one
+frozen kind and delivery facts for structured logs, trace and wire events.
+Provider-review retains its existing cancellation-first/unknown-wait policy.
+Actual registry/lease/event/telemetry controls and the production publication
+seam cover held workers, repeated/late cancellation and truthful terminal facts.
+All prior channel, checkpoint, model and Automation workflow selectors remain.
+Independent frozen review and exact-H Actions are required; authored tests are
+not execution evidence. The separate Automation timeout, unknown-result custody,
+original-turn restart and all full migration acceptance remain open. Fixed U,
+source-read records and global completion flags are unchanged.
+
 ### 2026-11-02 production batch: committed Plugin Skills admission
 
 `OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1` freezes the actual loader → Rust lifecycle/
