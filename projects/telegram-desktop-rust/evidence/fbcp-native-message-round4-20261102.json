@@ -25,9 +25,10 @@
     "preserved_auxiliary_source_capture": "77d8a251eb453eb0c7260717f576c20fecc6fd8a",
     "preserved_corruption_recovery": "06fb24c4963f35d1450c122e7222ee39e21b4192",
     "concurrent_overlap": "Strict source scanner, two concurrent journal tests and one Human corrupted-journal test retained; complete-to-pending stale guard omitted by concurrent4f1070 repaired. Final required counts Human44/journal12.",
-    "latest_observed_head": "0e8c41c69468edaf5ce525aa23d747b65df6b36a",
+    "latest_observed_head": "2f080931d27675d5cc88e18e0f313c4606f68a01",
     "concurrent_after_product94": "Keep subsequent UI immutable retry, cached-source identity, pending reply recovery and all current source/auxiliary-runtime work. Exact94 success does not qualify later changed inputs.",
-    "preserved_upload_limit_implementation": "76a84e8a9ff8867a076edd0c89f913a58cdb2806"
+    "preserved_upload_limit_implementation": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+    "observation_scope": "Current head observed before evidence publication; all execution claims remain scoped to exact named product/test heads."
   },
   "requested_run": {
     "run_id": 41399722398,
@@ -4403,10 +4404,10 @@
   },
   "traceability": {
     "inventory": "projects/telegram-desktop-rust/inventory/index.json (unchanged)",
-    "ledger": "Append-only FBCP-NMR-001 operations are rebased onto a95d76c46119474e36134456442aebe39f4e9760 after NMR49 and NMR51 publication. Expected output fce6ac938a4013c05e089fde2fc6abf7e54929a0. Preserve all six source reviews, all other fields/rows/root state. Temporary exact Git blob transport only; root CAS and readback still required.",
+    "ledger": "NMR48 arrays/notes integrated at222371af3d0c2241697c5a57b0160ecb336edbab via force=false expected_sha CAS; canonical blob e88c75896bd0dce29b2d8b89e949c9231dad872c fully read back. Source gate41521510203 passed157 Node/37 Python/schema0 without acceptance. Later live f716580b22c6b6791b2e535e2b286df4f9257444 retains all NMR48 additions and other source/root fields.",
     "rtm": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md#FBCP-NMR-001",
-    "owner": "projects/fabushi-communication-platform/owner-resolution-matrix.md#MSG-RELATION; replace absent round27 evidence with actual exact59 receipt",
-    "historical_execution": "Prior failures remain historical; latest qualified tuple is exact59. New NMR48 cases are not counted as executed until containing-H Actions logs prove it."
+    "owner": "Existing Session/Transcript, SandAgentDb and Native HTTP owners preserved; current owner/RTM changes from concurrent pagination, reply, reaction and forward recovery batches retained.",
+    "historical_execution": "Exact59 qualified the prerequisite; exact94/run41513767498 passed all five NMR48 jobs including44 Human/12journal and live TCP9. Laterd261 executed54 Human and its own UI gates. Exactafb UI29/17/5/16 passed but Human62 executed0 due E0382. One cleanup receiver was fixed at106bb95ba97ef7722e9523285783824393039bc0; run41523018920 now actually passes62/3/1/12/4/3/1 Rust groups, UI29/17/5/16, Electron and Windows. Shipping125543545357 remains queued; whole current batch is not accepted."
   },
   "original_requirement_review": [
     {
@@ -4436,13 +4437,13 @@
     },
     {
       "requirement": 6,
-      "status": "bounded-path-integration",
-      "evidence": "Disjoint existing helper/test paths, root-owned production/composition contracts and one canonical ledger/RTM; current remote CAS publication required."
+      "status": "bounded-path-integrated-and-remotely-verified",
+      "evidence": "Production94 and canonical222 exact commits/files read back. All ref writes used force=false expected_sha CAS; concurrent owners/source/reviews retained; own temporary paths removed. Current fixture repair106 is separately read back."
     },
     {
       "requirement": 7,
       "status": "exact94-scoped-gates-passed",
-      "evidence": "run41513767498 exact94 all five required jobs and actual named Human44/journal12/Agent4/DNS6/protocol122/TCP9live/proxy4/credential suites passed; later changed heads require separate execution. No local or htch-runtime validation."
+      "evidence": "Only GitHub Actions executable validation. Exact94/run41513767498 all five required jobs passed. Exact106/run41523018920 independently passes Human62/resource3/sharebox1/journal12/Agent4/private3/gateway1, actual renderer and UI29/17/5/16, Electron and Windows after the one-receiver fixture fix. Current mandatory shipping is still queued, so no whole-run or final acceptance. Later inputs need their own qualified evidence."
     },
     {
       "requirement": 8,
@@ -4451,8 +4452,8 @@
     },
     {
       "requirement": 9,
-      "status": "partial",
-      "evidence": "One canonical inventory/ledger/RTM. Current ledgereddd includes six source reviews and NMR49; this round uses append-only evidence preserving them. Full source and independent acceptance remain false."
+      "status": "scoped-evidence-published-source-acceptance-open",
+      "evidence": "One canonical inventory/ledger/RTM retained. NMR48 integrated222/e88, full content readback and exact source gate157+37/schema0 verified; later live f716 retains append. Six source reviews (two complete/four pending), unknown/unread null; no source/product/independent ACCEPT."
     },
     {
       "requirement": 10,
@@ -4461,11 +4462,11 @@
     }
   ],
   "unresolved": [
-    "Append-only NMR48 ledger publication must finish through exact blob readback and root nonforce CAS; temporary transport is not product validation.",
-    "Later UI16, cached owner, NMR49 reply and NMR51 service25MiB changes need their own exact-H gates; exact94 retains actual Human44/journal12/Transcript16/Chromium12 counts.",
-    "Authenticated production Fabushi authorization/history pagination/forward provenance and Backend PR137 deployment remain unaccepted; no backend merge or deployment authorized here.",
-    "Complete fixed-U source/generated/external/LFS/legal review remains open: six review records are two complete/four pending mappings, unknown/unread remain null.",
-    "Snapshot filesystem/power-loss/lifetime, signed supported-platform packages, full UI/visual/a11y, timing/security/performance/soak, upgrades/rollback, complete existing Bot regression and independent ACCEPT remain open."
+    "Exact106 passed four required jobs and62-Human/UI29 suites but shipping125543545357 is still queued. Later workflow9329/run41523624057 has its own required gates; shipping125545613231 is queued at the recorded observation. No whole current batch acceptance or dependent batch start until mandatory shipping and all actual gates succeed.",
+    "Execution claims remain bound to exact heads: prior94 full gates, later54 atd261, and current62 at106 are separate. Do not transplant results to later changed inputs or treat artifact-only packaging scope as service/final acceptance.",
+    "Authenticated production Fabushi authorization/history/forward provenance and Backend PR137 deployment remain unaccepted; no backend merge or deployment authorized here.",
+    "Complete fixed-U source/generated/external/LFS/legal review remains open: six source reviews are two complete/four pending, unknown/unread null; lexical captures are not deep review completion.",
+    "Snapshot filesystem/power-loss/lifetime, signed supported-platform packages, full UI/visual/accessibility/timing/security/performance/soak, upgrades/rollback, complete Bot regression and independent ACCEPT remain open."
   ],
   "local_executable_validation": "not-run",
   "product_acceptance": false,
@@ -5164,7 +5165,8 @@
     "rejection_line": 387,
     "max_upload_bytes": 26214400,
     "exact94_upload_bound": 33554432,
-    "disposition": "Source-confirmed current25MiB contract; concurrent76a84e8a9ff8867a076edd0c89f913a58cdb2806 now implements NMR51 correction and requires containing-H Human48/resource3/journal12/Transcript18/Chromium16 and retained gates. Preserve it. Exact94 remains bounded32MiB byte-identity behavior evidence, not production upload-limit acceptance."
+    "disposition": "Source-confirmed current25MiB contract; concurrent76a84e8a9ff8867a076edd0c89f913a58cdb2806 now implements NMR51 correction and requires containing-H Human48/resource3/journal12/Transcript18/Chromium16 and retained gates. Preserve it. Exact94 remains bounded32MiB byte-identity behavior evidence, not production upload-limit acceptance.",
+    "execution_update": "Current25MiB boundary resource3, Human62 and journal12 actually pass at exact106/run41523018920. Original94 used32MiB and remains bounded historical evidence. Authenticated production-service and complete shipping acceptance remain open."
   },
   "ledger_transport_static_review": {
     "schema_version": 1,
@@ -5241,6 +5243,491 @@
     "old_expected": "4438fe38ffc6ed0aa88f4d89b22bcd39a401fc22",
     "expected": "9ec849390eef48fc760455fb761786fa302b3863",
     "change": "Identical reviewed append operations rebased after NMR51 and updater evidence. NMR51 preserves25MiB contract. Latest updater changed only TDRP-UPDATER-DISCOVERY-AUTHORITY-001, kept fully. Six source reviews and acceptance untouched.",
-    "local_copy_correction": "Independent pre-publication hash review caught one extra trailing newline in local026 copy; removed exactly that byte, confirmed canonical input026 identity, and corrected output identity before any workflow/ref publication."
+    "local_copy_correction": "Independent pre-publication hash review caught one extra trailing newline in local026 copy; removed exactly that byte, confirmed canonical input026 identity, and corrected output identity before any workflow/ref publication.",
+    "snapshot_scope": "Historical intermediate prepared identities only; superseded by successful d44->e88 transport and publication below."
+  },
+  "closing_receipt": "projects/telegram-desktop-rust/evidence/nmr48-ledger-publication-receipt.json",
+  "ledger_publication": {
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 4,
+    "attempts": [
+      {
+        "generation": 1,
+        "observed_head": "d261afe14785d9bf1c4ac772d01df3523b453300",
+        "base_blob": "d44b094065722c5a70f92e21489887f86f5b2b0e",
+        "target_blob": "e88c75896bd0dce29b2d8b89e949c9231dad872c",
+        "blobs": {
+          ".github/workflows/nmr48-ledger-object.yml": "225c22b1db941f0ec5615743d894309b0a857dff",
+          ".github/nmr48-ledger-ops.json": "7c8c003d4b5ddc870a8fda0adb785f8ff8231af6"
+        },
+        "stage_attempts": [
+          {
+            "parent": "d261afe14785d9bf1c4ac772d01df3523b453300",
+            "commit": "dd4ad143043bbc366ba2462ce4adbae53c6cb8f7",
+            "success": true
+          }
+        ],
+        "integration_attempts": [
+          {
+            "parent": "dd4ad143043bbc366ba2462ce4adbae53c6cb8f7",
+            "commit": "222371af3d0c2241697c5a57b0160ecb336edbab",
+            "success": true
+          }
+        ],
+        "stage_commit": "dd4ad143043bbc366ba2462ce4adbae53c6cb8f7",
+        "stage_parent": "d261afe14785d9bf1c4ac772d01df3523b453300",
+        "stage_tree": "e80d0ac99fd149005682853f990cee826237eb7d",
+        "stage_remote_verified": true,
+        "run_id": 41521421694,
+        "job_id": 125538127758,
+        "observed_job_status": "in_progress",
+        "observed_job_conclusion": null,
+        "remote_full_content_equal": true,
+        "integration_commit": "222371af3d0c2241697c5a57b0160ecb336edbab",
+        "integration_parent": "dd4ad143043bbc366ba2462ce4adbae53c6cb8f7",
+        "integration_tree": "42eaadd56042b9002fe5b3c3942b09c48b1a6e86"
+      }
+    ],
+    "ref_updated": true,
+    "commit": "222371af3d0c2241697c5a57b0160ecb336edbab",
+    "ledger_blob": "e88c75896bd0dce29b2d8b89e949c9231dad872c",
+    "base_blob": "d44b094065722c5a70f92e21489887f86f5b2b0e",
+    "stage_commit": "dd4ad143043bbc366ba2462ce4adbae53c6cb8f7",
+    "run_id": 41521421694,
+    "job_id": 125538127758,
+    "remote_verification": {
+      "commit": "222371af3d0c2241697c5a57b0160ecb336edbab",
+      "parent": "dd4ad143043bbc366ba2462ce4adbae53c6cb8f7",
+      "tree": "42eaadd56042b9002fe5b3c3942b09c48b1a6e86",
+      "checks": {
+        "commit": true,
+        "changed_paths": true,
+        "temporary_removed": true,
+        "mapping": true,
+        "full_remote_content": true
+      },
+      "content": {
+        "equal": true,
+        "bytes": 3582871,
+        "blob": "e88c75896bd0dce29b2d8b89e949c9231dad872c",
+        "sha256": "e68d16fff75c51b8e6fc163ebce1400a0d4ee94a99af1d57e5444f530a424615"
+      },
+      "verified": true
+    }
+  },
+  "source_gate_after_ledger_publication": {
+    "run_id": 41521510203,
+    "head_sha": "222371af3d0c2241697c5a57b0160ecb336edbab",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 125538427337,
+        "name": "contract",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125538643078,
+        "name": "fixed-source-candidate",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "node": {
+      "tests": 157,
+      "passed": 157,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "python": {
+      "tests": 37,
+      "result": "OK"
+    },
+    "canonical_schema_errors": 0,
+    "candidate": {
+      "status": "unaccepted-candidate-consistent",
+      "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_entries_total": 16381,
+      "root_source_entries_total": 6895,
+      "responsibility_rows": 184,
+      "authored_source_review_records": 6,
+      "completed_source_review_records": 2,
+      "unknown": null,
+      "unread": null,
+      "lexical_observations": 333,
+      "counts_by_scope": {
+        "pinned-cmake-component": 2,
+        "legacy-root-paths": 331
+      },
+      "text_files_read": 203,
+      "opaque_inputs_unread": 2,
+      "unresolved_ref_observations": 76,
+      "baseline_accepted": false,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false,
+      "target_commit": "222371af3d0c2241697c5a57b0160ecb336edbab",
+      "reused_git_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+        "artifact_id": 13118749668,
+        "run_id": 41397005716,
+        "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+      },
+      "reused_build_input_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+        "artifact_id": 13121721589,
+        "run_id": 41401970993,
+        "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+      }
+    },
+    "accepted_negative": "Error: accepted source accounting cannot contain a rebaseline candidate",
+    "artifacts": [
+      {
+        "id": 13178295360,
+        "name": "tdrp-source-review-contract-222371af3d0c2241697c5a57b0160ecb336edbab",
+        "digest": "sha256:a37e5dc30ba7e84cb66ac379defdaa7e543fc8ea905e8dd4257458e785df2147",
+        "upload_log_digest_matches": true
+      },
+      {
+        "id": 13178186089,
+        "name": "tdrp-source-candidate-222371af3d0c2241697c5a57b0160ecb336edbab",
+        "digest": "sha256:1a78281a16c7948e234d53be2d30ff5cd24a6f1fd357ad0bc6c5eeb2e43cc31e",
+        "upload_log_digest_matches": true
+      }
+    ],
+    "interpretation": "Candidate consistency is not source, product, independent or shipping acceptance. Lexical/text capture counts are not deep product review counts."
+  },
+  "later_native_execution_receipt": "See closing_receipt for exact977/d261/afb logs, named cases, artifacts and current fixture repair; do not transplant prior counts across changed heads.",
+  "current_test_owner_repair": {
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "base": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+    "path": "source/host/tests/session_gateway_contract.rs",
+    "base_blob": "b84f6a3eec2994a8be84006823366a7f29f082d7",
+    "failure_head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+    "failure_run": 41522324008,
+    "failure_job": 125541192099,
+    "class": "TEST_COMPILE_DEFECT",
+    "error": "E0382: moved runtime reused after true drop and restart",
+    "mutated": true,
+    "local_new_blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+    "local_change": "One cleanup receiver: runtime.shutdown() -> restarted.shutdown(); keep original true drop and every assertion.",
+    "local_executable_validation": false,
+    "cas_attempts": [
+      {
+        "parent": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+        "commit": "106bb95ba97ef7722e9523285783824393039bc0",
+        "success": true
+      }
+    ],
+    "new_blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+    "base_tree": "b085982baf5db0df5e988d9a7de1556f58451a87",
+    "tree": "3a8fb3fefa7f4fc67ce0994b168f3d490c977b55",
+    "commit": "106bb95ba97ef7722e9523285783824393039bc0",
+    "ref_updated": true,
+    "remote_verification": {
+      "head": "106bb95ba97ef7722e9523285783824393039bc0",
+      "commit_parent_matches": true,
+      "commit_tree_matches": true,
+      "diff_only_intended_file": true,
+      "diff": [
+        {
+          "path": "source/host/tests/session_gateway_contract.rs",
+          "sha": "2e032c705fcec8256dd66476807dd1fd683625db",
+          "additions": 1,
+          "deletions": 1,
+          "patch": "@@ -6886,7 +6886,7 @@ fn shipping_human_reaction_restart_replays_already_applied_intent_without_retogg\n         Some(json!({\"afterId\":4_000_777,\"complete\":true})));\n     assert!(events.lock().expect(\"events\").iter().all(|event| event[\"entries\"] == json!([applied.clone()])),\n         \"recovery never publishes an inactive or partial intermediate row\");\n-    runtime.shutdown(); drop(owner); drop(restarted);\n+    restarted.shutdown(); drop(owner); drop(restarted);\n     let reopened = human_message_fixture_runtime(&root, &url);\n     assert_eq!(reopened.read_human_conversation_transcript(&id).expect(\"pure reopen\"), vec![applied]);\n     subscription.unsubscribe();"
+        }
+      ],
+      "full_remote_content_equal": true,
+      "blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+      "runs": [
+        {
+          "id": 41523018920,
+          "name": "Native service contracts",
+          "head": "106bb95ba97ef7722e9523285783824393039bc0",
+          "status": "queued",
+          "conclusion": null
+        }
+      ],
+      "verified": true
+    }
+  },
+  "current_test_owner_repair_execution": {
+    "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+    "run_id": 41523018920,
+    "reconciliation_job": 125543545349,
+    "reconciliation": "completed/success",
+    "actual_rust_counts": {
+      "Human": 62,
+      "resource": 3,
+      "sharebox": 1,
+      "journal": 12,
+      "Agent_nonce": 4,
+      "private_credential": 3,
+      "gateway": 1
+    },
+    "actual_ui_counts": [
+      29,
+      17,
+      5,
+      16
+    ],
+    "remaining_shipping_job": 125543545357,
+    "all_five_required_jobs_success": false,
+    "full_evidence": "projects/telegram-desktop-rust/evidence/nmr48-ledger-publication-receipt.json"
+  },
+  "final_prepublication_observation": {
+    "observed_at": "2026-11-02 20:58:55 UTC",
+    "head": "2f080931d27675d5cc88e18e0f313c4606f68a01",
+    "main_evidence_blob": "70c540c3a539d58f704bbd7bc1eae37b9d357bd8",
+    "prior_inspected_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "ledger_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+    "receipt_exists": false,
+    "changes_since_106": [
+      {
+        "path": ".github/checkpoint-ledger-ops-round10.json",
+        "sha": "a0b80274f73907e5f767b637a3373d407beb30db",
+        "status": "added"
+      },
+      {
+        "path": ".github/checkpoint-ledger-ops-round16.json",
+        "sha": "0aaf3b58bd18230adcb7b758a2130fbcee241f30",
+        "status": "modified"
+      },
+      {
+        "path": ".github/checkpoint-ledger-ops-round8-ui.json",
+        "sha": "e99ea757ac42cb5d2824d2babf6a936c27f8785e",
+        "status": "added"
+      },
+      {
+        "path": ".github/peer-durability-object-ops.json",
+        "sha": "6631537725a2196ebf623bc3a3ecb5c5c4fc8609",
+        "status": "added"
+      },
+      {
+        "path": ".github/round14-c15-ledger-ops.json",
+        "sha": "9bcc0b87ce6eee918dd8c829abdcda1bca2d74ca",
+        "status": "added"
+      },
+      {
+        "path": ".github/round17-reviewed-objects.json",
+        "sha": "7213d04856625035b39c5dea6ce0140d5736ae1c",
+        "status": "added"
+      },
+      {
+        "path": ".github/round22-ledger-operations.json",
+        "sha": "6695a3c47f8ba364fc9c17598ca2f4d42c2d9b13",
+        "status": "added"
+      },
+      {
+        "path": ".github/round28-ledger-ops.json",
+        "sha": "28f2b400ab684714b77861ac2fa684f2675a8dbd",
+        "status": "added"
+      },
+      {
+        "path": ".github/round3-protocol-owner-object.json",
+        "sha": "78c587577f7614485486077c69ff1d833525def7",
+        "status": "added"
+      },
+      {
+        "path": ".github/scripts/prepare-peer-durability-objects.py",
+        "sha": "d1d602ee0535ef232fd325b09e81d101206147a6",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/checkpoint-ledger-object-round10.yml",
+        "sha": "46d474b015fa65b1a48b179bdb8df9e6f0975b8c",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/checkpoint-ledger-object-round8-ui.yml",
+        "sha": "1cf64b32dea92fb5bee56fd113d7ec0344bd8a74",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/fdn-tsnet-worker.yml",
+        "sha": "eea77c7e877193e2a54e70942394f93afc49d8a6",
+        "status": "modified"
+      },
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "sha": "e60ec6e6f2d5c9e489e8200fa1bda10b3a4f4c1d",
+        "status": "modified"
+      },
+      {
+        "path": ".github/workflows/peer-durability-object-prepare.yml",
+        "sha": "f0203774516b1be5b0eb402f0c10a9521eb10024",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/release-macos-main.yml",
+        "sha": "a9c2eba957269acf17d8693623fd807409dc08e4",
+        "status": "modified"
+      },
+      {
+        "path": ".github/workflows/round14-c15-ledger-object.yml",
+        "sha": "a61da58a58a55d199d732de0f1d8613d1a07092f",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/round17-reviewed-objects.yml",
+        "sha": "9e909f93e71619f157402a3ef98fb7a2cd5235d4",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/round22-ledger-object.yml",
+        "sha": "0269ac99b789a5b7eaf7b9f85642b5251b09ffc9",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/round28-ledger-object.yml",
+        "sha": "7c1075db28dfaf2a075643237b7a152105e86467",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/round3-protocol-owner-object.yml",
+        "sha": "5211b34383ccd4f3e740e953bdf093d9ee3f9033",
+        "status": "added"
+      },
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "7baaffcde9bae870396a4da36b262028d2a1d7ed",
+        "status": "modified"
+      },
+      {
+        "path": ".github/workflows/staged-runtime-source-contracts.yml",
+        "sha": "c77c6a6c5bfd9698023b910741f4be24723574f4",
+        "status": "modified"
+      },
+      {
+        "path": "docs/specs/fbcp-gateway-peer-durability.md",
+        "sha": "d4ed731306b1966d3738d777affa21103b3e9fed",
+        "status": "added"
+      },
+      {
+        "path": "docs/specs/fbcp-human-message-retry.md",
+        "sha": "0b1ec2c58a302e9ab67b88333d164270651403d7",
+        "status": "added"
+      },
+      {
+        "path": "docs/specs/fbcp-native-message-reconciliation.md",
+        "sha": "1c3a6a2116b7810c89319b8e130e31ca0b78540c",
+        "status": "modified"
+      },
+      {
+        "path": "docs/specs/fdn-001-tsnet-network-worker.md",
+        "sha": "5294b57d1078e23d6068f97abd89c3ee59682416",
+        "status": "modified"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "sha": "bc045c2a564d4de9ca6e8807b8d49713bdeee58f",
+        "status": "modified"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/STATUS.md",
+        "sha": "cf672a99a2f21378be5e048fcbe4e022b5277741",
+        "status": "modified"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round16-apphost-package-boundary.json",
+        "sha": "505843f9385a853b097cd16b31af35d03f3f7eab",
+        "status": "modified"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json",
+        "sha": "c7a24526b77ea03e4534965241a767458ac7c215",
+        "status": "modified"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/task20bf-round2-auxiliary-input-pin.json",
+        "sha": "c2ea85a8709ce68738e86b3cc93fdf44c7c9aefd",
+        "status": "modified"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/parity-ledger.json",
+        "sha": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+        "status": "modified"
+      },
+      {
+        "path": "source/fabushi-network-worker/main.go",
+        "sha": "e58e3827799f4e40075fd81024b9346ff0617cc1",
+        "status": "modified"
+      },
+      {
+        "path": "source/fabushi-network-worker/stream_listener.go",
+        "sha": "23e9f9ac1ea6f3cbd07bb2936e2f1ceb8b74f164",
+        "status": "added"
+      },
+      {
+        "path": "source/fabushi-network-worker/stream_listener_test.go",
+        "sha": "4c3c98069107e046b859c6c90bb3dbc1f14c726a",
+        "status": "added"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs",
+        "sha": "f6234339c3a1d644f7f06c08e36635c7a851c882",
+        "status": "modified"
+      }
+    ],
+    "latest_native": [
+      {
+        "id": 41523624057,
+        "head": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 41523018920,
+        "head": "106bb95ba97ef7722e9523285783824393039bc0",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 41522952938,
+        "head": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 41522324008,
+        "head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 41521877281,
+        "head": "78c375cef3f27e4a355cb8c206681c2b7edc9c66",
+        "status": "queued",
+        "conclusion": null
+      }
+    ],
+    "canonical_append_preservation": {
+      "blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+      "our_append_values_present": true,
+      "our_note_present": true,
+      "source_review_count": 6,
+      "responsibility_rows": 184
+    }
+  },
+  "current_live_main_readback": {
+    "sha": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "observed_at": "2026-11-02 20:46:59 UTC"
+  },
+  "later_native_workflow_snapshot": {
+    "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+    "run_id": 41523624057,
+    "workflow_blob": "e60ec6e6f2d5c9e489e8200fa1bda10b3a4f4c1d",
+    "observed_at": "2026-11-02 20:59:54 UTC",
+    "shipping_job": 125545613231,
+    "shipping_status": "queued",
+    "qualification": "Separate later workflow: do not assign exact106 counts to this run without its own full logs."
   }
 }
