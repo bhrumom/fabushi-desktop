@@ -771,3 +771,20 @@ visible through the existing Running history/cron projection and the unchanged
 local Runner terminal. It is not automatically retried or silently resolved.
 The pre-existing reaper, event-loss, external reconciliation, real-service and
 final acceptance requirements above remain mandatory.
+
+### AUTO-CUSTODY-ORACLE-01 — upgrade already owns cancellation
+
+Decision **FIX / TEST_FLAW** against H
+`36e06f0fbfe58a0a3ce1852db11699446e7f4ed3`, Actions run `41465568818`,
+job `125346503908`: the safe-outcome/upgrade test requests actual upgrade
+quiesce, then incorrectly requires a second `cancel_stream` to be a first
+cancellation. `request_quiesce_for_upgrade` already cancels registered tasks;
+the cancellation owner returns false for repeats and preserves its first reason.
+
+Keep the production owner unchanged. The fixture must prove its initial handle
+is uncancelled, the non-upgrade explicit cancellation succeeds, and upgrade
+quiesce itself cancels with the upgrade reason. A subsequent cancellation must
+return false without changing that reason. Preserve all original terminal kind,
+sent/reacted facts, safe outcomes, upgrade annotation, retained-unsettled and
+real NotStarted assertions. The same exact app selector remains required in
+Actions; this diagnosis and authored repair are not candidate execution evidence.
