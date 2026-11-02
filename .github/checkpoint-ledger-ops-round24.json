@@ -1,9 +1,7 @@
 {
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
-  "prepared_from_head": "cc631ac554bd3f4506fdf1c6d18024f3e0e8421d",
-  "expected_input_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
-  "expected_output_blob": "4792662e8186b3d85516c308b3b543b2e1821602",
+  "source_mode": "latest_exact_checkpoint_ledger",
   "operations": [
     {
       "id": "FBCP-NMR-001",
@@ -13,49 +11,35 @@
           "source/host/src/extensions/session/human_creation_tests.rs",
           "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
           "source/host/src/extensions/session/agent_db.rs",
-          "source/host/src/extensions/session/human_creation_storage_tests.rs"
+          "source/host/src/extensions/session/human_creation_storage_tests.rs",
+          "source/host/src/extensions/session/agent_db_recovery.rs"
         ],
         "fabushi_target_symbols": [
           "ProductionSessionWorkers::create_human_conversation",
           "ProductionSessionWorkers::human_creation_summary",
           "ProductionSessionWorkers::human_message_lock",
           "session_owned_platform_path",
-          "SandAgentDb::initialize_human_metadata_if_empty"
+          "SandAgentDb::initialize_human_metadata_if_empty",
+          "SandAgentDb::open_human_conversation_store",
+          "probe_human_conversation_store"
         ],
         "requirement_ids": [
-          "NMR-46",
-          "NMR-47",
-          "NMR-47a",
-          "NMR-47b",
-          "NMR-47c",
-          "NMR-47d",
-          "NMR-47e",
-          "NMR-47f",
           "NMR-CREATE-01",
           "NMR-CREATE-01a",
           "NMR-CREATE-01b",
           "NMR-HTTP-OWNER-01",
-          "NMR-AC-37",
-          "NMR-AC-38",
           "NMR-AC-CREATE-01",
           "NMR-AC-HTTP-OWNER-01",
-          "NMR-48",
-          "NMR-48a",
-          "NMR-48b",
-          "NMR-48c",
-          "NMR-AC-39",
           "NMR-CREATE-01c",
           "FBCP-HUMAN-CREATE-01",
           "FBCP-HUMAN-CREATE-02",
           "FBCP-HUMAN-CREATE-03",
-          "FBCP-HUMAN-CREATE-04"
+          "FBCP-HUMAN-CREATE-04",
+          "NMR-CREATE-01d"
         ],
         "release_gate_ids": [
-          "NMR-AC-37",
-          "NMR-AC-38",
           "NMR-AC-CREATE-01",
-          "NMR-AC-HTTP-OWNER-01",
-          "NMR-AC-39"
+          "NMR-AC-HTTP-OWNER-01"
         ],
         "unit_case_ids": [
           "source/host/src/extensions/session/human_creation_tests.rs#same_pair_waits_before_open_while_other_pair_progresses_and_state_survives_restart",
@@ -71,7 +55,8 @@
           "source/host/src/extensions/session/human_creation_tests.rs#existing_empty_directory_and_schema_only_store_resume_without_replacing_files",
           "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
           "source/host/src/extensions/session/human_creation_storage_tests.rs#held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer",
-          "source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit"
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit",
+          "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
         ],
         "security_case_ids": [
           "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs#session_owned_platform_rejects_message_routes_before_credentials",
@@ -96,7 +81,8 @@
           "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
           "source/host/src/extensions/session/human_creation_storage_tests.rs#held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer",
           "source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit",
-          "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload"
+          "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+          "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
         ],
         "regression_ids": [
           "source/host/src/extensions/session/human_creation_tests.rs#same_pair_waits_before_open_while_other_pair_progresses_and_state_survives_restart",
@@ -117,7 +103,8 @@
           "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
           "source/host/src/extensions/session/human_creation_storage_tests.rs#held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer",
           "source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit",
-          "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload"
+          "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+          "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
         ],
         "production_evidence": [
           "resumed-round24-base:59308cf3cee48213278c52e4ad60bfd9250fb545:ProductionRenderer roster refresh -> Coordinator per-request dispatch -> authenticated per-connection gateway -> Session create_human_conversation; same canonical SandAgentDb owner, no alternate store/schema/command. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json"
@@ -141,19 +128,20 @@
           "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
           "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_storage_tests.rs#held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer",
           "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit",
-          "authored-expanded-gateway-create-and-events-not-run-at-preparation:source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload"
+          "authored-expanded-gateway-create-and-events-not-run-at-preparation:source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+          "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
         ],
         "test_environment_ids": [
-          ".github/workflows/native-service-contracts.yml#native-message-reconciliation:human_creation_tests11+human_creation_storage_tests3:real-SQLite-owned-barriers:GitHub-Actions-only",
-          ".github/workflows/native-service-contracts.yml#native-human-creation-linux:creation11+atomic-storage3+shipping-gateway1:additional-not-macOS-substitute"
+          ".github/workflows/native-service-contracts.yml#native-message-reconciliation:human_creation_tests12+human_creation_storage_tests3:real-SQLite-owned-barriers:GitHub-Actions-only"
         ],
         "test_execution_evidence": [
           "exact:efc58a55cca018ea66c96004ded4291781f2764c:run41489716798:attempt1:failure:shipping125429227384 Social9 passed then regex TEST_FLAW, HTTP6/later-shipping not run; Windows125429227032 11 common-before-hook failures before assertions; reconciliation125429227086 Human33/Agent4/private3 passed; complete logs and decoded hashes in projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json",
           "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1:completed/success:reconciliation125494011040 Human38/sharebox1/journal3/Agent4/private3/gateway1 all passed; shipping125494011097 composition12/Native7/FeatureHost7/Social9/HTTP6/Host6/ABI7/CLI3/gateway5/library11/DNS6/salts2/protocol122/TCP9/proxy4/credential1/copy4 passed; actual AppHost160061040bytes sha2565681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb; three copy refusal controls; artifact13173112803 sha256a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f; projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json",
-          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:UI125494010641 renderer/Transcript16/settlement5/Chromium12 pass; Electron125494011030 carrier10/account8/copy3/update-source16/publisher28/metadata18/build pass; immutable historical installer experiment is not a current-source package; complete logs/artifact bindings in projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json"
+          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:UI125494010641 renderer/Transcript16/settlement5/Chromium12 pass; Electron125494011030 carrier10/account8/copy3/update-source16/publisher28/metadata18/build pass; immutable historical installer experiment is not a current-source package; complete logs/artifact bindings in projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json",
+          "exact:b28c8d1c3442fc5c4dbd9d6e69de3ccfb2f3baeb:run41525788471:reconciliation125553047387:failure:Human63/63 passed; resource3 lib-test compilation E0277 because rusqlite0.39 FromSql does not support usize in human_creation_tests.rs data-page fixture. resource3/creation12/storage3 and subsequent gates executed0. Test-fixture correction reads SQLite signed integers, asserts positive page size/root>1 and uses checked usize conversion/multiplication; retains the corrupt-data-page preservation oracle and12-case gate. Static review did not detect the type defect and is superseded by this execution evidence. Complete logs in projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json"
         ],
         "blockers": [
-          "New NMR-CREATE-01 creation11/storage3 and expanded NMR-HTTP-OWNER-01 HTTP6/Native7 are authored; containing-H Actions execution is required. Base59 results cannot qualify these edits. Preserve concurrent Human53/resource3/journal12/Transcript20/cursors17/Chromium16 expectations.",
+          "New NMR-CREATE-01 creation12/storage3 and expanded NMR-HTTP-OWNER-01 HTTP6/Native7 require containing-H Actions execution. H=b28c8d1c3442fc5c4dbd9d6e69de3ccfb2f3baeb run41525788471 passed Human63, then lib-test E0277 in the new fixture blocked resource3/creation12/storage3; no new creation or storage case was executed. Current native workflow gates and concurrent owners are retained.",
           "Formal publisher authorization, full signed supported-platform application install/upgrade/rollback, complete source/external/generated/legal closure, full Bot/UI/a11y/temporal/performance/soak and independent ACCEPT remain open.",
           "Remote-forward provenance/policy, pinned-attachment power-loss/filesystem qualification, simultaneous independent AppHost cross-source uniqueness, full multi-device/cancellation/permission and read-receipt UI coverage remain open."
         ],
@@ -161,7 +149,7 @@
           "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload"
         ]
       },
-      "note": "\nResumed round24: after interruption, remote had advanced to59f5fa and then59308 source guard. Preserve all later forwarding/UI/source work; do not replay the old working tree. New NMR-CREATE-01 creation safety and NMR-HTTP-OWNER-01 expanded resource/account recovery tests are authored with11creation/3atomic-storage/HTTP6/Native7 selected; containing-H Actions is required. Initial efc58 failure and full subsequent59f5fa success are recorded separately. Old target_commit/workflow/job fields remain historical exact95 evidence; no relabeling as a new execution. Current source accounting remains fixed U, six source_reviews preserved (two complete, four pending), unknown/unread null, no final acceptance. Historical blocker text is recoverable at59308; current blockers above supersede resolved fixture/count failures. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json Later73cc6 preserves pinned attachment snapshots, Human44/journal12 and immutable-picker Chromium16; creation/resource identifiers were reconciled to NMR-CREATE-01 / NMR-HTTP-OWNER-01 and NMR-AC-CREATE-01 / NMR-AC-HTTP-OWNER-01 without changing their reviewed behavior. Canonical pair discovery enters the existing per-conversation mutation lane; absent metadata initializes, valid metadata reuses the saved identity, and failed initialization preserves a retryable store. Existing Human pending/dispatching outbox settles through validated Native HTTP and the same transcript; history coverage persists ordered progress. Whole forwarding intent is stored in source metadata before destination work, and ordinary sync resumes it with expected-value CAS and source-policy fencing. New creation behavior requires containing-H execution; full service and product acceptance remains open. Existing Session human_message_locks serialize each canonical pair. NMR-CREATE-01 extends that lane before first path/open/metadata decisions through owner publication; independent pairs progress, and a read-side published Arc is retained. Existing send/sync/forwarding locking and credential settlement fencing are preserved. Multiple independent AppHost processes, external deletion behind a cached owner and post-shutdown reuse are not qualified by this batch. Stable named creation/resource requirement IDs avoid concurrent numeric reservations; the existing NMR-49/AC-40 reply contract remains untouched. Current FBCP-HUMAN-CREATE-01/03 task exposed a required atomicity extension before publication: one SQLite INSERT checks kv/transcript_entries/blobs empty at the same write boundary; an identityless populated store is refused rather than adopted. The new Human initializer preserves busy callback and mutation notifications but never invokes corruption salvage/replacement. General Agent initialization and reply settlement are unchanged. The initial unpublished seven-case fixture seeded identityless rows before retry; it is corrected to a genuinely empty schema with retained directory sentinel. New production and storage cases qualify distinct owners, first committed identity and retained data; whole independent AppHost lifecycle remains open. No original or subsequent execution result is upgraded by test authorship. Focused review R24-ATOMIC-01 repaired the same-call SQLite wait oracle with a connection/thread-owned one-shot busy callback: winner commits only after actual INSERT wait, then the same invocation must refuse without any terminal busy result. R24-ATOMIC-02 routes an existing selected ambiguous-send/restart case through the shipping create gateway and asserts pending/settled events for its unique nonce. Current observed06decb retains Human52, resource3, journal12, Transcript20, cursors17 and Chromium16. Additional same-H Linux11+3+1 can provide targeted evidence while macOS queues; all required macOS and shipping gates remain open until executed."
+      "note": " Round24 adds NMR-CREATE-01a-d / FBCP-HUMAN-CREATE-01..04 to the existing Session and SandAgentDb owners: same-pair lane, atomic empty KV/transcript/blob identity admission, preservation of first committed metadata and published reader owners, and Human opening with automatic corruption recovery disabled and explicit unchanged corrupt/NOTADB file oracles. Authored creation12/storage3 include true held-INSERT contention, missing-identity nonadoption, busy/error retry and valid-WAL/corrupt-store controls. The selected existing gateway recovery case now uses actual createHumanConversation and pending/sent events. Existing HTTP6/Native7 gain resource/account/restart controls. Concurrent production changes, source reviews and every shipping gate are retained. Original owner106bb95b repaired the afb34b49 E0382 restart cleanup and executed62/3/1/12/4/3/1; new containing-H creation12/storage3/resource oracles remain required, not inferred from these pass counts. The unpublished readonly_shm path was removed; only no-sidecar immutable integrity checking precedes existing SQLite configuration. No dependency upgrade or full arbitrary damaged-sidecar/crash acceptance is claimed. No full source/legal/service/package/formal-publisher/independent ACCEPT promotion. Published code H=b28c8d1c3442fc5c4dbd9d6e69de3ccfb2f3baeb was updated with force=false/expected_sha and all11 changed file contents and exact commit/tree/parent were API-read back. Native run41525788471 is the new containing-H execution;12 creation/3storage are not credited before its actual logs. Later5755732d preserves omitted optional projection fields after b28 UI31/33; full migration remains unaccepted. Actual b28 reconciliation executed63 Human cases successfully, then failed while compiling the new test fixture: rusqlite Row::get does not support usize. resource3/creation12/storage3 executed0. Minimal fixture-only i64/checked-usize correction retains all behavioral assertions; its containing-H execution must be read before qualification. 575 UI proves Transcript33 after the existing owner optional-field fix, but the later renderer step failed and is not accepted."
     },
     {
       "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",

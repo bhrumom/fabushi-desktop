@@ -1,0 +1,1054 @@
+{
+  "format_version": 2,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 30,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "requested_head": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+  "observed_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "latest_read_head_at_preparation": "e711505dbc44bde087595c10a060f5ae6deb5847",
+  "scope": "Verify original run terminal and every available full execution log; preserve concurrent implementation, classify actual failures, confirm minimal repair and publish scoped evidence in existing ledger/RTM. Not full migration acceptance.",
+  "original_execution": {
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+    "run_id": 41512635210,
+    "run_attempt": 1,
+    "observed_at_utc": "2026-11-02T20:18:35Z",
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41512635210",
+    "run_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41512635210",
+    "status": "completed",
+    "conclusion": "failure",
+    "evidence_scope": "GitHub Actions only. Full decoded log bytes retained exactly as returned by the GitHub connector, including BOM/CRLF. File hashes are SHA-256 of those UTF-8 bytes. Artifact digests were read from GitHub API metadata and matched each job's uploaded-artifact digest log; archives have not been downloaded for independent digest computation.",
+    "jobs": [
+      {
+        "id": 125508112060,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "log_path": "125508112060-native-message-electron.log",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125508112060/logs",
+        "log_utf8_bytes": 82388,
+        "log_lines": 1067,
+        "log_sha256": "2c6416b680b0aecb127f53c8c25f52ceb23ef975469256709774c87d189192bc",
+        "source_sha_verified": true,
+        "tests": {
+          "carrier": 10,
+          "native_auth_retention": 8,
+          "package_resources": 3,
+          "explicit_update_source": 16,
+          "windows_publisher_behaviors": 28,
+          "macos_metadata": 18
+        },
+        "test_failures": 0,
+        "test_skipped": 0,
+        "compile": "actual Electron main/preload/Rust Coordinator carrier built",
+        "historical_installer_scope": "immutable historical package metadata experiment passed; packages source 9d16483f70df9af06db97b17bb02a24dc507e459; no installation or release"
+      },
+      {
+        "id": 125508112515,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success",
+        "log_path": "125508112515-native-message-ui.log",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125508112515/logs",
+        "log_utf8_bytes": 69064,
+        "log_lines": 789,
+        "log_sha256": "25d3a17f2feb332500b88845ebf5bd7b2aac21c718f5073e0ff0d6a68bbf6a71",
+        "source_sha_verified": true,
+        "tests": {
+          "transcript": 16,
+          "forward_settlement": 5,
+          "actual_chromium": 12
+        },
+        "test_failures": 0,
+        "test_skipped": 0,
+        "compile": "tsc --noEmit, vite build and actual desktop renderer bundle boundary succeeded"
+      },
+      {
+        "id": 125508112305,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "log_path": "125508112305-windows-update-publisher.log",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125508112305/logs",
+        "log_utf8_bytes": 35777,
+        "log_lines": 406,
+        "log_sha256": "a9d83af9d53c60e2c34cdf0aed5c26672fba74777e088b4d23942b90230d29d7",
+        "source_sha_verified": true,
+        "tests": {
+          "native_authenticode": 11
+        },
+        "test_failures": 0,
+        "test_skipped": 0,
+        "scope": "CI-only inert signed fixture; no production publisher authorization or installation acceptance"
+      },
+      {
+        "id": 125508112528,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "success",
+        "completed_at_utc": "2026-11-02T20:05:32Z",
+        "log_path": "125508112528-native-message-shipping-compile.log",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125508112528/logs",
+        "log_utf8_bytes": 931432,
+        "log_lines": 8418,
+        "log_sha256": "0963a102129359136a910238b148043276d48346f8daf366bf6f0a2c5d8aefc5",
+        "source_sha_verified": true,
+        "tests": {
+          "apphost_composition": 12,
+          "native_desktop_account_handoff": 7,
+          "featurehost_messaging": 7,
+          "retained_social_recovery": 9,
+          "social_http_owner": 6,
+          "host_legacy_handoff": 6,
+          "c_abi": 7,
+          "cli_native_owner": 3,
+          "gateway_executable": 5,
+          "gateway_library": 11,
+          "dns_response_normalization": 6,
+          "future_salts": 2,
+          "protocol": 122,
+          "tcp": 9,
+          "proxy_boundary": 4,
+          "native_credential_schema": 1,
+          "actual_package_resource_copy": 4
+        },
+        "auxiliary_behavior_matrix": {
+          "proxy_preference_orders": 16,
+          "proxy_removals": 48,
+          "repeated_no_ops": 48,
+          "full_permutations": 6,
+          "full_permutation_removals": 18
+        },
+        "native_account_nested_processes": {
+          "additional_executions": 19,
+          "counting_note": "Native7 is the top-level suite; the 19 exact child entries are not added to that top-level count."
+        },
+        "expected_negative_checks": {
+          "missing_binary": "rejected",
+          "invalid_hash": "rejected",
+          "valid_but_mismatched_hash": "1 selected test failed as required; no package output before rejection"
+        },
+        "live_service": {
+          "test": "live_session_exchanges_encrypted_ping_and_service_rpc",
+          "result": "ok",
+          "ignored": 0,
+          "source_blob": "bb3af3f4dc124a9841a17b9daab10eca72d83da1",
+          "scope": "Real Telegram production data center auth-key handshake, ping and service RPC; does not establish Fabushi production authenticated-history acceptance."
+        },
+        "apphost_compile": "actual CI-profile shipping binary built; normal/build dependency, defined-symbol and linked-library legacy boundaries passed",
+        "actual_copied_binary": {
+          "sha256": "6b71295a7148a33ea977907d351e0d4b46697d13c1f39580aa1aceacecd444db",
+          "destination_sha256": "6b71295a7148a33ea977907d351e0d4b46697d13c1f39580aa1aceacecd444db",
+          "size": 160062816,
+          "mode": 493,
+          "excluded_control_count": 11
+        },
+        "scope": "Actual AppHost resource-copy evidence only; complete signed application/package acceptance remains open."
+      },
+      {
+        "id": 125508112546,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "labels": [
+          "macos-15"
+        ],
+        "runner_id": 0,
+        "runner_name": "",
+        "steps": [],
+        "created_at": "2026-11-02T19:43:55Z",
+        "completed_at": "2026-11-02T20:14:09Z",
+        "log_retrieved": false,
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125508112546/logs",
+        "log_fetch_result": {
+          "attempts": 1,
+          "error_code": "NOT_FOUND",
+          "http_status": 404,
+          "error_name": "BlobNotFound",
+          "observed_at_utc": "2026-11-02T20:18:35Z"
+        },
+        "execution_status": "not-run",
+        "classification": "environment/no-execution; no compiler, test, or assertion result exists",
+        "cancellation_reason": "unknown: check-run has 4 annotations but their endpoint is unavailable through the connector; direct public API request denied by network sandbox",
+        "annotations_count": 4,
+        "annotations_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125508112546/annotations",
+        "required_test_results": {
+          "human39": "not-run",
+          "journal5": "not-run",
+          "concurrent_sqlite_cas": "not-run",
+          "stale_snapshot_completion_regression": "not-run",
+          "corrupt_metadata_restart_recovery": "not-run",
+          "sharebox1": "not-run",
+          "agent4": "not-run",
+          "settlement_credentials3": "not-run",
+          "forward_http1": "not-run"
+        }
+      }
+    ],
+    "conditionally_skipped_job": {
+      "id": 125508114094,
+      "name": "native-auth-and-journal",
+      "conclusion": "skipped"
+    },
+    "artifacts": [
+      {
+        "id": 13175010168,
+        "name": "native-message-electron-06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "size_in_bytes": 13387,
+        "digest": "sha256:6ebf23c1423e0048b3df779a5b37988a11a8af3ec7742c4dc58ee1893aaf462a",
+        "expired": false,
+        "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13175010168"
+      },
+      {
+        "id": 13174690534,
+        "name": "native-message-ui-06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "size_in_bytes": 110706,
+        "digest": "sha256:eed57af1167408e680596ee370a05ed3099dccdf8cdb0ce9216414fe7f90e9e6",
+        "expired": false,
+        "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13174690534"
+      },
+      {
+        "id": 13174558587,
+        "name": "native-message-shipping-compile-06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "size_in_bytes": 81433496,
+        "digest": "sha256:c8a41a0f3e4fb52e2aff53d080ade388cef9ced2b6d82bb7b28d861ec2e83e42",
+        "expired": false,
+        "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13174558587"
+      },
+      {
+        "id": 13173597475,
+        "name": "windows-update-publisher-06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "size_in_bytes": 1827,
+        "digest": "sha256:75fe6ff48b1bd3787304d50c6e049e8b3b4ffb71819cb12b99baea1a26f4ae55",
+        "expired": false,
+        "head_sha": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13173597475"
+      }
+    ],
+    "required_pending": [
+      "Human39 (not run; original reconciliation job cancelled before runner allocation)",
+      "journal5 (not run; original reconciliation job cancelled before runner allocation)",
+      "concurrent SQLite CAS (not run; original reconciliation job cancelled before runner allocation)",
+      "stale same-batch snapshot completion regression (not run; original reconciliation job cancelled before runner allocation)",
+      "corrupt metadata restart recovery (not run; original reconciliation job cancelled before runner allocation)",
+      "Agent4 (not run; original reconciliation job cancelled before runner allocation)",
+      "settlement credentials3 (not run; original reconciliation job cancelled before runner allocation)",
+      "sharebox1 (not run; original reconciliation job cancelled before runner allocation)",
+      "authenticated forwarding HTTP1 (not run; original reconciliation job cancelled before runner allocation)"
+    ],
+    "restrictions": "No local build/test execution, no reruns or workflow dispatch, no cancel, no production/ledger/workflow mutation.",
+    "run_updated_at_utc": "2026-11-02T20:14:10Z",
+    "terminal_verified": true,
+    "all_required_gates_passed": false
+  },
+  "subsequent_execution": {
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 30,
+    "review_scope": "Read-only current CI and concurrent oracle reconciliation",
+    "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+    "run_id": 41522324008,
+    "observed_at_utc": "2026-11-02 20:50:32 UTC",
+    "current_required_counts": {
+      "human": 62,
+      "journal": 12,
+      "resource": 3,
+      "transcript": 29,
+      "chromium": 16,
+      "cursor_rpc": 17
+    },
+    "current_jobs": [
+      {
+        "id": 125541191705,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125541192009,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125541192065,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125541192099,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "id": 125541192169,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125541194332,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "concurrent_implementation": {
+      "kind_guard_commit": "c438df8390f60c044afbd37f511d35bbc0fdb58e",
+      "fixture_restoration_commit": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+      "stale_oracle_commit": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+      "production_blob": "7b2fd1bd349d6e810fe4af76875af49982d007ef",
+      "journal_blob": "ad000f575f846d612485aff645f7a1af69eb8424",
+      "test_blob": "b84f6a3eec2994a8be84006823366a7f29f082d7",
+      "corruption_matrix": {
+        "raw_nonobject": 5,
+        "valid_json_journal": 6,
+        "kind_identity": 2,
+        "phases": 2,
+        "total_subcases": 26
+      },
+      "mapping": "Contains all ten planned Round30 corruption kinds and three additional source/kind/identity cases. Cold and cached owner paths now both recheck conversationKind and conversationId before returning. A stale round30 oracle requiring cached outer corruption to reach persisted-Human-forward error is invalid; preserve current admission.",
+      "stale_oracle": "Already rejects mixed regression/progression and preserves exact raw metadata, unrelated journal/metadata, pending error, terminal replay and SQLite reopen."
+    },
+    "qualified_predecessor": {
+      "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300",
+      "run_id": 41521138485,
+      "job_id": 125537164274,
+      "conclusion": "success",
+      "log_sha256": "e540894adf0c83b5403046d410e77b9d5a9c854f2eddb883aa2004b2b65e1fb4",
+      "log_bytes": 352327,
+      "log_file": "125537164274.log",
+      "actual_counts": {
+        "human": 54,
+        "resource": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "agent": 4,
+        "credentials": 3,
+        "gateway_http": 1
+      },
+      "named_cases": [
+        "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+        "stale_same_batch_snapshot_cannot_regress_completed_destination",
+        "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover"
+      ],
+      "artifact": {
+        "id": 13177203183,
+        "digest": "sha256:d2c4ead4b34e5cdfe62430bcc605439ff07fd244c870e349d8313beafaa2f18a",
+        "size": 35105
+      },
+      "limitation": "Does not qualify later62-case changed input; its shipping job is still queued."
+    },
+    "actual_prior_failure": {
+      "head_sha": "06decb74cede0830b49170cde98c2d92590d4293",
+      "run_id": 41519414297,
+      "job_id": 125531272399,
+      "classification": "IMPL_BUG",
+      "error": "TS2741 in coordinator-source.ts:188 missing human-transcript-page key in exhaustive response converter Record",
+      "log_sha256": "3872ede4d229abaf0cc537db4dca4ef9d1ee775934d2a918fba44400bfae6236",
+      "repair_commit": "97710c1ba96134a381a020dcdd3ed0e48b9f0f2c",
+      "current_compile_step": "Success at afb UI125541191705; complete log now read, SHA2564d389e73f1b6577540fe02f0be7cbd019047c732ba84cb511d52bd2297d6c78b."
+    },
+    "completed_current_logs": [
+      {
+        "job": 125541192169,
+        "name": "native-message-electron",
+        "bytes": 92514,
+        "sha256": "ade85fa7e43c50a62ef1fe16afe16bcad4ca0dbbac36f4c45669e2253397aa0a",
+        "counts": {
+          "carrier": 10,
+          "auth": 8,
+          "resources": 3,
+          "update_source": 16,
+          "publisher": 28,
+          "metadata": 18,
+          "artifact_scope": 10,
+          "promotion": 7
+        },
+        "artifact": {
+          "id": 13179050188,
+          "digest": "sha256:f45435c91950fa3efc5be3c0e375d90616913e746ca67801aa79ed40cf27e2bd",
+          "size": 14791
+        },
+        "compile": "actual Electron main/preload/carrier success",
+        "historical_installer": "immutable artifact13093546572 source9d16483 metadata experiment only, no new package/installation/release"
+      },
+      {
+        "job": 125541192065,
+        "name": "windows-update-publisher",
+        "bytes": 35921,
+        "sha256": "b8e7403991459e16289c2208508b3a127b3d892a6d4e82453aa1ab8f5cdfe679",
+        "counts": {
+          "native_authenticode": 11
+        },
+        "artifact": {
+          "id": 13176994922,
+          "digest": "sha256:d9244913f4527e8062ea538dab4130d3537fdf05d77accc2a3c1f788fcc1795a",
+          "size": 1832
+        },
+        "scope": "CI-only fixture, no formal publisher/package acceptance"
+      },
+      {
+        "job": 125541191705,
+        "name": "native-message-ui",
+        "bytes": 86893,
+        "sha256": "4d389e73f1b6577540fe02f0be7cbd019047c732ba84cb511d52bd2297d6c78b",
+        "counts": {
+          "transcript": 29,
+          "cursor_rpc": 17,
+          "forward_settlement": 5,
+          "actual_chromium": 16
+        },
+        "artifact": {
+          "id": 13177872487,
+          "digest": "sha256:011d756dc8e88c0cf1fb6ff2d92e49354693b59826a34a94d0f6f18711c005dd",
+          "size": 229006
+        },
+        "compile": "tsc production renderer and actual Vite bundle boundary success"
+      }
+    ],
+    "restrictions": "No local product validation, no repository mutation, no remote writes, no reruns/cancel/dispatch. Artifact digests from logs/API, archives not independently downloaded.",
+    "current_failure": {
+      "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+      "run_id": 41522324008,
+      "job_id": 125541192099,
+      "classification": "TEST_FLAW",
+      "phase": "test target compilation",
+      "error_code": "E0382",
+      "error_location": "source/host/tests/session_gateway_contract.rs:6889",
+      "function": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+      "cause": "runtime moved by drop(runtime) at line6878, then runtime.shutdown() invoked at6889 after creating restarted",
+      "minimum_repair": "Call restarted.shutdown() at the second shutdown, preserving actual first-runtime teardown and the reopened-runtime oracle.",
+      "runtime_tests_executed": 0,
+      "following_gates": "resource3/sharebox1/journal12/Agent4/credentials3/HTTP1 skipped because the Human test binary did not compile",
+      "log_file": "125541192099.log",
+      "log_bytes": 106405,
+      "log_sha256": "97a39a2aa67414f594eb25b434455ec3c60e1101a31c93342b1dcb855ce9d0eb",
+      "artifact": {
+        "id": 13179185160,
+        "digest": "sha256:49885aa2a87dbecf35b04e640a3ad3b3ef50ea5e4b9f5d354f163603d23ef130",
+        "size": 5406
+      }
+    },
+    "all_required_gates_passed": false,
+    "run_conclusion": "not terminal at observed time: shipping still queued"
+  },
+  "minimal_repair": {
+    "classification": "TEST_FLAW",
+    "error": "Rust E0382 borrowing runtime after drop in existing reaction-restart test cleanup",
+    "failed_head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+    "failed_run": 41522324008,
+    "failed_job": 125541192099,
+    "function": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+    "before": "runtime.shutdown(); drop(owner); drop(restarted);",
+    "after": "restarted.shutdown(); drop(owner); drop(restarted);",
+    "delivered_commit": "106bb95ba97ef7722e9523285783824393039bc0",
+    "read_back_blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+    "decision": "ALREADY_SATISFIED_BY_CONCURRENT_COMMIT; preserve exact one-line repair, no duplicate code write or first-implementation credit",
+    "execution": "Exact106bb95/run41523018920 reconciliation125543545349 now completed/success:62 Human,12 journal and all retained affected controls."
+  },
+  "current_oracle_preservation": {
+    "source_kind_and_identity": "c438df8390f60c044afbd37f511d35bbc0fdb58e rechecks cached and cold owner; ff6d49dadfb3fbc8f7d65260ce558760d7213ef2 restores valid fixture metadata before structural cases",
+    "corruption": "13 kinds x cold/cached =26 subcases; no additional POST/history GET, exact corrupted bytes and original-intent repair",
+    "stale_snapshot": "29c4f4eec8b5928f674d20107e041eee7c5a081b preserves mixed regression/progression refusal, raw metadata, unrelated batch, recoverable error, terminal replay and reopen",
+    "concurrent_cas": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a uses prepared independent owners, valid immutable intents, busy callback count0, actual winner relation, independent read-only SQL bytes, stale-absence refusal, fresh losing-batch merge and reopen",
+    "journal_blob": "0eb499fd4e47a37b8791425b7319694cccc6cef5",
+    "later_beafc_execution": "Actual named concurrent case and all12 journal cases passed at106bb95/run41523018920/job125543545349."
+  },
+  "discarded_unpublished_work": [
+    "Early local monotonicity/strict-reader patch was not pushed: concurrent94dcf7a supplied equivalent production safeguards plus attachment pinning.",
+    "Early20-case corruption oracle was not pushed: c438df8/ff6d49 supplied stronger26-case coverage and changed both cold/cached non-object admission errors.",
+    "Later local CAS retry oracle was not pushed: beafc6fc supplied a stronger valid-intent/no-busy/fresh-retry/reopen oracle.",
+    "Large connector ledger blob call was interrupted; it never moved a ref. Do not claim a blob upload result from that call."
+  ],
+  "source_accounting": {
+    "head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+    "repository": "bhrumom/fabushi-desktop",
+    "ledger": {
+      "sha": "f716580b22c6b6791b2e535e2b286df4f9257444",
+      "bytes": 3595770,
+      "rows": 184,
+      "source_reviews": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/ui/chat/forward_options_box.h",
+          "object": "65db5fbe067e340e0259a23ae57cda59096ccda0",
+          "status": "complete",
+          "responsibility_ids": [
+            "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+          ]
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
+          "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf",
+          "status": "complete",
+          "responsibility_ids": [
+            "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+          ]
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+          "status": "pending",
+          "responsibility_ids": []
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+          "status": "pending",
+          "responsibility_ids": []
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+          "object": "86865db47439dbce848fc812df2554335d3e004c",
+          "status": "pending",
+          "responsibility_ids": []
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+          "status": "pending",
+          "responsibility_ids": []
+        }
+      ],
+      "coverage": {
+        "source_entries_total": 16381,
+        "unknown": null,
+        "unread": null,
+        "omitted": 0,
+        "responsibilities_total": 184,
+        "unmapped_responsibilities": 0
+      }
+    },
+    "validators": {
+      "implementation": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+      "tests": "09dea53a4967b39439c04302c71e040b1c0bf475"
+    },
+    "read_only": true,
+    "no_local_executable_validation": true,
+    "transport": {
+      "preferred_reference": {
+        "path": ".github/workflows/checkpoint-ledger-object-round16.yml",
+        "blob": "704fa5d6a332df2c3d4d420199f9301931e0e593",
+        "note": "Existing round16 payload is another task's scope. Reuse the guarded mechanism in a task-specific helper, do not repurpose another round's payload.",
+        "workflow_run": 41522324084,
+        "job": 125541191150,
+        "status": "completed",
+        "conclusion": "success",
+        "output_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+        "artifact": {
+          "id": 13178475770,
+          "sha256": "626f59a31eb0862e789a0da87cfc3bd3283479949526971140f53de1f90adf89",
+          "size": 544644
+        }
+      },
+      "historical_round18": {
+        "workflow_run": 41518460722,
+        "job": 125527971979,
+        "head": "0e8c41c69468edaf5ce525aa23d747b65df6b36a",
+        "input_blob": "026508e30187d3e6722beef3cc7241bbc5533df9",
+        "output_blob": "59d18f5de12fe6c4fe72bb110996c0cb0e07e9f4",
+        "refs_written": false,
+        "status": "success",
+        "removed_in": "1a2b864aee290db21548262c983033d184cab356"
+      },
+      "required_root_publication": "Read full output blob, compare actual scoped delta to current canonical input, preserve concurrent edits, create tree/commit and update_ref force=false expected_sha; remove only own temporary helper."
+    },
+    "source_workflow": {
+      "run": 41522324060,
+      "head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+      "contract_job": 125541191917,
+      "candidate_job": 125541405509,
+      "status": "completed",
+      "conclusion": "success",
+      "node_tests": 157,
+      "schema_tests": 37,
+      "ledger_errors": 0,
+      "candidate_status": "unaccepted-candidate-consistent",
+      "accepted_negative": "Error: accepted source accounting cannot contain a rebaseline candidate",
+      "product_accepted": false,
+      "independent_acceptance": false,
+      "artifacts": [
+        {
+          "id": 13179100059,
+          "sha256": "b3c6f3c4068c3814610f8edf93e2fd41072c4edcd95c0297a919f6e3af1d71a3",
+          "size": 6782
+        },
+        {
+          "id": 13178725452,
+          "sha256": "d6677209e541d8290b82a6c05d5cd2770cef0ab94e94bbf0d3f4eb8c32c8fb54",
+          "size": 79141
+        }
+      ],
+      "artifact_verification": "Digests read from full upload logs; archives not downloaded or rehashed."
+    },
+    "guard_notes": [
+      "Exact checkout git rev-parse HEAD must equal github.sha; record input ledger blob from that immutable tree.",
+      "Task-specific fixed row allowlist and source-identity equality; append only declared array fields and note text; scalar changes require current equals from or to.",
+      "Prove unrelated rows, row ordering/count, every top-level non-rows field and source/legal/acceptance status unchanged.",
+      "Only POST /repos/bhrumom/fabushi-desktop/git/blobs with timeout; response sha must equal locally computed Git blob SHA.",
+      "Do not push or write refs/commits from the transport job. Root rechecks latest head and current ledger blob before tree/commit/CAS.",
+      "Delete only the task's own temporary transport after actual integration; another task's workflow/payload remains untouched."
+    ]
+  },
+  "backend_read_only_observation": {
+    "pr": 137,
+    "read_only": true,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "base": "687718ce9e0083aa124d29005bcce4051d357919",
+    "reviews": [],
+    "inline_comments": [],
+    "ci_runs": [
+      {
+        "id": 41510861859,
+        "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 41510852280,
+        "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "verified_log_job": 125502035909,
+    "actual_test_groups": [
+      {
+        "scope": "mock/D1/R2 contracts",
+        "tests": 29,
+        "pass": 29,
+        "fail": 0,
+        "skipped": 0
+      },
+      {
+        "scope": "actual SQLite contracts",
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skipped": 0
+      },
+      {
+        "scope": "readiness harness contracts using fixtures",
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "skipped": 0
+      }
+    ],
+    "live_readonly_readiness": "skipped on both runs",
+    "latest_observed_canonical_production_delivery": {
+      "run_id": 40047409890,
+      "job_id": 120732189309,
+      "head": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "conclusion": "success",
+      "created_at": "2026-10-24T00:56:05Z"
+    },
+    "production_authorization": "No current approval/review or authorized dispatch observed; no merge/deployment performed.",
+    "limitation": "GitHub historical delivery is not proof of current live Cloudflare Worker version, domain route or authenticated afterId=0 production behavior."
+  },
+  "production_authority": {
+    "entry": "ProductionRenderer forward selection -> existing Coordinator RPC/carrier -> actual AppHost ProductionSessionWorkers -> Session gateway",
+    "state": "source SandAgentDb humanForwardBatches plus destination Session transcript/outbox; same source journal resumes through ordinary sync before history",
+    "identity": "current local Human participant identity and private native credential account/issuer; no bearer stored in journal",
+    "message_resource": "existing native message/resource HTTP service; source-owned pinned attachment snapshots preserve accepted bytes; server remote IDs and local outbox retain their roles",
+    "permission_search": "source/destination membership and protected content checked through existing Session/core policy, same authorized recipient and transcript searches; renderer is projection",
+    "legacy": "Production+Electron FeatureHost messaging refused before I/O; Host rejects legacy handoff before runtime creation; retained data is not deleted or claimed accepted"
+  },
+  "acceptance_checklist": [
+    {
+      "requirement": 1,
+      "done": "Fixed U, lock and unique inventory read; no floating upstream followed.",
+      "open": "Complete recursive generated/resource/tool/legal dispositions remain unaccepted."
+    },
+    {
+      "requirement": 2,
+      "done": "Deep read of concrete forwarding states, permissions, CAS and restart paths; source validator/schema and exact source records checked.",
+      "open": "All-source risk-tier review and legal closure incomplete; no unread bodies claimed read."
+    },
+    {
+      "requirement": 3,
+      "done": "Actual renderer/Coordinator/AppHost/Session/native-client path and competing legacy/FeatureHost boundaries traced.",
+      "open": "Whole-platform retired callers and retained-data acceptance incomplete."
+    },
+    {
+      "requirement": 4,
+      "done": "Forward selection/intent/permission/dispatch/settlement/restart batch preserved; actual old and new recovery checks read.",
+      "open": "Remaining applicable feature batches, remote provenance and full product closure incomplete."
+    },
+    {
+      "requirement": 5,
+      "done": "No new message owner, deletion or unrelated capability change; retain concurrent Agent/Coordinator/Host/Runner/Tools/approval/plugins/computer/automation paths.",
+      "open": "Full Bot, platform, migration/rollback acceptance incomplete."
+    },
+    {
+      "requirement": 6,
+      "done": "No public schema or composition change; root owns shared ledger evidence/CAS and preserves concurrent source records.",
+      "open": "Common-contract final qualification continues with production batches."
+    },
+    {
+      "requirement": 7,
+      "done": "Only GitHub Actions execute validation; original terminal and four full available logs read. Fifth job has no runner/steps and404 log, honestly marked not-run. Exact106bb95 affected reconciliation62/12/3/1/4/3/1 now passed; UI/Electron/Windows passed.",
+      "open": "Shipping125543545357 at106bb95 still queued; no overall current run pass."
+    },
+    {
+      "requirement": 8,
+      "done": "Distinct environment/no-execution, TEST_FLAW and source-observed implementation gaps; independent work continued during queue, no rerun-to-green.",
+      "open": "MacOS queue and latest exact-H execution remain external evidence gates."
+    },
+    {
+      "requirement": 9,
+      "done": "One inventory, ledger and RTM; existing FMEP-SOURCE-01 contracts read and actual157/37/schema0 candidate checks preserved. Six review records are2complete/4pending.",
+      "open": "Full16381 identity/source/build/legal closure and independent acceptance remain false."
+    },
+    {
+      "requirement": 10,
+      "done": "Backend137 stays read-only/open/draft/unmerged; actual mock/SQLite CI distinguished from skipped production readiness.",
+      "open": "Real native services, signed supported-platform packages, UI/visual/a11y, timing/security/performance/soak, upgrade/rollback, complete Bot, independent ACCEPT and release."
+    }
+  ],
+  "validation_and_delivery": {
+    "local_executable_validation": "not-run by instruction",
+    "original_run_all_gates_passed": false,
+    "product_complete": false,
+    "independent_accept": false,
+    "formal_release": false,
+    "publication": "Root alone uses force=false expected_sha CAS after current input and prepared output readback; temporary helper creates unattached ledger blob only."
+  },
+  "repair_execution": {
+    "format_version": 1,
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 30,
+    "scope": "Read-only exact-H follow-up after test cleanup correction and stronger SQLite CAS oracle",
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+    "run_id": 41523018920,
+    "run_attempt": 1,
+    "observed_at_utc": "2026-11-02T20:54:57Z",
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523018920",
+    "run_status": "queued",
+    "run_conclusion": null,
+    "all_five_jobs_passed": false,
+    "jobs": [
+      {
+        "id": 125543544935,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125543545349,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125543545357,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125543545453,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125543545542,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125543547583,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "fixed_source_readback": {
+      "test_blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+      "journal_blob": "0eb499fd4e47a37b8791425b7319694cccc6cef5",
+      "cleanup_fix": "Second teardown calls restarted.shutdown(); original runtime remains shut down/dropped before restart.",
+      "cas_oracle": "Actual valid HumanForwardBatch records, two independent preopened handles, observed missing key before barrier, on_busy_error counter=0, exactly one durable winner, independent readonly SQL raw bytes, still-stale loser rejection, fresh store_forward_batch merge retaining both intents, reopen and unrelated metadata preservation.",
+      "corrupt_oracle": "Inherited13 variants x cold/cached owner phases=26 subcases; strict source identity and metadata/journal recovery retained."
+    },
+    "executed": {
+      "human": 62,
+      "resource_upload": 3,
+      "sharebox": 1,
+      "journal": 12,
+      "agent_nonce": 4,
+      "settlement_credentials": 3,
+      "authenticated_forward_http": 1,
+      "transcript": 29,
+      "human_cursor_rpc": 17,
+      "forward_settlement": 5,
+      "chromium": 16,
+      "electron": {
+        "carrier": 10,
+        "auth_retention": 8,
+        "resource_copy": 3,
+        "explicit_update_source": 16,
+        "windows_publisher_behavior": 28,
+        "macos_metadata": 18,
+        "artifact_scope": 10,
+        "promotion_consumer": 7
+      },
+      "windows_native_authenticode": 11
+    },
+    "named_executed_cases": [
+      "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+      "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+      "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
+      "stale_same_batch_snapshot_cannot_regress_completed_destination"
+    ],
+    "full_logs": [
+      {
+        "job": 125543545349,
+        "name": "native-message-reconciliation",
+        "bytes": 353176,
+        "sha256": "c10ca945da98d697a489463898f1f20fe522982bf25a1a32fe6c9c76e2715435",
+        "file": "125543545349.log",
+        "success": true
+      },
+      {
+        "job": 125543544935,
+        "name": "native-message-electron",
+        "bytes": 92437,
+        "sha256": "59a986cc6abd1765a26d6471902188d4588da320840bea261cbe3b6aad1b9ce7",
+        "file": "125543544935.log",
+        "success": true
+      },
+      {
+        "job": 125543545453,
+        "name": "native-message-ui",
+        "bytes": 86805,
+        "sha256": "4a1704cfc939ba1a7c8318934e46cbab651a9234824fb617a645c3c87627a893",
+        "file": "125543545453.log",
+        "success": true
+      },
+      {
+        "job": 125543545542,
+        "name": "windows-update-publisher",
+        "bytes": 35087,
+        "sha256": "e779100cd235d4cc28bc8fc7c26bb36e423e1262a1189e5c2eea1c272210e6cd",
+        "file": "125543545542.log",
+        "success": true
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13178302134,
+        "name": "native-message-reconciliation-106bb95ba97ef7722e9523285783824393039bc0",
+        "size_in_bytes": 35255,
+        "digest": "sha256:02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6",
+        "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+      },
+      {
+        "id": 13178197604,
+        "name": "windows-update-publisher-106bb95ba97ef7722e9523285783824393039bc0",
+        "size_in_bytes": 1830,
+        "digest": "sha256:0250f74f9bfae47441b52b57ea3edb7f6af0ab7649ab317abc08a3c0d8d0435d",
+        "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+      },
+      {
+        "id": 13177893490,
+        "name": "native-message-electron-106bb95ba97ef7722e9523285783824393039bc0",
+        "size_in_bytes": 14810,
+        "digest": "sha256:a99d09534076db006a7994168d789ab95bf019fe505eaabca35eba9c0016ee00",
+        "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+      },
+      {
+        "id": 13177349232,
+        "name": "native-message-ui-106bb95ba97ef7722e9523285783824393039bc0",
+        "size_in_bytes": 229005,
+        "digest": "sha256:50f70023d81daebde007f7ee6aba9b0e6a6353b340c72ea08b88d6b9cd9757ef",
+        "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+      }
+    ],
+    "retained_failure": {
+      "head_sha": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+      "run_id": 41522952938,
+      "job_id": 125543328873,
+      "classification": "TEST_FLAW",
+      "error": "Same E0382 test cleanup use-after-move as afb; no tests executed, not a CAS oracle failure.",
+      "log_bytes": 106230,
+      "log_sha256": "980b04b5ba43cf3397b0dab19c2560bb61e88233776a87f665c015ad3e98ae0a",
+      "log_file": "125543328873.log",
+      "artifact": {
+        "id": 13178133035,
+        "digest": "sha256:793e73250aea5d417872c65bc481e1544ecae7265a74d426eab188b49c497b5b",
+        "size": 5405
+      }
+    },
+    "older_afb_shipping": {
+      "run_id": 41522324008,
+      "job_id": 125541192009,
+      "status": "queued",
+      "conclusion": null,
+      "log_retrieved": false
+    },
+    "remaining": "Native shipping job125543545357 still queued at observation; no actual AppHost/gateway/package qualification for106 H. Historical package metadata experiment is not installation/release; full product/source/service/platform/independent ACCEPT remain open.",
+    "restrictions": "No local build/test/validator, no repository edits, no remote writes, no dispatch/rerun/cancel. Logs are complete decoded UTF-8 as returned by connector; digests of artifact archives read from API and job upload logs, not independently downloaded."
+  },
+  "backend_latest_readback": {
+    "observed_at_utc": "2026-11-02T20:54Z",
+    "repository": "bhrumom/fabushi-backend",
+    "pr": 137,
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "read_only": true
+  },
+  "evidence_transport": {
+    "harness_sha": "6fc3cb3c3c5c25681bf68d60b6ea633a7acbc563",
+    "input_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+    "ops_blob": "0922986a8d3e38d8020925903ca959285f353a7b",
+    "output_blob": "cc1a1682aa5174053809c557eaf9c2a3f079fd4b",
+    "output_sha256": "fe37bdf33fb5e6bd63174b145991553d65676bf7c8566d3d64c5f88bb4ac7fd0",
+    "changed_rows": [
+      "FBCP-NMR-001"
+    ],
+    "product_validation": false,
+    "accepted": false,
+    "commit_created": false,
+    "ref_updated": false,
+    "integration_condition": "Root reads complete input/output and current input identity, then force=false expected-head CAS.",
+    "run_id": 41525833805,
+    "job_id": 125553202439,
+    "remote_output_readback": true,
+    "exact_reviewed_append": true
+  },
+  "static_review": {
+    "reviewer": "/root/current_source",
+    "review_kind": "Independent static review of frozen evidence-only delta; no local executable validation and no remote write",
+    "reviewed_head": "e711505dbc44bde087595c10a060f5ae6deb5847",
+    "decision": "APPROVE_FROZEN_EVIDENCE_ONLY_DELTA",
+    "first_publication": "Approved for only the two frozen task-owned helper paths. The stale receipt status was corrected before final evidence publication.",
+    "bindings": [
+      {
+        "path": ".github/checkpoint-ledger-ops-round30.json",
+        "git_blob_sha": "e6ad427dc29d7519f2f945046baa05b60eaebfc2",
+        "sha256": "d98f098a34f03c5442d5254dbc8bbfd5fef0e3987266a7bdf28f06135f0b361e"
+      },
+      {
+        "path": ".github/workflows/checkpoint-ledger-object-round30.yml",
+        "git_blob_sha": "832d398e8d0038a32b76b510143e6ab21b829556",
+        "sha256": "d9b8fa9ddda37372177dff16a6b5b4f4cdf0a16f6bcd89506c399acdc0293cde"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "git_blob_sha": "159ef9825a91cc8aaecbcd8c054d81d55191f7c7",
+        "sha256": "f2f715fb70a753b93c4470be2d5d6fe9b75c612b6fcf050183d9df6b08d370ad"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round30-forward-recovery-qualification.json",
+        "git_blob_sha": "78f8d64532ac0bb53db8abdee23fdba68c8b9fd7",
+        "sha256": "c8dbf423943d1701953adc4fc4b031f38766e8363fe9ea6c2ccc91f4802db796"
+      }
+    ],
+    "helper_review": {
+      "source_execution": "Exact github.sha checkout and Git input-blob equality checked; correctly indented quoted Node heredoc; task-owned push paths and checkpoint branch only.",
+      "mutation_scope": "Only FBCP-NMR-001 test_evidence and test_execution_evidence append plus notes append. Existing array prefixes, note prefix, source identity, all other row fields, row count/order, unrelated rows and all non-rows top-level fields are asserted unchanged.",
+      "source_and_acceptance": "Complete source_reviews and all source/legal/acceptance fields remain those of the exact checkout; no historical six-entry overwrite or acceptance promotion is possible in this helper.",
+      "remote_operation": "Exactly one POST to git/blobs for the prepared ledger; returned Git SHA must equal computed output Git SHA. No test-file branch, commit creation, ref update, push, dispatch, deployment, merge or product validation.",
+      "receipt": "Records immutable harness SHA, input/ops/output blob identities, output SHA-256, and false product-validation/acceptance/ref/commit claims.",
+      "integration": "Root still reads full output and compares with the live canonical input before force=false expected_sha CAS. Remove only this task's two temporary helper paths after integration. These are the existing authorized integration requirements, not a request for new user approval."
+    },
+    "evidence_review": {
+      "original_06fb": "Four available complete execution logs and their successes are separated from reconciliation125508112546, which has runner_id0, empty steps and a 404 BlobNotFound log response. Human39/journal5 and requested recovery cases are explicitly not-run; no fifth execution log is invented.",
+      "predecessor_d261": "Human54/journal12 and mixed-stale/26 cold-cached corruption evidence remain bound to d261afe14785d9bf1c4ac772d01df3523b453300 and run41521138485. They do not qualify changed Human62 or the later beafc CAS oracle.",
+      "afb_failure": "Actual test-target E0382 is correctly classified TEST_FLAW; no Human62 or following journal/resource/Agent/credential/HTTP execution is claimed. Other afb jobs and queued shipping are time-scoped to the recorded observation.",
+      "concurrent_106": "ALREADY_SATISFIED_BY106bb95ba97ef7722e9523285783824393039bc0. Closing the live restarted runtime preserves the intended first-runtime teardown and restart assertions. Fixed blob2e032c705fcec8256dd66476807dd1fd683625db is attributed to the concurrent delivery; this frozen scope must not repeat or claim first authorship of the test edit.",
+      "beafc": "Current valid-intent, zero-busy, independent raw-SQL, stale-absence, fresh-loser-merge and reopen controls are preserved. Superseded local synthetic-intent CAS and smaller corruption drafts are not published.",
+      "acceptance": "Product completion, independent ACCEPT, formal release, full source/legal closure and production-service/package/Bot/soak gates remain explicitly open. Backend137 remains read-only."
+    },
+    "follow_up_106_execution": {
+      "evidence_file": "current-ci-evidence/round30-current-ci-106bb95.json",
+      "head": "106bb95ba97ef7722e9523285783824393039bc0",
+      "run": 41523018920,
+      "job": 125543545349,
+      "direct_log_inspection": "Read exact106 checkout, actual result lines62/3/1/12/4/3/1 and four named passing restart/corruption/stale/CAS cases from current-ci-evidence/125543545349.log. The new append-only execution entry agrees with those observations.",
+      "artifact": "13178302134; uploaded digest02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6",
+      "remaining": "Four required jobs succeeded; shipping125543545357 remained queued at the recorded observation. No overall run, shipping, production-service or independent ACCEPT pass is claimed.",
+      "scope": "Only additional execution-array and note text; helper remains blob832d398e8d0038a32b76b510143e6ab21b829556 with no expanded write authority."
+    },
+    "findings": [],
+    "resolved_findings": [
+      {
+        "id": "R30-RECEIPT-STALE-UI-STATUS",
+        "severity": "minor factual inconsistency, resolved",
+        "path": "projects/telegram-desktop-rust/evidence/round30-forward-recovery-qualification.json",
+        "json_pointer": "/subsequent_execution/actual_prior_failure/current_compile_step",
+        "current": "success at afb UI; complete UI log not yet available",
+        "reason": "The same frozen receipt subsequently records the complete successful UI log125541191705 (86893 bytes; SHA-2564d389e73f1b6577540fe02f0be7cbd019047c732ba84cb511d52bd2297d6c78b). The earlier unavailable-log clause is stale.",
+        "resolution": "Re-read frozen receipt: current_compile_step now states successful afb UI125541191705 and complete-log SHA2564d389e73f1b6577540fe02f0be7cbd019047c732ba84cb511d52bd2297d6c78b. It remains bound to afb rather than106 or a later delivery H."
+      }
+    ],
+    "not_performed": [
+      "No local build, test, validator, formatter or generator was executed.",
+      "No repository source, test, ledger, RTM, receipt or workflow file was edited by this reviewer.",
+      "No GitHub write, workflow dispatch, ref update or Backend137 operation was performed.",
+      "Only this review.json scratch result was written."
+    ]
+  },
+  "rtm_concurrent_merge": {
+    "input_blob": "0366da6b6162766a546dc1bad1f96526b5b567ce",
+    "scope": "Insert only the reviewed Round30 section before existing Rule; preserve all concurrent RTM sections/rows."
+  },
+  "evidence_transport_history": [
+    {
+      "harness_sha": "00036927d789913f08062cd303475fc5c55d57f2",
+      "input_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+      "ops_blob": "e6ad427dc29d7519f2f945046baa05b60eaebfc2",
+      "output_blob": "a40c82d26662f8e1944aedbf06bc4ecb1247c4f8",
+      "output_sha256": "d5bb7e3b648738acac352d2ee15c97b2d2af1f12d743e8c024e86f8d3ab336e9",
+      "changed_rows": [
+        "FBCP-NMR-001"
+      ],
+      "product_validation": false,
+      "accepted": false,
+      "commit_created": false,
+      "ref_updated": false,
+      "integration_condition": "Root reads complete input/output and current input identity, then force=false expected-head CAS.",
+      "run_id": 41524131886,
+      "job_id": 125547382593,
+      "artifact_id": 13178651964,
+      "artifact_digest": "sha256:2bef0bfe11a71e0f286f7b152a137bf3ff1ea5f7f6b3d5c550916b7f5bbb9cc3",
+      "remote_output_readback": true,
+      "exact_reviewed_append": true
+    }
+  ],
+  "temporary_trigger_review": {
+    "base_workflow_blob": "832d398e8d0038a32b76b510143e6ab21b829556",
+    "workflow_blob": "7e368d14a2635bcf21736d9db908ecc1b3c518fb",
+    "sole_change": "Include canonical ledger path in push trigger to prepare unattached blob on changed input. No ref/commit write; remove both own helper files on integration.",
+    "review": "Independent static review passed; no expanded write scope or product acceptance."
+  }
+}

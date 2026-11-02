@@ -1,0 +1,109 @@
+name: Round22 exact updater ledger object preparation
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - .github/workflows/round22-ledger-object.yml
+      - .github/round22-ledger-operations.json
+permissions:
+  contents: read
+jobs:
+  prepare:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prepare only the reviewed immutable updater ledger object
+        env:
+          ROUND22_OBJECT_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import copy, hashlib, json, os, pathlib, subprocess, urllib.request
+          repository = 'bhrumom/fabushi-desktop'
+          path = 'projects/telegram-desktop-rust/parity-ledger.json'
+          identity = 'TDRP-UPDATER-DISCOVERY-AUTHORITY-001'
+          source_paths = {'Telegram/SourceFiles/core/update_verify.cpp', 'Telegram/SourceFiles/_other/updater_win.cpp'}
+          allowed_fields = {'additional_source_identities', 'test_execution_evidence', 'test_evidence'}
+          raw = pathlib.Path('.github/round22-ledger-operations.json').read_bytes()
+          plan = json.loads(raw)
+          if plan['repository'] != repository or plan['path'] != path or plan['responsibility_id'] != identity:
+              raise SystemExit('Unexpected transfer scope')
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          if head != os.environ['GITHUB_SHA']:
+              raise SystemExit('Checkout differs from workflow source')
+          before_blob = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + path], text=True).strip()
+          if before_blob != plan['expected_input_blob']:
+              raise SystemExit('Canonical ledger advanced; reconcile the exact input before retrying')
+          before = json.loads(pathlib.Path(path).read_text())
+          if before['upstream_commit'] != 'f985723b552b30fe1c17d377d57f44e61a15a8c4':
+              raise SystemExit('Frozen upstream identity changed')
+          after = copy.deepcopy(before)
+          summary = plan['review_summary']
+          if before['rebaseline_candidate']['source_responsibility_rows'] != summary['before']:
+              raise SystemExit('Source review summary advanced; reconcile before retrying')
+          after['rebaseline_candidate']['source_responsibility_rows'] = summary['after']
+          matches = [r for r in after['rows'] if r.get('responsibility_id') == identity]
+          if len(matches) != 1 or set(plan['append']) - allowed_fields:
+              raise SystemExit('Unexpected row or field scope')
+          row = matches[0]
+          for field, additions in plan['append'].items():
+              if not isinstance(row[field], list):
+                  raise SystemExit('Expected append-only row array')
+              for value in additions:
+                  if value not in row[field]:
+                      row[field].append(value)
+          if plan['note'] not in row['notes']:
+              row['notes'] += '\n' + plan['note']
+          reviews = plan['source_reviews']
+          if len(reviews) != 2 or {r['path'] for r in reviews} != source_paths:
+              raise SystemExit('Only the two reviewed updater source identities are permitted')
+          existing = after.setdefault('source_reviews', [])
+          for review in reviews:
+              if review['repository'] != 'telegramdesktop/tdesktop' or review['commit'] != before['upstream_commit'] or review['category'] != 'product' or review['risk'] != 'high' or review['review_depth'] != 'deep' or review['status'] != 'pending' or review['responsibility_ids'] != [identity]:
+                  raise SystemExit('Source record exceeds the reviewed pending scope')
+              key = tuple(review[k] for k in ('repository', 'commit', 'path', 'object'))
+              prior = [r for r in existing if tuple(r[k] for k in ('repository', 'commit', 'path', 'object')) == key]
+              if prior and (len(prior) != 1 or prior[0] != review):
+                  raise SystemExit('Concurrent source review conflict must be reconciled')
+              if not prior:
+                  existing.append(review)
+          restored = copy.deepcopy(after)
+          restored['rebaseline_candidate']['source_responsibility_rows'] = before['rebaseline_candidate']['source_responsibility_rows']
+          original_row = next(r for r in before['rows'] if r.get('responsibility_id') == identity)
+          restored_row = next(r for r in restored['rows'] if r.get('responsibility_id') == identity)
+          for field in set(plan['append']) | {'notes'}:
+              restored_row[field] = copy.deepcopy(original_row[field])
+          if 'source_reviews' in before:
+              restored['source_reviews'] = copy.deepcopy(before['source_reviews'])
+          else:
+              restored.pop('source_reviews', None)
+          if restored != before:
+              raise SystemExit('An undeclared field, row, source, coverage or acceptance value changed')
+          encoded = (json.dumps(after, ensure_ascii=False, indent=2) + '\n').encode()
+          blob = hashlib.sha1(b'blob ' + str(len(encoded)).encode() + b'\0' + encoded).hexdigest()
+          if blob != plan['expected_output_blob']:
+              raise SystemExit('Output differs from the reviewed immutable object')
+          request = urllib.request.Request(
+              'https://api.github.com/repos/' + repository + '/git/blobs',
+              data=json.dumps({'content': encoded.decode(), 'encoding': 'utf-8'}).encode(),
+              headers={'Authorization': 'Bearer ' + os.environ['ROUND22_OBJECT_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'}, method='POST')
+          with urllib.request.urlopen(request, timeout=45) as response:
+              result = json.load(response)
+          if result.get('sha') != blob:
+              raise SystemExit('Remote blob does not match the reviewed object')
+          receipt = {'source_sha': head, 'input_blob': before_blob, 'output_blob': blob, 'operations_sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(encoded), 'existing_row': identity, 'source_reviews_before': len(before.get('source_reviews', [])), 'source_reviews_after': len(after['source_reviews']), 'refs_written': False, 'commits_created': False, 'product_validation': False, 'acceptance_changed': False}
+          pathlib.Path('round22-ledger-object-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print('ROUND22_LEDGER_OBJECT ' + json.dumps(receipt))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: round22-ledger-object-${{ github.sha }}
+          path: round22-ledger-object-receipt.json
+          if-no-files-found: error

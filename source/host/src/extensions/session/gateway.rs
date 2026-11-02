@@ -402,7 +402,12 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         }),
         "reactHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
             required_string(args, "entryId").and_then(|entry_id| {
-                required_string(args, "emoji").and_then(|emoji| {
+                // Emoji bytes are reaction identity; validation must not erase
+                // padding before the production admission guard sees it.
+                args.get("emoji").and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| SessionGatewayError::bad("missing or invalid emoji"))
+                    .and_then(|emoji| {
                     session
                         .toggle_human_message_reaction(conversation_id, entry_id, emoji)
                         .map_err(SessionGatewayError::internal)

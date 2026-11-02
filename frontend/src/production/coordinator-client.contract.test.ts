@@ -1,0 +1,451 @@
+import assert from "node:assert/strict";
+import test, { type TestContext } from "node:test";
+import { setImmediate as nextTurn } from "node:timers/promises";
+import { createCoordinatorPortBroker } from "../../../source/electron-preload/coordinator-port-bridge.ts";
+import type { TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge.ts";
+import {
+  COORDINATOR_PROTOCOL_VERSION,
+  CoordinatorCallError,
+  createCoordinatorClient,
+} from "./coordinator-client.ts";
+
+// NMR-50d: exercise the production client and broker. Only the transferred
+// transport is controlled; no mock client may admit a request before ready.
+// These 13 cases distinguish local admission from already posted Host work.
+interface RequestFrame {
+  readonly kind: "request";
+  readonly requestId: string;
+  readonly method: string;
+  readonly args: unknown;
+}
+
+type MessageListener = (event: { data: unknown }) => void;
+type CloseListener = (event: Record<string, never>) => void;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+class ControlledPort implements TransferredCoordinatorPort {
+  readonly posted: unknown[] = [];
+  readonly #messages = new Set<MessageListener>();
+  readonly #closes = new Set<CloseListener>();
+  starts = 0;
+  closes = 0;
+
+  postMessage(message: unknown): void {
+    // A real transferred port cannot serialize the local admission callback.
+    // Recording a clone also prevents later caller mutations hiding the frame.
+    this.posted.push(structuredClone(message));
+  }
+
+  start(): void { this.starts += 1; }
+
+  close(): void {
+    this.closes += 1;
+    this.disconnect();
+  }
+
+  addEventListener(type: "message", listener: MessageListener): void;
+  addEventListener(type: "close", listener: CloseListener): void;
+  addEventListener(type: "message" | "close", listener: MessageListener | CloseListener): void {
+    if (type === "message") this.#messages.add(listener as MessageListener);
+    else this.#closes.add(listener as CloseListener);
+  }
+
+  receive(frame: unknown): void {
+    // Deliver even after close: the actual client must fence a retired port.
+    for (const listener of this.#messages) listener({ data: structuredClone(frame) });
+  }
+
+  disconnect(): void {
+    for (const listener of this.#closes) listener({});
+  }
+
+  ready(): void {
+    this.receive({ kind: "lifecycle", phase: "ready", protocolVersion: COORDINATOR_PROTOCOL_VERSION });
+  }
+
+  succeed(request: RequestFrame, value: unknown): void {
+    this.receive({ kind: "reply", requestId: request.requestId, outcome: { status: "ok", value } });
+  }
+
+  get requests(): RequestFrame[] {
+    return this.posted
+      .filter((frame): frame is Record<string, unknown> => isRecord(frame) && frame.kind === "request")
+      .map((frame) => {
+        assert.equal(typeof frame.requestId, "string", "request needs a correlation id");
+        assert.equal(typeof frame.method, "string", "request needs a method");
+        assert.ok(Object.hasOwn(frame, "args"), "request needs serializable arguments");
+        return frame as unknown as RequestFrame;
+      });
+  }
+}
+
+function harness(t: TestContext) {
+  let portRequests = 0;
+  const broker = createCoordinatorPortBroker<TransferredCoordinatorPort>({
+    invokeRequest() { portRequests += 1; },
+  });
+  const client = createCoordinatorClient(broker.bridge);
+  assert.ok(client, "the actual broker must grant its first client claim");
+  t.after(() => client.dispose());
+  assert.equal(portRequests, 1, "claiming the client requests a transferred port");
+  return {
+    client,
+    get portRequests() { return portRequests; },
+    providePort() {
+      const port = new ControlledPort();
+      broker.deliver(port);
+      assert.equal(port.starts, 1);
+      assert.deepEqual(port.posted, [{
+        kind: "lifecycle", phase: "hello", protocolVersion: COORDINATOR_PROTOCOL_VERSION,
+      }]);
+      return port;
+    },
+  };
+}
+
+function forwardArgs(clientNonce = "forward-admission-1") {
+  return {
+    sourceConversationId: "human:source",
+    sourceEntryId: "message:source",
+    destinationConversationIds: ["human:destination"],
+    clientNonce,
+    dropSenderNames: true,
+    dropCaptions: true,
+  };
+}
+
+function forwardResult() {
+  return { destinations: [{ conversationId: "human:destination", status: "sent" }] };
+}
+
+function observed<T>(promise: Promise<T>): Promise<T> {
+  // A failed frame assertion still disposes the client in t.after. Observe that
+  // cleanup rejection without replacing the original result asserted below.
+  void promise.catch(() => {});
+  return promise;
+}
+
+function onlyRequest(port: ControlledPort): RequestFrame {
+  assert.equal(port.requests.length, 1, "exactly one request must be posted");
+  return port.requests[0]!;
+}
+
+async function admitFreshForward(client: NonNullable<ReturnType<typeof createCoordinatorClient>>, port: ControlledPort) {
+  const args = forwardArgs("fresh-live-scope");
+  const result = observed(client.call("forwardHumanMessage", args, () => true));
+  await nextTurn();
+  const request = onlyRequest(port);
+  assert.equal(request.method, "forwardHumanMessage");
+  assert.deepEqual(request.args, args);
+  const settlement = forwardResult();
+  port.succeed(request, settlement);
+  assert.deepEqual(await result, settlement);
+}
+
+test("Coordinator admission rejects an account retired while initial readiness is pending", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  let accountGeneration = 1;
+  const originalGeneration = accountGeneration;
+  let guardCalls = 0;
+  const result = observed(h.client.call("forwardHumanMessage", forwardArgs(), () => {
+    guardCalls += 1;
+    return accountGeneration === originalGeneration;
+  }));
+  const rejected = assert.rejects(result, /scope expired before admission/);
+  await nextTurn();
+  assert.equal(guardCalls, 0);
+  assert.equal(port.requests.length, 0);
+  accountGeneration += 1;
+  port.ready();
+  await rejected;
+  assert.equal(guardCalls, 1);
+  assert.equal(port.requests.length, 0);
+});
+
+test("Coordinator admission rejects a closed dialog after the same source is reopened before ready", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  let dialog: { sourceEntryId: string } | null = { sourceEntryId: "message:source" };
+  const originalDialog = dialog;
+  const result = observed(h.client.call("forwardHumanMessage", forwardArgs(), () => dialog === originalDialog));
+  const rejected = assert.rejects(result, /scope expired before admission/);
+  await nextTurn();
+  assert.equal(port.requests.length, 0);
+  dialog = null;
+  dialog = { sourceEntryId: "message:source" };
+  port.ready();
+  await rejected;
+  assert.equal(port.requests.length, 0, "equal source ids cannot revive the old dialog lifetime");
+});
+
+test("Coordinator admission rejects an account A-B-A return with the original generation", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  let account = { id: "account-a", generation: 1 };
+  const original = account;
+  const result = observed(h.client.call("forwardHumanMessage", forwardArgs(), () =>
+    account.id === original.id && account.generation === original.generation));
+  const rejected = assert.rejects(result, /scope expired before admission/);
+  account = { id: "account-b", generation: 2 };
+  account = { id: "account-a", generation: 3 };
+  port.ready();
+  await rejected;
+  assert.equal(port.requests.length, 0);
+});
+
+test("Coordinator admission checks a live predicate only after ready and posts no callback", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  const args = forwardArgs();
+  let guardCalls = 0;
+  const result = observed(h.client.call("forwardHumanMessage", args, () => {
+    guardCalls += 1;
+    return true;
+  }));
+  await nextTurn();
+  assert.equal(guardCalls, 0);
+  assert.equal(port.requests.length, 0);
+  port.ready();
+  await nextTurn();
+  const request = onlyRequest(port);
+  assert.equal(guardCalls, 1);
+  assert.deepEqual(request, {
+    kind: "request", requestId: request.requestId, method: "forwardHumanMessage", args,
+  }, "only the ordinary gateway request is serialized");
+  const settlement = forwardResult();
+  port.succeed(request, settlement);
+  assert.deepEqual(await result, settlement);
+  assert.equal(guardCalls, 1, "reply handling does not reevaluate the local predicate");
+});
+
+test("Coordinator admission waits for replacement readiness after disconnect and rejects a retired scope", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const oldPort = h.providePort();
+  oldPort.ready();
+  await h.client.ready;
+  oldPort.disconnect();
+  assert.equal(h.portRequests, 2);
+  await h.client.ready; // The public initial promise is already resolved.
+  let current = true;
+  let guardCalls = 0;
+  const result = observed(h.client.call("forwardHumanMessage", forwardArgs(), () => {
+    guardCalls += 1;
+    return current;
+  }));
+  const rejected = assert.rejects(result, /scope expired before admission/);
+  const replacement = h.providePort();
+  oldPort.ready();
+  await nextTurn();
+  assert.equal(guardCalls, 0, "call uses currentReady, not the resolved initial promise");
+  assert.equal(oldPort.requests.length, 0);
+  assert.equal(replacement.requests.length, 0);
+  current = false;
+  replacement.ready();
+  await rejected;
+  assert.equal(guardCalls, 1);
+  assert.equal(replacement.requests.length, 0);
+  await admitFreshForward(h.client, replacement);
+});
+
+test("Coordinator port replacement rejects the old wait and requires the new port to become ready", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const oldPort = h.providePort();
+  let oldGuardCalls = 0;
+  const oldResult = observed(h.client.call("forwardHumanMessage", forwardArgs(), () => {
+    oldGuardCalls += 1;
+    return true;
+  }));
+  const rejected = assert.rejects(oldResult, /coordinator session replaced/);
+  const replacement = h.providePort();
+  await rejected;
+  assert.equal(oldPort.closes, 1);
+  assert.equal(oldGuardCalls, 0);
+  assert.equal(oldPort.requests.length, 0);
+  let freshGuardCalls = 0;
+  const freshResult = observed(h.client.call("forwardHumanMessage", forwardArgs("replacement"), () => {
+    freshGuardCalls += 1;
+    return true;
+  }));
+  oldPort.ready();
+  await nextTurn();
+  assert.equal(freshGuardCalls, 0);
+  assert.equal(replacement.requests.length, 0);
+  replacement.ready();
+  await nextTurn();
+  const request = onlyRequest(replacement);
+  const settlement = forwardResult();
+  replacement.succeed(request, settlement);
+  assert.deepEqual(await freshResult, settlement);
+  assert.equal(freshGuardCalls, 1);
+});
+
+test("Coordinator admission requires strict true and a rejected predicate does not poison a fresh request", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  port.ready();
+  await h.client.ready;
+  // Runtime misuse must fail closed even though the TypeScript API is boolean.
+  for (const value of [false, undefined, null, 0, 1, "true", {}]) {
+    await assert.rejects(
+      observed(h.client.call("forwardHumanMessage", forwardArgs(), () => value as boolean)),
+      /scope expired before admission/,
+    );
+    assert.equal(port.requests.length, 0);
+  }
+  await admitFreshForward(h.client, port);
+});
+
+test("Coordinator admission rejects a throwing predicate without posting and admits the next request", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  port.ready();
+  await h.client.ready;
+  await assert.rejects(
+    observed(h.client.call("forwardHumanMessage", forwardArgs(), () => {
+      throw new Error("local scope inspection failed");
+    })),
+    /local scope inspection failed/,
+  );
+  assert.equal(port.requests.length, 0);
+  await admitFreshForward(h.client, port);
+});
+
+test("Coordinator retirement after posting preserves the Host success without a cancellation frame", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  port.ready();
+  await h.client.ready;
+  let current = true;
+  let guardCalls = 0;
+  const result = observed(h.client.call("forwardHumanMessage", forwardArgs(), () => {
+    guardCalls += 1;
+    return current;
+  }));
+  await nextTurn();
+  const request = onlyRequest(port);
+  const posted = structuredClone(port.posted);
+  current = false;
+  await nextTurn();
+  assert.deepEqual(port.posted, posted, "retiring presentation does not send cancellation or another mutation");
+  const settlement = forwardResult();
+  port.succeed(request, settlement);
+  assert.deepEqual(await result, settlement);
+  assert.equal(guardCalls, 1);
+  assert.deepEqual(port.posted, posted);
+});
+
+test("Coordinator retirement after posting preserves the Host failure code and transport kind", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  port.ready();
+  await h.client.ready;
+  let current = true;
+  let guardCalls = 0;
+  const result = observed(h.client.call("forwardHumanMessage", forwardArgs(), () => {
+    guardCalls += 1;
+    return current;
+  }));
+  const rejected = assert.rejects(result, (error: unknown) => {
+    assert.ok(error instanceof CoordinatorCallError);
+    assert.equal(error.code, "forward.retryable");
+    assert.equal(error.transportKind, "http");
+    assert.equal(error.message, "forward.retryable: delivery confirmation unavailable");
+    return true;
+  });
+  await nextTurn();
+  const request = onlyRequest(port);
+  current = false;
+  port.receive({
+    kind: "reply", requestId: request.requestId,
+    outcome: {
+      status: "failed",
+      failure: { code: "forward.retryable", message: "delivery confirmation unavailable", transportKind: "http" },
+    },
+  });
+  await rejected;
+  assert.equal(guardCalls, 1);
+  assert.equal(port.requests.length, 1);
+});
+
+test("Coordinator calls without a predicate retain readiness, default arguments and reply validation", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  const result = observed(h.client.call("listAgents"));
+  await nextTurn();
+  assert.equal(port.requests.length, 0);
+  port.ready();
+  await nextTurn();
+  const request = onlyRequest(port);
+  assert.deepEqual(request, {
+    kind: "request", requestId: request.requestId, method: "listAgents", args: {},
+  });
+  const agents = [{ agentId: "agent-1" }];
+  port.succeed(request, agents);
+  assert.deepEqual(await result, agents);
+  const malformed = observed(h.client.call("listAgents"));
+  const rejected = assert.rejects(malformed, /listAgents returned a malformed array reply/);
+  await nextTurn();
+  assert.equal(port.requests.length, 2);
+  port.succeed(port.requests[1]!, { agents: [] });
+  await rejected;
+});
+
+test("Coordinator disposal rejects a readiness wait without evaluating its predicate or posting work", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  let guardCalls = 0;
+  const result = observed(h.client.call("forwardHumanMessage", forwardArgs(), () => {
+    guardCalls += 1;
+    return true;
+  }));
+  const rejected = assert.rejects(result, /coordinator source disposed/);
+  h.client.dispose();
+  await rejected;
+  port.ready();
+  await nextTurn();
+  assert.equal(guardCalls, 0);
+  assert.equal(port.requests.length, 0);
+  assert.equal(port.closes, 1);
+  assert.deepEqual(port.posted.at(-1), {
+    kind: "lifecycle", phase: "shutdown", reason: "requested", detail: null,
+  });
+  h.client.dispose();
+  assert.equal(port.closes, 1, "disposal remains idempotent");
+});
+
+test("Coordinator malformed-frame recovery fences late old-port frames and admits a fresh request", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const oldPort = h.providePort();
+  oldPort.ready();
+  await h.client.ready;
+  const original = observed(h.client.call("forwardHumanMessage", forwardArgs(), () => true));
+  const rejected = assert.rejects(original, /coordinator posted a malformed frame/);
+  await nextTurn();
+  onlyRequest(oldPort);
+  oldPort.receive(null);
+  await rejected;
+  assert.equal(h.portRequests, 2);
+  assert.deepEqual(oldPort.posted.at(-1), {
+    kind: "lifecycle", phase: "shutdown", reason: "protocol-error", detail: "coordinator posted a malformed frame",
+  });
+  const replacement = h.providePort();
+  const result = observed(h.client.call("forwardHumanMessage", forwardArgs("after-malformed"), () => true));
+  let settled = false;
+  void result.then(() => { settled = true; }, () => { settled = true; });
+  oldPort.ready();
+  await nextTurn();
+  assert.equal(replacement.requests.length, 0);
+  replacement.ready();
+  await nextTurn();
+  const request = onlyRequest(replacement);
+  oldPort.succeed(request, { destinations: [], stale: true });
+  await nextTurn();
+  assert.equal(settled, false, "even a matching reply id from a retired port cannot settle current work");
+  const settlement = forwardResult();
+  replacement.succeed(request, settlement);
+  assert.deepEqual(await result, settlement);
+});

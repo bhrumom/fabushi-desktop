@@ -40,7 +40,7 @@ export interface ForwardMessageDialogProps {
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
-  }) => Promise<readonly ForwardSettlement[]>;
+  }, isCurrent: () => boolean) => Promise<readonly ForwardSettlement[]>;
   readonly onSettled?: (settlement: readonly ForwardSettlement[], accountScopeGeneration: number) => void;
 }
 
@@ -260,7 +260,7 @@ export function ForwardMessageDialog({
       const settlement = await forwardMessage({
         ...snapshot,
         destinationConversationIds,
-      });
+      }, () => isCurrent(lifetime));
       if (!isCurrent(lifetime)) return;
       const hasUnexpectedSettlement = settlement.some((item) => !destinationConversationIds.includes(item.conversationId));
       const completed = destinationConversationIds.map((conversationId): ForwardSettlement => {

@@ -5,6 +5,43 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
+## Round31 — canonical reply identity recovery
+
+Production H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40` uses the existing
+strict message-ID parser before direct or historical reply staging/HTTP. Existing
+Session/Transcript owners and valid reply semantics remain. Run41524748572 /
+reconciliation125549482711 actually passed Human62/resource3/sharebox1/journal12/
+Agent4/credential3/forwardHTTP1, including the28-scenario historical reply matrix,
+17 direct-target scenarios, dual SQLite CAS, mixed stale progress and corrupt
+journal restart. UI29/cursor17/forward5/Chromium16, Electron, Windows native11
+and retained C wrappers15-pass/1-live-DC-ignore also passed at this H.
+
+Same-H shipping125549483258 is queued at observation. Originalff6 shipping and
+containing106bb recovery are separate historical evidence. Full migration, real
+services, supported signed packages, complete source/legal/Bot/quality/upgrade/
+rollback and independent ACCEPT remain blocked. See
+`projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+
+## Concurrent round16 — pinned package inputs and retained C wrapper qualification
+
+The original requested run41447812811 passed at exact
+`adf15caadac5775fdd8582227cad3bbf9c93cf0f`; actual round16 NMR38/39
+delivery and all artifact bytes were reconciled at23f737f and its successful
+run41451598911. Later59f5fa/run41508537631 supplies separately scoped actual
+AppHost resource-copy and owner evidence; it does not qualify later changes.
+
+Input capture run41514329200 at565a4639f1b7efbd15937aff93f4e14168322389
+succeeded. The two independent Cargo locks and Go manifest/checksums match
+artifact13175461007 exactly; capture Mac jobs skipped. Concurrent e13c34a5 already committed those
+inputs, disabled capture and locked the normal builders. This batch preserves
+that work, completes the remaining CI/release input guards and adds five
+direct C wrapper/temporary-store recovery cases while retaining the original
+ignored live-DC case. Pinned-H actual Mac binaries/owner tests and the Ubuntu
+C-wrapper gate are **not run at preparation**. Original data/readers, concurrent
+Session/UI work, the fixed U and all source/release acceptance blockers remain.
+Receipt: `evidence/round16-apphost-package-boundary.json`.
+
+
 ## Round 18 scoped result — native CLI Host and installer artifact boundary
 
 Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
@@ -103,6 +140,22 @@ Evidence: `projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-
 
 ## Retained concurrent batch — task20bf round1 resumed, immutable forward intent
 
+Current task20bf update: exact `db27ec9c4b36f6bc47e04bee46d8f53b5ec45e23`
+passed renderer132 (including the repaired original test loader), both2002-module
+architecture gates and source170/Python37/candidate checks. Exact `2ac00f9` UI76
+includes all18 actual Settings proxy settlement/lifetime cases; its reconciliation80,
+Electron89 and Windows11 passed while shipping remained queued at21:20:15 UTC.
+The new integration freezes shared `217d1499dbd541274ba11f8f1fdb092a85e8bc7b`,
+preserves all existing owners and adds no second state truth. Its union gates
+Human65/journal13/Transcript38/cursor17/Coordinator13/Forward5+23/Settings18/Renderer11/Transcript8
+are authored and require containing-H Actions. The same existing owners now reject
+ordinary resend of unresolved source-owned forwarding, fence Forward after ready
+before its frame, and coalesce failed-page updates without losing alias/clear semantics. Human message Retry remains the
+explicit HRR-01..06 consumer gap; older-page Retry does not close it. Source/legal,
+service/package/Bot/quality/upgrade/rollback and independent ACCEPT remain open.
+
+The following paragraphs retain the original H73/H531 authoring history.
+
 Product H=`73cc6e1cc9fa871e5f80931979606ac9ee810551` was pushed and its commit,
 tree and changed file contents were reread through GitHub. Source run41514576605
 passed Node157/schema37/current-ledger shape/fixed candidate. Native run41514576570
@@ -186,23 +239,39 @@ The UI fixture installs the existing runtime theme owner and proves actual
 light/dark colors before its four screenshots. No public schema, service API,
 message owner or data migration/deletion is introduced.
 
-Tests are authored, reviewed and **not-run at commit preparation**. Only the
-containing-H Actions logs/artifacts establish execution; no local executable
-validation was performed. Exact predecessor evidence, corrections, review
-findings and scoped case IDs are recorded in
+Execution correction: exact `59f5fa24827812f78336c464995d161f403dedfb`,
+run41508537631 attempt1 is completed/success. All five full job logs were
+read: reconciliation125494011040 passed Human38/sharebox1/journal3/Agent4/
+private3/Gateway1, including the five actual process/SQLite cases. UI125494010641
+passed renderer/Transcript16/settlement5/Chromium12; its four actual light/dark
+wide/narrow images were opened. Shipping125494011097 passed the locked actual
+AppHost build, gateway5/library11, protocol122/TCP9 and actual resource-copy4
+plus all three required refusal controls. Electron125494011030 and
+Windows125494011118 succeeded. These results qualify only that exact source.
+
+After concurrent migration changes, the same existing journal test is now
+strengthened through real valid batches and the actual observed-value
+merge/write path. The reviewed e8b48cb journal keeps12 cases, later attachment
+and completion protections, and the independently strengthened concurrency
+test. The new oracle is not-run at preparation and requires containing-H
+Actions; historical Human38 and journal3 do not qualify later code. No local
+executable validation was performed. Complete IDs, digests and scope are in
 `projects/telegram-desktop-rust/evidence/round28-forward-crash-qualification.json`.
 
-The single inventory/ledger still has6895 root/16381 recursive Git identities
-and184 responsibility rows; source_reviews is absent and unknown/unread are
-undetermined. FMEP-SOURCE-01 schema/checker contracts are present; no source or
+At the inspected65253740 base, inventory recorded6895 root/16381 recursive
+Git identities and184 responsibility rows, with source_reviews absent and
+unknown/unread undetermined. Later concurrent source reviews are preserved;
+these historical counts do not state current semantic coverage. FMEP-SOURCE-01 schema/checker contracts are present; no source or
 acceptance state is promoted. Remote forward provenance/policy, attachment
-retention under cache loss, simultaneous multi-AppHost cross-source uniqueness,
+power-loss/filesystem qualification, simultaneous multi-AppHost cross-source uniqueness,
 real production service/pagination, full source/legal closure, Bot regression,
 signed supported-platform packages, upgrade/rollback, performance/soak and
 independent ACCEPT/release remain open.
 
 Backend PR #137 was read only: open/draft/unmerged,
-H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. No merge or deployment.
+baseline H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`; later readback observed
+H=`52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23`, still open/draft/unmerged.
+This round made no Backend changes, merge or deployment.
 
 ## Historical bounded batch (round 21): explicit approved Electron update source
 
@@ -325,3 +394,28 @@ source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
 
+## Round23 resumed: current Social boundary qualification
+
+Fixed U stays `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Exact original
+H44f5203b8475afbeaa37bb049f6c72351ecb76d8 native41484767335 failed only
+Windows fixture setup (11 hook failures, no executed native assertions);
+source41484767424 succeeded. Later exact59f5fa24827812f78336c464995d161f403dedfb
+native41508537631 succeeded including Windows11, controlled28, shipping
+AppHost-copy positive and valid-format wrong-digest negative. Those runs retain
+their own source/input scope. Current106bb95 already contains the concurrent
+reopened-runtime compile fix and later forwarding/reply/pagination work.
+
+This batch contributes three missing Social public-command boundary cases,
+raises only the matching FeatureHost oracle7→10, and uses named Social spec
+IDs without replacing numeric forwarding requirements. Published code H=`83c9e3ffbf059556f3a8bce9d84d946c97433345` was remotely
+read back with all 17 file contents. Native run41524660245 is active; shipping
+job125549179025 remains queued, so Feature10 is not yet executed. The canonical ledger receives append-only
+evidence on existing rows while retaining all concurrent source_reviews and
+acceptance fields. Backend PR137 exact52fb remains draft/open/unmerged; both
+63-case CI jobs passed and production readiness skipped. No merge/deploy or
+production request occurred. Full source/legal/product/platform/Bot, formal
+publisher/real signed packages and independent ACCEPT remain incomplete.
+
+The existing workflow now also runs these same Feature10/Runtime9/HTTP6 behavioral
+harnesses on Ubuntu while retaining the queued macOS shipping requirement. This
+focused job is not a signed-package, live-service or independent acceptance gate.

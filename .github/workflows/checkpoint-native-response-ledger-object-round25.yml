@@ -1,0 +1,128 @@
+name: Round25 native response ledger object
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/checkpoint-native-response-ledger-ops-round25.json'
+      - '.github/workflows/checkpoint-native-response-ledger-object-round25.yml'
+      - 'projects/telegram-desktop-rust/parity-ledger.json'
+permissions:
+  contents: write
+jobs:
+  prepare-ledger-object:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Merge only the frozen delta at this exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/round25-native-response-ledger-object
+          export ROUND25_RESPONSE_INPUT_BLOB
+          ROUND25_RESPONSE_INPUT_BLOB=$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import assert from 'node:assert/strict';
+          const gitHash = bytes => crypto.createHash('sha1').update(Buffer.from('blob ' + bytes.length + '\0')).update(bytes).digest('hex');
+          const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+          const opsBytes = fs.readFileSync('.github/checkpoint-native-response-ledger-ops-round25.json');
+          const ops = JSON.parse(opsBytes);
+          const allowed = new Set(['FBCP-NMR-001']);
+          const appendKeys = new Set(['blockers', 'production_entrypoints', 'production_evidence',
+            'test_evidence', 'requirement_ids', 'test_environment_ids', 'test_execution_evidence',
+            'fabushi_target_paths', 'fabushi_target_symbols', 'oracle_ids', 'unit_case_ids', 'fault_recovery_case_ids', 'security_case_ids', 'regression_ids']);
+          assert.equal(process.env.GITHUB_REPOSITORY, 'bhrumom/fabushi-desktop');
+          assert.equal(ops.repository, process.env.GITHUB_REPOSITORY);
+          assert.equal(ops.path, 'projects/telegram-desktop-rust/parity-ledger.json');
+          assert.equal(ops.format_version, 2);
+          assert.equal(ops.operations.length, 1);
+          assert.deepEqual(new Set(ops.operations.map(op => op.id)), allowed);
+          const input = fs.readFileSync(ops.path);
+          const inputBlob = gitHash(input);
+          assert.equal(inputBlob, process.env.ROUND25_RESPONSE_INPUT_BLOB, 'checkout input differs from its immutable Git tree');
+          const original = JSON.parse(input);
+          const changed = structuredClone(original);
+          const applied = [];
+          for (const op of ops.operations) {
+            const matches = changed.rows.filter(item => item.responsibility_id === op.id);
+            assert.equal(matches.length, 1);
+            const row = matches[0];
+            assert.equal(Object.keys(op.scalars).length, 0, 'scalar writes are forbidden');
+            assert.equal(Object.keys(op.remove_exact).length, 0, 'removals are forbidden');
+            for (const [key, value] of Object.entries(op.source_identity)) assert.deepEqual(row[key], value, 'source conflict: ' + key);
+            for (const [key, values] of Object.entries(op.append)) {
+              assert.ok(appendKeys.has(key), 'undeclared append: ' + key);
+              assert.ok(Array.isArray(row[key]) && Array.isArray(values), key);
+              for (const value of values) if (!row[key].some(existing => equal(existing, value))) row[key].push(value);
+            }
+            assert.equal(typeof row.notes, 'string');
+            assert.equal(typeof op.note, 'string');
+            if (!row.notes.includes(op.note)) row.notes += op.note;
+            applied.push(op.id);
+          }
+          for (const key of Object.keys(original)) if (key !== 'rows') assert.deepEqual(changed[key], original[key], key);
+          assert.equal(changed.rows.length, original.rows.length);
+          for (let index = 0; index < original.rows.length; index += 1) {
+            const before = original.rows[index], after = changed.rows[index];
+            assert.equal(after.responsibility_id, before.responsibility_id);
+            if (!allowed.has(before.responsibility_id)) assert.deepEqual(after, before);
+            for (const key of ['source_repository', 'source_commit', 'source_path', 'source_blob_sha',
+              'implementation_status', 'coverage_disposition', 'release_gate_status', 'acceptance_reviewer', 'reviewer']) {
+              assert.deepEqual(after[key], before[key], key);
+            }
+            if (allowed.has(before.responsibility_id)) assert.ok(after.notes.startsWith(before.notes));
+          }
+          const restored = structuredClone(changed);
+          const originalRow = original.rows.find(row => row.responsibility_id === 'FBCP-NMR-001');
+          const restoredRow = restored.rows.find(row => row.responsibility_id === 'FBCP-NMR-001');
+          for (const key of appendKeys) {
+            if (Object.hasOwn(originalRow, key)) restoredRow[key] = structuredClone(originalRow[key]);
+            else delete restoredRow[key];
+          }
+          restoredRow.notes = originalRow.notes;
+          assert.deepEqual(restored, original, 'non-append state changed');
+          const text = JSON.stringify(changed, null, 2) + '\n';
+          const output = Buffer.from(text);
+          const outputBlob = gitHash(output);
+          fs.writeFileSync('artifacts/round25-native-response-ledger-object/prepared-ledger.json', output);
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/round25-native-response-ledger-blob.json', JSON.stringify({content: text, encoding: 'utf-8'}));
+          fs.writeFileSync('artifacts/round25-native-response-ledger-object/receipt.json', JSON.stringify({
+            harness_sha: process.env.GITHUB_SHA, input_blob: inputBlob, ops_blob: gitHash(opsBytes),
+            reviewed_delta_base_blob: ops.reviewed_delta_base_blob, output_blob: outputBlob,
+            output_sha256: crypto.createHash('sha256').update(output).digest('hex'),
+            changed_rows: applied, product_validation: false, source_acceptance: false,
+            commit_created: false, ref_updated: false,
+            integration_condition: 'Root API reads input/output, verifies scoped delta and current canonical input equality, then force=false expected-head CAS.'
+          }, null, 2) + '\n');
+          NODE
+      - name: Create only the unattached Git blob
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" \
+            --input "$RUNNER_TEMP/round25-native-response-ledger-blob.json" \
+            > artifacts/round25-native-response-ledger-object/github-blob.json
+          expected=$(node -p "JSON.parse(require('fs').readFileSync('artifacts/round25-native-response-ledger-object/receipt.json','utf8')).output_blob")
+          actual=$(node -p "JSON.parse(require('fs').readFileSync('artifacts/round25-native-response-ledger-object/github-blob.json','utf8')).sha")
+          test "$actual" = "$expected"
+          printf '%s\n' "$actual"
+      - name: Preserve object identity for root CAS readback
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: round25-native-response-ledger-object-${{ github.sha }}
+          path: artifacts/round25-native-response-ledger-object
+          if-no-files-found: error

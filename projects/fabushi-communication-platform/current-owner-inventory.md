@@ -42,8 +42,10 @@ preserved; no message or account authority moves into the CLI or renderer.
 
 ### 2026-11-02 immutable forward picker intent (task20bf round1 resumed)
 
-Current inspected input is `59f5fa24827812f78336c464995d161f403dedfb` on the
-existing migration branch; main remains `5528062177e3865eef60a073a066cca144f9e3e8`.
+Original inspected input was `59f5fa24827812f78336c464995d161f403dedfb`.
+The current task integration freezes shared `217d1499dbd541274ba11f8f1fdb092a85e8bc7b`
+with task parent `db27ec9c4b36f6bc47e04bee46d8f53b5ec45e23`; main was reread as
+`5528062177e3865eef60a073a066cca144f9e3e8`.
 The existing transcript action opens `ForwardMessageDialog`; its callback goes
 through the Coordinator Session gateway to `ProductionSessionWorkers::forward_human_message`.
 The existing source-conversation `HumanForwardBatch` journal binds account,
@@ -60,6 +62,19 @@ remain. Search, resources, approvals, Agent execution and old data retain their
 current owners. The historical statement that desktop Telegram/FeatureHost
 writers remain reachable is superseded by the current Native guards below and
 their later changes; no old registration or database is deleted here.
+
+Current prerequisite repairs preserve this authority: NMR-50d passes the original
+dialog/account predicate through the real Coordinator call after ready and before
+its request frame; retirement after posting does not cancel Host intent. The
+ordinary send staging lane now uses the complete forward-ownership classifier
+before reusing an existing row without context, preserving source-authorized batch
+recovery and retained bytes. Pagination coalesces failed-read updates by identity
+and keeps explicit author-checked alias candidates through the same root cache.
+The full two-identity Human message Retry contract remains unimplemented.
+Settings still uses SettingsDesktopSurface → DesktopBridge → Main RPC → Coordinator
+MainData → Native ProductSettingsOwner; no proxy routing or second settings store
+is inferred from its canonical mutation/publication UI. See the existing task receipt
+for separately bound authored, executed and open acceptance evidence.
 
 Oracle: ORA-TDRP-FORWARD-INTENT-UI-001. Exact-H execution is recorded by the
 existing native-service-contracts Actions artifacts; source reviews and final
@@ -229,3 +244,18 @@ PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected
 ### Resumed round 6: existing Human history owner extension
 
 NMR-PAGING-01 uses `SandAgentDb` and `agent_db_transcript_pages` for both canonical full reads and durable bounded traversal indices; `ProductionSessionWorkers` and the existing gateway admit the scoped cursor. The existing renderer pagination/root-cache/projection owners carry it and preserve committed updates across failed older-page retries. NMR-ACTIVITY-01 keeps activity and Agent handoff in the existing per-conversation mutation lane and repairs interrupted row/metadata persistence on replay. No additional message owner or user-data migration is introduced. Later credential, reply/forward, legacy-retention and source work remains intact. These authored changes require containing-H Actions; this inventory is not an acceptance claim.
+
+
+
+### Round23 resumed: desktop Social ownership boundary
+
+At inspected106bb95ba97ef7722e9523285783824393039bc0, Production Electron
+AppHost selects the existing Session host policy; ordinary/Codex registries
+omit generic Social. FeatureHost rejects contact ConversationOpen/ChatSend
+before auth/runtime/state/I/O/events; Runtime retains nonempty Social records
+before recovery writes, and the existing desktop platform client blocks generic
+message/resource HTTP before credentials. Human message writes remain in the
+existing Session/native_messaging path. No owner or user-data migration is added.
+The named NMR-SOCIAL-OWNER spec adds three missing real FeatureHost dispatch
+controls and keeps existing Agent, automation, non-desktop and Test boundaries.
+Exact-H execution remains required; no whole-owner acceptance is promoted.

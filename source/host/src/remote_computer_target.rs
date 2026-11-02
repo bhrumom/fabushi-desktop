@@ -23,7 +23,7 @@ use crate::extensions::auth::auth_service::{
     FabushiCoreCredential, FabushiCoreCredentialProvider,
 };
 use crate::network_enrollment_owner::{NetworkEnrollmentError, NetworkWorkerService};
-use crate::network_worker_process::OwnedNetworkWorker;
+use crate::network_worker_process::{NetworkWorkerStreamRead, OwnedNetworkWorker};
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 use crate::sensitive_input_challenge::{
     SensitiveInputBinding, SensitiveInputChallengeOwner, SENSITIVE_INPUT_CHALLENGE_MAX_TTL_MS,
@@ -2541,15 +2541,36 @@ fn read_private_frame(
     worker: &mut OwnedNetworkWorker,
     stream_id: &str,
 ) -> Result<Vec<u8>, RemoteComputerTargetError> {
+    read_private_frame_with(
+        |max_bytes, timeout_ms| worker.stream_read(stream_id, max_bytes, timeout_ms),
+        Instant::now,
+    )
+}
+
+fn read_private_frame_with<R, N>(
+    mut read: R,
+    mut now: N,
+) -> Result<Vec<u8>, RemoteComputerTargetError>
+where
+    R: FnMut(usize, u64) -> Result<NetworkWorkerStreamRead, String>,
+    N: FnMut() -> Instant,
+{
+    let deadline = now() + Duration::from_millis(REMOTE_TARGET_STREAM_TIMEOUT_MS);
     let mut frame = Vec::new();
     loop {
+        let timeout_ms = deadline.saturating_duration_since(now()).as_millis() as u64;
+        if timeout_ms == 0 {
+            return Err(RemoteComputerTargetError::TransportFailed);
+        }
         let remaining = REMOTE_TARGET_FRAME_MAX_BYTES.saturating_sub(frame.len());
         if remaining == 0 {
             return Err(RemoteComputerTargetError::InvalidResponse);
         }
-        let read = worker
-            .stream_read(stream_id, remaining, REMOTE_TARGET_STREAM_TIMEOUT_MS)
+        let read = read(remaining, timeout_ms)
             .map_err(|_| RemoteComputerTargetError::TransportFailed)?;
+        if now() >= deadline {
+            return Err(RemoteComputerTargetError::TransportFailed);
+        }
         frame.extend_from_slice(&read.data);
         if let Some(newline) = frame.iter().position(|byte| *byte == b'\n') {
             if frame[newline + 1..]
@@ -2569,6 +2590,10 @@ fn read_private_frame(
         }
     }
 }
+
+#[cfg(test)]
+#[path = "remote_computer_target/frame_tests.rs"]
+mod private_frame_tests;
 
 fn write_private_frame(
     worker: &mut OwnedNetworkWorker,

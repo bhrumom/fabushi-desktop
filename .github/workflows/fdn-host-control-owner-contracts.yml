@@ -6,6 +6,20 @@ on:
       - "source/host/src/network_enrollment_owner.rs"
       - "source/host/src/network_worker_process.rs"
       - "source/host/src/remote_computer_target.rs"
+      - "source/host/src/remote_computer_target/frame_tests.rs"
+      - "source/host/app/src/main.rs"
+      - "source/host/tests/network_enrollment_owner_contract.rs"
+      - "source/host/tests/network_worker_process_contract.rs"
+      - "source/host/tests/remote_computer_target_contract.rs"
+      - "source/host/tests/remote_computer_target_native_wiring_contract.rs"
+      - ".github/workflows/fdn-host-control-owner-contracts.yml"
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
+    paths:
+      - "source/host/src/network_enrollment_owner.rs"
+      - "source/host/src/network_worker_process.rs"
+      - "source/host/src/remote_computer_target.rs"
+      - "source/host/src/remote_computer_target/frame_tests.rs"
       - "source/host/app/src/main.rs"
       - "source/host/tests/network_enrollment_owner_contract.rs"
       - "source/host/tests/network_worker_process_contract.rs"
@@ -43,6 +57,8 @@ jobs:
           fi
           test "$actual" = "$expected"
           echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p .evidence
+          printf '%s\n' "$actual" > .evidence/source-sha.txt
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
@@ -58,16 +74,27 @@ jobs:
           sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
       - name: Test enrollment owner lifecycle and uncertainty fences
         shell: bash
-        run: cargo test --manifest-path source/host/Cargo.toml --test network_enrollment_owner_contract -- --nocapture
+        run: cargo test --locked --manifest-path source/host/Cargo.toml --test network_enrollment_owner_contract -- --nocapture
       - name: Test supervised worker IPC and secret boundary
         shell: bash
-        run: cargo test --manifest-path source/host/Cargo.toml --test network_worker_process_contract -- --nocapture
+        run: cargo test --locked --manifest-path source/host/Cargo.toml --test network_worker_process_contract -- --nocapture
       - name: Test target authorization, operation journal and network fences
         shell: bash
-        run: cargo test --manifest-path source/host/Cargo.toml --test remote_computer_target_contract -- --nocapture
+        run: cargo test --locked --manifest-path source/host/Cargo.toml --test remote_computer_target_contract -- --nocapture
       - name: Test shipping native target wiring and sensitive result boundary
         shell: bash
-        run: cargo test --manifest-path source/host/Cargo.toml --test remote_computer_target_native_wiring_contract -- --nocapture
+        run: cargo test --locked --manifest-path source/host/Cargo.toml --test remote_computer_target_native_wiring_contract -- --nocapture
+      - name: Test whole-frame receive budget and framing behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib remote_computer_target::private_frame_tests:: -- --nocapture 2>&1 | tee .evidence/fdn-private-frame-tests.log
+          test "$(grep -Ec '^test remote_computer_target::private_frame_tests::[[:alnum:]_]+ \.\.\. ok$' .evidence/fdn-private-frame-tests.log)" -eq 6
+          grep -Eq '^test result: ok\. 6 passed; 0 failed; 0 ignored;' .evidence/fdn-private-frame-tests.log
+      - name: Verify tracked Host dependency inputs unchanged
+        if: always()
+        shell: bash
+        run: git diff --exit-code HEAD -- source/host/Cargo.toml source/host/Cargo.lock
       - name: Record bounded evidence scope
         shell: bash
         run: |
@@ -79,6 +106,7 @@ jobs:
             "environment": "github-actions/ubuntu-24.04",
             "scope": "bounded-host-owner-contracts-only",
             "covers_contract_slices": ["G01","G02","G04","G07","G08","G09","G13","G15"],
+            "bounded_behavior_requirement": "FDN-HOST-FRAME-AC-01",
             "does_not_claim_complete_gates": ["G01","G02","G03","G04","G05","G06","G07","G08","G09","G10","G11","G12","G13","G14","G15","G16"],
             "production_enrollment_secret_required": false,
             "android_signing_or_protected_account_secret_required": false,
@@ -86,8 +114,12 @@ jobs:
           }
           EOF
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: fdn-host-control-owner-contracts-${{ github.event.pull_request.head.sha || github.sha }}
-          path: .evidence/fdn-host-control-owner-contracts.json
+          path: |
+            .evidence/fdn-host-control-owner-contracts.json
+            .evidence/fdn-private-frame-tests.log
+            .evidence/source-sha.txt
           if-no-files-found: error
           retention-days: 90

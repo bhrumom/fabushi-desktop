@@ -15,7 +15,8 @@ use crate::storage::store_db::{
 use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_recovery::{
-    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db, recover_corrupt_store_db,
+    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db,
+    probe_human_conversation_store, recover_corrupt_store_db,
 };
 use super::agent_db_schema::{
     CLEAR_BLOBS_SQL, CLEAR_TRANSCRIPT_ENTRIES_SQL, COMPARE_AND_SET_KV_SQL, DELETE_KV_SQL,
@@ -37,6 +38,10 @@ use super::agent_db_transcript_pages::{
     read_human_transcript_entries, read_human_transcript_tail,
     read_transcript_page, read_transcript_tail, read_transcript_window,
 };
+
+#[cfg(test)]
+#[path = "human_creation_storage_tests.rs"]
+mod human_creation_storage_tests;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AgentDbProjectionError {
@@ -248,6 +253,21 @@ impl SandAgentDb {
         Self::open_with_options_and_seed(db_path, options, false)
     }
 
+    /// Human creation must reject corruption without quarantining or resetting
+    /// the candidate. The live connection remains the identity authority.
+    pub fn open_human_conversation_store(
+        db_path: impl AsRef<Path>,
+        busy_timeout_ms: u64,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let db_path = resolve_agent_db_path(db_path.as_ref());
+        probe_human_conversation_store(&db_path, busy_timeout_ms)?;
+        let mut options = SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = busy_timeout_ms;
+        options.recovery.recover_on_corruption = false;
+        options.recovery.reject_if_corrupt = true;
+        Self::open_with_options_and_seed(db_path, options, false)
+    }
+
     pub fn open_with_options(
         db_path: impl AsRef<Path>,
         options: SandAgentDbOptions,
@@ -369,6 +389,57 @@ impl SandAgentDb {
             db.execute(SET_KV_SQL, params!["metadata", encoded])
                 .map(|changes| changes == 1)
         })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata("metadata".to_string()),
+            );
+        }
+        Ok(changed)
+    }
+
+    /// Seed Human identity only when all durable tables are empty at the same
+    /// SQLite write boundary. Callers must read and validate the persisted
+    /// metadata before publishing an owner, including after a refused or busy
+    /// insert. Identity initialization never attempts corruption recovery.
+    pub fn initialize_human_metadata_if_empty(
+        &self,
+        value: serde_json::Value,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() || !value.is_object() {
+            return Ok(false);
+        }
+        let encoded = encode_hex(&serde_json::to_vec(&value)?);
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(false);
+        };
+        let changed = match db.execute(
+            "INSERT INTO kv (key, value)
+             SELECT 'metadata', ?1
+             WHERE NOT EXISTS (SELECT 1 FROM kv)
+               AND NOT EXISTS (SELECT 1 FROM transcript_entries)
+               AND NOT EXISTS (SELECT 1 FROM blobs)",
+            params![encoded],
+        ) {
+            Ok(changes) => changes == 1,
+            Err(error) if is_sqlite_busy_error(&error) => {
+                let message = error.to_string();
+                drop(guard);
+                if let Some(callback) = self.options.on_busy_error.as_ref() {
+                    callback("initializeHumanMetadata", &message);
+                }
+                return Ok(false);
+            }
+            Err(error) => return Err(error.into()),
+        };
+        if changed {
+            bump_db_write_generation(&self.db_path);
+        }
+        drop(guard);
         if changed {
             notify_agent_db_listeners(
                 &self.db_path,

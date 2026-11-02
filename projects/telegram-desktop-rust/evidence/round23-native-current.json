@@ -1,0 +1,840 @@
+{
+  "schema_version": 1,
+  "audit": "round23 current Native owner, test and Actions read-only audit",
+  "reviewer": "/root/resume_current_native",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "scope_and_limits": {
+    "github_read_only": true,
+    "production_or_workflow_or_ledger_edits": false,
+    "local_build_test_lint_validator": false,
+    "scratch_evidence_only": true,
+    "independent_accept": false,
+    "current_is_observation_bound": "Concurrent work continues. Re-read ref and all target blobs immediately before root CAS; this audit does not authorize replaying an older snapshot.",
+    "complete_logs": "All selected completed-job logs were downloaded in full through the GitHub connector; local files contain exact UTF-8 of connector-decoded text with CR and final newline preserved. Artifact digests are GitHub archive digests, not log-file hashes.",
+    "untouched_root_preparation": "live-snapshot and parent production/preparation files were read, never modified."
+  },
+  "head_observations": [
+    {
+      "head_sha": "6660b6516f8936160496496814c298124d09e953",
+      "parent_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+      "change": "evidence-only round27-forward-pending-ownership.json",
+      "head_specific_runs": 0
+    },
+    {
+      "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+      "parent_sha": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+      "change": "one-line recovery-test runtime cleanup fix",
+      "commit_read": true,
+      "file_read": true,
+      "head_specific_native_run": 41523018920,
+      "native_status": "queued",
+      "native_conclusion": null
+    }
+  ],
+  "current_source_head": "106bb95ba97ef7722e9523285783824393039bc0",
+  "current_source_blobs": [
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
+      "blob_sha": "9856bba9a4889e14dcf79962d638a01b241ba899",
+      "chars": 27363,
+      "unchanged_from_6660": true
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+      "blob_sha": "56cc9788ae104e1acce98841efab7274f5548f8b",
+      "chars": 628853,
+      "unchanged_from_6660": true
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+      "blob_sha": "9b4bdaf53de31370a651e5a8d8e30eea14707026",
+      "chars": 32452,
+      "unchanged_from_6660": true
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+      "blob_sha": "340c330e0f0a0e002ba78a291979290cf71c67e5",
+      "chars": 90209,
+      "unchanged_from_6660": true
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs",
+      "blob_sha": "81043bb0a42cede91a9a940560cea144801c4446",
+      "chars": 20178,
+      "unchanged_from_6660": true
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+      "blob_sha": "f0fdddef00af4e5750b0b498037f611c21856f3f",
+      "chars": 183314,
+      "unchanged_from_6660": true
+    },
+    {
+      "path": "source/electron-main/update/windows-publisher.native.test.mjs",
+      "blob_sha": "c95b2a474405f52438b45e3b6abdc16c4e9e7de7",
+      "chars": 25517,
+      "unchanged_from_6660": true
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob_sha": "963e16e7fbade71fbe4869096b87b6e62abb3bee",
+      "chars": 58918,
+      "unchanged_from_6660": true
+    },
+    {
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "blob_sha": "dabd057f0c68794a7a6f8f552a247b9a2a29d928",
+      "chars": 124499,
+      "unchanged_from_6660": true
+    }
+  ],
+  "comparison_with_59f": {
+    "base_head": "59f5fa24827812f78336c464995d161f403dedfb",
+    "method": "Fresh connector fetch_file at both exact commits; compare returned Git blob SHA",
+    "files": [
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
+        "at_59f": "9856bba9a4889e14dcf79962d638a01b241ba899",
+        "at_106": "9856bba9a4889e14dcf79962d638a01b241ba899",
+        "identical": true
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+        "at_59f": "56cc9788ae104e1acce98841efab7274f5548f8b",
+        "at_106": "56cc9788ae104e1acce98841efab7274f5548f8b",
+        "identical": true
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+        "at_59f": "9b4bdaf53de31370a651e5a8d8e30eea14707026",
+        "at_106": "9b4bdaf53de31370a651e5a8d8e30eea14707026",
+        "identical": true
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+        "at_59f": "340c330e0f0a0e002ba78a291979290cf71c67e5",
+        "at_106": "340c330e0f0a0e002ba78a291979290cf71c67e5",
+        "identical": true
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs",
+        "at_59f": "81043bb0a42cede91a9a940560cea144801c4446",
+        "at_106": "81043bb0a42cede91a9a940560cea144801c4446",
+        "identical": true
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+        "at_59f": "f0fdddef00af4e5750b0b498037f611c21856f3f",
+        "at_106": "f0fdddef00af4e5750b0b498037f611c21856f3f",
+        "identical": true
+      },
+      {
+        "path": "source/electron-main/update/windows-publisher.native.test.mjs",
+        "at_59f": "c95b2a474405f52438b45e3b6abdc16c4e9e7de7",
+        "at_106": "c95b2a474405f52438b45e3b6abdc16c4e9e7de7",
+        "identical": true
+      }
+    ]
+  },
+  "owner_behavior": {
+    "feature_host": {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+      "method": "FeatureHostController::execute",
+      "lines_at_current": "1029-1042",
+      "description": "Production + Electron rejects ConversationOpen and ChatSend whose trimmed conversation ID starts with mahayana:contact:, before authorize_feature_command, runtime/auth, messaging state lock, disk/context or event work. Empty suffix is also refused at this UI command boundary.",
+      "tests_published": 7,
+      "tests_prepared": 10,
+      "missing_cases": [
+        "desktop_social_intents_refuse_before_auth_runtime_context_io_and_events",
+        "desktop_social_refusal_does_not_lock_state_or_touch_retained_context",
+        "social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces"
+      ]
+    },
+    "runtime": "Existing implementation intentionally checks nonempty suffix for valid retained Social records. Preserve the current 9 real-SQLite retained social recovery tests and ordinary Agent recovery; do not restore old malformed-ID retention behavior.",
+    "product": "Current Product boundary includes both social messages and message-resources and preserves existing alias, base-URL and redirect protections. Do not overwrite it with the weaker earlier proposal.",
+    "windows": "Current native fixture is byte-identical to the 59f fixture that passed 11 native cases. It is CI test publisher evidence; it does not authorize a formal Fabushi publisher or prove real package install/upgrade/rollback.",
+    "source_review_not_execution": "The prepared 3 Feature tests were statically reviewed against the exact unchanged current implementation and existing fixture, with no blocking source finding. They remain unexecuted until the containing exact head passes Actions Feature10."
+  },
+  "minimal_parent_increment": {
+    "prepared_test_path": "/workspace/scratch/5cf7d4b0b831/live-snapshot/source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
+    "prepared_test_blob_sha": "c15f8a9214247ca9b6b5540ce00af2e9f8993c4d",
+    "prepared_test_sha256": "b2208ff67d4d6c70db518cc4107c42d98749c568900ef4821dbb596f9ad8d7b9",
+    "original_test_blob_sha": "9856bba9a4889e14dcf79962d638a01b241ba899",
+    "source_review_record": "/workspace/scratch/5cf7d4b0b831/resume-audit/feature-social-review.json",
+    "changes": [
+      "Apply only the 3 prepared tests plus helper/constant; preserve all 7 existing tests and current production owners.",
+      "Change the prepared Feature header NMR-49 / NMR-AC-39 to root's unique NMR-SOCIAL-OWNER-* / NMR-SOCIAL-AC-* identifiers.",
+      "Change current Runtime retained_social_recovery_tests.rs header NMR-48 / NMR-AC-37 to the corresponding unique Social owner/AC identifiers without changing executable tests.",
+      "In current .github/workflows/native-service-contracts.yml, replace only the featurehost-messaging-boundary.log expected 7 passed count with 10 passed, preserving all concurrently added gates.",
+      "Do not reapply the one-line reconciliation fix: exact 106bb95 already contains it."
+    ],
+    "required_exact_head_gate": "FeatureHost suite 10 passed, zero failed/ignored, plus current affected required gates. Historical Feature7 does not cover the added cases.",
+    "spec_collisions": [
+      {
+        "id": "NMR-48",
+        "current_meaning": "immutable forwarding attachment bytes",
+        "acceptance": "NMR-AC-39"
+      },
+      {
+        "id": "NMR-49",
+        "current_meaning": "pending-parent reply identity and restart recovery",
+        "acceptance": "NMR-AC-40"
+      },
+      {
+        "id": "NMR-50",
+        "current_meaning": "forward recovery must not stall history or cross account boundaries"
+      },
+      {
+        "id": "NMR-51",
+        "current_meaning": "native resource upload service limit",
+        "acceptance": "NMR-AC-42"
+      },
+      {
+        "id": "NMR-AC-37",
+        "current_meaning": "forward account and dialog lifetime, NMR-46"
+      }
+    ]
+  },
+  "current_workflow": {
+    "path": ".github/workflows/native-service-contracts.yml",
+    "blob_sha": "963e16e7fbade71fbe4869096b87b6e62abb3bee",
+    "platforms": {
+      "native-message-reconciliation": "ubuntu-24.04",
+      "native-message-shipping-compile": "macos-15",
+      "native-message-ui": "ubuntu-24.04",
+      "native-message-electron": "ubuntu-24.04",
+      "windows-update-publisher": "windows-2025"
+    },
+    "exact_count_assertions": [
+      {
+        "line": 171,
+        "text": "grep -Eq 'test result: ok\\. 62 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log"
+      },
+      {
+        "line": 177,
+        "text": "grep -Eq 'test result: ok\\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/resource-upload-bounds.log"
+      },
+      {
+        "line": 187,
+        "text": "grep -Eq 'test result: ok\\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-sharebox.log"
+      },
+      {
+        "line": 193,
+        "text": "grep -Eq 'test result: ok\\. 12 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-batches.log"
+      },
+      {
+        "line": 201,
+        "text": "grep -Eq 'test result: ok\\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/agent-send-nonce.log"
+      },
+      {
+        "line": 207,
+        "text": "grep -Eq 'test result: ok\\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log"
+      },
+      {
+        "line": 213,
+        "text": "grep -Eq 'test result: ok\\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-http.log"
+      },
+      {
+        "line": 286,
+        "text": "grep -Eq 'test result: ok\\. 12 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/native-composition.log"
+      },
+      {
+        "line": 290,
+        "text": "grep -Eq 'test result: ok\\. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/native-startup-retention.log"
+      },
+      {
+        "line": 296,
+        "text": "grep -Eq 'test result: ok\\. 7 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/featurehost-messaging-boundary.log"
+      },
+      {
+        "line": 302,
+        "text": "grep -Eq 'test result: ok\\. 9 passed; 0 failed;' artifacts/native-message-shipping/social-recovery.log"
+      },
+      {
+        "line": 304,
+        "text": "grep -Eq 'test result: ok\\. 6 passed; 0 failed;' artifacts/native-message-shipping/social-http-owner.log"
+      },
+      {
+        "line": 310,
+        "text": "grep -Eq 'test result: ok\\. 6 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/host-legacy-handoff.log"
+      },
+      {
+        "line": 312,
+        "text": "grep -Eq 'test result: ok\\. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/ffi-legacy-handoff.log"
+      },
+      {
+        "line": 423,
+        "text": "grep -Eq 'test result: ok\\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/cli-native-owner.log"
+      },
+      {
+        "line": 425,
+        "text": "grep -Eq 'test result: ok\\. 5 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/gateway-native-owner.log"
+      },
+      {
+        "line": 427,
+        "text": "grep -Eq 'test result: ok\\. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/gateway-contracts.log"
+      },
+      {
+        "line": 442,
+        "text": "grep -Eq 'test result: ok\\. 6 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-response-normalization.log"
+      },
+      {
+        "line": 448,
+        "text": "grep -Eq 'test result: ok\\. 2 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-future-salts.log"
+      },
+      {
+        "line": 454,
+        "text": "grep -Eq 'test result: ok\\. 122 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/telegram-protocol-contract.log"
+      },
+      {
+        "line": 456,
+        "text": "grep -Eq 'test result: ok\\. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/telegram-tcp-transport.log"
+      },
+      {
+        "line": 462,
+        "text": "grep -Eq 'test result: ok\\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-proxy-boundary.log"
+      },
+      {
+        "line": 464,
+        "text": "grep -Eq 'test result: ok\\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/native-credential-schema.log"
+      },
+      {
+        "line": 502,
+        "text": "grep -Fx '# tests 1' artifacts/native-message-shipping/package-mismatched-hash-negative.log"
+      },
+      {
+        "line": 509,
+        "text": "grep -Fx '# tests 4' artifacts/native-message-shipping/actual-package-resource.log"
+      },
+      {
+        "line": 580,
+        "text": "grep -Fx '# tests 29' artifacts/native-message-ui/transcript.log"
+      },
+      {
+        "line": 595,
+        "text": "grep -Fx '# tests 17' artifacts/native-message-ui/human-cursors.log"
+      },
+      {
+        "line": 612,
+        "text": "grep -Fx '# tests 5' artifacts/native-message-ui/forward-settlement.log"
+      },
+      {
+        "line": 624,
+        "text": "grep -Fx '# tests 16' artifacts/native-message-ui/forward-dialog.log"
+      },
+      {
+        "line": 669,
+        "text": "grep -Fx '# tests 10' artifacts/native-message-electron/carrier.log"
+      },
+      {
+        "line": 679,
+        "text": "grep -Fx '# tests 8' artifacts/native-message-electron/native-auth-retention.log"
+      },
+      {
+        "line": 689,
+        "text": "grep -Fx '# tests 3' artifacts/native-message-electron/package-resources.log"
+      },
+      {
+        "line": 700,
+        "text": "grep -Fx '# tests 16' ../artifacts/native-message-electron/update-source.log"
+      },
+      {
+        "line": 712,
+        "text": "grep -Fx '# tests 28' ../artifacts/native-message-electron/windows-publisher.log"
+      },
+      {
+        "line": 723,
+        "text": "grep -Fx '# tests 18' artifacts/native-message-electron/macos-metadata.log"
+      },
+      {
+        "line": 733,
+        "text": "grep -Fx '# tests 10' artifacts/native-message-electron/package-scope.log"
+      },
+      {
+        "line": 744,
+        "text": "grep -Fx '# tests 7' artifacts/native-message-electron/promotion-consumer.log"
+      },
+      {
+        "line": 873,
+        "text": "grep -Fx '# tests 11' ../artifacts/windows-update-publisher/native-publisher.log"
+      }
+    ],
+    "primary_current_counts": {
+      "human": 62,
+      "featurehost": 7,
+      "social_recovery": 9,
+      "social_http_owner": 6,
+      "windows_behavior": 28,
+      "windows_native": 11
+    },
+    "shipping_status_at_newest_completed_jobs": "queued, not accepted",
+    "preserve_platforms_and_gates": true
+  },
+  "reconciliation_failure_and_fix": {
+    "schema_version": 1,
+    "audit": "reconciliation recovery cleanup ownership compile failure",
+    "repository": "bhrumom/fabushi-desktop",
+    "path": "source/host/tests/session_gateway_contract.rs",
+    "original_failure": {
+      "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+      "run_id": 41522324008,
+      "job_id": 125541192099,
+      "conclusion": "failure",
+      "stage": "Rust compilation",
+      "error": "E0382: borrowed old runtime after drop(runtime)",
+      "affected_test": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+      "test_line": 6889,
+      "earlier_drop_line": 6878,
+      "human62_executed": false,
+      "complete_log": "native-logs/41522324008-125541192099.log",
+      "complete_log_sha256": "97a39a2aa67414f594eb25b434455ec3c60e1101a31c93342b1dcb855ce9d0eb"
+    },
+    "original_patch": {
+      "base_head": "6660b6516f8936160496496814c298124d09e953",
+      "base_blob_sha": "b84f6a3eec2994a8be84006823366a7f29f082d7",
+      "old": "    runtime.shutdown(); drop(owner); drop(restarted);",
+      "new": "    restarted.shutdown(); drop(owner); drop(restarted);",
+      "context_before": "        \"recovery never publishes an inactive or partial intermediate row\");",
+      "context_after": "    let reopened = human_message_fixture_runtime(&root, &url);"
+    },
+    "current_resolution": {
+      "status": "already_applied_remotely_by_concurrent_work_do_not_reapply",
+      "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+      "parent_sha": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+      "blob_sha": "2e032c705fcec8256dd66476807dd1fd683625db",
+      "verified_with": [
+        "GitHub exact commit patch",
+        "GitHub exact file lines 6854-6905"
+      ],
+      "patch": "@@ -6886,7 +6886,7 @@ fn shipping_human_reaction_restart_replays_already_applied_intent_without_retogg\n         Some(json!({\"afterId\":4_000_777,\"complete\":true})));\n     assert!(events.lock().expect(\"events\").iter().all(|event| event[\"entries\"] == json!([applied.clone()])),\n         \"recovery never publishes an inactive or partial intermediate row\");\n-    runtime.shutdown(); drop(owner); drop(restarted);\n+    restarted.shutdown(); drop(owner); drop(restarted);\n     let reopened = human_message_fixture_runtime(&root, &url);\n     assert_eq!(reopened.read_human_conversation_transcript(&id).expect(\"pure reopen\"), vec![applied]);\n     subscription.unsubscribe();",
+      "replacement_run": 41523018920,
+      "replacement_run_status": "queued",
+      "replacement_run_conclusion": null,
+      "pass_claim": false
+    },
+    "mutations": {
+      "production": false,
+      "github": false,
+      "tests_run_locally": false,
+      "only_scratch_evidence": true
+    }
+  },
+  "actions": {
+    "newest_head": {
+      "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+      "run_id": 41523018920,
+      "status": "queued",
+      "conclusion": null,
+      "no_pass_claim": true
+    },
+    "latest_parent_with_completed_jobs": {
+      "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+      "run_id": 41522324008,
+      "status": "queued",
+      "conclusion": null,
+      "jobs": [
+        {
+          "id": 125541191705,
+          "name": "native-message-ui",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-02T20:47:01Z",
+          "completed_at": "2026-11-02T20:49:47Z"
+        },
+        {
+          "id": 125541192009,
+          "name": "native-message-shipping-compile",
+          "status": "queued",
+          "conclusion": null,
+          "started_at": "2026-11-02T20:46:52Z"
+        },
+        {
+          "id": 125541192065,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-02T20:47:02Z",
+          "completed_at": "2026-11-02T20:48:42Z"
+        },
+        {
+          "id": 125541192099,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-02T20:46:54Z",
+          "completed_at": "2026-11-02T20:48:45Z"
+        },
+        {
+          "id": 125541192169,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-02T20:46:59Z",
+          "completed_at": "2026-11-02T20:48:12Z"
+        },
+        {
+          "id": 125541194332,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-11-02T20:46:52Z",
+          "completed_at": "2026-11-02T20:46:52Z"
+        }
+      ],
+      "actual_success_counts": {
+        "ui": [
+          29,
+          17,
+          5,
+          16
+        ],
+        "electron": [
+          10,
+          8,
+          3,
+          16,
+          28,
+          18,
+          10,
+          7
+        ],
+        "windows_native": 11
+      },
+      "reconciliation": "compile E0382 before Human62 or later suites could execute",
+      "shipping": "queued, no terminal result",
+      "artifacts": [
+        {
+          "id": 13179185160,
+          "name": "native-message-reconciliation-afb34b49c5964524a887088f1095070b75cfdf8b",
+          "digest": "sha256:49885aa2a87dbecf35b04e640a3ad3b3ef50ea5e4b9f5d354f163603d23ef130",
+          "size_in_bytes": 5406,
+          "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41522324008/artifacts/13179185160"
+        },
+        {
+          "id": 13179050188,
+          "name": "native-message-electron-afb34b49c5964524a887088f1095070b75cfdf8b",
+          "digest": "sha256:f45435c91950fa3efc5be3c0e375d90616913e746ca67801aa79ed40cf27e2bd",
+          "size_in_bytes": 14791,
+          "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41522324008/artifacts/13179050188"
+        },
+        {
+          "id": 13177872487,
+          "name": "native-message-ui-afb34b49c5964524a887088f1095070b75cfdf8b",
+          "digest": "sha256:011d756dc8e88c0cf1fb6ff2d92e49354693b59826a34a94d0f6f18711c005dd",
+          "size_in_bytes": 229006,
+          "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41522324008/artifacts/13177872487"
+        },
+        {
+          "id": 13176994922,
+          "name": "windows-update-publisher-afb34b49c5964524a887088f1095070b75cfdf8b",
+          "digest": "sha256:d9244913f4527e8062ea538dab4130d3537fdf05d77accc2a3c1f788fcc1795a",
+          "size_in_bytes": 1832,
+          "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41522324008/artifacts/13176994922"
+        }
+      ]
+    },
+    "previous_successful_reconciliation": {
+      "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300",
+      "run_id": 41521138485,
+      "status": "queued",
+      "conclusion": null,
+      "jobs": [
+        {
+          "id": 125537163477,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125537163909,
+          "name": "native-message-shipping-compile",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125537164157,
+          "name": "native-message-ui",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125537164190,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125537164274,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125537166049,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "job_id": 125537164274,
+      "actual_counts": {
+        "human": 54,
+        "resource_upload_bounds": 3,
+        "forward_sharebox": 1,
+        "forward_batches": 12,
+        "agent_send_nonce": 4,
+        "settlement_credential": 3,
+        "forward_http": 1
+      },
+      "limit": "This earlier successful 54-test input does not cover current Human62.",
+      "artifacts": [
+        {
+          "id": 13177981296,
+          "name": "native-message-ui-d261afe14785d9bf1c4ac772d01df3523b453300",
+          "digest": "sha256:03127bbc068aed7ed76cc5bf604473693af8e17e6b5471c7a82af3a53ec43644",
+          "size_in_bytes": 226740,
+          "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41521138485/artifacts/13177981296"
+        },
+        {
+          "id": 13177333141,
+          "name": "windows-update-publisher-d261afe14785d9bf1c4ac772d01df3523b453300",
+          "digest": "sha256:1a12a49c3b1ac53088e80458e65fca0b70ef2a4e3100910e5b9b8257ef30fcb5",
+          "size_in_bytes": 1829,
+          "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41521138485/artifacts/13177333141"
+        },
+        {
+          "id": 13177203183,
+          "name": "native-message-reconciliation-d261afe14785d9bf1c4ac772d01df3523b453300",
+          "digest": "sha256:d2c4ead4b34e5cdfe62430bcc605439ff07fd244c870e349d8313beafaa2f18a",
+          "size_in_bytes": 35105,
+          "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41521138485/artifacts/13177203183"
+        },
+        {
+          "id": 13176354254,
+          "name": "native-message-electron-d261afe14785d9bf1c4ac772d01df3523b453300",
+          "digest": "sha256:5c0d58f7025b26d31d833d4d47631871795181eac956fc67f11c2abb77626ec9",
+          "size_in_bytes": 14003,
+          "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41521138485/artifacts/13176354254"
+        }
+      ]
+    },
+    "latest_fully_terminal_native_success_observed": {
+      "search_scope": "newest 100 branch workflow runs read during this audit",
+      "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+      "run_id": 41513767498,
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "jobs": [
+        {
+          "id": 125511938976,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125511939226,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125511939353,
+          "name": "native-message-ui",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125511939405,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125511939428,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125511942030,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "shipping_actual_counts": {
+        "native_composition": 12,
+        "native_startup_retention": 7,
+        "featurehost": 7,
+        "social_recovery": 9,
+        "social_http_owner": 6,
+        "host_legacy_handoff": 6,
+        "ffi_legacy_handoff": 7,
+        "cli_native_owner": 3,
+        "gateway_native_owner": 5,
+        "gateway_contracts": 11,
+        "telegram_response_normalization": 6,
+        "telegram_future_salts": 2,
+        "telegram_protocol": 122,
+        "telegram_tcp": 9,
+        "telegram_proxy": 4,
+        "native_credential_schema": 1,
+        "actual_apphost_package_copy": 4
+      },
+      "apphost_hash_negative": {
+        "format": "valid 64-character hexadecimal wrong digest",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "outcome": "intended rejection in a successful workflow; actual package test then passed 4/4",
+        "assertion_error": "copy only the same binary whose hash was captured after build"
+      },
+      "windows_native_actual": 11,
+      "windows_behavior_actual": 28,
+      "reconciliation_human_actual": 44,
+      "limit": "Historical exact-H bounded execution only. It is not current shipping acceptance and does not execute the 3 uncommitted Feature tests.",
+      "artifacts": [
+        {
+          "id": 13175452350,
+          "name": "native-message-shipping-compile-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:612ff0e24e7f3bb83ba5a7b68c9a5da9e09236ad787582edf0d00249ff177953",
+          "size_in_bytes": 81491108,
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/artifacts/13175452350"
+        },
+        {
+          "id": 13174787047,
+          "name": "native-message-reconciliation-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:afe4bce96fa0acfaddea9f4c634186a16ed4b02dc64b85747d2d2cbf2b67f5df",
+          "size_in_bytes": 29308,
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/artifacts/13174787047"
+        },
+        {
+          "id": 13174018193,
+          "name": "windows-update-publisher-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:07d1bc9e00d13584c449a4c670301acf7606499b058fce2730a61c154aaa8a1c",
+          "size_in_bytes": 1825,
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/artifacts/13174018193"
+        },
+        {
+          "id": 13173602759,
+          "name": "native-message-ui-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:0cf51ee47519896bd0854efd8fa466ea52cae853eff51463e62a5680415c53ef",
+          "size_in_bytes": 110471,
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/artifacts/13173602759"
+        },
+        {
+          "id": 13173338903,
+          "name": "native-message-electron-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:74d55b79059c3c163a94ad30cd17b3569180bb889fd9aff7967c0e5dfdaf33f5",
+          "size_in_bytes": 13407,
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/artifacts/13173338903"
+        }
+      ]
+    }
+  },
+  "logs": [
+    {
+      "run_id": 41522324008,
+      "job_id": 125541192099,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41522324008-125541192099.log",
+      "bytes": 106405,
+      "sha256": "97a39a2aa67414f594eb25b434455ec3c60e1101a31c93342b1dcb855ce9d0eb",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41521138485,
+      "job_id": 125537164274,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41521138485-125537164274.log",
+      "bytes": 352327,
+      "sha256": "e540894adf0c83b5403046d410e77b9d5a9c854f2eddb883aa2004b2b65e1fb4",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41513767498,
+      "job_id": 125511939405,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41513767498-125511939405.log",
+      "bytes": 928722,
+      "sha256": "bfa58ad1a0e02db95ebf8339168fb9a6746854b475f1e147a7d768bdb8c57cbc",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41513767498,
+      "job_id": 125511938976,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41513767498-125511938976.log",
+      "bytes": 82466,
+      "sha256": "833f68fa428bc50a4a7ff320d22753b164b2d65a267756f13718847fe5b6c0d4",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41513767498,
+      "job_id": 125511939226,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41513767498-125511939226.log",
+      "bytes": 35974,
+      "sha256": "f3c45b9467065c7cba4a64cc1fcb7aeedb68ed01b1075a63f6097abda086cae9",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41513767498,
+      "job_id": 125511939353,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41513767498-125511939353.log",
+      "bytes": 69150,
+      "sha256": "05c8d13df6cf0bdaa2834be58d7a11a217f8a177d02fbf13bb83530d93d7f93c",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41513767498,
+      "job_id": 125511939428,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41513767498-125511939428.log",
+      "bytes": 274778,
+      "sha256": "27678cd44349f70b84ae138d373a0a68f1f9f1ecc6601e52774b9f55130e9f66",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41522324008,
+      "job_id": 125541192065,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41522324008-125541192065.log",
+      "bytes": 35921,
+      "sha256": "b8e7403991459e16289c2208508b3a127b3d892a6d4e82453aa1ab8f5cdfe679",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41522324008,
+      "job_id": 125541192169,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41522324008-125541192169.log",
+      "bytes": 92514,
+      "sha256": "ade85fa7e43c50a62ef1fe16afe16bcad4ca0dbbac36f4c45669e2253397aa0a",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    },
+    {
+      "run_id": 41522324008,
+      "job_id": 125541191705,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41522324008-125541191705.log",
+      "bytes": 86893,
+      "sha256": "4d389e73f1b6577540fe02f0be7cbd019047c732ba84cb511d52bd2297d6c78b",
+      "encoding": "Exact UTF-8 encoding of full connector-decoded content; CR and final newline preserved"
+    }
+  ],
+  "blockers_retained": [
+    "Current/new head Actions must complete successfully for changed inputs; queued macOS shipping jobs do not pass.",
+    "The 3 prepared Feature tests are not yet published or executed at this audit's current head.",
+    "Formal Fabushi Windows publisher authorization is not supplied by CI test certificates.",
+    "Real signed package install, upgrade, rollback and all final shipping platform evidence remain required.",
+    "Independent ACCEPT remains false; this is a source/gate audit, not product acceptance."
+  ]
+}

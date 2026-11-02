@@ -1,0 +1,209 @@
+name: Round23 checkpoint ledger append object
+# Regenerate after concurrent ledger0a1b4387538129e45ecaca86dab55727f08cb772;
+# prior inputcc1a/output4457 were read but never integrated.
+
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/workflows/checkpoint-ledger-object-round23.yml'
+      - '.github/checkpoint-ledger-ops-round23.json'
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-ledger-object:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Prepare only the reviewed append at this exact checkout
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p artifacts/round23-ledger-object
+          export ROUND23_INPUT_BLOB ROUND23_PAYLOAD_BLOB
+          ROUND23_INPUT_BLOB=$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)
+          ROUND23_PAYLOAD_BLOB=$(git rev-parse HEAD:.github/checkpoint-ledger-ops-round23.json)
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import assert from 'node:assert/strict';
+
+          const repository = 'bhrumom/fabushi-desktop';
+          const ref = 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1';
+          const ledgerPath = 'projects/telegram-desktop-rust/parity-ledger.json';
+          const payloadPath = '.github/checkpoint-ledger-ops-round23.json';
+          const artifactPath = 'artifacts/round23-ledger-object';
+          const upstream = 'f985723b552b30fe1c17d377d57f44e61a15a8c4';
+          const gitHash = bytes => crypto.createHash('sha1').update(Buffer.from('blob ' + bytes.length + '\0')).update(bytes).digest('hex');
+          const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
+          const requireKeys = (value, keys, label) => {
+            assert.ok(value !== null && typeof value === 'object' && !Array.isArray(value), label);
+            assert.deepEqual(Object.keys(value).sort(), [...keys].sort(), label);
+          };
+          const scopes = new Map([
+            ['FBCP-NMR-001', {
+              source: {
+                source_repository: 'telegramdesktop/tdesktop', source_commit: upstream,
+                source_path: 'Telegram/SourceFiles/api/api_updates.cpp',
+                source_blob_sha: '71c929cfe3c779c94719efef32a47a4d029e2c67'
+              },
+              append: new Set(['requirement_ids', 'release_gate_ids', 'unit_case_ids',
+                'integration_case_ids', 'fault_recovery_case_ids', 'security_case_ids',
+                'regression_ids', 'test_environment_ids', 'test_evidence',
+                'test_execution_evidence', 'production_entrypoints', 'production_evidence',
+                'fabushi_target_paths', 'fabushi_target_symbols', 'blockers'])
+            }],
+            ['TDRP-UPDATER-DISCOVERY-AUTHORITY-001', {
+              source: {
+                source_repository: 'telegramdesktop/tdesktop', source_commit: upstream,
+                source_path: 'Telegram/SourceFiles/core/update_checker.cpp',
+                source_blob_sha: '73eee14f179d769854237640b246858959808736'
+              },
+              append: new Set(['test_execution_evidence'])
+            }]
+          ]);
+          assert.equal(process.env.GITHUB_REPOSITORY, repository);
+          assert.equal(process.env.GITHUB_REF, ref);
+          const payloadBytes = fs.readFileSync(payloadPath);
+          const payloadBlob = gitHash(payloadBytes);
+          assert.equal(payloadBlob, process.env.ROUND23_PAYLOAD_BLOB, 'Payload differs from the immutable checkout');
+          const payload = JSON.parse(payloadBytes);
+          requireKeys(payload, ['format_version', 'repository', 'path', 'operations'], 'Payload shape');
+          assert.equal(payload.format_version, 1);
+          assert.equal(payload.repository, repository);
+          assert.equal(payload.path, ledgerPath);
+          assert.ok(Array.isArray(payload.operations));
+          assert.equal(payload.operations.length, scopes.size);
+          assert.deepEqual(new Set(payload.operations.map(op => op.id)), new Set(scopes.keys()));
+
+          const input = fs.readFileSync(ledgerPath);
+          const inputBlob = gitHash(input);
+          assert.equal(inputBlob, process.env.ROUND23_INPUT_BLOB, 'Ledger differs from the immutable checkout');
+          const original = JSON.parse(input);
+          assert.deepEqual(Buffer.from(JSON.stringify(original, null, 2) + '\n'), input, 'Ledger must round-trip without unrelated byte changes');
+          assert.ok(Array.isArray(original.rows));
+          const changed = structuredClone(original);
+          const counts = {requested_values: 0, appended_values: 0, requested_notes: 0, appended_notes: 0};
+          const rowReceipts = [];
+          for (const op of payload.operations) {
+            requireKeys(op, ['id', 'append', 'note'], 'Operation shape');
+            const scope = scopes.get(op.id);
+            assert.ok(scope, 'Unexpected responsibility');
+            const matches = changed.rows.filter(row => row.responsibility_id === op.id);
+            assert.equal(matches.length, 1, 'Responsibility identity must be unique');
+            const row = matches[0];
+            for (const [key, value] of Object.entries(scope.source)) assert.deepEqual(row[key], value, 'Source identity conflict: ' + key);
+            assert.ok(op.append !== null && typeof op.append === 'object' && !Array.isArray(op.append));
+            const rowReceipt = {id: op.id, arrays: {}, note_appended: false};
+            for (const [key, values] of Object.entries(op.append)) {
+              assert.ok(scope.append.has(key), 'Undeclared append field: ' + key);
+              assert.ok(Array.isArray(row[key]) && Array.isArray(values), 'Append field must already be an array: ' + key);
+              assert.ok(values.every(value => typeof value === 'string' && value.trim().length > 0), 'Append values must be nonempty strings: ' + key);
+              const before = row[key].length;
+              for (const value of values) if (!row[key].includes(value)) row[key].push(value);
+              const appended = row[key].length - before;
+              counts.requested_values += values.length;
+              counts.appended_values += appended;
+              rowReceipt.arrays[key] = {before, requested: values.length, appended, after: row[key].length};
+            }
+            assert.equal(typeof row.notes, 'string');
+            assert.equal(typeof op.note, 'string');
+            if (op.note.length > 0) {
+              assert.ok(op.note.startsWith('\n'), 'Notes must append a separate paragraph');
+              counts.requested_notes += 1;
+              if (!row.notes.includes(op.note)) {
+                row.notes += op.note;
+                rowReceipt.note_appended = true;
+                counts.appended_notes += 1;
+              }
+            }
+            rowReceipts.push(rowReceipt);
+          }
+          assert.ok(counts.requested_values + counts.requested_notes > 0, 'Empty format examples are not executable operations');
+
+          const topWithoutRows = value => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'rows'));
+          assert.deepEqual(topWithoutRows(changed), topWithoutRows(original), 'Top-level state, including source_reviews, must be unchanged');
+          assert.equal(changed.rows.length, original.rows.length);
+          for (let index = 0; index < original.rows.length; index += 1) {
+            const before = original.rows[index], after = changed.rows[index];
+            assert.equal(after.responsibility_id, before.responsibility_id, 'Row order must be unchanged');
+            const op = payload.operations.find(operation => operation.id === before.responsibility_id);
+            if (!op) {
+              assert.deepEqual(after, before, 'Unrelated responsibility must be unchanged');
+              continue;
+            }
+            assert.deepEqual(Object.keys(after), Object.keys(before), 'No field may be added or removed');
+            const appendKeys = new Set(Object.keys(op.append));
+            for (const key of Object.keys(before)) {
+              if (key === 'notes') assert.ok(after.notes.startsWith(before.notes), 'Existing note text must remain intact');
+              else if (appendKeys.has(key)) assert.deepEqual(after[key].slice(0, before[key].length), before[key], 'Existing array values and order must remain intact: ' + key);
+              else assert.deepEqual(after[key], before[key], 'Non-append field must remain unchanged: ' + key);
+            }
+          }
+
+          const text = JSON.stringify(changed, null, 2) + '\n';
+          const output = Buffer.from(text);
+          const outputBlob = gitHash(output);
+          const receipt = {
+            repository, ref, harness_sha: process.env.GITHUB_SHA,
+            run_id: process.env.GITHUB_RUN_ID, run_attempt: process.env.GITHUB_RUN_ATTEMPT,
+            ledger_path: ledgerPath, payload_path: payloadPath,
+            input_blob: inputBlob, payload_blob: payloadBlob, output_blob: outputBlob,
+            input_sha256: sha256(input), payload_sha256: sha256(payloadBytes), output_sha256: sha256(output),
+            input_bytes: input.length, payload_bytes: payloadBytes.length, output_bytes: output.length,
+            row_count: original.rows.length,
+            source_reviews_count: Array.isArray(original.source_reviews) ? original.source_reviews.length : null,
+            operations_count: payload.operations.length, counts, rows: rowReceipts,
+            changed_rows: rowReceipts.filter(row => row.note_appended || Object.values(row.arrays).some(array => array.appended > 0)).map(row => row.id),
+            product_validation: false, source_acceptance: false, independent_acceptance: false,
+            commit_created: false, ref_updated: false,
+            integration_condition: 'Root API reads the exact input/output and scoped delta, requires current canonical ledger input equality, then integrates with force=false and expected_sha CAS. A changed ledger input requires regeneration.'
+          };
+          fs.writeFileSync(artifactPath + '/prepared-ledger.json', output);
+          fs.writeFileSync(artifactPath + '/payload.json', payloadBytes);
+          fs.writeFileSync(artifactPath + '/receipt.json', JSON.stringify(receipt, null, 2) + '\n');
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/round23-ledger-blob.json', JSON.stringify({content: text, encoding: 'utf-8'}));
+          console.log('ROUND23_LEDGER_PREPARED ' + JSON.stringify(receipt));
+          NODE
+      - name: Create only the unattached Git blob
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method POST repos/bhrumom/fabushi-desktop/git/blobs \
+            --input "$RUNNER_TEMP/round23-ledger-blob.json" \
+            > artifacts/round23-ledger-object/github-blob.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const path = 'artifacts/round23-ledger-object/';
+          const receipt = JSON.parse(fs.readFileSync(path + 'receipt.json'));
+          const result = JSON.parse(fs.readFileSync(path + 'github-blob.json'));
+          assert.equal(result.sha, receipt.output_blob, 'GitHub object identity differs from the prepared output');
+          receipt.github_blob = result.sha;
+          fs.writeFileSync(path + 'receipt.json', JSON.stringify(receipt, null, 2) + '\n');
+          console.log('ROUND23_LEDGER_OBJECT ' + JSON.stringify(receipt));
+          NODE
+      - name: Preserve exact object identity for root API readback
+        if: always() && steps.prepare.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: round23-ledger-object-${{ github.sha }}
+          path: artifacts/round23-ledger-object
+          if-no-files-found: error

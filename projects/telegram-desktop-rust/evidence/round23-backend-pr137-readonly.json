@@ -1,0 +1,584 @@
+{
+  "schema_version": 1,
+  "audit": "backend-pr137-readonly-current-head-refresh",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "recorded_at_utc": "2026-11-02 20:50:32 UTC",
+  "repository": "bhrumom/fabushi-backend",
+  "operations": {
+    "remote_reads_only": true,
+    "complete_ci_logs_read": true,
+    "source_content_read": true,
+    "production_requests": false,
+    "local_builds_tests_or_validators": false,
+    "backend_files_changed": false,
+    "github_writes": false,
+    "dispatch": false,
+    "merge": false,
+    "deployment": false,
+    "comments": false
+  },
+  "previous_evidence": {
+    "path": "projects/telegram-desktop-rust/evidence/round23-backend-pr137-readonly.json",
+    "snapshot_path": "/workspace/scratch/5cf7d4b0b831/live-snapshot/projects/telegram-desktop-rust/evidence/round23-backend-pr137-readonly.json",
+    "sha256": "cc752cb99b295c310a07f1e1f5793031ea54361b0b8db8b5c1eb31e934580dbd",
+    "qualified_head": "013c5460049f2f75843ebc0c8c736e287d32789c",
+    "scope": "Historical entries retain their original source head and observation dates; this refresh does not re-label them as current production acceptance."
+  },
+  "current_pr": {
+    "number": 137,
+    "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "head_ref": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "base_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+    "base_ref": "main",
+    "comments": 0,
+    "review_comments": 0,
+    "reviews": [],
+    "updated_at": "2026-11-02T19:32:19Z",
+    "merge_or_deploy_authorized": false
+  },
+  "main_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+  "delta_from_previous_qualified_head": {
+    "base_sha": "013c5460049f2f75843ebc0c8c736e287d32789c",
+    "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "status": "ahead",
+    "ahead_by": 1,
+    "behind_by": 0,
+    "commits": [
+      {
+        "sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "parents": [
+          "013c5460049f2f75843ebc0c8c736e287d32789c"
+        ],
+        "message": "docs(messages): record exact-H readiness contracts and production blockers\n\nRecord the two completed 63-case runs, full-log hashes and verified artifact contents for H013c546. Preserve the production job's skipped result and separate live Worker/account/fixture/recovery requirements. Runtime, tests and workflow bytes are unchanged."
+      }
+    ],
+    "files": [
+      {
+        "path": "docs/evidence/human-messaging-readiness-round12-20261102.json",
+        "status": "added",
+        "blob_sha": "a4af534dfbba900d0dd92fb7b2250847ddfc9b98",
+        "additions": 831,
+        "deletions": 0
+      },
+      {
+        "path": "docs/specs/human-direct-messaging-extensions.md",
+        "status": "modified",
+        "blob_sha": "0d2b0a0fec5c1852e1e8ea389054153a55aa2ce8",
+        "additions": 5,
+        "deletions": 4
+      }
+    ],
+    "runtime_tests_and_workflow_unchanged": true,
+    "evidence_added_by_head": {
+      "path": "docs/evidence/human-messaging-readiness-round12-20261102.json",
+      "blob_sha": "a4af534dfbba900d0dd92fb7b2250847ddfc9b98",
+      "qualified_source_head": "013c5460049f2f75843ebc0c8c736e287d32789c",
+      "evidence_collection_completed_at_utc": "2026-11-02 19:30:01 UTC",
+      "scope": "The new repository evidence qualifies 013c546, not 52fbf874. Exact-52 CI is separately read in this receipt."
+    }
+  },
+  "exact_head_runs": [
+    {
+      "id": 41510861859,
+      "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41510861859",
+      "event": "pull_request",
+      "name": "Human Messaging CI",
+      "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "path": ".github/workflows/human-messaging-ci.yml",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "created_at": "2026-11-02T19:32:24Z",
+      "updated_at": "2026-11-02T19:32:36Z"
+    },
+    {
+      "id": 41510852280,
+      "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41510852280",
+      "event": "push",
+      "name": "Human Messaging CI",
+      "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "path": ".github/workflows/human-messaging-ci.yml",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "created_at": "2026-11-02T19:32:20Z",
+      "updated_at": "2026-11-02T19:32:34Z"
+    }
+  ],
+  "exact_head_jobs": [
+    {
+      "id": 125502003031,
+      "name": "human-messaging-contracts",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Bind exact Human messaging source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Check handler syntax",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Check community route syntax",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Check call signaling syntax",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Run existing and Phase 1 messaging contracts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Run real SQLite mutation and recovery contracts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Run read-only production readiness behavior contracts without production access",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Preserve exact Human messaging evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 22
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 23
+        }
+      ]
+    },
+    {
+      "id": 125502117517,
+      "name": "production-readonly-readiness",
+      "status": "completed",
+      "conclusion": "skipped",
+      "steps": []
+    },
+    {
+      "id": 125502035909,
+      "name": "human-messaging-contracts",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Bind exact Human messaging source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Check handler syntax",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Check community route syntax",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Check call signaling syntax",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Run existing and Phase 1 messaging contracts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Run real SQLite mutation and recovery contracts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Run read-only production readiness behavior contracts without production access",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Preserve exact Human messaging evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 22
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 23
+        }
+      ]
+    },
+    {
+      "id": 125502139541,
+      "name": "production-readonly-readiness",
+      "status": "completed",
+      "conclusion": "skipped",
+      "steps": []
+    }
+  ],
+  "exact_head_complete_logs": [
+    {
+      "run_id": 41510852280,
+      "event": "push",
+      "job_id": 125502003031,
+      "path": "backend/125502003031.log",
+      "bytes": 46999,
+      "sha256": "95f49070a756522978b0faa78ff4ced42ad1f28ccea8a87c5d8928e2803d2da9",
+      "lines": 650,
+      "source": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/jobs/125502003031/logs",
+      "checkout_source_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "actual_tap_counts": [
+        {
+          "group": "existing-and-phase1",
+          "tests": 29,
+          "pass": 29,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        {
+          "group": "actual-sqlite-mutation-recovery",
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        {
+          "group": "injected-fetch-production-readiness-contract",
+          "tests": 24,
+          "pass": 24,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "total_pass": 63,
+      "log_complete_through_job_cleanup": true
+    },
+    {
+      "run_id": 41510861859,
+      "event": "pull_request",
+      "job_id": 125502035909,
+      "path": "backend/125502035909.log",
+      "bytes": 46992,
+      "sha256": "89b5ac4190089eeaff01b560272a35152032d063292175755180489a4257fd70",
+      "lines": 650,
+      "source": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/jobs/125502035909/logs",
+      "checkout_source_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "actual_tap_counts": [
+        {
+          "group": "existing-and-phase1",
+          "tests": 29,
+          "pass": 29,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        {
+          "group": "actual-sqlite-mutation-recovery",
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        {
+          "group": "injected-fetch-production-readiness-contract",
+          "tests": 24,
+          "pass": 24,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "total_pass": 63,
+      "log_complete_through_job_cleanup": true
+    }
+  ],
+  "artifact_metadata_observed": {
+    "contents_downloaded_or_verified_this_refresh": false,
+    "scope": "Artifact existence, exact head and API digest only; no new archive-content claim.",
+    "artifacts": [
+      {
+        "id": 13171519672,
+        "name": "human-messaging-contracts-52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "size_in_bytes": 5433,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13171519672",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13171519672/zip",
+        "expired": false,
+        "created_at": "2026-11-02T19:32:29Z",
+        "expires_at": "2027-01-31T19:32:20Z",
+        "updated_at": "2026-11-02T19:32:29Z",
+        "digest": "sha256:4c67b8b8e4f7fce10dc263cc0d862f1f1e95dad7d511ae31804077b61a4c3463",
+        "workflow_run": {
+          "id": 41510852280,
+          "repository_id": 1375313125,
+          "head_repository_id": 1375313125,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23"
+        }
+      },
+      {
+        "id": 13172293999,
+        "name": "human-messaging-contracts-52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "size_in_bytes": 5432,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13172293999",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13172293999/zip",
+        "expired": false,
+        "created_at": "2026-11-02T19:32:32Z",
+        "expires_at": "2027-01-31T19:32:24Z",
+        "updated_at": "2026-11-02T19:32:32Z",
+        "digest": "sha256:823587410fe31018a7cdea60f47ff608cf461828ea8726112d8aa1f1d8ba00bb",
+        "workflow_run": {
+          "id": 41510861859,
+          "repository_id": 1375313125,
+          "head_repository_id": 1375313125,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23"
+        }
+      }
+    ]
+  },
+  "source_contract": {
+    "checkpoint": {
+      "path": "fabushi/web/src/handlers/friends.js",
+      "ref": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "blob_sha": "fca0ed323b34fe767cad262af57cedcf0e71a79f",
+      "url": "https://github.com/bhrumom/fabushi-backend/blob/52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23/fabushi/web/src/handlers/friends.js",
+      "content_read_at_exact_ref": true,
+      "explicit_after_id_zero": "accepted_as_safe_nonnegative_integer_in_explicit_after-id_mode",
+      "history_cursor_echo": true,
+      "empty_next_cursor_preserved": true,
+      "ordering": "id ASC",
+      "partition": "authenticated account/contact pair only after stable identity and accepted friendship checks",
+      "list_handler_lines": "582-651"
+    },
+    "main": {
+      "path": "fabushi/web/src/handlers/friends.js",
+      "ref": "687718ce9e0083aa124d29005bcce4051d357919",
+      "blob_sha": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+      "url": "https://github.com/bhrumom/fabushi-backend/blob/687718ce9e0083aa124d29005bcce4051d357919/fabushi/web/src/handlers/friends.js",
+      "content_read_at_exact_ref": true,
+      "explicit_after_id_zero": "rejected_by_afterId_lte_0",
+      "history_cursor_echo": false,
+      "guard_line": 553
+    },
+    "route": {
+      "path": "fabushi/web/src/routes/community-routes.js",
+      "ref": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "blob_sha": "a9121244f37ec775e4e1aa027c9ac0dbb8351157",
+      "url": "https://github.com/bhrumom/fabushi-backend/blob/52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23/fabushi/web/src/routes/community-routes.js",
+      "content_read_at_exact_ref": true,
+      "entry": "GET /api/social/messages -> handleListDirectMessages; POST -> handleSendDirectMessage; PATCH/DELETE /api/social/messages/:id -> existing friends owner",
+      "entry_lines": "72-81"
+    },
+    "authority": {
+      "identity": "requireStableAuth calls requireAuthIdentity; handler denies nonfinite account identity",
+      "authorization": "areFriends accepted friendship plus authenticated participant pair; mutation sender ownership and row revision/operation-id fences remain existing handler responsibilities",
+      "message_state": "existing direct_messages D1 records",
+      "resource_state": "R2 byte object; direct_message_resources D1 metadata and canonical message references",
+      "desktop_projection": "Prior cross-repository audit identifies Session/Transcript as downstream materialization. Desktop code was not newly read by this Backend refresh."
+    }
+  },
+  "readiness_boundary": {
+    "workflow": {
+      "path": ".github/workflows/human-messaging-ci.yml",
+      "ref": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "blob_sha": "9c129977c1b88c13972ceeb46e8565cc1de1caa6",
+      "url": "https://github.com/bhrumom/fabushi-backend/blob/52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23/.github/workflows/human-messaging-ci.yml",
+      "content_read_at_exact_ref": true
+    },
+    "consumer": {
+      "path": ".github/scripts/human-messaging-production-readiness.mjs",
+      "ref": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "blob_sha": "55afecc1c1d9d8192b11a74b62c439513d673740",
+      "url": "https://github.com/bhrumom/fabushi-backend/blob/52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23/.github/scripts/human-messaging-production-readiness.mjs",
+      "content_read_at_exact_ref": true
+    },
+    "controlled_contracts_passed_each": 24,
+    "live_job_selected": false,
+    "live_job_results": [
+      {
+        "run_id": 41510852280,
+        "job_id": 125502117517,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "run_id": 41510861859,
+        "job_id": 125502139541,
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "live_probe_executed": false,
+    "live_acceptance": false,
+    "selection_gate": "workflow_dispatch && inputs.production_readiness && refs/heads/main; needs successful contracts; protected environment production",
+    "runtime_guards": [
+      "canonical repository/main/explicit Actions dispatch",
+      "protected FABUSHI_MESSAGE_PROBE_AUTHORIZED=true",
+      "expected full source SHA equals protected approved source SHA",
+      "successful canonical production provenance run",
+      "GitHub read token",
+      "Cloudflare read token/account",
+      "distinct approved ordinary account and noncontact tokens",
+      "approved existing fixture"
+    ],
+    "method": "GET only, redirects controlled, no production mutation in consumer",
+    "conclusion": "Successful push/PR CI proves controlled handler/SQLite/injected-fetch behavior only. Skipped production jobs are not acceptance."
+  },
+  "production_current_active_version": "not independently observed; inherited historical delivery is not proof of current Cloudflare active version",
+  "production_authenticated_pagination": "not executed or accepted by this audit",
+  "blockers": [
+    "PR #137 remains draft/open and unmerged with zero reviews/comments; no authorization to merge or deploy.",
+    "Current main handler still rejects explicit afterId=0 and has no historyCursor echo.",
+    "Current head CI jobs are controlled 29 + SQLite10 + injected-fetch24; live production readiness jobs are skipped.",
+    "Current active Cloudflare Worker/domain/source mapping is not independently observed; historical deployment must retain its original date and source SHA.",
+    "Authorized compatible deployed source, protected read credentials, approved existing account/noncontact fixtures and real authenticated pagination/empty-cursor/peer-denial proof remain required.",
+    "Real recovery/rollback and independent acceptance remain separate unfulfilled gates."
+  ],
+  "source_refs": [
+    "https://api.github.com/repos/bhrumom/fabushi-backend/pulls/137",
+    "https://api.github.com/repos/bhrumom/fabushi-backend/pulls/137/reviews?per_page=100",
+    "https://api.github.com/repos/bhrumom/fabushi-backend/git/ref/heads/main",
+    "https://api.github.com/repos/bhrumom/fabushi-backend/compare/013c5460049f2f75843ebc0c8c736e287d32789c...52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs?head_sha=52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23&per_page=30"
+  ],
+  "historical_production_observation": {
+    "inheritance": "Carried from the previous round23 receipt; not re-observed as current in this refresh.",
+    "previous_receipt_recorded_at_utc": "2026-11-02T19:37:02.337860+00:00",
+    "observation": {
+      "latest_canonical_delivery_observed": {
+        "run_id": 40047409890,
+        "job_id": 120732189309,
+        "status": "completed",
+        "conclusion": "success",
+        "source_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+        "run_created_at": "2026-10-24T00:56:05Z",
+        "completed_at": "2026-10-24T00:56:44Z",
+        "worker": "fabushi-flutter-web-prod",
+        "worker_version_from_log": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+        "database": "DB/fabushi-db",
+        "migrations": "success",
+        "deployment": "success",
+        "health": "historical_success",
+        "artifact_id": 12542026010,
+        "artifact_zip_sha256": "ba90289cbeae90d7bacca69050147717d3256a7574b1289632cfdd3bf8edae18",
+        "artifact_downloaded_and_extracted": true,
+        "artifact_hash_matches_api_and_job_log": true,
+        "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890"
+      },
+      "provenance_scope": "Historical canonical GitHub Actions deployment only. Current active Cloudflare version not independently observed; current afterId=0 production compatibility not established.",
+      "discovery_scope": "Read newest 100 Actions runs (newest 41427242843 through 39758771384); no newer Production Worker Delivery in that ordered window. Workflow-specific runs endpoint was rejected by connector allowlist, and collection read was used.",
+      "actual_production_pagination": {
+        "status": "blocked/not-executed",
+        "origin_multi_page": false,
+        "empty_page_cursor": false,
+        "unauthorized_peer_negative": false,
+        "remote_recovery": false,
+        "reason": "PR remains unmerged and undeployed; no formal merge/deployment authorization or approved authenticated acceptance account execution evidence."
+      }
+    }
+  }
+}

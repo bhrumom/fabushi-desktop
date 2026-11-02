@@ -23,7 +23,7 @@ jobs:
           TRANSFER_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, subprocess, urllib.request
+          import base64, hashlib, json, os, pathlib, re, subprocess, urllib.parse, urllib.request
           payload_path = pathlib.Path('.github/checkpoint-ledger-ops-round24.json')
           payload_bytes = payload_path.read_bytes()
           payload = json.loads(payload_bytes)
@@ -34,10 +34,32 @@ jobs:
           head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           if head != os.environ['GITHUB_SHA']:
               raise SystemExit('Checkout identity differs from the workflow event')
-          before = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + ledger_path], text=True).strip()
-          if before != payload['expected_input_blob']:
-              raise SystemExit('Ledger advanced; reconcile operations before another transfer')
-          ledger = json.loads(pathlib.Path(ledger_path).read_text())
+          if payload.get('source_mode') != 'latest_exact_checkpoint_ledger':
+              raise SystemExit('Unexpected source mode')
+          branch = 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+          def read_json(endpoint):
+              request = urllib.request.Request('https://api.github.com' + endpoint,
+                  headers={'Authorization': 'Bearer ' + os.environ['TRANSFER_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          ref = read_json('/repos/' + repository + '/git/ref/heads/' + urllib.parse.quote(branch, safe='/'))
+          if ref['ref'] != 'refs/heads/' + branch or ref['object']['type'] != 'commit':
+              raise SystemExit('Unexpected checkpoint reference')
+          ledger_source_head = ref['object']['sha']
+          if not re.fullmatch(r'[0-9a-f]{40}', ledger_source_head):
+              raise SystemExit('Invalid exact ledger source')
+          item = read_json('/repos/' + repository + '/contents/' + ledger_path + '?ref=' + ledger_source_head)
+          if item['path'] != ledger_path or item['type'] != 'file' or not 0 < item['size'] <= 10 * 1024 * 1024:
+              raise SystemExit('Unexpected ledger identity or size')
+          source = read_json('/repos/' + repository + '/git/blobs/' + item['sha'])
+          if source['sha'] != item['sha'] or source['encoding'] != 'base64':
+              raise SystemExit('Unexpected ledger object encoding')
+          source_bytes = base64.b64decode(''.join(source['content'].split()), validate=True)
+          before = hashlib.sha1(b'blob ' + str(len(source_bytes)).encode() + b'\0' + source_bytes).hexdigest()
+          if before != item['sha'] or len(source_bytes) != item['size'] or len(source_bytes) != source['size']:
+              raise SystemExit('Ledger source object differs from its exact identity')
+          ledger = json.loads(source_bytes)
           if {op['id'] for op in payload['operations']} != {'FBCP-NMR-001', 'TDRP-UPDATER-DISCOVERY-AUTHORITY-001'}:
               raise SystemExit('Unexpected responsibility mutation scope')
           for op in payload['operations']:
@@ -45,17 +67,17 @@ jobs:
               if len(matches) != 1:
                   raise SystemExit('Responsibility identity must be unique')
               row = matches[0]
-              row.update(op['set'])
+              if op['set']:
+                  raise SystemExit('Only append operations are permitted')
               for key, values in op['append'].items():
                   for value in values:
                       if value not in row[key]:
                           row[key].append(value)
-              row['notes'] += op['note']
+              if op['note'] not in row['notes']:
+                  row['notes'] += op['note']
           content = json.dumps(ledger, ensure_ascii=False, indent=2) + '\n'
           encoded = content.encode('utf-8')
           blob = hashlib.sha1(b'blob ' + str(len(encoded)).encode() + b'\0' + encoded).hexdigest()
-          if blob != payload['expected_output_blob']:
-              raise SystemExit('Materialized ledger differs from the reviewed exact output')
           request = urllib.request.Request(
               'https://api.github.com/repos/' + repository + '/git/blobs',
               data=json.dumps({'content': content, 'encoding': 'utf-8'}).encode(),
@@ -66,7 +88,7 @@ jobs:
               result = json.load(response)
           if result.get('sha') != blob:
               raise SystemExit('GitHub object identity differs from the reviewed output')
-          receipt = {'source_sha': head, 'input_blob': before, 'ledger_blob': blob,
+          receipt = {'source_sha': head, 'ledger_source_head': ledger_source_head, 'input_blob': before, 'ledger_blob': blob,
                      'bytes': len(encoded), 'operations_sha256': hashlib.sha256(payload_bytes).hexdigest(),
                      'refs_updated': False, 'product_validation': False}
           pathlib.Path('round24-ledger-object-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')

@@ -10,7 +10,11 @@ import {
 } from "../recovered/features/conversation/workspace/pagination.ts";
 import {
   applyTranscriptReadUpdates,
+  createHumanReactionSettlement,
   currentTranscriptReadBuffers,
+  mergeAuthoritativeTranscriptMessage,
+  recordTranscriptReadUpdate,
+  reconcileTranscriptMutation,
   reconcileAuthoritativeTranscriptBaseline,
   reconcileLateInitialTranscriptPage,
   reconcileTranscriptFeedBaseline,
@@ -501,6 +505,526 @@ test("Human older pages cannot resurrect a settled pending row in the root cache
   assert.equal(cached.some((entry) => entry.id === pending.id), false);
   assert.equal(cachedCursor, "opaque-walk:2");
   assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 2, beforeCursor: "opaque-walk:2" });
+  controller.dispose();
+});
+
+test("NMR-26 an intermediate row commit cannot consume an older-page viewport anchor", async () => {
+  const read = deferred<TranscriptHistoryPage>();
+  const requests: TranscriptHistoryRequest[] = [];
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "conversation",
+    fetchPage: (request) => {
+      requests.push(request);
+      return request.beforeSeq === 5
+        ? Promise.resolve({ entries: [message("m3")], nextBeforeSeq: 3, nextBeforeCursor: "opaque-walk:3" })
+        : read.promise;
+    },
+  });
+  controller.installInitialPage({ entries: [], nextBeforeSeq: 5, nextBeforeCursor: "opaque-walk:5" });
+  await controller.loadOlder();
+  const viewport = { scrollTop: 40, scrollHeight: 400 };
+  controller.bindViewport(viewport);
+  const loading = controller.loadOlder();
+  controller.ingestEntryUpdate("account", "conversation", message("m3", "updated"));
+  assert.equal(controller.getSnapshot().isLoadingOlder, true);
+  // The renderer commits this row update while the older read is still pending.
+  assert.equal(controller.onEntriesCommitted(), false);
+  assert.equal(viewport.scrollTop, 40);
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 3, beforeCursor: "opaque-walk:3" });
+  read.resolve({ entries: [message("m1"), message("m2"), message("m3", "stale overlap")], nextBeforeSeq: 1, nextBeforeCursor: "opaque-walk:1" });
+  await loading;
+  assert.deepEqual(requests, [
+    { id: "conversation", limit: 200, beforeSeq: 5, beforeCursor: "opaque-walk:5" },
+    { id: "conversation", limit: 200, beforeSeq: 3, beforeCursor: "opaque-walk:3" },
+  ]);
+  viewport.scrollHeight = 480;
+  assert.equal(controller.onEntriesCommitted(), true);
+  assert.equal(viewport.scrollTop, 120);
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["m1", "m2", "m3"]);
+  assert.equal(row(controller.getSnapshot().entries, "m3").text, "updated");
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 1, beforeCursor: "opaque-walk:1" });
+  assert.equal(controller.onEntriesCommitted(), false);
+  controller.dispose();
+});
+
+const reactionTarget = { conversationId: "human-a", entryId: "older-entry" };
+const unexpectedReactionFailure = (error: unknown): never => { throw error; };
+
+test("NMR-26 a late first reaction response cannot replace a later mutation settlement", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const first = deferred<string>();
+  const second = deferred<string>();
+  const applied: string[] = [];
+  const a = controller.run(reactionTarget, () => first.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  const b = controller.run(reactionTarget, () => second.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  second.resolve("new reaction state");
+  await b;
+  first.resolve("old reaction state");
+  await a;
+  assert.deepEqual(applied, ["new reaction state"]);
+  controller.dispose();
+});
+
+test("NMR-26 an authoritative event wins over an outstanding reaction RPC response", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const pending = deferred<string>();
+  const applied: string[] = [];
+  const request = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  controller.observeEntry(reactionTarget);
+  applied.push("authoritative event");
+  pending.resolve("obsolete response");
+  await request;
+  assert.deepEqual(applied, ["authoritative event"]);
+  controller.dispose();
+});
+
+test("NMR-26 account generation fences a reaction across logout and return to the same identity", async () => {
+  let generation = 1;
+  const controller = createHumanReactionSettlement(() => generation);
+  const pending = deferred<string>();
+  const applied: string[] = [];
+  const request = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  generation = 2;
+  generation = 3;
+  pending.resolve("departed scope");
+  await request;
+  await controller.run(reactionTarget, async () => "current scope", (value) => { applied.push(value); }, unexpectedReactionFailure);
+  assert.deepEqual(applied, ["current scope"]);
+  controller.dispose();
+});
+
+test("NMR-26 independent conversation and message reactions retain their completion scope", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const pending = deferred<string>();
+  const applied: string[] = [];
+  const first = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  await controller.run({ conversationId: "human-b", entryId: reactionTarget.entryId }, async () => "other conversation", (value) => { applied.push(value); }, unexpectedReactionFailure);
+  await controller.run({ conversationId: reactionTarget.conversationId, entryId: "other-entry" }, async () => "other entry", (value) => { applied.push(value); }, unexpectedReactionFailure);
+  pending.resolve("original entry");
+  await first;
+  assert.deepEqual(applied, ["other conversation", "other entry", "original entry"]);
+  controller.dispose();
+});
+
+test("NMR-26 current reaction failures report once and obsolete failures cannot replace recovery feedback", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const errors: unknown[] = [];
+  const applied: string[] = [];
+  const failure = new Error("offline");
+  await controller.run(reactionTarget, async () => { throw failure; }, () => assert.fail("failed request applied"), (error) => { errors.push(error); });
+  const invalid = new Error("invalid settlement");
+  await controller.run(reactionTarget, async () => "invalid", () => { throw invalid; }, (error) => { errors.push(error); });
+  const pending = deferred<string>();
+  const old = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, (error) => { errors.push(error); });
+  await controller.run(reactionTarget, async () => "recovered", (value) => { applied.push(value); }, unexpectedReactionFailure);
+  pending.reject(new Error("obsolete failure"));
+  await old;
+  assert.deepEqual(errors, [failure, invalid]);
+  assert.deepEqual(applied, ["recovered"]);
+  controller.dispose();
+});
+
+test("NMR-26 deferred reaction state and error updates recheck events, clear and account generation", async () => {
+  let generation = 1;
+  const controller = createHumanReactionSettlement(() => generation);
+  const deferredApplications: Array<() => void> = [];
+  const applied: string[] = [];
+  const enqueue = (value: string, isCurrent: () => boolean) => {
+    deferredApplications.push(() => { if (isCurrent()) applied.push(value); });
+  };
+  await controller.run(reactionTarget, async () => "old event", enqueue, unexpectedReactionFailure);
+  controller.observeEntry(reactionTarget);
+  deferredApplications.shift()!();
+  await controller.run(reactionTarget, async () => "cleared conversation", enqueue, unexpectedReactionFailure);
+  controller.clearConversation(reactionTarget.conversationId);
+  deferredApplications.shift()!();
+  await controller.run(reactionTarget, async () => "old account", enqueue, unexpectedReactionFailure);
+  generation += 1;
+  deferredApplications.shift()!();
+  await controller.run(reactionTarget, async () => { throw new Error("old account error"); }, enqueue,
+    (_error, isCurrent) => enqueue("stale error notice", isCurrent));
+  generation += 1;
+  deferredApplications.shift()!();
+  await controller.run(reactionTarget, async () => "current state", enqueue, unexpectedReactionFailure);
+  deferredApplications.shift()!();
+  assert.deepEqual(applied, ["current state"]);
+  controller.dispose();
+});
+
+test("NMR-26 Human reaction settlement and a later event refresh an older row without moving it", async () => {
+  const pagination = createTranscriptPaginationController({
+    accountSlot: "account", agentId: reactionTarget.conversationId,
+    fetchPage: async ({ beforeSeq, beforeCursor }) => {
+      assert.equal(beforeSeq, 2);
+      assert.equal(beforeCursor, "opaque-walk:2");
+      return { entries: [message(reactionTarget.entryId)], nextBeforeSeq: 1, nextBeforeCursor: "opaque-walk:1" };
+    },
+  });
+  pagination.installInitialPage({ entries: [message("tail")], nextBeforeSeq: 2, nextBeforeCursor: "opaque-walk:2" });
+  await pagination.loadOlder();
+  const cursor = pagination.getSnapshot().cursor;
+  const controller = createHumanReactionSettlement(() => 1);
+  const reacted = { ...message(reactionTarget.entryId), reactions: [{ emoji: "👍", by: "me" }] };
+  const apply = (value: TranscriptMessage) => pagination.ingestEntryUpdate("account", reactionTarget.conversationId, value);
+  await controller.run(reactionTarget, async () => reacted, apply, unexpectedReactionFailure);
+  assert.deepEqual(pagination.getSnapshot().entries, [reacted, message("tail")]);
+  const late = deferred<TranscriptMessage>();
+  const pending = controller.run(reactionTarget, () => late.promise, apply, unexpectedReactionFailure);
+  const refreshed = { ...message(reactionTarget.entryId), reactions: [{ emoji: "❤️", by: "me" }] };
+  controller.observeEntry(reactionTarget);
+  pagination.ingestEntryUpdate("account", reactionTarget.conversationId, refreshed);
+  late.resolve(reacted);
+  await pending;
+  assert.deepEqual(pagination.getSnapshot().entries, [refreshed, message("tail")]);
+  assert.equal(pagination.getSnapshot().cursor, cursor);
+  assert.deepEqual(pagination.getSnapshot().cursor, { kind: "more", beforeSeq: 1, beforeCursor: "opaque-walk:1" });
+  controller.dispose();
+  pagination.dispose();
+});
+
+test("NMR-26 disposed reaction completion cannot mutate the renderer or show a stale error", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const pending = deferred<string>();
+  const request = controller.run(reactionTarget, () => pending.promise, () => assert.fail("disposed result applied"), unexpectedReactionFailure);
+  controller.dispose();
+  pending.reject(new Error("disconnected after dispose"));
+  await request;
+  await controller.run(reactionTarget, async () => { assert.fail("disposed request sent"); }, () => assert.fail("disposed result applied"), unexpectedReactionFailure);
+});
+
+test("NMR-26 Human empty snapshots clear content and resources while Agent partial echoes retain them", () => {
+  const human: TranscriptMessage = {
+    ...message("human-1", "old body"), authorKind: "human", authorId: "local",
+    attachments: [{ path: "/old-resource", name: "old.txt" }], richText: "old-rich-text", clientNonce: "old",
+  };
+  const partial = mergeAuthoritativeTranscriptMessage(human, {
+    ...message("human-1", "changed body"), authorKind: "human", authorId: "local",
+  });
+  assert.deepEqual(partial.attachments, human.attachments);
+  assert.equal(partial.richText, human.richText);
+  assert.equal(partial.clientNonce, human.clientNonce);
+  const cleared = mergeAuthoritativeTranscriptMessage(partial, {
+    ...message("human-1", ""), authorKind: "human", authorId: "local", attachments: [], richText: "", reactions: [],
+  });
+  assert.equal(cleared.text, "");
+  assert.deepEqual(cleared.attachments, []);
+  assert.equal(cleared.richText, "");
+  assert.equal(cleared.clientNonce, human.clientNonce);
+  const agentTurn = { ...message("pending-agent", "Agent prompt"), attachments: human.attachments,
+    delivery: "pending" as const, clientNonce: "agent-nonce" };
+  const echo = mergeAuthoritativeTranscriptMessage(agentTurn, {
+    ...message("attachment-echo", ""), attachments: [{ path: "/new-resource", name: "new.txt" }], delivery: "sent",
+  }, { preserveCurrentId: true });
+  assert.equal(echo.id, agentTurn.id);
+  assert.equal(echo.text, agentTurn.text);
+  assert.equal(echo.delivery, "pending");
+  assert.equal(echo.clientNonce, "agent-nonce");
+  assert.deepEqual(echo.attachments?.map((attachment) => attachment.path), ["/old-resource", "/new-resource"]);
+});
+
+test("NMR-26 peer and missing-author nonces cannot reconcile a local Human placeholder", () => {
+  const pending: TranscriptMessage = { ...message("pending-n", "local draft"), authorKind: "human", authorId: "local", clientNonce: "n", delivery: "pending" };
+  const peer = { ...pending, id: "peer-1", authorId: "peer", text: "peer body" };
+  const missingAuthor = { ...pending, id: "unknown", authorId: undefined };
+  assert.equal(transcriptEntriesCorrelate(pending, peer), false);
+  assert.equal(transcriptEntriesCorrelate(pending, missingAuthor), false);
+  assert.equal(transcriptEntriesCorrelate(pending, { ...pending, id: "assistant", role: "assistant" }), false);
+  assert.deepEqual(ids(reconcileAuthoritativeTranscriptBaseline([pending], [peer])), ["peer-1", "pending-n"]);
+  assert.deepEqual(ids(reconcileTranscriptMutation([pending], peer, { previousId: pending.id, appendIfMissing: true })), ["pending-n", "peer-1"]);
+  const authorless = { ...message("authorless"), clientNonce: "n" };
+  assert.deepEqual(ids(reconcileTranscriptMutation([pending], authorless, { previousId: pending.id })), [pending.id]);
+  assert.deepEqual(applyTranscriptReadUpdates([pending], new Map([[pending.id, peer]])), [pending]);
+  assert.deepEqual(applyTranscriptReadUpdates([pending], new Map([[pending.id, authorless]])), [pending]);
+  const local = { ...pending, id: "local-1", delivery: "sent" as const };
+  assert.deepEqual(ids(reconcileTranscriptMutation([pending, peer], local, { previousId: pending.id })), ["local-1", "peer-1"]);
+});
+
+test("NMR-26 before-ID canonicalization and a delayed receipt preserve one newer settled Human row", () => {
+  const pending: TranscriptMessage = { ...message("pending-n", "composed"), authorKind: "human", authorId: "local", clientNonce: "n", delivery: "pending" };
+  const accepted = { ...pending, id: "remote-1", delivery: "sent" as const };
+  const afterEvent = reconcileTranscriptMutation([pending], accepted, { previousId: pending.id });
+  assert.deepEqual(ids(afterEvent), [accepted.id]);
+  const newer = { ...accepted, text: "", attachments: [], reactions: [{ emoji: "💙", by: "me" }] };
+  const withNewer = reconcileTranscriptMutation(afterEvent, newer);
+  const settled = reconcileTranscriptMutation([...withNewer, pending], accepted, { previousId: pending.id, preserveSettled: true });
+  assert.deepEqual(ids(settled), [accepted.id]);
+  assert.equal(row(settled, accepted.id).text, "");
+  assert.deepEqual(row(settled, accepted.id).reactions, newer.reactions);
+  const latePage = applyTranscriptReadUpdates([pending], new Map([[pending.id, accepted], [accepted.id, newer]]));
+  assert.deepEqual(ids(latePage), [accepted.id]);
+  assert.equal(row(latePage, accepted.id).text, "");
+  assert.deepEqual(row(latePage, accepted.id).reactions, newer.reactions);
+  const updates = new Map<string, ConversationTranscriptEntry>();
+  recordTranscriptReadUpdate(updates, { ...newer, richText: "" }, pending.id);
+  recordTranscriptReadUpdate(updates, { ...accepted, text: "later partial" });
+  const clearThenPartial = applyTranscriptReadUpdates([{ ...pending, attachments: [{ path: "/old", name: "old.txt" }], richText: "old-rich-text" }], updates);
+  assert.deepEqual(ids(clearThenPartial), [accepted.id]);
+  assert.equal(row(clearThenPartial, accepted.id).text, "later partial");
+  assert.deepEqual(row(clearThenPartial, accepted.id).attachments, []);
+  assert.deepEqual(row(clearThenPartial, accepted.id).reactions, newer.reactions);
+  assert.equal(row(clearThenPartial, accepted.id).richText, "");
+  recordTranscriptReadUpdate(updates, { ...newer, id: "peer", authorId: "peer" }, pending.id);
+  assert.equal(row(applyTranscriptReadUpdates([pending], updates), accepted.id).text, "later partial");
+  const noNonce = { ...accepted, clientNonce: undefined, id: "rewritten-id" };
+  assert.deepEqual(ids(reconcileTranscriptMutation(afterEvent, noNonce, { previousId: accepted.id })), [noNonce.id]);
+});
+
+test("NMR-26 overlapping older windows preserve canonical anchors and loaded/in-flight identity updates", async () => {
+  const current = [message("m2", "newer"), message("m4"), message("m5")];
+  const merged = mergeOlderTranscriptEntries(current, [message("m1"), message("m2", "stale"), message("m3"), message("m4")]);
+  assert.deepEqual(ids(merged), ["m1", "m2", "m3", "m4", "m5"]);
+  assert.equal(row(merged, "m2").text, "newer");
+  const old: TranscriptMessage = { ...message("old"), authorKind: "human", authorId: "local" };
+  const remapped = { ...old, id: "canonical", text: "edited", attachments: [] };
+  const page = deferred<TranscriptHistoryPage>();
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "conversation", fetchPage: () => page.promise,
+  });
+  controller.installInitialPage({ entries: [old, message("tail")], nextBeforeSeq: 3 });
+  controller.ingestEntryUpdate("account", "conversation", remapped, old.id);
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["canonical", "tail"]);
+  controller.ingestEntryUpdate("account", "conversation", { ...remapped, id: "peer", authorId: "peer" }, remapped.id);
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["canonical", "tail"]);
+  controller.installInitialPage({ entries: [], nextBeforeSeq: 3 });
+  const loading = controller.loadOlder();
+  controller.ingestEntryUpdate("account", "conversation", { ...remapped, id: "peer", authorId: "peer" }, old.id);
+  controller.ingestEntryUpdate("account", "conversation", remapped, old.id);
+  page.resolve({ entries: [old, message("tail")] });
+  await loading;
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["canonical", "tail"]);
+  assert.equal(row(controller.getSnapshot().entries, "canonical").text, "edited");
+  controller.dispose();
+});
+
+test("NMR-26 failed older pages coalesce repeated Human clears and partial updates before replay", async () => {
+  const first = deferred<TranscriptHistoryPage>();
+  const retry = deferred<TranscriptHistoryPage>();
+  const requests: TranscriptHistoryRequest[] = [];
+  const original: TranscriptMessage = {
+    ...message("older", "stale body"), authorKind: "human", authorId: "local", clientNonce: "older-nonce",
+    attachments: [{ path: "/old-resource", name: "old.txt" }], richText: "old-rich-text",
+    reactions: [{ emoji: "👍", by: "me" }],
+  };
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "conversation",
+    fetchPage: (request) => {
+      requests.push(request);
+      return requests.length === 1 ? first.promise : retry.promise;
+    },
+  });
+  controller.installInitialPage({ entries: [message("tail")], nextBeforeSeq: 5, nextBeforeCursor: "opaque-walk:5" });
+  const loading = controller.loadOlder();
+  controller.ingestEntryUpdate("account", "conversation", {
+    ...original, text: "", attachments: [], richText: "", reactions: [],
+  });
+  const failure = new Error("older page unavailable");
+  first.reject(failure);
+  await loading;
+  assert.equal(controller.getSnapshot().olderFailure, failure);
+  let measuringReplay = false;
+  let supersededPayloadReads = 0;
+  for (let index = 0; index < 256; index += 1) {
+    controller.ingestEntryUpdate("account", "conversation", {
+      ...message(original.id), authorKind: "human", authorId: "local",
+      get text() {
+        // Observe replay work directly, without a timing threshold or access
+        // to private controller storage. Ingestion may read these payloads.
+        if (measuringReplay) supersededPayloadReads += 1;
+        return "edit-" + index;
+      },
+    });
+  }
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["tail"]);
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 5, beforeCursor: "opaque-walk:5" });
+  const retried = controller.loadOlder();
+  measuringReplay = true;
+  retry.resolve({ entries: [original], nextBeforeSeq: 1, nextBeforeCursor: "opaque-walk:1" });
+  await retried;
+  measuringReplay = false;
+  assert.ok(supersededPayloadReads <= 4, "one identity must not replay its superseded event log");
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["older", "tail"]);
+  const refreshed = row(controller.getSnapshot().entries, original.id);
+  assert.equal(refreshed.text, "edit-255");
+  assert.deepEqual(refreshed.attachments, []);
+  assert.equal(refreshed.richText, "");
+  assert.deepEqual(refreshed.reactions, []);
+  assert.equal(refreshed.clientNonce, original.clientNonce);
+  assert.equal(controller.getSnapshot().olderFailure, null);
+  assert.deepEqual(requests, [
+    { id: "conversation", limit: 200, beforeSeq: 5, beforeCursor: "opaque-walk:5" },
+    { id: "conversation", limit: 200, beforeSeq: 5, beforeCursor: "opaque-walk:5" },
+  ]);
+  controller.dispose();
+});
+
+test("NMR-26 two failed reads retain composed previous-ID aliases without injecting unrelated rows", async () => {
+  const reads = [deferred<TranscriptHistoryPage>(), deferred<TranscriptHistoryPage>(), deferred<TranscriptHistoryPage>()] as const;
+  let requestIndex = 0;
+  const original: TranscriptMessage = {
+    ...message("old", "stale body"), authorKind: "human", authorId: "local",
+    attachments: [{ path: "/old-resource", name: "old.txt" }], richText: "old-rich-text",
+  };
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "conversation", fetchPage: () => {
+      const read = reads[requestIndex++];
+      assert.ok(read, "only the three explicit page requests may run");
+      return read.promise;
+    },
+  });
+  controller.installInitialPage({ entries: [message("tail")], nextBeforeSeq: 5, nextBeforeCursor: "opaque-walk:5" });
+  const first = controller.loadOlder();
+  controller.ingestEntryUpdate("account", "conversation", {
+    ...message("middle", "first edit"), authorKind: "human", authorId: "local", attachments: [], richText: "",
+  }, original.id);
+  reads[0].reject(new Error("first failure"));
+  await first;
+  controller.ingestEntryUpdate("account", "conversation", {
+    ...message("canonical", "second edit"), authorKind: "human", authorId: "local",
+  }, "middle");
+  const second = controller.loadOlder();
+  controller.ingestEntryUpdate("account", "conversation", {
+    ...message("canonical", ""), authorKind: "human", authorId: "local", reactions: [],
+  });
+  const failure = new Error("second failure");
+  reads[1].reject(failure);
+  await second;
+  assert.equal(controller.getSnapshot().olderFailure, failure);
+  controller.ingestEntryUpdate("account", "conversation", {
+    ...message("canonical", "latest edit"), authorKind: "human", authorId: "local",
+  });
+  controller.ingestEntryUpdate("account", "conversation", message("outside-page"));
+  const third = controller.loadOlder();
+  reads[2].resolve({ entries: [original, { ...original, id: "middle" }] });
+  await third;
+  assert.equal(requestIndex, 3);
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["canonical", "tail"]);
+  const refreshed = row(controller.getSnapshot().entries, "canonical");
+  assert.equal(refreshed.text, "latest edit");
+  assert.deepEqual(refreshed.attachments, []);
+  assert.equal(refreshed.richText, "");
+  assert.deepEqual(refreshed.reactions, []);
+  assert.equal(controller.getSnapshot().olderFailure, null);
+  controller.dispose();
+});
+
+test("NMR-26 failed-page coalescing rejects cross-author aliases with and without nonces in either event order", async () => {
+  for (const [clientNonce, peerFirst] of [
+    [undefined, false], [undefined, true], ["shared", false], ["shared", true],
+  ] as const) {
+    const first = deferred<TranscriptHistoryPage>();
+    const retry = deferred<TranscriptHistoryPage>();
+    let requestIndex = 0;
+    const local: TranscriptMessage = {
+      ...message(clientNonce == null ? "old" : "human-message:shared", "local draft"), authorKind: "human", authorId: "local",
+      clientNonce, delivery: "pending",
+    };
+    const peer: TranscriptMessage = {
+      ...local, id: "peer-row", authorId: "peer", text: "peer body", delivery: "sent", remoteMessageId: "41",
+    };
+    const canonical: TranscriptMessage = {
+      ...local, id: "local-canonical", text: "local settled", delivery: "sent", remoteMessageId: "42", attachments: [],
+    };
+    const controller = createTranscriptPaginationController({
+      accountSlot: "account", agentId: "conversation",
+      fetchPage: () => ++requestIndex === 1 ? first.promise : retry.promise,
+    });
+    controller.installInitialPage({ entries: [message("tail")], nextBeforeSeq: 5 });
+    const loading = controller.loadOlder();
+    const localEvent = () => controller.ingestEntryUpdate("account", "conversation", canonical, local.id);
+    const foreignEvents = () => {
+      controller.ingestEntryUpdate("account", "conversation", { ...peer, text: "peer updated" }, local.id);
+      controller.ingestEntryUpdate("account", "conversation", {
+        ...peer, id: "authorless-row", authorId: undefined, text: "unqualified identity",
+      }, local.id);
+    };
+    if (peerFirst) { foreignEvents(); localEvent(); }
+    else { localEvent(); foreignEvents(); }
+    first.reject(new Error("retry required"));
+    await loading;
+    controller.ingestEntryUpdate("account", "conversation", { ...peer, text: "peer latest" }, local.id);
+    const retried = controller.loadOlder();
+    retry.resolve({ entries: [local, peer] });
+    await retried;
+    assert.deepEqual(ids(controller.getSnapshot().entries), ["local-canonical", "peer-row", "tail"]);
+    assert.equal(row(controller.getSnapshot().entries, canonical.id).authorId, "local");
+    assert.equal(row(controller.getSnapshot().entries, canonical.id).text, "local settled");
+    assert.deepEqual(row(controller.getSnapshot().entries, canonical.id).attachments, []);
+    assert.equal(row(controller.getSnapshot().entries, peer.id).authorId, "peer");
+    assert.equal(row(controller.getSnapshot().entries, peer.id).text, "peer latest");
+    controller.dispose();
+  }
+});
+
+test("NMR-26 appended canonical nonce settlement preserves earlier clears without a previous-ID event", async () => {
+  const first = deferred<TranscriptHistoryPage>();
+  const retry = deferred<TranscriptHistoryPage>();
+  let requestIndex = 0;
+  const pending: TranscriptMessage = {
+    ...message("human-message:original", "stale draft"), authorKind: "human", authorId: "local",
+    clientNonce: "original", delivery: "pending",
+    attachments: [{ path: "/old-resource", name: "old.txt" }], richText: "old-rich-text",
+  };
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "conversation",
+    fetchPage: () => ++requestIndex === 1 ? first.promise : retry.promise,
+  });
+  controller.installInitialPage({ entries: [message("tail")], nextBeforeSeq: 5 });
+  const loading = controller.loadOlder();
+  controller.ingestEntryUpdate("account", "conversation", {
+    ...pending, text: "", attachments: [], richText: "", reactions: [],
+  });
+  first.reject(new Error("retry required"));
+  await loading;
+  controller.ingestEntryUpdate("account", "conversation", {
+    ...message("canonical", "settled"), authorKind: "human", authorId: "local",
+    clientNonce: pending.clientNonce, delivery: "sent", remoteMessageId: "42",
+  });
+  controller.ingestEntryUpdate("account", "conversation", {
+    ...message("canonical", "latest partial"), authorKind: "human", authorId: "local",
+  });
+  const retried = controller.loadOlder();
+  retry.resolve({ entries: [pending] });
+  await retried;
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["canonical", "tail"]);
+  const refreshed = row(controller.getSnapshot().entries, "canonical");
+  assert.equal(refreshed.text, "latest partial");
+  assert.equal(refreshed.clientNonce, pending.clientNonce);
+  assert.equal(refreshed.delivery, "sent");
+  assert.equal(refreshed.remoteMessageId, "42");
+  assert.deepEqual(refreshed.attachments, []);
+  assert.equal(refreshed.richText, "");
+  assert.deepEqual(refreshed.reactions, []);
+  controller.dispose();
+});
+
+test("NMR-26 the first unloaded-row update after a failed read survives its explicit retry", async () => {
+  const retry = deferred<TranscriptHistoryPage>();
+  const failure = new Error("failed before any events");
+  let requestIndex = 0;
+  const original: TranscriptMessage = {
+    ...message("older", "stale"), authorKind: "human", authorId: "local",
+    attachments: [{ path: "/old-resource", name: "old.txt" }], richText: "old-rich-text",
+  };
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "conversation",
+    fetchPage: () => ++requestIndex === 1 ? Promise.reject(failure) : retry.promise,
+  });
+  controller.installInitialPage({ entries: [message("tail")], nextBeforeSeq: 5, nextBeforeCursor: "opaque-walk:5" });
+  await controller.loadOlder();
+  assert.equal(controller.getSnapshot().olderFailure, failure);
+  controller.ingestEntryUpdate("account", "conversation", { ...original, text: "", attachments: [], richText: "" });
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["tail"]);
+  const retried = controller.loadOlder();
+  assert.equal(controller.loadOlder(), retried);
+  retry.resolve({ entries: [original] });
+  await retried;
+  assert.equal(requestIndex, 2);
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["older", "tail"]);
+  const refreshed = row(controller.getSnapshot().entries, original.id);
+  assert.equal(refreshed.text, "");
+  assert.deepEqual(refreshed.attachments, []);
+  assert.equal(refreshed.richText, "");
+  assert.equal(controller.getSnapshot().olderFailure, null);
   controller.dispose();
 });
 

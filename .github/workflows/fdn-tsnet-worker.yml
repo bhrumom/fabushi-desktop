@@ -10,7 +10,7 @@ on:
       - "source/host/tests/network_worker_process_contract.rs"
       - ".github/workflows/fdn-tsnet-worker.yml"
   push:
-    branches: [main]
+    branches: [main, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - "docs/specs/fdn-001-tsnet-network-worker.md"
       - "source/fabushi-network-worker/**"
@@ -94,7 +94,16 @@ jobs:
           test -z "$(gofmt -l .)"
       - name: Unit tests
         shell: bash
-        run: go test -mod=readonly ./...
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > worker-tests-source-sha.txt
+          go version > worker-tests-toolchain.txt
+          go test -mod=readonly -count=1 -v ./... 2>&1 | tee worker-tests.log
+          test "$(grep -Ec '^--- PASS: Test' worker-tests.log)" -eq 18
+          if grep -Eq '^[[:space:]]*--- (FAIL|SKIP):' worker-tests.log; then
+            echo 'worker behavior tests failed or were skipped' >&2
+            exit 1
+          fi
       - name: Vet
         shell: bash
         run: go vet -mod=readonly ./...
@@ -105,6 +114,17 @@ jobs:
         if: always()
         shell: bash
         run: git diff --exit-code HEAD -- go.mod go.sum
+      - name: Preserve actual worker behavior evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdn-worker-contracts-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            source/fabushi-network-worker/worker-tests.log
+            source/fabushi-network-worker/worker-tests-source-sha.txt
+            source/fabushi-network-worker/worker-tests-toolchain.txt
+          if-no-files-found: error
+          retention-days: 90
 
   rust-host-supervisor:
     name: Rust Host supervisor

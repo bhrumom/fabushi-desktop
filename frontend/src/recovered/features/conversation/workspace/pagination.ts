@@ -1,5 +1,5 @@
 import type { ConversationTranscriptEntry } from "./model";
-import { mergeOlderTranscriptEntries } from "../../../../production/transcript-projection.ts";
+import { mergeOlderTranscriptEntries, recordTranscriptReadUpdate, reconcileTranscriptMutation } from "../../../../production/transcript-projection.ts";
 export { mergeOlderTranscriptEntries } from "../../../../production/transcript-projection.ts";
 
 /**
@@ -60,7 +60,7 @@ export interface TranscriptPaginationRootHandoff {
   subscribe(listener: () => void): () => void;
   setScope(accountSlot: string | null, agentId: string | null): void;
   installInitialPage(page: TranscriptHistoryPage): boolean;
-  ingestEntryUpdate(accountSlot: string | null, agentId: string, entry: ConversationTranscriptEntry): void;
+  ingestEntryUpdate(accountSlot: string | null, agentId: string, entry: ConversationTranscriptEntry, previousId?: string): void;
   loadOlder(): Promise<void>;
   bindViewport(viewport: TranscriptViewport | null): void;
   onEntriesCommitted(): boolean;
@@ -128,8 +128,11 @@ export function createTranscriptPaginationController(
   let requestGeneration = 0;
   let inFlight: Promise<void> | null = null;
   const updatesDuringRequest = new Map<string, ConversationTranscriptEntry>();
+  // The returned row decides which author may use a before-ID. Retain all
+  // distinct candidate identities when different authors name the same alias.
+  const aliasTargetsDuringRequest = new Map<string, Set<string>>();
   let viewport: TranscriptViewport | null = null;
-  let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number } | null = null;
+  let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number; ready: boolean } | null = null;
   let disposed = false;
 
   const buildSnapshot = (): TranscriptPaginationSnapshot => ({
@@ -169,6 +172,7 @@ export function createTranscriptPaginationController(
     olderFailure = null;
     pendingAnchor = null;
     updatesDuringRequest.clear();
+    aliasTargetsDuringRequest.clear();
   };
 
   return {
@@ -198,6 +202,7 @@ export function createTranscriptPaginationController(
       requestGeneration += 1;
       inFlight = null;
       updatesDuringRequest.clear();
+      aliasTargetsDuringRequest.clear();
       entries = uniqueEntries(page.entries);
       cursor = cursorFromPage(page);
       olderFailure = null;
@@ -206,13 +211,22 @@ export function createTranscriptPaginationController(
       return true;
     },
 
-    ingestEntryUpdate(updateAccountSlot, ownerId, entry) {
+    ingestEntryUpdate(updateAccountSlot, ownerId, entry, previousId) {
       if (disposed || updateAccountSlot !== accountSlot || ownerId !== agentId) return;
       // A failed page can be retried with an older snapshot. Keep the latest
-      // committed overlay for that read until a successful page consumes it.
-      if (inFlight != null || updatesDuringRequest.has(entry.id)) updatesDuringRequest.set(entry.id, entry);
-      if (!entries.some((candidate) => candidate.id === entry.id)) return;
-      entries = entries.map((candidate) => candidate.id === entry.id ? entry : candidate);
+      // committed overlay for each identity/alias, not its unbounded event log.
+      // This includes the first unloaded-row update arriving after a failure.
+      if (inFlight != null || olderFailure != null || updatesDuringRequest.size > 0) {
+        recordTranscriptReadUpdate(updatesDuringRequest, entry, previousId);
+        if (previousId != null) {
+          const targets = aliasTargetsDuringRequest.get(previousId) ?? new Set<string>();
+          targets.add(entry.id);
+          aliasTargetsDuringRequest.set(previousId, targets);
+        }
+      }
+      const next = reconcileTranscriptMutation(entries, entry, { previousId });
+      if (next === entries) return;
+      entries = next;
       emit();
     },
 
@@ -231,7 +245,8 @@ export function createTranscriptPaginationController(
           generation,
           pageGeneration,
           scrollTop: viewport.scrollTop,
-          scrollHeight: viewport.scrollHeight
+          scrollHeight: viewport.scrollHeight,
+          ready: false
         };
       } else pendingAnchor = null;
       olderFailure = null;
@@ -249,8 +264,20 @@ export function createTranscriptPaginationController(
             ...(beforeCursor === undefined ? {} : { beforeCursor }),
           });
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
-          const refreshedPage = page.entries.map((entry) => updatesDuringRequest.get(entry.id) ?? entry);
+          let refreshedPage = page.entries;
+          for (const [previousId, entry] of updatesDuringRequest) {
+            // Reconcile aliases and author-qualified nonces as well as IDs:
+            // an appended canonical settlement may not name its placeholder.
+            refreshedPage = reconcileTranscriptMutation(refreshedPage, entry, { previousId });
+          }
+          for (const [previousId, targets] of aliasTargetsDuringRequest) {
+            for (const targetId of targets) {
+              const entry = updatesDuringRequest.get(targetId);
+              if (entry != null) refreshedPage = reconcileTranscriptMutation(refreshedPage, entry, { previousId });
+            }
+          }
           entries = mergeOlderTranscriptEntries(entries, refreshedPage);
+          if (pendingAnchor != null) pendingAnchor.ready = true;
           cursor = cursorFromPage(page);
           olderFailure = null;
           options.onPageApplied?.({ accountSlot: requestAccountSlot, agentId: requestAgentId }, {
@@ -259,6 +286,7 @@ export function createTranscriptPaginationController(
             ...(page.nextBeforeCursor === undefined ? {} : { nextBeforeCursor: page.nextBeforeCursor }),
           });
           updatesDuringRequest.clear();
+          aliasTargetsDuringRequest.clear();
           emit();
         } catch (error) {
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
@@ -266,6 +294,7 @@ export function createTranscriptPaginationController(
             cursor = { kind: "unavailable" };
             olderFailure = null;
             updatesDuringRequest.clear();
+            aliasTargetsDuringRequest.clear();
           } else olderFailure = error;
           pendingAnchor = null;
           emit();
@@ -288,7 +317,7 @@ export function createTranscriptPaginationController(
     },
 
     onEntriesCommitted() {
-      if (disposed || pendingAnchor == null || viewport == null) return false;
+      if (disposed || pendingAnchor == null || !pendingAnchor.ready || viewport == null) return false;
       const anchor = pendingAnchor;
       pendingAnchor = null;
       if (anchor.generation !== generation || anchor.pageGeneration !== pageGeneration) return false;

@@ -43,6 +43,32 @@ Exact source/oracle/old-failure/execution boundary: `projects/telegram-desktop-r
 | Existing reply/resource behavior | NMR-49 current-row reply recovery and NMR-48 pinned-byte preflight retained; arbitrary ordinary reply metadata is not a forwarding identity | Retain all existing Human/Agent/credential/resource/journal gates; add exactly one selected Human case |
 | Evidence/acceptance | Original2a failed;59 message jobs passed;936 UI18/5/16 and source157/schema37 passed while two Native jobs queued | Source counters/reviews/ACCEPT unchanged; temporary ledger transport is not product validation |
 
+## Round31 — canonical reply remote identity and exact execution
+
+NMR-49c / NMR-AC-40: existing Session reply admission now uses the strict
+canonical positive safe-integer message-ID parser for both direct and historical
+parents. Valid local/peer and local-only pending semantics remain. Two existing
+tests cover28 historical/numeric scenarios and17 direct-target scenarios; readable
+notice fixtures exercise the kind guard. Physical rows, independent chronology,
+HTTP refusal/idempotency, sync and reopen are checked without a new owner.
+
+Exact H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40`, run41524748572,
+reconciliation125549482711 passed Human62/resource3/sharebox1/journal12/
+Agent4/credential3/forwardHTTP1. The named reply, mixed-stale, dual-SQLite CAS
+and corrupt-journal recovery cases actually passed. UI passed Transcript29,
+cursor17, forward5 and Chromium16; Electron, Windows11 and retained C wrappers
+15-pass/1-live-DC-ignore also passed at this H. Shipping125549483258 remains
+queued at the recorded observation; old ff6 shipping is not a replacement for
+this affected-H result. Complete log hashes and artifact identities are in
+`projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+
+Original06 reconciliation was cancelled without a runner. Originalff6
+reconciliation remains unexecuted; containing106bb and this4cbd run qualify the
+requested later recovery assertions separately. The afb E0382 fixture failure
+was TEST_FLAW, corrected in concurrent106bb and preserved. Backend PR137 stays
+read-only; full source/legal, real services, signed supported-platform packages,
+full Bot/quality/upgrade/rollback and independent ACCEPT remain open.
+
 ## NMR-49 / NMR-AC-40 — pending-parent reply recovery
 
 Fixed U unchanged; integration base `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`.
@@ -104,21 +130,28 @@ Inspected base H=`65253740c033508ab08a4b500449a5b56727e940`,
 run41504939510 attempt1. The prior Round27 description of five authored
 integration cases/owner5 and its absent evidence file are withdrawn; the base
 actually has Human33, sharebox1 and journal2. This round authors the five cases.
-New containing-H execution is not-run at preparation; Actions supplies the
-exact target, run/job/artifact binding. Historical passing counts are not new-H evidence.
+Exact H59f5fa24827812f78336c464995d161f403dedfb/run41508537631 is now
+completed/success: Human38/sharebox1/journal3/Agent4/private3/Gateway1,
+renderer/Transcript16/settlement5/Chromium12, actual AppHost/gateway5/library11/
+protocol122/TCP9/copy4 with three refusal controls, Electron and Windows11.
+All five complete logs and four CI theme/viewport images were inspected.
+The same journal test is strengthened on the later e8b48cb owner through
+the actual valid-batch merge/write path, preserving12 cases and all concurrent
+attachment/completion/concurrency changes. That oracle requires containing-H
+Actions; old-H execution is not promoted to later code.
 
 | Requirement / oracle | Existing production owner | Authored check / actual base evidence |
 | --- | --- | --- |
 | NMR-46 / NMR-AC-37 recovery | ForwardMessageDialog fixture using existing runtime theme installer | Base renderer/Transcript16/settlement5 pass; Chromium11/12, missing setTheme. Retain Chromium12, keyboard control and four actual light/dark viewport screenshots. |
-| NMR-47a/b / NMR-AC-38 | Source SandAgentDb journal plus destination Session/Transcript | Five actual HTTP/SQLite/process cases now authored; parent kills and reaps child, reads committed intent independently, resumes untouched target, injects staging/progress SQL errors. Require Human38. |
+| NMR-47a/b / NMR-AC-38 | Source SandAgentDb journal plus destination Session/Transcript | Five actual HTTP/SQLite/process cases passed in H59 Human38; parent kills and reaps child, reads committed intent independently, resumes untouched target, injects staging/progress SQL errors. Require Human38. |
 | NMR-47c/d / NMR-AC-38 | Existing credential/source authorization and ordinary sync | Ambiguous first POST reuses nonce; immutable source snapshot; same/subset/concurrent completed replay; changed source/privacy/expanded-set negatives; source/account/issuer denial; no generic-outbox bypass. |
 | NMR-47e/f / NMR-AC-38 | Existing SandAgentDb expected-value CAS and Session eligibility | Two-handle stale read regression plus typed source denial and unrelated actual history GET; I/O failures still stop. Select sharebox1 and journal3 separately. |
 | Gateway / Human / Agent preservation | Existing authenticated Gateway and Session writers | Base Human33/sharebox1 pass, count assertion fails; Agent4/private3/Gateway1 are skipped after it. All remain required on new H. |
 | Native package / Social / transport | Actual AppHost shipping root and resource-copy owner | Base shipping125481711613 compiled AppHost and passed composition12/Native7/FeatureHost7/Social9/HTTP-owner6/Host6/ABI7/CLI3/gateway5, then stale expected3 count failed. Later library/protocol/TCP/copy checks not run; new H must execute them. |
 | Electron / Windows | Existing carrier/auth/update/publisher owners | Base Electron125481711452 and Windows125481711041 succeed; no formal publisher or signed-package acceptance. |
 
-Source_reviews remains absent; source/product/independent acceptance stay
-false. Backend #137 remains open/draft/unmerged and read-only. Remote
+Source_reviews was absent at65253740; later concurrent records are retained.
+Source/product/independent acceptance remain ungranted. Backend #137 remains open/draft/unmerged and read-only. Remote
 provenance/policy, resource retention, multi-AppHost uniqueness, real service,
 packaged visual/a11y, signed release, Bot and performance/soak remain open.
 
@@ -171,6 +204,25 @@ at preparation; historical execution does not qualify later changed code.
 | NMR-43 / AC-34 | Final package hashes/sizes plus complete decoded blockmap equality; receipt binds actual sidecar | Metadata18 and unchanged digest-pinned artifact13093546572 repair/immutable-byte experiment | Old15 passed, historical experiment failed compressed-byte comparison; fix authored; signed candidate acceptance open |
 | NMR-44 / AC-35 | Runtime lifecycle owner; v1 cannot revive interrupted runs/duplicate terminals |3 lifecycle cases in full lib9 | Compiled at base; lib9 execution blocked by executable fixture failure |
 | NMR-45 / AC-36 | Real persistent request registry with UUID-owned fixture, lastError/restoredRequests and stable srq-ID | Keep executable5; first1/duplicate0, disk and memory unchanged, reopen retains request, independent store issues1 | TEST_FLAW repaired in tests; containing-H execution required |
+
+## Round 30 — exact recovery gate classification
+
+Original06fb/run41512635210 has four passing execution jobs; reconciliation
+was cancelled before runner assignment, so Human39/journal5 were not executed.
+Later d261afe/run41521138485 passed Human54/journal12 with mixed stale snapshots
+and26 cold/cached corruption controls. Preserve the newer beafc6fc concurrent
+CAS valid-intent, zero-busy-callback, raw-byte and fresh-retry/reopen oracle.
+Exact afb34b49/run41522324008 failed before Human62 execution with Rust E0382 in
+the reaction-restart fixture: it reused `runtime` after drop. Concurrent
+`106bb95ba97ef7722e9523285783824393039bc0` closes the live `restarted` owner;
+the exact remote test blob matches the independently reviewed one-line fix and
+retains all lifecycle, durability, event and HTTP assertions. This is TEST_FLAW,
+not evidence of a product failure. Exact106bb95/run41523018920 subsequently
+passed Human62/resource3/sharebox1/journal12/Agent4/credential3/HTTP1, including
+the newer CAS and corruption controls; UI/Electron/Windows also pass. Shipping
+125543545357 is queued at2026-11-02T20:54Z; overall pass, independent ACCEPT and
+release remain blocked. Evidence:
+`projects/telegram-desktop-rust/evidence/round30-forward-recovery-qualification.json`.
 
 ## Rule
 
@@ -470,8 +522,132 @@ Spec: `docs/specs/fabushi-product-settings-owner.md` §14. Responsibility remain
 | --- | --- | --- |
 | PS-UI-01 / PS-UI-02 | Existing SettingsDesktopSurface → GeneralSettingsPanel → networkProxy adapter → DesktopBridge → Main RPC → Coordinator MainData → Native ProductSettingsOwner; full result preserves canonical settings and separate publication | Actual-surface timeout same-value normalization and five publication cases; unavailable/unconfirmed never claims connected routing |
 | PS-UI-03 / PS-UI-04 | Surface lifetime/write tokens plus adapter in-flight promise barrier; accepted Host write continues after close, reopened read waits then gets canonical state | Duplicate/pending controls with independent Theme, failed endpoint/timeout drafts, close/unmount/bridge ABA, pending success/error reopening and fixed read-error Retry; 18 authored Chromium cases total |
-| PS-UI-05 | Existing native-message-ui Actions job, production Settings fixture and unchanged Native Settings persistence/restart contracts | Exact2ac00f98ad7831f351ad2de986abca91bceee2b0/run41524706583/job125549341413 Settings18 and actual renderer build passed. Separate architecture loader repair and integrated shipping remain open, together with Native proxy transport, supported packages, visual/a11y/security/upgrade/rollback and independent ACCEPT |
+| PS-UI-05 | Existing native-message-ui Actions job, production Settings fixture and unchanged Native Settings persistence/restart contracts | Exact2ac00f98ad7831f351ad2de986abca91bceee2b0/run41524706583/job125549341413 Settings18 and actual renderer build passed. Exactdb27/run41526294942/job125554766420 repaired renderer132 plus both strict architecture gates passed; new integrated-H checks and shipping remain open, together with Native proxy transport, supported packages, visual/a11y/security/upgrade/rollback and independent ACCEPT |
 
 Test: `frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs`.
 Current-H results stay in `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`;
 no source-review count, historical Rust execution or independent acceptance is promoted.
+### Round7 resumed NMR-22/24/26 boundary evidence
+
+Current additions retain the existing FBCP-NMR-001 row and production route.
+Eight new `shipping_human_` cases in `session_gateway_contract.rs` cover short/empty
+32nd pages, durable partial-page replay, stable equal-timestamp beforeSeq,
+applied-row/uncleared-intention restart, malformed persisted target admission,
+post-HTTP target changes, and actual gateway pre-staging refusal with a numeric-ID
+positive control, plus canonical message-ID and strict page-order rejection with
+checkpoint-preserving restart recovery. All prior Human/forward/Agent/credential/shipping cases remain.
+Nine new cases in `transcript-projection.contract.test.ts` exercise the actual
+completion fence and intermediate-render viewport anchor. Existing tail merge,
+read buffers, cursor cache, immutable forward UI and one Transcript remain.
+
+The round7 evidence receipt separates original failed63da, passed fixture30b4,
+qualified later predecessor94dc, unpublished superseded preparation and the new
+containing-H candidate. Authored source counts must include all concurrent Human
+and Transcript additions; actual results require the final exact-H Actions logs.
+No mounted reaction/visual/a11y, source or full independent acceptance is claimed.
+
+### Resumed round16: exact delivery correction, auxiliary inputs and retained C wrappers
+
+This annotation preserves the dated snapshots above. Actual round16 delivery
+was `23f737faba69b4f60eecb6ec1a031602f87f60dc`: its run `41451598911`
+passed the built AppHost dependency/symbol/library checks and three synthetic
+package-copy cases, but did **not** contain the locally prepared twelve-route
+account matrix or the original ledger/owner-matrix edits. The later verified
+`59f5fa24827812f78336c464995d161f403dedfb` run `41508537631` includes
+the actual AppHost resource copy, Human38 and the separately recorded later
+composition/CLI/gateway checks. Neither result qualifies subsequent Session,
+UI or source-review changes. The old thirteen-Human paragraph above is the
+exact95 historical gate; containing-H workflow requirements remain authoritative.
+
+| Requirement / owner | Actual input or executable case | Evidence and remaining gate |
+| --- | --- | --- |
+| FMEP-SOURCE-01 / existing desktop package builders | Coordinator and box Cargo.lock; network worker go.mod/go.sum; existing npm, Rust CI and macOS release commands require locked/readonly inputs | Capture run41514329200 at565a4639f1b7efbd15937aff93f4e14168322389, job125513870853, artifact13175461007 SHA25685488acba970ec85e92327d8b5e1726061a69ffd1caf6b70c19cc83b8813c18b. Four input files match the original artifact bytes. Capture Mac jobs skipped; pinned-H actual binary/owner verification remains required. |
+| NMR-AC-30 / same Coordinator, Box and network-worker owners | `staged-runtime-source-contracts.yml`: required tracked inputs; actual macOS executables; normal/build dependencies and symbol/library refusals; Coordinator1+1+4, Box13+Host supervisor3, Go13 | Authored containing-H gates, not executed at preparation. No fabricated substitute binaries; actual Box path is supplied to the Host lifecycle fixture. Full signed package, other platforms and dependency source/legal acceptance remain open. |
+| NMR-39 compatibility retention / existing legacy C exports | `providers/telegram-runtime/tests/runtime_ffi.rs`: five direct create/persistent-create/execute/close/free cases, persistent close/reopen, owned response frees, null/UTF-8/key-length/closed-handle refusal | Fifteen non-live tests plus the original one explicitly ignored live-DC test are required by `retained-direct-ffi-compatibility`; authored, not run at preparation. Invalid-length buffers are allocated; all stores/keys are synthetic. This does not qualify a final shared/static library or installed external consumer. |
+
+Concurrent commit `e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e` already
+integrated the identical four inputs, desktop locked builders, capture=false and
+release readonly build. This batch preserves that delivery, adds the remaining
+CI/release input guards and the retained C-wrapper target; it does not replay
+or claim authorship of the concurrent pin commit.
+
+The authoritative receipt remains
+`projects/telegram-desktop-rust/evidence/round16-apphost-package-boundary.json`.
+The unique ledger's two existing responsibility rows retain source identities,
+review depths, all concurrent source reviews and unaccepted release states.
+Original SQLite/sidecars/keys/readers are preserved. Backend PR137 remains
+open/draft and read-only; its skipped production readiness job is not service
+acceptance. External mobile/installer producer-consumer mismatches remain
+separately recorded gaps, with no external repository mutation.
+
+### Round 19 execution binding — journal, direct Host and Plugins Close
+
+Fixed upstream remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The code batch below is
+`682aea58b4fbac7b1b509c30fd565a12c4af5a2f`; later concurrent checkpoint changes require
+their own exact-H evidence. This annotation preserves the historical failures and all existing rows.
+
+| Existing requirement / owner | Actual execution and production binding | Remaining qualification |
+| --- | --- | --- |
+| NMR-47e / Session forward source journal | Expanded stale-snapshot oracle uses two SQLite handles, raw metadata preservation, terminal replay and reopen; exact682 reconciliation job125536673830 passed Human54/resource3/sharebox1/journal12/Agent4/credential3/forward HTTP1, including the expanded stale and concurrent-writer cases | Twelve journal cases are the top-level count; full forwarding service, migration and rollback acceptance remain open |
+| NMR-41 and NMR-CLI-HOST-01 / existing AppHost preferences and direct MahayanaHost consumers | Exact94dcf7a2213808a8ded6baddaf069562d365c6d7 shipping job125511939405 executed all six proxy permutations:16 ordered subsets,48 removals,48 repeated-removal no-ops,18 full-permutation deletions inside one Rust matrix; CLI3/gateway5/library11 passed, including eight valid approval aliases and nine invalid zero-dispatch controls | Original5281 shipping failed E0004 before approval tests; historical94 cannot qualify682 shipping125536674079, still queued without runner or steps at20:56:52 UTC. Current process controls4 and actual AppHost copy remain unexecuted |
+| NMR-PAGING-01c / existing Coordinator reply converter and Transcript | Preserve exact29 UI TS2741 failure after20 Transcript/17 cursor tests; concurrent977 repaired the missing human-transcript-page converter. Exact682 UI125536673715 passed20/17/settlement5/Chromium16 and renderer compilation | This preserves one message owner and projection; it is not full real-service, visual or accessibility acceptance |
+| FPM-UI-CLOSE-01 / ProductionRenderer overlay state and PluginsDesktopSurface onClose | Exact682 run41520998019/job125536673032 passed two real Electron pointer cases at1024x684 and1280x900, with four normal Close clicks and successful hides across initial/reopened states. Downloaded artifact13177399337 matches347040 bytes/SHA256c1eb66fd578f8321ca2f776d0566e2476f5990eaaf63aae435514efd52ae8f10; frame y52/z5002, hit-tests and no-drag confirmed | Controlled Host/loopback auth; native window button actions0. Reopened PNGs capture catalog loading. Current signed installer, full visual/a11y and real-service acceptance remain open |
+
+The bounded FFI review traces Electron carrier -> Coordinator -> AppHost -> FeatureHost -> MahayanaHost,
+and direct CLI/gateway Host construction. The retained FFI exports and five legacy link anchors stay in place:
+repository-external consumers remain unknown. The inspected production graph and source manifests do not
+constitute current-H binary or external-consumer acceptance.
+
+Evidence, full-log identities, actual artifact/geometry/trace records, bounded four-image review,
+source manifest and the latest authority refresh are recorded in
+`projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json`.
+The unique ledger already links that receipt; no source-review completion counters are promoted.
+Backend PR137 remains read-only/open/draft and unmerged. Complete source/legal accounting, current signed
+packages and stapling metadata, supported platforms, real services, Bot regressions, security/performance,
+soak, upgrade/rollback and independent ACCEPT remain required and unaccepted.
+
+### Request round 9: NMR-23a / NMR-26a / NMR-26b
+
+| Existing requirement | Actual owner / authored behavioral evidence | Execution boundary |
+|---|---|---|
+| NMR-23a | Session coverage version1; legacy metadata preserved until matching historyCursor page; invalid versions refuse before same-conversation replay; new legacy-upgrade/reopen case plus retained6400/32 and short/empty32 | Human63 in containing-H Actions; no production Worker claim |
+| NMR-26a | Existing projection/root/older-page caches compose explicit empty fields and identity remaps while preserving Agent semantics | Projection33 plus actual ProductionRenderer11; existing cursor17 retained |
+| NMR-26b | Existing account/queue/feed owners fence delayed acknowledgements and drain offline sends once after connected state commits | Actual renderer switch/logout/in-flight-or-queued account reset/reconnect scenarios; Electron/carrier and shipping gates retained |
+| FMEP-SOURCE-01 | Existing authority CLI subprocess rejects real open acquisition after candidate markers are removed; source review schema/helpers preserved | Actions-only regression; no source or product acceptance promotion |
+
+Exact evidence is recorded in the containing request-round9 receipt; authored
+cases, prerequisite results and actual execution remain distinct. All other
+responsibility rows and current acceptance requirements remain unchanged.
+
+### Round23 desktop Social owner-boundary controls
+
+| Requirement / acceptance | Existing production owner and direct oracle | Execution scope |
+| --- | --- | --- |
+| NMR-SOCIAL-OWNER-01; NMR-SOCIAL-AC-02 | AppHost/Host Production Electron Session policy; ordinary/Codex registry selection and native retained-data handoff | Current composition/native suites; historical59f success is scoped evidence, not all-current approval |
+| NMR-SOCIAL-OWNER-02; NMR-SOCIAL-AC-01 | FeatureHost real execute: exact early refusal before absent runtime, poisoned lock, file or event side effects; explicit Test/non-desktop/unrelated controls | Existing desktop_messaging_boundary_tests: seven retained plus three added, ten required at containing H |
+| NMR-SOCIAL-OWNER-03; NMR-SOCIAL-AC-02 | Runtime real SQLite recovery preserves Social records and continues ordinary Agent work | retained_social_recovery_tests: nine; source-comment ID correction only in this batch |
+| NMR-SOCIAL-OWNER-04; NMR-SOCIAL-AC-02 | Existing session-owned platform client validates actual URL/origin/path before credentials and disallows desktop redirects | session_owned_platform_: six; unchanged production implementation |
+
+See `docs/specs/fbcp-desktop-social-owner-boundary.md` and
+`projects/telegram-desktop-rust/evidence/round23-owner-boundary-recovery.json`.
+H0 Windows hook timeout and later Windows11 success retain their actual run
+identities. Formal publisher, real package install/upgrade/rollback, authenticated
+production pagination, source/legal/full Bot and independent ACCEPT stay open.
+
+The existing workflow now also runs these same Feature10/Runtime9/HTTP6 behavioral
+harnesses on Ubuntu while retaining the queued macOS shipping requirement. This
+focused job is not a signed-package, live-service or independent acceptance gate.
+
+### Task20bf prerequisite recovery in the frozen217 integration
+
+| Existing requirement | Production change | Required exact-H evidence |
+| --- | --- | --- |
+| NMR-50d | Original Forward dialog/account predicate reaches the existing Coordinator call after ready and before pending registration/post; accepted Host work is retained after presentation retirement | Actual client/controlled-port13 plus real dialog/client7 new cases; retain original Forward16 and all settlement/Agent gates |
+| HRR-04 / HRR-AC-02 partial prerequisite | Existing ordinary Human send staging lane refuses to reuse source-owned or unresolved provenance without its original context before upload/POST; original batch recovery remains authoritative | New `shipping_human_forward_ordinary_send_rejects_lost_provenance_before_dispatch`: cold/cached,12 corruption scenarios, retained bytes, source denial, exact recovery and ordinary-send positive controls; Human union65 |
+| NMR-26 pagination/refresh | Same pagination/projection owner coalesces repeated failed-read events, retains authored alias candidates, Human clears and later partial fields, and bounds replay by identities | Five new actual controller cases, including no-nonce cross-author alias ordering, first post-failure update and measured superseded-payload replay; projection union38 |
+
+These are prerequisite fixes, not completion of the new `retryHumanMessage` command
+or its reload/retry UI. All newly combined input requires containing-H Actions;
+previous results keep their original SHA. The existing task receipt records the
+reviewed production paths, test selections, failures and later execution separately.
+Full source/service/package/quality/Bot/upgrade/rollback and independent ACCEPT remain open.

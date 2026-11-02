@@ -1,0 +1,134 @@
+name: Round10 scoped ledger object
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/checkpoint-ledger-ops-round10.json'
+      - '.github/workflows/checkpoint-ledger-object-round10.yml'
+      - 'projects/telegram-desktop-rust/parity-ledger.json'
+permissions:
+  contents: read
+jobs:
+  prepare-ledger-object:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Prepare only the reviewed append delta at this immutable input
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/round10-ledger-object
+          export ROUND10_INPUT_BLOB
+          ROUND10_INPUT_BLOB=$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import assert from 'node:assert/strict';
+          const gitHash = bytes => crypto.createHash('sha1').update(Buffer.from('blob ' + bytes.length + '\0')).update(bytes).digest('hex');
+          const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+          const allowedKeys = new Set(['fabushi_target_paths', 'ui_functional_case_ids', 'test_evidence', 'test_environment_ids', 'requirement_ids']);
+          const opsBytes = fs.readFileSync('.github/checkpoint-ledger-ops-round10.json');
+          const ops = JSON.parse(opsBytes);
+          assert.equal(process.env.GITHUB_REPOSITORY, 'bhrumom/fabushi-desktop');
+          assert.equal(process.env.GITHUB_REF, 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1');
+          assert.equal(ops.repository, process.env.GITHUB_REPOSITORY);
+          assert.equal(ops.path, 'projects/telegram-desktop-rust/parity-ledger.json');
+          assert.equal(ops.format_version, 2);
+          assert.equal(ops.upstream_commit, 'f985723b552b30fe1c17d377d57f44e61a15a8c4');
+          assert.equal(ops.operations.length, 1);
+          const input = fs.readFileSync(ops.path);
+          const inputBlob = gitHash(input);
+          assert.equal(inputBlob, process.env.ROUND10_INPUT_BLOB);
+          assert.match(ops.reviewed_delta_base_blob, /^[0-9a-f]{40}$/);
+          // Exact checkout input is recorded below. Concurrent canonical additions
+          // are preserved; root must read this full input/output and prove current
+          // input equality before attaching the object with non-force CAS.
+          const original = JSON.parse(input);
+          assert.equal(original.upstream_commit, ops.upstream_commit);
+          const changed = structuredClone(original);
+          const op = ops.operations[0];
+          assert.deepEqual(Object.keys(op).sort(), ['append', 'id', 'note', 'source_identity']);
+          assert.equal(op.id, 'FBCP-NMR-001');
+          assert.deepEqual(op.source_identity, {
+            source_repository: 'telegramdesktop/tdesktop',
+            source_commit: 'f985723b552b30fe1c17d377d57f44e61a15a8c4',
+            source_path: 'Telegram/SourceFiles/api/api_updates.cpp',
+            source_blob_sha: '71c929cfe3c779c94719efef32a47a4d029e2c67'
+          });
+          const matches = changed.rows.filter(row => row.responsibility_id === op.id);
+          assert.equal(matches.length, 1);
+          const row = matches[0];
+          for (const [key, value] of Object.entries(op.source_identity)) assert.deepEqual(row[key], value);
+          for (const [key, values] of Object.entries(op.append)) {
+            assert.ok(allowedKeys.has(key), 'undeclared append field: ' + key);
+            assert.ok(Array.isArray(row[key]) && Array.isArray(values));
+            assert.ok(values.every(value => typeof value === 'string' && value.length > 0));
+            for (const value of values) if (!row[key].some(existing => equal(existing, value))) row[key].push(value);
+          }
+          assert.equal(typeof row.notes, 'string');
+          assert.equal(typeof op.note, 'string');
+          assert.ok(op.note.startsWith('\nRound10 actual-root Transcript continuation:'));
+          if (!row.notes.includes(op.note)) row.notes += op.note;
+          for (const key of Object.keys(original)) if (key !== 'rows') assert.deepEqual(changed[key], original[key], key);
+          assert.equal(changed.rows.length, original.rows.length);
+          for (let index = 0; index < original.rows.length; index += 1) {
+            const before = original.rows[index], after = changed.rows[index];
+            assert.deepEqual(Object.keys(after), Object.keys(before));
+            if (before.responsibility_id !== op.id) {
+              assert.deepEqual(after, before);
+              continue;
+            }
+            for (const key of Object.keys(before)) {
+              if (allowedKeys.has(key)) assert.deepEqual(after[key].slice(0, before[key].length), before[key], key);
+              else if (key === 'notes') assert.ok(after.notes.startsWith(before.notes));
+              else assert.deepEqual(after[key], before[key], key);
+            }
+          }
+          const text = JSON.stringify(changed, null, 2) + '\n';
+          const output = Buffer.from(text);
+          const outputBlob = gitHash(output);
+          fs.writeFileSync('artifacts/round10-ledger-object/prepared-ledger.json', output);
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/round10-ledger-blob.json', JSON.stringify({content: text, encoding: 'utf-8'}));
+          fs.writeFileSync('artifacts/round10-ledger-object/receipt.json', JSON.stringify({
+            harness_sha: process.env.GITHUB_SHA, input_blob: inputBlob,
+            ops_blob: gitHash(opsBytes), output_blob: outputBlob,
+            reviewed_delta_base_blob: ops.reviewed_delta_base_blob,
+            output_sha256: crypto.createHash('sha256').update(output).digest('hex'),
+            changed_rows: [op.id], product_validation: false, source_acceptance: false,
+            commit_created: false, ref_updated: false,
+            integration_condition: 'Root reads input/output and requires exact expected content plus unchanged current input before force=false expected-head CAS.'
+          }, null, 2) + '\n');
+          console.log('ROUND10_OBJECT_RECEIPT ' + fs.readFileSync('artifacts/round10-ledger-object/receipt.json', 'utf8').replace(/\n/g, ' '));
+          NODE
+      - name: Upload only the unattached Git blob
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" \
+            --input "$RUNNER_TEMP/round10-ledger-blob.json" \
+            > artifacts/round10-ledger-object/github-blob.json
+          expected=$(node -p "JSON.parse(require('fs').readFileSync('artifacts/round10-ledger-object/receipt.json','utf8')).output_blob")
+          actual=$(node -p "JSON.parse(require('fs').readFileSync('artifacts/round10-ledger-object/github-blob.json','utf8')).sha")
+          test "$actual" = "$expected"
+          printf '%s\n' "$actual"
+      - name: Preserve object identities for root readback and CAS
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: round10-ledger-object-${{ github.sha }}
+          path: artifacts/round10-ledger-object
+          if-no-files-found: error

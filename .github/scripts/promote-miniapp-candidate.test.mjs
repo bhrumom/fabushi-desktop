@@ -57,3 +57,26 @@ test('promotion binds the isolated factory to the current deployed Backend/Core 
     (v) => { v.report.factoryCoreSha = 'd'.repeat(40); },
   ]) { const candidate = fixture(); mutate(candidate); assert.throws(() => verifyPromotion(candidate), /PROMOTION_FACTORY_BINDING_DENIED/); }
 });
+
+test('artifact-only candidates cannot substitute for full immutable promotion evidence', () => {
+  assert.equal(verifyPromotion(fixture()), true);
+
+  const dispatched = fixture();
+  dispatched.candidateRun.event = 'workflow_dispatch';
+  assert.throws(() => verifyPromotion(dispatched), { message: 'PROMOTION_CANDIDATE_DENIED' });
+
+  for (const name of [
+    'Run real signed packaged acceptance',
+    'Run approved Mini App installed and OS-offline lifecycle acceptance',
+  ]) {
+    const candidate = fixture();
+    const step = candidate.candidateJobs[0].steps.find((item) => item.name === name);
+    assert.ok(step, `required full-acceptance step exists: ${name}`);
+    step.conclusion = 'skipped';
+    assert.throws(() => verifyPromotion(candidate), { message: 'PROMOTION_SOURCE_GATES_MISSING' });
+  }
+
+  const artifactOnly = fixture();
+  artifactOnly.artifact.name = `fabushi-macos-artifact-only-${artifactOnly.source.slice(0, 12)}`;
+  assert.throws(() => verifyPromotion(artifactOnly), { message: 'PROMOTION_ARTIFACT_DENIED' });
+});

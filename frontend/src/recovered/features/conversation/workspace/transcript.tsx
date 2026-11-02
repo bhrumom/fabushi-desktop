@@ -1,7 +1,7 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
 import { normalizeLinkUrl } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import "./transcript-utility-parity.css";
 import { AssistantMath } from "./math";
 import { TranscriptAttachmentGallery } from "./media-viewer";
@@ -38,7 +38,9 @@ function transcriptIds(id: string, hasTimestamp: boolean) {
 export interface ConversationTranscriptActions {
   hasOlder?: boolean;
   isLoadingOlder?: boolean;
+  olderLoadFailed?: boolean;
   loadOlder?(): void | Promise<void>;
+  onViewportChanged?(viewport: HTMLDivElement | null): void;
   isTransportDown?: boolean;
   onCancelQueuedSend?(entry: TranscriptMessage): void;
   onDeleteFailedSend?(entry: TranscriptMessage): void;
@@ -620,8 +622,12 @@ export function TranscriptThinkingRow({ entry, expanded, onToggle }: { entry: Tr
   );
 }
 
-export function ConversationTranscript({ entries, hasOlder = false, isLoadingOlder = false, loadOlder, isAgentRunning = false, renderComputerHandoff, isTransportDown = false, isReadOnly = false, onCancelQueuedSend, onCopyMessage, onDeleteFailedSend, onForward, onReply, onStartThread, renderMessageReactionActions, renderMessageReactionPills, resolveTranscriptCardInteractions, onResendFailedSend, resolveAttachmentMedia, readAttachmentBytes, downloadAttachment, resolveReplyPreview, isReplyTargetInScope, onOpenReply, onOpenAutomation, localToolPermissionStore, resolveLocalToolPermission, transcriptCards, urlCards, threadRootId = null, transcriptHandleRef }: { entries: readonly ConversationTranscriptEntry[]; isAgentRunning?: boolean; isReadOnly?: boolean; renderComputerHandoff?(entry: TranscriptComputerHandoff): ReactNode; resolveAttachmentMedia?: (source: string) => Promise<AttachmentMedia | null>; readAttachmentBytes?: (path: string, maxBytes: number) => Promise<AttachmentBytesResult | null>; downloadAttachment?: (path: string, suggestedName?: string) => Promise<boolean>; resolveReplyPreview?(targetId: string): TranscriptReplyPreview | null; isReplyTargetInScope?(targetId: string): boolean; localToolPermissionStore?: LocalToolPermissionStore; resolveLocalToolPermission?(input: ResolveLocalToolPermissionInput): Promise<unknown>; transcriptCards?: TranscriptCardRootMountContract; resolveTranscriptCardInteractions?: TranscriptCardInteractionContext; urlCards?: UrlCardProvider | null; threadRootId?: string | null; transcriptHandleRef?: { current: FindInChatTranscriptHandle | null } } & ConversationTranscriptActions) {
+export function ConversationTranscript({ entries, hasOlder = false, isLoadingOlder = false, olderLoadFailed = false, loadOlder, onViewportChanged, isAgentRunning = false, renderComputerHandoff, isTransportDown = false, isReadOnly = false, onCancelQueuedSend, onCopyMessage, onDeleteFailedSend, onForward, onReply, onStartThread, renderMessageReactionActions, renderMessageReactionPills, resolveTranscriptCardInteractions, onResendFailedSend, resolveAttachmentMedia, readAttachmentBytes, downloadAttachment, resolveReplyPreview, isReplyTargetInScope, onOpenReply, onOpenAutomation, localToolPermissionStore, resolveLocalToolPermission, transcriptCards, urlCards, threadRootId = null, transcriptHandleRef }: { entries: readonly ConversationTranscriptEntry[]; isAgentRunning?: boolean; isReadOnly?: boolean; renderComputerHandoff?(entry: TranscriptComputerHandoff): ReactNode; resolveAttachmentMedia?: (source: string) => Promise<AttachmentMedia | null>; readAttachmentBytes?: (path: string, maxBytes: number) => Promise<AttachmentBytesResult | null>; downloadAttachment?: (path: string, suggestedName?: string) => Promise<boolean>; resolveReplyPreview?(targetId: string): TranscriptReplyPreview | null; isReplyTargetInScope?(targetId: string): boolean; localToolPermissionStore?: LocalToolPermissionStore; resolveLocalToolPermission?(input: ResolveLocalToolPermissionInput): Promise<unknown>; transcriptCards?: TranscriptCardRootMountContract; resolveTranscriptCardInteractions?: TranscriptCardInteractionContext; urlCards?: UrlCardProvider | null; threadRootId?: string | null; transcriptHandleRef?: { current: FindInChatTranscriptHandle | null } } & ConversationTranscriptActions) {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const bindTranscriptViewport = useCallback((viewport: HTMLDivElement | null) => {
+    transcriptRef.current = viewport;
+    onViewportChanged?.(viewport);
+  }, [onViewportChanged]);
   const olderLoadInFlightRef = useRef(false);
   const viewCommitListenersRef = useRef(new Set<() => void>());
   const handleRef = useRef<FindInChatTranscriptHandle | null>(null);
@@ -657,7 +663,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
   }, [entries, transcriptHandleRef]);
   useEffect(() => {
     const transcript = transcriptRef.current;
-    if (transcript == null || !hasOlder || loadOlder == null) return;
+    if (transcript == null || !hasOlder || olderLoadFailed || loadOlder == null) return;
     let active = true;
     const maybeLoadOlder = () => {
       if (!active || isLoadingOlder || olderLoadInFlightRef.current || transcript.scrollTop > 600) return;
@@ -680,7 +686,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       transcript.removeEventListener("scroll", maybeLoadOlder);
       olderLoadInFlightRef.current = false;
     };
-  }, [hasOlder, isLoadingOlder, loadOlder]);
+  }, [hasOlder, isLoadingOlder, olderLoadFailed, loadOlder]);
   const [expandedToolCalls, setExpandedToolCalls] = useState<ReadonlySet<string>>(() => new Set());
   const [expandedThinking, setExpandedThinking] = useState<ReadonlySet<string>>(() => new Set());
   const toggleToolCall = (id: string) => {
@@ -703,7 +709,11 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       : (entry) => resolveTranscriptCardInteractions.getThreadSummary(entry.id) != null,
   });
   return (
-    <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
+    <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={bindTranscriptViewport} role="log" tabIndex={0}>
+      {olderLoadFailed ? <div aria-label="Older messages unavailable" className="sand-transcript-history-error" role="alert">
+        <p>Couldn't load older messages. Try again.</p>
+        {loadOlder == null ? null : <button aria-label="Retry loading older messages" className={deliveryActionButtonClass} disabled={isLoadingOlder} onClick={() => { void loadOlder(); }} type="button">Retry</button>}
+      </div> : null}
       {entries.map((entry, index) => {
         if (entry.kind === "time-separator") return <div className="sand-transcript-time-separator" key={entry.id} role="separator">{entry.label}</div>;
         if (entry.kind === "unread-divider") return <div className="sand-unread-divider" key={entry.id} role="separator"><span className="sand-unread-divider__label">{entry.newMessageCount} new {entry.newMessageCount === 1 ? "message" : "messages"}</span></div>;
@@ -804,3 +814,4 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     </div>
   );
 }
+

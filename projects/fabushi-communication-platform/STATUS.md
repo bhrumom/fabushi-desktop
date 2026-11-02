@@ -6,6 +6,38 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
+## Round31 — canonical reply identity recovery
+
+Production H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40` uses the existing
+strict message-ID parser before direct or historical reply staging/HTTP. Existing
+Session/Transcript owners and valid reply semantics remain. Run41524748572 /
+reconciliation125549482711 actually passed Human62/resource3/sharebox1/journal12/
+Agent4/credential3/forwardHTTP1, including the28-scenario historical reply matrix,
+17 direct-target scenarios, dual SQLite CAS, mixed stale progress and corrupt
+journal restart. UI29/cursor17/forward5/Chromium16, Electron, Windows native11
+and retained C wrappers15-pass/1-live-DC-ignore also passed at this H.
+
+Same-H shipping125549483258 is queued at observation. Originalff6 shipping and
+containing106bb recovery are separate historical evidence. Full migration, real
+services, supported signed packages, complete source/legal/Bot/quality/upgrade/
+rollback and independent ACCEPT remain blocked. See
+`projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+
+## Round7 resumed NMR-22/24/26 qualification
+
+The existing Session/gateway now refuses malformed reaction targets and emoji
+before staging or HTTP, preserves current row fields at delayed settlement,
+and keeps durable rejected intentions diagnosable. Existing Transcript projection
+fences obsolete reaction responses, and pagination waits for the accepted page
+before consuming its viewport anchor. Later reply/upload/forward/credential/CLI
+changes remain intact. Eight Host and nine production-helper cases are added,
+including canonical message-ID and strictly advancing page refusal/recovery;
+containing-H Actions execution is required. Initial run41409695104 executed16
+Human cases:14passed/2failed; fixture repair30b4/run41410242810 passed16Human/4Agent
+and shipping gates.
+See `projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json`.
+Full migration, real service, source/legal, packages/UI/a11y/Bot and ACCEPT remain open.
+
 ## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
 
 Observed 2026-11-02. Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
@@ -47,6 +79,22 @@ implementation or source/release acceptance is added by this reply batch.
 Evidence: `projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-recovery.json`.
 
 ## Retained concurrent batch — task20bf round1 resumed, immutable forward intent
+
+Current task20bf update: exact `db27ec9c4b36f6bc47e04bee46d8f53b5ec45e23`
+passed renderer132 (including the repaired original test loader), both2002-module
+architecture gates and source170/Python37/candidate checks. Exact `2ac00f9` UI76
+includes all18 actual Settings proxy settlement/lifetime cases; its reconciliation80,
+Electron89 and Windows11 passed while shipping remained queued at21:20:15 UTC.
+The new integration freezes shared `217d1499dbd541274ba11f8f1fdb092a85e8bc7b`,
+preserves all existing owners and adds no second state truth. Its union gates
+Human65/journal13/Transcript38/cursor17/Coordinator13/Forward5+23/Settings18/Renderer11/Transcript8
+are authored and require containing-H Actions. The same existing owners now reject
+ordinary resend of unresolved source-owned forwarding, fence Forward after ready
+before its frame, and coalesce failed-page updates without losing alias/clear semantics. Human message Retry remains the
+explicit HRR-01..06 consumer gap; older-page Retry does not close it. Source/legal,
+service/package/Bot/quality/upgrade/rollback and independent ACCEPT remain open.
+
+The following paragraphs retain the original H73/H531 authoring history.
 
 Product H=`73cc6e1cc9fa871e5f80931979606ac9ee810551` was pushed and its commit,
 tree and changed file contents were reread through GitHub. Source run41514576605
@@ -131,23 +179,39 @@ The UI fixture installs the existing runtime theme owner and proves actual
 light/dark colors before its four screenshots. No public schema, service API,
 message owner or data migration/deletion is introduced.
 
-Tests are authored, reviewed and **not-run at commit preparation**. Only the
-containing-H Actions logs/artifacts establish execution; no local executable
-validation was performed. Exact predecessor evidence, corrections, review
-findings and scoped case IDs are recorded in
+Execution correction: exact `59f5fa24827812f78336c464995d161f403dedfb`,
+run41508537631 attempt1 is completed/success. All five full job logs were
+read: reconciliation125494011040 passed Human38/sharebox1/journal3/Agent4/
+private3/Gateway1, including the five actual process/SQLite cases. UI125494010641
+passed renderer/Transcript16/settlement5/Chromium12; its four actual light/dark
+wide/narrow images were opened. Shipping125494011097 passed the locked actual
+AppHost build, gateway5/library11, protocol122/TCP9 and actual resource-copy4
+plus all three required refusal controls. Electron125494011030 and
+Windows125494011118 succeeded. These results qualify only that exact source.
+
+After concurrent migration changes, the same existing journal test is now
+strengthened through real valid batches and the actual observed-value
+merge/write path. The reviewed e8b48cb journal keeps12 cases, later attachment
+and completion protections, and the independently strengthened concurrency
+test. The new oracle is not-run at preparation and requires containing-H
+Actions; historical Human38 and journal3 do not qualify later code. No local
+executable validation was performed. Complete IDs, digests and scope are in
 `projects/telegram-desktop-rust/evidence/round28-forward-crash-qualification.json`.
 
-The single inventory/ledger still has6895 root/16381 recursive Git identities
-and184 responsibility rows; source_reviews is absent and unknown/unread are
-undetermined. FMEP-SOURCE-01 schema/checker contracts are present; no source or
+At the inspected65253740 base, inventory recorded6895 root/16381 recursive
+Git identities and184 responsibility rows, with source_reviews absent and
+unknown/unread undetermined. Later concurrent source reviews are preserved;
+these historical counts do not state current semantic coverage. FMEP-SOURCE-01 schema/checker contracts are present; no source or
 acceptance state is promoted. Remote forward provenance/policy, attachment
-retention under cache loss, simultaneous multi-AppHost cross-source uniqueness,
+power-loss/filesystem qualification, simultaneous multi-AppHost cross-source uniqueness,
 real production service/pagination, full source/legal closure, Bot regression,
 signed supported-platform packages, upgrade/rollback, performance/soak and
 independent ACCEPT/release remain open.
 
 Backend PR #137 was read only: open/draft/unmerged,
-H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. No merge or deployment.
+baseline H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`; later readback observed
+H=`52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23`, still open/draft/unmerged.
+This round made no Backend changes, merge or deployment.
 
 ## Historical planning snapshot (2026-10-02)
 
@@ -218,4 +282,3 @@ CAS. Six source reviews/two complete at936 are scoped historical counts; later
 source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
-
