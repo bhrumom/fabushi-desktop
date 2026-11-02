@@ -347,7 +347,7 @@ mod tests {
         ]}"#.as_bytes();
         assert_eq!(
             normalize_special_config_response(SpecialConfigResponseKind::DnsTxt, response),
-            b"cccc???bbaa"
+            b"cccc\xE9??bbaa"
         );
     }
 

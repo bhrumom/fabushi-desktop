@@ -1810,6 +1810,208 @@ fn plaintext_handshake_envelope_matches_fixed_u_padding_and_rejects_invalid_leng
     );
 }
 
+fn res_pq_envelope_for_padding_test(nonce: [u8; 16]) -> PlaintextEnvelope {
+    let mut body = TlWriter::new();
+    body.write_u32(RES_PQ_CONSTRUCTOR);
+    body.write_i128_bytes(&nonce);
+    body.write_i128_bytes(&[0x42; 16]);
+    body.write_bytes(&[0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef])
+        .unwrap();
+    body.write_vector_length(3).unwrap();
+    for fingerprint in [0x0102_0304_0506_0708_u64, 0x8877_6655_4433_2211, 7] {
+        body.write_u64(fingerprint);
+    }
+    PlaintextEnvelope {
+        message_id: 5,
+        body: body.into_bytes(),
+    }
+}
+
+#[test]
+fn plaintext_envelope_receives_declared_res_pq_with_bounded_server_padding() {
+    let nonce = [0x31; 16];
+    let response = res_pq_envelope_for_padding_test(nonce);
+    assert_eq!(response.body.len(), 80);
+
+    // The live failure had declared=80 and actual=192: 112 bytes outside
+    // the declared TL body. The receive rule has no 252-byte send-side cap.
+    for tail_length in [0, 1, 2, 3, 4, 15, 16, 112, 252, 256] {
+        let mut wire = response.encode().unwrap();
+        wire.resize(wire.len() + tail_length, 0xa5);
+        assert_eq!(i32::from_le_bytes(wire[16..20].try_into().unwrap()), 80);
+        if tail_length == 112 {
+            assert_eq!(wire.len() - 20, 192);
+        }
+
+        let decoded = PlaintextEnvelope::decode(&wire).unwrap();
+        assert_eq!(decoded, response);
+        assert_eq!(
+            PlaintextEnvelope::decode_with_limit(&wire, 80 + tail_length).unwrap(),
+            response
+        );
+        let mut handshake = AuthKeyHandshake::new(nonce);
+        handshake.begin(4).unwrap();
+        let parsed = handshake.receive_res_pq(decoded).unwrap();
+        assert_eq!(parsed.nonce, nonce);
+        assert_eq!(parsed.server_nonce, [0x42; 16]);
+        assert_eq!(
+            parsed.pq,
+            vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]
+        );
+        assert_eq!(
+            parsed.server_public_key_fingerprints,
+            vec![0x0102_0304_0506_0708, 0x8877_6655_4433_2211, 7]
+        );
+    }
+}
+
+#[test]
+fn plaintext_envelope_rejects_invalid_headers_and_declared_body_truncation() {
+    let response = res_pq_envelope_for_padding_test([0x31; 16]);
+    let encoded = response.encode().unwrap();
+    for length in [0, 7, 19] {
+        assert_eq!(
+            PlaintextEnvelope::decode(&encoded[..length]).unwrap_err(),
+            HandshakeError::TruncatedEnvelope { length }
+        );
+    }
+    assert_eq!(
+        PlaintextEnvelope::decode(&encoded[..encoded.len() - 1]).unwrap_err(),
+        HandshakeError::EnvelopeLengthMismatch {
+            declared: 80,
+            actual: 79,
+        }
+    );
+
+    let mut padded = encoded;
+    padded.resize(padded.len() + 112, 0xa5);
+    for declared in [-4_i32, 0, 1, 2, 79] {
+        let mut invalid = padded.clone();
+        invalid[16..20].copy_from_slice(&declared.to_le_bytes());
+        assert_eq!(
+            PlaintextEnvelope::decode(&invalid).unwrap_err(),
+            HandshakeError::InvalidBodyLength(i64::from(declared))
+        );
+    }
+    let mut truncated = padded.clone();
+    truncated[16..20].copy_from_slice(&196_i32.to_le_bytes());
+    assert_eq!(
+        PlaintextEnvelope::decode(&truncated).unwrap_err(),
+        HandshakeError::EnvelopeLengthMismatch {
+            declared: 196,
+            actual: 192,
+        }
+    );
+    for auth_key_id in [1_i64, -1] {
+        let mut invalid = padded.clone();
+        invalid[..8].copy_from_slice(&auth_key_id.to_le_bytes());
+        assert_eq!(
+            PlaintextEnvelope::decode(&invalid).unwrap_err(),
+            HandshakeError::UnexpectedAuthKeyId(auth_key_id)
+        );
+    }
+}
+
+#[test]
+fn plaintext_envelope_budget_counts_declared_and_received_padding() {
+    let request = PlaintextEnvelope {
+        message_id: 4,
+        body: build_req_pq_multi(&[0x11; 16]),
+    };
+    let declared_padding = request.encode_with_padding(&[0xa5; 8]).unwrap();
+    assert_eq!(
+        i32::from_le_bytes(declared_padding[16..20].try_into().unwrap()),
+        28
+    );
+    let expected_body = declared_padding[20..].to_vec();
+    assert_eq!(
+        PlaintextEnvelope::decode_with_limit(&declared_padding, 28)
+            .unwrap()
+            .body,
+        expected_body
+    );
+    assert_eq!(
+        PlaintextEnvelope::decode_with_limit(&declared_padding, 27).unwrap_err(),
+        HandshakeError::BodyTooLarge {
+            length: 28,
+            maximum: 27,
+        }
+    );
+
+    let mut both_padding_forms = declared_padding;
+    both_padding_forms.extend_from_slice(&[0x5a; 4]);
+    assert_eq!(
+        PlaintextEnvelope::decode_with_limit(&both_padding_forms, 32)
+            .unwrap()
+            .body,
+        expected_body
+    );
+    assert_eq!(
+        PlaintextEnvelope::decode_with_limit(&both_padding_forms, 31).unwrap_err(),
+        HandshakeError::BodyTooLarge {
+            length: 32,
+            maximum: 31,
+        }
+    );
+
+    // A small declared body must not hide an oversized received data region.
+    const MAX_BODY: usize = 16 * 1024 * 1024;
+    let mut oversized = res_pq_envelope_for_padding_test([0x31; 16])
+        .encode()
+        .unwrap();
+    oversized.resize(20 + MAX_BODY + 1, 0xa5);
+    assert!(matches!(
+        PlaintextEnvelope::decode(&oversized),
+        Err(HandshakeError::BodyTooLarge { length, maximum })
+            if length == MAX_BODY + 1 && maximum == MAX_BODY
+    ));
+    drop(oversized);
+    let maximum_body = PlaintextEnvelope {
+        message_id: 4,
+        body: vec![0; MAX_BODY],
+    };
+    assert!(matches!(
+        maximum_body.encode_with_padding(&[0; 4]),
+        Err(HandshakeError::BodyTooLarge { length, maximum })
+            if length == MAX_BODY + 4 && maximum == MAX_BODY
+    ));
+}
+
+#[test]
+fn plaintext_envelope_tail_cannot_complete_or_replace_res_pq_nonce() {
+    let nonce = [0x31; 16];
+    let response = res_pq_envelope_for_padding_test(nonce);
+    let wire = response.encode().unwrap();
+
+    // Leave four nonce bytes and the rest of a valid response outside the
+    // declaration. The TL parser must not borrow them from the discarded tail.
+    let mut incomplete_nonce = wire.clone();
+    incomplete_nonce[16..20].copy_from_slice(&16_i32.to_le_bytes());
+    let decoded = PlaintextEnvelope::decode(&incomplete_nonce).unwrap();
+    assert_eq!(decoded.body.len(), 16);
+    let mut handshake = AuthKeyHandshake::new(nonce);
+    handshake.begin(4).unwrap();
+    assert!(matches!(
+        handshake.receive_res_pq(decoded),
+        Err(HandshakeError::Tl(TlError::UnexpectedEof { .. }))
+    ));
+    assert_eq!(handshake.state(), &AuthKeyHandshakeState::AwaitingResPq);
+
+    // A complete, correctly correlated response in the tail cannot replace
+    // the wrong nonce in the actual declared response.
+    let mut wrong_nonce = wire;
+    wrong_nonce[24] ^= 0xff;
+    wrong_nonce.extend_from_slice(&response.body);
+    let decoded = PlaintextEnvelope::decode(&wrong_nonce).unwrap();
+    let mut handshake = AuthKeyHandshake::new(nonce);
+    handshake.begin(4).unwrap();
+    assert_eq!(
+        handshake.receive_res_pq(decoded).unwrap_err(),
+        HandshakeError::NonceMismatch
+    );
+    assert_eq!(handshake.state(), &AuthKeyHandshakeState::AwaitingResPq);
+}
+
 #[test]
 fn res_pq_validates_nonce_pq_and_server_key_fingerprints() {
     let nonce = [0x31; 16];

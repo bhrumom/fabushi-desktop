@@ -119,7 +119,7 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-bounded-tcp-fixture-recovery-actions",
+    "status": "pending-plaintext-envelope-repair-actions",
     "local_executable_validation": "not-run",
     "dependent_message_batches": "blocked-until-all-NMR-required-jobs-and-tests-pass",
     "full_product_acceptance": false,
@@ -426,8 +426,8 @@
       "id": 41395923359,
       "attempt": 1,
       "head_sha": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
-      "status": "in_progress",
-      "conclusion": null,
+      "status": "completed",
+      "conclusion": "cancelled",
       "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41395923359",
       "jobs": [
         {
@@ -454,14 +454,144 @@
         {
           "id": 125117103899,
           "name": "native-message-shipping-compile",
-          "status": "in_progress",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "app_host_compile": "success",
           "protocol_and_tcp": "running-unproven",
-          "proxy_and_credential": "pending",
-          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125117103899/logs"
+          "proxy_and_credential": "skipped",
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125117103899/logs",
+          "protocol": {
+            "passed": 118,
+            "failed": 0,
+            "ignored": 0
+          },
+          "tcp": "partial results only; unsolicited quick-ack fixture hung; two failures and six passes observed; no complete test result",
+          "full_log_read": true,
+          "retirement_run": 41397871951
         }
       ]
+    },
+    {
+      "id": 41397871884,
+      "attempt": 1,
+      "head_sha": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41397871884",
+      "jobs": [
+        {
+          "id": 125123039202,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            }
+          },
+          "full_log_read": true,
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125123039202/logs"
+        },
+        {
+          "id": 125123039467,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "app_host_compile": "success",
+          "protocol": {
+            "passed": 118,
+            "failed": 0,
+            "ignored": 0,
+            "filtered_out": 0
+          },
+          "tcp": {
+            "passed": 8,
+            "failed": 1,
+            "ignored": 0,
+            "failed_case": "live_session_exchanges_encrypted_ping_and_service_rpc",
+            "failure": "Handshake(EnvelopeLengthMismatch { declared: 80, actual: 192 })"
+          },
+          "proxy_and_credential": "skipped",
+          "classification": "IMPL_BUG",
+          "full_log_read": true,
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125123039467/logs"
+        }
+      ],
+      "shipping_artifact": {
+        "id": 13119774490,
+        "digest": "sha256:d60faa9d28e05449dd09075af8b20b7346f70f61afa3239b19614ad1dd2e40ce"
+      },
+      "diagnostic_generated_lock": "Not acceptance and not adopted; --locked AppHost compilation succeeded."
+    },
+    {
+      "id": 41398061600,
+      "attempt": 1,
+      "head_sha": "fb4df3898ae31b04bc64adde1944067154ae3678",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41398061600",
+      "jobs": [
+        {
+          "id": 125123622499,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            }
+          },
+          "full_log_read": true,
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125123622499/logs"
+        },
+        {
+          "id": 125123622177,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "app_host_compile": "success",
+          "protocol": {
+            "passed": 118,
+            "failed": 0,
+            "ignored": 0,
+            "filtered_out": 0
+          },
+          "tcp": {
+            "passed": 8,
+            "failed": 1,
+            "ignored": 0,
+            "failed_case": "live_session_exchanges_encrypted_ping_and_service_rpc",
+            "failure": "Handshake(EnvelopeLengthMismatch { declared: 80, actual: 144 })"
+          },
+          "proxy_and_credential": "skipped",
+          "classification": "IMPL_BUG",
+          "full_log_read": true,
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125123622177/logs"
+        }
+      ],
+      "shipping_artifact": {
+        "id": 13120676058,
+        "digest": "sha256:e71522b6683f978f98c79107c718f57306fe8ca1474fb79d8a1b25b9d106b509"
+      },
+      "diagnostic_generated_lock": "Not acceptance and not adopted; --locked AppHost compilation succeeded."
     }
   ],
   "review": {
@@ -4361,7 +4491,7 @@
     "all_error_records_read": true
   },
   "fixed_upstream_git_collection": {
-    "status": "producer-job-success-artifact-retrieval-pending",
+    "status": "git-inventory-candidate-recovered-and-byte-verified",
     "scope": [
       "scripts/tdrp-collect-fixed-upstream.py",
       ".github/workflows/tdrp-fixed-upstream-inventory.yml"
@@ -4393,10 +4523,28 @@
       "expected_artifact": 13118749668,
       "expected_sha256": "77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
       "path": ".github/workflows/tdrp-protocol-failure-evidence.yml",
-      "status": "authored-not-run",
+      "status": "completed",
       "acquisition_repeated": false,
       "tests_rerun": false,
-      "review": "Independent static review found no blocking issues; 32 MiB per transferred file and 2 MiB aggregate gzip bounds; complete source/acceptance gates retained."
+      "review": "Independent static review found no blocking issues; 32 MiB per transferred file and 2 MiB aggregate gzip bounds; complete source/acceptance gates retained.",
+      "run_id": 41398181976,
+      "head_sha": "a8c31a63ab09f3612b6e46118edbbf09995c5f9a",
+      "job_id": 125123994721,
+      "conclusion": "success",
+      "all_zip_members_read_and_verified": 137,
+      "recovered_artifact": {
+        "id": 13119973295,
+        "digest": "sha256:d76f17ceb97ab5ef032301934002e2e7029e0f127e3fa184b57519400ae1d0c0"
+      },
+      "lossless_transfer": "All five documents reconstructed with ordered chunk offsets, gzip/raw lengths, SHA256 and end markers checked. This is evidence transfer, not executable repository validation.",
+      "document_sha256": {
+        "upstream-recursive-inventory.json": "d2aa4fd1a6f02b496b44f4a759880905cd2b186adda824217685742e477c9a4b",
+        "upstream-root-inventory.json": "6330dccd9f5e9502b89b3e0890ee1aa079d6f03510497514b44f901b2379fb2f",
+        "authority-report.json": "8b6a70b05030f2a389cfb78b740ea5eddcbf941afd5bd5974dbebfd90b7627ad",
+        "acquisition-summary.json": "058632e4778c0352c0ebf9ff9359bd5196924e2d881a667e593e97f5a1c3f874",
+        "index.json": "25f834ddc059c1f880941124d9e0972d2c74bf0d9ba20791d66f3def75c1209d"
+      },
+      "derived_summary_limit": "acquisition-summary omits only redundant repository entries; original full 5,444,621-byte manifest remains in digest-verified artifact, SHA256 d5c62dcd1a1397c2e2c633527db69409d227a2471a3713b483dc15a70333897b."
     },
     "helper_adapter_repair": {
       "concurrent_head": "5fa9087ae95ab9e9be572181cef07c53d0a94a4f",
@@ -4410,7 +4558,16 @@
       "review": "New metadata/records preserve existing method, entry and edge contracts. Original declared expected-lite URL and license blob mode/object/length/bytes are checked; source content is never executed.",
       "status": "concurrent-fix-preserved-pending-its-exact-H-Actions",
       "effective_fix_commit": "fb4df3898ae31b04bc64adde1944067154ae3678"
-    }
+    },
+    "git_inventory_only": true,
+    "root_non_directory_entries": 6895,
+    "root_blob_entries": 6859,
+    "root_gitlinks": 36,
+    "recursive_source_entries": 16381,
+    "repository_identities": 41,
+    "recursive_edges": 40,
+    "raw_tree_entries": 17462,
+    "canonical_lock_and_index_replaced": false
   },
   "concurrent_work_preserved": [
     {
@@ -4623,5 +4780,77 @@
     ],
     "legal_acceptance": false,
     "product_acceptance": false
+  },
+  "plaintext_envelope_repair": {
+    "base": "a8c31a63ab09f3612b6e46118edbbf09995c5f9a",
+    "classification": "IMPL_BUG",
+    "production_chain": [
+      "establish_auth_key",
+      "exchange_and_validate",
+      "TcpTransport::exchange_plaintext",
+      "PlaintextEnvelope::decode",
+      "AuthKeyHandshake::receive_res_pq"
+    ],
+    "root_cause": "Exact-length equality rejected server/transport bytes beyond the declared body. Both failed live runs reached this production decoder.",
+    "source": [
+      {
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/mtproto/connection_abstract.cpp",
+        "blob": "3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "lines": [
+          109,
+          145
+        ],
+        "read_scope": "selected-sections",
+        "contract": "Positive aligned declared length <= available; return declared span only."
+      },
+      {
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/mtproto/connection_abstract.h",
+        "blob": "217b684fa222c42e968dfddeaa62f16a0054017f",
+        "lines": [
+          172,
+          207
+        ],
+        "read_scope": "selected-sections",
+        "contract": "Client outgoing random padding is included in declared length; not a receive tail maximum."
+      },
+      {
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/mtproto/connection_tcp.cpp",
+        "blob": "d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "lines": [
+          394,
+          409
+        ],
+        "read_scope": "selected-sections",
+        "contract": "TCP transport delivers complete four-byte words; accepting 1-3 excess bytes does not add them to the declared TL body."
+      }
+    ],
+    "changes": [
+      "Reject truncation but permit bytes outside the declared span.",
+      "Bound actual post-header received region, including extra padding, before copying the declared body.",
+      "Keep auth-key ID, positive/aligned declaration, checked arithmetic, message-ID validation, nonce checks and state ownership."
+    ],
+    "new_cases": [
+      "plaintext_envelope_receives_declared_res_pq_with_bounded_server_padding",
+      "plaintext_envelope_rejects_invalid_headers_and_declared_body_truncation",
+      "plaintext_envelope_budget_counts_declared_and_received_padding",
+      "plaintext_envelope_tail_cannot_complete_or_replace_res_pq_nonce"
+    ],
+    "execution_status": "authored-not-run",
+    "dependent_message_batch": "blocked"
+  },
+  "response_normalization_oracle_repair": {
+    "classification": "TEST_BUG",
+    "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/response_normalization.rs",
+    "old_expected": "b\"cccc???bbaa\"",
+    "new_expected": "b\"cccc\\xE9??bbaa\"",
+    "reason": "QString Latin-1 projection retains U+00E9 as byte E9; the supplementary-plane character contributes two unsupported UTF-16 code units and therefore two question marks. Production conversion and adjacent Firestore expectation already agree.",
+    "production_logic_changed": false,
+    "workflow": ".github/workflows/native-service-contracts.yml",
+    "selected_filter": "response_normalization::tests::",
+    "required_cases": 6,
+    "execution_status": "authored-not-run"
   }
 }

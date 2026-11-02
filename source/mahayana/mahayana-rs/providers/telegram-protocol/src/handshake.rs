@@ -124,15 +124,26 @@ impl PlaintextEnvelope {
         let expected = 20_usize
             .checked_add(body_length)
             .ok_or(HandshakeError::InvalidBodyLength(i64::from(raw_length)))?;
-        if input.len() != expected {
+        if input.len() < expected {
             return Err(HandshakeError::EnvelopeLengthMismatch {
                 declared: body_length,
                 actual: input.len().saturating_sub(20),
             });
         }
+        // The receive budget covers the entire post-header region, including
+        // server/transport padding outside the declared message body.
+        let available = input.len() - 20;
+        if available > maximum {
+            return Err(HandshakeError::BodyTooLarge {
+                length: available,
+                maximum,
+            });
+        }
+        // Fixed U parseNotSecureResponse returns only the declared span. Its
+        // receive rule does not reuse the client's outgoing padding-length cap.
         Ok(Self {
             message_id,
-            body: input[20..].to_vec(),
+            body: input[20..expected].to_vec(),
         })
     }
 }
