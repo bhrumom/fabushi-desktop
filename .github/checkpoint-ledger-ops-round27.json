@@ -3,7 +3,7 @@
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 27,
   "target_path": "projects/telegram-desktop-rust/parity-ledger.json",
-  "base_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+  "base_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
   "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "acceptance_changed": false,
   "rows": {
