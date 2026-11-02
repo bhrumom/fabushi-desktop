@@ -6,48 +6,52 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Current bounded batch (round 20): recover exact-H shipping validation
+## Current bounded batch (round 26): forward account/lifetime isolation
 
-Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; inspected base
-`151d3ffe6382219dab98fb317e59fe5faa8cea01` and live main
-`5528062177e3865eef60a073a066cca144f9e3e8`. Run41465224038 failed after passing
-Human33/Agent4/private3, AppHost12/Native6/FeatureHost7/Host6/ABI7/CLI3 and UI16.
-Gateway executable was4/5: a shared persistent test file suppressed the second
-test's first request. NMR-45 isolates real persistent fixtures and strengthens
-duplicate/restart oracles without changing production deduplication.
+Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`; inspected checkpoint
+H=`a1196f00230f3307ce0bd9c704ef5c4a7c9a4044`, live main
+`5528062177e3865eef60a073a066cca144f9e3e8`. Exact-H run41496846317 is
+completed/success, attempt1. Complete logs confirm Social9, HTTP-owner6,
+Human33/Agent4/private3 and the authenticated Gateway forwarding HTTP contract1.
+Shipping AppHost copy4 passed (three fixtures and one actual Darwin AppHost),
+with missing binary input, invalid hash format and valid-but-unequal hash all
+rejected. Windows native Authenticode11 passed with zero failures/skips and
+remaining owned fixture certificates0; Electron controlled publisher28 and
+source16 passed. This is bounded execution, not signed product acceptance.
 
-Electron carrier10/auth8/copy3/metadata15 passed, but the historical installer
-experiment rejected a valid cross-platform ZIP blockmap before reaching stale
-DMG metadata. NMR-43 now compares complete bounded decoded map content and
-records actual sidecar hashes;18 authored cases and the unchanged digest-pinned
-real package experiment require containing-H Actions. Gateway lib9, protocol122,
-TCP9 and actual-binary package-copy did not execute at the inspected base.
+NMR-46 fixes the existing ForwardMessageDialog and ProductionRenderer path:
+account generation plus dialog lifetime fence old search/send callbacks across
+logout, A→B→A, close/reopen, source replacement and unmount. Synchronous submit
+admission prevents duplicate dispatch; current partial retry retains request
+identity and only failed destinations. The same renderer account generation
+fences the subsequent roster read, including synchronous layout unmount. The
+actual Session/Transcript → FabushiNativeMessagingClient → native HTTP →
+SandAgentDb/events writer is unchanged. No new account/message owner, route,
+data migration, provider deletion or Backend mutation is introduced.
 
-The actual Human path remains existing Composer -> Session/Transcript ->
-FabushiNativeMessagingClient -> native HTTP -> the same SandAgentDb/events.
-Production+Electron refuses standalone MessagingService before locks/storage.
-CLI and gateway now use direct MahayanaHost; the old round16 C ABI consumer
-statement is superseded. Retained FFI exports, external callers, old data and
-rollback readers are not declared globally retired. No parallel owner or user
-data deletion is introduced. This batch changes the existing release verifier
-and test fixtures; it does not qualify a new signed installer or update service.
+The new Chromium component/lifecycle12 and roster-boundary5 contracts are
+authored; execution at their containing H is pending at this preparation
+snapshot. Transcript16 and actual renderer compilation remain required in the
+existing UI Actions job. Four theme/viewport screenshots and keyboard/focus
+checks are focused evidence; full packaged visual/a11y acceptance remains open.
+Evidence and exact job/log/artifact hashes: `projects/telegram-desktop-rust/evidence/round26-forward-account-lifetime.json`.
+No local executable validation was run.
 
-Evidence, exact old-run logs/artifacts, source review and required new gates:
-`projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json`.
-No local executable validation ran. The canonical ledger/RTM keep implementation,
-authored tests, scoped execution and final acceptance separate; full source review
-and legal disposition remain open with fixed U and unchanged source acceptance.
+Source accounting remains an unaccepted fixed-U candidate: 6895 root /16381
+recursive identities, 41 repositories/40 edges and184 responsibilities;
+source_reviews has no records, unknown/unread are undetermined. Git-tree
+acquisition of cppgir is verified; semantic/external/generated/legal closure
+is not. Current FMEP-SOURCE-01 schema and validator are present. Whole-batch
+forward intent durability before first destination dispatch and remote forward
+provenance remain concrete product gaps. Full Bot regression, real services,
+supported-platform signed packages/install/upgrade/rollback, UI/a11y,
+performance/soak and independent ACCEPT remain blocked.
 
 Backend PR #137 remains open/draft/unmerged at
-`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. Both exact-head handler29/SQLite10
-runs passed. Historical production artifact12542026010 was inspected and digest
-verified; it binds source33a26692ce2f74e3fdca3940dfc4cbfb3ede151b to the recorded
-Worker version but only proves health/FDN enrollment checks at deployment time.
-Current Worker identity and authenticated afterId=0 pagination/empty/denial/
-recovery remain unverified; no backend merge or deployment is authorized.
-Full functionality, supported-platform packages, UI/a11y, Native proxy/update
-support, complete Bot regression, upgrade/rollback, soak and independent ACCEPT
-remain open. Complete remains false.
+`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. Read-only exact-head handler29 and
+SQLite10 passes do not prove deployment. Current main still rejects afterId=0;
+live Worker identity and authenticated paging/recovery remain unverified.
+No merge or deployment is authorized or performed.
 
 ## Historical planning snapshot (2026-10-02)
 

@@ -103,6 +103,8 @@ import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOn
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
 import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
+import { settleForwardProjection } from "./forward-settlement";
+import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
 import { AgentDeleteConfirmation, type AgentDeleteTarget } from "./AgentDeleteConfirmation";
 import type { CommandPaletteCommand } from "./command-palette-model";
 import { createCommandPaletteMessageProvider, type CommandPaletteMessage } from "./command-palette-message-provider";
@@ -897,7 +899,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [pluginQuery, setPluginQuery] = useState("");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [newAgentDialogOpen, setNewAgentDialogOpen] = useState(false);
-  const [forwardTarget, setForwardTarget] = useState<{ sourceConversationId: string; message: TranscriptMessage } | null>(null);
+  const [forwardTarget, setForwardTarget] = useState<{ sourceConversationId: string; message: TranscriptMessage; accountScopeGeneration: number } | null>(null);
   const [newAgentName, setNewAgentName] = useState("New chat");
   const [newAgentDescription, setNewAgentDescription] = useState("");
   const [newAgentAvatarShape, setNewAgentAvatarShape] = useState<(typeof AVATAR_SHAPES)[number]>("wedge");
@@ -947,8 +949,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const resendSubmissionNoncesRef = useRef(new Set<string>());
   const accountIdentityRef = useRef<string | null>(null);
   const accountScopeGenerationRef = useRef(0);
+  const renderedAccountScopeGeneration = accountScopeGenerationRef.current;
   const accountObservationGenerationRef = useRef(0);
   const accountRef = useRef<CursorAuthStatus | null>(account);
+  const isForwardAccountScopeCurrent = useCallback((generation: number) =>
+    accountScopeGenerationRef.current === generation
+    && accountIdentityRef.current?.startsWith("logged-in:") === true, []);
+  useForwardAccountScopeUnmountFence(accountScopeGenerationRef);
   const spreadsheetTriggerRef = useRef<HTMLElement | null>(null);
   const avatarEditorTriggerRef = useRef<HTMLButtonElement | null>(null);
   const conversationOutlineReturnFocusRef = useRef<HTMLElement | null>(null);
@@ -1051,6 +1058,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const searchForwardRecipients = useCallback(async (input: {
     sourceConversationId: string;
+    sourceEntryId: string;
     query: string;
     limit: number;
   }): Promise<readonly ForwardRecipient[]> => {
@@ -1096,20 +1104,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     });
   }, [client]);
 
-  const settleForward = useCallback((settlement: readonly ForwardSettlement[]) => {
-    const sent = settlement.filter((item) => item.status === "sent").length;
-    const failed = settlement.length - sent;
-    setNotice(failed === 0
-      ? `Forwarded to ${sent} conversation${sent === 1 ? "" : "s"}.`
-      : `Forwarded to ${sent}; ${failed} destination${failed === 1 ? "" : "s"} still need attention.`);
-    if (client == null) return;
-    void client.call("listHumanConversations").then((value) => {
-      const projected = projectHumanConversations(value);
-      humanConversationsRef.current = projected;
-      setHumanConversations(projected);
-      reconcileCompleteRosterSelection([...projected, ...agentsRef.current].sort((left, right) => right.updatedAt - left.updatedAt));
-    }).catch(() => {});
-  }, [client, reconcileCompleteRosterSelection]);
+  const settleForward = useCallback((settlement: readonly ForwardSettlement[], accountScopeGeneration: number) => {
+    void settleForwardProjection({
+      settlement, accountScopeGeneration, isAccountScopeCurrent: isForwardAccountScopeCurrent, setNotice,
+      readRoster: client == null ? null : () => client.call("listHumanConversations"),
+      applyRoster: (value) => {
+        const projected = projectHumanConversations(value);
+        humanConversationsRef.current = projected;
+        setHumanConversations(projected);
+        reconcileCompleteRosterSelection([...projected, ...agentsRef.current].sort((left, right) => right.updatedAt - left.updatedAt));
+      },
+    });
+  }, [client, isForwardAccountScopeCurrent, reconcileCompleteRosterSelection]);
 
   const sendComposerPrompt = async (submission: ComposerSubmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
@@ -3242,6 +3248,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const identityChanged = accountIdentityRef.current != null && accountIdentityRef.current !== identity;
       if (accountIdentityRef.current !== identity) {
         accountScopeGenerationRef.current += 1;
+        setForwardTarget(null);
         localToolPermissionScopeGate.reset();
         groupMembersRoot.reset();
         sharedRoomProvider?.reset();
@@ -3279,6 +3286,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       }
       accountIdentityRef.current = identity;
       if (status.kind !== "logged-in") {
+        setForwardTarget(null);
         localToolPermissionScopeGate.reset();
         selectionStore.reset();
         acknowledgementController.reset();
@@ -4166,7 +4174,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 onCancelQueuedSend={cancelQueuedSend}
                 onDeleteFailedSend={removeTranscriptMessage}
                 onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
-                onForward={activeIsHuman ? (entry) => setForwardTarget({ sourceConversationId: activeAgent.id, message: entry }) : undefined}
+                onForward={activeIsHuman ? (entry) => {
+                  const accountScopeGeneration = renderedAccountScopeGeneration;
+                  if (isForwardAccountScopeCurrent(accountScopeGeneration)) {
+                    setForwardTarget({ sourceConversationId: activeAgent.id, message: entry, accountScopeGeneration });
+                  }
+                } : undefined}
                 onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
                 onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
                 onResendFailedSend={(entry) => void resendFailedSend(entry)}
@@ -4195,11 +4208,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       </div>
 
       <ForwardMessageDialog
+        accountScopeGeneration={forwardTarget?.accountScopeGeneration ?? accountScopeGenerationRef.current}
         forwardMessage={forwardHumanMessage}
+        isAccountScopeCurrent={isForwardAccountScopeCurrent}
         message={forwardTarget?.message ?? null}
-        onClose={() => setForwardTarget(null)}
+        onClose={() => setForwardTarget((current) => current === forwardTarget ? null : current)}
         onSettled={settleForward}
-        open={forwardTarget != null}
+        open={forwardTarget != null && isForwardAccountScopeCurrent(forwardTarget.accountScopeGeneration)}
         searchRecipients={searchForwardRecipients}
         sourceConversationId={forwardTarget?.sourceConversationId ?? null}
       />

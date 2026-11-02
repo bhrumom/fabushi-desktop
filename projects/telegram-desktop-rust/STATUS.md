@@ -5,15 +5,54 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## Current bounded batch (round 22): Windows publisher trust and exact-base recovery
+## Current bounded batch (round 26): forward account/lifetime isolation
 
-Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`; base H=`8f089dd8640dacb4ec39105aa6d43e4c547ac5a2`; staged round-22 code commit `5d271ff0c03d8f01368ca44026d14cd7519ad6bd`, parent exactly base. Production Windows updater no longer trusts historical Anysphere signers implicitly. Only explicit approved main-process policy with exact signer subject and certificate SHA-256 can authorize an embedded Authenticode candidate; installer bytes are rechecked, permission is single-use, and the existing marker, settings, staged recovery and user data are preserved. 28 controlled behavior tests, 11 native Windows/ephemeral CI fixture cases and a well-formed unequal AppHost digest negative are **authored, not yet executed at new H**. Formal Fabushi certificate identity has not been provided or guessed.
+Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`; inspected checkpoint
+H=`a1196f00230f3307ce0bd9c704ef5c4a7c9a4044`, live main
+`5528062177e3865eef60a073a066cca144f9e3e8`. Exact-H run41496846317 is
+completed/success, attempt1. Complete logs confirm Social9, HTTP-owner6,
+Human33/Agent4/private3 and the authenticated Gateway forwarding HTTP contract1.
+Shipping AppHost copy4 passed (three fixtures and one actual Darwin AppHost),
+with missing binary input, invalid hash format and valid-but-unequal hash all
+rejected. Windows native Authenticode11 passed with zero failures/skips and
+remaining owned fixture certificates0; Electron controlled publisher28 and
+source16 passed. This is bounded execution, not signed product acceptance.
 
-At original exact H run41476964752 completed/success after one cancelled unassigned reconciliation and targeted recovery: shipping job125384977191 passed gateway library11, protocol122, TCP9 and actual AppHost resource copy4 (three fixtures plus real Darwin binary); missing-binary and invalid-format hash negatives rejected. New valid-format unequal-hash negative is not covered by this old H. Reconciliation attempt2 job125394283462 passed Human33/Agent4/private3; UI16 and Electron update-source16/carrier10/auth8/copy3/metadata18 passed. Failed unassigned job125384977860 had no steps/runner, not an implementation/oracle failure. Exact run and artifact digests: `projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json`.
+NMR-46 fixes the existing ForwardMessageDialog and ProductionRenderer path:
+account generation plus dialog lifetime fence old search/send callbacks across
+logout, A→B→A, close/reopen, source replacement and unmount. Synchronous submit
+admission prevents duplicate dispatch; current partial retry retains request
+identity and only failed destinations. The same renderer account generation
+fences the subsequent roster read, including synchronous layout unmount. The
+actual Session/Transcript → FabushiNativeMessagingClient → native HTTP →
+SandAgentDb/events writer is unchanged. No new account/message owner, route,
+data migration, provider deletion or Backend mutation is introduced.
 
-Backend PR #137 is open/draft at `06047d3ea69313ec4cfec58bbee36a7afc9cf007`, unmerged with zero reviews; no merge/deploy performed and production Worker provenance/afterId=0 authenticated paging remain open. Generic social provider/Host durable recovery authority remains to be audited before removal. Fixed-source 16381 identities / 184 canonical responsibilities have not been falsely promoted: unknown/unread undetermined and full source/legal/packaged acceptance, Bot regressions, performance/soak, signed platform upgrades/rollback and independent ACCEPT are **NOT ACCEPTED**.
+The new Chromium component/lifecycle12 and roster-boundary5 contracts are
+authored; execution at their containing H is pending at this preparation
+snapshot. Transcript16 and actual renderer compilation remain required in the
+existing UI Actions job. Four theme/viewport screenshots and keyboard/focus
+checks are focused evidence; full packaged visual/a11y acceptance remains open.
+Evidence and exact job/log/artifact hashes: `projects/telegram-desktop-rust/evidence/round26-forward-account-lifetime.json`.
+No local executable validation was run.
 
-## Current bounded batch (round 21): explicit approved Electron update source
+Source accounting remains an unaccepted fixed-U candidate: 6895 root /16381
+recursive identities, 41 repositories/40 edges and184 responsibilities;
+source_reviews has no records, unknown/unread are undetermined. Git-tree
+acquisition of cppgir is verified; semantic/external/generated/legal closure
+is not. Current FMEP-SOURCE-01 schema and validator are present. Whole-batch
+forward intent durability before first destination dispatch and remote forward
+provenance remain concrete product gaps. Full Bot regression, real services,
+supported-platform signed packages/install/upgrade/rollback, UI/a11y,
+performance/soak and independent ACCEPT remain blocked.
+
+Backend PR #137 remains open/draft/unmerged at
+`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. Read-only exact-head handler29 and
+SQLite10 passes do not prove deployment. Current main still rejects afterId=0;
+live Worker identity and authenticated paging/recovery remain unverified.
+No merge or deployment is authorized or performed.
+
+## Historical bounded batch (round 21): explicit approved Electron update source
 
 Fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; reviewed checkpoint
 H=8ce0a9a43b7fe94df2ec2085399fe65a57343577 and live main

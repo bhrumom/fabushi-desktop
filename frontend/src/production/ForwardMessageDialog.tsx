@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
@@ -22,6 +22,8 @@ export interface ForwardSettlement {
 
 export interface ForwardMessageDialogProps {
   readonly open: boolean;
+  readonly accountScopeGeneration: number;
+  readonly isAccountScopeCurrent: (generation: number) => boolean;
   readonly message: TranscriptMessage | null;
   readonly sourceConversationId: string | null;
   readonly onClose: () => void;
@@ -39,7 +41,14 @@ export interface ForwardMessageDialogProps {
     dropSenderNames: boolean;
     dropCaptions: boolean;
   }) => Promise<readonly ForwardSettlement[]>;
-  readonly onSettled?: (settlement: readonly ForwardSettlement[]) => void;
+  readonly onSettled?: (settlement: readonly ForwardSettlement[], accountScopeGeneration: number) => void;
+}
+
+interface ForwardDialogLifetime {
+  readonly accountScopeGeneration: number;
+  readonly sourceConversationId: string;
+  readonly sourceEntryId: string;
+  readonly requestId: string;
 }
 
 function createForwardRequestId(sourceConversationId: string, sourceEntryId: string): string {
@@ -51,6 +60,8 @@ function createForwardRequestId(sourceConversationId: string, sourceEntryId: str
 
 export function ForwardMessageDialog({
   open,
+  accountScopeGeneration,
+  isAccountScopeCurrent,
   message,
   sourceConversationId,
   onClose,
@@ -60,7 +71,9 @@ export function ForwardMessageDialog({
 }: ForwardMessageDialogProps) {
   const searchRef = useRef<HTMLInputElement | null>(null);
   const recipientListRef = useRef<HTMLDivElement | null>(null);
-  const generationRef = useRef(0);
+  const searchGenerationRef = useRef(0);
+  const lifetimeRef = useRef<ForwardDialogLifetime | null>(null);
+  const submittingLifetimeRef = useRef<ForwardDialogLifetime | null>(null);
   const [query, setQuery] = useState("");
   const [recipients, setRecipients] = useState<readonly ForwardRecipient[]>([]);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
@@ -69,65 +82,84 @@ export function ForwardMessageDialog({
   const [searching, setSearching] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const [requestId, setRequestId] = useState<string | null>(null);
   const [activeRecipientIndex, setActiveRecipientIndex] = useState(0);
 
-  const scopeKey = open && message != null && sourceConversationId != null
-    ? `${sourceConversationId}:${message.id}`
+  const sourceEntryId = message?.id ?? null;
+  const scopeKey = open && sourceEntryId != null && sourceConversationId != null
+    ? JSON.stringify([accountScopeGeneration, sourceConversationId, sourceEntryId])
     : null;
 
-  useEffect(() => {
-    if (scopeKey == null || message == null || sourceConversationId == null) {
-      generationRef.current += 1;
-      setQuery("");
-      setRecipients([]);
-      setSelected(new Set());
-      setDropSenderNames(false);
-      setDropCaptions(false);
-      setFailure(null);
-      setRequestId(null);
-      setActiveRecipientIndex(0);
-      return;
-    }
-    generationRef.current += 1;
+  const isCurrent = (lifetime: ForwardDialogLifetime): boolean =>
+    lifetimeRef.current === lifetime && isAccountScopeCurrent(lifetime.accountScopeGeneration);
+  const canInteract = (): boolean => {
+    const lifetime = lifetimeRef.current;
+    return lifetime != null && isCurrent(lifetime) && submittingLifetimeRef.current !== lifetime;
+  };
+
+  // A committed close/source/account change invalidates both asynchronous
+  // lanes before paint. Object-only message refreshes preserve the same intent.
+  useLayoutEffect(() => {
+    lifetimeRef.current = null;
+    submittingLifetimeRef.current = null;
+    searchGenerationRef.current += 1;
     setQuery("");
     setRecipients([]);
     setSelected(new Set());
     setDropSenderNames(false);
     setDropCaptions(false);
+    setSearching(false);
+    setSubmitting(false);
     setFailure(null);
-    setRequestId(createForwardRequestId(sourceConversationId, message.id));
     setActiveRecipientIndex(0);
-  }, [scopeKey, message, sourceConversationId]);
+    if (scopeKey == null || sourceEntryId == null || sourceConversationId == null) return;
+    const lifetime: ForwardDialogLifetime = {
+      accountScopeGeneration,
+      sourceConversationId,
+      sourceEntryId,
+      requestId: createForwardRequestId(sourceConversationId, sourceEntryId),
+    };
+    lifetimeRef.current = lifetime;
+    return () => {
+      if (lifetimeRef.current === lifetime) lifetimeRef.current = null;
+      if (submittingLifetimeRef.current === lifetime) submittingLifetimeRef.current = null;
+      searchGenerationRef.current += 1;
+    };
+  }, [accountScopeGeneration, scopeKey, sourceConversationId, sourceEntryId]);
 
   useEffect(() => {
-    if (scopeKey == null || sourceConversationId == null || message == null) return;
-    const generation = ++generationRef.current;
+    const lifetime = lifetimeRef.current;
+    if (lifetime == null || !isCurrent(lifetime)) return;
+    const generation = ++searchGenerationRef.current;
+    const isSearchCurrent = () => isCurrent(lifetime) && generation === searchGenerationRef.current;
     const timer = window.setTimeout(() => {
+      if (!isSearchCurrent()) return;
       setSearching(true);
       void searchRecipients({
-        sourceConversationId,
-        sourceEntryId: message.id,
+        sourceConversationId: lifetime.sourceConversationId,
+        sourceEntryId: lifetime.sourceEntryId,
         query,
         limit: 50,
       })
         .then((next) => {
-          if (generation !== generationRef.current) return;
+          if (!isSearchCurrent()) return;
           setRecipients(next);
           setActiveRecipientIndex((current) => next.length === 0 ? 0 : Math.min(current, next.length - 1));
           setFailure(null);
         })
         .catch((error: unknown) => {
-          if (generation !== generationRef.current) return;
+          if (!isSearchCurrent()) return;
           setRecipients([]);
           setFailure(error instanceof Error ? error.message : String(error));
         })
         .finally(() => {
-          if (generation === generationRef.current) setSearching(false);
+          if (isSearchCurrent()) setSearching(false);
         });
     }, query.length === 0 ? 0 : 150);
-    return () => window.clearTimeout(timer);
-  }, [message, query, scopeKey, searchRecipients, sourceConversationId]);
+    return () => {
+      window.clearTimeout(timer);
+      if (generation === searchGenerationRef.current) searchGenerationRef.current += 1;
+    };
+  }, [query, scopeKey, searchRecipients]);
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selected.has(recipient.id)),
@@ -135,7 +167,9 @@ export function ForwardMessageDialog({
   );
 
   const focusActiveRecipient = (index: number) => {
+    const lifetime = lifetimeRef.current;
     window.requestAnimationFrame(() => {
+      if (lifetime == null || !isCurrent(lifetime)) return;
       recipientListRef.current
         ?.querySelector<HTMLElement>(`[data-forward-recipient-index="${index}"]`)
         ?.scrollIntoView({ block: "nearest" });
@@ -143,7 +177,7 @@ export function ForwardMessageDialog({
   };
 
   const handleRecipientKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (submitting || recipients.length === 0) return;
+    if (!canInteract() || recipients.length === 0) return;
     if (isForwardSubmitShortcut(event)) {
       event.preventDefault();
       void submit();
@@ -166,7 +200,7 @@ export function ForwardMessageDialog({
   };
 
   const toggleRecipient = (id: string) => {
-    if (submitting) return;
+    if (!canInteract()) return;
     setSelected((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
@@ -176,28 +210,32 @@ export function ForwardMessageDialog({
   };
 
   const submit = async () => {
+    const lifetime = lifetimeRef.current;
     if (
-      submitting
-      || message == null
-      || sourceConversationId == null
-      || requestId == null
+      lifetime == null
+      || !isCurrent(lifetime)
+      || submittingLifetimeRef.current === lifetime
       || selected.size === 0
     ) return;
+    // React may batch two submit events before repainting `submitting`.
+    submittingLifetimeRef.current = lifetime;
     setSubmitting(true);
     setFailure(null);
     try {
       const settlement = await forwardMessage({
-        sourceConversationId,
-        sourceEntryId: message.id,
+        sourceConversationId: lifetime.sourceConversationId,
+        sourceEntryId: lifetime.sourceEntryId,
         destinationConversationIds: [...selected],
-        clientNonce: requestId,
+        clientNonce: lifetime.requestId,
         dropSenderNames,
         dropCaptions,
       });
-      onSettled?.(settlement);
+      if (!isCurrent(lifetime)) return;
+      onSettled?.(settlement, lifetime.accountScopeGeneration);
+      if (!isCurrent(lifetime)) return;
       const failed = settlement.filter((item) => item.status === "failed");
       if (failed.length === 0) {
-        onClose();
+        closeLifetime(lifetime);
         return;
       }
       const succeeded = new Set(
@@ -210,17 +248,32 @@ export function ForwardMessageDialog({
           : `${failed.length} destinations could not be forwarded. Retry will reuse the same request identity.`,
       );
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : String(error));
+      if (isCurrent(lifetime)) setFailure(error instanceof Error ? error.message : String(error));
     } finally {
-      setSubmitting(false);
+      if (isCurrent(lifetime) && submittingLifetimeRef.current === lifetime) {
+        submittingLifetimeRef.current = null;
+        setSubmitting(false);
+      }
     }
+  };
+
+  const closeLifetime = (lifetime: ForwardDialogLifetime) => {
+    if (!isCurrent(lifetime)) return;
+    lifetimeRef.current = null;
+    submittingLifetimeRef.current = null;
+    searchGenerationRef.current += 1;
+    onClose();
+  };
+  const close = () => {
+    const lifetime = lifetimeRef.current;
+    if (lifetime != null && submittingLifetimeRef.current !== lifetime) closeLifetime(lifetime);
   };
 
   return <OverlayDialog
     className="fabushi-forward-dialog"
     initialFocusRef={searchRef}
     label="Forward message"
-    onClose={() => { if (!submitting) onClose(); }}
+    onClose={close}
     open={open}
   >
     <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
@@ -234,7 +287,10 @@ export function ForwardMessageDialog({
           <input
             aria-busy={searching || undefined}
             autoComplete="off"
-            onChange={(event) => setQuery(event.currentTarget.value)}
+            onChange={(event) => {
+              const lifetime = lifetimeRef.current;
+              if (lifetime != null && isCurrent(lifetime)) setQuery(event.currentTarget.value);
+            }}
             placeholder="Search conversations"
             ref={searchRef}
             type="search"
@@ -261,7 +317,7 @@ export function ForwardMessageDialog({
               data-forward-recipient-index={index}
               id={`fabushi-forward-recipient-${index}`}
               key={recipient.id}
-              onMouseEnter={() => setActiveRecipientIndex(index)}
+              onMouseEnter={() => { if (canInteract()) setActiveRecipientIndex(index); }}
               role="option"
             >
               <input
@@ -280,7 +336,7 @@ export function ForwardMessageDialog({
             <input
               checked={dropSenderNames}
               disabled={submitting || dropCaptions}
-              onChange={(event) => setDropSenderNames(event.currentTarget.checked)}
+              onChange={(event) => { if (canInteract()) setDropSenderNames(event.currentTarget.checked); }}
               type="checkbox"
             />
             <span>Hide sender name</span>
@@ -290,6 +346,7 @@ export function ForwardMessageDialog({
               checked={dropCaptions}
               disabled={submitting}
               onChange={(event) => {
+                if (!canInteract()) return;
                 const checked = event.currentTarget.checked;
                 setDropCaptions(checked);
                 if (checked) setDropSenderNames(true);
@@ -303,7 +360,7 @@ export function ForwardMessageDialog({
       </div>
       <footer>
         <span aria-live="polite">{selectedRecipients.length === 0 ? "No recipients selected" : `${selectedRecipients.length} selected`}</span>
-        <SandButton disabled={submitting} onClick={onClose} size="sm" variant="secondary">Cancel</SandButton>
+        <SandButton disabled={submitting} onClick={close} size="sm" variant="secondary">Cancel</SandButton>
         <SandButton disabled={selected.size === 0} pending={submitting} size="sm" type="submit">
           {submitting ? "Forwarding…" : "Forward"}
         </SandButton>

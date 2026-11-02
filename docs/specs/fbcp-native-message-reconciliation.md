@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–16
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–26
 
 ## Context and goal
 
@@ -864,6 +864,50 @@ protocol/TCP/resource-copy steps did not execute in that failed job.
 Keep the failing log and causal assertion. Tests and all executable checks
 remain Actions-only. This recovery does not qualify real approval-service,
 external FFI, complete Bot, signed-package or independent migration ACCEPT.
+
+### Round 26 forward account and dialog lifetime (NMR-46 / NMR-AC-37)
+
+At `a1196f00230f3307ce0bd9c704ef5c4a7c9a4044`, the canonical renderer
+opens `ForwardMessageDialog` for a Session/Transcript message. Search has a
+query generation, but submit settlement/error/finally has no lifetime fence;
+the account reset does not close the forward target, and the post-forward
+roster read can publish after an account change. A late A-account response
+can therefore mutate or close B's dialog or restore A's conversation roster.
+This is a source-observed implementation defect, not a claimed pre-fix run.
+
+- NMR-46: Keep the existing renderer account generation as authority. Bind
+  every forward target, search, submit and completion callback to that
+  generation and the live dialog lifetime; bind the subsequent roster read to
+  the same account generation even after a successful dialog closes. Account change
+  or logout invalidates the target synchronously, including A→B→A reuse of
+  identical conversation/entry IDs. Closing, replacing or unmounting a dialog
+  invalidates its pending searches and submissions. Stale success, rejection
+  and finally callbacks must cause no notice, selection, roster, error or
+  busy-state mutation in the new scope. A query change must not invalidate a
+  valid in-flight submit; rapid double submit must dispatch only once. Current
+  partial failure keeps the same request identity and only failed selections
+  retry. Same-account credential refresh must preserve the current lifetime.
+- NMR-AC-37: Exercise the actual React dialog in Chromium with controlled
+  delayed search/forward promises, including account switch/logout and
+  A→B→A, close/reopen, source replacement, unmount, old success/failure/finally,
+  partial failure/retry and current-success positive controls. Exercise the
+  renderer's actual roster-settlement boundary with a delayed read across an
+  account change and the root's synchronous layout-unmount generation fence
+  before passive effects. Preserve Transcript16 and compile the actual renderer.
+  Capture keyboard/focus and light/dark narrow/wide dialog evidence using the
+  existing styles and components; publish logs and screenshots at exact H in
+  the existing Actions UI job. No local executable validation or new test
+  dependency is authorized. These are focused UI/contract checks, not complete
+  packaged visual/accessibility, real service or independent ACCEPT evidence.
+
+Session/Transcript remains the only message writer. Invalidating a renderer
+lifetime suppresses stale projection; it does not cancel or undo an already
+dispatched durable send. No database/key migration or data deletion occurs;
+rollback is an ordinary reviewed code revert. Whole-batch forwarding intent
+durability before the first destination dispatch, restart recovery of an
+unsubmitted destination, and remote forward provenance are separate known
+gaps. Backend #137 remains read-only, and all release/independent ACCEPT gates
+remain blocked. Preserve U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
 
 
 

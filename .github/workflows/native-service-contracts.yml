@@ -8,6 +8,8 @@ on:
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
       - 'frontend/src/production/ProductionRenderer.tsx'
+      - 'desktop/forward-dialog-test.html'
+      - 'frontend/src/production/ForwardMessageDialog.fixture.tsx'
       - 'frontend/src/recovered/runtime/coordinator-source.ts'
       - 'source/shared/rpc/coordinator.ts'
       - 'frontend/src/production/coordinator-client.ts'
@@ -433,6 +435,27 @@ jobs:
         run: |
           set -euo pipefail
           npm run build:renderer 2>&1 | tee ../artifacts/native-message-ui/renderer-build.log
+      - name: Forward settlement account and roster boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/forward-settlement.contract.test.ts 2>&1 | tee artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# tests 5' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# pass 5' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/forward-settlement.log
+      - name: Install locked Chromium for actual forward dialog
+        working-directory: desktop
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Actual forward dialog account and lifetime behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/ForwardMessageDialog.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# tests 12' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# pass 12' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log
       - name: Preserve exact renderer evidence
         if: always()
         uses: actions/upload-artifact@v4
