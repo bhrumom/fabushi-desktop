@@ -297,6 +297,49 @@ turn_runtime terminal projection and actual Automation/Coordinator/outline
 consumers at the exact target base above, under OCRM-001 Revision 2 §17.
 This target repair does not add an upstream full-file read or acceptance claim.
 
+### CANCEL-06 — Connector source recovery after exact-H failure
+
+Decision `CANCEL-SOURCE-01`: **FIX / IMPL_BUG**, recorded before implementation.
+Runtime run `41411715447`, job `125166533584`, on exact H
+`b3a3fd398d3057b264ac673fae1b352aaecf1c92` failed the retained
+`routed_provider_cancel_request_waits_for_worker_terminal` wake-marker
+assertion. The worker's later `Disconnected` panic is secondary to the parent
+assertion dropping its release sender. Independent direct source/log assessment
+confirmed the real channel producer passes `connector` through
+`background_revival_admission_args` into `accept_routed_send`, but
+`classify_send_dispatch` projects it to the default `turn`. The scheduler then
+cannot report `connector` to the existing cancellation/wake owner. This is not
+a missing fixture seed, environment fault or permission to weaken the oracle.
+
+Repair only the existing classifier's exact `connector` source projection;
+retain its User lane, every other recognized source and unknown-source `turn`
+fallback. The shipping fixture must use the real admission-argument helper and
+assert actual source/lane before cancellation. Retain every held-worker,
+registry/lease, terminal, telemetry and delivery assertion. Add ordinary and
+unknown-source superseding controls plus a nonsuperseding connector cancellation
+control: none may receive the connector preemption marker. The real routed
+admission contract must independently observe source and lane before settlement.
+
+Scope extends to `extensions/transcript/production_runtime.rs`, the existing
+`turn_runtime_recovery_contract.rs`, shipping app tests and existing scoped
+workflow/receipt. Concurrent commit
+`4fe16f4689e23da2f027d09b2e8d39f56755c6ec` supplied the equivalent production
+repair and real-admission oracle before this shipping control batch was
+published. Adopt that exact implementation and oracle; do not duplicate them.
+This successor adds the real shipping helper/preconditions and cancellation
+negatives. No new owner, state/schema, lane policy or dependency is introduced.
+U and all global flags stay unchanged; concurrent Host-lock, canonical-root and
+compaction changes are preserved. Reverting the controls does not revert the
+preceding production fix; reverting that fix restores the lost-source defect.
+
+The b3 Host build, Settings/inference checks, app test compilation, other eight
+selected app cases and renderer's fifteen tests remain positive evidence for
+b3 only. Its affected integration recovery step did not execute. Recovery must
+run the repaired shipping assertion and source controls at the new exact H,
+then the previously unreached shared contracts. Do not rerun unchanged b3 or
+label queued/cancelled successor runs passing. A further repeated signature
+requires a fresh independent causal/exhaustion assessment under root AGENTS.
+
 ## Verification and Definition of Done
 
 - A source-backed architecture decision names the existing owners and all

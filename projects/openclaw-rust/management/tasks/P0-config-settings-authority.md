@@ -8,6 +8,40 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Fixed implementation source: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; accepted identity and scoped evidence remain pending. Later discovery candidates do not reopen this fixed subject.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+### Active shared-gate recovery — CANCEL-SOURCE-01 (2026-11-02)
+
+Exact b3 Runtime `41411715447` / job `125166533584` is failed: the real held
+connector cancellation test did not find its preemption wake marker. Independent
+log and producer→classifier→scheduler→cancellation source tracing classified
+this as **FIX / IMPL_BUG** before edits; see `CANCEL-06` in
+`docs/specs/cron-session-reaper.md`. The production classifier loses the exact
+`connector` source while retaining User lane. Repair that projection, retain
+the valid assertion, and add real-admission and shipping cancellation negatives.
+The worker's secondary disconnected release channel does not establish an
+environment fault. Preserve b3's passed build/configuration/app compilation and
+other eight shipping cases plus fifteen renderer tests as b3-only evidence;
+the shared integration step did not execute.
+
+Concurrent `4fe16f4689e23da2f027d09b2e8d39f56755c6ec` supplied the equivalent
+classifier repair and real-admission oracle on ec1 before this control batch
+published. Adopt those exact changes and add the shipping producer/precondition
+and negative cancellation controls without duplicating the implementation or
+admission test. Preserve Host-lock, canonical checkpoint and compaction changes.
+C3 H
+`d047bfa4d9705f54a5e069e17c53fcc001a475d0` is remotely read back; source run
+`41412511336` succeeded, while runtime `41412511366` was cancelled with no jobs
+after a concurrent push. Those are not C3 runtime approvals. Freeze the repair
+for independent source review and exact-H Actions before advancing dependent
+Plugin batches. Fixed U, all false global flags and final acceptance are intact.
+
+Review disposition `CS-ORACLE-QUEUE-01` — **DEFER / TEST_FLAW**: independent
+review of the earlier candidate found an inherited 30 ms sleep before asserting
+that a second thread enqueued in `routed_send_acceptance_contract`. This batch
+adopts 4fe's already-selected `turn_runtime_recovery_contract` source oracle,
+so it does not add that unrelated timing-dependent target. Retain its existing
+assertions; replace the sleep with causal synchronization before relying on it
+for full acceptance. This is an open oracle repair, not a production exemption.
+
 ## Atomic closed behavior
 
 Configuration reads and mutations enter through canonical Fabushi settings API → check immutability / deployment mode guards → acquire serial writer mutex → traverse or update properties along safe dot notation paths with prototype pollution defense → persist atomically via temporary staging files and sync → notify subscribers of effective field changes.

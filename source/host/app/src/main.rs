@@ -18037,11 +18037,22 @@ mod tests {
             agent_id: &str,
             stream_id: &str,
         ) -> (super::RoutedProviderCancellation, super::RoutedTurnLeaseGuard) {
-            self.runtime.accept_routed_send(&serde_json::json!({
-                "agentId": agent_id, "prompt": "continue the connector turn",
-                "streamId": stream_id, "clientNonce": stream_id,
-                "requestSource": "connector",
-            }), |_| Ok(super::PersistedSendContext::default())).expect("admitted routed lease");
+            self.admit_with_source(agent_id, stream_id, "connector")
+        }
+
+        fn admit_with_source(
+            &self,
+            agent_id: &str,
+            stream_id: &str,
+            source: &str,
+        ) -> (super::RoutedProviderCancellation, super::RoutedTurnLeaseGuard) {
+            let args = super::background_revival_admission_args(
+                agent_id, &format!("agent:{agent_id}:main"), source,
+                "continue the admitted turn", stream_id, stream_id, None,
+            );
+            self.runtime.accept_routed_send(&args, |_| {
+                Ok(super::PersistedSendContext::default())
+            }).expect("admitted routed lease");
             self.runtime.begin_provider_run_with_kind(agent_id, false);
             let cancellation = self.registry.register_routed_provider(agent_id, stream_id)
                 .expect("real registry task");
@@ -18117,6 +18128,9 @@ mod tests {
             ).is_err());
         }
         let (cancellation, mut lease) = fixture.admit("held-agent", "held-stream");
+        assert_eq!(fixture.runtime.active_turn_source("held-agent").as_deref(), Some("connector"));
+        assert_eq!(fixture.runtime.active_turn_lane("held-agent"),
+            Some(mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane::User));
         let other = fixture.registry.register_routed_provider("other-agent", "other-stream")
             .expect("independent stream");
         let terminal_ownership = Arc::new(Mutex::new(Vec::new()));
@@ -18208,6 +18222,39 @@ mod tests {
         assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
         drop(listener);
         fixture.close();
+    }
+
+    #[test]
+    fn routed_provider_cancellation_only_marks_superseded_connectors() {
+        use std::sync::mpsc;
+        use serde_json::json;
+
+        for (source, reason, marked) in [
+            ("connector", "Superseded by a newer request", true),
+            ("turn", "Superseded by a newer request", false),
+            ("unrecognized-source", "Superseded by a newer request", false),
+            ("connector", "User requested stop", false),
+        ] {
+            let fixture = RoutedProviderTerminalFixture::new();
+            let receiver = fixture.events.subscribe();
+            let (cancellation, mut lease) = fixture.admit_with_source("agent", "stream", source);
+            let expected_source = if source == "connector" { "connector" } else { "turn" };
+            assert_eq!(fixture.runtime.active_turn_source("agent").as_deref(), Some(expected_source));
+            assert_eq!(fixture.runtime.active_turn_lane("agent"),
+                Some(mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane::User));
+            assert_eq!(fixture.request(&json!({"streamId":"stream", "reason":reason}))["cancelled"], true);
+            assert!(cancellation.is_cancelled());
+            assert_eq!(fixture.background_wakes.lock().unwrap()
+                .dm_preempted_wake_agent_ids.contains("agent"), marked, "source={source}, reason={reason}");
+            assert!(fixture.runtime.has_routed_turn_lease("agent", "stream"));
+            assert!(fixture.runtime.is_agent_running("agent"));
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            fixture.runtime.end_provider_run_with_kind("agent", false);
+            fixture.registry.finish_routed_provider("stream");
+            lease.settle();
+            drop(lease);
+            fixture.close();
+        }
     }
 
     #[test]
