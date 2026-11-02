@@ -1519,7 +1519,7 @@
     ],
     "test_function_count_delta": 0,
     "expected_human_at_reviewed_base": 63,
-    "execution": "not-run at preparation; exact containing-H GitHub Actions required",
+    "execution": "The ownership case explicitly passed at exact3949 run41526315271/job125554841599; full Human gate was 62 passed/1 failed due to the separate streaming-response fixture. Do not claim the whole gate passed.",
     "local_product_validation": false,
     "backend_pr137_modified": false,
     "acceptance_changed": false,
@@ -1533,6 +1533,197 @@
       "versioned history coverage and canonical reply identity changes",
       "renderer optional-field merge repair",
       "retained direct FFI compatibility gate"
-    ]
+    ],
+    "publication": {
+      "head": "3949d54a79c9e22710ce8f66abea0aaf05908174",
+      "parent": "be660661a4935a590cc6e5074ba3224074493401",
+      "tree": "62a8c22f90f538363e58a0a859f1cc4712b14988",
+      "files": {
+        "source/host/src/extensions/session/production.rs": "10e66d505b9faa384ac7551f9bd7bb6d24f7c97d",
+        "source/host/tests/session_gateway_contract.rs": "4aae6ab5a6f5c9e32d6e91f6977c734ea0d9f7b6",
+        "docs/specs/fbcp-native-message-reconciliation.md": "379a371051e2d23f18660bc88d54addc1a498f04",
+        "projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json": "8c3fb3ffd36cd68f142a76a4b11e551c23311dec"
+      },
+      "readback_verified": true,
+      "force": false,
+      "expected_sha": "be660661a4935a590cc6e5074ba3224074493401"
+    }
+  },
+  "post_publication_failures_3949": {
+    "head": "3949d54a79c9e22710ce8f66abea0aaf05908174",
+    "run": 41526315271,
+    "ui": {
+      "job": 125554841399,
+      "classification": "IMPLEMENTATION_DEFECT",
+      "renderer_build": "success",
+      "transcript": 33,
+      "cursors": 17,
+      "forward_settlement": 5,
+      "forward_chromium": 16,
+      "production_renderer": {
+        "passed": 1,
+        "failed": 10,
+        "retries": 0,
+        "page_errors": [],
+        "common_failure": "pending().older expected1 received0; fixture initial tail with a valid cursor reached the renderer, but no continuation was sent"
+      },
+      "production_transcript8": "not-run",
+      "root_cause": "pagination.hasOlder is true for both unprobed and more; Transcript effect runs while loadOlder is a no-op, then none of its dependencies changes when the real cursor arrives.",
+      "concurrent_repair": {
+        "head": "441425cd65a661f95d8b629c388281c77115d2b2",
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "blob": "e6449278d2b45a40cfbd3537ef3a6590680dce82",
+        "change": "Pass cursor.kind === more through the existing hasOlder view handoff.",
+        "native_run": 41527189803,
+        "execution": "Actual441 run41527189803/UI125557844335 failed 9 cases with pending older2, passed initial-remap and clear cases. The initial readiness defect is corrected, but reselecting the active cached conversation invalidates an already issued continuation. Do not mark the full UI gate passed."
+      },
+      "log_sha256": "707143a2baf739db782ad1665ae90fa0084f259acd57626ff9ddb2f1c0823fa7",
+      "artifact": {
+        "id": 13180122352,
+        "sha256": "99cf665e151beee296c5ce5425870b7458c19c21b9dae36228e8e30a544f2f6b",
+        "bytes": 21129548,
+        "actual_archive_digest_verified": true
+      }
+    },
+    "human": {
+      "job": 125554841599,
+      "classification": "TEST_FLAW",
+      "passed": 62,
+      "failed": 1,
+      "ownership_case": "ok",
+      "failed_case": "shipping_human_reaction_rejects_credential_change_while_response_body_is_streaming",
+      "actual_failure": "Server remainder-body write expected success but received BrokenPipe; main thread already verified the credential error, unchanged transcript and retained intention before joining the server.",
+      "native_source": {
+        "path": "source/host/src/extensions/session/native_messaging.rs",
+        "blob": "2c86ddf9c9432334e862a062d72a2de8903368dc",
+        "contract": "Credential snapshots are checked after response headers and after response.text. First-byte emission does not prove the client passed the headers fence."
+      },
+      "repair": "Allow only BrokenPipe/ConnectionReset from the fixture remainder write/flush; every actual credential/state/request/restart assertion remains. No sleep, rerun or production relaxation.",
+      "new_execution": "pending at preparation",
+      "log_sha256": "af46ccb71fd408741d2368fcbcd86b24c264c11e37eb373da534e88d4685728a",
+      "artifact": {
+        "id": 13180222585,
+        "sha256": "4738e8d28c02572180acd3576611d13ff8af198642091da2f05a4af3d15f9ce9"
+      }
+    },
+    "social": {
+      "job": 125554841677,
+      "classification": "TEST_FLAW",
+      "featurehost_actual": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_gate": "Second named-case grep; nocapture inserted the intentional fixture poison panic between the case name and its standalone ok.",
+      "sqlite9": "not-run",
+      "http6": "not-run",
+      "repair": "Already supplied by concurrent f2903f53ded5b07faea73e7f07d780eda0423283: retain the exact full test name and 10 passed/0 failed/0 ignored result requirements while allowing expected caught-panic diagnostics between the name and ok. Preserve this repair; the proposed --show-output alternative was not published.",
+      "new_execution": "pending at preparation",
+      "log_sha256": "0e1c897b9e1d04b4fe564cead2208fddc0be4201e85c378d994320e7ab7e2c29",
+      "artifact": {
+        "id": 13180212395,
+        "sha256": "6136f074834f89a6a1b1170988697e1c3d0e333119af57cfaddec691b892130a",
+        "bytes": 14695,
+        "actual_archive_digest_verified": true
+      },
+      "concurrent_repair_head": "f2903f53ded5b07faea73e7f07d780eda0423283"
+    },
+    "all_independent_acceptance_and_release_gates": false
+  },
+  "following_creation_gate": {
+    "head": "f544e9b3161d758141e1b419bcdab22cc522952e",
+    "run": 41526852400,
+    "job": 125556686433,
+    "transcript_recovery3": "passed",
+    "human63": "passed; streaming fixture pass under this schedule does not close the 3949 fixture defect",
+    "resource3": "passed",
+    "creation12": "11 passed/1 failed; corrupt/notadb sidecar retention mismatch",
+    "later_steps": "not-run",
+    "root_cause_status": "IMPLEMENTATION_DEFECT: nonempty sidecars bypassed the read-only main-file probe; the live SQLite opener removed original sidecars before rejecting NOTADB.",
+    "acceptance": false,
+    "log_sha256": "a37a592f0edb8f59036c63f261850d457cb6bc4fd4f1e42a872913b88e55183b",
+    "artifact": {
+      "id": 13180716147,
+      "sha256": "06e016a46c28af61d45f7bf1693526f054e34d75c58a5fa10bd908da206876ed",
+      "actual_archive_digest_verified": true
+    },
+    "repair": "Before any sidecar bypass or SQLite connection, read the first16 bytes of a nonempty main file using File; reject short/invalid SQLite signatures. Keep absent/empty files and valid-header WAL stores on their existing owner paths; retain the full immutable quick_check for main-only corruption.",
+    "regression": "Existing creation12 suite, same corruption test now adds a short nonempty header with all three sidecars. Preserve NOTADB/schema/data-page variants, complete directory byte equality, no cached/live owner, same-worker retry and fresh-worker reopen.",
+    "limit": "Does not qualify arbitrary valid-header corrupt WAL/hot-journal recovery; no user data deletion or recovery-authority change.",
+    "new_execution": "pending at preparation",
+    "concurrent_repair": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+      "blob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+      "preserved": true
+    },
+    "concurrent_boundary_test": {
+      "head": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+      "path": "source/host/src/extensions/session/human_creation_tests.rs",
+      "blob": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+      "variant": "short-header",
+      "preserved": true
+    }
+  },
+  "ui_following_reselect_failure": {
+    "head": "441425cd65a661f95d8b629c388281c77115d2b2",
+    "run": 41527189803,
+    "job": 125557844335,
+    "classification": "IMPLEMENTATION_DEFECT",
+    "production_renderer": {
+      "passed": 2,
+      "failed": 9,
+      "skipped": 0,
+      "retries": 0
+    },
+    "observed_requests": "Each failed case has one initial tail r-19 and two identical beforeSeq3/opaque-cursor continuation requests r-20/r-21. No pageerror; original unmodified Playwright oracle.",
+    "log_sha256": "0c0bb5df322324ff5a8973ba67760c964f81efa0207eafacc4cabf8575ba5bcd",
+    "artifact": {
+      "id": 13181055417,
+      "bytes": 19750822,
+      "sha256": "61563e6545353fff4bd8f16200995564855ef2149b3b2e2341ea60943cd36890",
+      "actual_archive_digest_verified": true
+    },
+    "root_cause": "openAgent always installs the cached initial page even when setScope retained the same active scope. installInitialPage clears the in-flight request and its overlays, allowing a second continuation.",
+    "repair": "Only install the cached cursor when that scope is unprobed; keep active, failed and exhausted scope state. Preserve the earlier readiness handoff and existing controller/viewport owner.",
+    "regression": "Concurrent9b9 keeps all11 cases and waits for the automatic initial m3 plus held older1 before the real same-Alice click, then preserves the original automatic-before-scroll and pending1 assertions. Root preserves this equivalent deterministic reselect regression.",
+    "execution": "pending at preparation",
+    "acceptance": false,
+    "concurrent_repair": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "production_blob": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+      "spec_blob": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+      "preserved": true
+    }
+  },
+  "repair_batch_preparation": {
+    "reviewed_head": "9bb7bd6b1a00d4f1028e60aee8ccfaacfa97656a",
+    "scope": [
+      "valid credential-rejection socket closure in existing streaming fixture",
+      "invalid Human SQLite main-header refusal before sidecar handling",
+      "same-scope renderer pagination continuation retention"
+    ],
+    "new_test_function_counts": {
+      "human": 63,
+      "creation": 12,
+      "production_renderer": 11
+    },
+    "no_local_executable_validation": true,
+    "no_backend_pr137_mutation": true,
+    "independent_acceptance": false,
+    "formal_release": false,
+    "root_changes": [
+      "Accept only valid BrokenPipe/ConnectionReset cancellation in the existing streaming fixture while preserving every production assertion.",
+      "Record exact failures, original artifacts and the actual concurrent repairs without changing acceptance."
+    ],
+    "concurrent_changes_preserved": [
+      "f290 Social named-output repair with exact passing total retained",
+      "441 concrete pagination readiness handoff",
+      "9b9 active-scope pagination retention and deterministic reselect assertions",
+      "9b9 invalid main-header refusal before sidecar handling",
+      "5d38 settled/canonical Human reaction target validation",
+      "f95 short-header/sidecar full-byte retry and reopen regression, equivalent to the prepared isolated candidate"
+    ],
+    "unpublished_equivalent_candidates": "Root-created unattached blobs for the equal renderer/probe/spec changes and --show-output alternative were not integrated; preserve the current concurrent implementation instead. The root short-header candidate was also not integrated after equivalent f95 was read back."
   }
 }

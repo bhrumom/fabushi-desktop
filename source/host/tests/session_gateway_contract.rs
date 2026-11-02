@@ -4516,8 +4516,15 @@ fn shipping_human_reaction_rejects_credential_change_while_response_body_is_stre
         body_started.send(()).expect("notify response is streaming");
         wait_for_release.recv_timeout(std::time::Duration::from_secs(15))
             .expect("explicitly release final response body");
-        stream.write_all(&body.as_bytes()[1..]).expect("remaining body");
-        stream.flush().expect("flush response");
+        // Credential fencing may reject after the headers, before the rest
+        // of this body is consumed. That valid cancellation closes the socket;
+        // the caller below still requires the credential error, unchanged
+        // durable state and successful restart replay.
+        if let Err(error) = stream.write_all(&body.as_bytes()[1..]).and_then(|_| stream.flush()) {
+            assert!(matches!(error.kind(),
+                std::io::ErrorKind::BrokenPipe | std::io::ErrorKind::ConnectionReset
+            ), "unexpected streaming fixture delivery failure: {error}");
+        }
         request
     });
     let runtime = human_message_fixture_runtime(&root, &url);
