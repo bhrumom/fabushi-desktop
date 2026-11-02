@@ -1,7 +1,8 @@
-use std::fs::{self, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
@@ -21,6 +22,7 @@ pub enum HostLockOutcome {
 pub struct HostLockHandle {
     path: PathBuf,
     pid: u32,
+    guard: Mutex<Option<File>>,
 }
 
 impl HostLockHandle {
@@ -33,6 +35,13 @@ impl HostLockHandle {
     }
 
     pub fn release(&self) -> io::Result<()> {
+        let mut guard = self
+            .guard
+            .lock()
+            .map_err(|_| io::Error::other("Host lock release state is poisoned"))?;
+        if guard.is_none() {
+            return Ok(());
+        }
         if read_lock_pid(&self.path) == Some(self.pid) {
             match fs::remove_file(&self.path) {
                 Ok(()) => {}
@@ -40,6 +49,9 @@ impl HostLockHandle {
                 Err(error) => return Err(error),
             }
         }
+        // Remove the projection before closing physical custody. Taking the
+        // resource also makes later release/Drop harmless to a same-PID owner.
+        drop(guard.take());
         Ok(())
     }
 }
@@ -66,10 +78,41 @@ pub fn read_lock_pid(path: &Path) -> Option<u32> {
         .filter(|pid| *pid > 0)
 }
 
+fn open_guard(path: &Path) -> io::Result<File> {
+    let mut guard_path = path.as_os_str().to_os_string();
+    guard_path.push(".guard");
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true).truncate(false);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    // Never unlink this file: a waiter must keep referring to the same inode.
+    options.open(PathBuf::from(guard_path))
+}
+
+fn try_acquire_guard(guard: &File) -> io::Result<bool> {
+    let contended = fs2::lock_contended_error().raw_os_error();
+    match fs2::FileExt::try_lock_exclusive(guard) {
+        Ok(()) => Ok(true),
+        Err(error) if contended.is_some() && error.raw_os_error() == contended => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
+fn guard_contention(path: &Path) -> io::Error {
+    io::Error::new(
+        io::ErrorKind::WouldBlock,
+        format!("Host physical custody is still held for {}", path.display()),
+    )
+}
+
 fn remove_lock_if_pid_matches(path: &Path, expected_pid: Option<u32>) -> io::Result<bool> {
     // A liveness probe or takeover can outlast the PID file it inspected.
     // Leave a visibly newer holder for the next exclusive acquisition attempt.
-    // This recheck is not an atomic cross-process compare-and-remove operation.
+    // Participating owners serialize this recheck/removal under the OS guard;
+    // this is not an atomic CAS against older writers or external replacement.
     if read_lock_pid(path) != expected_pid {
         return Ok(false);
     }
@@ -194,16 +237,19 @@ where
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
+    let guard = open_guard(path)?;
+    let mut guard_held = try_acquire_guard(&guard)?;
     let mut outcome = HostLockOutcome::Created;
     let mut previous_pid = None;
 
     for _ in 0..MAX_ACQUIRE_ATTEMPTS {
-        if try_create_lock(path, pid)? {
+        if guard_held && try_create_lock(path, pid)? {
             return Ok(HostLockAcquisition {
                 outcome,
                 lock: HostLockHandle {
                     path: path.to_path_buf(),
                     pid,
+                    guard: Mutex::new(Some(guard)),
                 },
                 previous_pid,
             });
@@ -211,21 +257,33 @@ where
 
         let holder = read_lock_pid(path);
         let Some(holder) = holder else {
+            if !guard_held {
+                return Err(guard_contention(path));
+            }
             outcome = HostLockOutcome::ReclaimedDead;
             remove_lock_if_pid_matches(path, None)?;
             continue;
         };
         if holder == pid {
+            if !guard_held {
+                return Err(guard_contention(path));
+            }
             remove_lock_if_pid_matches(path, Some(holder))?;
             continue;
         }
         if !is_alive(holder) {
+            if !guard_held {
+                return Err(guard_contention(path));
+            }
             outcome = HostLockOutcome::ReclaimedDead;
             previous_pid = Some(holder);
             remove_lock_if_pid_matches(path, Some(holder))?;
             continue;
         }
         if !is_host_process(holder) {
+            if !guard_held {
+                return Err(guard_contention(path));
+            }
             outcome = HostLockOutcome::ReclaimedForeign;
             previous_pid = Some(holder);
             remove_lock_if_pid_matches(path, Some(holder))?;
@@ -259,6 +317,14 @@ where
                     "Host process {holder} is still running after graceful and forced takeover polling"
                 ),
             ));
+        }
+        if !guard_held {
+            // A liveness observation does not release another process's file
+            // lock. No PID removal or publication may precede this acquisition.
+            guard_held = try_acquire_guard(&guard)?;
+            if !guard_held {
+                return Err(guard_contention(path));
+            }
         }
         remove_lock_if_pid_matches(path, Some(holder))?;
     }

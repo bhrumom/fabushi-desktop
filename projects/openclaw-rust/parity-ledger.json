@@ -15930,7 +15930,9 @@
         "source/host/app/src/main.rs",
         "source/host/src/extensions/session/production_fresh_append_tests.rs",
         "source/host/tests/session_gateway_contract.rs",
-        "source/host/tests/agent_to_agent_messaging_contract.rs"
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "source/host/src/host_lock.rs",
+        "source/host/tests/bootstrap_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -16089,7 +16091,8 @@
       "typed_contracts": [
         "Session work admission and archive lifecycle",
         "SWA-ROOT-RECOVERY-v1 checked production checkpoint-root recovery",
-        "SESSION-FRESH-APPEND-v1 strict physical-snapshot allocation, all-row commit and deferred existing transcript publication"
+        "SESSION-FRESH-APPEND-v1 strict physical-snapshot allocation, all-row commit and deferred existing transcript publication",
+        "OCRM-HOST-PHYSICAL-CUSTODY-v1 existing Host startup guard prerequisite; original-turn durable claim/reconciliation and full restart acceptance remain open"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },

@@ -74,7 +74,9 @@
         "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
         "source/host/src/extensions/session/production_fresh_append_tests.rs",
         "source/host/tests/session_gateway_contract.rs",
-        "source/host/tests/agent_to_agent_messaging_contract.rs"
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "source/host/src/host_lock.rs",
+        "source/host/tests/bootstrap_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -290,7 +292,9 @@
         "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
         "source/host/src/extensions/session/production_fresh_append_tests.rs",
         "source/host/tests/session_gateway_contract.rs",
-        "source/host/tests/agent_to_agent_messaging_contract.rs"
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "source/host/src/host_lock.rs",
+        "source/host/tests/bootstrap_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -1318,7 +1322,9 @@
         "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
         "source/host/src/extensions/session/production_fresh_append_tests.rs",
         "source/host/tests/session_gateway_contract.rs",
-        "source/host/tests/agent_to_agent_messaging_contract.rs"
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "source/host/src/host_lock.rs",
+        "source/host/tests/bootstrap_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",

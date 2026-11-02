@@ -1015,6 +1015,69 @@ marker preservation and original-stream/provider/model/generation recovery
 remain required. There is no state migration; rollback must not erase a
 pending recovery marker or assert that an unknown tool result is settled.
 
+## Host physical lifetime custody — OCRM-HOST-PHYSICAL-CUSTODY-v1
+
+Implementation base: `fdfdfb2d6a5635fc9c79da51b9fc4b09486b553a`; fixed U
+unchanged. The current `host_lock.rs` closes the exclusively created PID file
+after writing it. Another starter can observe the still-empty publication
+window and remove it; read/PID/remove is not physical lifetime exclusion.
+An already released same-PID handle can also remove a later holder's PID file.
+Extend this existing owner, retaining HTR-01–04 and the shipping caller.
+
+- HPG-01: admission holds an exclusive OS file lock before creating/reclaiming
+  the existing PID projection. Use the already locked `fs2=0.4.3` API and a
+  stable adjacent `<pid-path>.guard` file; never unlink that guard in normal
+  acquire/release. The same `HostLockHandle` retains its open file through
+  the existing Host lifetime. There is no second registry or runtime owner.
+- HPG-02: a busy guard cannot be bypassed by missing, malformed, same-PID,
+  reportedly dead or foreign PID metadata. Refuse with contention and preserve
+  bytes, without signalling an unidentified/foreign process. Existing bounded
+  known-Host takeover may request termination, but a successor is admitted
+  only after it actually obtains the guard and exclusively creates its PID
+  projection. A liveness callback alone never proves the guard was released.
+  Recognize contention using the dependency's portable error contract.
+- HPG-03: when physical custody is available, preserve existing fresh,
+  malformed/dead/same-PID legacy projection recovery and known-Host/foreign-PID
+  policy. Keep bounded acquisition and termination budgets and all old refusal
+  assertions. A guard/open/lock/write error must propagate before admission.
+- HPG-04: release removes only this handle's matching PID projection while
+  still holding custody, then closes its retained guard exactly once. Repeated
+  release or Drop after release cannot affect a same-PID successor. A failed
+  explicit projection removal retains the handle for retry; ordinary handle
+  destruction still releases its OS resource. Persisting the guard file is
+  deliberate; do not make an unlocked replacement inode while contenders exist.
+- HPG-05: keep acquisition at the existing shipping startup boundary before
+  managed daemon/extensions, and release after their existing shutdown. Earlier
+  layout and platform-lane construction are outside this boundary. Do not
+  reinterpret this handle as a durable Session claim or tool-result settlement.
+- HPG-06: Actions must run the complete existing `bootstrap_contract` plus
+  shared compilation/recovery. Add causal real-file controls for an incomplete
+  PID under a held guard, dead/foreign/same-PID busy metadata, known-Host
+  takeover with and without actual guard release, repeated release/Drop and
+  unaffected paths. A bounded real child must hold the actual public owner;
+  a contender is refused until that exact child exits, then fresh acquisition
+  succeeds. Bind child readiness to its PID and nonce, retain an owned Child
+  for cleanup, and preserve every existing HTR assertion. No local execution.
+
+Scope is this spec, `source/host/src/host_lock.rs` and the existing bootstrap
+contract; shared workflow/ledger edits, if needed, remain with root. No dependency
+or PID wire-format change is required. The stable guard is understood only by
+participating versions; simultaneous older writers, externally replaced lock
+paths, PID reuse/process-tree proof, cross-process Session claims and original
+turn/model/checkpoint recovery remain separate unaccepted contracts. Rollback
+restores the old exclusion weakness, so stop all participating owners first.
+
+Fixed-U review: `gateway-lock.ts` blob `688683ff422fd0e77c3470ab27895b427f3497c6`,
+`gateway-state-owner.ts` blob `42993beb4828ef6723605345de21700abb4e93a8`,
+`gateway-state-owner-record.ts` blob `9f0aa23af80956166b8fc2f7b32e94f632397b79`
+and `gateway-lock-recovery-lease.ts` blob `578661c027a536a9f9c6355b319437bd16ca9355`
+establish retained physical custody, incomplete-publication refusal and exact
+recovery-row validation as distinct responsibilities. This slice addresses the
+first startup boundary in Fabushi; it does not claim their full equivalence.
+The current BoxStore writer already uses `fs2::FileExt` with retained ownership;
+reuse that dependency, not its different metadata/permission owner. Exact-H
+execution and independent review remain required before scoped verification.
+
 ## Shipping composition source oracle — 2026-11-02
 
 `SWA-COMPOSITION-ORACLE-v1`: the recovery gate at H
