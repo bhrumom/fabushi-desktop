@@ -49929,6 +49929,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository waiting-for-answer issue/PR lifecycle workflow evidence contract"
       ],
       "production_evidence": [
+        "governance-contract-preparation-commit:1c0aa1542960c216aa25786797ab024c77c0e11c",
         "dossier:projects/telegram-desktop-rust/dossiers/waiting-for-answer-workflow-complete-read.md",
         "upstream-source:.github/workflows/waiting-for-answer.yml@0cccca6b2d434303da915b12a13e7620cf1b8bc4",
         "observed-action-commit:9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
@@ -49942,7 +49943,7 @@
         "12 fault/recovery cases authored, not run",
         "8 security/privacy/provenance cases authored, not run"
       ],
-      "target_commit": null,
+      "target_commit": "1c0aa1542960c216aa25786797ab024c77c0e11c",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -50116,7 +50117,7 @@
       "release_gate_status": "not-run",
       "license_and_provenance": "Behavioral repository waiting-for-answer lifecycle workflow read from telegramdesktop/tdesktop fixed U plus observed lee-dohm/no-response v0.5.0 commit/tree/bundle and MIT repository metadata; no Telegram support workflow/runtime is copied into Fabushi shipping product.",
       "reviewer": null,
-      "notes": "Task round178/source evidence round209. Full-read fixed-U tree index 134. One source entry closes: unknown 16100->16099, unread 16073->16072, responsibilities 178->179, omitted 0, unmapped 0.",
+      "notes": "Task round178/source evidence round209. Full-read fixed-U tree index 134. One source entry closes: unknown 16100->16099, unread 16073->16072, responsibilities 178->179, omitted 0, unmapped 0. Governance/contracts/dossier and closure preparation commit 1c0aa1542960c216aa25786797ab024c77c0e11c.",
       "validation_status": "not-run",
       "accepted": false,
       "source_paths": [
