@@ -99,6 +99,8 @@ pub struct CoordinatorMcpLifecycleRelay {
     next_request_id: AtomicU64,
     timeout: Duration,
     closed: AtomicBool,
+    #[cfg(test)]
+    before_pending_registration: Option<Arc<dyn Fn() + Send + Sync>>,
 }
 
 impl CoordinatorMcpLifecycleRelay {
@@ -113,6 +115,8 @@ impl CoordinatorMcpLifecycleRelay {
             next_request_id: AtomicU64::new(0),
             timeout,
             closed: AtomicBool::new(false),
+            #[cfg(test)]
+            before_pending_registration: None,
         }
     }
 
@@ -127,11 +131,24 @@ impl CoordinatorMcpLifecycleRelay {
         let sequence = self.next_request_id.fetch_add(1, Ordering::AcqRel) + 1;
         let request_id = format!("host-mcp-{sequence}");
         let (reply_tx, reply_rx) = mpsc::sync_channel(1);
-        self.pending
-            .lock()
-            .map_err(|_| CoordinatorMcpLifecycleRelayError::Protocol("pending relay lock poisoned".into()))?
-            .insert(request_id.clone(), reply_tx);
+        #[cfg(test)]
+        if let Some(before_registration) = &self.before_pending_registration {
+            before_registration();
+        }
+        {
+            let mut pending = self.pending
+                .lock()
+                .map_err(|_| CoordinatorMcpLifecycleRelayError::Protocol("pending relay lock poisoned".into()))?;
+            // Closure drains this same lock. A request must either register
+            // before that drain or observe closure without leaving a waiter.
+            if self.closed.load(Ordering::Acquire) {
+                return Err(CoordinatorMcpLifecycleRelayError::Closed("Mahayana Host is shutting down".into()));
+            }
+            pending.insert(request_id.clone(), reply_tx);
+        }
 
+        // Publication invokes listeners synchronously; they may resolve or
+        // close the relay. An admitted request can still publish after close.
         self.events.publish(json!({
             "channel": HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL,
             "payload": {
@@ -488,5 +505,277 @@ impl McpManagerBackend for CoordinatorMcpManagerBackend {
 
     fn dispose(&self) -> Result<(), String> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod lifecycle_tests {
+    use super::*;
+    use crate::extensions::mcp::extension::{
+        AuthRenewalEvent, AuthRenewalPort, McpExtensionRuntime,
+        PluginSkillsAuthenticatedStartup, PollingHandle, PollingPort,
+    };
+    use crate::extensions::mcp::mcp_service::McpHostService;
+    use crate::extensions::mcp::plugin_skills::SandPluginSkillsService;
+    use crate::extensions::mcp::plugin_skills_cache::{
+        PluginSkillsCacheWriteIndex, get_plugin_skills_cache_path,
+        get_plugin_skills_dir, write_plugin_skills_cache,
+    };
+    use crate::extensions::mcp::production::RealPluginSkillsPolling;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::sync::atomic::AtomicUsize;
+    use std::thread;
+
+    const ORACLE_TIMEOUT: Duration = Duration::from_secs(5);
+    const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
+
+    fn completes_without_deadlock(check: impl FnOnce() + Send + 'static) {
+        let (done_tx, done_rx) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            check();
+            let _ = done_tx.send(());
+        });
+        done_rx
+            .recv_timeout(Duration::from_secs(20))
+            .expect("MCP lifecycle contract did not complete before the request timeout");
+        worker.join().expect("MCP lifecycle contract worker");
+    }
+
+    struct RegistrationPause {
+        entered: mpsc::Receiver<()>,
+        release: mpsc::Sender<()>,
+        attempts: Arc<AtomicUsize>,
+    }
+
+    impl Drop for RegistrationPause {
+        fn drop(&mut self) {
+            let _ = self.release.send(());
+        }
+    }
+
+    fn paused_relay(
+        events: GatewayEventHub,
+    ) -> (Arc<CoordinatorMcpLifecycleRelay>, RegistrationPause) {
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let release_rx = Mutex::new(release_rx);
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let hook_attempts = Arc::clone(&attempts);
+        let mut relay = CoordinatorMcpLifecycleRelay::with_timeout(events, REQUEST_TIMEOUT);
+        relay.before_pending_registration = Some(Arc::new(move || {
+            hook_attempts.fetch_add(1, Ordering::SeqCst);
+            entered_tx.send(()).expect("registration pause entered");
+            release_rx
+                .lock()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(30))
+                .expect("release actual request registration");
+        }));
+        (
+            Arc::new(relay),
+            RegistrationPause {
+                entered: entered_rx,
+                release: release_tx,
+                attempts,
+            },
+        )
+    }
+
+    #[test]
+    fn close_before_pending_registration_refuses_the_actual_request() {
+        completes_without_deadlock(|| {
+            let events = GatewayEventHub::default();
+            let receiver = events.subscribe();
+            let (relay, pause) = paused_relay(events);
+            let (result_tx, result_rx) = mpsc::channel();
+            let worker_relay = Arc::clone(&relay);
+            let worker = thread::spawn(move || {
+                result_tx
+                    .send(worker_relay.request(MCP_LOAD_PLUGIN_SKILLS_METHOD, json!({})))
+                    .unwrap();
+            });
+            pause.entered.recv_timeout(ORACLE_TIMEOUT).unwrap();
+            assert_eq!(relay.pending_count(), 0);
+
+            relay.cancel_all("Host teardown before registration");
+            pause.release.send(()).unwrap();
+            assert_eq!(
+                result_rx
+                    .recv_timeout(ORACLE_TIMEOUT)
+                    .expect("losing admission must return Closed without waiting for a reply"),
+                Err(CoordinatorMcpLifecycleRelayError::Closed(
+                    "Mahayana Host is shutting down".into()
+                ))
+            );
+            worker.join().unwrap();
+            assert_eq!(pause.attempts.load(Ordering::SeqCst), 1);
+            assert_eq!(relay.pending_count(), 0);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert!(matches!(
+                relay.request(MCP_LOAD_PLUGIN_SKILLS_METHOD, json!({})),
+                Err(CoordinatorMcpLifecycleRelayError::Closed(_))
+            ));
+            assert_eq!(pause.attempts.load(Ordering::SeqCst), 1);
+        });
+    }
+
+    struct TestRoot(PathBuf);
+
+    impl Drop for TestRoot {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    struct Authenticated {
+        unsubscriptions: Arc<AtomicUsize>,
+    }
+
+    impl AuthRenewalPort for Authenticated {
+        fn peek_access_token(&self) -> Option<String> {
+            Some("fixture-access-token".into())
+        }
+
+        fn subscribe_to_renewal(
+            &self,
+            _listener: Arc<dyn Fn(AuthRenewalEvent) + Send + Sync>,
+        ) -> Box<dyn FnOnce() + Send> {
+            let unsubscriptions = Arc::clone(&self.unsubscriptions);
+            Box::new(move || {
+                unsubscriptions.fetch_add(1, Ordering::SeqCst);
+            })
+        }
+    }
+
+    struct JoinObservedPolling {
+        joining: mpsc::Sender<()>,
+        callbacks: Arc<AtomicUsize>,
+        disposals: Arc<AtomicUsize>,
+    }
+
+    struct JoinObservedHandle {
+        inner: Box<dyn PollingHandle>,
+        joining: mpsc::Sender<()>,
+        disposals: Arc<AtomicUsize>,
+    }
+
+    impl PollingHandle for JoinObservedHandle {
+        fn dispose(&mut self) {
+            self.disposals.fetch_add(1, Ordering::SeqCst);
+            let _ = self.joining.send(());
+            self.inner.dispose();
+        }
+    }
+
+    impl PollingPort for JoinObservedPolling {
+        fn start(&self, callback: Arc<dyn Fn() + Send + Sync>) -> Box<dyn PollingHandle> {
+            let callbacks = Arc::clone(&self.callbacks);
+            Box::new(JoinObservedHandle {
+                inner: RealPluginSkillsPolling::daily().start(Arc::new(move || {
+                    callbacks.fetch_add(1, Ordering::SeqCst);
+                    callback();
+                })),
+                joining: self.joining.clone(),
+                disposals: Arc::clone(&self.disposals),
+            })
+        }
+    }
+
+    #[test]
+    fn closed_relay_does_not_strand_real_plugin_skills_poll_shutdown() {
+        completes_without_deadlock(|| {
+            let root = TestRoot(std::env::temp_dir().join(format!(
+                "mcp-relay-close-{}",
+                uuid::Uuid::new_v4()
+            )));
+            let cache_dir = get_plugin_skills_dir(&root.0);
+            write_plugin_skills_cache(
+                &cache_dir,
+                &PluginSkillsCacheWriteIndex {
+                    current_user_id: Some(Some(11)),
+                    skills: vec![json!({
+                        "id": "retained-skill",
+                        "pluginId": "41",
+                        "pluginName": "Retained plugin",
+                        "name": "Retained skill",
+                        "description": "Available before shutdown",
+                        "filePath": root.0.join("retained/SKILL.md"),
+                    })],
+                    auth_blocked: None,
+                },
+                || 1000.0,
+            )
+            .unwrap();
+            let cache_path = get_plugin_skills_cache_path(&cache_dir);
+            let cache_before = fs::read(&cache_path).unwrap();
+            let events = GatewayEventHub::default();
+            let receiver = events.subscribe();
+            let (relay, pause) = paused_relay(events);
+            let skills = Arc::new(SandPluginSkillsService::new(
+                root.0.clone(),
+                Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&relay))),
+            ));
+            let retained_skills = skills.current();
+            assert_eq!(retained_skills.len(), 1);
+            let service = Arc::new(McpHostService::new(
+                Arc::new(CoordinatorMcpManagerBackend::new(
+                    Arc::clone(&relay),
+                    Arc::new(|_, _| Ok(Vec::new())),
+                )),
+                Some(skills.clone()),
+            ));
+            let callbacks = Arc::new(AtomicUsize::new(0));
+            let disposals = Arc::new(AtomicUsize::new(0));
+            let unsubscriptions = Arc::new(AtomicUsize::new(0));
+            let sweeps = Arc::new(AtomicUsize::new(0));
+            let (joining_tx, joining_rx) = mpsc::channel();
+            let startup = PluginSkillsAuthenticatedStartup::start(
+                Arc::new(Authenticated {
+                    unsubscriptions: Arc::clone(&unsubscriptions),
+                }),
+                skills.clone(),
+                Arc::new(JoinObservedPolling {
+                    joining: joining_tx,
+                    callbacks: Arc::clone(&callbacks),
+                    disposals: Arc::clone(&disposals),
+                }),
+                Some({
+                    let sweeps = Arc::clone(&sweeps);
+                    Arc::new(move || {
+                        sweeps.fetch_add(1, Ordering::SeqCst);
+                    })
+                }),
+            );
+            let runtime = Arc::new(McpExtensionRuntime::new(startup, service, Arc::new(())));
+            pause.entered.recv_timeout(ORACLE_TIMEOUT).unwrap();
+
+            // Match shipping teardown: close the relay before stopping MCP.
+            relay.cancel_all("Host shutdown");
+            let (stopped_tx, stopped_rx) = mpsc::channel();
+            let stopping_runtime = Arc::clone(&runtime);
+            let stopping = thread::spawn(move || {
+                stopped_tx.send(stopping_runtime.stop()).unwrap();
+            });
+            joining_rx.recv_timeout(ORACLE_TIMEOUT).unwrap();
+            assert!(matches!(stopped_rx.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            pause.release.send(()).unwrap();
+            stopped_rx
+                .recv_timeout(ORACLE_TIMEOUT)
+                .expect("real poll join must finish before the relay request timeout")
+                .unwrap();
+            stopping.join().unwrap();
+            runtime.stop().unwrap();
+
+            assert_eq!(callbacks.load(Ordering::SeqCst), 1);
+            assert_eq!(disposals.load(Ordering::SeqCst), 1);
+            assert_eq!(unsubscriptions.load(Ordering::SeqCst), 1);
+            assert_eq!(sweeps.load(Ordering::SeqCst), 0);
+            assert_eq!(skills.sync("after-stop").unwrap(), retained_skills);
+            assert_eq!(fs::read(&cache_path).unwrap(), cache_before);
+            assert_eq!(pause.attempts.load(Ordering::SeqCst), 1);
+            assert_eq!(relay.pending_count(), 0);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        });
     }
 }

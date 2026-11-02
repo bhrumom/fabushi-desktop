@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
 use mahayana_host_runtime::extensions::mcp::plugin_skills::PluginSkillsLoader;
 use mahayana_host_runtime::gateway_server::GatewayEventHub;
 use serde_json::json;
-use std::sync::Arc;
+use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::Duration;
 
@@ -94,6 +94,159 @@ fn host_mcp_lifecycle_relay_rejects_unapproved_methods_and_remote_failures() {
         MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
         "mcp.resolveLifecycleRequest"
     );
+}
+
+#[test]
+fn host_mcp_lifecycle_close_settles_an_admitted_waiter_and_rejects_late_resolution() {
+    let events = GatewayEventHub::default();
+    let receiver = events.subscribe();
+    let relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+        events,
+        Duration::from_secs(60),
+    ));
+    let (result_tx, result_rx) = mpsc::channel();
+    let worker_relay = Arc::clone(&relay);
+    let worker = thread::spawn(move || {
+        result_tx
+            .send(worker_relay.request(MCP_LIST_CATALOG_METHOD, json!({})))
+            .unwrap();
+    });
+    let event = receiver
+        .recv_timeout(Duration::from_secs(5))
+        .expect("admitted lifecycle request");
+    let request_id = event["payload"]["requestId"].as_str().unwrap();
+    assert_eq!(relay.pending_count(), 1);
+
+    relay.cancel_all("Host teardown");
+    relay.cancel_all("duplicate teardown");
+    assert_eq!(
+        result_rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("close must settle the admitted waiter before its timeout"),
+        Err(CoordinatorMcpLifecycleRelayError::Closed(
+            "Host teardown".into()
+        ))
+    );
+    worker.join().unwrap();
+    assert_eq!(relay.pending_count(), 0);
+    assert!(matches!(
+        relay.resolve(&json!({"requestId": request_id, "ok": true, "result": []})),
+        Err(CoordinatorMcpLifecycleRelayError::Protocol(_))
+    ));
+    assert!(matches!(
+        relay.request(MCP_LIST_CATALOG_METHOD, json!({})),
+        Err(CoordinatorMcpLifecycleRelayError::Closed(_))
+    ));
+    assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+}
+
+#[test]
+fn host_mcp_lifecycle_publication_allows_synchronous_resolution() {
+    let events = GatewayEventHub::default();
+    let relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+        events.clone(),
+        Duration::from_secs(60),
+    ));
+    let weak_relay = Arc::downgrade(&relay);
+    let (callback_tx, callback_rx) = mpsc::channel();
+    let _subscription = events.subscribe_listener(move |event| {
+        if event["channel"] != HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL {
+            return;
+        }
+        let relay = weak_relay.upgrade().expect("live relay during publication");
+        let before = relay.pending_count();
+        let resolved = relay.resolve(&json!({
+            "requestId": event["payload"]["requestId"],
+            "ok": true,
+            "result": [{"id": "inline-plugin"}],
+        }));
+        callback_tx
+            .send((before, resolved, relay.pending_count()))
+            .unwrap();
+    });
+    let (result_tx, result_rx) = mpsc::channel();
+    let worker_relay = Arc::clone(&relay);
+    let worker = thread::spawn(move || {
+        result_tx
+            .send(worker_relay.request(MCP_LIST_CATALOG_METHOD, json!({})))
+            .unwrap();
+    });
+
+    assert_eq!(
+        result_rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("synchronous resolve must not deadlock publication"),
+        Ok(json!([{"id": "inline-plugin"}]))
+    );
+    worker.join().unwrap();
+    let (before, resolved, after) = callback_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("synchronous resolution report");
+    assert_eq!(before, 1);
+    assert_eq!(resolved.unwrap()["resolved"], true);
+    assert_eq!(after, 0);
+    assert_eq!(relay.pending_count(), 0);
+}
+
+#[test]
+fn host_mcp_lifecycle_publication_allows_synchronous_close() {
+    let events = GatewayEventHub::default();
+    let receiver = events.subscribe();
+    let relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+        events.clone(),
+        Duration::from_secs(60),
+    ));
+    let weak_relay = Arc::downgrade(&relay);
+    let (callback_tx, callback_rx) = mpsc::channel();
+    let _subscription = events.subscribe_listener(move |event| {
+        if event["channel"] != HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL {
+            return;
+        }
+        let relay = weak_relay.upgrade().expect("live relay during publication");
+        let before = relay.pending_count();
+        relay.cancel_all("listener closes relay");
+        callback_tx
+            .send((before, relay.pending_count()))
+            .unwrap();
+    });
+    let (result_tx, result_rx) = mpsc::channel();
+    let worker_relay = Arc::clone(&relay);
+    let worker = thread::spawn(move || {
+        result_tx
+            .send(worker_relay.request(MCP_LIST_CATALOG_METHOD, json!({})))
+            .unwrap();
+    });
+
+    assert_eq!(
+        result_rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("synchronous close must not deadlock publication"),
+        Err(CoordinatorMcpLifecycleRelayError::Closed(
+            "listener closes relay".into()
+        ))
+    );
+    worker.join().unwrap();
+    assert_eq!(
+        callback_rx.recv_timeout(Duration::from_secs(5)).unwrap(),
+        (1, 0)
+    );
+    let event = receiver
+        .recv_timeout(Duration::from_secs(5))
+        .expect("the already-admitted request was published");
+    assert!(matches!(
+        relay.resolve(&json!({
+            "requestId": event["payload"]["requestId"],
+            "ok": true,
+            "result": [],
+        })),
+        Err(CoordinatorMcpLifecycleRelayError::Protocol(_))
+    ));
+    assert!(matches!(
+        relay.request(MCP_LIST_CATALOG_METHOD, json!({})),
+        Err(CoordinatorMcpLifecycleRelayError::Closed(_))
+    ));
+    assert_eq!(relay.pending_count(), 0);
+    assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
 }
 
 

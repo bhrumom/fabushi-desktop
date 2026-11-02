@@ -1,5 +1,9 @@
 # OCRM Dossier: MCP Channel Bridge, Claude Permissions & Tools Stdio Server
 
+The original source authority below is historical. The bounded current-U
+Fabushi relay repair is recorded in §6 without promoting the separate stdio
+or channel adaptation's wiring or acceptance.
+
 - **Unit ID**: `OCRM-UNIT-045`
 - **Module ID**: `OCRM-M09` (`mcp`)
 - **Responsibility IDs**:
@@ -76,3 +80,37 @@ stdio-tool filtering helpers beyond their defining modules. No production MCP
 transport, permission reply producer, or tool consumer is established. The
 ledger retains both execution wiring blockers with `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending`.
+
+## 6. Existing MCP lifecycle relay waiter custody — 2026-11-02
+
+Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`, tree
+`90c8aab39972da11cfad220361781d49e1bc6700`. Current source bodies acquired
+through GitHub and read for this bounded lifecycle boundary are:
+
+| Source | Exact blob |
+| --- | --- |
+| `src/mcp/tools-stdio-server.ts` | `ef5a603bce25ebe2247966c40932e8539ae80632` |
+| `src/mcp/tools-stdio-server.lifecycle.test.ts` | `c3d3ee2748857f4915245ce02c07a28860c89478` |
+
+They establish closing-before-new-admission and retained accepted-work custody;
+their broader SDK/process lifecycle does not prove this Rust relay interleaving.
+Recursive MCP dependency review and scoped semantic authority remain incomplete.
+
+The actual existing Fabushi chain is authenticated Skills polling and MCP
+management → `CoordinatorPluginSkillsLoader` / manager backend →
+`CoordinatorMcpLifecycleRelay` → Host event bus → Coordinator/Electron MCP
+owner. Host shutdown closes the relay before disposing and joining MCP polling.
+At parent `88143ef99a21e87d2da0a31cc509aff3e5176552`, a request can pass its
+early closed check and register after shutdown has drained pending replies.
+`MCP-LIFE-004` in the existing runtime parity spec binds the close decision to
+the pending registration lock. Publication stays outside that lock because
+event subscribers may synchronously resolve or close the relay.
+
+Private real-request barrier tests and a composed real Skills/polling shutdown
+test exercise the missed-waiter schedule; public controls retain admitted
+request settlement and synchronous resolution/closure. The existing Actions
+workflow explicitly selects those owner tests and affected MCP integration
+targets. Independent review and exact-H execution remain required. This
+preserves the existing permission/credential/installation owners, does not
+retract an already-admitted remote operation, and does not close sibling tool
+relay cancellation, plugin permission/revocation or full MCP acceptance.
