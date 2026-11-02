@@ -1,0 +1,120 @@
+name: Task20bf Human retry reviewed objects
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/task20bf-human-retry-objects/**'
+      - '.github/workflows/task20bf-human-retry-objects.yml'
+permissions:
+  contents: write
+jobs:
+  prepare-reviewed-blobs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare only exact reviewed Git blobs without commits or ref updates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/task20bf-human-retry-objects
+          python - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request, zlib
+          repository = os.environ['GITHUB_REPOSITORY']
+          if repository != 'bhrumom/fabushi-desktop':
+              raise SystemExit('unexpected repository')
+          root = pathlib.Path('.github/task20bf-human-retry-objects')
+          header = json.loads((root / 'manifest.json').read_text())
+          if header['task_id'] != '20bf9475-a885-4314-b509-bea53ef8849f' or header['format'] != 1:
+              raise SystemExit('unexpected task envelope')
+          encoded = ''.join((root / name).read_text() for name in header['parts'])
+          packed = base64.b64decode(encoded, validate=True)
+          if hashlib.sha256(packed).hexdigest() != header['packed_sha256']:
+              raise SystemExit('payload digest mismatch')
+          decoder = zlib.decompressobj()
+          raw = decoder.decompress(packed, 2_000_001)
+          if len(raw) > 2_000_000 or decoder.unconsumed_tail or not decoder.eof:
+              raise SystemExit('payload exceeds reviewed transfer bounds')
+          payload = json.loads(raw)
+          allowed = {
+              'source/host/src/extensions/session/production.rs',
+              'source/host/src/extensions/session/gateway.rs',
+              'source/host/src/gateway_server.rs',
+              'source/host/tests/session_gateway_contract.rs',
+              'source/host/tests/gateway_server_contract.rs',
+              'source/shared/rpc/coordinator.ts',
+              'source/shared/rpc/coordinator.contract.test.ts',
+              'frontend/src/production/ProductionRenderer.tsx',
+              'frontend/src/production/model.ts',
+              'frontend/src/production/coordinator-client.ts',
+              'frontend/src/production/transcript-projection.ts',
+              'frontend/src/production/transcript-projection.contract.test.ts',
+              'frontend/src/production/human-message-retry.ts',
+              'frontend/src/production/human-message-retry.contract.test.ts',
+              'frontend/src/production/human-message-retry-port.contract.test.ts',
+              'frontend/src/production/human-message-submission.ts',
+              'frontend/src/production/human-message-submission.contract.test.ts',
+              'frontend/src/recovered/features/conversation/workspace/submission.ts',
+              '.github/workflows/native-service-contracts.yml',
+              'docs/specs/fbcp-human-message-retry.md',
+              'projects/fabushi-communication-platform/STATUS.md',
+              'projects/fabushi-communication-platform/inventory/current-owners.md',
+              'projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md',
+              'projects/telegram-desktop-rust/parity-ledger.json',
+              'projects/telegram-desktop-rust/evidence/task20bf-round1-human-message-retry.json',
+          }
+          def git_blob(data):
+              return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          def api(method, suffix, body=None):
+              request = urllib.request.Request('https://api.github.com/repos/' + repository + '/git/blobs' + suffix,
+                  data=None if body is None else json.dumps(body).encode(), method=method,
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  return json.load(response)
+          result = []
+          seen = set()
+          for item in payload['files']:
+              path = item['path']
+              if path not in allowed or path in seen:
+                  raise SystemExit('unreviewed or duplicate path')
+              seen.add(path)
+              old = b''
+              if item['input_blob'] is not None:
+                  blob = api('GET', '/' + item['input_blob'])
+                  old = base64.b64decode(blob['content'])
+                  if git_blob(old) != item['input_blob']:
+                      raise SystemExit('input blob mismatch: ' + path)
+              updated = old
+              previous = len(old) + 1
+              for splice in reversed(item['splices']):
+                  offset, removed, inserted = splice
+                  if offset < 0 or removed < 0 or offset + removed > len(old) or offset + removed > previous:
+                      raise SystemExit('invalid splice ordering: ' + path)
+                  updated = updated[:offset] + base64.b64decode(inserted, validate=True) + updated[offset + removed:]
+                  previous = offset
+              if len(updated) > 6_000_000 or git_blob(updated) != item['output_blob']:
+                  raise SystemExit('reviewed output mismatch: ' + path)
+              created = api('POST', '', {'content': base64.b64encode(updated).decode(), 'encoding': 'base64'})
+              if created['sha'] != item['output_blob']:
+                  raise SystemExit('GitHub returned a different blob: ' + path)
+              result.append({'path': path, 'input_blob': item['input_blob'], 'output_blob': created['sha'], 'bytes': len(updated)})
+              print(path + ' -> ' + created['sha'], flush=True)
+          receipt = {'task_id': header['task_id'], 'carrier_sha': os.environ['GITHUB_SHA'],
+                     'base_commit': payload['base_commit'], 'files': result,
+                     'scope': 'Unattached Git blobs only. No commit/ref update, product tests or acceptance.'}
+          pathlib.Path('artifacts/task20bf-human-retry-objects/receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: task20bf-human-retry-objects-${{ github.sha }}
+          path: artifacts/task20bf-human-retry-objects
+          if-no-files-found: error
