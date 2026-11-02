@@ -50,6 +50,17 @@ schema, separate search implementation or Agent behavior replacement.
   cursor in the same navigation. Preserve the pagination owner's failure and
   current-scope user feedback; a later explicit selection/retry may try again
   and recover. No missing or deleted hit is falsely reported as located.
+  While a nonempty Human Find session is open, its navigation owner controls
+  automatic history traversal: the Transcript's separate scroll-top effect
+  cannot bypass cancellation, failure, cursor-progress or page-budget guards.
+  Gate automatic Human paging while its existing olderFailure is present,
+  without erasing failure/hasOlder state or disabling an explicit Find retry.
+  Ordinary Human history failures expose a concise status and an explicit Retry
+  action in the existing Transcript. Retry calls the same pagination owner and
+  is disabled while that read is pending; no separate failure or retry store is
+  introduced. The optional failure presentation is absent for Agent callers.
+  Keep the existing Agent auto-paging default and ordinary successful Human
+  scrolling outside this search mode.
 
 ## Batch verification and completion
 
@@ -62,6 +73,8 @@ Find controller, pagination owner and Transcript commit/navigation seam.
   old success/failure makes no scroll/notice and no further request.
 - One failing page causes exactly one fetch in a navigation, preserves visible
   retry state, and a later explicit retry can locate the hit after a real commit.
+  Ordinary Human scroll paging likewise stops after one failed read and recovers
+  through the visible Transcript Retry action, using the existing loading state.
 - Repeated cursor/empty page and exhausted/unavailable cases stop without a
   32-request storm; the budget remains bounded on genuinely advancing pages.
 - A current successful multi-page hit uses its exact entry ID after commit;
@@ -84,3 +97,4 @@ Rollback is a normal code revert without persisted-data changes. Full native
 service/search equivalence, source/legal closure, supported signed packages,
 complete UI/accessibility and Bot regression, temporal/security/performance/soak,
 upgrade/rollback and independent shipping ACCEPT remain open.
+
