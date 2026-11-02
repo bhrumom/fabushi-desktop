@@ -114,3 +114,24 @@ targets. Independent review and exact-H execution remain required. This
 preserves the existing permission/credential/installation owners, does not
 retract an already-admitted remote operation, and does not close sibling tool
 relay cancellation, plugin permission/revocation or full MCP acceptance.
+
+### Routed-tool waiter follow-up at 3ce1cd31898d090f38ba3a8c5b895da5b2de2892
+
+The shipping `CoordinatorRoutedToolBridge` in `source/host/app/src/main.rs`
+uses `runner/coordinator_tool_relay.rs::CoordinatorToolRelay` for both listing
+and execution, after the existing review/permission gates. Host shutdown calls
+this relay's `cancel_all`. Reading the actual request and shutdown paths found
+the same early-open-check / late-registration gap in this sibling owner.
+`MCP-LIFE-005` now requires a second close check under the pending lock and
+keeps publication outside it. The existing method allowlist, request/response
+shape, permission owner and timeout/error contracts stay in force.
+
+A private barrier reaches the actual request path for both supported methods;
+public contracts retain round trips, remote failure and timeout controls and
+add duplicate close, late-resolution refusal and synchronous resolve/close.
+The workflow selects that real owner test and
+`runner_coordinator_tool_relay_contract`. The fixed-U lifecycle sources above
+support the admission/custody requirement; this target interleaving has its own
+direct oracle. No global source status or acceptance flag is promoted. Local
+waiter settlement does not establish whether an already-admitted external tool
+ran, and does not replace Runner unknown-effect or process-recovery evidence.
