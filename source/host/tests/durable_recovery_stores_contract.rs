@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
 use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
     AutomationQuietOrigin, DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin,
-    SandPendingWakeStore, parse_pending_wake_file,
+    PendingWakeStoreError, SandPendingWakeStore, parse_pending_wake_file,
 };
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::{
     upgrade_resume_marker_identity_is_well_formed, SandUpgradeResumeStore, UpgradeResumeMarker,
@@ -108,6 +108,290 @@ fn pending_wake_store_upserts_clears_and_prunes_atomically() {
     assert!(store.list_pending().is_empty());
     assert!(!store.file_path().exists());
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers() {
+    let root = temp_root("checked-pending-valid");
+    let store = SandPendingWakeStore::new(&root);
+    let retained = DurablePendingWakeMarker {
+        quiet_origin: Some(QuietWakeOrigin {
+            automation: Some(AutomationQuietOrigin {
+                id: " original-automation ".into(),
+                name: String::new(),
+            }),
+        }),
+        title: Some(String::new()),
+        subagent_type: Some(" legacy-kind ".into()),
+        interrupted_by_recreate: true,
+        delivery_operation_id: Some(" distinct-operation ".into()),
+        address_token: Some(" slack:retained-room ".into()),
+        failure_reason: Some(" original failure ".into()),
+        session_key: Some(" agent:channel-agent:main ".into()),
+        ..pending(" channel-agent ", PendingWakeKind::ChannelDelivery, " recovery-work ", 10.0)
+    };
+    assert!(store.list_pending_checked().unwrap().is_empty());
+    assert_eq!(store.with_matching_marker_checked(&retained, || 7).unwrap(), None);
+    assert!(!root.exists(), "absence inspection must not create the store");
+
+    fs::create_dir_all(&root).unwrap();
+    for document in [
+        serde_json::json!({"pending": []}),
+        serde_json::json!({"version": 1, "pending": []}),
+        serde_json::json!({"pending": [retained.clone()]}),
+        serde_json::json!({"version": 1, "pending": [retained.clone()]}),
+    ] {
+        let raw = serde_json::to_vec(&document).unwrap();
+        fs::write(store.file_path(), &raw).unwrap();
+        let expected = if document["pending"].as_array().unwrap().is_empty() {
+            Vec::new()
+        } else {
+            vec![retained.clone()]
+        };
+        assert_eq!(store.list_pending_checked().unwrap(), expected);
+        assert_eq!(SandPendingWakeStore::new(&root).list_pending_checked().unwrap(), expected);
+        assert_eq!(fs::read(store.file_path()).unwrap(), raw, "discovery is read-only");
+    }
+
+    // General storage validation keeps incomplete legacy channel metadata for
+    // the recovery adapter to refuse without inventing a replacement identity.
+    let legacy = pending("legacy", PendingWakeKind::ChannelDelivery, "work", 20.0);
+    store.mark_pending_checked(legacy.clone()).unwrap();
+    assert!(store.has_pending_checked("legacy", PendingWakeKind::ChannelDelivery, "work").unwrap());
+    assert!(store.list_pending_checked().unwrap().contains(&legacy));
+    store.clear_all_checked().unwrap();
+    assert!(!store.file_path().exists());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations() {
+    let root = temp_root("checked-pending-invalid");
+    fs::create_dir_all(&root).unwrap();
+    let store = SandPendingWakeStore::new(&root);
+    let retained = pending("retained", PendingWakeKind::CloudAgent, "work", 10.0);
+    let incoming = pending("incoming", PendingWakeKind::Shell, "new-work", 20.0);
+    let valid = serde_json::json!({"version": 1, "pending": [retained.clone()]});
+    let mut invalid = vec![
+        "".to_string(),
+        "not-json".to_string(),
+        "[]".to_string(),
+        "{}".to_string(),
+        r#"{"version":1}"#.to_string(),
+        r#"{"version":1,"pending":null}"#.to_string(),
+        r#"{"version":2,"pending":[]}"#.to_string(),
+        r#"{"version":null,"pending":[]}"#.to_string(),
+        r#"{"version":"1","pending":[]}"#.to_string(),
+        r#"{"version":1,"pending":[],"unexpected":true}"#.to_string(),
+        r#"{"version":1,"version":1,"pending":[]}"#.to_string(),
+        r#"{"version":1,"pending":[],"pending":[]}"#.to_string(),
+        r#"{"version":1,"pending":[{"agentId":"a","agentId":"a","kind":"shell","workId":"w","markedAtMs":1}]}"#.to_string(),
+        r#"{"version":1,"pending":[{"agentId":"a","kind":"shell","workId":"w","markedAtMs":1,"title":null,"title":null}]}"#.to_string(),
+        r#"{"version":1,"pending":[{"agentId":"a","kind":"shell","workId":"w","markedAtMs":1,"quietOrigin":{"automation":null,"automation":null}}]}"#.to_string(),
+        r#"{"version":1,"pending":[["a","shell","w",1]]}"#.to_string(),
+        serde_json::json!({"version": 1, "pending": [retained.clone(), retained.clone()]}).to_string(),
+        serde_json::json!({"version": 1, "pending": [retained.clone(), {"agentId": "invalid-tail"}]}).to_string(),
+    ];
+    for (field, value) in [
+        ("agentId", serde_json::json!(" ")),
+        ("agentId", serde_json::json!(7)),
+        ("workId", serde_json::json!("")),
+        ("kind", serde_json::json!("unknown")),
+        ("kind", serde_json::json!({"cloud-agent": null})),
+        ("markedAtMs", serde_json::json!("10")),
+        ("markedAtMs", serde_json::Value::Null),
+        ("quietOrigin", serde_json::json!(false)),
+        ("quietOrigin", serde_json::json!([])),
+        ("quietOrigin", serde_json::json!({"extra": true})),
+        ("quietOrigin", serde_json::json!({"automation": {"id": "auto"}})),
+        ("quietOrigin", serde_json::json!({"automation": ["auto", "Name"]})),
+        ("quietOrigin", serde_json::json!({"automation": {"id": " ", "name": "Name"}})),
+        ("quietOrigin", serde_json::json!({"automation": {"id": "auto", "name": 7}})),
+        ("quietOrigin", serde_json::json!({"automation": {"id": "auto", "name": "Name", "extra": true}})),
+        ("title", serde_json::json!(7)),
+        ("subagentType", serde_json::json!([])),
+        ("interruptedByRecreate", serde_json::Value::Null),
+        ("interruptedByRecreate", serde_json::json!("false")),
+        ("deliveryOperationId", serde_json::json!(true)),
+        ("addressToken", serde_json::json!(7)),
+        ("failureReason", serde_json::json!({})),
+        ("sessionKey", serde_json::json!(false)),
+        ("unknownField", serde_json::json!(true)),
+    ] {
+        let mut document = valid.clone();
+        document["pending"][0][field] = value;
+        invalid.push(document.to_string());
+    }
+    for field in ["agentId", "kind", "workId", "markedAtMs"] {
+        let mut document = valid.clone();
+        document["pending"][0].as_object_mut().unwrap().remove(field);
+        invalid.push(document.to_string());
+    }
+
+    for raw in invalid {
+        fs::write(store.file_path(), &raw).unwrap();
+        assert!(store.list_pending_checked().is_err(), "{raw}");
+        assert!(store.has_pending_checked("retained", retained.kind, "work").is_err(), "{raw}");
+        let mut admitted = false;
+        assert!(store.with_matching_marker_checked(&retained, || admitted = true).is_err(), "{raw}");
+        assert!(!admitted);
+        assert!(store.mark_pending_checked(incoming.clone()).is_err(), "{raw}");
+        assert!(store.mark_if_absent_or_matches_checked(&incoming).is_err(), "{raw}");
+        assert!(store.replace_if_matches_checked(&retained, retained.clone()).is_err(), "{raw}");
+        assert!(store.clear_if_matches_checked(&retained).is_err(), "{raw}");
+        assert!(store.clear_one_checked("retained", retained.kind, "work").is_err(), "{raw}");
+        assert!(store.clear_agent_checked("retained").is_err(), "{raw}");
+        assert!(store.clear_all_checked().is_err(), "{raw}");
+        assert!(store.prune_stale_checked(1.0, 100.0).is_err(), "{raw}");
+        assert!(!store.mark_pending(incoming.clone()));
+        assert!(!store.mark_if_absent_or_matches(&incoming));
+        assert!(!store.replace_if_matches(&retained, retained.clone()));
+        assert!(!store.clear_if_matches(&retained));
+        assert!(!store.clear_one("retained", retained.kind, "work"));
+        store.clear_agent("retained");
+        store.clear_all();
+        assert!(store.prune_stale(1.0, 100.0).is_empty());
+        assert_eq!(fs::read_to_string(store.file_path()).unwrap(), raw);
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1, "refusal creates no temporary file");
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn checked_pending_store_refuses_unreadable_images_and_preserves_the_target() {
+    let root = temp_root("checked-pending-io");
+    fs::create_dir_all(&root).unwrap();
+    let store = SandPendingWakeStore::new(&root);
+    let retained = pending("a", PendingWakeKind::Shell, "work", 10.0);
+    fs::create_dir(store.file_path()).unwrap();
+    let child = store.file_path().join("retained-evidence");
+    fs::write(&child, b"not a recovery file").unwrap();
+    assert!(matches!(store.list_pending_checked(), Err(PendingWakeStoreError::Io { operation: "read", .. })));
+    assert!(store.with_matching_marker_checked(&retained, || -> () { panic!("unreadable admission") }).is_err());
+    assert!(!store.mark_pending(retained.clone()));
+    store.clear_all();
+    assert_eq!(fs::read(&child).unwrap(), b"not a recovery file");
+    fs::remove_file(&child).unwrap();
+    fs::remove_dir(store.file_path()).unwrap();
+
+    fs::write(store.file_path(), [0xff, 0xfe]).unwrap();
+    assert!(matches!(store.list_pending_checked(), Err(PendingWakeStoreError::Io { operation: "read", .. })));
+    assert!(!store.mark_pending(retained.clone()));
+    store.clear_all();
+    assert_eq!(fs::read(store.file_path()).unwrap(), [0xff, 0xfe]);
+    #[cfg(unix)]
+    {
+        std::fs::remove_file(store.file_path()).unwrap();
+        let missing_target = root.join("missing-target");
+        std::os::unix::fs::symlink(&missing_target, store.file_path()).unwrap();
+        assert!(matches!(store.list_pending_checked(), Err(PendingWakeStoreError::Io { operation: "read", .. })));
+        assert!(!store.mark_pending(retained));
+        store.clear_all();
+        assert_eq!(fs::read_link(store.file_path()).unwrap(), missing_target);
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn checked_pending_store_validates_incoming_markers_without_mutating_known_state() {
+    let root = temp_root("checked-pending-incoming");
+    let store = SandPendingWakeStore::new(&root);
+    let retained = pending("a", PendingWakeKind::CloudAgent, "work", 10.0);
+    store.mark_pending_checked(retained.clone()).unwrap();
+    let original = fs::read(store.file_path()).unwrap();
+    for invalid in [
+        DurablePendingWakeMarker { agent_id: " ".into(), ..retained.clone() },
+        DurablePendingWakeMarker { work_id: String::new(), ..retained.clone() },
+        DurablePendingWakeMarker { marked_at_ms: f64::NAN, ..retained.clone() },
+        DurablePendingWakeMarker { marked_at_ms: f64::INFINITY, ..retained.clone() },
+    ] {
+        assert!(store.mark_pending_checked(invalid.clone()).is_err());
+        assert!(store.mark_if_absent_or_matches_checked(&invalid).is_err());
+        assert!(store.replace_if_matches_checked(&retained, invalid.clone()).is_err());
+        assert!(store.clear_if_matches_checked(&invalid).is_err());
+        assert!(store.with_matching_marker_checked(&invalid, || -> () { panic!("invalid expected marker") }).is_err());
+        assert_eq!(fs::read(store.file_path()).unwrap(), original);
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots() {
+    let root = temp_root("checked-pending-admission");
+    let store = SandPendingWakeStore::new(&root);
+    let observed = pending("a", PendingWakeKind::ChannelDelivery, "work", 10.0);
+    assert_eq!(store.with_matching_marker_checked(&observed, || 7).unwrap(), None);
+    assert!(!root.exists());
+    store.mark_pending_checked(observed.clone()).unwrap();
+    let original = fs::read(store.file_path()).unwrap();
+    // A pre-existing unrelated temporary path is never touched by admission.
+    let unrelated = root.join("unrelated.part");
+    fs::write(&unrelated, b"owned elsewhere").unwrap();
+    let token = String::from("move-only admission result");
+    assert_eq!(store.with_matching_marker_checked(&observed, || token).unwrap(),
+        Some("move-only admission result".to_string()));
+    assert_eq!(fs::read(store.file_path()).unwrap(), original);
+    assert_eq!(fs::read(&unrelated).unwrap(), b"owned elsewhere");
+
+    let replacement = DurablePendingWakeMarker { title: Some("new title".into()), ..observed.clone() };
+    store.mark_pending_checked(replacement.clone()).unwrap();
+    let replaced = fs::read(store.file_path()).unwrap();
+    assert_eq!(store.with_matching_marker_checked(&observed, || -> () { panic!("stale admission") }).unwrap(), None);
+    assert_eq!(fs::read(store.file_path()).unwrap(), replaced);
+    assert_eq!(SandPendingWakeStore::new(&root).list_pending_checked().unwrap(), vec![replacement.clone()]);
+    assert!(store.clear_if_matches_checked(&replacement).unwrap());
+    assert_eq!(store.with_matching_marker_checked(&observed, || -> () { panic!("settled admission") }).unwrap(), None);
+    assert!(!store.file_path().exists(), "admission cannot resurrect a settled marker");
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn matching_pending_wake_admission_compares_every_marker_field() {
+    let root = temp_root("checked-pending-complete-identity");
+    let store = SandPendingWakeStore::new(&root);
+    let observed = DurablePendingWakeMarker {
+        quiet_origin: Some(QuietWakeOrigin {
+            automation: Some(AutomationQuietOrigin { id: "auto".into(), name: "Original".into() }),
+        }),
+        title: Some("Original title".into()),
+        subagent_type: Some("legacy-notice".into()),
+        interrupted_by_recreate: true,
+        delivery_operation_id: Some("distinct-operation".into()),
+        address_token: Some("slack:original".into()),
+        failure_reason: Some("Original failure".into()),
+        session_key: Some("agent:a:main".into()),
+        ..pending("a", PendingWakeKind::ChannelDelivery, "work", 10.0)
+    };
+    for replacement in [
+        DurablePendingWakeMarker { agent_id: "another-agent".into(), ..observed.clone() },
+        DurablePendingWakeMarker { kind: PendingWakeKind::Shell, ..observed.clone() },
+        DurablePendingWakeMarker { work_id: "another-work".into(), ..observed.clone() },
+        DurablePendingWakeMarker { marked_at_ms: 11.0, ..observed.clone() },
+        DurablePendingWakeMarker { quiet_origin: None, ..observed.clone() },
+        DurablePendingWakeMarker { quiet_origin: Some(QuietWakeOrigin { automation: None }), ..observed.clone() },
+        DurablePendingWakeMarker { quiet_origin: Some(QuietWakeOrigin {
+            automation: Some(AutomationQuietOrigin { id: "replacement".into(), name: "Original".into() }),
+        }), ..observed.clone() },
+        DurablePendingWakeMarker { quiet_origin: Some(QuietWakeOrigin {
+            automation: Some(AutomationQuietOrigin { id: "auto".into(), name: "Replacement".into() }),
+        }), ..observed.clone() },
+        DurablePendingWakeMarker { title: None, ..observed.clone() },
+        DurablePendingWakeMarker { subagent_type: None, ..observed.clone() },
+        DurablePendingWakeMarker { interrupted_by_recreate: false, ..observed.clone() },
+        DurablePendingWakeMarker { delivery_operation_id: None, ..observed.clone() },
+        DurablePendingWakeMarker { address_token: Some("slack:replacement".into()), ..observed.clone() },
+        DurablePendingWakeMarker { failure_reason: Some("Replacement failure".into()), ..observed.clone() },
+        DurablePendingWakeMarker { session_key: Some("agent:a:replacement".into()), ..observed.clone() },
+    ] {
+        store.clear_all_checked().unwrap();
+        store.mark_pending_checked(replacement.clone()).unwrap();
+        let original = fs::read(store.file_path()).unwrap();
+        assert_eq!(store.with_matching_marker_checked(&observed, || -> () { panic!("changed marker admitted") }).unwrap(), None);
+        assert!(!store.clear_if_matches_checked(&observed).unwrap());
+        assert_eq!(fs::read(store.file_path()).unwrap(), original);
+        assert_eq!(SandPendingWakeStore::new(&root).list_pending_checked().unwrap(), vec![replacement]);
+    }
+    fs::remove_dir_all(root).unwrap();
 }
 
 #[test]

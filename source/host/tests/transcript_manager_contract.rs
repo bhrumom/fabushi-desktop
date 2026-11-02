@@ -30,7 +30,7 @@ use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
 };
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
-    DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin,
+    DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin, SandPendingWakeStore,
 };
 use mahayana_host_runtime::extensions::transcript::transcript_manager::{
     TranscriptManager, TranscriptTurnExecutionPort,
@@ -738,6 +738,63 @@ fn manager_owns_pending_wake_rearm_and_replays_durable_wakes() {
             .any(|report| report.outcome == "rearmed" && report.work_id == "shell-pending")
     );
 
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy() {
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let manager = TranscriptManager::new(&root, sessions);
+    let transcript = manager.transcript_runtime();
+    let store = transcript.pending_wake_store().expect("pending wake owner");
+    let runtime = Arc::new(ManagerPendingWakeRuntime::default());
+    manager.bind_pending_wake_runtime(runtime.clone()).expect("bind owner");
+    assert!(!transcript.has_carryable_pending_wake());
+
+    let marker = DurablePendingWakeMarker {
+        agent_id: "agent-pending".into(),
+        kind: PendingWakeKind::Shell,
+        work_id: "shell-pending".into(),
+        marked_at_ms: chrono::Utc::now().timestamp_millis() as f64,
+        quiet_origin: None,
+        title: Some("Pending shell".into()),
+        subagent_type: None,
+        interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
+        session_key: None,
+    };
+    store.mark_pending_checked(marker.clone()).expect("persist original");
+    let original = fs::read(store.file_path()).expect("original image");
+    let corrupt = serde_json::to_vec(&json!({
+        "version": 1,
+        "pending": [marker, {"agentId": null}]
+    })).expect("malformed row image");
+    fs::write(store.file_path(), &corrupt).expect("persist malformed suffix");
+
+    let error = manager.rearm_pending_wakes().expect_err("whole image must refuse");
+    assert!(error.contains("pending wake"), "{error}");
+    assert!(runtime.shell_watches.lock().expect("watches").is_empty());
+    assert!(runtime.reports.lock().expect("reports").is_empty());
+    assert!(transcript.has_carryable_pending_wake(), "unknown custody cannot authorize idle teardown");
+    assert_eq!(fs::read(store.file_path()).expect("retained image"), corrupt);
+
+    fs::write(store.file_path(), original).expect("restore original image");
+    manager.rearm_pending_wakes().expect("repaired owner resumes original work");
+    assert_eq!(runtime.shell_watches.lock().expect("watches").as_slice(),
+        &[("agent-pending".to_string(), "shell-pending".to_string())]);
+    // Ordinary Shell rearm hands off to its watcher and clears this marker;
+    // the retained-custody policy is specific to the durable wake kinds.
+    assert!(SandPendingWakeStore::new(&root).list_pending_checked()
+        .expect("reopened pending state").is_empty());
+    assert!(!transcript.has_carryable_pending_wake());
     manager.dispose();
     let _ = fs::remove_dir_all(root);
 }

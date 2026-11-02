@@ -32,6 +32,8 @@ struct FakeRuntime {
     shell_watches: Mutex<Vec<(String, String)>>,
     interrupted: Mutex<Vec<String>>,
     revived: Mutex<Vec<LostSubagentWake>>,
+    channel_revivals: Mutex<Vec<DurablePendingWakeMarker>>,
+    channel_rearm_error: Mutex<Option<String>>,
     emitted: Mutex<Vec<String>>,
     reports: Mutex<Vec<PendingWakeReport>>,
 }
@@ -84,8 +86,12 @@ impl PendingWakeRuntimePort for FakeRuntime {
         self.revived.lock().unwrap().push(wake);
         Ok(())
     }
-    fn revive_channel_delivery_failure(&self, _marker: &DurablePendingWakeMarker) -> Result<(), String> {
-        Ok(())
+    fn revive_channel_delivery_failure(&self, marker: &DurablePendingWakeMarker) -> Result<(), String> {
+        self.channel_revivals.lock().unwrap().push(marker.clone());
+        match self.channel_rearm_error.lock().unwrap().clone() {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
     }
     fn emit_async_tasks_for_agent(&self, agent_id: &str) { self.emitted.lock().unwrap().push(agent_id.into()); }
     fn report_pending_wake(&self, report: PendingWakeReport) { self.reports.lock().unwrap().push(report); }
@@ -263,6 +269,184 @@ fn enqueue_refuses_gone_agents_and_appends_for_live_agents() {
     assert!(service.enqueue_pending_wake(&mut q,"live",vec![1,2]));
     assert!(service.enqueue_pending_wake(&mut q,"live",vec![3]));
     assert_eq!(q["live"],vec![1,2,3]);
+}
+
+#[test]
+fn checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| 200.0));
+    for raw in [
+        "not-json",
+        r#"{"version":2,"pending":[]}"#,
+        r#"{"version":1,"pending":[{"agentId":"a","kind":"shell","workId":"work","markedAtMs":100},{"agentId":"invalid-tail"}]}"#,
+        r#"{"version":1,"pending":[{"agentId":"a","kind":"shell","workId":"work","markedAtMs":100},{"agentId":"a","kind":"shell","workId":"work","markedAtMs":100}]}"#,
+    ] {
+        std::fs::write(store.file_path(), raw).unwrap();
+        assert!(service.rearm_pending_wakes_checked().is_err());
+        // The compatibility wrapper shares the same refusal and cannot dispatch
+        // the apparently valid prefix of a rejected document.
+        service.rearm_pending_wakes();
+        assert_eq!(std::fs::read_to_string(store.file_path()).unwrap(), raw);
+        assert!(runtime.cloud_watches.lock().unwrap().is_empty());
+        assert!(runtime.shell_watches.lock().unwrap().is_empty());
+        assert!(runtime.revived.lock().unwrap().is_empty());
+        assert!(runtime.interrupted.lock().unwrap().is_empty());
+        assert!(runtime.channel_revivals.lock().unwrap().is_empty());
+        assert!(runtime.reports.lock().unwrap().is_empty());
+    }
+    std::fs::remove_file(store.file_path()).unwrap();
+    std::fs::create_dir(store.file_path()).unwrap();
+    assert!(service.rearm_pending_wakes_checked().is_err());
+    assert!(store.file_path().is_dir());
+    assert!(runtime.reports.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn checked_rearm_accepts_known_empty_state_without_creating_recovery_work() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone());
+    service.rearm_pending_wakes_checked().unwrap();
+    assert!(!store.file_path().exists());
+    for raw in [r#"{"pending":[]}"#, r#"{"version":1,"pending":[]}"#] {
+        std::fs::write(store.file_path(), raw).unwrap();
+        service.rearm_pending_wakes_checked().unwrap();
+        assert_eq!(std::fs::read_to_string(store.file_path()).unwrap(), raw);
+    }
+    assert!(runtime.reports.lock().unwrap().is_empty());
+    assert!(runtime.channel_revivals.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+fn assert_channel_rearm_retains_marker_across_reopen(error: Option<&str>) {
+    for operation in [Some("operation-distinct-from-work"), None] {
+        let dir = root();
+        let observed = DurablePendingWakeMarker {
+            quiet_origin: coerce_quiet_origin(&serde_json::json!({
+                "automation": {"id": "original-automation", "name": "Original automation"},
+            })),
+            title: Some("Legacy channel failure".into()),
+            subagent_type: Some("legacy-channel-notice".into()),
+            interrupted_by_recreate: true,
+            delivery_operation_id: operation.map(str::to_string),
+            address_token: Some("slack:retained-room".into()),
+            failure_reason: Some("Original failure".into()),
+            session_key: Some("agent:channel-agent:main".into()),
+            ..marker("channel-agent", PendingWakeKind::ChannelDelivery, "recovery-work", 100.0)
+        };
+        let store = SandPendingWakeStore::new(&dir);
+        store.mark_pending_checked(observed.clone()).unwrap();
+        let original = std::fs::read(store.file_path()).unwrap();
+        drop(store);
+        for now in [PENDING_WAKE_STALE_MAX_AGE_MS + 200.0, PENDING_WAKE_STALE_MAX_AGE_MS * 2.0 + 300.0] {
+            let reopened = SandPendingWakeStore::new(&dir);
+            let runtime = Arc::new(FakeRuntime::with_store(reopened.clone()));
+            *runtime.can_execute.lock().unwrap() = true;
+            *runtime.channel_rearm_error.lock().unwrap() = error.map(str::to_string);
+            let service = PendingWakeRearm::new(Some(reopened.clone()), runtime.clone())
+                .with_now(Arc::new(move || now));
+            service.rearm_pending_wakes_checked().unwrap();
+            assert_eq!(runtime.channel_revivals.lock().unwrap().as_slice(), &[observed.clone()]);
+            assert_eq!(std::fs::read(reopened.file_path()).unwrap(), original);
+            assert_eq!(reopened.list_pending_checked().unwrap(), vec![observed.clone()]);
+            assert_eq!(runtime.reports.lock().unwrap().as_slice(), &[PendingWakeReport {
+                conversation_id: observed.agent_id.clone(),
+                outcome: if error.is_some() { "rearm_failed" } else { "rearmed" }.into(),
+                kind: PendingWakeKind::ChannelDelivery,
+                work_id: observed.work_id.clone(),
+                age_ms: Some(now - observed.marked_at_ms),
+                reason: error.map(|_| "error".to_string()),
+                is_quiet_origin: true,
+            }]);
+            assert!(runtime.cloud_watches.lock().unwrap().is_empty());
+            assert!(runtime.shell_watches.lock().unwrap().is_empty());
+            assert!(runtime.revived.lock().unwrap().is_empty());
+            assert!(runtime.interrupted.lock().unwrap().is_empty());
+        }
+        assert_eq!(SandPendingWakeStore::new(&dir).list_pending_checked().unwrap(), vec![observed]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+}
+
+#[test]
+fn channel_rearm_success_retains_complete_marker_across_reopen() {
+    assert_channel_rearm_retains_marker_across_reopen(None);
+}
+
+#[test]
+fn channel_rearm_error_retains_complete_marker_across_reopen() {
+    assert_channel_rearm_retains_marker_across_reopen(Some("recovery admission refused"));
+}
+
+#[test]
+fn checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let observed = DurablePendingWakeMarker {
+        quiet_origin: coerce_quiet_origin(&serde_json::json!({
+            "automation": {"id": "old-automation", "name": "Original automation"},
+        })),
+        title: Some("Original retained title".into()),
+        subagent_type: Some("legacy-channel-notice".into()),
+        interrupted_by_recreate: true,
+        delivery_operation_id: Some("old-operation".into()),
+        address_token: Some("slack:retained-room".into()),
+        failure_reason: Some("Original provider failure".into()),
+        session_key: Some("agent:channel-agent:main".into()),
+        ..marker("channel-agent", PendingWakeKind::ChannelDelivery, "old-operation", 10.0)
+    };
+    store.mark_pending_checked(observed.clone()).unwrap();
+    let channel_image = std::fs::read(store.file_path()).unwrap();
+    store.mark_pending_checked(marker("shell-agent", PendingWakeKind::Shell, "old-shell", 20.0)).unwrap();
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    *runtime.channel_rearm_error.lock().unwrap() = Some("provider unavailable".into());
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| PENDING_WAKE_STALE_MAX_AGE_MS + 1_000.0));
+    service.rearm_pending_wakes_checked().unwrap();
+
+    assert_eq!(runtime.channel_revivals.lock().unwrap().as_slice(), &[observed.clone()]);
+    assert!(runtime.shell_watches.lock().unwrap().is_empty());
+    assert_eq!(std::fs::read(store.file_path()).unwrap(), channel_image);
+    assert_eq!(SandPendingWakeStore::new(&dir).list_pending_checked().unwrap(), vec![observed.clone()]);
+    let reports = runtime.reports.lock().unwrap();
+    assert_eq!(reports.len(), 2);
+    assert!(reports.iter().any(|report| report.kind == PendingWakeKind::Shell
+        && report.work_id == "old-shell" && report.outcome == "pruned"));
+    assert!(reports.iter().any(|report| report.kind == PendingWakeKind::ChannelDelivery
+        && report.work_id == observed.work_id && report.outcome == "rearm_failed"));
+    assert!(!reports.iter().any(|report| report.kind == PendingWakeKind::ChannelDelivery
+        && report.outcome == "pruned"));
+    drop(reports);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn recreate_carry_still_excludes_channel_delivery_markers() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    let observed = DurablePendingWakeMarker {
+        address_token: Some("slack:excluded-carry-room".into()),
+        failure_reason: Some("Retained failure".into()),
+        ..marker("channel-agent", PendingWakeKind::ChannelDelivery, "recovery-work", 100.0)
+    };
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone());
+    assert_eq!(service.restore_recreate_carried_pending_wakes(&[
+        serde_json::to_value(&observed).unwrap(),
+    ]), 0);
+    assert!(!store.file_path().exists());
+    assert!(runtime.channel_revivals.lock().unwrap().is_empty());
+    assert!(runtime.reports.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
 }
 
 #[test]

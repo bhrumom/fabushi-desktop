@@ -1,4 +1,4 @@
-//! Causal shipping-path oracles for OCRM-CHANNEL-HOST-LANE-DELIVERY-v1.
+//! Causal shipping-path oracles for OCRM-CHANNEL-HOST-LANE-DELIVERY-v1/CWR-v1.
 //!
 //! Session, the sink, lane dispatcher, delivery router and failure owners are
 //! real. Only the external ChannelDeliveryPort chooses a transport outcome.
@@ -32,7 +32,9 @@ use mahayana_host_runtime::extensions::local_tool_permission::extension::start_l
 use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
 use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
-use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::SandPendingWakeStore;
+use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
+    AutomationQuietOrigin, QuietWakeOrigin, SandPendingWakeStore,
+};
 use mahayana_host_runtime::extensions::trays::extension::start_trays_extension;
 use mahayana_host_runtime::production_binding_providers::production_cloud_agent_trace_converter;
 use mahayana_host_runtime::runner::background_work::CloudAgentWatchOutcome;
@@ -383,10 +385,12 @@ struct ChannelHostLaneFixture {
     host_tx: mpsc::Sender<HostLaneRequest>,
     owners: Option<IdleRunnerOwners>,
     sink: Option<ProductionSendMessageSink>,
+    roster: Arc<ProductionRosterEmit>,
     router: ChannelDeliveryRouter,
     ports: Vec<Arc<ControlledChannelPort>>,
     lane_observations: mpsc::Receiver<LaneObservation>,
     completions: mpsc::Receiver<ChannelDeliveryWorkerFinished>,
+    completion_tx: mpsc::Sender<ChannelDeliveryWorkerFinished>,
     lifecycle_events: Arc<Mutex<Vec<(String, String)>>>,
     lane: Option<thread::JoinHandle<()>>,
     lane_done: mpsc::Receiver<()>,
@@ -402,11 +406,17 @@ impl ChannelHostLaneFixture {
         ));
         fs::create_dir_all(&root).expect("fixture directory");
         fs::write(root.join("settings.json"), b"{}").expect("actual missing-provider settings");
+        Self::open(label, root, None)
+    }
+
+    fn open(label: &str, root: PathBuf, existing_agent_id: Option<String>) -> Self {
         let (host_tx, host_rx) = mpsc::channel();
         let events = GatewayEventHub::default();
         let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
-        let record = sessions.materialize_new_session(None, "user", None).expect("real Session");
-        let admission = sessions.read_session_work_admission(&record.id)
+        let agent_id = existing_agent_id.unwrap_or_else(|| {
+            sessions.materialize_new_session(None, "user", None).expect("real Session").id
+        });
+        let admission = sessions.read_session_work_admission(&agent_id)
             .expect("Session admission read").expect("materialized Session admission");
         let manager = Arc::new(TranscriptManager::new(&root, Arc::clone(&sessions)));
         let owners = idle_runner_owners(&root, host_tx.clone(), events.clone(), sessions, manager);
@@ -438,7 +448,7 @@ impl ChannelHostLaneFixture {
             ack_obligations: Arc::clone(&deps.ack_obligations),
             transcript_runtime: Arc::clone(&deps.transcript_runtime),
             ack_token: None,
-            agent_id: record.id.clone(),
+            agent_id: agent_id.clone(),
             session_key: Some(admission.session_key.clone()),
             reply_thread_target: None,
             is_fork: false,
@@ -449,9 +459,9 @@ impl ChannelHostLaneFixture {
         let dispatch_deps = ChannelDeliveryDispatchDeps {
             delivery: HostChannelDelivery::new(Arc::new(router.clone())),
             runner: deps.clone(),
-            roster,
+            roster: Arc::clone(&roster),
             wakes: deps.transcript_manager.background_wakes(),
-            completion: Some(completion_tx),
+            completion: Some(completion_tx.clone()),
         };
         let attachments = AttachmentsService::new(
             &root, Arc::clone(&deps.auth) as Arc<dyn GenerateImageAuth>,
@@ -503,9 +513,9 @@ impl ChannelHostLaneFixture {
                 let _ = done_tx.send(());
             }).expect("owned Host lane thread");
         let fixture = Self {
-            root, agent_id: record.id, session_key: admission.session_key, host_tx,
-            owners: Some(owners), sink: Some(sink), router, ports: Vec::new(),
-            lane_observations, completions, lifecycle_events,
+            root, agent_id, session_key: admission.session_key, host_tx,
+            owners: Some(owners), sink: Some(sink), roster, router, ports: Vec::new(),
+            lane_observations, completions, completion_tx, lifecycle_events,
             lane: Some(lane), lane_done, lane_exited: false, lane_panicked: false,
             workers_settled: true,
         };
@@ -607,7 +617,11 @@ impl ChannelHostLaneFixture {
     }
 
     fn assert_unchanged_append_and_no_followup(&self, send: &PersistedChannelSend) {
-        assert_eq!(self.entries(), send.entries, "delivery must not append again");
+        self.assert_no_followup(&send.entries);
+    }
+
+    fn assert_no_followup(&self, entries: &[Value]) {
+        assert_eq!(self.entries().as_slice(), entries, "delivery must not append again");
         assert_eq!(self.deps().runner_registry.active_count(), 0);
         assert_eq!(self.deps().transcript_runtime.in_flight_run_count(&self.agent_id), 0);
         assert!(self.deps().transcript_runtime.is_turn_dispatch_idle(&self.agent_id));
@@ -660,9 +674,116 @@ impl ChannelHostLaneFixture {
             "markedAtMs": marker.marked_at_ms,
             "sessionKey": self.session_key,
             "reason": reason,
+            "pendingWakeMarker": marker,
         })]);
         assert!(!wakes.reviving_channel_failure_agent_ids.contains(&self.agent_id),
             "actual deferred worker has ended revival");
+    }
+
+    fn pending_store(&self) -> SandPendingWakeStore {
+        self.deps().transcript_runtime.pending_wake_store()
+            .expect("actual durable pending-wake owner").clone()
+    }
+
+    fn recovery_marker(&self, operation: &str) -> DurablePendingWakeMarker {
+        DurablePendingWakeMarker {
+            agent_id: self.agent_id.clone(),
+            kind: PendingWakeKind::ChannelDelivery,
+            work_id: operation.into(),
+            marked_at_ms: 456_789.125,
+            quiet_origin: Some(QuietWakeOrigin {
+                automation: Some(AutomationQuietOrigin {
+                    id: "channel-recovery-automation".into(),
+                    name: "  Quiet channel wake  ".into(),
+                }),
+            }),
+            title: Some("  Retained channel failure title  ".into()),
+            subagent_type: Some("channel-recovery-origin".into()),
+            interrupted_by_recreate: true,
+            delivery_operation_id: Some(operation.into()),
+            address_token: Some(ADDRESS.into()),
+            failure_reason: Some("  Original delivery failure detail  ".into()),
+            session_key: Some(self.session_key.clone()),
+        }
+    }
+
+    fn queue_recovered_failure(&self, marker: &DurablePendingWakeMarker) -> Result<(), String> {
+        queue_recovered_channel_delivery_failure(
+            self.deps().clone(), Arc::clone(&self.roster),
+            self.deps().transcript_manager.background_wakes(), marker,
+            Some(self.completion_tx.clone()),
+        )
+    }
+
+    fn recover_and_wait(&mut self, marker: &DurablePendingWakeMarker) {
+        assert!(self.workers_settled);
+        self.workers_settled = false;
+        self.queue_recovered_failure(marker).expect("actual recovery admission");
+        self.wait_revival_worker();
+    }
+
+    fn claim_failure_revival(&self) {
+        assert!(self.workers_settled);
+        let wakes = self.deps().transcript_manager.background_wakes();
+        let mut wakes = wakes.lock().expect("actual BackgroundWakes owner");
+        // Hold the existing ownership bit only to make queue admission and
+        // durable replacement deterministic. The real worker drains it below.
+        assert!(BackgroundWakes::<Value>::begin_revival(
+            &mut wakes.reviving_channel_failure_agent_ids, &self.agent_id,
+        ));
+    }
+
+    fn run_claimed_failure_revival(&mut self) {
+        assert!(self.workers_settled);
+        self.workers_settled = false;
+        spawn_channel_failure_revival_worker(
+            self.deps().clone(), Arc::clone(&self.roster),
+            self.deps().transcript_manager.background_wakes(), self.agent_id.clone(),
+            Some(self.completion_tx.clone()),
+        ).expect("actual failure-revival worker spawn");
+        self.wait_revival_worker();
+    }
+
+    fn wait_revival_worker(&mut self) {
+        match self.completions.recv_timeout(WAIT).expect("actual recovery worker completion") {
+            ChannelDeliveryWorkerFinished::FailureRevival { agent_id } => {
+                assert_eq!(agent_id, self.agent_id);
+            }
+            ChannelDeliveryWorkerFinished::Delivery { .. } => {
+                panic!("recovering a persisted failure must not retry transport");
+            }
+        }
+        self.workers_settled = true;
+        self.assert_no_worker_observation();
+    }
+
+    fn queued_failures(&self) -> Vec<Value> {
+        self.deps().transcript_manager.background_wakes().lock()
+            .expect("actual failure queue").pending_channel_failures
+            .get(&self.agent_id).cloned().unwrap_or_default()
+    }
+
+    fn assert_failure_queue_idle(&self) {
+        assert!(self.workers_settled);
+        let wakes = self.deps().transcript_manager.background_wakes();
+        let wakes = wakes.lock().expect("actual failure revival owner");
+        assert!(wakes.reviving_channel_failure_agent_ids.is_empty());
+        self.assert_no_worker_observation();
+    }
+
+    fn assert_recovery_refused(&self, marker: &DurablePendingWakeMarker) {
+        self.queue_recovered_failure(marker).expect_err("recovery must refuse admission");
+        let wakes = self.deps().transcript_manager.background_wakes();
+        assert!(wakes.lock().expect("actual failure queue").pending_channel_failures.is_empty());
+        self.assert_failure_queue_idle();
+    }
+
+    fn assert_recovered_marker_retained(&self, marker: &DurablePendingWakeMarker, bytes: &[u8]) {
+        assert_eq!(fs::read(self.pending_store().file_path()).expect("retained durable bytes"), bytes);
+        assert_eq!(SandPendingWakeStore::new(&self.root).list_pending_checked()
+            .expect("fresh checked marker read"), vec![marker.clone()]);
+        assert_eq!(self.queued_failures(), vec![expected_recovered_failure(marker)]);
+        self.assert_failure_queue_idle();
     }
 
     fn stop_lane(&mut self) {
@@ -695,14 +816,17 @@ impl ChannelHostLaneFixture {
         }
     }
 
-    fn close(mut self) {
+    fn stop_for_reopen(mut self) -> (PathBuf, String) {
         assert!(self.workers_settled, "workers must finish before owner disposal");
         self.assert_no_worker_observation();
         self.stop_lane();
         assert!(self.lane_exited && !self.lane_panicked, "owned Host lane shutdown deadline");
         self.dispose_owners();
-        let root = self.root.clone();
-        drop(self);
+        (self.root.clone(), self.agent_id.clone())
+    }
+
+    fn close(self) {
+        let (root, _) = self.stop_for_reopen();
         fs::remove_dir_all(root).expect("remove only the completed fixture directory");
     }
 }
@@ -718,6 +842,17 @@ impl Drop for ChannelHostLaneFixture {
 
 fn text_message(text: &str) -> Value {
     json!({"type":"text", "content":text, "channel":ADDRESS})
+}
+
+fn expected_recovered_failure(marker: &DurablePendingWakeMarker) -> Value {
+    json!({
+        "addressToken": marker.address_token,
+        "deliveryOperationId": marker.delivery_operation_id,
+        "markedAtMs": marker.marked_at_ms,
+        "sessionKey": marker.session_key,
+        "reason": marker.failure_reason,
+        "pendingWakeMarker": marker,
+    })
 }
 
 fn assert_transport_identity(
@@ -836,5 +971,374 @@ fn channel_send_host_lane_preserves_projection_noop_and_no_retry() {
         "Couldn't deliver that message to Slack: transport acknowledgement lost after effect");
     assert_ne!(send.entry_id, noop.entry_id);
     assert_eq!(send.entries.len(), noop.entries.len() + 1);
+    fixture.close();
+}
+
+#[test]
+fn channel_send_host_lane_persistence_refusal_retains_live_failure_without_overwriting_store() {
+    for unreadable_path in [false, true] {
+        let label = if unreadable_path { "live-failure-unreadable" } else { "live-failure-corrupt" };
+        let mut fixture = ChannelHostLaneFixture::new(label);
+        assert_eq!(configured_routed_provider(&fixture.root.join("settings.json")), None);
+        assert!(!fixture.deps().transcript_runtime.is_quiescing_for_upgrade());
+        let (port, entered) = fixture.register_transport(
+            TransportOutcome::EffectThenError("transport acknowledgement lost after effect"), true,
+        );
+        let send = fixture.send(text_message("live failure with refused persistence"), true);
+        let call = entered.recv_timeout(WAIT).expect("actual transport held before failure persistence");
+        assert!(port.effects().is_empty());
+        fixture.assert_no_worker_observation();
+
+        let store = fixture.pending_store();
+        let corrupt = br#"{"version":1,"pending":[{"agentId":"unrelated-retained-work"},"#;
+        let witness = store.file_path().join("retained-witness");
+        if unreadable_path {
+            fs::create_dir(store.file_path()).expect("make the actual store path unreadable as a file");
+            fs::write(&witness, b"unrelated custody must survive the live failure")
+                .expect("retain directory fault witness");
+        } else {
+            fs::write(store.file_path(), corrupt).expect("retain corrupt pending-wake bytes");
+        }
+        assert!(store.list_pending_checked().is_err(), "the actual store must observe this refusal");
+        port.release();
+        fixture.wait_workers(&send, true);
+
+        assert_transport_identity(&fixture, &send, &call, "live failure with refused persistence");
+        assert_eq!(port.calls(), vec![call.clone()], "persistence refusal must not retry transport");
+        assert_eq!(port.effects(), vec![call], "the ambiguous failure retains its single external effect");
+        assert!(matches!(entered.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        fixture.assert_unchanged_append_and_no_followup(&send);
+        let reason = "Couldn't deliver that message to Slack: transport acknowledgement lost after effect";
+        let trays = fixture.deps().trays.list();
+        assert_eq!(trays.len(), 1);
+        assert_eq!(trays[0].title, "Message not delivered");
+        assert_eq!(trays[0].agent_id.as_deref(), Some(fixture.agent_id.as_str()));
+        assert_eq!(trays[0].raw_detail.as_deref(), Some(reason));
+        let failures = fixture.queued_failures();
+        assert_eq!(failures.len(), 1, "fresh unpersisted failure retains volatile custody");
+        let marked_at_ms = failures[0]["markedAtMs"].as_f64().expect("original live failure timestamp");
+        assert!(marked_at_ms.is_finite() && marked_at_ms > 0.0);
+        assert_eq!(failures, vec![json!({
+            "addressToken": ADDRESS,
+            "deliveryOperationId": send.entry_id,
+            "markedAtMs": marked_at_ms,
+            "sessionKey": fixture.session_key,
+            "reason": reason,
+        })], "retain the exact legacy five-key payload without fabricating durable admission");
+        assert!(failures[0].get("pendingWakeMarker").is_none());
+        fixture.assert_failure_queue_idle();
+        assert!(SandPendingWakeStore::new(&fixture.root).list_pending_checked().is_err(),
+            "failure handling must not replace an unknown image with a readable marker");
+        if unreadable_path {
+            assert!(store.file_path().is_dir());
+            assert_eq!(fs::read(&witness).expect("directory witness remains untouched"),
+                b"unrelated custody must survive the live failure");
+        } else {
+            assert_eq!(fs::read(store.file_path()).expect("corrupt bytes remain untouched"), corrupt);
+        }
+        fixture.close();
+    }
+}
+
+#[test]
+fn channel_recovery_reopens_actual_owners_and_retains_exact_failure_without_provider() {
+    let mut original = ChannelHostLaneFixture::new("recovery-original");
+    let send = original.send(text_message("persist before recovery restart"), true);
+    original.wait_workers(&send, true);
+    original.assert_retained_failure(&send,
+        "Channel messaging isn't available on this computer, so that message wasn't delivered.");
+    let marker = original.recovery_marker(&send.entry_id);
+    let store = original.pending_store();
+    store.mark_pending_checked(marker.clone()).expect("persist original complete metadata");
+    let bytes = fs::read(store.file_path()).expect("original durable image");
+    let session_key = original.session_key.clone();
+    drop(store);
+    let (root, agent_id) = original.stop_for_reopen();
+
+    let mut reopened = ChannelHostLaneFixture::open("recovery-reopened", root, Some(agent_id));
+    assert_eq!(reopened.session_key, session_key, "reopen the same actual Session");
+    assert_eq!(configured_routed_provider(&reopened.root.join("settings.json")), None);
+    assert!(reopened.queued_failures().is_empty(), "fresh owners have no inherited memory queue");
+    assert_eq!(reopened.pending_store().list_pending_checked().expect("reopened marker"), vec![marker.clone()]);
+    let (port, entered) = reopened.register_transport(TransportOutcome::Delivered, false);
+    reopened.recover_and_wait(&marker);
+    reopened.assert_recovered_marker_retained(&marker, &bytes);
+    reopened.assert_unchanged_append_and_no_followup(&send);
+    assert!(reopened.deps().trays.list().is_empty(), "recovery does not manufacture a new failure");
+    assert!(port.calls().is_empty(), "failure recovery must not retry the original delivery");
+    assert!(port.effects().is_empty());
+    assert!(matches!(entered.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    reopened.close();
+}
+
+#[test]
+fn channel_recovery_quiescence_retains_original_marker_and_queue() {
+    let mut fixture = ChannelHostLaneFixture::new("recovery-quiescence");
+    let entries = fixture.entries();
+    let marker = fixture.recovery_marker("quiesced-recovery-operation");
+    let store = fixture.pending_store();
+    store.mark_pending_checked(marker.clone()).expect("persist before upgrade pause");
+    let bytes = fs::read(store.file_path()).expect("pre-recovery image");
+    fs::write(fixture.root.join("settings.json"), br#"{"inferenceProvider":"fabushi"}"#)
+        .expect("actual configured-provider settings");
+    assert_eq!(configured_routed_provider(&fixture.root.join("settings.json")), Some(RoutedProvider::Fabushi));
+    fixture.deps().transcript_runtime.quiesce_for_upgrade().expect("actual runtime quiescence");
+    assert!(fixture.deps().transcript_runtime.is_quiescing_for_upgrade());
+
+    fixture.recover_and_wait(&marker);
+    fixture.assert_recovered_marker_retained(&marker, &bytes);
+    fixture.assert_no_followup(&entries);
+    assert!(fixture.deps().trays.list().is_empty());
+    fixture.close();
+}
+
+#[test]
+fn channel_recovery_repeated_enqueue_coalesces_and_preserves_batch_order() {
+    let mut fixture = ChannelHostLaneFixture::new("recovery-coalescing");
+    let entries = fixture.entries();
+    let first = fixture.recovery_marker("first-retained-operation");
+    let mut second = fixture.recovery_marker("second-retained-operation");
+    second.marked_at_ms += 17.5;
+    second.session_key = None;
+    let store = fixture.pending_store();
+    store.mark_pending_checked(first.clone()).expect("first durable failure");
+    store.mark_pending_checked(second.clone()).expect("second durable failure");
+    let bytes = fs::read(store.file_path()).expect("two-marker image");
+    let expected = vec![expected_recovered_failure(&first), expected_recovered_failure(&second)];
+    fixture.claim_failure_revival();
+    for marker in [&first, &first, &second, &first, &second] {
+        fixture.queue_recovered_failure(marker).expect("repeated recovery admission");
+    }
+    assert_eq!(fixture.queued_failures(), expected, "coalesce before the worker can drain");
+    let wakes = fixture.deps().transcript_manager.background_wakes();
+    let claimed = wakes.lock().expect("actual queue batch owner")
+        .take_pending_channel_failures_or_end_revival(&fixture.agent_id)
+        .expect("claim the admitted batch under the existing revival bit");
+    for marker in [&second, &first] {
+        fixture.queue_recovered_failure(marker).expect("duplicates admitted while batch is held");
+    }
+    // The existing requeue owner must put the claimed batch first and merge
+    // duplicates that arrived while it was held. No completion is fabricated.
+    requeue_channel_failures(&wakes, &fixture.agent_id, claimed);
+    assert_eq!(fixture.queued_failures(), expected, "merge preserves original order without duplicates");
+    fixture.assert_no_worker_observation();
+    fixture.run_claimed_failure_revival();
+    assert_eq!(fixture.queued_failures(), expected, "real missing-provider requeue preserves order");
+    fixture.assert_failure_queue_idle();
+
+    fixture.recover_and_wait(&first);
+    assert_eq!(fixture.queued_failures(), expected, "a later rearm must not duplicate retained work");
+    assert_eq!(fs::read(store.file_path()).expect("retained image"), bytes);
+    assert_eq!(SandPendingWakeStore::new(&fixture.root).list_pending_checked()
+        .expect("fresh reader sees both markers"), vec![first, second]);
+    fixture.assert_failure_queue_idle();
+    fixture.assert_no_followup(&entries);
+    fixture.close();
+}
+
+#[test]
+fn channel_recovery_cleared_or_replaced_snapshot_cannot_resurrect() {
+    let fixture = ChannelHostLaneFixture::new("recovery-stale-admission");
+    let entries = fixture.entries();
+    let marker = fixture.recovery_marker("observed-recovery-operation");
+    let store = fixture.pending_store();
+
+    fixture.assert_recovery_refused(&marker);
+    assert!(!store.file_path().exists(), "absent custody cannot be manufactured by recovery");
+    let unrelated = fixture.recovery_marker("unrelated-retained-operation");
+    store.mark_pending_checked(unrelated.clone()).expect("preserve unrelated durable custody");
+    store.mark_pending_checked(marker.clone()).expect("persist observed marker");
+    assert!(store.clear_if_matches(&marker), "settle the exact observed snapshot first");
+    let cleared = fs::read(store.file_path()).expect("image after settling only the observed marker");
+    fixture.assert_recovery_refused(&marker);
+    assert_eq!(fs::read(store.file_path()).expect("still cleared"), cleared);
+    assert_eq!(store.list_pending_checked().expect("cleared image"), vec![unrelated.clone()]);
+
+    let mut replacement = marker.clone();
+    replacement.marked_at_ms += 1.0;
+    replacement.title = Some("Newer same-operation failure".into());
+    store.mark_pending_checked(replacement.clone()).expect("persist newer identity");
+    let replaced = fs::read(store.file_path()).expect("replacement bytes");
+    fixture.assert_recovery_refused(&marker);
+    assert_eq!(fs::read(store.file_path()).expect("unmodified replacement"), replaced);
+    assert_eq!(SandPendingWakeStore::new(&fixture.root).list_pending_checked()
+        .expect("fresh replacement read"), vec![unrelated, replacement]);
+    fixture.assert_no_followup(&entries);
+    fixture.close();
+}
+
+#[test]
+fn channel_recovery_refuses_incomplete_context_without_mutating_durable_bytes() {
+    let fixture = ChannelHostLaneFixture::new("recovery-incomplete");
+    let entries = fixture.entries();
+    let complete = fixture.recovery_marker("incomplete-recovery-operation");
+    let mut missing_operation = complete.clone();
+    missing_operation.delivery_operation_id = None;
+    let mut mismatched_operation = complete.clone();
+    mismatched_operation.delivery_operation_id = Some("another-operation".into());
+    let mut missing_address = complete.clone();
+    missing_address.address_token = None;
+    let mut blank_address = complete.clone();
+    blank_address.address_token = Some("  ".into());
+    let mut missing_reason = complete.clone();
+    missing_reason.failure_reason = None;
+    let mut blank_reason = complete.clone();
+    blank_reason.failure_reason = Some("\t".into());
+    let mut blank_session = complete.clone();
+    blank_session.session_key = Some(" ".into());
+    let store = fixture.pending_store();
+    for marker in [missing_operation, mismatched_operation, missing_address, blank_address,
+        missing_reason, blank_reason, blank_session] {
+        // An already-written incomplete record is retained evidence, not
+        // permission to default its operation or delivery context.
+        let bytes = serde_json::to_vec(&json!({"version": 1, "pending": [marker]}))
+            .expect("incomplete persisted marker bytes");
+        fs::write(store.file_path(), &bytes).expect("write exact incomplete snapshot");
+        fixture.assert_recovery_refused(&marker);
+        assert_eq!(fs::read(store.file_path()).expect("preserved incomplete bytes"), bytes);
+    }
+    fixture.assert_no_followup(&entries);
+    fixture.close();
+}
+
+#[test]
+fn channel_recovery_corrupt_or_unreadable_store_refuses_enqueue() {
+    let fixture = ChannelHostLaneFixture::new("recovery-unknown-store");
+    let entries = fixture.entries();
+    let marker = fixture.recovery_marker("unknown-store-operation");
+    let store = fixture.pending_store();
+    let corrupt = br#"{"version":1,"pending":[{"agentId":"unrelated-retained-work"},"#;
+    fs::write(store.file_path(), corrupt).expect("inject malformed whole image");
+    assert!(store.list_pending_checked().is_err(), "fault must reach the actual store reader");
+    fixture.assert_recovery_refused(&marker);
+    assert_eq!(fs::read(store.file_path()).expect("corrupt bytes remain"), corrupt);
+
+    fs::remove_file(store.file_path()).expect("replace only this fixture's corrupt image");
+    fs::create_dir(store.file_path()).expect("deterministic unreadable file path");
+    let witness = store.file_path().join("retained-witness");
+    fs::write(&witness, b"must survive the store read refusal").expect("unreadable-path witness");
+    assert!(store.list_pending_checked().is_err(), "a directory is not a missing image");
+    fixture.assert_recovery_refused(&marker);
+    assert!(store.file_path().is_dir());
+    assert_eq!(fs::read(witness).expect("unreadable image preserved"), b"must survive the store read refusal");
+    fixture.assert_no_followup(&entries);
+    fixture.close();
+}
+
+#[test]
+fn channel_recovery_closed_wakes_refuses_admission_without_retiring_marker() {
+    let fixture = ChannelHostLaneFixture::new("recovery-closed-wakes");
+    let entries = fixture.entries();
+    let marker = fixture.recovery_marker("closed-owner-operation");
+    let store = fixture.pending_store();
+    store.mark_pending_checked(marker.clone()).expect("persist before wake owner closes");
+    let bytes = fs::read(store.file_path()).expect("retained image");
+    fixture.deps().transcript_manager.background_wakes().lock()
+        .expect("actual BackgroundWakes owner").close();
+
+    fixture.assert_recovery_refused(&marker);
+    assert_eq!(fs::read(store.file_path()).expect("closed owner preserves bytes"), bytes);
+    assert_eq!(SandPendingWakeStore::new(&fixture.root).list_pending_checked()
+        .expect("marker remains recoverable by a fresh owner"), vec![marker]);
+    fixture.assert_no_followup(&entries);
+    fixture.close();
+}
+
+#[test]
+fn channel_recovery_worker_suppresses_cleared_or_replaced_queued_snapshots() {
+    let mut fixture = ChannelHostLaneFixture::new("recovery-stale-batch");
+    let entries = fixture.entries();
+    let cleared = fixture.recovery_marker("queued-then-cleared");
+    let observed = fixture.recovery_marker("queued-then-replaced");
+    let store = fixture.pending_store();
+    store.mark_pending_checked(cleared.clone()).expect("persist first queued marker");
+    store.mark_pending_checked(observed.clone()).expect("persist second queued marker");
+    fixture.claim_failure_revival();
+    fixture.queue_recovered_failure(&cleared).expect("first actual queued snapshot");
+    fixture.queue_recovered_failure(&observed).expect("second actual queued snapshot");
+    assert_eq!(fixture.queued_failures(), vec![
+        expected_recovered_failure(&cleared), expected_recovered_failure(&observed),
+    ]);
+    assert!(store.clear_if_matches(&cleared));
+    let mut replacement = observed.clone();
+    replacement.marked_at_ms += 2.0;
+    replacement.failure_reason = Some("A newer failure owns this operation".into());
+    store.mark_pending_checked(replacement.clone()).expect("replace after enqueue, before drain");
+    let bytes = fs::read(store.file_path()).expect("replacement snapshot");
+    fs::write(fixture.root.join("settings.json"), br#"{"inferenceProvider":"fabushi"}"#)
+        .expect("configure provider so the identity guard prevents admission");
+    assert_eq!(configured_routed_provider(&fixture.root.join("settings.json")), Some(RoutedProvider::Fabushi));
+    assert!(!fixture.deps().transcript_runtime.is_quiescing_for_upgrade());
+
+    fixture.run_claimed_failure_revival();
+    assert!(fixture.queued_failures().is_empty(), "both stale snapshots are consumed without replay");
+    fixture.assert_failure_queue_idle();
+    assert_eq!(fs::read(store.file_path()).expect("new marker unchanged"), bytes);
+    assert_eq!(SandPendingWakeStore::new(&fixture.root).list_pending_checked()
+        .expect("replacement remains pending"), vec![replacement]);
+    fixture.assert_no_followup(&entries);
+    assert!(fixture.deps().trays.list().is_empty(), "no provider-failure attempt may be hidden");
+    fixture.close();
+}
+
+#[test]
+fn channel_recovery_worker_read_error_retains_original_queued_marker() {
+    let mut fixture = ChannelHostLaneFixture::new("recovery-worker-read-error");
+    let entries = fixture.entries();
+    let marker = fixture.recovery_marker("queued-before-read-error");
+    let store = fixture.pending_store();
+    store.mark_pending_checked(marker.clone()).expect("persist original worker input");
+    fixture.claim_failure_revival();
+    fixture.queue_recovered_failure(&marker).expect("admit from the readable snapshot");
+    let corrupt = b"pending-wake image became unreadable JSON after enqueue";
+    fs::write(store.file_path(), corrupt).expect("fault the store after actual admission");
+    assert!(store.list_pending_checked().is_err());
+
+    fixture.run_claimed_failure_revival();
+    assert_eq!(fixture.queued_failures(), vec![expected_recovered_failure(&marker)],
+        "unknown current identity retains the exact claimed batch");
+    fixture.assert_failure_queue_idle();
+    assert_eq!(fs::read(store.file_path()).expect("failed read cannot rewrite custody"), corrupt);
+    fixture.assert_no_followup(&entries);
+    assert!(fixture.deps().trays.list().is_empty());
+    fixture.close();
+}
+
+#[test]
+fn channel_recovery_exact_settlement_preserves_newer_marker_and_full_metadata() {
+    let mut fixture = ChannelHostLaneFixture::new("recovery-exact-settlement");
+    let entries = fixture.entries();
+    let observed = fixture.recovery_marker("same-key-settlement-operation");
+    let store = fixture.pending_store();
+    store.mark_pending_checked(observed.clone()).expect("persist full original metadata");
+    fixture.claim_failure_revival();
+    fixture.queue_recovered_failure(&observed).expect("queue original settlement identity");
+    let original_failures = fixture.queued_failures();
+    assert_eq!(original_failures, vec![expected_recovered_failure(&observed)]);
+    let mut replacement = observed.clone();
+    replacement.marked_at_ms += 3.0;
+    replacement.title = Some("Full metadata on the newer marker".into());
+    store.mark_pending_checked(replacement.clone()).expect("new marker wins before old settlement");
+    let bytes = fs::read(store.file_path()).expect("newer marker bytes");
+
+    // Exercise the real settlement owner directly; this is not a fabricated
+    // provider completion or a claim that a follow-up turn sent a message.
+    clear_durable_channel_failure_markers(fixture.deps(), &fixture.agent_id, &original_failures);
+    assert_eq!(fs::read(store.file_path()).expect("old settlement cannot touch replacement"), bytes);
+    assert_eq!(store.list_pending_checked().expect("replacement survived"), vec![replacement.clone()]);
+    fixture.queue_recovered_failure(&replacement).expect("queue replacement's exact metadata");
+    let mut current_failures = fixture.queued_failures();
+    filter_current_channel_failure_markers(fixture.deps(), &fixture.agent_id, &mut current_failures)
+        .expect("select the still-current queued identity");
+    assert_eq!(current_failures, vec![expected_recovered_failure(&replacement)]);
+    clear_durable_channel_failure_markers(fixture.deps(), &fixture.agent_id, &current_failures);
+    assert!(SandPendingWakeStore::new(&fixture.root).list_pending_checked()
+        .expect("fresh reader after exact settlement").is_empty(),
+        "settlement must preserve optional metadata instead of reconstructing defaults");
+
+    fixture.run_claimed_failure_revival();
+    assert!(fixture.queued_failures().is_empty(), "settled queue snapshots cannot execute later");
+    fixture.assert_failure_queue_idle();
+    fixture.assert_no_followup(&entries);
     fixture.close();
 }

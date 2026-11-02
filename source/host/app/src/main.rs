@@ -2577,27 +2577,14 @@ impl UnifiedGatewayApi {
         &self,
         marker: &DurablePendingWakeMarker,
     ) -> Result<(), String> {
-        let address_token = marker
-            .address_token
-            .clone()
-            .ok_or_else(|| "channel failure marker has no address token".to_string())?;
-        let reason = marker
-            .failure_reason
-            .clone()
-            .ok_or_else(|| "channel failure marker has no failure reason".to_string())?;
-        queue_channel_delivery_failure(
+        queue_recovered_channel_delivery_failure(
             self.local_routed_runner_deps(),
             Arc::clone(&self.roster_emit),
             Arc::clone(&self.background_wakes),
-            marker.agent_id.clone(),
-            address_token,
-            marker.delivery_operation_id.clone(),
-            marker.session_key.clone(),
-            reason,
+            marker,
             #[cfg(test)]
             None,
-        );
-        Ok(())
+        )
     }
 
     fn call_accept_routed_prompt(
@@ -7085,11 +7072,69 @@ fn requeue_channel_failures(
     let mut state = wakes
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if state.is_closed() {
+        return;
+    }
     let pending = state.pending_channel_failures.remove(agent_id).unwrap_or_default();
-    state.pending_channel_failures.insert(
-        agent_id.to_string(),
-        failures.into_iter().chain(pending).collect(),
-    );
+    let mut retained = failures;
+    for failure in pending {
+        if !retained.iter().any(|current| same_channel_failure(agent_id, current, &failure)) {
+            retained.push(failure);
+        }
+    }
+    state.pending_channel_failures.insert(agent_id.to_string(), retained);
+}
+
+fn same_channel_failure(agent_id: &str, left: &serde_json::Value, right: &serde_json::Value) -> bool {
+    match (
+        channel_failure_marker_from_failure(agent_id, left),
+        channel_failure_marker_from_failure(agent_id, right),
+    ) {
+        (Some(left), Some(right)) => left == right,
+        _ => left == right,
+    }
+}
+
+/// Queue under the existing BackgroundWakes owner. Callers release every
+/// storage/queue guard before spawning or entering Session and Runner owners.
+fn enqueue_channel_failure(
+    state: &mut BackgroundWakes<serde_json::Value>,
+    agent_id: &str,
+    failure: serde_json::Value,
+) -> Result<bool, String> {
+    if state.is_closed() {
+        return Err("channel failure wake owner is closed".into());
+    }
+    let pending = state.pending_channel_failures.entry(agent_id.to_string()).or_default();
+    if !pending.iter().any(|current| same_channel_failure(agent_id, current, &failure)) {
+        pending.push(failure);
+    }
+    Ok(BackgroundWakes::<serde_json::Value>::begin_revival(
+        &mut state.reviving_channel_failure_agent_ids,
+        agent_id,
+    ))
+}
+
+fn channel_failure_from_marker(marker: &DurablePendingWakeMarker) -> Result<serde_json::Value, String> {
+    if marker.kind != PendingWakeKind::ChannelDelivery
+        || marker.agent_id.trim().is_empty()
+        || marker.work_id.trim().is_empty()
+        || !marker.marked_at_ms.is_finite()
+        || marker.delivery_operation_id.as_deref() != Some(marker.work_id.as_str())
+        || marker.address_token.as_deref().is_none_or(|value| value.trim().is_empty())
+        || marker.failure_reason.as_deref().is_none_or(|value| value.trim().is_empty())
+        || marker.session_key.as_deref().is_some_and(|value| value.trim().is_empty())
+    {
+        return Err("channel failure marker identity or delivery context is incomplete".into());
+    }
+    Ok(serde_json::json!({
+        "addressToken": marker.address_token,
+        "deliveryOperationId": marker.delivery_operation_id,
+        "markedAtMs": marker.marked_at_ms,
+        "sessionKey": marker.session_key,
+        "reason": marker.failure_reason,
+        "pendingWakeMarker": marker,
+    }))
 }
 
 fn clear_durable_channel_failure_markers(
@@ -7120,6 +7165,14 @@ fn channel_failure_marker_from_failure(
     agent_id: &str,
     failure: &serde_json::Value,
 ) -> Option<DurablePendingWakeMarker> {
+    if let Some(raw_marker) = failure.get("pendingWakeMarker") {
+        let marker: DurablePendingWakeMarker = serde_json::from_value(raw_marker.clone()).ok()?;
+        if marker.agent_id != agent_id {
+            return None;
+        }
+        let expected = channel_failure_from_marker(&marker).ok()?;
+        return (expected == *failure).then_some(marker);
+    }
     let work_id = failure
         .get("deliveryOperationId")
         .and_then(serde_json::Value::as_str)
@@ -7155,6 +7208,34 @@ fn channel_failure_marker_from_failure(
         failure_reason: Some(failure_reason.to_string()),
         session_key,
     })
+}
+
+fn filter_current_channel_failure_markers(
+    deps: &LocalRoutedRunnerDeps,
+    agent_id: &str,
+    failures: &mut Vec<serde_json::Value>,
+) -> Result<(), String> {
+    if !failures.iter().any(|failure| failure.get("pendingWakeMarker").is_some()) {
+        return Ok(());
+    }
+    let store = deps.transcript_runtime.pending_wake_store()
+        .ok_or_else(|| "channel failure pending-wake owner is unavailable".to_string())?;
+    let current = store.list_pending_checked().map_err(|error| error.to_string())?;
+    let mut retained = Vec::with_capacity(failures.len());
+    for failure in failures.iter() {
+        if failure.get("pendingWakeMarker").is_some() {
+            let marker = channel_failure_marker_from_failure(agent_id, failure)
+                .ok_or_else(|| "queued channel failure marker is invalid".to_string())?;
+            if !current.contains(&marker) {
+                continue;
+            }
+        }
+        if !retained.iter().any(|other| same_channel_failure(agent_id, other, failure)) {
+            retained.push(failure.clone());
+        }
+    }
+    *failures = retained;
+    Ok(())
 }
 
 fn filter_current_channel_failure_provenance(
@@ -7214,6 +7295,14 @@ fn run_channel_failure_revival_worker(
             state.take_pending_channel_failures_or_end_revival(&agent_id)
         },
         |mut failures| {
+            if let Err(error) = filter_current_channel_failure_markers(&deps, &agent_id, &mut failures) {
+                eprintln!("mahayana-host channel_failure_marker_read_failed agent={agent_id} error={error}");
+                requeue_channel_failures(&wakes, &agent_id, failures);
+                return false;
+            }
+            if failures.is_empty() {
+                return true;
+            }
             let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
                 Ok(Some(summary)) => summary,
                 Ok(None) => {
@@ -7338,9 +7427,16 @@ fn queue_channel_delivery_failure(
     #[cfg(test)] completion: Option<mpsc::Sender<ChannelDeliveryWorkerFinished>>,
 ) {
     let marked_at_ms = started_at_ms() as f64;
+    let mut failure = serde_json::json!({
+        "addressToken": address_token,
+        "deliveryOperationId": delivery_operation_id,
+        "markedAtMs": marked_at_ms,
+        "sessionKey": session_key,
+        "reason": reason,
+    });
     if let Some(operation_id) = delivery_operation_id.as_deref() {
         if let Some(store) = deps.transcript_runtime.pending_wake_store() {
-            let written = store.mark_pending(DurablePendingWakeMarker {
+            let marker = DurablePendingWakeMarker {
                 agent_id: agent_id.clone(),
                 kind: PendingWakeKind::ChannelDelivery,
                 work_id: operation_id.to_string(),
@@ -7353,38 +7449,79 @@ fn queue_channel_delivery_failure(
                 address_token: Some(address_token.clone()),
                 failure_reason: Some(reason.clone()),
                 session_key: session_key.clone(),
-            });
-            if !written {
-                eprintln!(
-                    "mahayana-host channel_failure_persist_failed agent={} operation={}",
-                    agent_id, operation_id
-                );
+            };
+            match store.mark_pending_checked(marker.clone()) {
+                Ok(()) => failure["pendingWakeMarker"] = serde_json::json!(marker),
+                Err(error) => {
+                    eprintln!(
+                        "mahayana-host channel_failure_persist_failed agent={} operation={} error={error}",
+                        agent_id, operation_id,
+                    );
+                    // A new live failure still has volatile follow-up custody.
+                    // Do not label it as durably admitted or overwrite unknown
+                    // state; strict persisted recovery uses its separate path.
+                }
             }
         }
     }
-    let should_spawn = {
+    let admission = {
         let mut state = wakes
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        BackgroundWakes::enqueue(
-            &mut state.pending_channel_failures,
-            agent_id.clone(),
-            serde_json::json!({
-                "addressToken": address_token,
-                "deliveryOperationId": delivery_operation_id,
-                "markedAtMs": marked_at_ms,
-                "sessionKey": session_key,
-                "reason": reason,
-            }),
-        );
-        BackgroundWakes::<serde_json::Value>::begin_revival(
-            &mut state.reviving_channel_failure_agent_ids,
-            &agent_id,
-        )
+        enqueue_channel_failure(&mut state, &agent_id, failure)
     };
-    if !should_spawn {
-        return;
+    match admission {
+        Ok(false) => {}
+        Ok(true) => {
+            if let Err(error) = spawn_channel_failure_revival_worker(
+                deps, roster, wakes, agent_id,
+                #[cfg(test)]
+                completion,
+            ) {
+                eprintln!("mahayana-host channel_failure_worker_spawn_failed error={error}");
+            }
+        }
+        Err(error) => {
+            eprintln!("mahayana-host channel_failure_queue_refused agent={agent_id} error={error}");
+        }
     }
+}
+
+fn queue_recovered_channel_delivery_failure(
+    deps: LocalRoutedRunnerDeps,
+    roster: Arc<ProductionRosterEmit>,
+    wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    marker: &DurablePendingWakeMarker,
+    #[cfg(test)] completion: Option<mpsc::Sender<ChannelDeliveryWorkerFinished>>,
+) -> Result<(), String> {
+    let failure = channel_failure_from_marker(marker)?;
+    let store = deps.transcript_runtime.pending_wake_store()
+        .ok_or_else(|| "channel failure pending-wake owner is unavailable".to_string())?;
+    // Store -> wakes is the sole nested lock order. The callback has no I/O,
+    // notifications, Session calls or spawn; recovery never rewrites the image.
+    let should_spawn = store.with_matching_marker_checked(marker, || {
+        let mut state = wakes.lock()
+            .map_err(|_| "channel failure wake owner is poisoned".to_string())?;
+        enqueue_channel_failure(&mut state, &marker.agent_id, failure)
+    }).map_err(|error| error.to_string())?
+        .ok_or_else(|| "channel failure marker is no longer pending".to_string())??;
+    if should_spawn {
+        spawn_channel_failure_revival_worker(
+            deps, roster, wakes, marker.agent_id.clone(),
+            #[cfg(test)]
+            completion,
+        )?;
+    }
+    Ok(())
+}
+
+fn spawn_channel_failure_revival_worker(
+    deps: LocalRoutedRunnerDeps,
+    roster: Arc<ProductionRosterEmit>,
+    wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    agent_id: String,
+    #[cfg(test)] completion: Option<mpsc::Sender<ChannelDeliveryWorkerFinished>>,
+) -> Result<(), String> {
     let worker_agent_id = agent_id.clone();
     let worker_wakes = Arc::clone(&wakes);
     if let Err(error) = thread::Builder::new()
@@ -7408,11 +7545,9 @@ fn queue_channel_delivery_failure(
             &mut state.reviving_channel_failure_agent_ids,
             &agent_id,
         );
-        eprintln!(
-            "mahayana-host channel_failure_worker_spawn_failed agent={} error={error}",
-            agent_id
-        );
+        return Err(format!("channel failure worker spawn failed for {agent_id}: {error}"));
     }
+    Ok(())
 }
 
 fn automatic_ack_redrive_marker_snapshot(

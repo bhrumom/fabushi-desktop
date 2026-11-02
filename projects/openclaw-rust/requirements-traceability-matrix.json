@@ -102,7 +102,12 @@
         "source/host/tests/mcp_coordinator_relay_contract.rs",
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+        "source/host/app/src/tests/channel_host_lane_tests.rs",
+        "source/host/tests/pending_wake_rearm_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -341,7 +346,12 @@
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
         "source/node-agent-coordinator/tests/production_protocol.rs",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+        "source/host/app/src/tests/channel_host_lane_tests.rs",
+        "source/host/tests/pending_wake_rearm_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -717,7 +727,14 @@
         "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
         "source/host/tests/openclaw_storage_diagnostics_contract.rs",
         "source/host/tests/openclaw_channel_delivery_contract.rs",
-        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
+        "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+        "source/host/app/src/tests/channel_host_lane_tests.rs",
+        "source/host/tests/pending_wake_rearm_contract.rs",
+        "source/host/tests/durable_recovery_stores_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R15",
@@ -1429,7 +1446,12 @@
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
         "source/node-agent-coordinator/tests/production_protocol.rs",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+        "source/host/app/src/tests/channel_host_lane_tests.rs",
+        "source/host/tests/pending_wake_rearm_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",
@@ -1726,7 +1748,14 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
-        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
+        "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+        "source/host/app/src/tests/channel_host_lane_tests.rs",
+        "source/host/tests/pending_wake_rearm_contract.rs",
+        "source/host/tests/durable_recovery_stores_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC15",

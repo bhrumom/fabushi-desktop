@@ -432,8 +432,7 @@ impl TranscriptManager {
             .map_err(|_| "transcript pending-wake mutex poisoned".to_string())?
             .clone()
             .ok_or_else(|| "transcript pending-wake runtime is not configured".to_string())?;
-        owner.rearm_pending_wakes();
-        Ok(())
+        owner.rearm_pending_wakes_checked().map_err(|error| error.to_string())
     }
 
     pub fn restore_recreate_pending_wakes(&self, carried: &[Value]) -> Result<usize, String> {

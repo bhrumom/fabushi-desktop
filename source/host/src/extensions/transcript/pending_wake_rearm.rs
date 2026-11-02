@@ -5,8 +5,8 @@ use std::sync::Arc;
 use serde_json::Value;
 
 use super::sand_pending_wake_store::{
-    DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin, SandPendingWakeStore,
-    coerce_marker,
+    DurablePendingWakeMarker, PendingWakeKind, PendingWakeStoreError, QuietWakeOrigin,
+    SandPendingWakeStore, coerce_marker,
 };
 
 pub const PENDING_WAKE_STALE_MAX_AGE_MS: f64 = 48.0 * 60.0 * 60.0 * 1_000.0;
@@ -218,14 +218,18 @@ impl PendingWakeRearm {
     }
 
     pub fn rearm_pending_wakes(&self) {
+        let _ = self.rearm_pending_wakes_checked();
+    }
+
+    pub fn rearm_pending_wakes_checked(&self) -> Result<(), PendingWakeStoreError> {
         let Some(store) = &self.store else {
-            return;
+            return Ok(());
         };
         if !self.runtime.can_execute() {
-            return;
+            return Ok(());
         }
         let now = (self.now_ms)();
-        for marker in store.prune_stale(PENDING_WAKE_STALE_MAX_AGE_MS, now) {
+        for marker in store.prune_stale_checked(PENDING_WAKE_STALE_MAX_AGE_MS, now)? {
             self.report(
                 &marker,
                 "pruned",
@@ -234,7 +238,7 @@ impl PendingWakeRearm {
             );
         }
 
-        for marker in store.list_pending() {
+        for marker in store.list_pending_checked()? {
             if self.runtime.is_agent_gone(&marker.agent_id) {
                 self.report(
                     &marker,
@@ -247,6 +251,7 @@ impl PendingWakeRearm {
 
             self.rearm_pending_wake(marker, now, None);
         }
+        Ok(())
     }
 
     /// Rearm a marker already persisted by startup or recreate-carry admission.
@@ -311,12 +316,15 @@ impl PendingWakeRearm {
 
         match result {
             Ok(()) => {
-                // An armed cloud watch still needs its durable recovery marker.
-                // A repeated rearm observes that same marker without writing a
-                // replacement. Rearming is not completion settlement.
+                // Cloud watches, lost-subagent completion and channel-failure
+                // queues retain their durable recovery markers until their
+                // existing completion owners settle them. Enqueueing recovery
+                // is not completion settlement.
                 let clear_after_success = !matches!(
                     marker.kind,
-                    PendingWakeKind::CloudAgent | PendingWakeKind::Subagent
+                    PendingWakeKind::CloudAgent
+                        | PendingWakeKind::Subagent
+                        | PendingWakeKind::ChannelDelivery
                 )
                     && !(marker.kind == PendingWakeKind::Shell
                         && marker.interrupted_by_recreate);

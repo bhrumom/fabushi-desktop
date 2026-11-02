@@ -162,6 +162,23 @@ read does not upgrade the six historical rows above or imported durable-runtime
 dependencies to current complete review. Those dependencies, real provider
 registration, channel protocols and full acceptance remain open.
 
+### Pending failure restart custody — CWR-v1, 2026-11-02
+
+On exact base `0533ca72870a2794c2db32959b9d01427abf325a`, the same production
+chain exposes a second defect: recovery uses the fresh-failure producer and
+then clears ChannelDelivery on enqueue, although missing provider or upgrade
+pause only requeues. CWR-v1 in the existing Host-lane spec now requires exact
+persisted-marker admission, full metadata through the existing queue, checked
+whole-image store mutations, and settlement only by existing terminal owners.
+The Host adapter, store/rearm and manager/health wiring plus real-owner
+restart/refusal oracles are authored. Independent frozen review and exact-H
+Actions are required before any bounded verification claim. Existing OCRM
+rows and RTM retain their verification/acceptance states and all eight false
+flags. The fixed-U outbound source read above is reused without upgrading
+historical reads or imported-dependency closure. No transport retry, real
+provider acceptance, unknown-effect reconciliation or cross-process writer
+arbitration is claimed by this batch.
+
 ### Inbound debounce implementation slice — 2026-10-31
 
 The existing connector owner now also contains

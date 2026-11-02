@@ -5539,7 +5539,14 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
-        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
+        "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+        "source/host/app/src/tests/channel_host_lane_tests.rs",
+        "source/host/tests/pending_wake_rearm_contract.rs",
+        "source/host/tests/durable_recovery_stores_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -5613,11 +5620,15 @@
       },
       "tests": [
         "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o03_delivery_port_registration_lifecycle",
-        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o04_dead_letter_fallback"
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o04_dead_letter_fallback",
+        "source/host/app/src/tests/channel_host_lane_tests.rs::channel_recovery_reopens_actual_owners_and_retains_exact_failure_without_provider",
+        "source/host/app/src/tests/channel_host_lane_tests.rs::channel_recovery_worker_suppresses_cleared_or_replaced_queued_snapshots",
+        "source/host/tests/transcript_manager_contract.rs::manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy"
       ],
       "typed_contracts": [
         "HostChannelDelivery::deliver",
-        "HostChannelDelivery::set_port"
+        "HostChannelDelivery::set_port",
+        "CWR-v1 exact pending-channel-failure recovery: checked whole-image custody, original-marker admission and settlement, coalesced existing wake queue, retained missing-provider/quiescence/error state; real channel and unknown-effect acceptance remain open"
       ],
       "unit_id": "OCRM-UNIT-CHANNELS-001"
     },
@@ -16001,7 +16012,12 @@
         "source/host/src/extensions/transcript/ack_obligations.rs",
         "source/host/tests/routed_send_acceptance_contract.rs",
         "source/host/tests/durable_recovery_stores_contract.rs",
-        "source/host/tests/host_upgrade_production_contract.rs"
+        "source/host/tests/host_upgrade_production_contract.rs",
+        "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+        "source/host/app/src/tests/channel_host_lane_tests.rs",
+        "source/host/tests/pending_wake_rearm_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -16160,7 +16176,10 @@
         "source/host/app/src/tests/original_turn_recovery_tests.rs::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work",
         "source/host/app/src/tests/original_turn_recovery_tests.rs::original_turn_ack_gate_retains_due_timer_attempt_and_bytes_until_marker_releases",
         "source/host/tests/production_checkpoint_restart_contract.rs",
-        "source/host/src/extensions/session/agent_db.rs::original_turn_terminal_tests"
+        "source/host/src/extensions/session/agent_db.rs::original_turn_terminal_tests",
+        "source/host/app/src/tests/channel_host_lane_tests.rs::channel_recovery_reopens_actual_owners_and_retains_exact_failure_without_provider",
+        "source/host/app/src/tests/channel_host_lane_tests.rs::channel_recovery_worker_suppresses_cleared_or_replaced_queued_snapshots",
+        "source/host/tests/transcript_manager_contract.rs::manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy"
       ],
       "typed_contracts": [
         "Session work admission and archive lifecycle",
@@ -16168,7 +16187,8 @@
         "SESSION-FRESH-APPEND-v1 strict physical-snapshot allocation, all-row commit and deferred existing transcript publication",
         "OCRM-CHANNEL-INBOUND-REARM-v1 retained unappended head readiness, exact launch custody, coalesced retry and permanent disposal fence",
         "OCRM-HOST-PHYSICAL-CUSTODY-v1 existing Host startup guard prerequisite; original-turn durable claim/reconciliation and full restart acceptance remain open",
-        "ORT-v1 completed ordinary Native Journal turn: accepted original identity/model, private committed checkpoint observations and frozen terminal custody, bounded strict Session slot, whole-image marker v2 migration, guarded completed-marker acknowledgment and automatic ACK containment; newly declared implementation/tests require exact-H execution, unfinished and Legacy turn restoration remain open"
+        "ORT-v1 completed ordinary Native Journal turn: accepted original identity/model, private committed checkpoint observations and frozen terminal custody, bounded strict Session slot, whole-image marker v2 migration, guarded completed-marker acknowledgment and automatic ACK containment; newly declared implementation/tests require exact-H execution, unfinished and Legacy turn restoration remain open",
+        "CWR-v1 exact pending-channel-failure recovery: checked whole-image custody, original-marker admission and settlement, coalesced existing wake queue, retained missing-provider/quiescence/error state; real channel and unknown-effect acceptance remain open"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },

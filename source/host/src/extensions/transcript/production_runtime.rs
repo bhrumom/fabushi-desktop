@@ -393,7 +393,9 @@ impl ProductionTranscriptRuntime {
     pub fn has_carryable_pending_wake(&self) -> bool {
         self.pending_wake_store
             .as_ref()
-            .is_some_and(|store| !store.list_pending().is_empty())
+            // Unknown durable custody must not authorize idle Host teardown.
+            .is_some_and(|store| store.list_pending_checked()
+                .map(|markers| !markers.is_empty()).unwrap_or(true))
     }
 
     pub fn recreate_carry_pending_wakes(&self) -> Vec<DurablePendingWakeMarker> {

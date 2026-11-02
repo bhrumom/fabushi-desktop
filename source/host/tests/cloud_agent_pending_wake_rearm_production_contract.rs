@@ -6,8 +6,8 @@ const PENDING_WAKE_REARM: &str = include_str!("../src/extensions/transcript/pend
 fn shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start() {
     assert!(TRANSCRIPT_MANAGER.contains("PendingWakeRearm::new("));
     assert!(TRANSCRIPT_MANAGER.contains("pub fn rearm_pending_wakes(&self)"));
-    assert!(TRANSCRIPT_MANAGER.contains("owner.rearm_pending_wakes();"));
-    assert!(PENDING_WAKE_REARM.contains("for marker in store.list_pending()"));
+    assert!(TRANSCRIPT_MANAGER.contains("owner.rearm_pending_wakes_checked().map_err(|error| error.to_string())"));
+    assert!(PENDING_WAKE_REARM.contains("store.list_pending_checked()?"));
     assert!(PENDING_WAKE_REARM.contains("self.rearm_pending_wake(marker, now, None);"));
     assert!(SHIPPING_HOST.contains(".bind_pending_wake_runtime(Arc::new(ProductionPendingWakeRuntime"));
     assert!(SHIPPING_HOST.contains("transcript_manager.rearm_pending_wakes()"));
