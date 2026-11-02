@@ -1958,6 +1958,106 @@ impl ProductionSessionWorkers {
         }))
     }
 
+
+    // Admission is pure and happens before remote resources or transcript writes.
+    // Server request ids are scoped to their actual author, not to this device.
+    fn validate_remote_human_message(
+        &self,
+        remote: &FabushiRemoteHumanMessage,
+        local_human_id: &str,
+        peer_human_id: &str,
+        existing: &[serde_json::Value],
+    ) -> Result<(), String> {
+        let remote_id = fabushi_identity_text(&remote.id)?;
+        let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
+        let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
+        if !((sender_id == local_human_id && recipient_id == peer_human_id)
+            || (sender_id == peer_human_id && recipient_id == local_human_id))
+        {
+            return Err("remote Human message does not belong to the selected Human conversation".into());
+        }
+
+        let canonical_id = format!("human-server-message:{remote_id}");
+        let by_id = existing.iter().find(|row| {
+            row.get("id").and_then(serde_json::Value::as_str) == Some(canonical_id.as_str())
+        });
+        if by_id.is_some_and(|row| {
+            row.get("authorId").and_then(serde_json::Value::as_str) != Some(sender_id.as_str())
+        }) {
+            return Err("remote Human canonical identity conflicts with the persisted sender".into());
+        }
+
+        // Peer request provenance can never acknowledge a local intent. On our own
+        // outgoing echo, both canonical-ID and nonce lookups must pass the same
+        // immutable local-send checks, even when a replay omits/changes the nonce.
+        if sender_id != local_human_id {
+            return Ok(());
+        }
+        let nonce = remote.client_request_id.as_deref()
+            .map(str::trim).filter(|value| !value.is_empty());
+        let by_nonce = nonce.and_then(|nonce| existing.iter().find(|row| {
+            row.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                && row.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce)
+        }));
+        for current in [by_id, by_nonce].into_iter().flatten() {
+            if current.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id)
+                || current.get("clientNonce").and_then(serde_json::Value::as_str) != nonce
+                || nonce.is_none()
+                || current.get("content").and_then(serde_json::Value::as_str)
+                    != Some(remote.text.trim())
+            {
+                return Err("remote Human acknowledgement conflicts with the local send identity or text".into());
+            }
+            if let Some(prior_remote) = current.get("remoteMessageId") {
+                if fabushi_identity_text(prior_remote)? != remote_id {
+                    return Err("remote Human acknowledgement changed a settled remote identity".into());
+                }
+            }
+            let expected_reply = if let Some(id) = current.get("remoteReplyToMessageId") {
+                Some(fabushi_identity_text(id)?)
+            } else if let Some(reply_id) = current.get("replyToId")
+                .and_then(serde_json::Value::as_str)
+            {
+                let target = existing.iter().find(|row| {
+                    row.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+                }).ok_or_else(|| "remote Human acknowledgement reply target disappeared".to_string())?;
+                Some(fabushi_identity_text(target.get("remoteMessageId").ok_or_else(|| {
+                    "remote Human acknowledgement reply has no settled remote identity".to_string()
+                })?)?)
+            } else {
+                None
+            };
+            let actual_reply = remote.reply_to_message_id.as_ref()
+                .map(fabushi_identity_text).transpose()?;
+            if expected_reply != actual_reply {
+                return Err("remote Human acknowledgement changed the dispatched reply".into());
+            }
+
+            let previously_dispatched = current.get("remoteDispatchAttachments")
+                .or_else(|| current.get("attachments"));
+            let mut expected_resources = Vec::new();
+            if let Some(attachments) = previously_dispatched {
+                let attachments = attachments.as_array().ok_or_else(|| {
+                    "persisted Human dispatched resources are not an array".to_string()
+                })?;
+                for attachment in attachments {
+                    expected_resources.push(
+                        attachment.get("resourceId")
+                            .and_then(serde_json::Value::as_str)
+                            .ok_or_else(|| "persisted Human attachment lacks dispatched resource identity".to_string())?
+                            .to_string()
+                    );
+                }
+            }
+            let actual_resources = remote.attachments.iter()
+                .map(|attachment| attachment.resource_id.as_str()).collect::<Vec<_>>();
+            if expected_resources.iter().map(String::as_str).collect::<Vec<_>>() != actual_resources {
+                return Err("remote Human acknowledgement changed dispatched resources".into());
+            }
+        }
+        Ok(())
+    }
+
     fn materialize_remote_human_message(
         &self,
         owner: &SandAgentDb,
@@ -1967,9 +2067,13 @@ impl ProductionSessionWorkers {
         let remote_id = fabushi_identity_text(&remote.id)?;
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
-        if sender_id != local_human_id && recipient_id != local_human_id {
-            return Err("remote Human message does not belong to the local Fabushi account".into());
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
         }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let existing = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+        self.validate_remote_human_message(remote, local_human_id, &peer_human_id, &existing)?;
         let timestamp_ms = chrono::DateTime::parse_from_rfc3339(&remote.created_at)
             .map_err(|error| format!("remote Human message timestamp is invalid: {error}"))?
             .timestamp_millis() as f64;
@@ -2003,7 +2107,11 @@ impl ProductionSessionWorkers {
             .map(str::trim)
             .filter(|value| !value.is_empty())
         {
-            object.insert("clientNonce".into(), serde_json::json!(client_nonce));
+            if sender_id == local_human_id {
+                object.insert("clientNonce".into(), serde_json::json!(client_nonce));
+            } else {
+                object.insert("remoteClientRequestId".into(), serde_json::json!(client_nonce));
+            }
         }
         if let Some(read_at) = remote
             .read_at
@@ -2069,9 +2177,6 @@ impl ProductionSessionWorkers {
             "reactions".into(),
             serde_json::Value::Array(projected_reactions),
         );
-        let existing = owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?;
         if let Some(current) = existing.iter().find(|candidate| {
             candidate.get("id").and_then(serde_json::Value::as_str)
                 == entry.get("id").and_then(serde_json::Value::as_str)
@@ -2098,7 +2203,8 @@ impl ProductionSessionWorkers {
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {
-                candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+                candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                    && candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
             }) {
                 if let Some(context) = current.get("forwardContext").cloned() {
                     entry
@@ -2199,6 +2305,7 @@ impl ProductionSessionWorkers {
         let mut before: Option<String> = None;
         let mut unseen_pages: Vec<Vec<FabushiRemoteHumanMessage>> = Vec::new();
         let mut pages_read = 0usize;
+        let mut first_rejection: Option<String> = None;
         loop {
             let page = client.list_direct_messages(
                 &peer_human_id,
@@ -2210,8 +2317,20 @@ impl ProductionSessionWorkers {
             }
             pages_read += 1;
 
+            // An invalid participant or conflicting acknowledgement is not an
+            // overlap marker: keep walking history and admit independent rows.
+            let snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+            let mut admitted = Vec::new();
+            for remote in &page {
+                match self.validate_remote_human_message(
+                    remote, &local_human_id, &peer_human_id, &snapshot,
+                ) {
+                    Ok(()) => admitted.push(remote.clone()),
+                    Err(error) => { first_rejection.get_or_insert(error); }
+                }
+            }
             let mut overlap_at = None;
-            for (index, remote) in page.iter().enumerate().rev() {
+            for (index, remote) in admitted.iter().enumerate().rev() {
                 let remote_id = fabushi_identity_text(&remote.id)?;
                 if known_remote_ids.contains(&remote_id) {
                     overlap_at = Some(index);
@@ -2219,8 +2338,8 @@ impl ProductionSessionWorkers {
                 }
             }
             let unseen_start = overlap_at.map_or(0, |index| index + 1);
-            if unseen_start < page.len() {
-                unseen_pages.push(page[unseen_start..].to_vec());
+            if unseen_start < admitted.len() {
+                unseen_pages.push(admitted[unseen_start..].to_vec());
             }
 
             if overlap_at.is_some() || page.len() < PAGE_LIMIT {
@@ -2255,8 +2374,20 @@ impl ProductionSessionWorkers {
         // Session/Transcript replay remains deterministic after restart.
         for page in unseen_pages.into_iter().rev() {
             for remote in page {
+                let current = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+                if let Err(error) = self.validate_remote_human_message(
+                    &remote, &local_human_id, &peer_human_id, &current,
+                ) {
+                    first_rejection.get_or_insert(error);
+                    continue;
+                }
+                // Resource/storage failure is retryable and MUST stop ordered
+                // replay: persisting a later overlap would hide the gap.
                 self.materialize_remote_human_message(&owner, &remote)?;
             }
+        }
+        if let Some(error) = first_rejection {
+            return Err(error);
         }
         owner.get_transcript_entries().map_err(|error| error.to_string())
     }
@@ -2812,7 +2943,8 @@ impl ProductionSessionWorkers {
         });
         let mut existing_pending: Option<serde_json::Value> = None;
         if let Some(entry) = existing.iter().find(|entry| {
-            entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+            entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id)
+                && entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
         }) {
             let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
             let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
@@ -3171,9 +3303,20 @@ impl ProductionSessionWorkers {
             }
         }
         let mut next = current;
+        let local_human_id = self.local_human_id()?;
+        let is_peer_message = next.get("authorId")
+            .and_then(serde_json::Value::as_str) != Some(local_human_id);
         let object = next
             .as_object_mut()
             .ok_or_else(|| "Human reaction target is not a message object".to_string())?;
+        // Legacy incoming rows may contain a peer-authored clientNonce. A
+        // reaction publishes this same row, so scrub only unsafe metadata
+        // before durable update and event emission, without altering content.
+        if is_peer_message {
+            if let Some(legacy_nonce) = object.remove("clientNonce") {
+                object.entry("remoteClientRequestId".to_string()).or_insert(legacy_nonce);
+            }
+        }
         object.insert(
             "remoteReactions".into(),
             serde_json::to_value(&remote_reactions).map_err(|error| {

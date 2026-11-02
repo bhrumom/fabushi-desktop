@@ -1,5 +1,16 @@
 name: Native service contracts
 on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - 'source/host/src/extensions/session/**'
+      - 'source/host/tests/session_gateway_contract.rs'
+      - 'source/host/Cargo.lock'
+      - 'source/host/app/Cargo.lock'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
+      - 'source/mahayana/mahayana-rs/Cargo.lock'
+      - '.github/workflows/native-service-contracts.yml'
   pull_request:
     paths:
       - 'source/host/src/extensions/auth/**'
@@ -26,10 +37,16 @@ on:
       - 'source/host/tests/native_object_transfer_contract.rs'
       - '.github/workflows/native-service-contracts.yml'
   workflow_dispatch:
+    inputs:
+      message_batch:
+        description: Run the focused FBCP native message reconciliation batch
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   native-auth-and-journal:
+    if: github.event_name != 'push' && !inputs.message_batch
     strategy:
       fail-fast: false
       matrix:
@@ -75,3 +92,78 @@ jobs:
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
           echo 'Native credential and loopback HTTP transport evidence only; no deployed-cloud, full lifecycle or packaged-platform acceptance.' >> "$GITHUB_STEP_SUMMARY"
+  native-message-reconciliation:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source and batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/native-message
+          git rev-parse HEAD > artifacts/native-message/target-sha.txt
+          printf '%s\n' 'FBCP-NMR-001; source-informed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; loopback integration only' > artifacts/native-message/scope.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Human ingress, settlement and restart contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+      - name: Preserve exact batch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-message-reconciliation-${{ github.sha }}
+          path: artifacts/native-message
+          if-no-files-found: error
+  native-message-shipping-compile:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact shipping source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/native-message-shipping
+          git rev-parse HEAD > artifacts/native-message-shipping/target-sha.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            source/host/app -> target
+            source/mahayana/mahayana-rs -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Compile actual desktop AppHost entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml 2>&1 | tee artifacts/native-message-shipping/app-host-check.log
+      - name: Preserve shipping compile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-message-shipping-compile-${{ github.sha }}
+          path: artifacts/native-message-shipping
+          if-no-files-found: error
+
