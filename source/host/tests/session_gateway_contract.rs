@@ -3330,3 +3330,49 @@ fn shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_co
     drop(resumed);
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn shipping_human_reaction_intent_survives_failed_http_and_replays_once_after_restart() {
+    let root = temp_root("human-reaction-intent-restart");
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"unavailable"})),
+        HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":777,
+            "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
+        })),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2","Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    let entry_id = "human-server-message:777";
+    let original = json!({
+        "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+        "authorId":"2","content":"persist target","timestampMs":1000.0,
+        "delivery":"sent","remoteMessageId":"777","remoteCreatedAt":"2026-10-05T01:00:17Z",
+        "remoteReactions":[],"reactions":[]
+    });
+    assert!(owner.append_transcript_entry(&original).expect("seed"));
+    assert!(runtime.toggle_human_message_reaction(&id,entry_id,"👍").is_err());
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("intent"),Some(json!({
+        "entryId":entry_id,"remoteMessageId":"777","emoji":"👍","active":true,"localHumanId":"1"
+    })));
+    assert_eq!(owner.get_transcript_entries().expect("unchanged"),vec![original]);
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let restarted = human_message_fixture_runtime(&root, &url);
+    let settled = restarted.toggle_human_message_reaction(&id,entry_id,"👍")
+        .expect("retry staged desired reaction");
+    assert_eq!(settled["remoteReactions"],json!([{"emoji":"👍","count":1,"reactedByMe":true}]));
+    let owner = restarted.open_human_conversation_db_owner(&id).expect("reopen");
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("ack"),Some(serde_json::Value::Null));
+    assert_eq!(owner.get_transcript_entries().expect("recovered").len(),1);
+    let requests = server.join().expect("fixture");
+    assert_eq!(requests.len(),2);
+    for request in requests {
+        assert!(request.starts_with("POST /api/social/messages/777/reactions "));
+        assert_eq!(fixture_request_json(&request),json!({"emoji":"👍","active":true}));
+    }
+    restarted.shutdown(); drop(owner); drop(restarted);
+    let _ = fs::remove_dir_all(root);
+}
