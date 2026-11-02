@@ -22,6 +22,7 @@ use crate::extensions::box_store_sync::box_object_store::{
     resolve_box_object_store_provider, AgentStoreObjectStoreProvider, BoxObjectStore,
     BoxObjectStoreProvider, BoxObjectStoreProviderDependencies,
 };
+use crate::extensions::box_store_sync::box_store_download::InstallationKeyMaterial;
 use crate::extensions::box_store_sync::box_store_hydration::{
     remove_hydration_handoff_marker, BOX_STORE_HYDRATION_HANDOFF_FILE_NAME,
     BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH,
@@ -267,21 +268,24 @@ impl ProductionBoxStoreSyncService {
                 | ProductionBoxStoreSyncMode::AgentStore
                 | ProductionBoxStoreSyncMode::SandBoxStoreV2
         );
+        let sand_root = get_sand_root_dir();
         let transfer_log = Arc::clone(&deps.log);
         let transfer = BoxStoreTransfer::new(
             DEFAULT_MAX_OBJECT_BYTES,
             DEFAULT_SNAPSHOT_OUT_CONCURRENCY,
             LARGE_OBJECT_THRESHOLD_BYTES,
-            Some(get_sand_root_dir().join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME)),
+            Some(sand_root.join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME)),
             Arc::new(move |message| {
                 transfer_log(&format!("[box-store-sync] {message}"));
             }),
-        );
+        )
+        .with_installation_data_root(sand_root.clone());
         Self {
             inner: Arc::new(ProductionBoxStoreSyncInner {
                 deps,
                 env,
                 mode,
+                sand_root,
                 transfer,
                 started: AtomicBool::new(false),
                 stopped: AtomicBool::new(false),
@@ -404,7 +408,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
         let handle = thread::Builder::new()
             .name("box-store-sync-poller".into())
             .spawn(move || {
-                let roots = snapshot_transfer_roots(&poll_inner.env);
+                let roots = snapshot_transfer_roots(&poll_inner.env, &poll_inner.sand_root);
                 let removed = poll_inner.transfer.sweep_leaked_temps(&roots);
                 if removed > 0 {
                     poll_inner.log(&format!("swept {removed} leaked box-store temp file(s)"));
@@ -414,7 +418,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                         break;
                     }
                     let idle = (poll_inner.deps.is_idle)();
-                    let hydration_handoff_pending = get_sand_root_dir()
+                    let hydration_handoff_pending = poll_inner.sand_root
                         .join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME)
                         .exists();
                     let plan = plan_periodic_cycle(
@@ -574,6 +578,7 @@ struct ProductionBoxStoreSyncInner {
     deps: BoxStoreSyncExtensionDeps,
     env: BTreeMap<String, String>,
     mode: ProductionBoxStoreSyncMode,
+    sand_root: PathBuf,
     transfer: BoxStoreTransfer,
     started: AtomicBool,
     stopped: AtomicBool,
@@ -817,7 +822,7 @@ impl ProductionBoxStoreSyncInner {
         if slot.is_some() {
             return Ok(true);
         }
-        let lock_path = get_sand_root_dir().join(BOX_STORE_WRITER_LOCK_FILE_NAME);
+        let lock_path = self.sand_root.join(BOX_STORE_WRITER_LOCK_FILE_NAME);
         let window_id = format!("mahayana-host-{}", std::process::id());
         let lock = match BoxStoreWriterLock::try_acquire(&lock_path, &window_id) {
             Ok(Some(lock)) => lock,
@@ -918,7 +923,7 @@ impl ProductionBoxStoreSyncInner {
             .env
             .get(SAND_MANIFEST_V2_ENV)
             .is_some_and(|value| value == "1");
-        let sand_root = get_sand_root_dir();
+        let sand_root = &self.sand_root;
         let hydration_marker_path = sand_root.join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
         let loaded = load_manifest_for_write(
             store.as_ref(),
@@ -945,33 +950,12 @@ impl ProductionBoxStoreSyncInner {
                 &self.deps.report_chrome_session_stage,
             )?);
         } else {
-            let sand_data_excludes = sand_data_excludes();
-            let sand_data_exclude_refs = sand_data_excludes
-                .iter()
-                .map(String::as_str)
-                .collect::<Vec<_>>();
-            categories.push(self.transfer.sync_tree_category(
+            categories.extend(sync_sand_data_and_workspace_categories(
+                &self.transfer,
                 store.as_ref(),
                 &mut entries,
-                &sand_root,
-                SAND_DATA_REL_PREFIX,
-                "sand-data",
-                &sand_data_exclude_refs,
-                None,
-                true,
-                manifest_v2,
-            )?);
-            let workspace_ignore =
-                load_workspace_ignore(WORKSPACE_ROOT, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS);
-            categories.push(self.transfer.sync_tree_category(
-                store.as_ref(),
-                &mut entries,
+                sand_root,
                 Path::new(WORKSPACE_ROOT),
-                WORKSPACE_REL_PREFIX,
-                "workspace",
-                &[],
-                Some(&workspace_ignore),
-                false,
                 manifest_v2,
             )?);
             categories.push(self.transfer.sync_tree_category(
@@ -1150,7 +1134,7 @@ impl ProductionBoxStoreSyncInner {
                 self.env.get("SAND_BOX_STORE_PACKS").map(String::as_str),
             )
         {
-            let pack_summary = sync_local_packs(store.as_ref(), &entries, || {
+            let pack_summary = sync_local_packs(&self.transfer, sand_root, store.as_ref(), &entries, || {
                 self.flush_waiters.load(Ordering::Acquire) > 0
             });
             if pack_summary.failures > 0 {
@@ -1310,7 +1294,7 @@ impl ProductionBoxStoreSyncInner {
     ) -> Result<(), String> {
         prepare_canonical_manifest_reset(store)?;
         let baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
-        let marker_path = get_sand_root_dir().join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
+        let marker_path = self.sand_root.join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
         remove_hydration_handoff_marker(&marker_path).map_err(|error| error.to_string())?;
         let manifest_v2 = self
             .env
@@ -1358,7 +1342,7 @@ impl ProductionBoxStoreSyncInner {
         }
         let store_id = self.resolve_store_id()?;
         let store = self.object_store_for_source_id(&store_id)?;
-        let marker_path = get_sand_root_dir().join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
+        let marker_path = self.sand_root.join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
         let loaded = load_manifest_for_write(
             store.as_ref(),
             self.env
@@ -1486,7 +1470,7 @@ impl ProductionBoxStoreSyncInner {
             .env
             .get(SAND_MANIFEST_V2_ENV)
             .is_some_and(|value| value == "1");
-        let sand_root = get_sand_root_dir();
+        let sand_root = &self.sand_root;
         let hydration_marker_path = sand_root.join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
         let loaded = match load_manifest_for_write(
             store.as_ref(),
@@ -1796,9 +1780,46 @@ fn sand_data_excludes() -> Vec<String> {
     excludes
 }
 
-fn snapshot_transfer_roots(env: &BTreeMap<String, String>) -> Vec<PathBuf> {
+fn sync_sand_data_and_workspace_categories(
+    transfer: &BoxStoreTransfer,
+    store: &dyn BoxObjectStore,
+    manifest: &mut BoxManifestMap,
+    sand_root: &Path,
+    workspace_root: &Path,
+    manifest_v2: bool,
+) -> Result<Vec<CategoryTransferSummary>, String> {
+    let excludes = sand_data_excludes();
+    let exclude_refs = excludes.iter().map(String::as_str).collect::<Vec<_>>();
+    let sand_data = transfer.sync_tree_category(
+        store,
+        manifest,
+        sand_root,
+        SAND_DATA_REL_PREFIX,
+        "sand-data",
+        &exclude_refs,
+        None,
+        true,
+        manifest_v2,
+    )?;
+    let workspace_ignore =
+        load_workspace_ignore(workspace_root, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS);
+    let workspace = transfer.sync_tree_category(
+        store,
+        manifest,
+        workspace_root,
+        WORKSPACE_REL_PREFIX,
+        "workspace",
+        &[],
+        Some(&workspace_ignore),
+        false,
+        manifest_v2,
+    )?;
+    Ok(vec![sand_data, workspace])
+}
+
+fn snapshot_transfer_roots(env: &BTreeMap<String, String>, sand_root: &Path) -> Vec<PathBuf> {
     let mut roots = vec![
-        get_sand_root_dir(),
+        sand_root.to_path_buf(),
         PathBuf::from(WORKSPACE_ROOT),
         PathBuf::from(CLI_CONFIG_ROOT),
         PathBuf::from("/home/box/chrome-profile"),
@@ -1971,9 +1992,9 @@ impl StoreDbSnapshotRuntimePort for ProductionStoreDbSnapshotRuntime {
     }
 }
 
-fn resolve_pack_source_path(rel_path: &str) -> Option<PathBuf> {
+fn resolve_pack_source_path(rel_path: &str, sand_root: &Path) -> Option<PathBuf> {
     for (prefix, root) in [
-        (SAND_DATA_REL_PREFIX, get_sand_root_dir()),
+        (SAND_DATA_REL_PREFIX, sand_root.to_path_buf()),
         (WORKSPACE_REL_PREFIX, PathBuf::from(WORKSPACE_ROOT)),
         (CLI_CONFIG_REL_PREFIX, PathBuf::from(CLI_CONFIG_ROOT)),
     ] {
@@ -2010,6 +2031,8 @@ fn sweep_pack_temp_dir(dir: &Path) {
 }
 
 fn sync_local_packs<F>(
+    transfer: &BoxStoreTransfer,
+    sand_root: &Path,
     store: &dyn BoxObjectStore,
     manifest: &BoxManifestMap,
     should_abort: F,
@@ -2022,11 +2045,19 @@ where
         ..CategoryTransferSummary::default()
     };
     let result = (|| -> Result<(), String> {
+        let installation_keys = transfer.installation_key_material()?;
         let mut live = HashMap::<String, u64>::new();
         let mut eligible = HashMap::<String, u64>::new();
         let mut local_by_sha = HashMap::<String, PathBuf>::new();
 
         for (rel_path, entry) in manifest {
+            let abs_path = resolve_pack_source_path(rel_path, sand_root);
+            if InstallationKeyMaterial::contains_portable_path(rel_path)
+                || abs_path.as_ref().map(|path| installation_keys.excludes_path(path))
+                    .transpose()?.unwrap_or(false)
+            {
+                continue;
+            }
             let (sha, size) = match entry {
                 BoxStoreManifestEntry::LegacyFile { sha, size }
                 | BoxStoreManifestEntry::File { sha, size, .. } => (sha, *size),
@@ -2036,7 +2067,7 @@ where
             if size >= PACK_MEMBER_MAX_BYTES || eligible.contains_key(sha) {
                 continue;
             }
-            let Some(abs_path) = resolve_pack_source_path(rel_path) else {
+            let Some(abs_path) = abs_path else {
                 continue;
             };
             let Ok(metadata) = fs::symlink_metadata(&abs_path) else {
@@ -2806,6 +2837,132 @@ mod tests {
         ));
         fs::create_dir_all(&path).expect("create temp root");
         path
+    }
+
+    #[test]
+    fn production_snapshot_categories_exclude_actual_workspace_installation_key() {
+        use crate::durable_file_policy::HOST_CONFIG_REVISION_KEY_FILE_NAME;
+        use crate::host_paths::{SAND_DATA_ROOT_ENV, get_sand_root_dir_with};
+
+        let root = temp_root("actual-installation-categories");
+        let workspace = root.join("workspace");
+        let actual = workspace.join("private-state");
+        let environment = BTreeMap::from([(
+            SAND_DATA_ROOT_ENV.to_string(), actual.to_string_lossy().into_owned(),
+        )]);
+        let sand_root = get_sand_root_dir_with(&root.join("home"), &[], &environment, &root);
+        assert_eq!(sand_root, actual, "existing path owner did not retain the explicit override");
+        fs::create_dir_all(&sand_root).expect("create alternate installation");
+        fs::create_dir_all(workspace.join("unrelated")).expect("create ordinary workspace data");
+        fs::write(sand_root.join(HOST_CONFIG_REVISION_KEY_FILE_NAME), [0x31_u8; 32])
+            .expect("write synthetic key");
+        let stage_name = format!("{HOST_CONFIG_REVISION_KEY_FILE_NAME}.pending.tmp");
+        fs::write(sand_root.join(&stage_name), [0x54_u8; 32]).expect("write synthetic staged key");
+        fs::write(sand_root.join("settings.json"), b"{}").expect("write ordinary settings");
+        for name in [HOST_CONFIG_REVISION_KEY_FILE_NAME, stage_name.as_str()] {
+            fs::write(workspace.join("unrelated").join(name), b"ordinary neighboring file")
+                .expect("write unrelated same-basename control");
+        }
+        let key_sha = format!("{:x}", Sha256::digest([0x31_u8; 32]));
+        let staged_sha = format!("{:x}", Sha256::digest([0x54_u8; 32]));
+        let mut manifest = BoxManifestMap::new();
+        for prefix in [SAND_DATA_REL_PREFIX, "workspace/private-state"] {
+            for name in [HOST_CONFIG_REVISION_KEY_FILE_NAME, stage_name.as_str()] {
+                manifest.insert(format!("{prefix}/{name}"), BoxStoreManifestEntry::File {
+                    sha: key_sha.clone(), size: 32, mode: 0o600,
+                });
+            }
+        }
+        let transfer = BoxStoreTransfer::new(
+            DEFAULT_MAX_OBJECT_BYTES, 1, LARGE_OBJECT_THRESHOLD_BYTES, None, Arc::new(|_| {}),
+        ).with_installation_data_root(sand_root.clone());
+        let store = LocalFsObjectStore::new(root.join("store"));
+        let categories = sync_sand_data_and_workspace_categories(
+            &transfer, &store, &mut manifest, &sand_root, &workspace, true,
+        ).expect("run actual production category composition");
+        assert_eq!(categories.iter().map(|value| value.name.as_str()).collect::<Vec<_>>(), vec!["sand-data", "workspace"]);
+        assert!(categories.iter().all(|value| value.failures == 0 && value.metadata_failures == 0));
+        assert_eq!(manifest.len(), 4, "production categories retained unexpected key references");
+        assert!(manifest.contains_key("home/box/sand-data/settings.json"));
+        assert!(manifest.contains_key("workspace/private-state/settings.json"));
+        for name in [HOST_CONFIG_REVISION_KEY_FILE_NAME, stage_name.as_str()] {
+            assert!(manifest.contains_key(&format!("workspace/unrelated/{name}")),
+                "production categories suppressed an unrelated matching basename");
+            for prefix in [SAND_DATA_REL_PREFIX, "workspace/private-state"] {
+                assert!(!manifest.contains_key(&format!("{prefix}/{name}")),
+                    "production categories retained installation material");
+            }
+        }
+        for sha in [key_sha, staged_sha] {
+            assert!(store.get(&format!("blobs/{sha}")).expect("inspect absent key object").is_none(),
+                "production category uploaded installation material");
+        }
+        fs::remove_dir_all(root).expect("cleanup owned category fixture");
+    }
+
+    #[test]
+    fn pack_source_selection_excludes_installation_key_material() {
+        use crate::durable_file_policy::HOST_CONFIG_REVISION_KEY_FILE_NAME;
+
+        let root = temp_root("actual-installation-packs");
+        let sand_root = root.join("workspace/private-state");
+        fs::create_dir_all(&sand_root).expect("create explicit pack installation");
+        let mut manifest = BoxManifestMap::new();
+        let mut protected_shas = Vec::new();
+        for (index, (name, payload)) in [
+            (HOST_CONFIG_REVISION_KEY_FILE_NAME.to_string(), vec![0x31_u8; 32]),
+            (format!("{HOST_CONFIG_REVISION_KEY_FILE_NAME}.pending.tmp"), vec![0x54_u8; 32]),
+        ].into_iter().enumerate() {
+            fs::write(sand_root.join(&name), &payload).expect("write protected pack fixture");
+            let sha = format!("{:x}", Sha256::digest(&payload));
+            protected_shas.push(sha.clone());
+            // These ordinary names cannot be rejected by portable-name policy;
+            // the real pack consumer must use the captured installation identity.
+            let alias = format!("ordinary-looking-alias-{index}.bin");
+            fs::hard_link(sand_root.join(&name), sand_root.join(&alias))
+                .expect("create native alias to protected pack source");
+            manifest.insert(format!("{SAND_DATA_REL_PREFIX}/{alias}"), BoxStoreManifestEntry::File {
+                sha: sha.clone(), size: payload.len() as u64, mode: 0o600,
+            });
+            manifest.insert(format!("{SAND_DATA_REL_PREFIX}/{name}"), BoxStoreManifestEntry::File {
+                sha, size: payload.len() as u64, mode: 0o600,
+            });
+        }
+        fs::create_dir(sand_root.join("unrelated")).expect("create ordinary pack namespace");
+        let mut ordinary_shas = Vec::new();
+        for index in 0..PACK_BUILD_MIN_MEMBERS {
+            let name = if index == 0 {
+                format!("unrelated/{HOST_CONFIG_REVISION_KEY_FILE_NAME}")
+            } else {
+                format!("ordinary-{index}.txt")
+            };
+            let payload = format!("ordinary pack member {index}").into_bytes();
+            fs::write(sand_root.join(&name), &payload).expect("write ordinary pack member");
+            let sha = format!("{:x}", Sha256::digest(&payload));
+            ordinary_shas.push(sha.clone());
+            manifest.insert(format!("{SAND_DATA_REL_PREFIX}/{name}"), BoxStoreManifestEntry::File {
+                sha,
+                size: payload.len() as u64,
+                mode: 0o600,
+            });
+        }
+        let transfer = BoxStoreTransfer::new(
+            DEFAULT_MAX_OBJECT_BYTES, 1, LARGE_OBJECT_THRESHOLD_BYTES, None, Arc::new(|_| {}),
+        ).with_installation_data_root(sand_root.clone());
+        let store = LocalFsObjectStore::new(root.join("store"));
+        let summary = sync_local_packs(&transfer, &sand_root, &store, &manifest, || false);
+        assert_eq!(summary.failures, 0, "ordinary pack maintenance failed");
+        assert!(summary.files_uploaded > 0, "pack control never uploaded an ordinary pack");
+        let raw = store.get(BOX_STORE_PACK_INDEX_KEY).expect("read pack index").expect("ordinary pack index");
+        let index = parse_pack_index(std::str::from_utf8(&raw).expect("pack index UTF-8"))
+            .expect("parse produced pack index");
+        let members = index.packs.iter().flat_map(|pack| &pack.members).collect::<Vec<_>>();
+        assert_eq!(members.len(), PACK_BUILD_MIN_MEMBERS);
+        assert!(members.iter().all(|member| !protected_shas.contains(&member.sha)),
+            "pack consumer uploaded protected installation material");
+        assert!(ordinary_shas.iter().all(|sha| members.iter().any(|member| &member.sha == sha)),
+            "pack consumer omitted an ordinary member or an unrelated matching basename");
+        fs::remove_dir_all(root).expect("cleanup owned pack fixture");
     }
 
     #[test]

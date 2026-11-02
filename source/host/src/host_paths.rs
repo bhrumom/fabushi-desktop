@@ -4,6 +4,8 @@ use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
+use crate::durable_file_policy::HOST_CONFIG_REVISION_KEY_FILE_NAME;
+
 pub const SAND_DATA_ROOT_ENV: &str = "SAND_DATA_ROOT";
 pub const SAND_PRODUCTION_DATA_DIRNAME: &str = ".grokbot";
 pub const SAND_USER_DATA_DIR_ENV: &str = "SAND_USER_DATA_DIR";
@@ -210,6 +212,10 @@ pub fn get_host_lock_path() -> PathBuf {
 
 pub fn get_host_secrets_path() -> PathBuf {
     get_sand_root_dir().join("host-secrets.json")
+}
+
+pub fn get_host_config_revision_key_path() -> PathBuf {
+    get_sand_root_dir().join(HOST_CONFIG_REVISION_KEY_FILE_NAME)
 }
 
 pub fn get_host_node_identity_path() -> PathBuf {

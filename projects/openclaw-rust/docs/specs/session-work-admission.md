@@ -1052,10 +1052,13 @@ Extend this existing owner, retaining HTR-01–04 and the shipping caller.
   Every unsuccessful admission path and ordinary destruction explicitly unlocks
   an acquired guard before closing it; a contended, unacquired file must not
   release someone else's lock. Internal RAII is part of this existing owner.
-- HPG-05: keep acquisition at the existing shipping startup boundary before
-  managed daemon/extensions, and release after their existing shutdown. Earlier
-  layout and platform-lane construction are outside this boundary. Do not
-  reinterpret this handle as a durable Session claim or tool-result settlement.
+- HPG-05: use the same owner/path before normal app layout and mutation-capable
+  Unified/Platform construction, as required by `host-startup-admission.md`
+  HSA-v1. Keep both auxiliary roles ahead of normal admission and release after
+  the existing shutdown. HSA extends the original pre-daemon/extension boundary;
+  different profile roots sharing app data and complete worker retirement remain
+  separate. Do not reinterpret this handle as a durable Session claim or
+  tool-result settlement.
 - HPG-06: Actions must run the complete existing `bootstrap_contract` plus
   shared compilation/recovery. Add causal real-file controls for an incomplete
   PID under a held guard, dead/foreign/same-PID busy metadata, known-Host
