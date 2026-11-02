@@ -1893,3 +1893,26 @@ still queued at that observation. These results cannot qualify a later H.
 The sole round10 evidence file keeps exact SHAs, counts, job logs and artifact
 identities. Fixed U, source/acceptance fields and every full migration gate remain
 unchanged.
+
+### NMR-FFI-LIVE-01 — Retained Rust runtime production transport check
+
+The non-live retained C-wrapper job above deliberately leaves the existing
+`live_runtime_bootstrap_keeps_an_encrypted_transport_session` case ignored.
+Run that unchanged case separately in GitHub Actions at its containing exact
+H, using Rust 1.97.1 and the workspace's locked dependency graph. The scoped
+workflow checks out `github.sha`, records the source/test/lock identities and
+complete command/log, and executes only that named case with
+`--ignored --exact --nocapture --test-threads=1`. Require its actual named
+success and exactly 1 passed, 0 failed, 0 ignored and 15 filtered out; preserve
+failure output and classify any failure before a focused repair or retry.
+
+This invokes the existing Rust client owner: create → bootstrap production DC2
+with a fresh MTProto auth key → encrypted ping → connected status → close.
+It needs no account, API credentials, user data or device; runner network,
+clock and randomness remain real inputs. It does not invoke the exported C
+wrappers, restore a persisted transport, log in, send messages, qualify an
+installed consumer, or restore the retired Telegram production registration.
+Keep the ordinary 15-pass/1-ignored C compatibility gate, native shipping and
+all current message gates intact. Store exact run/job/artifact identities;
+retain all final service, package, migration and independent-ACCEPT gaps.
+The one-purpose workflow may be removed after its immutable evidence is saved.
