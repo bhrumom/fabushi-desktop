@@ -4,6 +4,7 @@ on:
     branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
       - 'source/host/src/extensions/session/**'
+      - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
       - 'source/host/tests/session_gateway_contract.rs'
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
@@ -226,6 +227,14 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Transcript compaction and recovery registration contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib conversation_state_binary::tests -- --nocapture 2>&1 | tee artifacts/native-message/transcript-recovery.log
+          grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/transcript-recovery.log
+          grep -Fx 'test transcript_mirror::conversation_state_binary::tests::recovery_fields_decode_token_details_and_turn_timing ... ok' artifacts/native-message/transcript-recovery.log
+          grep -Fx 'test transcript_mirror::conversation_state_binary::tests::stale_token_details_can_be_removed_without_reencoding_other_fields ... ok' artifacts/native-message/transcript-recovery.log
       - name: Human ingress, settlement and restart contracts
         shell: bash
         run: |
