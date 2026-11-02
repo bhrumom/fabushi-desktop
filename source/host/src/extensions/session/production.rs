@@ -33,6 +33,7 @@ use super::forward_batch_journal::{
     snapshot_forward_attachments, store_forward_batch,
 };
 use super::agent_db_transcript_pages::{
+    HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
 use super::call_session::{CallSession, CallSessionStore, CallSignal, transition_target};
@@ -1877,6 +1878,29 @@ impl ProductionSessionWorkers {
         format!("conversation:{conversation_id}")
     }
 
+    // Every Human row writer holds the existing conversation mutation lane.
+    // Reconcile activity after the durable row write, and also on replay so a
+    // crash between the two commits cannot leave the roster permanently stale.
+    fn update_human_activity(owner: &SandAgentDb, timestamp_ms: f64) -> Result<(), String> {
+        if owner.is_closed() {
+            return Err("Human conversation owner is closed".into());
+        }
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
+        let latest = owner.get_metadata("lastActivityAt")
+            .map_err(|error| error.to_string())?
+            .as_ref().and_then(serde_json::Value::as_f64)
+            .filter(|value| value.is_finite())
+            .unwrap_or(timestamp_ms).max(timestamp_ms);
+        if !owner.set_metadata("lastActivityAt", serde_json::json!(latest))
+            .map_err(|error| error.to_string())?
+        {
+            return Err("Human message activity was not durably updated".into());
+        }
+        Ok(())
+    }
+
     fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
         match (&self.native_messaging, self.native_messaging_required) {
             (Some(client), _) => Ok(Some(client.as_ref())),
@@ -2259,9 +2283,10 @@ impl ProductionSessionWorkers {
                 }
             }
             if current == &entry {
+                Self::update_human_activity(owner, timestamp_ms)?;
                 return Ok(current.clone());
             }
-            return owner
+            let refreshed = owner
                 .update_transcript_entry(
                     entry
                         .get("id")
@@ -2270,7 +2295,9 @@ impl ProductionSessionWorkers {
                     &entry,
                 )
                 .map_err(|error| error.to_string())?
-                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
+                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string())?;
+            Self::update_human_activity(owner, timestamp_ms)?;
+            return Ok(refreshed);
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {
@@ -2296,10 +2323,12 @@ impl ProductionSessionWorkers {
                 ) {
                     return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
                 }
-                return owner
+                let settled = owner
                     .settle_transcript_entry_identity(current_id, &entry)
                     .map_err(|error| error.to_string())?
-                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string());
+                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string())?;
+                Self::update_human_activity(owner, timestamp_ms)?;
+                return Ok(settled);
             }
         }
         if !owner
@@ -2312,11 +2341,12 @@ impl ProductionSessionWorkers {
                 .into_iter()
                 .find(|candidate| candidate.get("id") == entry.get("id"))
                 .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
+            let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                .unwrap_or(timestamp_ms);
+            Self::update_human_activity(owner, timestamp)?;
             return Ok(replay);
         }
-        let _ = owner
-            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?;
+        Self::update_human_activity(owner, timestamp_ms)?;
         Ok(entry)
     }
 
@@ -2398,7 +2428,7 @@ impl ProductionSessionWorkers {
             return Err("local Human identity is not a conversation participant".into());
         }
         let Some(client) = self.shipping_native_messaging()? else {
-            return owner.get_transcript_entries().map_err(|error| error.to_string());
+            return owner.get_human_transcript_entries().map_err(|error| error.to_string());
         };
         let local_human_id = self.local_human_id()?.to_string();
         if client.identity()?.user_id != local_human_id {
@@ -2518,7 +2548,7 @@ impl ProductionSessionWorkers {
         }
         if let Some(error) = rejected { return Err(error); }
         // Full 32-page windows persist a nonterminal cursor for the next sync/restart.
-        owner.get_transcript_entries().map_err(|error| error.to_string())
+        owner.get_human_transcript_entries().map_err(|error| error.to_string())
     }
 
     pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
@@ -3296,6 +3326,9 @@ impl ProductionSessionWorkers {
                 .unwrap_or_default()
                 .as_millis() as f64
         });
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
         let mut existing_pending: Option<serde_json::Value> = None;
         if let Some(entry) = existing.iter().find(|entry| {
             entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id)
@@ -3332,6 +3365,9 @@ impl ProductionSessionWorkers {
             if entry.get("remoteMessageId").is_some()
                 || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
             {
+                let timestamp = entry.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(timestamp_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(entry.clone());
             }
             if !matches!(
@@ -3505,7 +3541,13 @@ impl ProductionSessionWorkers {
                 });
                 let remote = match response {
                     Ok(remote) => remote,
-                    Err(FabushiHumanSendError::Transport(error)) => return settled.cloned().ok_or(error),
+                    Err(FabushiHumanSendError::Transport(error)) => {
+                        let settled = settled.ok_or(error)?;
+                        let timestamp = settled.get("timestampMs").and_then(serde_json::Value::as_f64)
+                            .unwrap_or(timestamp_ms);
+                        Self::update_human_activity(&owner, timestamp)?;
+                        return Ok(settled.clone());
+                    }
                     Err(FabushiHumanSendError::Rejected(error)) => return Err(error),
                 };
                 let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
@@ -3534,6 +3576,9 @@ impl ProductionSessionWorkers {
                     // nonce, resources, reply or malformed reaction summary.
                     // A valid late acknowledgement has no freshness authority
                     // over reactions/receipts already persisted by sync or POST.
+                    let timestamp = settled.get("timestampMs").and_then(serde_json::Value::as_f64)
+                        .unwrap_or(timestamp_ms);
+                    Self::update_human_activity(&owner, timestamp)?;
                     return Ok(settled.clone());
                 }
                 self.materialize_remote_human_message(&owner, &remote)
@@ -3605,16 +3650,12 @@ impl ProductionSessionWorkers {
                 .find(|candidate| candidate.get("id") == entry.get("id"))
                 .ok_or_else(|| "native Human message was not durably appended".to_string())?;
             if replay == entry {
+                Self::update_human_activity(&owner, timestamp_ms)?;
                 return Ok(replay);
             }
             return Err("sendHumanMessage clientNonce already identifies different content".into());
         }
-        if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?
-        {
-            return Err("native Human message activity metadata was not durably updated".into());
-        }
+        Self::update_human_activity(&owner, timestamp_ms)?;
         Ok(entry)
     }
 
@@ -3641,6 +3682,11 @@ impl ProductionSessionWorkers {
                     .into(),
             );
         }
+        if !completed_at_ms.is_finite() {
+            return Err("Human handoff Agent activity timestamp must be finite".into());
+        }
+        let serial = self.human_message_lock(conversation_id)?;
+        let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         let is_participant = metadata
@@ -3665,6 +3711,9 @@ impl ProductionSessionWorkers {
             let same_stream =
                 entry.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                let timestamp = entry.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(entry.clone());
             }
             return Err("Human handoff stream already identifies different Agent content".into());
@@ -3699,16 +3748,14 @@ impl ProductionSessionWorkers {
             let same_stream =
                 replay.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(replay);
             }
             return Err("Human handoff stream already identifies different Agent content".into());
         }
-        if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(completed_at_ms))
-            .map_err(|error| error.to_string())?
-        {
-            return Err("Human handoff Agent activity metadata was not durably updated".into());
-        }
+        Self::update_human_activity(&owner, completed_at_ms)?;
         Ok(entry)
     }
 
@@ -3886,22 +3933,22 @@ impl ProductionSessionWorkers {
             return Err("local Human identity is not a conversation participant".into());
         }
         owner
-            .get_transcript_entries()
+            .get_human_transcript_entries()
             .map_err(|error| error.to_string())
     }
 
     pub fn read_human_conversation_transcript_tail(
         &self,
         conversation_id: &str,
-        query: TranscriptWindowQuery,
-    ) -> Result<TranscriptPage, String> {
+        query: impl Into<HumanTranscriptPageQuery>,
+    ) -> Result<HumanTranscriptPage, String> {
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
         owner
-            .get_transcript_tail(query)
+            .get_human_transcript_tail(query.into())
             .map_err(|error| error.to_string())
     }
 

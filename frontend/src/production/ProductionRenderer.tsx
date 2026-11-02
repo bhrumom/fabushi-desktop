@@ -46,7 +46,7 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
-import { applyTranscriptReadUpdates, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { applyTranscriptReadUpdates, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, transcriptEntriesCorrelate, type TranscriptReadUpdateBuffer } from "./transcript-projection";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -980,7 +980,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const rebuildRevisionRef = useRef(0);
   const entriesByAgentRef = useRef(entriesByAgent);
   // Rows remain in entriesByAgent; only the exclusive history cursor is cached here.
-  const transcriptHistoryCursorsRef = useRef(new Map<string, { accountSlot: string; nextBeforeSeq?: number }>());
+  const transcriptHistoryCursorsRef = useRef(new Map<string, { accountSlot: string; nextBeforeSeq?: number; nextBeforeCursor?: string }>());
   const pendingTranscriptReadsRef = useRef(new Set<TranscriptReadUpdateBuffer>());
   const transportRef = useRef<TransportState>(transport);
   transportRef.current = transport;
@@ -1028,20 +1028,27 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [agents, groupMembersRoot]);
 
   const [transcriptPaginationController] = useState(() => createTranscriptPaginationController({
-    fetchPage: async ({ id, limit, beforeSeq }) => {
+    fetchPage: async ({ id, limit, beforeSeq, beforeCursor }) => {
       if (client == null) throw new Error("coordinator is unavailable for transcript history");
       const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === id);
       const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === id)?.name ?? UI_TEXT.title;
       const page = humanConversation == null
         ? await client.call("getAgentTranscriptTail", { id, limit, beforeSeq })
-        : await client.call("getHumanConversationTranscriptTail", { conversationId: id, limit, beforeSeq });
+        : await client.call("getHumanConversationTranscriptTail", {
+          conversationId: id, limit, beforeSeq,
+          ...(beforeCursor === undefined ? {} : { beforeCursor }),
+        });
       return projectTranscriptPageResult(page, agentName, id);
     },
     onPageApplied: ({ accountSlot, agentId }, page) => {
       const accountNow = accountRef.current;
       const liveSlot = accountNow?.kind === "logged-in" ? accountNow.authId ?? accountNow.email ?? "account" : null;
       if (accountSlot == null || liveSlot !== accountSlot) return;
-      transcriptHistoryCursorsRef.current.set(agentId, { accountSlot, nextBeforeSeq: page.nextBeforeSeq });
+      transcriptHistoryCursorsRef.current.set(agentId, {
+        accountSlot,
+        nextBeforeSeq: page.nextBeforeSeq,
+        nextBeforeCursor: page.nextBeforeCursor,
+      });
       setEntriesByAgent((current) => ({
         ...current,
         [agentId]: mergeOlderTranscriptEntries(current[agentId] ?? [], page.entries),
@@ -1136,10 +1143,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (authoritative != null) {
         setEntriesByAgent((current) => {
           const existing = current[submission.agentId] ?? [];
-          const correlatedIndex = existing.findIndex((entry) =>
-            entry.id === authoritative.id
-            || (entry.kind === "message" && entry.clientNonce === submission.nonce)
-          );
+          const correlatedIndex = existing.findIndex((entry) => transcriptEntriesCorrelate(entry, authoritative));
           return {
             ...current,
             [submission.agentId]: correlatedIndex < 0
@@ -1572,7 +1576,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot
       && entriesByAgentRef.current[activeAgentId] != null
       && transcriptPaginationController.getSnapshot().cursor.kind === "unprobed") {
-      transcriptPaginationController.installInitialPage({ entries: [], nextBeforeSeq: cachedCursor.nextBeforeSeq });
+      transcriptPaginationController.installInitialPage({
+        entries: [],
+        nextBeforeSeq: cachedCursor.nextBeforeSeq,
+        nextBeforeCursor: cachedCursor.nextBeforeCursor,
+      });
     }
   }, [activeAgentId, transcriptAccountSlot, transcriptPaginationController]);
   useEffect(() => {
@@ -2675,6 +2683,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       transcriptPaginationController.installInitialPage({
         entries: [],
         nextBeforeSeq: cachedCursor?.nextBeforeSeq,
+        nextBeforeCursor: cachedCursor?.nextBeforeCursor,
       });
       selectionStore.settle(agentId);
     }
@@ -2726,9 +2735,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (transcriptAccountSlot != null) transcriptHistoryCursorsRef.current.set(agentId, {
         accountSlot: transcriptAccountSlot,
         nextBeforeSeq: projectedPage.nextBeforeSeq,
+        nextBeforeCursor: projectedPage.nextBeforeCursor,
       });
       // The root projection already contains the tail and concurrent events.
-      transcriptPaginationController.installInitialPage({ entries: [], nextBeforeSeq: projectedPage.nextBeforeSeq });
+      transcriptPaginationController.installInitialPage({
+        entries: [],
+        nextBeforeSeq: projectedPage.nextBeforeSeq,
+        nextBeforeCursor: projectedPage.nextBeforeCursor,
+      });
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
       setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
@@ -2924,14 +2938,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const projectedAttachments = projectedMessage?.attachments ?? [];
       setEntriesByAgent((current) => {
         const existing = current[ownerId] ?? [];
-        const pendingId = resolvedNonce == null ? null : `pending-${resolvedNonce}`;
+        const correlationTarget = projectedMessage == null || resolvedNonce == null
+          ? projectedMessage : { ...projectedMessage, clientNonce: resolvedNonce };
         const correlated = projectedMessage == null ? null : existing.find((entry): entry is TranscriptMessage =>
           entry.kind === "message"
-          && (
-            entry.id === projected.id
-            || (pendingId != null && entry.id === pendingId)
-            || (resolvedNonce != null && entry.clientNonce === resolvedNonce)
-          )
+          && correlationTarget != null && transcriptEntriesCorrelate(entry, correlationTarget)
         );
         if (correlated != null && projectedMessage != null) {
           const isAttachmentEcho = "sourceKind" in projectedMessage && projectedMessage.sourceKind === "user-attachment";
@@ -4483,3 +4494,4 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     </div>
   );
 }
+

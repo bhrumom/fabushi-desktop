@@ -173,6 +173,7 @@ H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. No merge or deployment.
 9. full capability acceptance
 10. packaged/release acceptance
 
+## Resumed round 6 — durable Human history traversal (2026-11-02)
 
-
+The interrupted old round-6 candidate is not applied over later work. On the current checkpoint, NMR-PAGING-01/NMR-ACTIVITY-01 add bounded persistent Human page membership, opaque RPC/cache continuation, committed-update retry overlays and monotonic activity recovery through existing Session/Transcript and renderer owners. Existing full-credential fences, reply/forward journals, resource limits, shipping/source and Agent gates are preserved. Tests are authored at this checkpoint; exact containing-H Actions must establish execution. Historical 849 failure and f68 prerequisite success are separately recorded in `projects/telegram-desktop-rust/evidence/task20bf-round6-resumed-stable-pagination.json`. This is stage-A implementation, not source/real-service/package or independent ACCEPT.
 
