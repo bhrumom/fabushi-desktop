@@ -568,3 +568,40 @@ raw-byte rewrite. The additional Session corpus supplies nested-value and signed
 zero coverage plus one-generation/empty-append invariants. Every published
 Gateway assertion remains unchanged. No production precision repair is claimed
 by this baseline increment.
+
+
+### Observed parser repair — `SESSION-JSON-02`
+
+Decision **FIX / IMPL_BUG** before the production feature edit, on
+`04301c80866768e9169ceda274f48f9758232792`. The prior deterministic
+[Actions run 41450496585](https://github.com/bhrumom/fabushi-desktop/actions/runs/41450496585),
+Host job `125296671159`, attempt 1, at
+`73cf0269c5ccbbd1dff946e0949824a1bbbeffd4` failed only the
+`gateway_echoes_preserve_fractional_timestamps_through_durable_reopen` case
+in its Gateway target (25 passed, one failed). Its initial and reopened raw SQL
+text exactly matched the returned echo, containing
+`timestampMs` and `sentWhileOfflineAtMs` of `1793000000000.0015`; decoded and
+public values were `1793000000000.0017`. The Rust-emitted timestamp bits changed
+from `4790166932267466758` to `4790166932267466759`. Integral controls retained
+their exact values, both existing namespace tests passed, and SQL/decode errors
+were absent. The retained complete Host log SHA-256 is
+`10759adc2c6183fa8393581b0adb1502388081d9aec0d1db0d480d0e5dbff54f`.
+This proves a production decoding mismatch in that deterministic case; it does
+not retrospectively identify the unlogged differing field at `364cca21`.
+
+Enable `float_roundtrip` on Host's ordinary serde_json dependency, so the
+shipping app and ordinary consumers use the same faithful finite-float parser.
+The existing version/lock identities and raw stored bytes stay fixed. Keep
+every Gateway, nested-value, nonce, generation and no-write assertion. This
+change introduces no new parser, representation, store or schema. The primary
+dependency contract, license, parsing-cost qualification and open acceptance
+limits above still apply.
+
+The expanded pre-feature baseline is separately published at
+`04301c80866768e9169ceda274f48f9758232792`, runtime run
+[41453150181](https://github.com/bhrumom/fabushi-desktop/actions/runs/41453150181).
+JR-04 requires its actual effective-feature graph and deterministic nested-value
+outcome to be retained before publication of this repair, followed by unchanged
+controls and affected shipping/contracts on the resulting exact H. Source
+review or the earlier integral/clock-dependent passes cannot substitute for
+that execution, and no performance or full-migration acceptance is implied.

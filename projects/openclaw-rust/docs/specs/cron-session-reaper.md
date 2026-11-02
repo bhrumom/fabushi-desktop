@@ -592,3 +592,73 @@ separate and cannot be promoted by these local-owner oracles.
 - `source/host/src/extensions/transcript/automation_runtime.rs`
 - `source/host/src/extensions/session/production.rs`
 - `projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md`
+
+## Known unfinished backend-run redelivery — 2026-11-02
+
+Contract: `OCRM-AUTOMATION-KNOWN-RUN-REDELIVERY-v1`. Decision
+**AUTO-REDELIVERY-01 — FIX / IMPL_BUG**, specified from `f3b8105864a0e215e7918311b2d39cb789e350a4` and revalidated
+before implementation on `73cf0269c5ccbbd1dff946e0949824a1bbbeffd4`. Fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`.
+
+The existing delivery lookup finds an original UUID or coalesced alias in
+persisted history, but returns the same absence value for a matching `running`
+row and for no matching row. A fresh Host can therefore admit another event or
+revisioned schedule execution. Legacy covered-slot, disabled-definition and
+changed-definition checks can instead fabricate a failed completion for that
+unfinished original. Existing volatile in-flight keys, per-run cron projections
+and terminal supervision do not repair this delivery decision after reopen.
+
+- REDELIVERY-01: distinguish absent, known unfinished and known terminal
+  history in the existing `fire_delivery` owner. A matching `running` original
+  UUID or persisted coalesced alias returns the existing
+  `PreparedBackendFire::Abandon` with reason `existing_run_unsettled`.
+- REDELIVERY-02: keep this decision before enabled, legacy-slot, definition
+  revision, event and trigger checks. The shipping Host's existing refusal
+  path returns false without invoking completion or spawning an execution
+  worker. The backend owner removes only its volatile poll entry; it may
+  re-evaluate a later delivery but must not report completion or include this
+  UUID in `ackRunUuids` based on the unfinished row.
+- REDELIVERY-03: preparation does not begin, refresh, finish or rewrite history
+  or cron state and emits no run observation. Preserve the actual file bytes
+  and unfinished row. A different original UUID retains existing eligibility;
+  this is not an automation-wide execution fence.
+- REDELIVERY-04: retain stored terminal-success/failure replay, schedule/event
+  validation, the completion-error retention contract and ACK-04/05. A later
+  explicit terminal history settlement can be reported by the existing path
+  without executing that original again. Do not reinterpret a terminal error
+  as proof that every external effect was reconciled.
+- REDELIVERY-05: test original and coalesced IDs across valid event/revisioned
+  schedule, legacy covered-slot, disabled and changed-definition cases. Use
+  actual reopened Session/Automation file owners and the actual backend poll
+  consumer with controlled transport; verify unchanged bytes, zero execution,
+  zero completion requests and no ACK on repeated polling and fresh backend
+  owner construction. Preserve distinct-ID and terminal-history positive
+  controls. Owner reopen is not a claim of full Host process recovery.
+
+Production scope is `source/host/src/extensions/automations/fire_delivery.rs`;
+its existing Host and backend consumers remain wired. Tests belong to existing
+Automation contract targets. The integrator owns this spec and scoped workflow
+selection/receipt. No new store, schema, scheduler, registry, transport protocol
+or Session admission rule is authorized. Source authority is the current actual
+target call chain, with the fixed-U receipt/queue/finalization review retained
+in the existing cron dossier; this does not promote a full-source read claim.
+
+Missing, corrupt, pruned or ambiguously duplicated history, lenient projection
+normalization, durable execution claims, unknown effects, account changes,
+cross-store reconciliation and actual backend-service semantics remain open.
+The batch proves refusal only from positively visible unfinished history.
+Rollback removes this interpretation guard and restores the replay/false-ACK
+risk; no data migration is involved. Completion requires independent immutable
+source/spec review and final exact-H Actions for delivery, actual backend,
+history/cron and retained deadline controls. U, OCRM responsibility acceptance
+and all eight global flags remain unchanged. No local validation is permitted.
+
+This interpretation guard is independent of the pending Session JSON precision
+repair: its authority is positively present string UUID/alias and `running`
+status, before the existing numeric slot comparison. Existing shared execution
+at `fdfdfb2d6a5635fc9c79da51b9fc4b09486b553a` passed its selected owner contracts;
+this new guard still requires its own final-H gates. Implement it in parallel
+while the precision baseline waits in Actions, keep it out of that frozen
+baseline commit, and do not infer permission to settle unknown tool outcomes.
+The separate frozen terminal-custody consumer and original-turn recovery remain
+required; this slice alone does not close Automation settlement.

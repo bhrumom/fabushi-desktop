@@ -6,7 +6,9 @@ use mahayana_host_runtime::extensions::automations::fire_delivery::{
     PreparedBackendFire, admits_bare_fire, fire_event_matches_trigger, parse_fire_trigger_event,
     prepare_backend_fire,
 };
-use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::BackendAutomationFire;
+use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::{
+    BackendAutomationFire, FireCompletion,
+};
 use mahayana_host_runtime::extensions::session::agent_session::AgentAutomationEntry;
 use serde_json::{Value, json};
 
@@ -102,6 +104,103 @@ fn existing_completed_run_is_not_executed_twice() {
             reason: "existing_run"
         } if completion.status == "succeeded"
     ));
+}
+
+#[test]
+fn running_original_and_coalesced_ids_are_abandoned_before_fire_validation() {
+    for stored_id in ["run-1", "coalesced-parent"] {
+        for case in [
+            "valid_event",
+            "revisioned_schedule",
+            "legacy_covered_slot",
+            "disabled",
+            "changed_definition",
+            "unrecognized_event",
+            "changed_trigger",
+            "missing_event_context",
+        ] {
+            let mut target = entry(json!({"type":"group","listeners":[
+                {"type":"cron","schedule":"0 * * * *"},
+                {"type":"github","repo":"openai/repo","events":["pr-opened"]}
+            ]}));
+            let mut backend_fire = fire(None);
+            backend_fire.scheduled_for_ms = Some(90);
+            match case {
+                "valid_event" => backend_fire.event = Some(json!({
+                    "source":"github","repo":"openai/repo","kind":"pr-opened"
+                })),
+                "revisioned_schedule" => {
+                    backend_fire.definition_revision = Some("current-revision".into());
+                }
+                "legacy_covered_slot" => target.automation.last_run_at = Some(101.0),
+                "disabled" => target.automation.is_enabled = false,
+                "changed_definition" => {
+                    backend_fire.definition_revision = Some("old-revision".into());
+                }
+                "unrecognized_event" => {
+                    backend_fire.event = Some(json!({"source":"unrecognized"}));
+                }
+                "changed_trigger" => backend_fire.event = Some(json!({
+                    "source":"github","repo":"other/repo","kind":"pr-opened"
+                })),
+                "missing_event_context" => backend_fire.scheduled_for_ms = None,
+                _ => unreachable!(),
+            }
+            target.automation.runs.push(AutomationRun {
+                id: stored_id.into(),
+                trigger: "event".into(),
+                started_at: 1.0,
+                finished_at: None,
+                status: "running".into(),
+                detail: None,
+                event: None,
+                coalesced_run_ids: (stored_id != "run-1").then(|| vec!["run-1".into()]),
+            });
+            let before = target.clone();
+            assert_eq!(
+                prepare_backend_fire(std::slice::from_ref(&target), &backend_fire, |_| {
+                    panic!("known running identity must precede revision lookup: {case}")
+                }),
+                PreparedBackendFire::Abandon { reason: "existing_run_unsettled" },
+                "{case}, stored_id={stored_id}",
+            );
+            assert_eq!(target, before, "preparation must not mutate history: {case}");
+        }
+    }
+}
+
+#[test]
+fn terminal_original_and_coalesced_ids_replay_stored_success_and_failure() {
+    for stored_id in ["run-1", "coalesced-parent"] {
+        for (status, detail, completion) in [
+            ("ok", None, FireCompletion::succeeded()),
+            ("error", Some("stored failure"), FireCompletion::failed("stored failure")),
+            ("error", None, FireCompletion::failed("Automation run failed on the Sand box")),
+        ] {
+            let mut target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+            target.automation.is_enabled = false;
+            target.automation.last_run_at = Some(101.0);
+            target.automation.runs.push(AutomationRun {
+                id: stored_id.into(),
+                trigger: "schedule".into(),
+                started_at: 1.0,
+                finished_at: Some(2.0),
+                status: status.into(),
+                detail: detail.map(str::to_owned),
+                event: None,
+                coalesced_run_ids: (stored_id != "run-1").then(|| vec!["run-1".into()]),
+            });
+            let mut backend_fire = fire(Some(json!({"source":"unrecognized"})));
+            backend_fire.definition_revision = Some("old-revision".into());
+            assert_eq!(
+                prepare_backend_fire(&[target], &backend_fire, |_| {
+                    panic!("stored terminal replay must precede revision lookup")
+                }),
+                PreparedBackendFire::Complete { completion, reason: "existing_run" },
+                "status={status}, stored_id={stored_id}",
+            );
+        }
+    }
 }
 
 #[test]

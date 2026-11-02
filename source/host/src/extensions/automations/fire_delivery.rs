@@ -50,11 +50,19 @@ pub fn prepare_backend_fire(
         return rejected("automation_missing", "Automation not found on the Sand box");
     };
 
-    if let Some(existing) = existing_run_completion(target, &fire.id) {
-        return PreparedBackendFire::Complete {
-            completion: existing,
-            reason: "existing_run",
-        };
+    match existing_run_history(target, &fire.id) {
+        ExistingRunHistory::Absent => {}
+        ExistingRunHistory::Running => {
+            return PreparedBackendFire::Abandon {
+                reason: "existing_run_unsettled",
+            };
+        }
+        ExistingRunHistory::Terminal(completion) => {
+            return PreparedBackendFire::Complete {
+                completion,
+                reason: "existing_run",
+            };
+        }
     }
     if !target.automation.is_enabled {
         return rejected("automation_disabled", "Automation is disabled on the Sand box");
@@ -134,24 +142,34 @@ fn rejected(reason: &'static str, message: &str) -> PreparedBackendFire {
     }
 }
 
-fn existing_run_completion(
+enum ExistingRunHistory {
+    Absent,
+    Running,
+    Terminal(FireCompletion),
+}
+
+fn existing_run_history(
     target: &AgentAutomationEntry,
     run_uuid: &str,
-) -> Option<FireCompletion> {
-    let run = target.automation.runs.iter().find(|run| {
+) -> ExistingRunHistory {
+    let Some(run) = target.automation.runs.iter().find(|run| {
         run.id == run_uuid
             || run
                 .coalesced_run_ids
                 .as_ref()
                 .is_some_and(|ids| ids.iter().any(|id| id == run_uuid))
-    })?;
+    }) else {
+        return ExistingRunHistory::Absent;
+    };
     if run.status == "running" {
-        return None;
+        // A persisted identity is still owed settlement after volatile Host
+        // ownership is lost. Revalidation must not execute or fail this run.
+        return ExistingRunHistory::Running;
     }
     if run.status == "ok" {
-        Some(FireCompletion::succeeded())
+        ExistingRunHistory::Terminal(FireCompletion::succeeded())
     } else {
-        Some(FireCompletion::failed(
+        ExistingRunHistory::Terminal(FireCompletion::failed(
             run.detail
                 .clone()
                 .unwrap_or_else(|| "Automation run failed on the Sand box".into()),
