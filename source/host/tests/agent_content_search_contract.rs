@@ -78,6 +78,65 @@ fn snippet_collapses_whitespace_preserves_case_and_applies_frozen_window() {
 }
 
 #[test]
+fn unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text() {
+    for prefix in ["İ", "K"] {
+        let text = format!("{}Needle", prefix.repeat(90));
+        assert_eq!(
+            build_content_snippet(&text, "needle"),
+            Some(format!("…{}Needle", prefix.repeat(30))),
+            "the typed snippet retains thirty original characters before the match",
+        );
+    }
+
+    for query in ["i", "\u{307}", "i\u{307}"] {
+        assert_eq!(build_content_snippet("İ", query).as_deref(), Some("İ"));
+    }
+    let across_expansion = format!("{}İY{}", "界".repeat(35), "🙂".repeat(70));
+    assert_eq!(
+        build_content_snippet(&across_expansion, "\u{307}y"),
+        Some(format!("…{}İY{}…", "界".repeat(30), "🙂".repeat(60))),
+        "a match beginning inside İ's lowercase expansion includes all of İ",
+    );
+}
+
+#[test]
+fn unicode_snippet_preserves_whole_string_contextual_sigma_matching() {
+    let text = "  ΟΣ\nΟΣΑ\tΣ  ";
+    for query in ["ος", "οσα", "σ"] {
+        assert_eq!(
+            build_content_snippet(text, query).as_deref(),
+            Some("ΟΣ ΟΣΑ Σ"),
+        );
+    }
+    assert_eq!(build_content_snippet(text, "οσ "), None);
+    assert_eq!(build_content_snippet("Σ", "ς"), None);
+    assert_eq!(build_content_snippet("Σ", "σ").as_deref(), Some("Σ"));
+    assert_eq!(
+        build_content_snippet("Kİ ΟΣ\u{301}!", "ος\u{301}").as_deref(),
+        Some("Kİ ΟΣ\u{301}!"),
+        "case-ignorable marks retain the whole-string final-sigma context",
+    );
+}
+
+#[test]
+fn unicode_snippet_keeps_character_windows_and_whitespace_contract() {
+    let text = format!("{}Needle{}", "🙂".repeat(35), "界".repeat(70));
+    assert_eq!(
+        build_content_snippet(&text, "needle"),
+        Some(format!("…{}Needle{}…", "🙂".repeat(30), "界".repeat(60))),
+    );
+    assert_eq!(
+        build_content_snippet("\u{2003}東京\n\u{a0}Needle\t終\u{2003}", "needle")
+            .as_deref(),
+        Some("東京 Needle 終"),
+    );
+    assert_eq!(build_content_snippet("", "needle"), None);
+    assert_eq!(build_content_snippet(" \n\t\u{2003}", "needle"), None);
+    assert_eq!(build_content_snippet("İ", ""), None);
+    assert_eq!(build_content_snippet("İ", "missing"), None);
+}
+
+#[test]
 fn matches_walk_newest_first_skip_hidden_peers_and_preserve_roles() {
     let mut hidden = message(
         "hidden",

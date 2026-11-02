@@ -4,6 +4,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use serde_json::Value;
 
+use crate::extensions::content_search::agent_content_search::build_content_snippet_with_byte_context;
 use crate::extensions::content_search::extension::ProductionContentSearchExtension;
 use crate::extensions::content_search::search_index_db::{
     AttachmentKind, MediaSearchResult, MessageSearchResult,
@@ -12,9 +13,6 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 
 pub const AGENT_CONTENT_SEARCH_MAX_MATCHES_PER_AGENT: usize = 5;
 pub const AGENT_CONTENT_SEARCH_MAX_RESULTS: usize = 50;
-const SNIPPET_LEAD: usize = 30;
-const SNIPPET_TRAIL: usize = 60;
-const ELLIPSIS: &str = "…";
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,30 +100,7 @@ pub fn entry_search_text(entry: &Value) -> &str {
 }
 
 pub fn build_content_snippet(text: &str, normalized_query: &str) -> Option<String> {
-    if normalized_query.is_empty() {
-        return None;
-    }
-    let flat = text.split_whitespace().collect::<Vec<_>>().join(" ");
-    if flat.is_empty() {
-        return None;
-    }
-    let lowered = flat.to_lowercase();
-    let index = lowered.find(normalized_query)?;
-    let query_end = index.saturating_add(normalized_query.len());
-    let start = char_boundary_at_or_after(&flat, index.saturating_sub(SNIPPET_LEAD));
-    let end = char_boundary_at_or_before(
-        &flat,
-        query_end.saturating_add(SNIPPET_TRAIL).min(flat.len()),
-    );
-    let mut snippet = String::new();
-    if start > 0 {
-        snippet.push_str(ELLIPSIS);
-    }
-    snippet.push_str(flat.get(start..end).unwrap_or(&flat));
-    if end < flat.len() {
-        snippet.push_str(ELLIPSIS);
-    }
-    Some(snippet)
+    build_content_snippet_with_byte_context(text, normalized_query)
 }
 
 pub fn find_agent_content_matches(
@@ -312,18 +287,3 @@ pub fn search_agents_linear(
     Ok(results)
 }
 
-fn char_boundary_at_or_after(text: &str, mut index: usize) -> usize {
-    index = index.min(text.len());
-    while index < text.len() && !text.is_char_boundary(index) {
-        index += 1;
-    }
-    index
-}
-
-fn char_boundary_at_or_before(text: &str, mut index: usize) -> usize {
-    index = index.min(text.len());
-    while index > 0 && !text.is_char_boundary(index) {
-        index -= 1;
-    }
-    index
-}

@@ -256,7 +256,10 @@
         "source/host/tests/routed_send_acceptance_contract.rs",
         "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+        "source/host/tests/roster_search_contract.rs",
+        "source/host/tests/agent_content_search_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R05",
@@ -1215,7 +1218,10 @@
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
         "source/host/tests/transcript_manager_contract.rs",
         "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
-        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs"
+        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs",
+        "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+        "source/host/tests/roster_search_contract.rs",
+        "source/host/tests/agent_content_search_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1889,7 +1895,10 @@
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
-        "source/host/tests/transcript_manager_contract.rs"
+        "source/host/tests/transcript_manager_contract.rs",
+        "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+        "source/host/tests/roster_search_contract.rs",
+        "source/host/tests/agent_content_search_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC13",
@@ -2374,7 +2383,10 @@
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
         "source/host/tests/transcript_manager_contract.rs",
         "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
-        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs"
+        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs",
+        "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+        "source/host/tests/roster_search_contract.rs",
+        "source/host/tests/agent_content_search_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

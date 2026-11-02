@@ -76,64 +76,101 @@ fn flatten_whitespace(text: &str) -> String {
 }
 
 fn find_normalized_query(
-    flat_chars: &[char],
+    flat: &str,
     normalized_query: &str,
 ) -> Option<(usize, usize)> {
     if normalized_query.is_empty() {
         return None;
     }
 
-    let query = normalized_query.chars().collect::<Vec<_>>();
-    if query.is_empty() {
-        return None;
-    }
+    let lowered = flat.to_lowercase();
+    let match_start = lowered.find(normalized_query)?;
+    let match_end = match_start + normalized_query.len();
 
-    // JavaScript lower-cases the flattened text before indexOf(). Preserve a
-    // map back to the original flattened character positions so the returned
-    // snippet keeps original casing even when Unicode lower-casing expands.
-    let mut lowered = Vec::new();
-    let mut source_index = Vec::new();
-    for (index, ch) in flat_chars.iter().copied().enumerate() {
-        for lower in ch.to_lowercase() {
-            lowered.push(lower);
-            source_index.push(index);
+    // Lookup must use the whole string for contextual Greek sigma. For origin
+    // lengths, str and char lowercase use the same mapping except Σ -> σ/ς,
+    // whose alternatives both occupy two UTF-8 bytes. See the standard-library
+    // sources: https://doc.rust-lang.org/src/alloc/str.rs.html (to_lowercase)
+    // and https://doc.rust-lang.org/src/core/char/methods.rs.html (to_lowercase).
+    // One forward scan maps even a partial lowercase expansion to its complete
+    // original character; no growing prefixes are lowercased or rescanned.
+    let mut lowered_offset = 0;
+    let mut source_start = None;
+    for (source_offset, ch) in flat.char_indices() {
+        lowered_offset += ch.to_lowercase().map(char::len_utf8).sum::<usize>();
+        if source_start.is_none() && lowered_offset > match_start {
+            source_start = Some(source_offset);
         }
-    }
-
-    if query.len() > lowered.len() {
-        return None;
-    }
-
-    for start in 0..=lowered.len() - query.len() {
-        if lowered[start..start + query.len()] == query[..] {
-            let source_start = source_index[start];
-            let source_end = source_index[start + query.len() - 1] + 1;
-            return Some((source_start, source_end));
+        if lowered_offset >= match_end {
+            return Some((source_start?, source_offset + ch.len_utf8()));
         }
     }
     None
 }
 
-pub fn build_content_snippet(text: &str, normalized_query: &str) -> Option<String> {
+enum SnippetContext {
+    Characters,
+    Bytes,
+}
+
+fn build_content_snippet_with_context(
+    text: &str,
+    normalized_query: &str,
+    context: SnippetContext,
+) -> Option<String> {
     if normalized_query.is_empty() {
         return None;
     }
 
     let flat = flatten_whitespace(text);
-    let chars = flat.chars().collect::<Vec<_>>();
-    let (match_start, match_end) = find_normalized_query(&chars, normalized_query)?;
-    let start = match_start.saturating_sub(SNIPPET_LEAD);
-    let end = chars.len().min(match_end.saturating_add(SNIPPET_TRAIL));
+    let (match_start, match_end) = find_normalized_query(&flat, normalized_query)?;
+    let (start, end) = match context {
+        SnippetContext::Characters => (
+            flat[..match_start]
+                .char_indices()
+                .rev()
+                .nth(SNIPPET_LEAD - 1)
+                .map(|(index, _)| index)
+                .unwrap_or(0),
+            flat[match_end..]
+                .char_indices()
+                .nth(SNIPPET_TRAIL)
+                .map(|(index, _)| match_end + index)
+                .unwrap_or(flat.len()),
+        ),
+        SnippetContext::Bytes => {
+            let mut start = match_start.saturating_sub(SNIPPET_LEAD);
+            let mut end = match_end.saturating_add(SNIPPET_TRAIL).min(flat.len());
+            while !flat.is_char_boundary(start) {
+                start += 1;
+            }
+            while !flat.is_char_boundary(end) {
+                end -= 1;
+            }
+            (start, end)
+        }
+    };
 
     let mut snippet = String::new();
     if start > 0 {
         snippet.push_str(ELLIPSIS);
     }
-    snippet.extend(chars[start..end].iter());
-    if end < chars.len() {
+    snippet.push_str(&flat[start..end]);
+    if end < flat.len() {
         snippet.push_str(ELLIPSIS);
     }
     Some(snippet)
+}
+
+pub fn build_content_snippet(text: &str, normalized_query: &str) -> Option<String> {
+    build_content_snippet_with_context(text, normalized_query, SnippetContext::Characters)
+}
+
+pub(crate) fn build_content_snippet_with_byte_context(
+    text: &str,
+    normalized_query: &str,
+) -> Option<String> {
+    build_content_snippet_with_context(text, normalized_query, SnippetContext::Bytes)
 }
 
 pub fn find_agent_content_matches(
