@@ -491,5 +491,79 @@ class SourceReviewSchemaContractTests(unittest.TestCase):
         )
 
 
+    def full_candidate_ledger(self):
+        return {
+            "format_version": 3,
+            "project_id": "TDRP-001",
+            "spec_revision": 9,
+            "upstream_commit": "a" * 40,
+            "target_commit": "e" * 40,
+            "coverage": {
+                "source_entries_total": 2, "unknown": None, "unread": None,
+                "omitted": 0, "responsibilities_total": 0, "unmapped_responsibilities": 0,
+            },
+            "rows": [],
+            "rebaseline_candidate": rebaseline_candidate(),
+        }
+
+    def test_full_ledger_candidate_nulls_use_the_root_condition(self):
+        validator = Draft202012Validator(self.schema)
+        ledger = self.full_candidate_ledger()
+        before = deepcopy(ledger)
+        self.assert_valid(validator, ledger)
+        self.assertEqual(ledger, before)
+        self.assertIsNone(ledger["coverage"]["unknown"])
+        self.assertIsNone(ledger["coverage"]["unread"])
+
+    def test_null_current_counters_require_the_candidate_marker(self):
+        validator = Draft202012Validator(self.schema)
+        ledger = self.full_candidate_ledger()
+        del ledger["rebaseline_candidate"]
+        self.assert_invalid(validator, ledger)
+
+    def test_unmarked_integer_coverage_remains_valid_without_granting_acceptance(self):
+        validator = Draft202012Validator(self.schema)
+        ledger = self.full_candidate_ledger()
+        del ledger["rebaseline_candidate"]
+        ledger["coverage"]["unknown"] = 2
+        ledger["coverage"]["unread"] = 1
+        self.assert_valid(validator, ledger)
+
+    def test_full_candidate_counters_cannot_reuse_numeric_or_partial_values(self):
+        validator = Draft202012Validator(self.schema)
+        for owner in ("coverage", "rebaseline_candidate"):
+            for field in ("unknown", "unread"):
+                for value in (0, 1, "0", False, -1, 1.5):
+                    ledger = self.full_candidate_ledger()
+                    ledger[owner][field] = value
+                    with self.subTest(owner=owner, field=field, value=value):
+                        self.assert_invalid(validator, ledger)
+
+    def test_pending_coverage_never_allows_a_null_or_coerced_denominator(self):
+        validator = Draft202012Validator(self.schema)
+        for value in (None, "2", False, 0, -1, 1.5):
+            ledger = self.full_candidate_ledger()
+            ledger["coverage"]["source_entries_total"] = value
+            with self.subTest(value=value):
+                self.assert_invalid(validator, ledger)
+
+    def test_full_candidate_still_requires_strict_marker_identity_and_fields(self):
+        validator = Draft202012Validator(self.schema)
+        for value in (None, [], False, "candidate"):
+            ledger = self.full_candidate_ledger()
+            ledger["rebaseline_candidate"] = value
+            with self.subTest(marker=value):
+                self.assert_invalid(validator, ledger)
+        for field in rebaseline_candidate():
+            ledger = self.full_candidate_ledger()
+            del ledger["rebaseline_candidate"][field]
+            with self.subTest(missing=field):
+                self.assert_invalid(validator, ledger)
+        ledger = self.full_candidate_ledger()
+        ledger["rebaseline_candidate"]["accepted"] = True
+        self.assert_invalid(validator, ledger)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

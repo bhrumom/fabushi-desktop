@@ -3,11 +3,11 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
+  "target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
   "coverage": {
-    "source_entries_total": 16202,
-    "unknown": 16098,
-    "unread": 16071,
+    "source_entries_total": 16381,
+    "unknown": null,
+    "unread": null,
     "omitted": 0,
     "responsibilities_total": 183,
     "unmapped_responsibilities": 0
@@ -50194,8 +50194,7 @@
       "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Original NMR prerequisite passed at exact 68d4f07688741e8f54b35f3746a087f7fdd12108, run41402071662: both required jobs terminal success and Human10/Agent4/normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1 actually passed. This evidence does not qualify the new NMR-18/19/20 changes.",
-        "New reaction production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff are independently statically reviewed; publication/readback and all required exact-H gates including thirteen Human cases remain pending.",
+        "The bounded NMR-18/19/20 Host gates passed at exact95/run41403643662; full product/independent acceptance and the open behaviors below remain unqualified. Evidence for later code must be bound to its own H.",
         "Known-overlap refresh/coverage, snapshot-versus-mutation freshness, monotonic receipt semantics, distinct-emoji/whole-payload bounds and read-receipt UI remain separate open work.",
         "Full source/legal closure, legacy caller/data-safe retirement, live native-service acceptance, packages, UI/a11y, performance/soak, complete Bot regression and independent ACCEPT remain open."
       ],
@@ -50232,16 +50231,16 @@
         "authored-frozen-target-blob:127700079e9ae9d5c2155cd1d8a218a47f2f8075:source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart; published in1cd; executed successfully in exact68 run41402071662",
         "authored-frozen-target-blob:127700079e9ae9d5c2155cd1d8a218a47f2f8075:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access; published in1cd; executed successfully in exact68 run41402071662",
         "authored-frozen-target-blob:127700079e9ae9d5c2155cd1d8a218a47f2f8075:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce; published in1cd; executed successfully in exact68 run41402071662",
-        "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart; new exact-H execution pending",
-        "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap; new exact-H execution pending",
-        "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart; new exact-H execution pending"
+        "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart; published/read-back and actually passed at95/run41403643662",
+        "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap; published/read-back and actually passed at95/run41403643662",
+        "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart; published/read-back and actually passed at95/run41403643662"
       ],
-      "target_commit": "68d4f07688741e8f54b35f3746a087f7fdd12108",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
+      "workflow_run": 41403643662,
+      "run_attempt": 1,
+      "job": 125140696528,
+      "artifact_id": 13122423309,
+      "artifact_digest": "sha256:7a05891c6594b2fcfb66bb80847cfd8dca2349af4e842dbc9128267968dba41d",
       "composition_root": "Existing Host Session production composition beneath ProductionRenderer",
       "composition_slot": "Existing Human conversation command, durable transcript and native HTTP boundary",
       "capability_component": "Human message admission, author-scoped reconciliation and ordered failure recovery",
@@ -50474,13 +50473,15 @@
       "flake_status": "unknown",
       "test_execution_evidence": [
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41402071662@68d4f07688741e8f54b35f3746a087f7fdd12108:attempt1:job125135845372:completed/success:Human10 and AgentNonce4, zero failed/ignored; artifact13122181591 sha256:efb9a58757f0f56291f93a0d11c0bf062e5e718dada4028ddd92aa389b3a647b",
-        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41402071662@68d4f07688741e8f54b35f3746a087f7fdd12108:attempt1:job125135845319:completed/success:locked AppHost and normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1, zero failed/ignored; artifact13122201285 sha256:90ad15f97a4f6f1906b05cb4f7f0f9351ee9f6dbe93888c03e132809baf3e162; original prerequisite only, not new reaction batch"
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41402071662@68d4f07688741e8f54b35f3746a087f7fdd12108:attempt1:job125135845319:completed/success:locked AppHost and normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1, zero failed/ignored; artifact13122201285 sha256:90ad15f97a4f6f1906b05cb4f7f0f9351ee9f6dbe93888c03e132809baf3e162; original prerequisite only, not new reaction batch",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41403643662@95b29df688f718a35574fa36ef4ca75df437ed30:attempt1:job125140696528:completed/success:Human13 including all three new NMR-AC-12 cases and AgentNonce4, zero failed/ignored; artifact13122423309 sha256:7a05891c6594b2fcfb66bb80847cfd8dca2349af4e842dbc9128267968dba41d",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41403643662@95b29df688f718a35574fa36ef4ca75df437ed30:attempt1:job125140696373:completed/success:locked AppHost and normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1, zero failed/ignored; artifact13122264126 sha256:ced74e3a058e43ea6925483413d0f6c7bc149b23d3f37b789a19fdc4d9108b9e"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Behavioral references are selected source sections at frozen U recorded in the existing known-overlap research dossier. Primary api_updates.cpp and additional data_session.cpp/history_item.cpp are only partially read as explicitly documented. Upstream LEGAL references are retained; no code-copy or full legal approval is asserted. Exact Fabushi target blobs and authored cases are independent implementation evidence. This responsibility mapping does not modify source_reviews, unknown/unread, source acceptance or inventory closure.",
       "reviewer": null,
-      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. New exact-H execution remains pending, so implementation_status is implemented and release_gate_status remains blocked. Row target_commit denotes the last qualified prerequisite H, not execution of new blobs. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced."
+      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced."
     }
   ],
   "rebaseline_candidate": {
@@ -50490,7 +50491,7 @@
     "nested_gitlinks_discovered": 4,
     "nested_gitlinks_resolved": 4,
     "nested_gitlinks_blocked": 0,
-    "source_responsibility_rows": "56-fixed-U-anchored-41-exact-blob-plus-15-semantic-reread",
+    "source_responsibility_rows": "183 current canonical responsibility rows; exact source tuples require the full fixed-U inventory contract; this is not the 16,381-identity source review set",
     "unknown": null,
     "unread": null,
     "omitted_known": 0,
@@ -50499,7 +50500,7 @@
       "repository": "https://gitlab.com/mnauw/cppgir.git",
       "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
       "git_tree_verified": true,
-      "reason": "The original-host transport blocker is cleared. GitHub Actions run 41395923342/job 125117103688 at target d00fdb48200b105b7aea9f2cb865cf4e7b482b2d fetched the exact declared GitLab commit and verified cppgir tree b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8 (103 blobs, 22 trees, one gitlink). Its exact .gitmodules blob e0c91502bcb2798a8a57bd85e49c76e0ef7275a3 declares https://github.com/martinmoene/expected-lite.git at 95b9cb015fa17baa749c2b396b335906e1596a9e; that child tree is 5f38901998c76e9c3dcc52bfbbe26877820cbbda (43 blobs, 12 trees, no further gitlinks). All entry and edge JSONL SHA256 digests were remotely read back and matched. Artifact 13119680890 digest sha256:61c39c84a93982b5788e8dba6c3cf1627ebf85cdabf8c08851537ddfa5b970be preserves the evidence; details are in evidence/fbcp-native-message-round3-20261102.json. The four resolved nested Git edges include the previously observed libcbor/doxygen-theme and range-v3/doc/gh-pages trees. Zero blocked here concerns those four Git-tree acquisitions only: canonical fixed-U inventory, build-time/generated-input accounting, legal and semantic review, and product/independent acceptance remain open."
+      "reason": "The original-host transport blocker is cleared. GitHub Actions run 41395923342/job 125117103688 at target d00fdb48200b105b7aea9f2cb865cf4e7b482b2d fetched the exact declared GitLab commit and verified cppgir tree b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8 (103 blobs, 22 trees, one gitlink). Its exact .gitmodules blob e0c91502bcb2798a8a57bd85e49c76e0ef7275a3 declares https://github.com/martinmoene/expected-lite.git at 95b9cb015fa17baa749c2b396b335906e1596a9e; that child tree is 5f38901998c76e9c3dcc52bfbbe26877820cbbda (43 blobs, 12 trees, no further gitlinks). All entry and edge JSONL SHA256 digests were remotely read back and matched. Artifact 13119680890 digest sha256:61c39c84a93982b5788e8dba6c3cf1627ebf85cdabf8c08851537ddfa5b970be preserves the evidence; details are in evidence/fbcp-native-message-round3-20261102.json. The four resolved nested Git edges include the previously observed libcbor/doxygen-theme and range-v3/doc/gh-pages trees. Zero blocked here concerns those four Git-tree acquisitions only: canonical fixed-U inventory, build-time/generated-input accounting, legal and semantic review, and product/independent acceptance remain open. The subsequently produced complete fixed-U Git-only inventory is pinned at producer9f77bb2389cba6a65d589eb309d1392501ed308d/run41397005716/artifact13118749668 and recovered by1cd59bb01513624d26e12f77bfab66729ab72694/run41401970993. Its41 repository nodes and40 edges include all four nested edges. Current source disposition/depth and external/build/generated/LFS/legal/product acceptance remain open."
     }
   }
 }

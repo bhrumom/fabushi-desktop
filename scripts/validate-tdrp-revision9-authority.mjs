@@ -66,6 +66,7 @@ const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-led
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
+if (requireAccepted) assertNoOpenSourceCandidate(ledger);
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
@@ -73,6 +74,11 @@ fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 
 fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format_version===3,'ledger instance is not Revision 9');
 fail(ledger.upstream_commit===lock.upstream.commit,'ledger upstream commit does not match accepted baseline identity');
 fail(ledger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'ledger recursive source count does not match lock');
+for (const value of [ledger.coverage?.unknown, ledger.coverage?.unread,
+  lock.coverage?.unknown_minimum, lock.coverage?.unread_minimum]) {
+  fail(Number.isInteger(value) && value >= 0,
+    'full source authority coverage is unestablished; run the focused candidate consistency gate');
+}
 fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown count understates lock minimum');
 fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
 fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
@@ -724,3 +730,4 @@ if (requireAccepted) {
   fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
 }
 console.log(JSON.stringify(report,null,2));
+

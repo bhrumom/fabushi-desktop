@@ -46,11 +46,17 @@
           "minimum": 1
         },
         "unknown": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "unread": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "omitted": {
@@ -1345,5 +1351,53 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "rebaseline_candidate"
+        ]
+      },
+      "then": {
+        "properties": {
+          "coverage": {
+            "properties": {
+              "unknown": {
+                "const": null
+              },
+              "unread": {
+                "const": null
+              }
+            }
+          },
+          "rebaseline_candidate": {
+            "properties": {
+              "unknown": {
+                "const": null
+              },
+              "unread": {
+                "const": null
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "coverage": {
+            "properties": {
+              "unknown": {
+                "type": "integer"
+              },
+              "unread": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
+

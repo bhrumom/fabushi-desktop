@@ -7,6 +7,13 @@ on:
       - scripts/tdrp-source-review*.py
       - scripts/tdrp-nested-pin-identity*.mjs
       - scripts/validate-tdrp-revision9-authority.mjs
+      - scripts/validate-tdrp-source-candidate.mjs
+      - scripts/tdrp-summarize-protocol-artifact.py
+      - projects/telegram-desktop-rust/upstream.lock.json
+      - projects/telegram-desktop-rust/inventory/index.json
+      - projects/telegram-desktop-rust/inventory/build-time-acquisitions.json
+      - projects/telegram-desktop-rust/inventory/root-mutable-authorities.json
+      - projects/telegram-desktop-rust/inventory/root-tool-authorities.json
       - projects/telegram-desktop-rust/contracts/parity-ledger.schema.json
       - projects/telegram-desktop-rust/parity-ledger.json
       - .github/workflows/tdrp-source-review-contract.yml
@@ -76,4 +83,107 @@ jobs:
         with:
           name: tdrp-source-review-contract-${{ github.sha }}
           path: artifacts/source-review
+          if-no-files-found: error
+  fixed-source-candidate:
+    needs: contract
+    if: github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Bind exact candidate source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/source-candidate/downloads
+          git rev-parse HEAD > artifacts/source-candidate/target-sha.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read the two immutable evidence artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668 > artifacts/source-candidate/downloads/git.metadata.json
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668/zip > artifacts/source-candidate/downloads/git.zip
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13121721589 > artifacts/source-candidate/downloads/export.metadata.json
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13121721589/zip > artifacts/source-candidate/downloads/export.zip
+      - name: Recover complete pinned Git evidence at this H
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          python scripts/tdrp-summarize-protocol-artifact.py \
+            --metadata artifacts/source-candidate/downloads/git.metadata.json \
+            --archive artifacts/source-candidate/downloads/git.zip \
+            --output-dir artifacts/candidate-git \
+            --repository bhrumom/fabushi-desktop \
+            --head-sha 9f77bb2389cba6a65d589eb309d1392501ed308d \
+            --artifact-id 13118749668 \
+            --run-id 41397005716 \
+            --expected-digest sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60 \
+            2>&1 | tee artifacts/source-candidate/git-recovery.log
+      - name: Recover complete pinned build-input observations at this H
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          python scripts/tdrp-summarize-protocol-artifact.py \
+            --metadata artifacts/source-candidate/downloads/export.metadata.json \
+            --archive artifacts/source-candidate/downloads/export.zip \
+            --output-dir artifacts/candidate-export \
+            --repository bhrumom/fabushi-desktop \
+            --head-sha 1cd59bb01513624d26e12f77bfab66729ab72694 \
+            --artifact-id 13121721589 \
+            --run-id 41401970993 \
+            --expected-digest sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc \
+            2>&1 | tee artifacts/source-candidate/export-recovery.log
+      - name: Check actual complete inventory and current candidate records
+        shell: bash
+        env:
+          TDRP_TARGET_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          node scripts/validate-tdrp-source-candidate.mjs \
+            --git-recovery-dir artifacts/candidate-git \
+            --export-recovery-dir artifacts/candidate-export \
+            --output artifacts/source-candidate/report.json \
+            2>&1 | tee artifacts/source-candidate/candidate.log
+      - name: Prove open candidates cannot enter accepted mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node scripts/validate-tdrp-revision9-authority.mjs --require-accepted > artifacts/source-candidate/accepted.log 2>&1; then
+            echo 'Open source candidate unexpectedly accepted' >&2
+            exit 1
+          fi
+          grep -Fx 'Error: accepted source accounting cannot contain a rebaseline candidate' artifacts/source-candidate/accepted.log
+      - name: Preserve candidate consistency and rejection evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-source-candidate-${{ github.sha }}
+          path: |
+            artifacts/source-candidate/*.json
+            artifacts/source-candidate/*.log
+            artifacts/source-candidate/target-sha.txt
+            artifacts/candidate-git/index.json
+            artifacts/candidate-git/metadata.json
+            artifacts/candidate-export/index.json
+            artifacts/candidate-export/metadata.json
           if-no-files-found: error
