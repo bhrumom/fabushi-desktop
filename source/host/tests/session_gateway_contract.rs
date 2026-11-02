@@ -4278,20 +4278,32 @@ fn shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_
         retry_wait.recv_timeout(std::time::Duration::from_secs(15))
             .expect("sync holds the Session lock for retry");
         send_release.send(()).expect("release older HTTP response");
-        // Sync still holds the lock: even a completed old HTTP response
-        // cannot gain authority to settle after this credential rotation.
-        thread::sleep(std::time::Duration::from_millis(150));
+        // This integration case proves pending-state and restart recovery
+        // regardless of whether transport or settlement observes rotation.
+        // The private shipping_human_settlement_credential_ tests use an
+        // explicit HTTP-completion barrier to prove the post-lock boundary.
         let path = root.join("host-credential.json");
         let mut credential: serde_json::Value = serde_json::from_str(
             &fs::read_to_string(&path).expect("private credential")
         ).expect("credential JSON");
         credential["accessToken"] = json!("rotated-after-http");
-        fs::write(&path, credential.to_string()).expect("rotate same-user bearer");
+        let replacement_path = root.join("host-credential-rotated.json");
+        fs::write(&replacement_path, credential.to_string()).expect("write complete rotated credential");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&replacement_path, fs::Permissions::from_mode(0o600))
+                .expect("private rotated credential");
+        }
+        fs::rename(&replacement_path, &path).expect("atomically rotate same-user bearer");
         retry_release.send(()).expect("release sync lock");
         syncing.join().expect("sync thread").expect("independent empty coverage");
         let error = sending.join().expect("original send")
             .expect_err("obsolete response cannot settle");
-        assert!(error.contains("credential changed"), "{label}: {error}");
+        assert!(matches!(error.as_str(),
+            "Fabushi native messaging credential changed during Human request"
+                | "Fabushi native messaging credential changed before Human settlement"
+        ), "{label}: {error}");
         let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("owner");
         let entries = owner.get_transcript_entries().expect("durable outbox");
         assert_eq!(entries.len(), 1, "{label}");
@@ -4323,3 +4335,4 @@ fn shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_
         let _ = fs::remove_dir_all(root);
     }
 }
+

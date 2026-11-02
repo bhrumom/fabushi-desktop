@@ -143,6 +143,12 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test send_pipeline_nonce_boundary_contract -- --nocapture 2>&1 | tee artifacts/native-message/agent-send-nonce.log
           grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/agent-send-nonce.log
+      - name: Prove completed HTTP credential fencing at settlement
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib shipping_human_settlement_credential_ -- --nocapture 2>&1 | tee artifacts/native-message/settlement-credential.log
+          grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
       - name: Diagnose locked Session dependency drift (no acceptance)
         if: failure()
         shell: bash
@@ -323,6 +329,7 @@ jobs:
           name: native-message-electron-${{ github.sha }}
           path: artifacts/native-message-electron
           if-no-files-found: error
+
 
 
 

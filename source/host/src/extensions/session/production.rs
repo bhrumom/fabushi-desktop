@@ -2315,6 +2315,32 @@ impl ProductionSessionWorkers {
             .or_insert_with(|| Arc::new(Mutex::new(())))))
     }
 
+    fn acquire_human_send_settlement_guard<'a>(
+        client: &FabushiNativeMessagingClient,
+        serial: &'a Mutex<()>,
+        held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
+        request_credential_fingerprint: &str,
+        response: &Result<FabushiRemoteHumanMessage, FabushiHumanSendError>,
+    ) -> Result<Option<std::sync::MutexGuard<'a, ()>>, String> {
+        let guard = if held_conversation_guard.is_none() {
+            Some(serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?)
+        } else {
+            None
+        };
+        // A completed HTTP/credential rejection already has a causal refusal.
+        // It cannot enter transport recovery or be replaced by a later lease
+        // error while waiting for this conversation's mutation lane.
+        if let Err(FabushiHumanSendError::Rejected(error)) = response {
+            return Err(error.clone());
+        }
+        // Successful and ambiguous transport outcomes may settle only while
+        // every private credential field still matches the dispatch snapshot.
+        if client.request_credential_fingerprint()? != request_credential_fingerprint {
+            return Err("Fabushi native messaging credential changed before Human settlement".into());
+        }
+        Ok(guard)
+    }
+
     fn update_human_replay_snapshot(
         snapshot: &mut Vec<serde_json::Value>,
         settled: serde_json::Value,
@@ -3146,17 +3172,13 @@ impl ProductionSessionWorkers {
                 // supplies its guard when replaying a persisted send, avoiding
                 // recursive acquisition of the non-reentrant mutex.
                 let serial = self.human_message_lock(conversation_id)?;
-                let _settlement_guard = if held_conversation_guard.is_none() {
-                    Some(serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?)
-                } else {
-                    None
-                };
                 // The transport checked credential stability at send/body read.
                 // Recheck after regaining the Session lock: credentials may
                 // change while an old response waits behind sync/reaction.
-                if client.request_credential_fingerprint()? != request_credential_fingerprint {
-                    return Err("Fabushi native messaging credential changed before Human settlement".into());
-                }
+                let _settlement_guard = Self::acquire_human_send_settlement_guard(
+                    client, serial.as_ref(), held_conversation_guard,
+                    &request_credential_fingerprint, &response,
+                )?;
                 let durable = owner.get_transcript_entries().map_err(|error| error.to_string())?;
                 let settled = durable.iter().find(|entry| {
                     let remote_id = entry.get("remoteMessageId").and_then(serde_json::Value::as_str);
@@ -3823,6 +3845,212 @@ impl ProductionSessionWorkers {
 
 
 #[cfg(test)]
+mod human_send_settlement_credential_tests {
+    use super::*;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::sync::mpsc;
+    use std::thread;
+    use std::time::{Duration, Instant};
+
+    fn write_credential(path: &Path, issuer: &str, token: &str) {
+        fs::write(path, serde_json::json!({
+            "accessToken": token, "deviceId": "device-a", "userId": 1,
+            "sessionId": "fixture-session", "issuer": issuer,
+        }).to_string()).expect("write private settlement credential fixture");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(path, fs::Permissions::from_mode(0o600))
+                .expect("private settlement fixture permissions");
+        }
+    }
+
+    fn remote_message() -> serde_json::Value {
+        serde_json::json!({
+            "id": 96, "senderUserId": 1, "recipientUserId": 2,
+            "text": "post-lock lease", "clientRequestId": "post-lock-lease",
+            "createdAt": "2026-10-05T01:00:36Z", "isOutgoing": true,
+            "attachments": [], "reactions": [],
+        })
+    }
+
+    fn successful_response() -> Result<FabushiRemoteHumanMessage, FabushiHumanSendError> {
+        Ok(serde_json::from_value(remote_message()).expect("valid persisted message fixture"))
+    }
+
+    fn completed_http_fixture(disconnect: bool) -> (String, thread::JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind settlement HTTP fixture");
+        listener.set_nonblocking(true).expect("bounded settlement fixture accept");
+        let address = listener.local_addr().expect("settlement fixture address");
+        let server = thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(15);
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((stream, _)) => break stream,
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        assert!(Instant::now() < deadline, "settlement fixture accept timed out");
+                        thread::yield_now();
+                    }
+                    Err(error) => panic!("settlement fixture accept failed: {error}"),
+                }
+            };
+            stream.set_nonblocking(false).expect("blocking settlement fixture stream");
+            stream.set_read_timeout(Some(Duration::from_secs(15)))
+                .expect("bounded settlement request read");
+            stream.set_write_timeout(Some(Duration::from_secs(15)))
+                .expect("bounded settlement response write");
+            let mut request = Vec::new();
+            let mut buffer = [0_u8; 1024];
+            let header_end = loop {
+                let count = stream.read(&mut buffer).expect("read settlement request headers");
+                assert!(count > 0, "settlement request closed before headers");
+                request.extend_from_slice(&buffer[..count]);
+                assert!(request.len() <= 64 * 1024, "settlement request exceeded fixture budget");
+                if let Some(index) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+                    break index + 4;
+                }
+            };
+            let headers = std::str::from_utf8(&request[..header_end]).expect("HTTP request headers");
+            assert!(headers.starts_with("POST /api/social/messages "));
+            let content_length = headers.lines().find_map(|line| {
+                let (name, value) = line.split_once(':')?;
+                name.eq_ignore_ascii_case("content-length")
+                    .then(|| value.trim().parse::<usize>().expect("request body length"))
+            }).expect("bounded request body declaration");
+            assert!(content_length <= 64 * 1024, "settlement request body exceeded fixture budget");
+            while request.len() < header_end + content_length {
+                let count = stream.read(&mut buffer).expect("read settlement request body");
+                assert!(count > 0, "settlement request closed before its body");
+                request.extend_from_slice(&buffer[..count]);
+            }
+            let body: serde_json::Value = serde_json::from_slice(
+                &request[header_end..header_end + content_length],
+            ).expect("settlement request JSON");
+            assert_eq!(body["clientRequestId"], "post-lock-lease");
+            if disconnect { return; }
+            let body = serde_json::json!({"success": true, "message": remote_message()}).to_string();
+            write!(stream,
+                "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(), body,
+            ).expect("write completed settlement response");
+            stream.flush().expect("flush completed settlement response");
+        });
+        (format!("http://{address}"), server)
+    }
+
+    #[test]
+    fn shipping_human_settlement_credential_rotation_after_completed_http_is_rejected() {
+        for disconnect in [false, true] {
+            let root = std::env::temp_dir().join(format!("fabushi-settlement-{}", Uuid::new_v4()));
+            fs::create_dir_all(&root).expect("settlement fixture directory");
+            let path = root.join("credential.json");
+            let (issuer, server) = completed_http_fixture(disconnect);
+            write_credential(&path, &issuer, "original-fixture-token");
+            let client = FabushiNativeMessagingClient::new(&issuer, &path)
+                .expect("real Native credential and HTTP owner");
+            let fingerprint = client.request_credential_fingerprint().expect("dispatch fingerprint");
+            let serial = Arc::new(Mutex::new(()));
+            let competing_guard = serial.lock().expect("hold competing Session mutation");
+            let (http_done, http_wait) = mpsc::channel();
+            let (settled, settlement_wait) = mpsc::channel();
+            let worker_serial = Arc::clone(&serial);
+            let worker = thread::spawn(move || {
+                let response = client.send_direct_message_for_settlement(
+                    "2", "post-lock lease", "post-lock-lease", None, &[], "1",
+                );
+                if disconnect {
+                    assert!(matches!(&response, Err(FabushiHumanSendError::Transport(_))),
+                        "complete disconnect must be an ambiguous transport outcome");
+                } else {
+                    assert!(response.is_ok(), "complete HTTP body must be accepted before rotation");
+                }
+                // This signal follows the real Native send method, including
+                // body consumption and its final credential stability check.
+                http_done.send(()).expect("observe completed Native HTTP result");
+                let result = ProductionSessionWorkers::acquire_human_send_settlement_guard(
+                    &client, worker_serial.as_ref(), None, &fingerprint, &response,
+                ).map(|_guard| ());
+                settled.send(result).expect("observe post-lock settlement result");
+            });
+            http_wait.recv_timeout(Duration::from_secs(15))
+                .expect("Native HTTP must complete while competing mutation holds the lock");
+            // The lock is still held here. No scheduler delay or socket-write
+            // observation is used to infer that the response was consumed.
+            write_credential(&path, &issuer, "rotated-after-completed-http");
+            drop(competing_guard);
+            let result = settlement_wait.recv_timeout(Duration::from_secs(15))
+                .expect("post-lock settlement must terminate");
+            assert_eq!(result, Err(
+                "Fabushi native messaging credential changed before Human settlement".to_string(),
+            ));
+            worker.join().expect("settlement worker");
+            server.join().expect("settlement HTTP fixture");
+            fs::remove_dir_all(root).expect("remove settlement fixture");
+        }
+    }
+
+    #[test]
+    fn shipping_human_settlement_credential_unchanged_retains_the_existing_lock() {
+        let root = std::env::temp_dir().join(format!("fabushi-settlement-{}", Uuid::new_v4()));
+        fs::create_dir_all(&root).expect("settlement fixture directory");
+        let path = root.join("credential.json");
+        let issuer = "http://127.0.0.1:4200";
+        write_credential(&path, issuer, "unchanged-fixture-token");
+        let client = FabushiNativeMessagingClient::new(issuer, &path).expect("Native credential owner");
+        let fingerprint = client.request_credential_fingerprint().expect("dispatch fingerprint");
+        let serial = Mutex::new(());
+        for response in [successful_response(), Err(FabushiHumanSendError::Transport("disconnect".into()))] {
+            let guard = ProductionSessionWorkers::acquire_human_send_settlement_guard(
+                &client, &serial, None, &fingerprint, &response,
+            ).expect("unchanged completed result can enter settlement");
+            assert!(guard.is_some(), "ordinary send must acquire the mutation guard");
+            assert!(matches!(serial.try_lock(), Err(std::sync::TryLockError::WouldBlock)),
+                "returned guard must protect the caller's later durable settlement");
+            drop(guard);
+            let held = serial.lock().expect("sync already owns the mutation lane");
+            let borrowed = ProductionSessionWorkers::acquire_human_send_settlement_guard(
+                &client, &serial, Some(&held), &fingerprint, &response,
+            ).expect("sync must reuse its existing guard without recursive acquisition");
+            assert!(borrowed.is_none());
+            assert!(matches!(serial.try_lock(), Err(std::sync::TryLockError::WouldBlock)));
+            drop(held);
+        }
+        fs::remove_dir_all(root).expect("remove settlement fixture");
+    }
+
+    #[test]
+    fn shipping_human_settlement_credential_rejection_preserves_the_original_refusal() {
+        let root = std::env::temp_dir().join(format!("fabushi-settlement-{}", Uuid::new_v4()));
+        fs::create_dir_all(&root).expect("settlement fixture directory");
+        let path = root.join("credential.json");
+        let issuer = "http://127.0.0.1:4200";
+        let client = FabushiNativeMessagingClient::new(issuer, &path).expect("Native credential owner");
+        let serial = Mutex::new(());
+        for refusal in [
+            "Fabushi native messaging credential changed during Human request",
+            "Fabushi Human message send was rejected (HTTP 403): forbidden",
+        ] {
+            write_credential(&path, issuer, "original-fixture-token");
+            let fingerprint = client.request_credential_fingerprint().expect("dispatch fingerprint");
+            write_credential(&path, issuer, "later-fixture-token");
+            let response = Err(FabushiHumanSendError::Rejected(refusal.into()));
+            let error = ProductionSessionWorkers::acquire_human_send_settlement_guard(
+                &client, &serial, None, &fingerprint, &response,
+            ).expect_err("explicit rejection never enters successful settlement or transport recovery");
+            assert_eq!(error, refusal);
+            fs::remove_file(&path).expect("invalidate the later credential snapshot");
+            let held = serial.lock().expect("sync mutation guard");
+            let error = ProductionSessionWorkers::acquire_human_send_settlement_guard(
+                &client, &serial, Some(&held), &fingerprint, &response,
+            ).expect_err("later credential unavailability cannot replace the original rejection");
+            assert_eq!(error, refusal);
+        }
+        fs::remove_dir_all(root).expect("remove settlement fixture");
+    }
+}
+
+#[cfg(test)]
 mod sharebox_shipping_tests {
     use super::*;
 
@@ -3911,3 +4139,4 @@ mod sharebox_shipping_tests {
         let _ = fs::remove_dir_all(root);
     }
 }
+

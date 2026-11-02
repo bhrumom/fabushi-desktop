@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–12
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–13
 
 ## Context and goal
 
@@ -311,5 +311,41 @@ Shipping, renderer and Electron jobs passed; retain that exact-H evidence.
   the two newly authored behaviors after they pass. No assertion is removed,
   no failing case is excluded, and diagnostic dependency upgrades are not
   adopted. Full service/packaged/independent acceptance remains open.
+
+### Round 13 delayed-settlement evidence and rejection provenance (NMR-30)
+
+Run `41432042504` at `1f5bd31d54c678a619f88dd4529834129bf11ff7`
+completed with 32/33 Human cases passing. The new delayed-lock case passed,
+but the older midflight send case failed because the later credential check
+replaced its transport's explicit `changed during Human request` rejection
+with `changed before Human settlement`. The resulting fixture timeout was
+after that assertion aborted recovery; it is not a production timeout.
+Shipping, renderer and Electron jobs passed; Agent nonce was skipped.
+
+- NMR-30: Preserve an explicit HTTP/admission rejection and its causal error
+  when a send rejoins the Session lane. Successful replies and ambiguous
+  transport failures must still acquire the existing conversation lock and
+  compare every private credential field with the pre-dispatch fingerprint
+  before reading or returning a durable settlement. Token-only changes count
+  as a different credential. Do not expose the fingerprint, bearer or session
+  identifier through renderer state, transcript metadata or logs.
+- NMR-AC-21: Keep all 33 Human integration behaviors, including successful
+  and disconnected delayed sends, pending intent, same-nonce retry and pure
+  reopen. Add deterministic private-owner concurrency coverage: hold the
+  real conversation mutex, provide an already completed response, rotate the
+  credential before allowing settlement, and require the exact post-lock
+  refusal for both success and transport ambiguity. Also prove explicit
+  rejections retain their original error and unchanged credentials proceed.
+  A scheduling delay alone is not evidence that an HTTP body was consumed.
+  Execute these private-owner tests plus Human 33, Agent nonce 4 and the
+  existing shipping/UI/Electron gates only in exact-H GitHub Actions.
+
+The helper remains private to the existing Session owner; this introduces
+no new public command, event, schema, credential owner or persistent field.
+Rollback is a normal code revert without deleting user data. Historical
+passed scopes remain recorded against their original SHA, and final
+production-service, source/legal, package and independent acceptance stay
+open.
+
 
 
