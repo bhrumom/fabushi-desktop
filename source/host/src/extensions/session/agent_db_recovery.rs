@@ -1,4 +1,3 @@
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -121,41 +120,28 @@ pub fn is_store_db_healthy(db: &Connection) -> bool {
 }
 
 /// Reject an existing corrupt main database before journal-mode/schema writes.
-/// A WAL or rollback journal may contain the current snapshot, so those stores
-/// are left to the existing WAL-aware opener; this probe is never their authority.
+/// With sidecars, reject only a main file SQLite identifies as NOTADB. Its current
+/// snapshot and integrity still belong to the existing WAL-aware opener.
 pub(super) fn probe_human_conversation_store(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<(), AgentDbRecoveryError> {
-    // SQLite may remove invalid journal files even when opening a NOTADB main
-    // file ultimately fails. Refuse its bytes before delegating sidecar-backed
-    // stores to SQLite; a valid WAL still remains the existing owner's authority.
-    match std::fs::File::open(db_path) {
-        Ok(mut file) => {
-            if file.metadata()?.len() > 0 {
-                // The magic alone does not admit a truncated main-file header.
-                // Read the complete header before SQLite can touch its sidecars.
-                let mut header = [0_u8; 100];
-                file.read_exact(&mut header)?;
-                if &header[..16] != b"SQLite format 3\0" {
-                    return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
-                }
-            }
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
-        Err(error) => return Err(error.into()),
-    }
+    let mut has_nonempty_sidecar = false;
     for suffix in ["-wal", "-journal"] {
         let mut path = db_path.as_os_str().to_os_string();
         path.push(suffix);
         match std::fs::metadata(PathBuf::from(path)) {
-            Ok(metadata) if metadata.len() > 0 => return Ok(()),
+            Ok(metadata) if metadata.len() > 0 => has_nonempty_sidecar = true,
             Ok(_) => {},
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
             Err(error) => return Err(error.into()),
         }
     }
     match std::fs::metadata(db_path) {
+        Ok(metadata) if metadata.len() > 0 && metadata.len() < 100 => {
+            // Preserve truncated headers without opening a raw file descriptor.
+            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+        },
         Ok(_) => {},
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
         Err(error) => return Err(error.into()),
@@ -169,6 +155,19 @@ pub(super) fn probe_human_conversation_store(
         OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
     )?;
     db.busy_timeout(Duration::from_millis(busy_timeout_ms))?;
+    if has_nonempty_sidecar {
+        // A normal writable open may discard sidecars before rejecting NOTADB.
+        // Read only the main-file header through SQLite, without replaying or
+        // touching sidecars. A stale main schema is not a WAL integrity verdict.
+        if let Err(error) = db.query_row("PRAGMA schema_version", [], |row| row.get::<_, i64>(0)) {
+            if matches!(&error, rusqlite::Error::SqliteFailure(code, _)
+                if code.code == rusqlite::ErrorCode::NotADatabase)
+            {
+                return Err(error.into());
+            }
+        }
+        return Ok(());
+    }
     let status = db.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))?;
     if status != "ok" {
         return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));

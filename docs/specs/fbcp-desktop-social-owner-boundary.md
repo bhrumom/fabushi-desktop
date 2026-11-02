@@ -132,6 +132,14 @@ GUI/account requirement. Add `desktop-social-owner-behaviors` to the existing
 workflow on Ubuntu24.04 using Rust1.97.1, the existing native dependencies/cache,
 unchanged default production/local-only features, `--locked`, and one test thread.
 Require Feature10, Runtime9 and HTTP6, each with zero failed/ignored tests.
+Also run the same existing `native_desktop_account_handoff` integration target
+on Linux: seven top-level cases, zero failed/ignored/measured/filtered-out cases.
+Its Unix child processes construct the production AppHost library and preserve
+the account, Social SQLite, credential, resource-boundary and restart oracles.
+Check and record the existing openssl/mkfifo tools, bind AppHost test/library and
+Cargo inputs plus the relevant Host/FeatureHost/Runtime/Product inputs, and
+retain Cargo.lock unchanged. The child is the integration-test executable;
+this does not build or qualify the separately packaged shipping AppHost binary.
 Record the exact checkout, source/lock/spec/workflow hashes, toolchain and full
 logs in an immutable artifact, including on failure. No retries or ignored cases
 may turn a missing result into success. This focused execution does not replace
