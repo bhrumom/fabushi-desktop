@@ -781,8 +781,9 @@ pub fn read_remote_media_buffer_with_headers(
 
     let redirect_options = options.clone();
     let max_redirects = options.max_redirects.unwrap_or(5);
+    let effective_timeout = Duration::from_millis(options.timeout_ms.unwrap_or(30_000));
     let client = reqwest::blocking::Client::builder()
-        .timeout(Duration::from_millis(options.timeout_ms.unwrap_or(30_000)))
+        .timeout(effective_timeout)
         .redirect(reqwest::redirect::Policy::custom(move |attempt| {
             if attempt.previous().len() > max_redirects {
                 return attempt.error(MediaFetchError::fetch_failed(
@@ -800,6 +801,7 @@ pub fn read_remote_media_buffer_with_headers(
 
     let mut res = client
         .get(source_url)
+        .timeout(effective_timeout)
         .send()
         .map_err(|error| media_request_error(source_url, error))?;
 
@@ -1041,14 +1043,16 @@ pub fn save_remote_media(
         return Err(MediaFetchError::fetch_failed(source_url, "HTTPS required"));
     }
 
+    let effective_timeout = Duration::from_millis(options.timeout_ms.unwrap_or(30_000));
     let client = reqwest::blocking::Client::builder()
-        .timeout(Duration::from_millis(options.timeout_ms.unwrap_or(30_000)))
+        .timeout(effective_timeout)
         .redirect(reqwest::redirect::Policy::limited(5))
         .build()
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
 
     let mut res = client
         .get(source_url)
+        .timeout(effective_timeout)
         .send()
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
 

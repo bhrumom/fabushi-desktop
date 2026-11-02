@@ -10,6 +10,7 @@
 //! - Empty body / 204 rejection without disk pollution.
 //! - Gateway dispatch integration for `readRemoteMediaBuffer` and `saveRemoteMedia`.
 //! - Bounded non-2xx diagnostics through real HTTP responses and Gateway calls.
+//! - Aggregate remote-request deadlines with progressing bodies and unchanged failed saves.
 //! - Restrictive hostname admission, private-origin trust, and per-hop redirect policy.
 //! - Real loopback response bodies, byte bounds, and explicit/default redirect caps.
 
@@ -84,17 +85,49 @@ impl AttachmentsBox for MockBox {
     }
 }
 
+enum MediaHttpBody {
+    Prefix {
+        body: Vec<u8>,
+        declared_length: usize,
+        suffix: Option<Vec<u8>>,
+    },
+    Chunked {
+        chunks: Vec<Vec<u8>>,
+        interval: Duration,
+        repeat_until_release: bool,
+    },
+}
+
+#[derive(Debug, Default)]
+struct MediaHttpProgress {
+    headers_sent: Option<Instant>,
+    chunks_sent: Vec<(Instant, usize)>,
+}
+
 struct MediaHttpFixture {
     origin: String,
     release: Option<mpsc::Sender<()>>,
     prefix_sent: mpsc::Receiver<()>,
     accepted: Arc<AtomicBool>,
     suffix_released: Arc<AtomicBool>,
-    worker: Option<thread::JoinHandle<io::Result<()>>>,
+    worker: Option<thread::JoinHandle<io::Result<MediaHttpProgress>>>,
 }
 
 impl MediaHttpFixture {
     fn start(status: u16, body: Vec<u8>, declared_length: usize, suffix: Option<Vec<u8>>) -> Self {
+        Self::start_response(status, MediaHttpBody::Prefix { body, declared_length, suffix })
+    }
+
+    fn start_chunks(
+        status: u16,
+        chunks: Vec<Vec<u8>>,
+        interval: Duration,
+        repeat_until_release: bool,
+    ) -> Self {
+        Self::start_response(status, MediaHttpBody::Chunked { chunks, interval, repeat_until_release })
+    }
+
+    fn start_response(status: u16, body: MediaHttpBody) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind media HTTP fixture");
         listener.set_nonblocking(true).unwrap();
         let origin = format!("http://{}", listener.local_addr().unwrap());
@@ -110,7 +143,9 @@ impl MediaHttpFixture {
                     Ok((stream, _)) => break stream,
                     Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
                         match released.try_recv() {
-                            Ok(()) | Err(mpsc::TryRecvError::Disconnected) => return Ok(()),
+                            Ok(()) | Err(mpsc::TryRecvError::Disconnected) => {
+                                return Ok(MediaHttpProgress::default());
+                            }
                             Err(mpsc::TryRecvError::Empty) => {}
                         }
                         thread::park_timeout(Duration::from_millis(5));
@@ -134,24 +169,93 @@ impl MediaHttpFixture {
             if !request.starts_with(b"GET ") {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "expected media GET"));
             }
-            write!(
-                stream,
-                "HTTP/1.1 {status} Fixture\r\nContent-Length: {declared_length}\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\n\r\n"
-            )?;
-            stream.write_all(&body)?;
-            stream.flush()?;
-            let _ = prefix_ready.send(());
-            if let Some(suffix) = suffix {
-                // No EOF or suffix reaches the client until the test releases
-                // this exact server, including assertion-failure cleanup.
-                let _ = released.recv();
-                worker_released.store(true, Ordering::SeqCst);
-                // A bounded reader has already dropped its response, so a
-                // closed peer during cleanup is expected.
-                let _ = stream.write_all(&suffix);
-                let _ = stream.flush();
+            let mut progress = MediaHttpProgress::default();
+            match body {
+                MediaHttpBody::Prefix { body, declared_length, suffix } => {
+                    write!(
+                        stream,
+                        "HTTP/1.1 {status} Fixture\r\nContent-Length: {declared_length}\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\n\r\n"
+                    )?;
+                    stream.write_all(&body)?;
+                    stream.flush()?;
+                    let _ = prefix_ready.send(());
+                    if let Some(suffix) = suffix {
+                        // No EOF or suffix reaches the client until the test releases
+                        // this exact server, including assertion-failure cleanup.
+                        let _ = released.recv();
+                        worker_released.store(true, Ordering::SeqCst);
+                        // A bounded reader has already dropped its response, so a
+                        // closed peer during cleanup is expected.
+                        let _ = stream.write_all(&suffix);
+                        let _ = stream.flush();
+                    }
+                }
+                MediaHttpBody::Chunked { chunks, interval, repeat_until_release } => {
+                    if chunks.is_empty() || chunks.iter().any(Vec::is_empty) {
+                        return Err(io::Error::new(io::ErrorKind::InvalidInput, "expected nonempty HTTP chunks"));
+                    }
+                    stream.set_nodelay(true)?;
+                    write!(
+                        stream,
+                        "HTTP/1.1 {status} Fixture\r\nTransfer-Encoding: chunked\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Disposition: attachment; filename*=UTF-8''deadline%20fixture.dat\r\nConnection: close\r\n\r\n"
+                    )?;
+                    stream.flush()?;
+                    progress.headers_sent = Some(Instant::now());
+                    let mut sent_bytes = 0;
+                    loop {
+                        if !progress.chunks_sent.is_empty() {
+                            match released.recv_timeout(interval) {
+                                Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => {
+                                    worker_released.store(true, Ordering::SeqCst);
+                                    break;
+                                }
+                                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                            }
+                        }
+                        let chunk = &chunks[progress.chunks_sent.len() % chunks.len()];
+                        if sent_bytes + chunk.len() >= 8192 {
+                            return Err(io::Error::new(io::ErrorKind::InvalidData, "fixture reached the diagnostic byte budget"));
+                        }
+                        let written = (|| -> io::Result<()> {
+                            write!(stream, "{:x}\r\n", chunk.len())?;
+                            stream.write_all(chunk)?;
+                            stream.write_all(b"\r\n")?;
+                            stream.flush()
+                        })();
+                        if let Err(error) = written {
+                            if !repeat_until_release || !matches!(
+                                error.kind(),
+                                io::ErrorKind::BrokenPipe | io::ErrorKind::ConnectionReset | io::ErrorKind::ConnectionAborted
+                            ) {
+                                return Err(error);
+                            }
+                            // A deadline may close the peer just before its caller
+                            // publishes the result. Keep this socket owned and EOF
+                            // gated even when subsequent writes detect that close.
+                            let _ = released.recv();
+                            worker_released.store(true, Ordering::SeqCst);
+                            return Ok(progress);
+                        }
+                        sent_bytes += chunk.len();
+                        progress.chunks_sent.push((Instant::now(), chunk.len()));
+                        if progress.chunks_sent.len() == 1 {
+                            let _ = prefix_ready.send(());
+                        }
+                        if !repeat_until_release && progress.chunks_sent.len() == chunks.len() {
+                            break;
+                        }
+                    }
+                    if repeat_until_release {
+                        // Only owned teardown can finish a trickling response.
+                        let _ = stream.write_all(b"0\r\n\r\n");
+                        let _ = stream.flush();
+                    } else {
+                        stream.write_all(b"0\r\n\r\n")?;
+                        stream.flush()?;
+                    }
+                }
             }
-            Ok(())
+            Ok(progress)
         });
         Self {
             origin,
@@ -183,13 +287,13 @@ impl MediaHttpFixture {
         }
     }
 
-    fn finish(&mut self) -> io::Result<()> {
+    fn finish(&mut self) -> io::Result<MediaHttpProgress> {
         self.release();
         match self.worker.take() {
             Some(worker) => worker.join().unwrap_or_else(|_| {
                 Err(io::Error::new(io::ErrorKind::Other, "media HTTP fixture panicked"))
             }),
-            None => Ok(()),
+            None => Ok(MediaHttpProgress::default()),
         }
     }
 }
@@ -223,6 +327,91 @@ fn media_tree_snapshot(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
     let mut snapshot = BTreeMap::new();
     visit(root, root, &mut snapshot);
     snapshot
+}
+
+#[derive(Debug)]
+struct MediaGatewayObservation {
+    started: Instant,
+    settled: Instant,
+    result: Result<Value, String>,
+}
+
+fn observe_media_gateway_response(
+    method: &'static str,
+    fixture: &mut MediaHttpFixture,
+    args: Value,
+    root: &Path,
+) -> (MediaGatewayObservation, MediaHttpProgress, bool) {
+    let root = root.to_path_buf();
+    let (result_tx, result_rx) = mpsc::channel();
+    let caller = thread::spawn(move || {
+        let started = Instant::now();
+        let result = media_gateway_call(method, &args, &root);
+        let _ = result_tx.send(MediaGatewayObservation { started, settled: Instant::now(), result });
+    });
+    let result_before_release = result_rx.recv_timeout(Duration::from_secs(6));
+    let eof_was_held = !fixture.suffix_released.load(Ordering::SeqCst);
+    // Even a harness timeout or caller panic releases the exact server and
+    // joins both owned threads before any assertion or result unwrap.
+    fixture.release();
+    let caller_joined = caller.join();
+    let server_joined = fixture.finish();
+    caller_joined.expect("media gateway caller did not panic");
+    let progress = server_joined.expect("streaming media HTTP fixture completed");
+    let observation = result_before_release
+        .expect("actual media gateway result must arrive before fixture teardown; harness timeout is failure");
+    (observation, progress, eof_was_held)
+}
+
+fn media_gateway_trickle_deadline(method: &'static str, status: u16) -> (String, Result<Value, String>) {
+    let temp = TempTestDir::new("gateway-aggregate-deadline");
+    fs::write(temp.path.join("keep.bin"), b"existing media stays intact").unwrap();
+    let before = media_tree_snapshot(&temp.path);
+    let timeout = Duration::from_millis(1_500);
+    let mut fixture = MediaHttpFixture::start_chunks(
+        status,
+        vec![b"PARTIAL_MUST_NOT_BE_RETURNED ".to_vec()],
+        Duration::from_millis(125),
+        true,
+    );
+    let mut args = fixture.args(&temp.path);
+    args["timeout_ms"] = serde_json::json!(timeout.as_millis() as u64);
+    let (observation, progress, eof_was_held) =
+        observe_media_gateway_response(method, &mut fixture, args, &temp.path);
+
+    assert!(fixture.accepted.load(Ordering::SeqCst), "the actual request must reach the owned server");
+    assert!(eof_was_held, "the final chunk and EOF must remain gated until after the actual result");
+    let headers_sent = progress.headers_sent.expect("the complete response headers must be sent");
+    assert!(headers_sent.duration_since(observation.started) < timeout / 2,
+        "headers must arrive promptly enough to exercise the response body deadline");
+    // Server timestamps come from successful writes, not intended sleep times.
+    // Exclude any write racing after the service result. The final gap matters:
+    // a stalled peer followed by a per-read idle timeout is not this oracle.
+    let chunks: Vec<_> = progress.chunks_sent.iter()
+        .filter(|(sent, _)| *sent <= observation.settled)
+        .collect();
+    assert!(chunks.len() >= 3, "the body must make repeated progress before settlement: {progress:?}");
+    let first = chunks.first().unwrap().0;
+    let last = chunks.last().unwrap().0;
+    assert!(first.duration_since(headers_sent) < timeout / 2, "first chunk must follow headers promptly");
+    assert!(last.duration_since(first) >= timeout / 2,
+        "positive body progress must span a substantial part of the request budget: {progress:?}");
+    for pair in chunks.windows(2) {
+        assert!(pair[1].0.duration_since(pair[0].0) < timeout / 2,
+            "a stalled fixture cannot establish an aggregate deadline: {progress:?}");
+    }
+    assert!(observation.settled.duration_since(last) < timeout / 2,
+        "the last successful chunk must precede settlement by less than an idle timeout: {progress:?}");
+    assert!(observation.settled.duration_since(observation.started) >= timeout,
+        "an unrelated early failure cannot establish the configured deadline: {observation:?}");
+    assert!(observation.settled.duration_since(headers_sent) < timeout + timeout / 2,
+        "body progress must not extend the configured total budget: {observation:?}");
+    let sent_bytes: usize = chunks.iter().map(|(_, bytes)| *bytes).sum();
+    assert!(sent_bytes > 0 && sent_bytes < 8192,
+        "the result must precede the diagnostic byte bound, with positive partial data");
+    assert_eq!(media_tree_snapshot(&temp.path), before,
+        "deadline failures must neither publish partial media nor leave temporary files");
+    (fixture.origin.clone(), observation.result)
 }
 
 fn assert_media_gateway_stops_before_eof(method: &'static str) {
@@ -724,6 +913,79 @@ fn media_http_error_gateway_success_and_default_guard_controls() {
             assert_eq!(fs::read(saved_path).unwrap(), body);
         }
         assert_eq!(fs::read(temp.path.join("keep.bin")).unwrap(), b"existing media");
+    }
+}
+
+#[test]
+fn media_http_deadline_gateway_trickle_preserves_http_status() {
+    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
+        let (origin, result) = media_gateway_trickle_deadline(method, 503);
+        assert_eq!(result.unwrap_err(), format!(
+            "MediaFetchError: Failed to fetch media from {origin}/media: HTTP 503",
+        ), "{method}: a timed-out diagnostic retains the known status and omits all partial detail");
+    }
+}
+
+#[test]
+fn media_http_deadline_gateway_trickle_success_leaves_store_unchanged() {
+    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
+        let (origin, result) = media_gateway_trickle_deadline(method, 200);
+        let error = result.expect_err("an incomplete successful body must fail at the total deadline");
+        let prefix = format!("MediaFetchError: Failed to fetch media from {origin}/media: ");
+        let cause = error.strip_prefix(&prefix)
+            .unwrap_or_else(|| panic!("{method}: preserve the existing fetch-error boundary: {error}"));
+        // Locked reqwest displays the body/decode category; the nested timeout
+        // is established by the real progressing response and closed EOF gate.
+        assert!(matches!(cause, "request or response body error" | "error decoding response body"),
+            "{method}: preserve the existing response-read error: {error}");
+    }
+}
+
+#[test]
+fn media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata() {
+    let chunks = vec![b"timely \xf0".to_vec(), b"\x9f\x98".to_vec(), b"\x80 media\r\nbytes".to_vec()];
+    let body = chunks.concat();
+    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
+        let temp = TempTestDir::new("gateway-timely-chunks");
+        fs::write(temp.path.join("keep.bin"), b"existing media stays intact").unwrap();
+        let before = media_tree_snapshot(&temp.path);
+        let mut fixture = MediaHttpFixture::start_chunks(
+            200, chunks.clone(), Duration::from_millis(25), false,
+        );
+        let mut args = fixture.args(&temp.path);
+        args["timeout_ms"] = serde_json::json!(5_000);
+        args["max_bytes"] = serde_json::json!(body.len());
+        let (observation, progress, _) =
+            observe_media_gateway_response(method, &mut fixture, args, &temp.path);
+
+        assert!(fixture.accepted.load(Ordering::SeqCst));
+        assert_eq!(progress.chunks_sent.len(), chunks.len(), "every split chunk must be delivered");
+        assert!(progress.chunks_sent.windows(2).all(|pair| pair[0].0 < pair[1].0),
+            "the positive control must deliver separate chunks");
+        let headers_sent = progress.headers_sent.expect("timely response headers must be sent");
+        assert!(progress.chunks_sent.last().unwrap().0.duration_since(headers_sent) < Duration::from_secs(5),
+            "the complete body must be supplied within the configured request budget");
+        let result = observation.result.expect("timely complete chunked media must succeed");
+        if method == "readRemoteMediaBuffer" {
+            assert_eq!(result["file_name"], "deadline fixture.dat", "{method}");
+            assert_eq!(result["content_type"], "text/plain; charset=utf-8", "{method}");
+            assert_eq!(result["buffer"], serde_json::json!(body), "UTF-8 split across chunks stays byte-exact");
+            assert_eq!(media_tree_snapshot(&temp.path), before);
+        } else {
+            assert_eq!(result["fileName"], "deadline fixture.dat", "{method}");
+            assert_eq!(result["contentType"], "text/plain; charset=utf-8", "{method}");
+            let saved_path = Path::new(result["path"].as_str().unwrap());
+            let canonical_root = fs::canonicalize(&temp.path).unwrap();
+            let relative = saved_path.strip_prefix(&canonical_root)
+                .expect("the complete save must stay within the owned media root").to_path_buf();
+            assert_eq!(result["size"], serde_json::json!(body.len()));
+            assert_eq!(fs::read(saved_path).unwrap(), body);
+            let mut expected = before;
+            expected.insert(PathBuf::from("inbound"), None);
+            expected.insert(relative, Some(body.clone()));
+            assert_eq!(media_tree_snapshot(&temp.path), expected,
+                "only the complete saved file and its directory may be published");
+        }
     }
 }
 

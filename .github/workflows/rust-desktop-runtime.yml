@@ -493,6 +493,9 @@ jobs:
               "media_http_error_gateway_read_failure_preserves_status",
               "media_http_error_gateway_empty_and_whitespace_omit_body",
               "media_http_error_gateway_success_and_default_guard_controls",
+              "media_http_deadline_gateway_trickle_preserves_http_status",
+              "media_http_deadline_gateway_trickle_success_leaves_store_unchanged",
+              "media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata",
               "media_fetch_hostname_allowlist_matches_normalized_patterns",
               "media_fetch_hostname_allowlist_does_not_override_private_trust",
               "media_fetch_url_admission_enforces_http_and_https_requirements",
@@ -522,7 +525,7 @@ jobs:
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
           receipt.update({
-              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1", "command": command, "command_exit_records": exits,
+              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1", "command": command, "command_exit_records": exits,
               "required_tests": required, "observed_passed_test_names": passed,
               "projection_command": (root / "media-input-url-projection.command.txt").read_text().strip(),
               "projection_required_test": projection_name, "projection_observed_passed_test_names": projection_passed,
@@ -533,7 +536,7 @@ jobs:
               "missing_or_nonunique_positive_results": missing,
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MHT covers total-request deadlines with real trickled/timely response controls. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
           })
           (root / "media-input-policy.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
@@ -1333,6 +1336,9 @@ jobs:
               "media_reference_unicode_contract": "MRU-v1",
               "media_reference_unicode_result": "passed",
               "media_reference_unicode_scope": "UTF-8-safe ASCII scheme decisions, unchanged inbound URI refusals, and actual ProductionXuserHost/AttachmentsService plus ordered publisher callbacks with a controlled relay. Fresh desktop producer projection, actual sharing accounts, platforms and full media acceptance remain open.",
+              "media_request_deadline_contract": "MHT-v1",
+              "media_request_deadline_result": "passed",
+              "media_request_deadline_scope": "Both existing remote media readers apply the configured timeout as a total connection-through-body budget; controlled trickling error/success responses settle without resetting it, errors retain known HTTP status, and timely payload/store controls remain. Separate read-idle/header budgets, caller cancellation, full network and real-service acceptance stay open.",
               "media_http_error_contract": "MHE-v1",
               "media_http_error_target": "openclaw_media_fetch_contract",
               "media_http_error_result": "passed",
@@ -1862,6 +1868,9 @@ jobs:
               "media_http_error_gateway_read_failure_preserves_status",
               "media_http_error_gateway_empty_and_whitespace_omit_body",
               "media_http_error_gateway_success_and_default_guard_controls",
+              "media_http_deadline_gateway_trickle_preserves_http_status",
+              "media_http_deadline_gateway_trickle_success_leaves_store_unchanged",
+              "media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata",
               "media_fetch_hostname_allowlist_matches_normalized_patterns",
               "media_fetch_hostname_allowlist_does_not_override_private_trust",
               "media_fetch_url_admission_enforces_http_and_https_requirements",
@@ -1916,7 +1925,7 @@ jobs:
               "source/host/tests/channel_attachment_contract.rs",
           ]
           receipt = {
-              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1", "subject_commit": head,
+              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -1933,7 +1942,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MHT covers total-request deadlines with real trickled/timely response controls. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
           }
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))

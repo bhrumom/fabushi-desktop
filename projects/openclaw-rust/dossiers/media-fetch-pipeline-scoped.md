@@ -155,3 +155,11 @@ Location behavior, deadlines, read scope, generic save/media-store downloads,
 accepted-turn composition and real channel/provider acceptance. In particular,
 the old `"::1"` comparison does not handle URL's bracketed IPv6 representation;
 MURL does not claim to repair that wider classifier.
+
+MHT-v1 in the existing [HTTP diagnostic spec](../docs/specs/media-http-error-diagnostics.md)
+adds a total request deadline to both remote entries after the bounded-read
+change exposed per-read timeout renewal. It deliberately tightens successful
+response timing as well. Actual trickled-response, status-preservation,
+timely-body and no-store controls are required in Actions; caller cancellation
+and separate idle/header budgets remain open. No read or acceptance state is
+promoted by this correction.

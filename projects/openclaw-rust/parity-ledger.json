@@ -11369,7 +11369,8 @@
         "Diagnostic body read failure preserves the known HTTP status and omits unavailable body detail",
         "Telegram bot tokens in URLs and error messages must be redacted with 6-char prefix and 4-char suffix separated by ellipsis",
         "MURL-v1: restrictive hostname patterns are conjunctive with private trust and apply before the initial and every followed request; matching the list never grants private access",
-        "MURL-v1: explicit zero/custom redirect caps and typed redirect-policy errors survive the existing reader and actual gateway boundary; full DNS/IP/proxy/cancellation parity is not established"
+        "MURL-v1: explicit zero/custom redirect caps and typed redirect-policy errors survive the existing reader and actual gateway boundary; full DNS/IP/proxy/cancellation parity is not established",
+        "MHT-v1: both remote fetch entries apply the configured timeout to the whole request including body; chunk progress cannot renew it, known HTTP errors retain their status, and incomplete successful bodies publish no store file"
       ],
       "migration_rollback": "Reject remote media fetch requests and return MediaFetchError::fetch_failed",
       "oracle_ids": [
@@ -11445,7 +11446,10 @@
         "source/host/tests/openclaw_media_fetch_contract.rs::media_fetch_url_admission_enforces_http_and_https_requirements",
         "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_trusted_origin_preserves_body_and_byte_bounds",
         "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_checks_relative_and_off_list_redirects",
-        "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_applies_explicit_and_default_redirect_caps"
+        "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_applies_explicit_and_default_redirect_caps",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_deadline_gateway_trickle_preserves_http_status",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_deadline_gateway_trickle_success_leaves_store_unchanged",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata"
       ],
       "typed_contracts": [
         "read_remote_media_buffer(options: &FetchMediaOptions) -> Result<FetchMediaResult, MediaFetchError>",

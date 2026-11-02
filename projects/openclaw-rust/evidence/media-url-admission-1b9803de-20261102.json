@@ -1,0 +1,201 @@
+{
+  "record_kind": "scoped-actions-observation",
+  "subject": {
+    "commit": "1b9803de2283322a7809dc626a5ca35a52eb834e",
+    "tree": "7ffa987205bbc71af80114f6c15267937f2cf09a",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    }
+  },
+  "scope": "MURL-v1 restrictive input URL/redirect admission, retaining MIP/LPIP/MHE and portable CWR controls; not whole-unit/source closure or shipping acceptance",
+  "history": [
+    {
+      "commit": "181cf49d4e14f08c1fc5daa9587928164ad09a12",
+      "run_id": 41526525909,
+      "result": "failed-before-jobs",
+      "classification": "TEST_FLAW",
+      "decision": "MURL-CI-01"
+    }
+  ],
+  "runtime": {
+    "run_id": 41526955264,
+    "run_attempt": 1,
+    "linux_job_id": 125557036050,
+    "media": {
+      "result": "passed",
+      "integration_passed": 53,
+      "projection_passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "required_integration_count": 30,
+      "missing_or_nonunique_positive_results": [],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_input_files_contract",
+        "--test",
+        "safe_link_preview_fetch_contract",
+        "--test",
+        "attachments_service_contract",
+        "--test",
+        "openclaw_media_fetch_contract"
+      ],
+      "projection_command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust",
+        "--",
+        "--exact"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "projection_exit": 0,
+      "projection_capture_exit": 0,
+      "log_sha256": "bd74513bb5033b70bde5a2bc0e18ea392d8f873a893e9f276db5a03c6f9f85a0",
+      "projection_log_sha256": "974128998f9badec6b1bea8db956ca1d9cc4684027b7823672b1d5cbce77c643"
+    },
+    "portable_recovery": {
+      "result": "passed",
+      "passed": 57,
+      "failed": 0,
+      "ignored": 0,
+      "executions": [
+        {
+          "case": "integration",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--no-fail-fast",
+            "--test",
+            "durable_recovery_stores_contract",
+            "--test",
+            "pending_wake_rearm_contract",
+            "--test",
+            "transcript_manager_contract",
+            "--test",
+            "cloud_agent_pending_wake_rearm_production_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "required_positive_count": 21,
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "log_sha256": "8aff9442bc139c704a4c8d49b378621a83f8b77309cd6b7846663c45f26bbc55"
+        },
+        {
+          "case": "checked-store",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "required_positive_count": 3,
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "log_sha256": "597b4b3527d9e05b28268651edac834bb79b33f7acf250c365802373a2bb7e93"
+        },
+        {
+          "case": "paired-device-sse",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "required_positive_count": 1,
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "log_sha256": "21a1bd4ba79af17d1e7e1a0b7066b35cc45a080b4de3e5a09df1d2ddd25ced88"
+        }
+      ]
+    },
+    "other_jobs": [
+      {
+        "id": 125557035585,
+        "name": "renderer",
+        "result": "success"
+      },
+      {
+        "id": 125557035833,
+        "name": "Linux installation-key restore",
+        "result": "success"
+      },
+      {
+        "id": 125557035734,
+        "name": "macOS rust-host",
+        "result": "queued",
+        "acceptance": "not accepted"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13180970076,
+        "name": "ocrm-config-restore-linux-1b9803de2283322a7809dc626a5ca35a52eb834e-41526955264-1",
+        "digest": "sha256:ba76ed99156409a15d6e5dd45d3cc0be7a873e30614c557dbc10ce0cefb15350",
+        "size_in_bytes": 47443
+      },
+      {
+        "id": 13180715687,
+        "name": "ocrm-plugin-edge-1b9803de2283322a7809dc626a5ca35a52eb834e",
+        "digest": "sha256:3155548a872fec2741803677178c6ba797881522db93278c57b75c074ce3a6b4",
+        "size_in_bytes": 2127
+      },
+      {
+        "id": 13178644876,
+        "name": "ocrm-sqlite-native-path-1b9803de2283322a7809dc626a5ca35a52eb834e-41526955264-1",
+        "digest": "sha256:bcb6f6d7f35192283959f7384558d491a47433a5221bc4cebaa59414b4e01f61",
+        "size_in_bytes": 50771
+      }
+    ]
+  },
+  "source_authority": {
+    "run_id": 41526955277,
+    "result": "success",
+    "scope": "P0 structural; not final source/dependency/review closure"
+  },
+  "delivery": {
+    "sha": "1b9803de2283322a7809dc626a5ca35a52eb834e",
+    "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/1b9803de2283322a7809dc626a5ca35a52eb834e",
+    "remote_commit_tree_and_changed_file_bodies_read_back": true
+  },
+  "remaining": [
+    "Outer Host HTTP registration and desktop/accepted-turn consumers",
+    "Incoming aggregate response deadline gap; MHT-v1 next",
+    "Complete DNS/IP/proxy/caller-cancellation/read-scope contracts",
+    "Real provider/channel/plugin/node/device/platform/UI/performance/packaged acceptance",
+    "All eight global OCRM completion flags remain false"
+  ],
+  "verification_boundary": "Actions execution only; no local executable verification. This file is a later evidence carrier for the explicit subject, not self-SHA acceptance."
+}

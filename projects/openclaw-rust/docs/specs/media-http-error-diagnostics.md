@@ -124,3 +124,88 @@ path twice to R24/AC24 evidence lists, violating their `uniqueItems` schema.
 Remove only the newly duplicated entries and retain the new MHE spec refs;
 all original tests, flags and assertions remain. The source-reviewed schema
 defect requires this correction and a fresh focused review before Actions.
+
+## Aggregate remote-request deadline — MHT-v1
+
+Implementation base is `1b9803de2283322a7809dc626a5ca35a52eb834e` after MURL
+integration. The publication parent advances to
+`0d6acd9bf4b9725bc2030c785db5064d277a68cd` (tree
+`a7a8f97c57f1b38fc5efecf981b553c443da592d`), preserving the incoming
+Automation, model/Config, native preview, Memory and Unicode work. Its shared
+workflow and ledger changes are retained without promoting any global flag.
+**MHT-01 — FIX / IMPL_BUG**: MHE's bounded diagnostic reader calls
+blocking `Read` repeatedly. Locked reqwest `0.12.28` restarts the blocking
+client wait for each read, whereas the earlier buffer-error `text()` wrapped
+one complete body future. A trickling peer below the diagnostic byte budget
+can therefore keep the operation alive beyond the configured timeout. The
+save path already had this aggregate-deadline gap; the buffer error path
+regressed in MHE. Do not undo bounded diagnostics to restore the old timing.
+
+Reuse reqwest's existing per-request `.timeout(effective_timeout)` on both
+`read_remote_media_buffer_with_headers` and `save_remote_media`. Resolve the
+same existing `timeout_ms`/30,000 ms default once and apply it to the client
+wait and request. This intentionally sets one connection-through-body budget,
+including redirects and successful responses. It tightens previous split
+header/body/per-read timing; it is not a claim of unchanged timeout semantics.
+No new worker, timer, runtime, retry, option or dependency is introduced.
+
+Required behavior:
+
+- MHT-01: trickled non-success bodies cannot reset the total request budget.
+  Once the deadline expires, preserve the already known HTTP status and omit
+  the unavailable snippet through the existing error/service boundary.
+- MHT-02: timely complete/chunked successful responses retain exact bytes,
+  metadata and store behavior. An incomplete successful body at the total
+  deadline returns the existing fetch error and publishes no partial file.
+- MHT-03: retain MHE exact-cap/Unicode/redaction controls, MURL initial and
+  redirect admission/caps, byte bounds and unchanged owner state. Dropping
+  the response/request-local client retains existing lifetime ownership.
+
+Extend the existing owned HTTP fixture and real service controls. Supply
+headers promptly, trickle bytes with observed gaps below the configured
+timeout and keep EOF/suffix behind a fixture-owned gate. Require an actual
+status-preserving result before that gate opens; a harness receive timeout is
+failure. Record progress so a stalled server cannot masquerade as the total
+deadline. Release/join every owned caller and server on failure. Retain a
+timely multi-chunk success control and unchanged-store failure controls.
+
+The exact dependency API review uses reqwest release
+`d97859910c357827ad5993d37ce750ad595f4fff`: blocking response blob
+`19fb7fe203fbd86266ad6592a4476a28cb4398ea`, blocking request blob
+`7ac08a768fd31c42fed77b6ee3eb787abb6eb6f5`, blocking client blob
+`255d9d8aa4fb2318cb923e6ff4e3db994b781b4d`, and async client blob
+`d6dc03ad346c5f78a532f07f73ad99867f848145`, and error Display blob
+`1128d633e57d6f7f614c331be1cf86f06ea7f548`. The service exposes the existing
+body/decode error category; timeout causality comes from actual pre-EOF
+settlement with continuing observed chunk progress, not a nested Display
+message. This is a timeout/consumer contract
+review, not complete dependency source or archive acceptance.
+
+Root owns the production owner, spec/workflow/ledger changes; a separate worker
+may edit only the existing media-fetch contract test file against this contract.
+Freeze and independently review before publication; require exact-H Actions
+named positives and existing media regressions. No local execution. Caller
+cancellation, separate header/read-idle budgets, proxy/DNS/IP security,
+outer HTTP/desktop consumers, real services and full migration acceptance
+remain open. Rollback must retain the aggregate deadline or disable the
+affected remote entry; no stored format or data migration changes.
+
+**MHT-ORACLE-01 — FIX / TEST_FLAW.** Independent review of frozen tree
+`fc52fc3aa4e954761261693a673bcf5baed715b3` found that the timely-body control
+asserted the buffer result's `file_name`/`content_type` keys for both methods.
+The existing saver serializes `SavedRemoteMedia` as `fileName`/`contentType`.
+Keep those product wire contracts unchanged; assert each method's actual
+metadata keys in its own branch, retaining exact byte/size/store assertions.
+This source-proven oracle correction requires a fresh focused review and
+exact-H Actions execution; it is not a product compatibility change.
+
+**MHT-MERGE-01 — FIX / integration preservation.** The incoming native preview
+implementation supersedes the local unpublished LPR prototype; preserve its
+single registry/carrier, shared service, Host-lane isolation and preview mutex.
+Retain every incoming MRU, Memory, Config, Automation and preview command and
+positive-result gate. The overlapping media receipt labels/scopes are the union
+of MRU and MHT, with neither one's execution replaced or relabeled. Interrupted
+review/large-blob submission is not approval or delivery; freeze the reconciled
+tree and obtain fresh review. The large ledger blob is delivered only through
+the repository's existing exact-object Actions carrier after an unconfirmed
+large connector submission; that carrier is not product verification.
