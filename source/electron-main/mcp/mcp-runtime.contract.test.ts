@@ -14,6 +14,9 @@ import { accountCacheScope } from "../../shared/node/cursor-token.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
 import { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
+import { createProductionMcpOAuthAdapter } from "../adapters/mcp-oauth.js";
+import type { ProductionServiceContext } from "../main-production-services.js";
+import type { DesktopMcpManagerFacade } from "./desktop-mcp-manager.js";
 import { createMcpRuntime } from "./mcp-runtime.js";
 
 test("shipping MCP runtime forwards discovery failure through the dedicated callback", async () => {
@@ -115,6 +118,620 @@ function deferred<T>() {
   });
   return { promise, resolve, reject };
 }
+
+type ConstructionManager = Pick<DesktopMcpManagerFacade,
+  "dispose" | "setAuthCompletionObserver" | "listRoutedTools" | "executeRoutedTool">;
+type ConstructionDeps = Parameters<typeof createMcpRuntime<ConstructionManager>>[0];
+type ConstructionOptions = Parameters<ConstructionDeps["createManager"]>[0];
+
+function constructionDeps(
+  createManager: ConstructionDeps["createManager"],
+  overrides: Partial<Omit<ConstructionDeps, "createManager">> = {},
+): ConstructionDeps {
+  return {
+    createManager,
+    settingsStore: {},
+    pushBoxSecrets: async () => {},
+    ensureCursorAuthService: async () => ({ getValidAccessToken: async () => "current-token" }),
+    getMachineId: () => "construction-machine",
+    loadBoxMcpServers: async () => ({}),
+    listBoxMcpServers: async () => [],
+    listBoxMcpToolsRaw: async () => "00",
+    executeBoxMcpToolRaw: async () => "00",
+    reportConnectorAuth: () => {},
+    reportMcpDiscoveryFailed: () => {},
+    reportDiagnostic: () => {},
+    cleanupLegacyAuth: async () => {},
+    sandRootDir: () => "/tmp/mcp-construction",
+    reportFailure: () => {},
+    broadcast: () => {},
+    refreshHostMcp: () => {},
+    ...overrides,
+  };
+}
+
+function constructionManager(hooks: {
+  dispose?: () => void | Promise<void>;
+  observe?: (listener: (completion: unknown) => void) => void;
+} = {}) {
+  const calls = { dispose: 0, observe: 0, list: 0, execute: 0 };
+  let observer: ((completion: unknown) => void) | undefined;
+  const manager: ConstructionManager = {
+    dispose() {
+      calls.dispose += 1;
+      return hooks.dispose?.();
+    },
+    setAuthCompletionObserver(listener) {
+      calls.observe += 1;
+      observer = listener;
+      hooks.observe?.(listener);
+    },
+    async listRoutedTools() { calls.list += 1; return ["current-tool"]; },
+    async executeRoutedTool() { calls.execute += 1; return "executed"; },
+  };
+  return { manager, calls, complete(completion: unknown) { observer?.(completion); } };
+}
+
+test("MC-01 concurrent ensures share the reserved construction and manager", async () => {
+  const started = deferred<void>();
+  const held = deferred<ConstructionManager>();
+  const owned = constructionManager();
+  let factories = 0;
+  const runtime = createMcpRuntime(constructionDeps(() => {
+    factories += 1;
+    started.resolve();
+    return held.promise;
+  }));
+  const first = runtime.ensureMcpManager();
+  const second = runtime.ensureMcpManager();
+  assert.equal(first, second);
+  await started.promise;
+  assert.equal(factories, 1);
+  held.resolve(owned.manager);
+  assert.deepEqual(await Promise.all([first, second]), [owned.manager, owned.manager]);
+  assert.equal(await runtime.ensureMcpManager(), owned.manager);
+  assert.equal(owned.calls.observe, 1);
+  await runtime.dispose();
+  assert.equal(owned.calls.dispose, 1);
+});
+
+test("MC-01 a synchronous factory reentry sees the already reserved promise", async () => {
+  const owned = constructionManager();
+  let factories = 0;
+  let reentrant: Promise<ConstructionManager> | undefined;
+  const runtime = createMcpRuntime(constructionDeps(() => {
+    factories += 1;
+    reentrant = runtime.ensureMcpManager();
+    return Promise.resolve(owned.manager);
+  }));
+  const first = runtime.ensureMcpManager();
+  assert.equal(await first, owned.manager);
+  assert.equal(reentrant, first);
+  assert.equal(factories, 1);
+  await runtime.dispose();
+});
+
+for (const action of ["reset", "dispose"] as const) {
+  test("MC-01/03 " + action + " before invocation refuses the old factory", async () => {
+    const owned = constructionManager();
+    let factories = 0;
+    const runtime = createMcpRuntime(constructionDeps(async () => {
+      factories += 1;
+      return owned.manager;
+    }));
+    const pending = runtime.ensureMcpManager();
+    const rejected = assert.rejects(pending, /construction is retired/);
+    await (action === "reset" ? runtime.resetMcpManager() : runtime.dispose());
+    await rejected;
+    assert.equal(factories, 0);
+    if (action === "reset") {
+      assert.equal(await runtime.ensureMcpManager(), owned.manager);
+      assert.equal(factories, 1);
+    } else {
+      await runtime.resetMcpManager();
+      await assert.rejects(runtime.ensureMcpManager(), /runtime is disposed/);
+      assert.equal(factories, 0);
+    }
+    await runtime.dispose();
+  });
+}
+
+for (const outcome of ["success", "failure"] as const) {
+  test("MC-02 late old " + outcome + " cannot adopt or erase replacement B", async () => {
+    const started = deferred<void>();
+    const held = deferred<ConstructionManager>();
+    const old = constructionManager();
+    const replacement = constructionManager();
+    const failure = new Error("Old factory failed");
+    let factories = 0;
+    const runtime = createMcpRuntime(constructionDeps(() => {
+      factories += 1;
+      if (factories > 1) return Promise.resolve(replacement.manager);
+      started.resolve();
+      return held.promise;
+    }));
+    const pending = runtime.ensureMcpManager();
+    const rejected = assert.rejects(pending, outcome === "success" ? /construction is retired/ : (error) => error === failure);
+    await started.promise;
+    await runtime.resetMcpManager();
+    assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+    if (outcome === "success") held.resolve(old.manager);
+    else held.reject(failure);
+    await rejected;
+    assert.equal(old.calls.dispose, outcome === "success" ? 1 : 0);
+    assert.equal(old.calls.observe, 0);
+    assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+    assert.equal(replacement.calls.dispose, 0);
+    assert.equal(factories, 2, "the old operation must not retry against B");
+    await runtime.dispose();
+  });
+}
+
+for (const failureMode of ["throw", "reject"] as const) {
+  test("MC-02 current factory " + failureMode + " retires callbacks and allows a fresh retry", async () => {
+    const replacement = constructionManager();
+    const failure = new Error("Current factory failed");
+    let oldOptions: ConstructionOptions | undefined;
+    let reports = 0;
+    let factories = 0;
+    const runtime = createMcpRuntime(constructionDeps((options) => {
+      factories += 1;
+      if (factories > 1) return Promise.resolve(replacement.manager);
+      oldOptions = options;
+      options.onMcpDiagnostic({ leg: "construct", errorClass: "live" });
+      if (failureMode === "throw") throw failure;
+      return Promise.reject(failure);
+    }, { reportDiagnostic: () => { reports += 1; } }));
+    await assert.rejects(runtime.ensureMcpManager(), (error) => error === failure);
+    assert.ok(oldOptions);
+    assert.equal(reports, 1);
+    oldOptions.onMcpDiagnostic({ leg: "construct", errorClass: "stale" });
+    assert.equal(reports, 1);
+    assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+    oldOptions.onMcpDiagnostic({ leg: "construct", errorClass: "stale-after-B" });
+    assert.equal(reports, 1);
+    assert.equal(factories, 2);
+    await runtime.dispose();
+  });
+}
+
+test("MC-03 disposal returns while a factory is pending and owns its late cleanup", async () => {
+  const started = deferred<void>();
+  const held = deferred<ConstructionManager>();
+  const old = constructionManager();
+  let factories = 0;
+  const runtime = createMcpRuntime(constructionDeps(() => {
+    factories += 1;
+    started.resolve();
+    return held.promise;
+  }));
+  const rejected = assert.rejects(runtime.ensureMcpManager(), /construction is retired/);
+  await started.promise;
+  await runtime.dispose();
+  await runtime.dispose();
+  await runtime.resetMcpManager();
+  await assert.rejects(runtime.ensureMcpManager(), /runtime is disposed/);
+  assert.equal(factories, 1);
+  assert.equal(old.calls.dispose, 0);
+  held.resolve(old.manager);
+  await rejected;
+  await runtime.dispose();
+  assert.equal(old.calls.dispose, 1);
+  assert.equal(old.calls.observe, 0);
+});
+
+test("MC-03 disposal shares observable cleanup before synchronous reentry", async () => {
+  const cleanup = deferred<void>();
+  let reentrant: Promise<void> | undefined;
+  const owned = constructionManager({ dispose: () => {
+    reentrant = runtime.dispose();
+    return cleanup.promise;
+  } });
+  const runtime = createMcpRuntime(constructionDeps(async () => owned.manager));
+  await runtime.ensureMcpManager();
+  let settled = false;
+  const first = runtime.dispose();
+  void first.then(() => { settled = true; });
+  const second = runtime.dispose();
+  assert.equal(first, second);
+  assert.equal(first, reentrant);
+  assert.equal(owned.calls.dispose, 1);
+  await assert.rejects(runtime.ensureMcpManager(), /runtime is disposed/);
+  assert.equal(settled, false);
+  cleanup.resolve();
+  await first;
+  assert.equal(settled, true);
+});
+
+test("MC-02 reset detaches before a disposer reentrantly creates B", async () => {
+  const cleanup = deferred<void>();
+  const replacement = constructionManager();
+  let replacementPromise: Promise<ConstructionManager> | undefined;
+  const old = constructionManager({ dispose: () => {
+    replacementPromise = runtime.ensureMcpManager();
+    return cleanup.promise;
+  } });
+  let factories = 0;
+  const runtime = createMcpRuntime(constructionDeps(async () => ++factories === 1 ? old.manager : replacement.manager));
+  await runtime.ensureMcpManager();
+  const reset = runtime.resetMcpManager();
+  assert.ok(replacementPromise);
+  assert.equal(await replacementPromise, replacement.manager);
+  cleanup.resolve();
+  await reset;
+  assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+  assert.equal(old.calls.dispose, 1);
+  assert.equal(replacement.calls.dispose, 0);
+  await runtime.dispose();
+});
+
+for (const cleanupMode of ["throw", "reject"] as const) {
+  test("MC-02/03 reset observes cleanup " + cleanupMode + " without erasing B", async () => {
+    const failure = new Error("Manager cleanup failed");
+    const cleanup = deferred<void>();
+    const old = constructionManager({ dispose: () => {
+      if (cleanupMode === "throw") throw failure;
+      return cleanup.promise;
+    } });
+    const replacement = constructionManager();
+    let factories = 0;
+    const runtime = createMcpRuntime(constructionDeps(async () => ++factories === 1 ? old.manager : replacement.manager));
+    await runtime.ensureMcpManager();
+    const rejected = assert.rejects(runtime.resetMcpManager(), (error) => error === failure);
+    assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+    if (cleanupMode === "reject") cleanup.reject(failure);
+    await rejected;
+    assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+    assert.equal(old.calls.dispose, 1);
+    assert.equal(replacement.calls.dispose, 0);
+    await runtime.dispose();
+  });
+}
+
+test("MC-02/03 late retired-manager cleanup failure remains in the old rejection", async () => {
+  const started = deferred<void>();
+  const held = deferred<ConstructionManager>();
+  const failure = new Error("Late cleanup failed");
+  const old = constructionManager({ dispose: async () => { throw failure; } });
+  const replacement = constructionManager();
+  let factories = 0;
+  const runtime = createMcpRuntime(constructionDeps(() => {
+    if (++factories > 1) return Promise.resolve(replacement.manager);
+    started.resolve();
+    return held.promise;
+  }));
+  const rejected = assert.rejects(runtime.ensureMcpManager(), (error) => {
+    assert.ok(error instanceof AggregateError);
+    assert.match(error.errors[0].message, /construction is retired/);
+    assert.equal(error.errors[1], failure);
+    return true;
+  });
+  await started.promise;
+  await runtime.resetMcpManager();
+  assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+  held.resolve(old.manager);
+  await rejected;
+  assert.equal(old.calls.dispose, 1);
+  assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+  await runtime.dispose();
+});
+
+for (const setup of ["root", "cleanup", "observer"] as const) {
+  test("MC-04 reentrant " + setup + " setup cannot publish a retired manager", async () => {
+    let replacementPromise: Promise<ConstructionManager> | undefined;
+    let resetPromise: Promise<void> | undefined;
+    let resetOnce = true;
+    const reset = () => {
+      if (!resetOnce) return;
+      resetOnce = false;
+      resetPromise = runtime.resetMcpManager();
+      replacementPromise = runtime.ensureMcpManager();
+    };
+    const old = constructionManager({ observe: () => { if (setup === "observer") reset(); } });
+    const replacement = constructionManager();
+    let factories = 0;
+    let scrubs = 0;
+    const runtime = createMcpRuntime(constructionDeps(async () => ++factories === 1 ? old.manager : replacement.manager, {
+      sandRootDir: () => {
+        if (setup === "root") reset();
+        return "/tmp/mcp-construction";
+      },
+      cleanupLegacyAuth: async () => {
+        scrubs += 1;
+        if (setup === "cleanup") reset();
+      },
+    }));
+    await assert.rejects(runtime.ensureMcpManager(), /construction is retired/);
+    await resetPromise;
+    assert.ok(replacementPromise);
+    assert.equal(await replacementPromise, replacement.manager);
+    assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+    assert.equal(old.calls.dispose, 1);
+    assert.equal(old.calls.observe, setup === "observer" ? 1 : 0);
+    assert.equal(scrubs, setup === "root" ? 1 : 2);
+    assert.equal(replacement.calls.observe, 1);
+    assert.equal(replacement.calls.dispose, 0);
+    await runtime.dispose();
+  });
+}
+
+test("MC-02 reset between setup and promise publication rejects the original waiter", async () => {
+  const installed = deferred<void>();
+  const old = constructionManager({ observe: () => { installed.resolve(); } });
+  const replacement = constructionManager();
+  let factories = 0;
+  const runtime = createMcpRuntime(constructionDeps(async () => ++factories === 1 ? old.manager : replacement.manager));
+  const rejected = assert.rejects(runtime.ensureMcpManager(), /construction is retired/);
+  // This waiter is released by setup before the construction continuation can
+  // publish its facade. It is a causal promise boundary, not a timed delay.
+  await installed.promise;
+  await runtime.resetMcpManager();
+  assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+  await rejected;
+  assert.equal(old.calls.dispose, 1);
+  assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+  await runtime.dispose();
+});
+
+test("MC-02/04 setup failure retires callbacks, retains cleanup errors and permits retry", async () => {
+  const failure = new Error("Observer setup failed");
+  const cleanupFailure = new Error("Failed setup cleanup failed");
+  const old = constructionManager({
+    observe: () => { throw failure; },
+    dispose: () => { throw cleanupFailure; },
+  });
+  const replacement = constructionManager();
+  let oldOptions: ConstructionOptions | undefined;
+  let factories = 0;
+  let reports = 0;
+  const runtime = createMcpRuntime(constructionDeps(async (options) => {
+    if (++factories > 1) return replacement.manager;
+    oldOptions = options;
+    return old.manager;
+  }, { reportDiagnostic: () => { reports += 1; } }));
+  await assert.rejects(runtime.ensureMcpManager(), (error) => {
+    assert.ok(error instanceof AggregateError);
+    assert.deepEqual(error.errors, [failure, cleanupFailure]);
+    return true;
+  });
+  assert.equal(old.calls.dispose, 1);
+  assert.ok(oldOptions);
+  oldOptions.onMcpDiagnostic({ leg: "setup", errorClass: "retired" });
+  assert.equal(reports, 0);
+  assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+  assert.equal(factories, 2);
+  await runtime.dispose();
+});
+
+for (const trigger of ["installation", "completion"] as const) {
+  test("MC-04 auth broadcast rechecks retirement during " + trigger, async () => {
+    const broadcasts: unknown[] = [];
+    const refreshes: unknown[] = [];
+    let resetPromise: Promise<void> | undefined;
+    const old = constructionManager({ observe: (listener) => {
+      if (trigger === "installation") listener("old-completion");
+    } });
+    const replacement = constructionManager();
+    let factories = 0;
+    const runtime = createMcpRuntime(constructionDeps(async () => ++factories === 1 ? old.manager : replacement.manager, {
+      broadcast: (channel, completion) => {
+        assert.equal(channel, "sand:mcp-auth-event");
+        broadcasts.push(completion);
+        if (completion === "old-completion") resetPromise = runtime.resetMcpManager();
+      },
+      refreshHostMcp: (completion) => { refreshes.push(completion); },
+    }));
+    if (trigger === "installation") {
+      await assert.rejects(runtime.ensureMcpManager(), /construction is retired/);
+    } else {
+      assert.equal(await runtime.ensureMcpManager(), old.manager);
+      old.complete("old-completion");
+    }
+    assert.ok(resetPromise);
+    await resetPromise;
+    assert.deepEqual(broadcasts, ["old-completion"]);
+    assert.deepEqual(refreshes, [], "reset during broadcast must prevent the Host refresh");
+    assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+    old.complete("stale-completion");
+    replacement.complete("B-completion");
+    assert.deepEqual(broadcasts, ["old-completion", "B-completion"]);
+    assert.deepEqual(refreshes, ["B-completion"]);
+    assert.equal(old.calls.dispose, 1);
+    await runtime.dispose();
+  });
+}
+
+test("MC-04 callbacks belong to the exact attempt while late scrub failures stay observable", async () => {
+  const options: ConstructionOptions[] = [];
+  const callbacks: unknown[] = [];
+  const reports: unknown[] = [];
+  const scrub = deferred<void>();
+  const reported = deferred<void>();
+  const failure = new Error("Old startup scrub failed");
+  const old = constructionManager();
+  const replacement = constructionManager();
+  let scrubs = 0;
+  const runtime = createMcpRuntime(constructionDeps(async (captured) => {
+    options.push(captured);
+    return options.length === 1 ? old.manager : replacement.manager;
+  }, {
+    pushBoxSecrets: async () => { callbacks.push("scope"); },
+    reportConnectorAuth: (report) => { callbacks.push(report); },
+    reportMcpDiscoveryFailed: (report) => { callbacks.push(report); },
+    reportDiagnostic: (leg, errorClass) => { callbacks.push([leg, errorClass]); },
+    cleanupLegacyAuth: () => ++scrubs === 1 ? scrub.promise : Promise.resolve(),
+    reportFailure: (subsystem, leg, error) => {
+      reports.push([subsystem, leg, error]);
+      reported.resolve();
+    },
+  }));
+  const auth = { phase: "flow_completed", outcome: "succeeded" };
+  const discovery = { errorClass: "TimeoutError", elapsedMs: 12, servedStale: true };
+  const emit = (captured: ConstructionOptions) => {
+    captured.onAccountScopeApplied();
+    captured.onConnectorAuth(auth);
+    captured.onMcpDiscoveryFailed(discovery);
+    captured.onMcpDiagnostic({ leg: "discovery", errorClass: "timeout" });
+  };
+  await runtime.ensureMcpManager();
+  emit(options[0]!);
+  const expected = ["scope", auth, discovery, ["discovery", "timeout"]];
+  assert.deepEqual(callbacks, expected);
+  await runtime.resetMcpManager();
+  emit(options[0]!);
+  assert.deepEqual(callbacks, expected);
+  await runtime.ensureMcpManager();
+  emit(options[0]!);
+  assert.deepEqual(callbacks, expected);
+  emit(options[1]!);
+  assert.deepEqual(callbacks, [...expected, ...expected]);
+  scrub.reject(failure);
+  await reported.promise;
+  assert.deepEqual(reports, [["mcp-auth-cleanup", "startup-scrub", failure]]);
+  assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+  await runtime.dispose();
+  emit(options[1]!);
+  assert.deepEqual(callbacks, [...expected, ...expected]);
+});
+
+for (const boundary of ["entry", "service", "token"] as const) {
+  test("MC-05 token port refuses retirement at the " + boundary + " boundary", async () => {
+    type AuthService = Awaited<ReturnType<ConstructionDeps["ensureCursorAuthService"]>>;
+    const serviceStarted = deferred<void>();
+    const tokenStarted = deferred<void>();
+    const factoryStarted = deferred<void>();
+    const heldFactory = deferred<ConstructionManager>();
+    const heldService = deferred<AuthService>();
+    const heldToken = deferred<string | null>();
+    const options: ConstructionOptions[] = [];
+    const old = constructionManager();
+    const replacement = constructionManager();
+    let serviceCalls = 0;
+    let tokenCalls = 0;
+    let currentToken = "account-A-token";
+    let holdService = boundary === "service";
+    let holdToken = boundary === "token";
+    const service: AuthService = { getValidAccessToken: ({ backendUrl }) => {
+      assert.equal(backendUrl, "https://account.example.test");
+      tokenCalls += 1;
+      tokenStarted.resolve();
+      return holdToken ? heldToken.promise : Promise.resolve(currentToken);
+    } };
+    const runtime = createMcpRuntime(constructionDeps((captured) => {
+      options.push(captured);
+      if (options.length > 1) return Promise.resolve(replacement.manager);
+      factoryStarted.resolve();
+      return heldFactory.promise;
+    }, { ensureCursorAuthService: () => {
+      serviceCalls += 1;
+      serviceStarted.resolve();
+      return holdService ? heldService.promise : Promise.resolve(service);
+    } }));
+    const constructionRejected = assert.rejects(runtime.ensureMcpManager(), /construction is retired/);
+    await factoryStarted.promise;
+    const request = { backendUrl: "https://account.example.test" };
+    let rejected: Promise<void> | undefined;
+    if (boundary !== "entry") {
+      rejected = assert.rejects(options[0]!.getAccessToken(request), /construction is retired/);
+      await (boundary === "service" ? serviceStarted.promise : tokenStarted.promise);
+    }
+    await runtime.resetMcpManager();
+    currentToken = "account-B-token";
+    assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+    holdService = false;
+    holdToken = false;
+    if (boundary === "entry") {
+      await assert.rejects(options[0]!.getAccessToken(request), /construction is retired/);
+    } else {
+      if (boundary === "service") heldService.resolve(service);
+      else heldToken.resolve(currentToken);
+      await rejected;
+    }
+    assert.equal(serviceCalls, boundary === "entry" ? 0 : 1);
+    assert.equal(tokenCalls, boundary === "token" ? 1 : 0);
+    heldFactory.resolve(old.manager);
+    await constructionRejected;
+    assert.equal(old.calls.dispose, 1);
+    assert.equal(old.calls.observe, 0);
+    assert.equal(await options[1]!.getAccessToken(request), "account-B-token");
+    assert.equal(serviceCalls, boundary === "entry" ? 1 : 2);
+    assert.equal(tokenCalls, boundary === "token" ? 2 : 1);
+    await runtime.dispose();
+    await assert.rejects(options[1]!.getAccessToken(request), /construction is retired/);
+  });
+}
+
+function constructionAdapter(deps: ConstructionDeps) {
+  return createProductionMcpOAuthAdapter({
+    resolveRuntimeDeps: () => ({
+      ...deps,
+      // This controlled factory implements only the facade methods exercised
+      // through the real adapter; unused desktop operations must never run.
+      createManager: async (options) => await deps.createManager(options) as DesktopMcpManagerFacade,
+    }),
+    resolveDesktopDeps: () => { throw new Error("Desktop IPC is outside this routed-operation test"); },
+  }).create({ machineId: "construction-machine" } as ProductionServiceContext);
+}
+
+for (const action of ["reset", "dispose"] as const) {
+  test("MC-06 shipping adapter " + action + " rejects pending routed operations before facade I/O", async () => {
+    const started = deferred<void>();
+    const held = deferred<ConstructionManager>();
+    const old = constructionManager();
+    const replacement = constructionManager();
+    let factories = 0;
+    const adapter = constructionAdapter(constructionDeps(() => {
+      if (++factories > 1) return Promise.resolve(replacement.manager);
+      started.resolve();
+      return held.promise;
+    }));
+    const request = { providerIdentifier: "connector", name: "tool", toolName: "tool", args: {}, toolCallId: "construction-call" };
+    const listRejected = assert.rejects(adapter.listRoutedTools(), /construction is retired/);
+    const executeRejected = assert.rejects(adapter.executeRoutedTool(request), /construction is retired/);
+    await started.promise;
+    assert.equal(factories, 1);
+    if (action === "reset") {
+      await adapter.resetMcpManager();
+      assert.deepEqual(await adapter.listRoutedTools(), ["current-tool"]);
+      assert.equal(await adapter.executeRoutedTool(request), "executed");
+    } else {
+      await adapter.dispose();
+      await assert.rejects(adapter.listRoutedTools(), /adapter is disposed/);
+    }
+    held.resolve(old.manager);
+    await Promise.all([listRejected, executeRejected]);
+    assert.equal(old.calls.list, 0);
+    assert.equal(old.calls.execute, 0);
+    assert.equal(old.calls.dispose, 1);
+    assert.equal(replacement.calls.list, action === "reset" ? 1 : 0);
+    assert.equal(replacement.calls.execute, action === "reset" ? 1 : 0);
+    assert.equal(factories, action === "reset" ? 2 : 1);
+    await adapter.dispose();
+  });
+}
+
+test("MC-03 shipping adapter awaits and propagates manager teardown failure", async () => {
+  const started = deferred<void>();
+  const cleanup = deferred<void>();
+  const failure = new Error("Shutdown cleanup failed");
+  const owned = constructionManager({ dispose: () => {
+    started.resolve();
+    return cleanup.promise;
+  } });
+  const adapter = constructionAdapter(constructionDeps(async () => owned.manager));
+  assert.deepEqual(await adapter.listRoutedTools(), ["current-tool"]);
+  let settled = false;
+  const disposal = Promise.resolve(adapter.dispose());
+  const rejected = assert.rejects(disposal, (error) => error === failure);
+  void disposal.then(() => { settled = true; }, () => { settled = true; });
+  await started.promise;
+  assert.equal(settled, false);
+  cleanup.reject(failure);
+  await rejected;
+  assert.equal(settled, true);
+  await adapter.dispose();
+  assert.equal(owned.calls.dispose, 1);
+});
 
 const ACCOUNT_A = "mcp-retirement-account-a";
 const ACCOUNT_B = "mcp-retirement-account-b";

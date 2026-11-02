@@ -418,7 +418,8 @@
         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
         "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
         "source/shared/node/mcp/mcp-manager.ts",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.ts"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -1457,7 +1458,8 @@
       "evidence_refs": [
         "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
         "source/shared/node/mcp/mcp-manager.ts",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.ts"
       ],
       "gate_ids": [],
       "id": "OCRM-AC10",
@@ -1670,7 +1672,8 @@
         "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
         "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
         "source/shared/node/mcp/mcp-manager.ts",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.ts"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",

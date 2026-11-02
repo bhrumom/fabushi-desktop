@@ -76,3 +76,69 @@ blob `ef5a603bce25ebe2247966c40932e8539ae80632` and
 supports lifetime discipline, not account-policy parity. Required local source
 and actual producer/consumer reads are recorded in the bounded investigation;
 no recursive coverage, historical reading or global completion flag is promoted.
+
+
+## Runtime construction custody — `MCP-RUNTIME-CONSTRUCTION-v1`
+
+Implementation base: `7a0254d4133080877cbfb2d9d4831acb231e673f`.
+Fixed U is unchanged. This follow-on contract addresses the existing Electron
+runtime's resource construction/publication boundary, not a new execution or
+permission owner. The shipping adapter awaits `ensureMcpManager()` before
+calling the returned facade. Today concurrent ensures can construct different
+managers, and reset/dispose sees only a completed manager: a pending result can
+publish after retirement and be used by the old operation.
+
+- MC-01: one existing runtime owns one current construction attempt. Concurrent
+  ensures share that attempt and its eventual manager. Reserve the pending
+  promise before invoking the factory, including a synchronous reentrant
+  factory. If reset/dispose invalidates the attempt before invocation, do not
+  invoke it. No alternate manager registry or account scope is introduced.
+- MC-02: reset detaches the current attempt synchronously before external
+  cleanup, then disposes its already-created manager through that exact attempt.
+  Reset permits a later ensure. A late old result is disposed and rejected;
+  neither an old caller nor cleanup/finally may adopt or erase replacement B.
+  Do not transparently retry an old operation against B. A current construction
+  failure retires its callback identity and permits a later fresh attempt.
+- MC-03: runtime disposal permanently refuses future ensure/factory admission.
+  In-flight creation may settle later and must be retired without publication.
+  Teardown of an already-created manager is observable through the existing
+  async cleanup caller, and each manager is disposed at most once by this owner.
+  Do not wait indefinitely for an unresolved factory merely to return reset or
+  shutdown; its eventual settlement remains owned by its construction promise.
+- MC-04: callbacks supplied by this runtime for scope-applied, connector auth,
+  discovery failures and diagnostics check the exact live attempt. Its auth
+  completion observer checks before broadcast and again before Host refresh,
+  because broadcast can synchronously reset the runtime. Startup cleanup and
+  observer installation cannot make a retired manager current; recheck after
+  synchronous external setup callbacks. Current callback behavior is retained.
+- MC-05: the captured `getAccessToken` port rejects a retired attempt at entry,
+  after awaiting the auth service before calling its token method, and after
+  awaiting the token before returning it. An old construction must not newly
+  obtain or return replacement-account credentials through this runtime port.
+  This does not revoke a credential or an I/O operation already handed out.
+- MC-06: exercise the actual runtime with controlled factory/auth/cleanup ports:
+  concurrent and reentrant ensure; reset before invocation and during pending
+  creation; old success and failure after B; current failure then successful
+  retry; disposal and repeated cleanup; reentrant observer/broadcast reset;
+  stale reports and all token-await boundaries. Include the real shipping
+  adapter's routed operation when practical to prove a retired ensure prevents
+  the facade call. Keep all MR account persistence/denial and original callback
+  assertions. No timers or sleeps decide ordering. Run only in Actions.
+
+Allowed implementation paths are the existing `mcp-runtime.ts` and
+`mcp-runtime.contract.test.ts`; root owns this contract and narrow existing
+workflow/ledger/RTM references. The active MCP contract bundle already selects
+this file, so a new workflow or test-only runtime is unnecessary. Use the
+existing factory, facade and cleanup owner; Electron keeps only the resource
+bridge lifecycle and Rust retains policy, registration and execution authority.
+No persistent schema, token format or wire change is needed. Revert restores
+the old construction race without rewriting user data.
+
+The real desktop factory starts discovery warming before returning its facade.
+This bounded publication fence cannot retract arbitrary factory-internal
+side effects before settlement, work admitted through an already-returned
+facade, or the separate official OAuth `changed()` path. Those lifecycle and
+full Rust migration contracts remain open. Late cleanup failures must remain
+observable without changing B's authority; a successful source review alone
+is not final-H verification. Reuse only the unchanged fixed-U closing/lifetime
+source identities and read bounds above; no new full-read or parity claim.

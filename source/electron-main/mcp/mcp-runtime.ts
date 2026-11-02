@@ -57,52 +57,139 @@ export function createMcpRuntime<
     setAuthCompletionObserver(listener: (completion: unknown) => void): void;
   },
 >(deps: McpRuntimeDependencies<TManager>) {
-  let mcpManager: TManager | undefined;
+  type Attempt = {
+    readonly promise: Promise<TManager>;
+    manager?: TManager;
+    cleanup?: Promise<void>;
+  };
+  let current: Attempt | undefined;
+  let disposed = false;
+  let shutdownAttempt: Attempt | undefined;
 
-  async function ensureMcpManager(): Promise<TManager> {
-    if (mcpManager != null) return mcpManager;
+  const isCurrent = (attempt: Attempt): boolean => !disposed && current === attempt;
+  function requireCurrent(attempt: Attempt): void {
+    if (!isCurrent(attempt)) throw new Error("MCP manager construction is retired.");
+  }
+
+  function disposeAttempt(attempt: Attempt | undefined): Promise<void> {
+    if (attempt?.manager == null) return Promise.resolve();
+    if (attempt.cleanup != null) return attempt.cleanup;
+    let resolve!: () => void;
+    let reject!: (error: unknown) => void;
+    // Reserve cleanup before calling external code: dispose may reenter us.
+    attempt.cleanup = new Promise<void>((onResolve, onReject) => {
+      resolve = onResolve;
+      reject = onReject;
+    });
+    try {
+      Promise.resolve(attempt.manager.dispose()).then(resolve, reject);
+    } catch (error) {
+      reject(error);
+    }
+    return attempt.cleanup;
+  }
+
+  async function construct(attempt: Attempt): Promise<TManager> {
+    requireCurrent(attempt);
     const manager = await deps.createManager({
       settingsStore: deps.settingsStore,
-      onAccountScopeApplied: () => void deps.pushBoxSecrets(),
+      onAccountScopeApplied: () => {
+        if (isCurrent(attempt)) void deps.pushBoxSecrets();
+      },
       getAccessToken: async ({ backendUrl }) => {
+        requireCurrent(attempt);
         const service = await deps.ensureCursorAuthService();
-        return await service.getValidAccessToken({ backendUrl });
+        requireCurrent(attempt);
+        const token = await service.getValidAccessToken({ backendUrl });
+        requireCurrent(attempt);
+        return token;
       },
       getMachineId: deps.getMachineId,
       loadBoxMcpServers: deps.loadBoxMcpServers,
       listBoxMcpServers: deps.listBoxMcpServers,
       listBoxMcpToolsRaw: deps.listBoxMcpToolsRaw,
       executeBoxMcpToolRaw: deps.executeBoxMcpToolRaw,
-      onConnectorAuth: (report) => deps.reportConnectorAuth(report),
-      onMcpDiscoveryFailed: (report) => deps.reportMcpDiscoveryFailed(report),
-      onMcpDiagnostic: (failure) =>
-        deps.reportDiagnostic(failure.leg, failure.errorClass),
+      onConnectorAuth: (report) => {
+        if (isCurrent(attempt)) deps.reportConnectorAuth(report);
+      },
+      onMcpDiscoveryFailed: (report) => {
+        if (isCurrent(attempt)) deps.reportMcpDiscoveryFailed(report);
+      },
+      onMcpDiagnostic: (failure) => {
+        if (isCurrent(attempt)) deps.reportDiagnostic(failure.leg, failure.errorClass);
+      },
     });
-    mcpManager = manager;
+    attempt.manager = manager;
+    requireCurrent(attempt);
+    const root = deps.sandRootDir();
+    requireCurrent(attempt);
     void deps
-      .cleanupLegacyAuth(deps.sandRootDir())
+      .cleanupLegacyAuth(root)
       .catch((error: unknown) =>
         deps.reportFailure("mcp-auth-cleanup", "startup-scrub", error),
       );
+    requireCurrent(attempt);
     manager.setAuthCompletionObserver((completion) => {
+      if (!isCurrent(attempt)) return;
       deps.broadcast("sand:mcp-auth-event", completion);
-      deps.refreshHostMcp(completion);
+      if (isCurrent(attempt)) deps.refreshHostMcp(completion);
     });
+    requireCurrent(attempt);
     return manager;
   }
 
-  async function resetMcpManager(): Promise<void> {
-    const manager = mcpManager;
-    mcpManager = undefined;
-    await manager?.dispose();
+  function ensureMcpManager(): Promise<TManager> {
+    if (disposed) return Promise.reject(new Error("MCP runtime is disposed."));
+    if (current != null) return current.promise;
+    let resolve!: (manager: TManager) => void;
+    let reject!: (error: unknown) => void;
+    const attempt: Attempt = {
+      promise: new Promise<TManager>((onResolve, onReject) => {
+        resolve = onResolve;
+        reject = onReject;
+      }),
+    };
+    current = attempt;
+    // Defer invocation so even a synchronous factory reentry shares the
+    // reserved attempt, and reset can refuse a factory that has not started.
+    void Promise.resolve().then(async () => {
+      try {
+        const manager = await construct(attempt);
+        // Setup can queue a reset before this final publication continuation.
+        requireCurrent(attempt);
+        resolve(manager);
+      } catch (error) {
+        if (current === attempt) current = undefined;
+        try {
+          await disposeAttempt(attempt);
+        } catch (cleanupError) {
+          reject(new AggregateError([error, cleanupError], "MCP construction and cleanup failed."));
+          return;
+        }
+        reject(error);
+      }
+    });
+    return attempt.promise;
+  }
+
+  function resetMcpManager(): Promise<void> {
+    const attempt = current;
+    current = undefined;
+    // An unresolved factory remains owned by its construction promise. Do not
+    // make account transition wait for it; its late manager is disposed there.
+    return disposeAttempt(attempt);
   }
 
   return {
     ensureMcpManager,
     resetMcpManager,
-    dispose: (): void => {
-      void mcpManager?.dispose();
-      mcpManager = undefined;
+    dispose: (): Promise<void> => {
+      if (!disposed) {
+        disposed = true;
+        shutdownAttempt = current;
+        current = undefined;
+      }
+      return disposeAttempt(shutdownAttempt);
     },
   };
 }
