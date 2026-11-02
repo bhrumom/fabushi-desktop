@@ -2742,25 +2742,36 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       && initialTranscriptRequestRef.current.requestGeneration === openAgentRequestGenerationRef.current
       && initialTranscriptRequestRef.current.isHuman === isHumanTranscript
       && (isHumanTranscript || initialTranscriptRequestRef.current.transportGeneration === transportScopeGeneration)) return;
-    const requestGeneration = ++openAgentRequestGenerationRef.current;
-    pendingTranscriptReadsRef.current.clear();
-    setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     const cachedCursor = transcriptHistoryCursorsRef.current.get(agentId);
     const hasLoadedEntries = entriesByAgentRef.current[agentId] != null
       && cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot;
+    const pagination = transcriptPaginationController.getSnapshot();
+    const retainsInstalledScope = hasLoadedEntries
+      && pagination.accountSlot === transcriptAccountSlot
+      && pagination.agentId === agentId
+      && pagination.cursor.kind !== "unprobed";
+    // A same-scope selection must also retain any full refresh and the events
+    // it is buffering. Real scope changes still fence old reads, including ABA.
+    const requestGeneration = retainsInstalledScope
+      ? openAgentRequestGenerationRef.current
+      : ++openAgentRequestGenerationRef.current;
+    if (!retainsInstalledScope) pendingTranscriptReadsRef.current.clear();
+    setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
     selectionStore.select(agentId);
     setOverlay(null);
     setWorkspaceRoute(null);
     setCommandPaletteOpen(false);
     if (hasLoadedEntries) {
-      // Reopening a cached conversation must restore its next page as well as
-      // its rows. Scope changes deliberately discard only the active request.
-      transcriptPaginationController.installInitialPage({
-        entries: [],
-        nextBeforeSeq: cachedCursor?.nextBeforeSeq,
-        nextBeforeCursor: cachedCursor?.nextBeforeCursor,
-      });
+      // A real scope change needs its cached cursor restored. Reselecting the
+      // current conversation must retain its installed page and in-flight read.
+      if (transcriptPaginationController.getSnapshot().cursor.kind === "unprobed") {
+        transcriptPaginationController.installInitialPage({
+          entries: [],
+          nextBeforeSeq: cachedCursor?.nextBeforeSeq,
+          nextBeforeCursor: cachedCursor?.nextBeforeCursor,
+        });
+      }
       selectionStore.settle(agentId);
     }
     if (hasLoadedEntries || client == null) {

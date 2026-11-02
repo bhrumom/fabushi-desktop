@@ -714,7 +714,10 @@ fn directory_file_bytes(path: &Path) -> Vec<(String, Vec<u8>)> {
 
 #[test]
 fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings() {
-    for corruption in ["notadb", "schema", "data-page-delete-mode"] {
+    for corruption in [
+        "notadb", "notadb-header", "truncated-header", "empty-main", "missing-main",
+        "orphan-shm", "schema", "data-page-delete-mode",
+    ] {
         let root = test_root("corrupt-store-refusal");
         let mut workers = test_workers(&root);
         let (locked, observed) = mpsc::channel();
@@ -733,7 +736,7 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         let path = get_native_conversation_db_path(&root, &id).unwrap();
         let directory = path.parent().unwrap();
         fs::create_dir_all(directory).unwrap();
-        if corruption != "notadb" {
+        if matches!(corruption, "schema" | "data-page-delete-mode") {
             let previous = SandAgentDb::open_conversation_store(&path, 25).unwrap();
             seed_entries(&previous);
             previous.close(true);
@@ -761,8 +764,17 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
             bytes[damage_offset] = 0; // Invalid B-tree type, with a valid SQLite header.
             fs::write(&path, bytes).unwrap();
         } else {
-            fs::write(&path, b"retained NOTADB bytes; never quarantine or replace").unwrap();
-            for suffix in ["-wal", "-shm", "-journal"] {
+            match corruption {
+                "truncated-header" => fs::write(&path, b"SQLite format 3\0").unwrap(),
+                "empty-main" | "orphan-shm" => fs::write(&path, b"").unwrap(),
+                "missing-main" => {},
+                "notadb-header" => fs::write(&path, [b'x'; 100]).unwrap(),
+                _ => fs::write(&path, b"retained NOTADB bytes; never quarantine or replace").unwrap(),
+            }
+            let suffixes: &[&str] = if corruption == "orphan-shm" {
+                &["-shm"]
+            } else { &["-wal", "-shm", "-journal"] };
+            for suffix in suffixes {
                 fs::write(PathBuf::from(format!("{}{suffix}", path.display())),
                     format!("retained original {suffix} bytes")).unwrap();
             }
@@ -774,16 +786,16 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         assert!(!error.is_empty());
         assert!(cached_owner(&workers, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
-        assert_eq!(directory_file_bytes(directory), saved);
+        assert_eq!(directory_file_bytes(directory), saved, "{corruption}: first refusal");
         workers.create_human_conversation(PEER, "Retry must preserve corrupt data").expect_err("same-worker refusal");
-        assert_eq!(directory_file_bytes(directory), saved);
+        assert_eq!(directory_file_bytes(directory), saved, "{corruption}: same-worker refusal");
         workers.shutdown();
         drop(workers);
         let restarted = test_workers(&root);
         restarted.create_human_conversation(PEER, "Reopen must preserve corrupt data").expect_err("reopened refusal");
         assert!(cached_owner(&restarted, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
-        assert_eq!(directory_file_bytes(directory), saved);
+        assert_eq!(directory_file_bytes(directory), saved, "{corruption}: reopened refusal");
         restarted.shutdown();
         drop(restarted);
         fs::remove_dir_all(root).unwrap();

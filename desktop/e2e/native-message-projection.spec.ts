@@ -27,8 +27,8 @@ const messageRow = (page: Page, id: string) => page.getByRole('log', { name: 'Co
 const domIds = (page: Page) => page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id]').evaluateAll((entries) => entries.map((entry) => entry.getAttribute('data-entry-id')));
 
 async function scrollToOlderHistory(page: Page) {
-  // unprobed -> more keeps hasOlder=true; exercise the mounted viewport's
-  // scroll listener instead of assuming that the automatic probe reruns.
+  // Exercise the mounted viewport's scroll listener after layout, independently
+  // of whether its automatic near-top probe has already started the read.
   await page.evaluate(async () => {
     for (let frame = 0; frame < 8; frame += 1) await new Promise(requestAnimationFrame);
   });
@@ -85,6 +85,19 @@ test.afterEach(async ({ page }, info) => {
 for (const theme of ['light', 'dark']) {
   test(`NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (${theme})`, async ({ page }, info) => {
     await openAlice(page, theme);
+    const pendingOlderRequestIds = await page.evaluate(() => window.nativeMessageFixture.requests
+      .filter((request) => request.method === 'getHumanConversationTranscriptTail' && request.args.beforeSeq === 3)
+      .map((request) => request.requestId));
+    expect(pendingOlderRequestIds).toHaveLength(1);
+    // The first older page is still held by the real coordinator fixture.
+    // Reselecting this same conversation must keep that request alive.
+    await page.getByRole('button', { name: 'Alice', exact: true }).click();
+    await page.getByRole('button', { name: 'Alice', exact: true }).click();
+    await scrollToOlderHistory(page);
+    await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
+    expect(await page.evaluate(() => window.nativeMessageFixture.requests
+      .filter((request) => request.method === 'getHumanConversationTranscriptTail' && request.args.beforeSeq === 3)
+      .map((request) => request.requestId))).toEqual(pendingOlderRequestIds);
     await loadOlder(page);
     await milestone(page, info, `loaded-history-${theme}`);
     await page.evaluate(() => {
@@ -180,6 +193,14 @@ for (const order of ['page-first', 'refresh-first']) {
     await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().refreshes)).toBeGreaterThan(0);
     await page.evaluate(() => {
       window.nativeMessageFixture.mutate('human:a', 'm1', { id: 'm1-canonical', content: 'Transient identity remap' });
+    });
+    // Both reads are held. A repeated selection must preserve the refresh's
+    // identity-remap overlay as well as the original older-page request.
+    await page.getByRole('button', { name: 'Alice', exact: true }).click();
+    await page.getByRole('button', { name: 'Alice', exact: true }).click();
+    await scrollToOlderHistory(page);
+    await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
+    await page.evaluate(() => {
       window.nativeMessageFixture.mutate('human:a', 'm1-canonical', { content: 'Newer than both outstanding reads', reactions: [{ emoji: '❤️', by: 'peer-a' }] });
       window.nativeMessageFixture.mutate('human:a', 'm2', { content: '', attachments: [], reactions: [] });
     });
@@ -189,6 +210,10 @@ for (const order of ['page-first', 'refresh-first']) {
     } else {
       await page.evaluate(() => window.nativeMessageFixture.releaseRefreshes());
       await expect(messageRow(page, 'm1-canonical')).toContainText('Newer than both outstanding reads');
+      expect(await page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
+      await expect(messageRow(page, 'm1')).toHaveCount(0);
+      await expect(messageRow(page, 'm2').locator('.sand-message')).not.toContainText('Old second message');
+      await expect(messageRow(page, 'm2')).not.toContainText('note.txt');
       await loadOlder(page, ['m1-canonical', 'm2', 'm3', 'm4', 'm5']);
     }
     await expect(messageRow(page, 'm1-canonical')).toContainText('Newer than both outstanding reads');

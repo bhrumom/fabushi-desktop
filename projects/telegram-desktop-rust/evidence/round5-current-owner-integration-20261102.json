@@ -3,7 +3,7 @@
   "round": 5,
   "repository": "bhrumom/fabushi-desktop",
   "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "status": "implemented-integrated-candidate; containing-H execution pending; no full acceptance",
+  "status": "implementation candidate; exact94b exposed two implementation defects; focused recovery authored; containing-head execution pending; no full acceptance",
   "publication_scope": {
     "reviewed_current_base": "1c0bd07f85c4f17ee465509c766eead878879185",
     "initial_concurrent_snapshot": "c83039f9da8330560680a3efccc5ae83bf2db419",
@@ -562,7 +562,12 @@
     "forward_chromium": 19,
     "source_node": 158,
     "source_schema": 37,
-    "others": "All current native-service-contracts and source-review jobs and existing exact count/negative-control assertions retained, including actual AppHost/CLI, DNS6, parser2, protocol122, TCP9 live, proxy4, credential1 and actual packagecopy4. No queued/failed/skipped required result grants pass."
+    "others": "All current native-service-contracts and source-review jobs and existing exact count/negative-control assertions retained, including actual AppHost/CLI, DNS6, parser2, protocol122, TCP9 live, proxy4, credential1 and actual packagecopy4. No queued/failed/skipped required result grants pass.",
+    "transcript_recovery": 3,
+    "production_renderer": 11,
+    "production_transcript": 8,
+    "transcript_projection": 33,
+    "cursor_pagination": 17
   },
   "static_review": {
     "verdict": "no source-review blocker at frozen blobs; not execution or independent ACCEPT",
@@ -671,5 +676,453 @@
     "Complete original-byte legacy recovery, power-loss, cross-AppHost initial dispatch uniqueness and broader cancellation/freshness",
     "Supported signed/installed packages, UI/visual/accessibility, timing/security/performance/soak, upgrade/rollback and full Bot regression",
     "Independent final ACCEPT with matching final shipping SHA/artifacts"
-  ]
+  ],
+  "integrated_candidate_94b_execution": {
+    "head_sha": "94b3768b7767d96c09be0207f710aab98b0bf9fc",
+    "native_run_id": 41529254382,
+    "source_run_id": 41529254351,
+    "run_attempt": 1,
+    "reconciliation": {
+      "job_id": 125564907592,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41529254382/job/125564907592",
+      "conclusion": "failure",
+      "full_log": {
+        "name": "job-125564907592.log",
+        "bytes": 285462,
+        "sha256": "b4e18195b7cb53406026451d8186d8d49466e93575c5eb625a2b755ccc2d3644"
+      },
+      "suites": [
+        {
+          "name": "transcript_compaction_recovery",
+          "actual_result": {
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0
+          },
+          "status": "success",
+          "required": null
+        },
+        {
+          "name": "human",
+          "actual_result": {
+            "passed": 71,
+            "failed": 0,
+            "ignored": 0
+          },
+          "status": "success",
+          "required": null
+        },
+        {
+          "name": "resource",
+          "actual_result": {
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0
+          },
+          "status": "success",
+          "required": null
+        },
+        {
+          "name": "human_creation",
+          "actual_result": {
+            "passed": 11,
+            "failed": 1,
+            "ignored": 0
+          },
+          "status": "failure",
+          "required": null
+        },
+        {
+          "name": "human_creation_storage",
+          "actual_result": null,
+          "status": "not_executed",
+          "required": null
+        },
+        {
+          "name": "sharebox",
+          "actual_result": null,
+          "status": "not_executed",
+          "required": null
+        },
+        {
+          "name": "forward_journal",
+          "actual_result": null,
+          "status": "not_executed",
+          "required": null
+        },
+        {
+          "name": "agent_nonce",
+          "actual_result": null,
+          "status": "not_executed",
+          "required": null
+        },
+        {
+          "name": "private_credential",
+          "actual_result": null,
+          "status": "not_executed",
+          "required": null
+        },
+        {
+          "name": "forward_http",
+          "actual_result": null,
+          "status": "not_executed",
+          "required": null
+        }
+      ],
+      "actual_passed": {
+        "transcript_recovery": 3,
+        "human": 71,
+        "resource": 3,
+        "human_creation": 11
+      },
+      "actual_failed": {
+        "human_creation": 1
+      },
+      "not_executed": [
+        "human_creation_storage3",
+        "sharebox1",
+        "forward_journal12",
+        "agent_nonce4",
+        "private_credential5",
+        "forward_http1"
+      ],
+      "failure": {
+        "case": "extensions::session::production::human_creation_tests::corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+        "path": "source/host/src/extensions/session/human_creation_tests.rs",
+        "line": 777,
+        "first_input": "notadb",
+        "observed": "After rejected creation, original store.db-journal, store.db-shm and store.db-wal are missing. Main store.db and unrelated-resource.bin retain their bytes.",
+        "unreached": "same-worker retry, restart refusal, schema and data-page-delete-mode inputs in the same outer test were not reached after the first assertion panic.",
+        "classification": "implementation defect (destructive admission/open side effect), not an environment failure or test-count oracle mismatch",
+        "source_path_reasoning": {
+          "entry": "production.rs:2973 -> agent_db.rs:265 probe then :270 -> :291 open_configured_db",
+          "bypass": "agent_db_recovery.rs:129-138 returns Ok for any non-empty -wal or -journal before read-only immutable quick_check at :147-155.",
+          "mutation_admission": "agent_db_recovery.rs:96 opens writable, :98 requests WAL, :112 applies schema. recover_on_corruption=false prevents explicit quarantine but does not prevent SQLite open/configuration side effects.",
+          "limit": "Complete logs prove sidecars are deleted. Static call-chain inspection identifies the bypass and writable opener. No local reproduction or SQLite syscall trace was run."
+        }
+      },
+      "artifact": {
+        "id": 13180564171,
+        "name": "native-message-reconciliation-94b3768b7767d96c09be0207f710aab98b0bf9fc",
+        "size_in_bytes": 26214,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180564171",
+        "digest": "sha256:d5173b9aa0bde2eb5a2fd9ee9a2a2962103e0218cb94e96435ed0b1e0acd05b7"
+      },
+      "artifact_zip_digest_and_target_sha_verified": true,
+      "legacy_upgrade_subscenarios": [
+        "permission",
+        "retire-abort",
+        "upgrade-abort",
+        "upgrade-ignore",
+        "retire-rotation",
+        "coverage-cas",
+        "refresh-cas"
+      ],
+      "legacy_subscenario_counting": "The existing outer Human test passed; its unconditional seven-scenario matrix is not counted as seven extra tests."
+    },
+    "ui": {
+      "job_id": 125564906881,
+      "conclusion": "failure",
+      "full_log": {
+        "name": "native-message-ui.full.log",
+        "bytes": 135607,
+        "sha256": "efa1f69a87de001c1c7327048e1c4a9804722f178471534636fcf3c5b858fa5b"
+      },
+      "actual_passed": {
+        "transcript_projection": 33,
+        "cursor_pagination": 17,
+        "forward_settlement": 5,
+        "forward_chromium": 19,
+        "production_renderer": 2
+      },
+      "actual_failed": {
+        "production_renderer": 9
+      },
+      "not_executed": [
+        "production_transcript8"
+      ],
+      "failure": "Expected pending().older to equal 1, received 2; every failed test timed out in the common openAlice entry before its business assertions.",
+      "root_cause": {
+        "classification": "Implementation duplicate older-page admission identified by static review; exact failing runtime observation is pending older requests=2.",
+        "facts": [
+          "Roster auto-selection invokes openAgent through ProductionRenderer.tsx effect near line3213.",
+          "Once the initial page installs cursor.more, the real ConversationTranscript automatic near-top effect starts loadOlder.",
+          "Clicking the already selected Alice invokes openAgent again. Its cached-page branch near2756 unconditionally calls installInitialPage.",
+          "pagination.ts installInitialPage increments page/request generations and clears inFlight, invalidating the still-pending older page and allowing another same-cursor read.",
+          "The two holdInitial cases passed and the nine openAlice cases failed at the shared exact-one-request assertion. Existing initialTranscriptRequestRef guards cover only pending initial reads."
+        ],
+        "suggestedFix": "Preserve an installed current account/conversation pagination owner and its in-flight page on same-conversation reopen. Restore cached cursor only when the scope is genuinely unprobed. Preserve the existing exact-one-page assertions; verify with exact-H Actions."
+      },
+      "artifact": {
+        "id": 13182250393,
+        "name": "native-message-ui-94b3768b7767d96c09be0207f710aab98b0bf9fc",
+        "size_in_bytes": 20610324,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182250393",
+        "digest": "sha256:cdb5b4063f98a685eef8f2e2bfcda06ce87c2b133c74e44421d7bf910c6fa23e"
+      },
+      "actual_renderer_build": "success",
+      "artifact_zip_not_independently_materialized": true
+    },
+    "social": {
+      "job_id": 125564907571,
+      "conclusion": "success",
+      "full_log": {
+        "name": "job-125564907571.log",
+        "bytes": 240759,
+        "sha256": "ea51d5962ba1efb0a724ca40b9b482e5078ec7a6e576ec59539d87376eff2d3b"
+      },
+      "actual_passed": {
+        "featurehost": 10,
+        "sqlite": 9,
+        "http": 6
+      },
+      "failed": 0,
+      "ignored": 0,
+      "artifact": {
+        "id": 13182485519,
+        "name": "desktop-social-owner-behaviors-94b3768b7767d96c09be0207f710aab98b0bf9fc",
+        "size_in_bytes": 18201,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182485519",
+        "digest": "sha256:a0822a972b8c9dd25b1bfe6ea8eb0c5bff8dc11ceacaff98746e8d4fec43a7ae"
+      },
+      "artifact_zip_digest_and_target_sha_verified": true,
+      "scope": "Controlled Ubuntu owner behaviors, not deployed service or full shipping acceptance."
+    },
+    "source": {
+      "contract_job_id": 125564906813,
+      "candidate_job_id": 125565163472,
+      "conclusion": "success",
+      "node_actual": 158,
+      "schema_actual": 37,
+      "ledger_errors": 0,
+      "candidate_verdict": "unaccepted-candidate-consistent",
+      "accepted_mode_actually_rejected": true,
+      "full_logs": [
+        {
+          "name": "job-125564906813.log",
+          "bytes": 90268,
+          "sha256": "815e7d8d779d97298f5a7e0597cb2949b11db5f3fe274062fe9bc6989886b4fc"
+        },
+        {
+          "name": "job-125565163472.log",
+          "bytes": 146059,
+          "sha256": "fdc2681ef81fd45852d674c6b9b27a6f34b09469328bbd0369cf4dc4f006ccc7"
+        }
+      ],
+      "source_accepted": false
+    },
+    "retained_direct_ffi": {
+      "job_id": 125564907256,
+      "conclusion": "success",
+      "passed": 15,
+      "failed": 0,
+      "ignored": 1,
+      "ignored_case": "live_runtime_bootstrap_keeps_an_encrypted_transport_session",
+      "live_case_passed": false,
+      "full_log": {
+        "name": "job-125564907256.log",
+        "bytes": 79386,
+        "sha256": "ee9eb0fd5d4e5a9165656110d10eeda0c973882f9b1f4b75d0fbf776008f6813"
+      }
+    },
+    "shipping": {
+      "job_id": 125564907394,
+      "status_at_last_read": "queued",
+      "steps_executed": false,
+      "actual_passed": false,
+      "pending_gates": [
+        "locked_AppHost",
+        "DNS6",
+        "future_salts2",
+        "protocol122",
+        "TCP9_including_live",
+        "proxy4",
+        "Native_credential1",
+        "all_current_shipping_owner_process_and_copy_controls"
+      ]
+    },
+    "native-message-electron": {
+      "job_id": 125564907537,
+      "conclusion": "success",
+      "actual_suites": [
+        {
+          "name": "carrier",
+          "actual": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "name": "native-auth-retention",
+          "actual": {
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "name": "package-resources",
+          "actual": {
+            "tests": 3,
+            "pass": 3,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "name": "update-source",
+          "actual": {
+            "tests": 16,
+            "pass": 16,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "name": "windows-publisher-policy",
+          "actual": {
+            "tests": 28,
+            "pass": 28,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "name": "macos-metadata",
+          "actual": {
+            "tests": 18,
+            "pass": 18,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "name": "artifact-only-scope",
+          "actual": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "name": "promotion-consumer",
+          "actual": {
+            "tests": 7,
+            "pass": 7,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        }
+      ],
+      "artifact": {
+        "id": 13181755978,
+        "name": "native-message-electron-94b3768b7767d96c09be0207f710aab98b0bf9fc",
+        "size_in_bytes": 14825,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181755978",
+        "digest": "sha256:f674f3e9e4d6ef30b825781ff2478ea92a8d4adc1eeb32a4616f1cefe288a952"
+      },
+      "build_and_scope": [
+        "Controlled Electron/HTTP owner boundaries; no live service, OS keychain or packaged acceptance.",
+        "Historical ZIP/DMG metadata reconciled read-only with respect to installer bytes. Historical package source is 9d16483f70df9af06db97b17bb02a24dc507e459, not this candidate; no installer execution or release.",
+        "Actual Electron main, preloads and Rust Coordinator carrier build completed."
+      ],
+      "full_log": {
+        "name": "native-message-electron.full.log",
+        "bytes": 92457,
+        "sha256": "119b129e7328c856905fee005796b225f250b3c5a261f72dc438068668028915"
+      }
+    },
+    "windows-update-publisher": {
+      "job_id": 125564907723,
+      "conclusion": "success",
+      "actual_suites": [
+        {
+          "name": "native-authenticode-unicode-publisher",
+          "actual": {
+            "tests": 11,
+            "pass": 11,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        }
+      ],
+      "artifact": {
+        "id": 13181750919,
+        "name": "windows-update-publisher-94b3768b7767d96c09be0207f710aab98b0bf9fc",
+        "size_in_bytes": 1830,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181750919",
+        "digest": "sha256:68d059479b056373c6047af2b6fd4f7665a06cea087d37f44fd2c3ba7dc8b219"
+      },
+      "build_and_scope": [
+        "Actual Windows Authenticode and PowerShell UTF-8/Unicode handling using a CI-only inert signed fixture.",
+        "Captured one allowed spawn callback; executed fixture executables = 0. Not formal publisher authorization, installer execution or package acceptance.",
+        "Cleanup receipt: remainingOwnedCertificates=0 in TrustedPublisher, Root and My; privateKeyDeletionRequested=true."
+      ],
+      "full_log": {
+        "name": "windows-update-publisher.full.log",
+        "bytes": 33549,
+        "sha256": "8da15cbcf89fc234b943139823a5960465f273b79b0897a1ef2543e36a11e4d0"
+      }
+    }
+  },
+  "focused_recovery_after_94b": {
+    "base": "94b3768b7767d96c09be0207f710aab98b0bf9fc",
+    "classification": "Two implementation bugs; no environment retry or oracle/count reduction.",
+    "renderer": {
+      "files": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "desktop/e2e/native-message-projection.spec.ts"
+      ],
+      "change": "Retain installed same-account/same-conversation pagination, in-flight request, read generation and full-refresh event buffers. True scope changes keep invalidating old reads and restore cached cursors only when unprobed.",
+      "cases": "Existing light/dark exact-one request ID checks plus both full-refresh/older-page response orders with selection between identity-remap and later content/resource mutations. Existing eleven outer browser cases retained."
+    },
+    "creation": {
+      "files": [
+        "source/host/src/extensions/session/agent_db_recovery.rs",
+        "source/host/src/extensions/session/human_creation_tests.rs"
+      ],
+      "change": "Read the complete 100-byte SQLite header using read-only File IO before any original-path SQLite open; refuse wrong signature, short header and missing/empty main with nonempty WAL/journal/SHM. Preserve the original no-sidecar immutable quick_check and live-WAL owner.",
+      "subscenarios": [
+        "notadb",
+        "notadb-header",
+        "truncated-header",
+        "empty-main",
+        "missing-main",
+        "orphan-shm",
+        "schema",
+        "data-page-delete-mode"
+      ],
+      "counts": "Existing twelve outer creation cases; eight inputs remain one case. Original NOTADB bytes and all first/repeated/restarted directory byte comparisons retained.",
+      "scope_limit": "Necessary main-file format admission only. Arbitrary hot/corrupt sidecar recovery and cross-process atomic snapshot preservation remain open. No immutable-main substitution for WAL identity, custom VFS, dependency change, quarantine or file restoration."
+    },
+    "static_review": "Root reviewed complete UI diff and existing pagination/refresh owners. Independent source review covered header guard types/errors, health-WAL compatibility and refusal matrix. Static review does not grant execution.",
+    "verification": "Publish force=false/expected_sha CAS from94b, read back full SHA/tree/parent and all changed file contents, then require exact containing-H Actions. No local or htch executable validation.",
+    "primary_sqlite_references": [
+      "https://www.sqlite.org/fileformat.html",
+      "https://www.sqlite.org/uri.html",
+      "https://www.sqlite.org/walformat.html"
+    ]
+  }
 }

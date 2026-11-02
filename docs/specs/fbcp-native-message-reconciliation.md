@@ -1793,6 +1793,15 @@ claim of an observed production data-loss incident.
   in DELETE journal mode. Arbitrary hot/corrupt-sidecar recovery remains open. The unpublished readonly_shm probe is withdrawn:
   the locked SQLite3.51.3 has a known corrupt-WAL read-overrun in that path.
   No dependency upgrade or full arbitrary-WAL/crash acceptance is claimed.
+  Exact94b/run41529254382 exposed a NOTADB refusal that nevertheless deleted
+  the original WAL/SHM/journal: nonempty sidecars bypassed the immutable probe
+  and reached the writable opener. Before that delegation, read the existing
+  main-file header with ordinary read-only file IO. Reject a missing/empty main
+  with retained nonempty sidecars, a truncated SQLite header, or a wrong SQLite
+  signature without opening SQLite on the original path. This is only a
+  necessary-format admission, not validation of an arbitrary sidecar snapshot.
+  Preserve the existing full no-sidecar quick_check and real live-WAL identity
+  positive control; retain byte-for-byte refusal/retry/restart assertions.
 - NMR-AC-CREATE-01: Add focused real-SQLite behavioral cases in the existing Host
   owner tests, selected explicitly by the Actions reconciliation job. Force
   the same-pair scheduling interleaving with owned barriers/channels, exercise
