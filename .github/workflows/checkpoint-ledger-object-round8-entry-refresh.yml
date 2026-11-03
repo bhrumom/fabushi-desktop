@@ -51,8 +51,8 @@ jobs:
           assert.equal(ops.repository, process.env.GITHUB_REPOSITORY);
           assert.equal(ops.path, 'projects/telegram-desktop-rust/parity-ledger.json');
           assert.equal(ops.format_version, 3);
-          assert.equal(ops.input_blob, '3bf47d8f7504bb179896c502a16329d9f0f80645');
-          assert.equal(ops.reviewed_base, '6d42fa7d64d6059ae010891a20d41dfacc51f246');
+          assert.equal(ops.input_blob, '76765dc8498dc3ffd92931169ea7ae754ba4ffe9');
+          assert.equal(ops.reviewed_base, '6e9ffe388d5483310ead7c185e5a8760c7fd614c');
           assert.equal(ops.authored_ui_cases, 23);
           assert.equal(ops.operations.length, 1);
           const op = ops.operations[0];
@@ -119,7 +119,7 @@ jobs:
           assert.equal(row.ui_functional_case_ids.filter(value => value.startsWith('desktop/e2e/native-message-author-recovery.spec.ts#')).length, 23);
           assert.equal(row.ui_functional_case_ids.filter(value => value.startsWith('frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_')).length, 4);
           assert.equal(row.fabushi_target_paths.length, 68);
-          assert.equal(row.fabushi_target_symbols.length, 88);
+          assert.equal(row.fabushi_target_symbols.length, 92);
           const output = Buffer.from(JSON.stringify(changed, null, 2) + '\n');
           fs.writeFileSync('artifacts/round8-entry-refresh-ledger-object/prepared-ledger.json', output);
           fs.writeFileSync(process.env.RUNNER_TEMP + '/round8-entry-refresh-ledger-blob.json', JSON.stringify({content: output.toString('utf8'), encoding: 'utf-8'}));

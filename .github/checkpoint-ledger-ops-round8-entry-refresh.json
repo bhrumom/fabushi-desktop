@@ -2,8 +2,8 @@
   "format_version": 3,
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
-  "reviewed_base": "6d42fa7d64d6059ae010891a20d41dfacc51f246",
-  "input_blob": "3bf47d8f7504bb179896c502a16329d9f0f80645",
+  "reviewed_base": "6e9ffe388d5483310ead7c185e5a8760c7fd614c",
+  "input_blob": "76765dc8498dc3ffd92931169ea7ae754ba4ffe9",
   "authored_ui_cases": 23,
   "operations": [
     {
@@ -78,7 +78,7 @@
           "NMR-AC-UI-ENTRY-REFRESH-01 requires original8 plus4 exact real Renderer behavior cases (12); total UI209=Node173+projection13+author23, zero failures/skips/retries. Human81/reconciliation125, owner40, actualMac2+2 and all existing gates remain. These pending obligations are not execution evidence."
         ],
         "test_execution_evidence": [
-          "Prerequisite exact6d42fa7d64d6059ae010891a20d41dfacc51f246/run41563429938: job125679139806 passed125 includingHuman81; UI125679140092 passed205 retry0; owner125679140064 passed40; Electron125679140130 passed100 plus actual compile. Source41563429876 passed161Node/37Python/schema0 and unaccepted candidate. OriginalUI failure1de remains retained. The new UI source requires containing-H execution; macOS/shipping at this prep remain separate nonterminal gates."
+          "Prerequisite exact6d42fa7d64d6059ae010891a20d41dfacc51f246/run41563429938: job125679139806 passed125 includingHuman81; UI125679140092 passed205 retry0; owner125679140064 passed40; Electron125679140130 passed100 plus actual compile. Source41563429876 passed161Node/37Python/schema0 and unaccepted candidate. Actual Mac41563429896/job125679138961 passedPlugins2/Human2 retry0. OriginalUI failure1de remains retained. The new UI source requires containing-H execution; native shipping job125679140188 remains queued at this preparation."
         ]
       },
       "note": "\nNMR-UI-ENTRY-REFRESH-01 closes current entry-update consumer lifetimes in the existing Renderer, action anchor, gallery and spreadsheet provider. Original8 renderer cases remain;4 actual behavior cases and containing-H UI209 are required. Canonical revision/tombstone, old-message discovery, outbound mutation, backend deployment, complete source/legal and independent ACCEPT remain open."
