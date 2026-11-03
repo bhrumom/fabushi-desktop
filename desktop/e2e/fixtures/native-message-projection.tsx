@@ -40,7 +40,8 @@ const rows = new Map<string, Row[]>([
 const fixtureRowsStorageKey = (authId: string | null) => authId == null
   ? 'native-message-fixture-canonical-rows:logged-out'
   : `native-message-fixture-canonical-rows:${authId}`;
-const savedRows = sessionStorage.getItem(fixtureRowsStorageKey(account.authId ?? null))
+const initialAuthId = account.kind === 'logged-in' ? account.authId ?? null : null;
+const savedRows = sessionStorage.getItem(fixtureRowsStorageKey(initialAuthId))
   ?? sessionStorage.getItem('native-message-fixture-canonical-rows');
 if (savedRows != null) {
   rows.clear();
