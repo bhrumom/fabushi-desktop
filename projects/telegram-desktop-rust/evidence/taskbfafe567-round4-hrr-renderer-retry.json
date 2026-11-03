@@ -1,0 +1,41 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 4,
+  "base": "725ab05473543e8a498d84d5e111d94fb3d72e21",
+  "fixedUpstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6"
+  },
+  "implementationCommit": "c8395b2eeb04a3e7b0b717085103fe08e11569b5",
+  "changes": [
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "change": "Replaced fresh-nonce resend path with retryHumanMessage({conversationId,clientNonce}); preserves the durable nonce and Host-owned payload/resources; no renderer attachment restaging or composer draft mutation; prevents duplicate in-flight retry clicks; fences async failure projection by account generation, account slot, active conversation, selected conversation and open-agent request generation."
+    }
+  ],
+  "reviewedBoundaries": [
+    "Session retry acquires the per-conversation human_message_lock before reading the durable row and re-enters append_human_message_with_context using the held guard; concurrent retries serialize on the same lane.",
+    "Retry forwards persisted content/reply/composedAt/attachment descriptors only to the existing append/settlement owner; that owner is responsible for reuse of remoteDispatchAttachments rather than renderer restaging.",
+    "Source-owned forwarding intents are rejected by pending_human_forward_is_batch_owned; retry identity is authenticated local Human + unique nonce row."
+  ],
+  "verification": {
+    "remoteRendererFileReadBack": true,
+    "remoteBranchHead": "c8395b2eeb04a3e7b0b717085103fe08e11569b5",
+    "compileOrBehaviorTestsExecuted": false,
+    "exactHWorkflowRuns": [],
+    "actionsPassed": false,
+    "sessionConcurrencyBehaviorTested": false,
+    "uploadedResourceReuseBehaviorTested": false,
+    "lastDispatchErrorRestartProjectionImplemented": false,
+    "coordinatorHostSqliteHttpAndRealRendererNegativeTests": false
+  },
+  "remaining": [
+    "Add and run deterministic Session concurrent-retry and persisted uploaded-resource reuse tests; verify retry does not duplicate dispatch or re-upload.",
+    "Implement persisted lastDispatchError restart failure projection in the actual transcript projection path.",
+    "Add Coordinator dispatcher/contract, Host SQLite/HTTP malicious-argument/foreign/duplicate/forward ownership, and real ProductionRenderer repeated-click/account-selection ABA/restart negative tests.",
+    "Freeze resulting exact H, run relevant GitHub Actions, and read back exact-H run/job logs.",
+    "Continue single fixed-U inventory/ledger/RTM closure: current inventory index records 6,895 root and 16,381 recursive identities, but baseline_identity_accepted=false, semantic_read_complete=false, responsibility_decomposition_complete=false; external/build/generated/LFS/legal closure and independent ACCEPT remain open.",
+    "Complete remaining full product/service/platform/package/UI/a11y/timing/security/performance/soak/upgrade/rollback/Bot regression gates."
+  ]
+}
