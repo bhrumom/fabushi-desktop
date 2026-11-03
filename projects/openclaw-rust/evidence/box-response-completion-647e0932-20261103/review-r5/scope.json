@@ -1,0 +1,238 @@
+{
+  "schema_version": "review-snapshot-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 5,
+  "base": "b35408891546694606ed0750c60af0302669aac9",
+  "baseTree": "158826d8a7483ad0c7182052419a48c5fb4cc210",
+  "startingHead": "b35408891546694606ed0750c60af0302669aac9",
+  "priorReviewCommit": "0e876a91527fdb0bac673be5df6ef0b18ef4f29b",
+  "priorReviewTree": "5270a4a9bebc6742217c6f83b28a629945bbe15d",
+  "reviewCommit": "d237b9e160c2c200fb72676d785b301fbe88c48f",
+  "reviewTree": "af13f01121e79c3d5d6ee1ab3409cc657a7de1e7",
+  "deltaCarrier": "ddaba6cc7ce4995250259274ca5f1b6172d60586",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "contract": {
+    "path": "docs/specs/g11-box-browser-wire-completion.md",
+    "blob": "aa3cfe774bffef385df9dfcc0ad584436b864746",
+    "name": "BXR-v1.3 plus BXR-HTTP-v1",
+    "preImplementationCommit": "2bd0cce4dcaa868468f7a8724c59398164093a7c"
+  },
+  "scope": "Retain all original eighteen BXR paths against frozen b354. Review the five-path HTTP correction delta and its affected functions/consumers, with complete original scope available. No developer index or branch was changed by these immutable review trees.",
+  "complete": {
+    "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/compare/b35408891546694606ed0750c60af0302669aac9...d237b9e160c2c200fb72676d785b301fbe88c48f",
+    "bytes": 302212,
+    "sha256": "235ac647286b872e7e7554d7fd7b4ef5b3669608b535179e095b058f2fcda5c6",
+    "paths": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "status": "modified",
+        "blob": "722919391a64e55f13fae68bb41fc549c70eaf23",
+        "additions": 4,
+        "deletions": 2,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "docs/specs/g11-box-browser-wire-completion.md",
+        "status": "modified",
+        "blob": "aa3cfe774bffef385df9dfcc0ad584436b864746",
+        "additions": 73,
+        "deletions": 2,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+        "status": "added",
+        "blob": "560305f76c8d0fc549bff73b9596743f47c7edfd",
+        "additions": 450,
+        "deletions": 0,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "status": "modified",
+        "blob": "aee0e4e69975891112b993a43c57e3dbec42e344",
+        "additions": 21,
+        "deletions": 5,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "status": "modified",
+        "blob": "635a1d2fa49fec8d34b89636f6c03d004a608e82",
+        "additions": 22,
+        "deletions": 4,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "status": "modified",
+        "blob": "7df804754b8fc9cb5578c792657d7c477b1b2e72",
+        "additions": 327,
+        "deletions": 6,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/src/box/box_remote_accessor.rs",
+        "status": "modified",
+        "blob": "e6470d1769972f73c90835c368f2164c7055c7e0",
+        "additions": 126,
+        "deletions": 7,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/src/box/generated_production.rs",
+        "status": "modified",
+        "blob": "18ada294465dd3f7defa6772fa05858ecb2fbea8",
+        "additions": 859,
+        "deletions": 542,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/src/extensions/forever_box/runner_tools.rs",
+        "status": "modified",
+        "blob": "0051f2ae387a036f5cfe78afb9b329b3efe47e48",
+        "additions": 256,
+        "deletions": 27,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/src/runner/box_tool_access.rs",
+        "status": "modified",
+        "blob": "35f217614fd832b3a482394cd70638f67d865efc",
+        "additions": 3,
+        "deletions": 3,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/src/runner/large_output_spill.rs",
+        "status": "modified",
+        "blob": "ebdea4323cbcb77216a1d9648717c274ed5e7a10",
+        "additions": 18,
+        "deletions": 17,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/src/runner/runner_prompt_glue.rs",
+        "status": "modified",
+        "blob": "e099d06120c6593d6d08f644abc03e753c027cbc",
+        "additions": 4,
+        "deletions": 4,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+        "status": "modified",
+        "blob": "f3df2cc147226266c6e12b297888f61934102365",
+        "additions": 105,
+        "deletions": 0,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/tests/box_generated_production_contract.rs",
+        "status": "modified",
+        "blob": "b515191a5e7617725ea50e3fbaab4b7734b21930",
+        "additions": 1823,
+        "deletions": 15,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/tests/box_remote_accessor_contract.rs",
+        "status": "modified",
+        "blob": "81d182554769cd99c012c9d2cb5800c93cc5429f",
+        "additions": 189,
+        "deletions": 3,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/tests/large_output_spill_contract.rs",
+        "status": "modified",
+        "blob": "af895ac7fb8b170278c6fa07f46aef1ae50bc690",
+        "additions": 53,
+        "deletions": 5,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/tests/runner_box_tool_composition_contract.rs",
+        "status": "modified",
+        "blob": "8a805357be0fbed1192b7094d630b7cf493705db",
+        "additions": 196,
+        "deletions": 0,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/tests/runner_prompt_glue_contract.rs",
+        "status": "modified",
+        "blob": "f80d1451906b1eac2fced34a1e0e60b7489e8d6e",
+        "additions": 31,
+        "deletions": 3,
+        "allHunkCountsMatch": true
+      }
+    ]
+  },
+  "focused": {
+    "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/compare/0e876a91527fdb0bac673be5df6ef0b18ef4f29b...ddaba6cc7ce4995250259274ca5f1b6172d60586",
+    "bytes": 23441,
+    "sha256": "9cb37ee4072280599f255f686f7711145bf439f3661ffcaf6e6ec7bb47fd1caf",
+    "paths": [
+      {
+        "path": "docs/specs/g11-box-browser-wire-completion.md",
+        "status": "modified",
+        "blob": "aa3cfe774bffef385df9dfcc0ad584436b864746",
+        "additions": 30,
+        "deletions": 0,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+        "status": "modified",
+        "blob": "560305f76c8d0fc549bff73b9596743f47c7edfd",
+        "additions": 23,
+        "deletions": 1,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "status": "modified",
+        "blob": "7df804754b8fc9cb5578c792657d7c477b1b2e72",
+        "additions": 4,
+        "deletions": 1,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/src/box/generated_production.rs",
+        "status": "modified",
+        "blob": "18ada294465dd3f7defa6772fa05858ecb2fbea8",
+        "additions": 44,
+        "deletions": 20,
+        "allHunkCountsMatch": true
+      },
+      {
+        "path": "source/host/tests/box_generated_production_contract.rs",
+        "status": "modified",
+        "blob": "b515191a5e7617725ea50e3fbaab4b7734b21930",
+        "additions": 176,
+        "deletions": 1,
+        "allHunkCountsMatch": true
+      }
+    ]
+  },
+  "execution": {
+    "localOrHtch": false,
+    "exactCandidateActions": "not-run"
+  },
+  "reviewInstructions": "Fresh read-only blind review. Do not read prior reports, verdicts or arbitration. Read actual source, adjacent request/consumer/result owners and causal tests. Product logic requires deep review; generated/contracts and accounting are reviewed honestly at their required depth.",
+  "integration": {
+    "currentIncomingMcpCommit": "4bc25f453108268087e9a11f91aee51680ce2822",
+    "note": "MCP production and shared-file integration are independent of this scoped BXR tree. On branch publication preserve current workflow/ledger/RTM and all unrelated incoming source; publish only the five HTTP-scope paths whose current preimages must be rechecked."
+  },
+  "remaining": [
+    "Exact published-H Actions",
+    "Actual generated daemon dependency resolution persistence/review",
+    "External services/devices/platform compatibility",
+    "All OCRM G01-G12/AC01-AC24 and independent ACCEPT"
+  ],
+  "allGlobalFlagsRemainFalse": true
+}

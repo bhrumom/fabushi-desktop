@@ -1,0 +1,537 @@
+{
+  "schema": "ocrm-exact-subject-execution-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "MCP-OFFICIAL-DISPATCH-v1",
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "4bc25f453108268087e9a11f91aee51680ce2822",
+    "tree": "a78ed0bdc19cad8e3f19a3b6ae29f2d440b73213",
+    "upstream": "1440bb1771372334bea23d7642bb52deb7db1845"
+  },
+  "source_delivery_readback": {
+    "sha": "4bc25f453108268087e9a11f91aee51680ce2822",
+    "matches": [
+      {
+        "path": "source/electron-main/mcp/official-mcp-service.ts",
+        "sha": "24889e871aaab597ddcd3fa19c7285081762eb26",
+        "expectedBlob": "24889e871aaab597ddcd3fa19c7285081762eb26",
+        "fullContentEqual": true,
+        "chars": 24878
+      },
+      {
+        "path": "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "sha": "01cc975d6eb6e2df5d4b93c5a829e02264fe0b7f",
+        "expectedBlob": "01cc975d6eb6e2df5d4b93c5a829e02264fe0b7f",
+        "fullContentEqual": true,
+        "chars": 15064
+      },
+      {
+        "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "sha": "3659cf93a8fd86b17e375e8998e0df68f61b410c",
+        "expectedBlob": "3659cf93a8fd86b17e375e8998e0df68f61b410c",
+        "fullContentEqual": true,
+        "chars": 171118
+      },
+      {
+        "path": "desktop/scripts/build-electron-runtime.mjs",
+        "sha": "4dafbbf040c4b18d30bc5d8143a2be550ac2f8ef",
+        "expectedBlob": "4dafbbf040c4b18d30bc5d8143a2be550ac2f8ef",
+        "fullContentEqual": true,
+        "chars": 4501
+      },
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "355aff835d1d18f3e3d68e704591bf71f75d16ce",
+        "expectedBlob": "355aff835d1d18f3e3d68e704591bf71f75d16ce",
+        "fullContentEqual": true,
+        "chars": 473013
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "sha": "63a1ae94825db6e442c27dc86869f9f0297b7a8d",
+        "expectedBlob": "63a1ae94825db6e442c27dc86869f9f0297b7a8d",
+        "fullContentEqual": true,
+        "chars": 1459974,
+        "contentReadMethod": "Exact commit path API SHA bound to full Git blob API read; contents API omitted >1MiB body"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "sha": "545c1d4d556ac956244d29f7ef5ca3923643d469",
+        "expectedBlob": "545c1d4d556ac956244d29f7ef5ca3923643d469",
+        "fullContentEqual": true,
+        "chars": 164155
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json",
+        "sha": "b88b72aa9c26a1f4486ccce24c5585a629e3e342",
+        "expectedBlob": "b88b72aa9c26a1f4486ccce24c5585a629e3e342",
+        "fullContentEqual": true,
+        "chars": 14652
+      },
+      {
+        "path": "source/electron-main/adapters/mcp-oauth.ts",
+        "sha": "8b4a37454aeb91190e161f1a113da36110ab7b8c",
+        "expectedBlob": "8b4a37454aeb91190e161f1a113da36110ab7b8c",
+        "fullContentEqual": true,
+        "chars": 31464
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/review-r3/manifest.json",
+        "sha": "68d7f5d7a1fa637e5c05a1599e65d187381131ad",
+        "expectedBlob": "68d7f5d7a1fa637e5c05a1599e65d187381131ad",
+        "fullContentEqual": true,
+        "chars": 8440
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/review-r3/convergence.json",
+        "sha": "ee63ba0997df04efc9b72a02cec0e191c02cf38d",
+        "expectedBlob": "ee63ba0997df04efc9b72a02cec0e191c02cf38d",
+        "fullContentEqual": true,
+        "chars": 6120
+      }
+    ],
+    "verified": true
+  },
+  "source_review": {
+    "commit": "ea524e45cc5a058e01c8c2962778b5bf62bde35c",
+    "tree": "4e6925f3a52afd28b3f7eeeb262ad464dbdf71da",
+    "manifest": "68d7f5d7a1fa637e5c05a1599e65d187381131ad",
+    "convergence": "ee63ba0997df04efc9b72a02cec0e191c02cf38d"
+  },
+  "runtime": {
+    "run": 41599968155,
+    "attempt": 1,
+    "job": 125796137272,
+    "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41599968155/job/125796137272",
+    "job_conclusion": "success",
+    "selected_scope": "ocrm-mcp-native",
+    "runner": "GitHub Actions 1000261669",
+    "os": "Linux",
+    "build_command": "npm --prefix desktop run build:electron -- --plugin-skills-contracts",
+    "plugin_command": "node --test --test-reporter=tap desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/coordinator-executors.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/official-mcp.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/backend-mcp-origin.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs",
+    "account_command": "node --test --test-reporter=tap desktop/.tmp-grok-electron/ocrm-plugin/coordinator-account-runtime.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/coordinator-main-port-client.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/coordinator-runtime.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/attachment-gateway.contract.test.cjs",
+    "commands_exit": 0,
+    "plugin_counts": {
+      "tests": 226,
+      "pass": 226,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "account_counts": {
+      "tests": 88,
+      "pass": 88,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "required_positive_occurrences": {
+      "official": [
+        {
+          "name": "OF-T1 default official source retirement at vault refuses tools/call and permits a fresh source",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T1 default official source retirement at initialize refuses tools/call and permits a fresh source",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T1 default official source retirement at notification refuses tools/call and permits a fresh source",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T1 default official source retirement at pagination refuses tools/call and permits a fresh source",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T1 default official Attempt reset cannot dispatch or borrow B after a held vault read",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T2 official final send refuses retirement after its last awaited fence fulfills",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T2 official payload serialization retires the source before the final fetch guard",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T3 default official concurrent sources keep separate assertions and refusal witnesses",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T3 official refusal provenance distinguishes owner-typed",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T3 official refusal provenance distinguishes matching-text",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T3 official refusal provenance distinguishes credential-typed",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T3 official refusal provenance distinguishes serialization-typed",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T3 official refusal provenance distinguishes entered-fetch-typed",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T4 default official entered success retains custody after source-only retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T4 default official entered server-error retains custody after source-only retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T4 default official entered transport-failure retains custody after source-only retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T4 default official entered http-failure retains custody after source-only retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T4 default official entered jsonrpc-failure retains custody after source-only retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T5 default official account-switch suppresses private output after tools/call entry",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T5 default official uninstall suppresses private output after tools/call entry",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T5 default official credential-revision suppresses private output after tools/call entry",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T5 default official service-reset suppresses private output after tools/call entry",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T5 default official dispatch retains raw disable, provider credential, protocol and redaction contracts",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T5 default official reset during its final output read suppresses private settlement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T5 official disposal after final fence fulfillment suppresses private settlement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T6 default official account departure during its final output read suppresses private settlement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T6 official account retirement after final fence fulfillment suppresses private settlement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T6 official captured account A cannot borrow B at private output publication",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T6 official captured account A cannot borrow A-after-B at private output publication",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OF-T6 default official refuses execution while the canonical account binding is unavailable",
+          "successfulOccurrences": 1
+        }
+      ],
+      "official_regressions": [
+        {
+          "name": "catalog pins all nine upstream HTTPS endpoints and labels preview and credential setup",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "install without credential remains needsAuth and does not contact provider",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OAuth completes into the scoped native vault and refreshes tools without returning credentials to UI",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "manual credential replacement cannot orphan an OAuth grant",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "account change during pending OAuth cancels delivery and cannot install into another account",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "expired OAuth refresh is single-flight, stays before provider calls, and fences account switches",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "disconnect clears local credentials even when upstream revocation fails",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "native broker confines Fabushi authorization to its origin and rejects foreign redirect URLs",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "real initialize/list/call uses only provider credential, negotiated protocol and session",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "disabled tools leave inventory and cannot execute; update preserves credential; lifecycle persists",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "SSE notifications and paginated tool inventory are correlated and decoded",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "repeated pagination cursor fails explicitly",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "authorization failures are honest and uncertain writes are never retried",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "account change fences in-flight provider output and isolates installed state",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "uninstall fences in-flight output and response strings redact provider token",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "legacy lookup failure leaves catalog visible with explicit partial-load warning",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "official Add installs then authenticates and opens the native broker URL",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "official Add stops on installation failure and exposes authorization or opener failures",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "official optional credentials do not intercept Add while required and legacy setup remains",
+          "successfulOccurrences": 1
+        }
+      ],
+      "origin_carrier": [
+        {
+          "name": "MCP origin: current generated transport preserves public/raw names, nested args and disabled checks",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP origin: held privacy retires before real Connect next and does not consume first-call diagnostics",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP origin: held token or machine ID cannot pass a retired source to next",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP origin: final assertion follows the request-ID observer and survives Connect deadline replacement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP origin: concurrent guarded requests retain separate sources and reverse-order completion",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP origin: matching text and typed exceptions outside the final assertion are not known refusals",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP origin: entered late success, server failure and uncertain transport settlement retain custody",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP origin: guarded refusal does not attach its assertion to shared listing, auth or unguarded execution",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP origin: default desktop facade forwards the assertion through its real HTTP client factory",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "control executor routes gateway, MCP, WebAuthn, and telemetry without absorbing Host behavior",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "MCP results retain their discriminants through native ports and the shipping Rust carrier",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-02 captured Attempt is reserved once and stale lookup never constructs a replacement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-02/05 stale and malformed origins cannot construct or borrow manager B",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-03 native origin stamping preserves malformed received catalogs and permissive row values",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-01 concrete control source retires before callbacks on dispose",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-01 concrete control source retires before callbacks on port-close",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-01 concrete control source retires before callbacks on shutdown",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-01 concrete control source retires before callbacks on protocol-breach",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-02/03 held factory cannot publish origin after source retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-02/03 held factory cannot publish origin after attempt retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-02/03 held catalog cannot publish origin after source retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-02/03 held catalog cannot publish origin after attempt retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-02 execute rechecks original source after the manager await",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-02 execute rechecks original attempt after the manager await",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-05/07 native adapter preserves admitted late success after source and Attempt retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-05/07 native adapter preserves admitted late server-error after source and Attempt retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-05/07 native adapter preserves admitted late failure after source and Attempt retirement",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-05/07 native adapter preserves admitted late typed-failure after source and Attempt retirement",
+          "successfulOccurrences": 1
+        }
+      ],
+      "account_origin": [
+        {
+          "name": "OD-T2 production Coordinator refuses departed account and serialized origin replay before manager B",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-T2 same-account child restart retires its source while retaining the current MCP Attempt",
+          "successfulOccurrences": 1
+        },
+        {
+          "name": "OD-T2/3 held production account catalog cannot publish its origin after departure",
+          "successfulOccurrences": 1
+        }
+      ]
+    },
+    "raw_job_log": {
+      "path": "native-job.log",
+      "bytes": 256239,
+      "sha256": "d18bb3ee79acf88468bf4c05e875f56d55cc7adfe53a35866e7ba25b08418097"
+    },
+    "artifacts": [
+      {
+        "id": 13214028133,
+        "name": "ocrm-plugin-edge-4bc25f453108268087e9a11f91aee51680ce2822",
+        "digest": "sha256:5b046131b676823287c75b7b793e1d2edd84614945fd345322a38455092caa30",
+        "size_in_bytes": 17603,
+        "subject": "4bc25f453108268087e9a11f91aee51680ce2822",
+        "expired": false
+      },
+      {
+        "id": 13213968276,
+        "name": "ocrm-mab-4bc25f453108268087e9a11f91aee51680ce2822",
+        "digest": "sha256:5bc700a51ab3df2e224262723f2438751868c55a5a6a801b58dd802ead03f883",
+        "size_in_bytes": 11670,
+        "subject": "4bc25f453108268087e9a11f91aee51680ce2822",
+        "expired": false
+      },
+      {
+        "id": 13213778218,
+        "name": "ocrm-openclaw-notice-4bc25f453108268087e9a11f91aee51680ce2822-41599968155-1",
+        "digest": "sha256:54704f71981bc3de17878089b3382dc0e67f5b3b123e8207b9c0086bec516f0a",
+        "size_in_bytes": 3846,
+        "subject": "4bc25f453108268087e9a11f91aee51680ce2822",
+        "expired": false
+      }
+    ]
+  },
+  "source_authority": {
+    "run": 41599968224,
+    "attempt": 1,
+    "job": 125796137296,
+    "conclusion": "success",
+    "source_review_tests": 33,
+    "materialization_tests": 21,
+    "structural_negative_controls": 4,
+    "tracked_upstream_paths": 62130,
+    "raw_job_log": {
+      "path": "source-authority.log",
+      "bytes": 31537,
+      "sha256": "9a1454213bfd05a7f7265a4cb416ddb9f273df2411285a4a7737efa0ba0a358d"
+    },
+    "artifact": {
+      "id": 13213873608,
+      "name": "ocrm-p0-authority-4bc25f453108268087e9a11f91aee51680ce2822",
+      "digest": "sha256:ea6ed5437b3e1d7f67b6e98a2991a8eba41c28543b4a460dd5b893c623f57e06",
+      "subject": "4bc25f453108268087e9a11f91aee51680ce2822",
+      "expired": false
+    },
+    "scope": "G01 tracked identities and G02 structural accounting only. Recursive dependency/LFS/legal closure and semantic product acceptance remain open."
+  },
+  "observed_behavior": "Controlled production native composition refuses stale source/Attempt admission, retains entered outcomes without replay, and suppresses private output for a retired captured account lifetime. The default chain, final-continuation, B and A-after-B, unavailable binding, standalone Official and retained native/account regressions have direct positive observations.",
+  "limits": {
+    "artifact_zip_downloaded": false,
+    "raw_log_readback": true,
+    "controlled_io_only": true,
+    "real_provider_account_compatibility": false,
+    "full_rust_policy_migration": false,
+    "unit_acceptance_promoted": false,
+    "global_acceptance": false,
+    "all_eight_flags_remain_false": true,
+    "carrier_is_subject": false
+  },
+  "remaining": [
+    "Real provider/account compatibility and entitlement",
+    "Box final resource boundary",
+    "Broker final HTTP admission and native credential/session epochs",
+    "Same-manager install/registration atomic revocation",
+    "Full Rust policy/protocol migration and all applicable MCP functionality",
+    "Recursive dependencies/downloads/patches/generation/LFS/resources/legal closure",
+    "All applicable G01-G12 / AC01-AC24, real ecosystem/device/platform/UI/security/performance/soak/packages/upgrade/rollback and independent ACCEPT"
+  ]
+}

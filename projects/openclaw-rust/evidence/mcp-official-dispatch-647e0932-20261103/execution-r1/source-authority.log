@@ -1,0 +1,380 @@
+﻿2026-11-03T07:59:21.1358718Z Current runner version: '2.338.2'
+2026-11-03T07:59:21.1383948Z ##[group]Runner Image Provisioner
+2026-11-03T07:59:21.1384815Z Hosted Compute Agent
+2026-11-03T07:59:21.1385637Z Version: 20261021.618
+2026-11-03T07:59:21.1386377Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-11-03T07:59:21.1387097Z Build Date: 2026-10-21T00:45:21Z
+2026-11-03T07:59:21.1387764Z Worker ID: {d49c2585-065a-4f29-a597-bd0d9055995a}
+2026-11-03T07:59:21.1388444Z Region: centralus
+2026-11-03T07:59:21.1388947Z Cloud: Azure
+2026-11-03T07:59:21.1389498Z ##[endgroup]
+2026-11-03T07:59:21.1390916Z ##[group]Operating System
+2026-11-03T07:59:21.1391527Z Ubuntu
+2026-11-03T07:59:21.1392383Z 26.04.1
+2026-11-03T07:59:21.1392894Z LTS
+2026-11-03T07:59:21.1393459Z ##[endgroup]
+2026-11-03T07:59:21.1393982Z ##[group]Runner Image
+2026-11-03T07:59:21.1394551Z Image: ubuntu-26.04
+2026-11-03T07:59:21.1395313Z Version: 20261025.179.1
+2026-11-03T07:59:21.1397226Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261025.179/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-03T07:59:21.1398974Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261025.179
+2026-11-03T07:59:21.1400004Z ##[endgroup]
+2026-11-03T07:59:21.1401078Z ##[group]GITHUB_TOKEN Permissions
+2026-11-03T07:59:21.1403758Z Contents: read
+2026-11-03T07:59:21.1404373Z Metadata: read
+2026-11-03T07:59:21.1404901Z ##[endgroup]
+2026-11-03T07:59:21.1407005Z Secret source: Actions
+2026-11-03T07:59:21.1407954Z Cache mode: write
+2026-11-03T07:59:21.1409018Z Prepare workflow directory
+2026-11-03T07:59:21.1912432Z Prepare all required actions
+2026-11-03T07:59:21.1958823Z Getting action download info
+2026-11-03T07:59:21.4398256Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-11-03T07:59:21.5514804Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-11-03T07:59:21.7366846Z Complete job name: source-authority
+2026-11-03T07:59:21.8102386Z ##[group]Run actions/checkout@v4
+2026-11-03T07:59:21.8103357Z with:
+2026-11-03T07:59:21.8103958Z   ref: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T07:59:21.8104616Z   fetch-depth: 1
+2026-11-03T07:59:21.8105219Z   repository: bhrumom/fabushi-desktop
+2026-11-03T07:59:21.8109337Z   token: ***
+2026-11-03T07:59:21.8109800Z   ssh-strict: true
+2026-11-03T07:59:21.8110335Z   ssh-user: git
+2026-11-03T07:59:21.8110843Z   persist-credentials: true
+2026-11-03T07:59:21.8111400Z   clean: true
+2026-11-03T07:59:21.8112265Z   sparse-checkout-cone-mode: true
+2026-11-03T07:59:21.8112866Z   fetch-tags: false
+2026-11-03T07:59:21.8113407Z   show-progress: true
+2026-11-03T07:59:21.8113908Z   lfs: false
+2026-11-03T07:59:21.8114377Z   submodules: false
+2026-11-03T07:59:21.8114925Z   set-safe-directory: true
+2026-11-03T07:59:21.8115493Z   allow-unsafe-pr-checkout: false
+2026-11-03T07:59:21.8116276Z env:
+2026-11-03T07:59:21.8116767Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T07:59:21.8117561Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T07:59:21.8118300Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T07:59:21.8118874Z ##[endgroup]
+2026-11-03T07:59:22.0732915Z Syncing repository: bhrumom/fabushi-desktop
+2026-11-03T07:59:22.0735379Z ##[group]Getting Git version info
+2026-11-03T07:59:22.0736598Z Working directory is '/home/runner/work/fabushi-desktop/fabushi-desktop'
+2026-11-03T07:59:22.0738679Z [command]/usr/bin/git version
+2026-11-03T07:59:22.0742480Z git version 2.56.0
+2026-11-03T07:59:22.0763317Z ##[endgroup]
+2026-11-03T07:59:22.0778920Z Temporarily overriding HOME='/home/runner/work/_temp/8b84a8cf-a138-4fd3-9735-322bd082fc67' before making global git config changes
+2026-11-03T07:59:22.0782630Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-03T07:59:22.0785490Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T07:59:22.0851454Z Deleting the contents of '/home/runner/work/fabushi-desktop/fabushi-desktop'
+2026-11-03T07:59:22.0855195Z ##[group]Initializing the repository
+2026-11-03T07:59:22.0859882Z [command]/usr/bin/git init /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T07:59:22.0966985Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-03T07:59:22.0969484Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-03T07:59:22.0971520Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-03T07:59:22.0973371Z hint: call:
+2026-11-03T07:59:22.0974215Z hint:
+2026-11-03T07:59:22.0975373Z hint: 	git config --global init.defaultBranch <name>
+2026-11-03T07:59:22.0976582Z hint:
+2026-11-03T07:59:22.0977840Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-03T07:59:22.0979686Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-03T07:59:22.0981125Z hint:
+2026-11-03T07:59:22.0982208Z hint: 	git branch -m <name>
+2026-11-03T07:59:22.0983434Z hint:
+2026-11-03T07:59:22.0984768Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-03T07:59:22.0986946Z Initialized empty Git repository in /home/runner/work/fabushi-desktop/fabushi-desktop/.git/
+2026-11-03T07:59:22.0990523Z [command]/usr/bin/git remote add origin https://github.com/bhrumom/fabushi-desktop
+2026-11-03T07:59:22.1059009Z ##[endgroup]
+2026-11-03T07:59:22.1060653Z ##[group]Disabling automatic garbage collection
+2026-11-03T07:59:22.1062255Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-03T07:59:22.1093827Z ##[endgroup]
+2026-11-03T07:59:22.1095230Z ##[group]Setting up auth
+2026-11-03T07:59:22.1100792Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-03T07:59:22.1140191Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-03T07:59:22.1656209Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-03T07:59:22.1690502Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-03T07:59:22.1922985Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-03T07:59:22.1958277Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-03T07:59:22.2186325Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-03T07:59:22.2228350Z ##[endgroup]
+2026-11-03T07:59:22.2230183Z ##[group]Fetching the repository
+2026-11-03T07:59:22.2238829Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T07:59:28.0638466Z From https://github.com/bhrumom/fabushi-desktop
+2026-11-03T07:59:28.0642176Z  * branch            4bc25f453108268087e9a11f91aee51680ce2822 -> FETCH_HEAD
+2026-11-03T07:59:28.0646985Z ##[endgroup]
+2026-11-03T07:59:28.0648589Z ##[group]Determining the checkout info
+2026-11-03T07:59:28.0650909Z ##[endgroup]
+2026-11-03T07:59:28.0652344Z [command]/usr/bin/git sparse-checkout disable
+2026-11-03T07:59:28.0706186Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-03T07:59:28.0738952Z ##[group]Checking out the ref
+2026-11-03T07:59:28.0741301Z [command]/usr/bin/git checkout --progress --force 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T07:59:28.8142545Z Note: switching to '4bc25f453108268087e9a11f91aee51680ce2822'.
+2026-11-03T07:59:28.8143074Z 
+2026-11-03T07:59:28.8143559Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-03T07:59:28.8144157Z changes and commit them, and you can discard any commits you make in this
+2026-11-03T07:59:28.8144868Z state without impacting any branches by switching back to a branch.
+2026-11-03T07:59:28.8145789Z 
+2026-11-03T07:59:28.8146053Z If you want to create a new branch to retain commits you create, you may
+2026-11-03T07:59:28.8146610Z do so (now or later) by using -c with the switch command. Example:
+2026-11-03T07:59:28.8146918Z 
+2026-11-03T07:59:28.8147105Z   git switch -c <new-branch-name>
+2026-11-03T07:59:28.8147381Z 
+2026-11-03T07:59:28.8147579Z Or undo this operation with:
+2026-11-03T07:59:28.8147788Z 
+2026-11-03T07:59:28.8147948Z   git switch -
+2026-11-03T07:59:28.8148174Z 
+2026-11-03T07:59:28.8148505Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-03T07:59:28.8148904Z 
+2026-11-03T07:59:28.8149236Z HEAD is now at 4bc25f4 fix(ocrm-mcp-native): bind Official dispatch and output to captured source and account
+2026-11-03T07:59:28.8174243Z ##[endgroup]
+2026-11-03T07:59:28.8218746Z [command]/usr/bin/git log -1 --format=%H
+2026-11-03T07:59:28.8245156Z 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T07:59:28.8467254Z ##[group]Run set -euo pipefail
+2026-11-03T07:59:28.8467915Z [36;1mset -euo pipefail[0m
+2026-11-03T07:59:28.8468341Z [36;1msubject="$(git rev-parse HEAD)"[0m
+2026-11-03T07:59:28.8468853Z [36;1mexpected="4bc25f453108268087e9a11f91aee51680ce2822"[0m
+2026-11-03T07:59:28.8469318Z [36;1mtest "$subject" = "$expected"[0m
+2026-11-03T07:59:28.8469761Z [36;1mif [ -n "$EXPECTED_DISPATCH_SHA" ]; then[0m
+2026-11-03T07:59:28.8470241Z [36;1m  [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]][0m
+2026-11-03T07:59:28.8470943Z [36;1m  test "$subject" = "$EXPECTED_DISPATCH_SHA" || { echo "Dispatch ref moved away from frozen subject"; exit 1; }[0m
+2026-11-03T07:59:28.8471527Z [36;1mfi[0m
+2026-11-03T07:59:28.8472049Z [36;1mpython3 - <<'PY'[0m
+2026-11-03T07:59:28.8472450Z [36;1mimport json, os[0m
+2026-11-03T07:59:28.8472850Z [36;1mfrom pathlib import Path[0m
+2026-11-03T07:59:28.8473355Z [36;1mlock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())[0m
+2026-11-03T07:59:28.8474117Z [36;1massert lock["upstream"]["repository"] == "openclaw/openclaw"[0m
+2026-11-03T07:59:28.8474655Z [36;1m# Fixed U is independent of later discovery candidates. Structural[0m
+2026-11-03T07:59:28.8475266Z [36;1m# authority may run with acceptance pending; final acceptance remains[0m
+2026-11-03T07:59:28.8475924Z [36;1m# gated by validate_p0.py --final-ac02. Never rebind declarations here.[0m
+2026-11-03T07:59:28.8476606Z [36;1midentity={k: lock["upstream"][k] for k in ("repository", "commit", "tree")}[0m
+2026-11-03T07:59:28.8477312Z [36;1mfor name in ("inventory/index.json", "parity-ledger.json", "requirements-traceability-matrix.json"):[0m
+2026-11-03T07:59:28.8478075Z [36;1m    document=json.loads((Path("projects/openclaw-rust") / name).read_text())[0m
+2026-11-03T07:59:28.8478909Z [36;1m    assert {k: document["upstream"][k] for k in identity} == identity, "fixed source declaration drift: " + name[0m
+2026-11-03T07:59:28.8479567Z [36;1massert lock["closure"]["source_closure_ready"] is False[0m
+2026-11-03T07:59:28.8480174Z [36;1midx=json.loads(Path("projects/openclaw-rust/inventory/index.json").read_text())[0m
+2026-11-03T07:59:28.8480759Z [36;1massert idx["authority"]["source_closure_ready"] is False[0m
+2026-11-03T07:59:28.8481237Z [36;1massert idx["inventory"]["omitted_known"] == 0[0m
+2026-11-03T07:59:28.8481805Z [36;1mwith open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:[0m
+2026-11-03T07:59:28.8482481Z [36;1m    env.write(f"UPSTREAM_COMMIT={lock['upstream']['commit']}\n")[0m
+2026-11-03T07:59:28.8483078Z [36;1m    env.write(f"UPSTREAM_TREE={lock['upstream']['tree']}\n")[0m
+2026-11-03T07:59:28.8483511Z [36;1mPY[0m
+2026-11-03T07:59:28.8509298Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T07:59:28.8509806Z env:
+2026-11-03T07:59:28.8510205Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T07:59:28.8510641Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T07:59:28.8511087Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T07:59:28.8511716Z ##[endgroup]
+2026-11-03T07:59:28.8980492Z ##[group]Run python3 projects/openclaw-rust/scripts/test_source_review.py
+2026-11-03T07:59:28.8981183Z [36;1mpython3 projects/openclaw-rust/scripts/test_source_review.py[0m
+2026-11-03T07:59:28.9001088Z shell: /usr/bin/bash -e {0}
+2026-11-03T07:59:28.9001545Z env:
+2026-11-03T07:59:28.9002135Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T07:59:28.9002625Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T07:59:28.9003090Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T07:59:28.9003521Z   UPSTREAM_COMMIT: 1440bb1771372334bea23d7642bb52deb7db1845
+2026-11-03T07:59:28.9004139Z   UPSTREAM_TREE: 90c8aab39972da11cfad220361781d49e1bc6700
+2026-11-03T07:59:28.9004566Z ##[endgroup]
+2026-11-03T07:59:28.9681190Z .................................
+2026-11-03T07:59:28.9682412Z ----------------------------------------------------------------------
+2026-11-03T07:59:28.9683042Z Ran 33 tests in 0.004s
+2026-11-03T07:59:28.9683307Z 
+2026-11-03T07:59:28.9683528Z OK
+2026-11-03T07:59:28.9795844Z ##[group]Run set -euo pipefail
+2026-11-03T07:59:28.9796300Z [36;1mset -euo pipefail[0m
+2026-11-03T07:59:28.9796696Z [36;1mgit init upstream[0m
+2026-11-03T07:59:28.9797415Z [36;1mgit -C upstream remote add origin "https://github.com/$UPSTREAM_REPO.git"[0m
+2026-11-03T07:59:28.9797995Z [36;1mgit -C upstream fetch --depth=1 origin "$UPSTREAM_COMMIT"[0m
+2026-11-03T07:59:28.9798492Z [36;1mgit -C upstream checkout --detach FETCH_HEAD[0m
+2026-11-03T07:59:28.9799000Z [36;1mtest "$(git -C upstream rev-parse HEAD)" = "$UPSTREAM_COMMIT"[0m
+2026-11-03T07:59:28.9799534Z [36;1mtest "$(git -C upstream rev-parse HEAD^{tree})" = "$UPSTREAM_TREE"[0m
+2026-11-03T07:59:28.9819584Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T07:59:28.9820112Z env:
+2026-11-03T07:59:28.9820477Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T07:59:28.9820956Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T07:59:28.9821430Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T07:59:28.9822085Z   UPSTREAM_COMMIT: 1440bb1771372334bea23d7642bb52deb7db1845
+2026-11-03T07:59:28.9822630Z   UPSTREAM_TREE: 90c8aab39972da11cfad220361781d49e1bc6700
+2026-11-03T07:59:28.9823054Z ##[endgroup]
+2026-11-03T07:59:28.9981164Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-03T07:59:28.9982285Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-03T07:59:28.9983329Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-03T07:59:28.9983921Z hint: call:
+2026-11-03T07:59:28.9984290Z hint:
+2026-11-03T07:59:28.9984713Z hint: 	git config --global init.defaultBranch <name>
+2026-11-03T07:59:28.9985107Z hint:
+2026-11-03T07:59:28.9985542Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-03T07:59:28.9986107Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-03T07:59:28.9986615Z hint:
+2026-11-03T07:59:28.9986952Z hint: 	git branch -m <name>
+2026-11-03T07:59:28.9987364Z hint:
+2026-11-03T07:59:28.9987802Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-03T07:59:28.9988460Z Initialized empty Git repository in /home/runner/work/fabushi-desktop/fabushi-desktop/upstream/.git/
+2026-11-03T08:00:05.2141518Z From https://github.com/openclaw/openclaw
+2026-11-03T08:00:05.2143691Z  * branch              1440bb1771372334bea23d7642bb52deb7db1845 -> FETCH_HEAD
+2026-11-03T08:00:09.2566098Z HEAD is now at 1440bb17 fix(update): recover repeated Git download interruptions (#189818)
+2026-11-03T08:00:09.2685009Z ##[group]Run set -euo pipefail
+2026-11-03T08:00:09.2685488Z [36;1mset -euo pipefail[0m
+2026-11-03T08:00:09.2685847Z [36;1mmkdir -p ocrm-evidence[0m
+2026-11-03T08:00:09.2686348Z [36;1mgit -C upstream ls-tree -r -z --full-tree "$UPSTREAM_COMMIT" > ocrm-evidence/ls-tree.z[0m
+2026-11-03T08:00:09.2686831Z [36;1mpython3 - <<'PY'[0m
+2026-11-03T08:00:09.2687137Z [36;1mimport hashlib, json, os[0m
+2026-11-03T08:00:09.2687504Z [36;1mfrom pathlib import Path[0m
+2026-11-03T08:00:09.2688043Z [36;1mraw=Path("ocrm-evidence/ls-tree.z").read_bytes()[0m
+2026-11-03T08:00:09.2688494Z [36;1mentries=[][0m
+2026-11-03T08:00:09.2688987Z [36;1mcounts={"tracked_entries_total":0,"blob_entries_total":0,"symlink_entries_total":0,"gitlink_entries_total":0}[0m
+2026-11-03T08:00:09.2689504Z [36;1mfor rec in raw.split(b"\0"):[0m
+2026-11-03T08:00:09.2689874Z [36;1m  if not rec:[0m
+2026-11-03T08:00:09.2690195Z [36;1m    continue[0m
+2026-11-03T08:00:09.2690628Z [36;1m  meta,path=rec.split(b"\t",1)[0m
+2026-11-03T08:00:09.2691004Z [36;1m  mode,kind,sha=meta.decode().split(" ")[0m
+2026-11-03T08:00:09.2691411Z [36;1m  p=path.decode("utf-8","surrogateescape")[0m
+2026-11-03T08:00:09.2691818Z [36;1m  if mode == "160000":[0m
+2026-11-03T08:00:09.2692359Z [36;1m    cls="gitlink"; counts["gitlink_entries_total"]+=1[0m
+2026-11-03T08:00:09.2692807Z [36;1m  elif mode == "120000":[0m
+2026-11-03T08:00:09.2693180Z [36;1m    cls="symlink"; counts["symlink_entries_total"]+=1[0m
+2026-11-03T08:00:09.2693553Z [36;1m  else:[0m
+2026-11-03T08:00:09.2693914Z [36;1m    cls="blob"; counts["blob_entries_total"]+=1[0m
+2026-11-03T08:00:09.2694298Z [36;1m  counts["tracked_entries_total"]+=1[0m
+2026-11-03T08:00:09.2694941Z [36;1m  entries.append({"path":p,"mode":mode,"git_type":kind,"sha":sha,"entry_kind":cls,"read_status":"unread","responsibility_status":"unclassified"})[0m
+2026-11-03T08:00:09.2695542Z [36;1mpayload={[0m
+2026-11-03T08:00:09.2695880Z [36;1m  "format_version":1,[0m
+2026-11-03T08:00:09.2696245Z [36;1m  "project_id":"OCRM-001",[0m
+2026-11-03T08:00:09.2696827Z [36;1m  "upstream":{"repository":os.environ["UPSTREAM_REPO"],"commit":os.environ["UPSTREAM_COMMIT"],"tree":os.environ["UPSTREAM_TREE"]},[0m
+2026-11-03T08:00:09.2697467Z [36;1m  "counts":counts,[0m
+2026-11-03T08:00:09.2697792Z [36;1m  "entries":entries[0m
+2026-11-03T08:00:09.2698080Z [36;1m}[0m
+2026-11-03T08:00:09.2698501Z [36;1mout=Path("ocrm-evidence/upstream-recursive-inventory.json")[0m
+2026-11-03T08:00:09.2699135Z [36;1mout.write_text(json.dumps(payload,ensure_ascii=False,sort_keys=True,separators=(",",":"))+"\n")[0m
+2026-11-03T08:00:09.2699908Z [36;1mPath("ocrm-evidence/upstream-recursive-inventory.sha256").write_text(hashlib.sha256(out.read_bytes()).hexdigest()+"\n")[0m
+2026-11-03T08:00:09.2700595Z [36;1mPath("ocrm-evidence/authority-summary.json").write_text(json.dumps({[0m
+2026-11-03T08:00:09.2701557Z [36;1m  "subject_commit":os.environ["SUBJECT_SHA"],[0m
+2026-11-03T08:00:09.2702182Z [36;1m  "upstream_commit":payload["upstream"]["commit"],[0m
+2026-11-03T08:00:09.2702598Z [36;1m  "upstream_tree":payload["upstream"]["tree"],[0m
+2026-11-03T08:00:09.2702958Z [36;1m  **counts,[0m
+2026-11-03T08:00:09.2703318Z [36;1m  "source_closure_ready":False,[0m
+2026-11-03T08:00:09.2703871Z [36;1m  "reason":"Tracked source enumeration is established; dependency/LFS/semantic responsibility closure remains open."[0m
+2026-11-03T08:00:09.2704500Z [36;1m},sort_keys=True,indent=2)+"\n")[0m
+2026-11-03T08:00:09.2704843Z [36;1mPY[0m
+2026-11-03T08:00:09.2726167Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T08:00:09.2726600Z env:
+2026-11-03T08:00:09.2726970Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T08:00:09.2727360Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T08:00:09.2727758Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T08:00:09.2728142Z   UPSTREAM_COMMIT: 1440bb1771372334bea23d7642bb52deb7db1845
+2026-11-03T08:00:09.2728624Z   UPSTREAM_TREE: 90c8aab39972da11cfad220361781d49e1bc6700
+2026-11-03T08:00:09.2729182Z ##[endgroup]
+2026-11-03T08:00:09.5741712Z ##[group]Run set -euo pipefail
+2026-11-03T08:00:09.5742412Z [36;1mset -euo pipefail[0m
+2026-11-03T08:00:09.5743041Z [36;1mgrep -RIl --exclude-dir=.git '^version https://git-lfs.github.com/spec/v1$' upstream > ocrm-evidence/lfs-pointer-candidates.txt || true[0m
+2026-11-03T08:00:09.5743922Z [36;1mwc -l < ocrm-evidence/lfs-pointer-candidates.txt | tr -d ' ' > ocrm-evidence/lfs-pointer-candidates.count[0m
+2026-11-03T08:00:09.5765254Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T08:00:09.5765705Z env:
+2026-11-03T08:00:09.5766028Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T08:00:09.5766449Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T08:00:09.5766831Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T08:00:09.5767210Z   UPSTREAM_COMMIT: 1440bb1771372334bea23d7642bb52deb7db1845
+2026-11-03T08:00:09.5767649Z   UPSTREAM_TREE: 90c8aab39972da11cfad220361781d49e1bc6700
+2026-11-03T08:00:09.5768049Z ##[endgroup]
+2026-11-03T08:00:10.1039171Z ##[group]Run set -euo pipefail
+2026-11-03T08:00:10.1039600Z [36;1mset -euo pipefail[0m
+2026-11-03T08:00:10.1039928Z [36;1m{[0m
+2026-11-03T08:00:10.1040735Z [36;1m  for f in package.json pnpm-lock.yaml pnpm-workspace.yaml package-lock.json yarn.lock bun.lock bun.lockb Cargo.toml Cargo.lock requirements.txt pyproject.toml go.mod go.sum Gemfile Gemfile.lock; do[0m
+2026-11-03T08:00:10.1041533Z [36;1m    if [ -e "upstream/$f" ]; then[0m
+2026-11-03T08:00:10.1042051Z [36;1m      printf '%s\t' "$f"[0m
+2026-11-03T08:00:10.1042475Z [36;1m      git -C upstream hash-object "$f"[0m
+2026-11-03T08:00:10.1042843Z [36;1m    fi[0m
+2026-11-03T08:00:10.1043114Z [36;1m  done[0m
+2026-11-03T08:00:10.1043459Z [36;1m} > ocrm-evidence/dependency-root-inputs.tsv[0m
+2026-11-03T08:00:10.1062474Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T08:00:10.1062949Z env:
+2026-11-03T08:00:10.1063309Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T08:00:10.1063755Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T08:00:10.1064192Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T08:00:10.1064581Z   UPSTREAM_COMMIT: 1440bb1771372334bea23d7642bb52deb7db1845
+2026-11-03T08:00:10.1064992Z   UPSTREAM_TREE: 90c8aab39972da11cfad220361781d49e1bc6700
+2026-11-03T08:00:10.1065389Z ##[endgroup]
+2026-11-03T08:00:10.1212803Z ##[group]Run set -euo pipefail
+2026-11-03T08:00:10.1213199Z [36;1mset -euo pipefail[0m
+2026-11-03T08:00:10.1213719Z [36;1mpython3 -m pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'[0m
+2026-11-03T08:00:10.1214351Z [36;1mpython3 projects/openclaw-rust/scripts/test_inventory_materialization.py[0m
+2026-11-03T08:00:10.1214874Z [36;1m# Refuse malformed committed history before any generated write.[0m
+2026-11-03T08:00:10.1215409Z [36;1mpython3 projects/openclaw-rust/scripts/verify_audit_integrity.py --before-expansion[0m
+2026-11-03T08:00:10.1216115Z [36;1mpython3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json[0m
+2026-11-03T08:00:10.1216753Z [36;1m# Rebuild the source-derived shard manifest against this exact inventory[0m
+2026-11-03T08:00:10.1217353Z [36;1m# after canonical ledger reconciliation, then let validate_p0.py verify it.[0m
+2026-11-03T08:00:10.1218090Z [36;1mpython3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json[0m
+2026-11-03T08:00:10.1218817Z [36;1mpython3 projects/openclaw-rust/scripts/validate_p0.py ocrm-evidence --negative-probes[0m
+2026-11-03T08:00:10.1219393Z [36;1mpython3 projects/openclaw-rust/scripts/verify_audit_integrity.py[0m
+2026-11-03T08:00:10.1236110Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T08:00:10.1236517Z env:
+2026-11-03T08:00:10.1236852Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T08:00:10.1237220Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T08:00:10.1237603Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T08:00:10.1237997Z   UPSTREAM_COMMIT: 1440bb1771372334bea23d7642bb52deb7db1845
+2026-11-03T08:00:10.1238453Z   UPSTREAM_TREE: 90c8aab39972da11cfad220361781d49e1bc6700
+2026-11-03T08:00:10.1238826Z ##[endgroup]
+2026-11-03T08:00:10.4561679Z Defaulting to user installation because normal site-packages is not writeable
+2026-11-03T08:00:10.8814576Z Collecting jsonschema==4.25.1
+2026-11-03T08:00:10.9470611Z   Downloading jsonschema-4.25.1-py3-none-any.whl.metadata (7.6 kB)
+2026-11-03T08:00:10.9528198Z Requirement already satisfied: attrs>=22.2.0 in /usr/lib/python3/dist-packages (from jsonschema==4.25.1) (25.4.0)
+2026-11-03T08:00:10.9531772Z Requirement already satisfied: jsonschema-specifications>=2023.03.6 in /usr/lib/python3/dist-packages (from jsonschema==4.25.1) (2023.12.1)
+2026-11-03T08:00:10.9535109Z Requirement already satisfied: referencing>=0.28.4 in /usr/lib/python3/dist-packages (from jsonschema==4.25.1) (0.36.2)
+2026-11-03T08:00:10.9538067Z Requirement already satisfied: rpds-py>=0.7.1 in /usr/lib/python3/dist-packages (from jsonschema==4.25.1) (0.27.1)
+2026-11-03T08:00:10.9742218Z Downloading jsonschema-4.25.1-py3-none-any.whl (90 kB)
+2026-11-03T08:00:11.1585699Z Installing collected packages: jsonschema
+2026-11-03T08:00:11.2322974Z Successfully installed jsonschema-4.25.1
+2026-11-03T08:00:16.5381426Z .....................
+2026-11-03T08:00:16.5382498Z ----------------------------------------------------------------------
+2026-11-03T08:00:16.5383214Z Ran 21 tests in 5.193s
+2026-11-03T08:00:16.5383493Z 
+2026-11-03T08:00:16.5383699Z OK
+2026-11-03T08:00:26.9770790Z OCRM pre-expansion history integrity PASS: 62130 paths; 888 mapped; 62067 unread/partial; 0 pending forward links. Risk review and final acceptance remain independent.
+2026-11-03T08:00:39.4564616Z OCRM canonical inventory candidate: 62130 paths, sha256:d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a; full source closure remains open
+2026-11-03T08:00:43.5461974Z OCRM committed-shard identity and reverse reconstruction PASS: 62130 rows
+2026-11-03T08:00:43.5463798Z OCRM persisted shard candidates: 62130 rows, 61 shards; dependencies unresolved
+2026-11-03T08:00:56.0172502Z OCRM committed-shard identity and reverse reconstruction PASS: 62130 rows
+2026-11-03T08:00:56.0357377Z OCRM G02 negative probes: duplicate source path, unread denominator tamper, unbacked accepted verdict, orphan responsibility rejected
+2026-11-03T08:00:56.0358574Z OCRM-G01 tracked source and OCRM-G02 structural PASS for 62130 paths; closure/open, unread remains honest, semantic implementation not-started
+2026-11-03T08:01:06.5640187Z OCRM committed source integrity PASS: 62130 paths; 888 mapped; 62067 unread/partial; 0 pending forward links. Risk review and final acceptance remain independent.
+2026-11-03T08:01:06.5940283Z ##[group]Run actions/upload-artifact@v4
+2026-11-03T08:01:06.5940649Z with:
+2026-11-03T08:01:06.5941026Z   name: ocrm-p0-authority-4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T08:01:06.5941465Z   path: ocrm-evidence/
+2026-11-03T08:01:06.5941752Z   if-no-files-found: error
+2026-11-03T08:01:06.5942196Z   retention-days: 30
+2026-11-03T08:01:06.5942488Z   compression-level: 6
+2026-11-03T08:01:06.5942768Z   overwrite: false
+2026-11-03T08:01:06.5943061Z   include-hidden-files: false
+2026-11-03T08:01:06.5943346Z env:
+2026-11-03T08:01:06.5943625Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T08:01:06.5944033Z   SUBJECT_SHA: 4bc25f453108268087e9a11f91aee51680ce2822
+2026-11-03T08:01:06.5944396Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T08:01:06.5944769Z   UPSTREAM_COMMIT: 1440bb1771372334bea23d7642bb52deb7db1845
+2026-11-03T08:01:06.5945193Z   UPSTREAM_TREE: 90c8aab39972da11cfad220361781d49e1bc6700
+2026-11-03T08:01:06.5945550Z ##[endgroup]
+2026-11-03T08:01:06.7554132Z (node:2865) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-03T08:01:06.7554973Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-03T08:01:06.7624684Z With the provided path, there will be 8 files uploaded
+2026-11-03T08:01:06.7630214Z Artifact name is valid!
+2026-11-03T08:01:06.7632283Z Root directory input is valid!
+2026-11-03T08:01:07.0439958Z Beginning upload of artifact content to blob storage
+2026-11-03T08:01:07.6232024Z (node:2865) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-03T08:01:08.1033445Z Uploaded bytes 4951968
+2026-11-03T08:01:08.1473401Z Finished uploading artifact content to blob storage!
+2026-11-03T08:01:08.1474474Z SHA256 digest of uploaded artifact zip is ea6ed5437b3e1d7f67b6e98a2991a8eba41c28543b4a460dd5b893c623f57e06
+2026-11-03T08:01:08.1476293Z Finalizing artifact upload
+2026-11-03T08:01:08.5959752Z Artifact ocrm-p0-authority-4bc25f453108268087e9a11f91aee51680ce2822.zip successfully finalized. Artifact ID 13213873608
+2026-11-03T08:01:08.5960896Z Artifact ocrm-p0-authority-4bc25f453108268087e9a11f91aee51680ce2822 has been successfully uploaded! Final size is 4951968 bytes. Artifact ID is 13213873608
+2026-11-03T08:01:08.5966834Z Artifact download URL: https://github.com/bhrumom/fabushi-desktop/actions/runs/41599968224/artifacts/13213873608
+2026-11-03T08:01:08.6207534Z Post job cleanup.
+2026-11-03T08:01:08.7009638Z [command]/usr/bin/git version
+2026-11-03T08:01:08.7053167Z git version 2.56.0
+2026-11-03T08:01:08.7079989Z Temporarily overriding HOME='/home/runner/work/_temp/650fe2aa-0c5e-4918-a989-7b11295d3323' before making global git config changes
+2026-11-03T08:01:08.7081566Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-03T08:01:08.7087182Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T08:01:08.7120341Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-03T08:01:08.7150987Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-03T08:01:08.7418131Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-03T08:01:08.7439897Z http.https://github.com/.extraheader
+2026-11-03T08:01:08.7449304Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-11-03T08:01:08.7482322Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-03T08:01:08.7747220Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-03T08:01:08.7805202Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-03T08:01:08.8147143Z Cleaning up orphan processes
+2026-11-03T08:01:08.8461285Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

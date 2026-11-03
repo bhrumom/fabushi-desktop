@@ -1,0 +1,44 @@
+{
+  "schema": "ocrm-build-resolution-capture-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subject_commit": "14e637798b7c76c8530f9a3710051461f793924f",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "run": 41597864483,
+  "attempt": 1,
+  "job": 125789361548,
+  "command": [
+    "cargo",
+    "build",
+    "--manifest-path",
+    "source/box-exec-daemon/Cargo.toml",
+    "--bin",
+    "box-exec-daemon",
+    "--target-dir",
+    "source/box-exec-daemon/target"
+  ],
+  "cargo_exit": 0,
+  "capture_exit": 0,
+  "source_manifest": {
+    "path": "source/box-exec-daemon/Cargo.toml",
+    "blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e"
+  },
+  "resolved_lock": {
+    "path": "box-response-daemon-resolved.Cargo.lock",
+    "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+    "bytes": 15520,
+    "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+    "package_records": 68,
+    "registry_records": 67,
+    "checksum_records": 67
+  },
+  "build_log_sha256": "4c5a70eafc005b83f9c21fb6bf8b7816d282270adae2d49e7dccb6798df644f3",
+  "binary": {
+    "bytes": 2367968,
+    "sha256_before_cases": "396ab6000a7c2b0194a5bba96f5f57a591d88f075f138e698268b3043c55650d"
+  },
+  "read_depth": "Manifest configuration and full generated lock identities/edges read; generated output provenance reviewed at build/capture contract. Registry archives, their legal records and all platform configurations are not accepted by this receipt.",
+  "state": "resolution-captured; live job and full BXR case verdict remain pending at capture time",
+  "lock_tracked_as_production_input": false,
+  "global_flags_changed": false
+}
