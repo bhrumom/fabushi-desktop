@@ -332,6 +332,12 @@ function messageText(entry: Record<string, unknown>): string | null {
 
 function transcriptDelivery(entry: Record<string, unknown>): TranscriptMessage["delivery"] {
   const candidate = entry.delivery ?? entry.status;
+  const hasPersistedHumanDispatchError = entry.authorKind === "human"
+    && typeof entry.lastDispatchError === "string"
+    && entry.lastDispatchError.trim().length > 0;
+  // Session keeps a failed outbox intent pending for safe retry. The durable
+  // error is the failure projection; Agent rows and settled Human rows are unchanged.
+  if (hasPersistedHumanDispatchError && (candidate === "pending" || candidate === "dispatching")) return "failed";
   // A Host dispatch has not settled its canonical remote identity yet.
   if (candidate === "dispatching") return "pending";
   if (candidate === "pending" || candidate === "queued" || candidate === "failed" || candidate === "sent") return candidate;

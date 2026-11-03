@@ -7,7 +7,7 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopBridge, Transferre
 // Only the external desktop port and service replies are controlled by the test.
 type Row = Record<string, unknown> & { id: string };
 type Request = { requestId: string; method: string; args: Record<string, unknown> };
-type Pending = { request: Request; value: unknown };
+type Pending = { request: Request; value: unknown; account?: string | null };
 const clone = <T,>(value: T): T => structuredClone(value);
 const accountListeners = new Set<(status: CursorAuthStatus) => void>();
 const focusListeners = new Set<(value: unknown) => void>();
@@ -21,6 +21,7 @@ const older: Pending[] = [];
 const initials: Pending[] = [];
 const refreshes: Pending[] = [];
 const sends: Pending[] = [];
+const retries: Pending[] = [];
 const reactions: Pending[] = [];
 const sendRosterRefreshes: Pending[] = [];
 const sendPositions = new Map<string, number>();
@@ -36,12 +37,19 @@ const rows = new Map<string, Row[]>([
   ['human:a', [row('m1', 'Old first message'), row('m2', 'Old second message', { attachments: [{ path: 'memory:note.txt', name: 'note.txt' }] }), row('m3', 'Tail third message'), row('m4', 'Tail fourth message', { attachments: [{ path: 'memory:tail-note.txt', name: 'tail-note.txt' }] }), row('m5', 'Tail fifth message')]],
   ['human:b', [row('b1', 'Bob conversation', { authorId: 'peer-b' })]],
 ]);
-const savedRows = sessionStorage.getItem('native-message-fixture-canonical-rows');
+const fixtureRowsStorageKey = (authId: string | null) => authId == null
+  ? 'native-message-fixture-canonical-rows:logged-out'
+  : `native-message-fixture-canonical-rows:${authId}`;
+const savedRows = sessionStorage.getItem(fixtureRowsStorageKey(account.authId ?? null))
+  ?? sessionStorage.getItem('native-message-fixture-canonical-rows');
 if (savedRows != null) {
   rows.clear();
   for (const [id, entries] of JSON.parse(savedRows) as Array<[string, Row[]]>) rows.set(id, entries);
 }
-const persistRows = () => sessionStorage.setItem('native-message-fixture-canonical-rows', JSON.stringify([...rows]));
+const persistRows = () => sessionStorage.setItem(
+  fixtureRowsStorageKey(account.kind === 'logged-in' ? account.authId ?? null : null),
+  JSON.stringify([...rows]),
+);
 const humans = () => [
   { id: 'human:a', kind: 'human', title: 'Alice', participantIds: [account.kind === 'logged-in' ? account.authId : '', 'peer-a'], updatedAt: 200 },
   { id: 'human:b', kind: 'human', title: 'Bob', participantIds: [account.kind === 'logged-in' ? account.authId : '', 'peer-b'], updatedAt: 100 },
@@ -94,6 +102,10 @@ function receive(request: Request) {
       });
       sends.push({ request, value: entry });
       sendPositions.set(request.requestId, transcript.length);
+      return;
+    }
+    case 'retryHumanMessage': {
+      retries.push({ request, value: null, account: account.kind === 'logged-in' ? account.authId ?? null : null });
       return;
     }
     case 'reactHumanMessage': {
@@ -180,7 +192,35 @@ const bridge = optionalCapability('', {
 const fixture = {
   requests,
   approvalClears,
-  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, reactions: reactions.length, sendRosterRefreshes: sendRosterRefreshes.length }),
+  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, retries: retries.length, reactions: reactions.length, sendRosterRefreshes: sendRosterRefreshes.length }),
+  retryAccounts: () => retries.map((pending) => pending.account ?? null),
+  seedFailedIntent(clientNonce = 'shared-retry-nonce') {
+    const id = `human-message:${clientNonce}`;
+    const transcript = rows.get('human:a') ?? [];
+    const existing = transcript.find((entry) => entry.clientNonce === clientNonce);
+    if (existing != null) return existing.id;
+    const entry = row(id, 'Persisted failed Human message', {
+      authorId: account.kind === 'logged-in' ? account.authId ?? '' : '',
+      clientNonce,
+      delivery: 'pending',
+      lastDispatchError: 'fixture: previous Human dispatch failed before renderer restart',
+      composedAtMs: 1_700_000_000_000,
+      replyToId: 'm3',
+    });
+    transcript.push(entry);
+    rows.set('human:a', transcript);
+    persistRows();
+    return entry.id;
+  },
+  failRetry(index = 0, message = 'fixture: retry failed') {
+    const pending = retries[index];
+    if (pending == null) throw new Error('No pending Human retry');
+    sendFrame({
+      kind: 'reply',
+      requestId: pending.request.requestId,
+      outcome: { status: 'failed', failure: { code: 'fixture-retry', message } },
+    });
+  },
   releaseInitial(newestFirst = false) {
     holdInitial = false;
     const pending = initials.splice(0);
@@ -241,11 +281,21 @@ const fixture = {
   disconnect() { sendFrame({ kind: 'event', family: 'coordinator-transport-state', payload: { state: 'down' } }); },
   reconnect() { sendFrame({ kind: 'event', family: 'coordinator-transport-state', payload: { state: 'connected' } }); },
   setAccount(authId: string | null) {
+    const previousAuthId = account.kind === 'logged-in' ? account.authId ?? null : null;
+    if (previousAuthId != null) {
+      sessionStorage.setItem(fixtureRowsStorageKey(previousAuthId), JSON.stringify([...rows]));
+    }
     account = authId == null ? { kind: 'logged-out' } : { kind: 'logged-in', authId, email: `${authId}@example.test`, displayName: authId };
-    if (authId != null && authId !== 'local') {
-      rows.set('human:a', [row('new-a', 'New account conversation', { authorId: authId })]);
-      rows.set('human:b', [row('new-b', 'New account Bob conversation', { authorId: authId })]);
-      persistRows();
+    if (authId != null) {
+      const saved = sessionStorage.getItem(fixtureRowsStorageKey(authId));
+      if (saved != null) {
+        rows.clear();
+        for (const [id, entries] of JSON.parse(saved) as Array<[string, Row[]]>) rows.set(id, entries);
+      } else if (authId !== 'local') {
+        rows.set('human:a', [row('new-a', 'New account conversation', { authorId: authId })]);
+        rows.set('human:b', [row('new-b', 'New account Bob conversation', { authorId: authId })]);
+        persistRows();
+      }
     }
     for (const listener of accountListeners) listener(account);
   },

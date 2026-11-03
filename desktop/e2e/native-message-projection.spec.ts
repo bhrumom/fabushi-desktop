@@ -310,6 +310,66 @@ test('NMR-26 old-row reaction commands settle the page cache and cannot overwrit
   await milestone(page, info, 'old-row-reaction-receipt');
 });
 
+test('NMR-50 persisted Human dispatch failure survives renderer restart; resend is single-flight and selection-ABA safe', async ({ page }, info) => {
+  await page.goto(`${origin}/native-message-projection.html`);
+  const failedId = await page.evaluate(() => window.nativeMessageFixture.seedFailedIntent('restart-single-flight-nonce'));
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  const failedRow = messageRow(page, failedId);
+  await expect(failedRow).toBeVisible();
+  const resend = failedRow.getByRole('button', { name: 'Resend', exact: true });
+  await expect(resend).toBeVisible();
+  await resend.evaluate((button) => { button.click(); button.click(); });
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().retries)).toBe(1);
+  const request = await page.evaluate(() => window.nativeMessageFixture.requests.find((item) => item.method === 'retryHumanMessage'));
+  expect(request?.args).toEqual({ conversationId: 'human:a', clientNonce: 'restart-single-flight-nonce' });
+
+  await page.getByRole('button', { name: 'Bob', exact: true }).click();
+  await expect(messageRow(page, 'b1')).toBeVisible();
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  await expect(failedRow.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await page.evaluate(() => window.nativeMessageFixture.failRetry(0, 'private stale selection failure'));
+  await expect(failedRow.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(page.getByText('private stale selection failure', { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((item) => item.method === 'retryHumanMessage').length)).toBe(1);
+  await milestone(page, info, 'human-retry-selection-aba-after-restart');
+});
+
+test('NMR-50 retry single-flight is account-scoped and stale A-B-A replies cannot alter the restored row', async ({ page }, info) => {
+  await page.goto(`${origin}/native-message-projection.html`);
+  const failedId = await page.evaluate(() => window.nativeMessageFixture.seedFailedIntent('shared-account-retry-nonce'));
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  const failedRow = messageRow(page, failedId);
+  await expect(failedRow.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await failedRow.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().retries)).toBe(1);
+
+  await page.evaluate(() => window.nativeMessageFixture.setAccount('next-account'));
+  await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
+  const nextFailedId = await page.evaluate(() => window.nativeMessageFixture.seedFailedIntent('shared-account-retry-nonce'));
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  const nextFailedRow = messageRow(page, nextFailedId);
+  await expect(nextFailedRow.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await nextFailedRow.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().retries)).toBe(2);
+  expect(await page.evaluate(() => window.nativeMessageFixture.retryAccounts())).toEqual(['local', 'next-account']);
+
+  await page.evaluate(() => window.nativeMessageFixture.setAccount('local'));
+  await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  await expect(failedRow.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await page.evaluate(() => {
+    window.nativeMessageFixture.failRetry(0, 'private stale account-A failure');
+    window.nativeMessageFixture.failRetry(1, 'private stale account-B failure');
+  });
+  await expect(failedRow.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(page.getByText('private stale account-A failure', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('private stale account-B failure', { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((item) => item.method === 'retryHumanMessage').length)).toBe(2);
+  await milestone(page, info, 'human-retry-account-aba-same-nonce');
+});
+
 test('NMR-26 a disconnected Human send queues and reconnect dispatches it exactly once', async ({ page }, info) => {
   await openAlice(page);
   await loadOlder(page);

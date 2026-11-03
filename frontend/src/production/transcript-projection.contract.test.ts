@@ -70,6 +70,49 @@ test("FBCP Human roster projection preserves the persisted participantIds string
   }
 });
 
+test("NMR-50 persisted Human lastDispatchError restores the failed retry projection after restart", () => {
+  const failedIntent = {
+    id: "human-message:restart-retry",
+    kind: "message",
+    role: "user",
+    authorKind: "human",
+    authorId: "self",
+    content: "Durable retry body",
+    clientNonce: "restart-retry",
+    composedAtMs: 1234,
+    timestampMs: 1234,
+    delivery: "pending",
+    lastDispatchError: "remote message endpoint unavailable",
+    attachments: [{ path: "memory:retry-report.pdf", name: "retry-report.pdf" }],
+    replyToId: "human-server-message:41",
+  };
+  const restored = projectTranscriptEntry(failedIntent, 0, "Alice", "human:alice");
+  assert.ok(restored?.kind === "message");
+  assert.equal(restored.delivery, "failed");
+  assert.equal(restored.clientNonce, "restart-retry");
+  assert.equal(restored.authorKind, "human");
+  assert.equal(restored.authorId, "self");
+  assert.equal(restored.text, "Durable retry body");
+  assert.equal(restored.composedAtMs, 1234);
+  assert.equal(restored.replyToId, "human-server-message:41");
+  assert.deepEqual(restored.attachments?.map(({ path, name }) => ({ path, name })), [
+    { path: "memory:retry-report.pdf", name: "retry-report.pdf" },
+  ]);
+
+  assert.equal(projectTranscriptEntry({ ...failedIntent, lastDispatchError: "   " }, 0, "Alice", "human:alice")?.kind === "message"
+    ? (projectTranscriptEntry({ ...failedIntent, lastDispatchError: "   " }, 0, "Alice", "human:alice") as TranscriptMessage).delivery
+    : null, "pending");
+  assert.equal(projectTranscriptEntry({ ...failedIntent, delivery: "sent" }, 0, "Alice", "human:alice")?.kind === "message"
+    ? (projectTranscriptEntry({ ...failedIntent, delivery: "sent" }, 0, "Alice", "human:alice") as TranscriptMessage).delivery
+    : null, "sent");
+  const agent = projectTranscriptEntry({
+    ...failedIntent, id: "agent-pending", role: "assistant", authorKind: undefined,
+    authorId: undefined, delivery: "pending",
+  }, 0, "Alice", "agent:a");
+  assert.ok(agent?.kind === "message");
+  assert.equal(agent.delivery, "pending");
+});
+
 test("NMR-49 dispatching Human text and attachments stay pending until settlement", () => {
   const shapes = [
     { kind: "message", role: "user", content: "Awaiting acknowledgement",

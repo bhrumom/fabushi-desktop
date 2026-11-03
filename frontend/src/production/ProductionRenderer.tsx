@@ -3700,39 +3700,26 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (client == null || !conversationId || !clientNonce || entry.delivery !== "failed") return;
     // The durable Host outbox owns retry payload, nonce and uploaded resources.
     // A renderer retry must never restage attachments or mint a new identity.
-    if (resendSubmissionNoncesRef.current.has(clientNonce)) return;
     const accountSlot = acknowledgementScopeRef.current.accountSlot;
     const accountGeneration = accountScopeGenerationRef.current;
     const selectionGeneration = openAgentRequestGenerationRef.current;
     if (accountSlot == null || selectionStore.get().currentAgentId !== conversationId) return;
+    const retryFlightKey = JSON.stringify([accountSlot, conversationId, clientNonce]);
+    if (resendSubmissionNoncesRef.current.has(retryFlightKey)) return;
     const isCurrent = () => accountScopeGenerationRef.current === accountGeneration
       && acknowledgementScopeRef.current.accountSlot === accountSlot
       && activeAgentIdRef.current === conversationId
       && selectionStore.get().currentAgentId === conversationId
       && openAgentRequestGenerationRef.current === selectionGeneration;
-    resendSubmissionNoncesRef.current.add(clientNonce);
-    setEntriesByAgent((current) => ({
-      ...current,
-      [conversationId]: (current[conversationId] ?? []).map((candidate) =>
-        candidate.kind === "message" && candidate.clientNonce === clientNonce
-          ? { ...candidate, delivery: "pending" }
-          : candidate)
-    }));
+    // Do not optimistically turn a durable failed intent into pending: a late
+    // failure after an A→B→A switch would otherwise strand a pending row.
+    resendSubmissionNoncesRef.current.add(retryFlightKey);
     try {
       await client.call("retryHumanMessage", { conversationId, clientNonce });
     } catch (error) {
-      if (isCurrent()) {
-        setEntriesByAgent((current) => ({
-          ...current,
-          [conversationId]: (current[conversationId] ?? []).map((candidate) =>
-            candidate.kind === "message" && candidate.clientNonce === clientNonce
-              ? { ...candidate, delivery: "failed" }
-              : candidate)
-        }));
-        setNotice(error instanceof Error ? error.message : String(error));
-      }
+      if (isCurrent()) setNotice(error instanceof Error ? error.message : String(error));
     } finally {
-      resendSubmissionNoncesRef.current.delete(clientNonce);
+      resendSubmissionNoncesRef.current.delete(retryFlightKey);
     }
   }, [client, selectionStore]);
 

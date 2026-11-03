@@ -749,8 +749,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 39' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 39' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 40' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 40' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
@@ -833,13 +833,13 @@ jobs:
           import fs from 'node:fs';
           import assert from 'node:assert/strict';
           const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/production-renderer.json', 'utf8'));
-          assert.equal(report.stats.expected, 11);
+          assert.equal(report.stats.expected, 13);
           for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
           assert.deepEqual(report.errors, []);
           const cases = [];
           const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
           for (const suite of report.suites) walk(suite);
-          assert.equal(cases.length, 11);
+          assert.equal(cases.length, 13);
           for (const item of cases) {
             assert.equal(item.expectedStatus, 'passed');
             assert.equal(item.results.length, 1);
