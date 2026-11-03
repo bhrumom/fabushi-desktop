@@ -3409,6 +3409,25 @@ impl ProductionSessionWorkers {
     pub(crate) fn human_recipient_requirements_from_entry(
         source_entry: &serde_json::Value,
     ) -> fabushi_messaging_core::RecipientSearchRequirements {
+        let has_non_null = |key: &str| source_entry.get(key).is_some_and(|v| !v.is_null());
+        let has_non_empty_str = |key: &str| {
+            source_entry
+                .get(key)
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|s| !s.trim().is_empty())
+        };
+        let has_game = has_non_null("game");
+        let has_other_content = has_game
+            || has_non_null("sticker")
+            || has_non_null("story")
+            || has_non_null("giveaway")
+            || has_non_null("location")
+            || has_non_null("venue")
+            || has_non_null("contact")
+            || has_non_null("dice");
+        let has_inline_content = has_non_null("miniApp")
+            || has_non_empty_str("viaBotId")
+            || has_non_empty_str("inlineBotId");
         fabushi_messaging_core::RecipientSearchRequirements {
             require_media: source_entry
                 .get("attachments")
@@ -3422,21 +3441,28 @@ impl ProductionSessionWorkers {
                 .get("requirePolls")
                 .and_then(serde_json::Value::as_bool)
                 .unwrap_or(false)
-                || source_entry.get("poll").is_some_and(|v| !v.is_null()),
+                || has_non_null("poll"),
             require_send_other: source_entry
                 .get("requireSendOther")
                 .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
+                .unwrap_or(false)
+                || has_other_content,
             require_inline: source_entry
                 .get("requireInline")
                 .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
+                .unwrap_or(false)
+                || has_inline_content,
             require_game: source_entry
                 .get("requireGame")
                 .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
+                .unwrap_or(false)
+                || has_game,
             source_protected_content: source_entry
                 .get("protectedContent")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            source_secret_content: source_entry
+                .get("secretContent")
                 .and_then(serde_json::Value::as_bool)
                 .unwrap_or(false),
             ..fabushi_messaging_core::RecipientSearchRequirements::default()
@@ -3451,86 +3477,114 @@ impl ProductionSessionWorkers {
             fabushi_messaging_core::RecipientAuthorizationInput::direct_default(
                 sender_is_participant,
             );
-        if let Some(permissions) = metadata
-            .get("permissions")
-            .and_then(serde_json::Value::as_object)
-        {
-            if let Some(v) = permissions
-                .get("canSendMessages")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.can_send_messages = v;
-            }
-            if let Some(v) = permissions
-                .get("canSendMedia")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.can_send_media = v;
-            }
-            if let Some(v) = permissions
-                .get("canSendPolls")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.can_send_polls = v;
-            }
-            if let Some(v) = permissions
-                .get("canSendOther")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.can_send_other = v;
-            }
-            if let Some(v) = permissions
-                .get("canSendInline")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.can_send_inline = v;
-            }
-            if let Some(v) = permissions
-                .get("canSendGames")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.can_send_games = v;
+        if let Some(permissions_val) = metadata.get("permissions") {
+            if let Some(permissions) = permissions_val.as_object() {
+                let is_canonical_snake_snapshot = permissions.contains_key("can_send_messages")
+                    || permissions.contains_key("can_send_media")
+                    || permissions.contains_key("can_send_polls")
+                    || permissions.contains_key("can_send_other")
+                    || permissions.contains_key("can_send_inline")
+                    || permissions.contains_key("can_send_games");
+                if is_canonical_snake_snapshot {
+                    if let Ok(parsed) = serde_json::from_value::<
+                        fabushi_messaging_core::ConversationPermissions,
+                    >(permissions_val.clone())
+                    {
+                        input.can_send_messages = parsed.can_send_messages;
+                        input.can_send_media = parsed.can_send_media;
+                        input.can_send_polls = parsed.can_send_polls;
+                        input.can_send_other = parsed.can_send_other;
+                        input.can_send_inline = parsed.can_send_inline;
+                        input.can_send_games = parsed.can_send_games;
+                    }
+                }
+                if let Some(v) = permissions
+                    .get("canSendMessages")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.can_send_messages = v;
+                }
+                if let Some(v) = permissions
+                    .get("canSendMedia")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.can_send_media = v;
+                }
+                if let Some(v) = permissions
+                    .get("canSendPolls")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.can_send_polls = v;
+                }
+                if let Some(v) = permissions
+                    .get("canSendOther")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.can_send_other = v;
+                }
+                if let Some(v) = permissions
+                    .get("canSendInline")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.can_send_inline = v;
+                }
+                if let Some(v) = permissions
+                    .get("canSendGames")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.can_send_games = v;
+                }
             }
         }
-        if let Some(restrictions) = metadata
-            .get("restrictions")
-            .and_then(serde_json::Value::as_object)
-        {
-            if let Some(v) = restrictions
-                .get("sendMessages")
-                .and_then(serde_json::Value::as_bool)
+        if let Some(restrictions_val) = metadata.get("restrictions") {
+            if let Ok(parsed) = serde_json::from_value::<
+                fabushi_messaging_core::MemberRestrictions,
+            >(restrictions_val.clone())
             {
-                input.community_restrict_messages = v;
+                input.community_restrict_messages = parsed.send_messages;
+                input.community_restrict_media = parsed.send_media;
+                input.community_restrict_polls = parsed.send_polls;
+                input.community_restrict_other = parsed.send_other;
+                input.community_restrict_inline = parsed.send_inline;
+                input.community_restrict_games = parsed.send_games;
             }
-            if let Some(v) = restrictions
-                .get("sendMedia")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.community_restrict_media = v;
-            }
-            if let Some(v) = restrictions
-                .get("sendPolls")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.community_restrict_polls = v;
-            }
-            if let Some(v) = restrictions
-                .get("sendOther")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.community_restrict_other = v;
-            }
-            if let Some(v) = restrictions
-                .get("sendInline")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.community_restrict_inline = v;
-            }
-            if let Some(v) = restrictions
-                .get("sendGames")
-                .and_then(serde_json::Value::as_bool)
-            {
-                input.community_restrict_games = v;
+            if let Some(restrictions) = restrictions_val.as_object() {
+                if let Some(v) = restrictions
+                    .get("sendMessages")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.community_restrict_messages = v;
+                }
+                if let Some(v) = restrictions
+                    .get("sendMedia")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.community_restrict_media = v;
+                }
+                if let Some(v) = restrictions
+                    .get("sendPolls")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.community_restrict_polls = v;
+                }
+                if let Some(v) = restrictions
+                    .get("sendOther")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.community_restrict_other = v;
+                }
+                if let Some(v) = restrictions
+                    .get("sendInline")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.community_restrict_inline = v;
+                }
+                if let Some(v) = restrictions
+                    .get("sendGames")
+                    .and_then(serde_json::Value::as_bool)
+                {
+                    input.community_restrict_games = v;
+                }
             }
         }
         if let Some(v) = metadata
@@ -3545,7 +3599,56 @@ impl ProductionSessionWorkers {
         {
             input.channel_posting_allowed = v;
         }
+        if let Some(v) = metadata
+            .get("isBroadcastChannel")
+            .and_then(serde_json::Value::as_bool)
+        {
+            input.is_broadcast_channel = v;
+        }
+        if let Some(v) = metadata
+            .get("hasAdminAuthority")
+            .and_then(serde_json::Value::as_bool)
+        {
+            input.has_admin_authority = v;
+        }
+        if metadata
+            .get("secret")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+            || metadata
+                .get("conversationSubkind")
+                .and_then(serde_json::Value::as_str)
+                == Some("secret")
+        {
+            input.destination_is_secret = true;
+        }
         input
+    }
+
+    pub fn refresh_human_conversation_recipient_policy(
+        &self,
+        conversation_id: &str,
+        permissions: fabushi_messaging_core::ConversationPermissions,
+        restrictions: Option<fabushi_messaging_core::MemberRestrictions>,
+    ) -> Result<(), String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let permissions_json =
+            serde_json::to_value(permissions).map_err(|error| error.to_string())?;
+        owner
+            .set_metadata("permissions", permissions_json)
+            .map_err(|error| error.to_string())?;
+        if let Some(restrictions) = restrictions {
+            let restrictions_json =
+                serde_json::to_value(restrictions).map_err(|error| error.to_string())?;
+            owner
+                .set_metadata("restrictions", restrictions_json)
+                .map_err(|error| error.to_string())?;
+        }
+        Ok(())
     }
 
     pub fn search_human_recipients(
@@ -6102,7 +6205,136 @@ mod sharebox_shipping_tests {
         );
         assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 2);
 
+        // Temporal recipient policy refresh (TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001):
+        // A legacy persisted ConversationPermissions snapshot missing can_send_other/can_send_inline/can_send_games
+        // fails closed for content-derived sticker/inline/game source entries until authoritative policy refresh
+        // updates the canonical permissions in SandAgentDb, and the refreshed policy survives restart.
+        let epsilon = conversation_id(
+            &restarted
+                .create_human_conversation("human-epsilon", "Epsilon LegacyPolicy")
+                .unwrap(),
+        );
+        let epsilon_owner = restarted.open_human_conversation_db_owner(&epsilon).unwrap();
+        assert!(epsilon_owner
+            .set_metadata(
+                "permissions",
+                serde_json::json!({
+                    "can_send_messages": true,
+                    "can_send_media": true,
+                    "can_send_polls": true
+                }),
+            )
+            .unwrap());
+
+        assert!(source_owner
+            .append_transcript_entry(&serde_json::json!({
+                "id": "human-server-message:903",
+                "kind": "message",
+                "role": "user",
+                "authorKind": "human",
+                "authorId": "human-source",
+                "content": "inline game message",
+                "game": { "shortName": "chess" },
+                "viaBotId": "bot-inline-1",
+                "delivery": "sent",
+                "timestampMs": 35.0,
+                "remoteMessageId": "903",
+                "remoteCreatedAt": "1970-01-01T00:00:35Z"
+            }))
+            .unwrap());
+
+        let before_refresh = restarted
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            before_refresh
+                .iter()
+                .all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(epsilon.as_str())),
+            "legacy permissions missing can_send_other/can_send_inline/can_send_games must fail closed before policy refresh",
+        );
+
+        restarted
+            .refresh_human_conversation_recipient_policy(
+                &epsilon,
+                fabushi_messaging_core::ConversationPermissions::default(),
+                None,
+            )
+            .unwrap();
+
+        let after_refresh = restarted
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            after_refresh
+                .iter()
+                .any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(epsilon.as_str())),
+            "authoritative policy refresh must expose the destination for inline/game/send-other forwards",
+        );
+
+        // Secret-content vs standard-destination compatibility fails closed before exposure and at forward boundary
+        let secret_dest = conversation_id(
+            &restarted
+                .create_human_conversation("human-secret", "Secret Peer")
+                .unwrap(),
+        );
+        let secret_dest_owner = restarted.open_human_conversation_db_owner(&secret_dest).unwrap();
+        assert!(secret_dest_owner
+            .set_metadata("secret", serde_json::json!(true))
+            .unwrap());
+        let standard_for_secret_check = restarted
+            .search_human_recipients(&source, source_entry_id, "", 50)
+            .unwrap();
+        assert!(
+            standard_for_secret_check
+                .iter()
+                .all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(secret_dest.as_str())),
+            "secret destination must be excluded for standard non-secret source messages",
+        );
+
         restarted.shutdown();
+
+        let restarted_after_policy = test_workers(&root);
+        let after_restart_refresh = restarted_after_policy
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            after_restart_refresh
+                .iter()
+                .any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(epsilon.as_str())),
+            "refreshed recipient policy must survive restart",
+        );
+        let refreshed_settlement = restarted_after_policy
+            .forward_human_message(
+                &source,
+                "human-server-message:903",
+                &[epsilon.clone(), secret_dest.clone()],
+                "forward-request-refreshed-policy-1",
+                false,
+                false,
+            )
+            .unwrap();
+        let refreshed_dests = refreshed_settlement
+            .get("destinations")
+            .and_then(serde_json::Value::as_array)
+            .unwrap();
+        assert_eq!(refreshed_dests[0].get("status").and_then(serde_json::Value::as_str), Some("sent"));
+        assert_eq!(refreshed_dests[1].get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        assert_eq!(
+            restarted_after_policy
+                .read_human_conversation_transcript(&epsilon)
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            restarted_after_policy
+                .read_human_conversation_transcript(&secret_dest)
+                .unwrap()
+                .len(),
+            0
+        );
+
+        restarted_after_policy.shutdown();
         let _ = fs::remove_dir_all(root);
     }
 }

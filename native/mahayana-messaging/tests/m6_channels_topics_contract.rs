@@ -1244,7 +1244,9 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
     let preserved_saved_msg_id = preserved_fwd_envelopes
         .iter()
         .find_map(|env| match &env.event {
-            ServerEvent::MessageChanged { message } => Some(message.id.clone()),
+            ServerEvent::MessageAdded { message } | ServerEvent::MessageChanged { message } => {
+                Some(message.id.clone())
+            }
             _ => None,
         })
         .expect("preserved saved message id");
@@ -1292,7 +1294,9 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
     let anon_saved_msg_id = anon_fwd_envelopes
         .iter()
         .find_map(|env| match &env.event {
-            ServerEvent::MessageChanged { message } => Some(message.id.clone()),
+            ServerEvent::MessageAdded { message } | ServerEvent::MessageChanged { message } => {
+                Some(message.id.clone())
+            }
             _ => None,
         })
         .expect("anon saved message id");
