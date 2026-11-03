@@ -1,0 +1,627 @@
+{
+  "subject_commit": "d70f86f33b5e3c67545954b270373e1548809f4b",
+  "subject_tree": "4c4c9cfd3f5067fef57dca530042d149a8e2fc5c",
+  "run_id": 41578381556,
+  "run_attempt": 1,
+  "job_id": 125727154650,
+  "artifact_id": 13205176091,
+  "artifact": {
+    "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-artifact-13205176091.zip",
+    "bytes": 10450,
+    "sha256": "9c4e019634217058bf7d17d2a3edb7b00d68d286f426f76a1b6178af3ed09e58"
+  },
+  "receipt": {
+    "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-artifact-13205176091/ocrm-plugin-edge.json",
+    "bytes": 11220,
+    "sha256": "2f0deb892e7a72b62e3589335df253c7474dbf38a800986b753c30b0a7bf505d"
+  },
+  "TAP": {
+    "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-artifact-13205176091/ocrm-plugin-edge.tap",
+    "bytes": 32629,
+    "sha256": "603582ecd572f4e85092053d8b16e3620b905fed80ee6aab5fe0617ce3236b06"
+  },
+  "full_job_log": {
+    "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-renderer-terminal.log",
+    "bytes": 202715,
+    "sha256": "ad8c1e7ee22f185599a6edaa2e230b825948bf5c20ec875f099eeefdd01d1ae6"
+  },
+  "checks": {
+    "subject": true,
+    "run_attempt": true,
+    "scope": true,
+    "original_TAP_hash": true,
+    "exact_TAP_in_original_job_log": true,
+    "input_key_sets": true,
+    "all20input_hashes": true,
+    "all144_source_names_exactly_once": true,
+    "top_level_indices": true,
+    "top_level_plan": true,
+    "four_nested_cases": true,
+    "exact_terminal_counts": true,
+    "no_failed_skipped_todo": true,
+    "build_and_test_API_steps_success": true,
+    "build_command_in_actual_run_group": true,
+    "five_test_targets_in_original_log": true,
+    "pipefail_captured": true,
+    "all15new_MCP_once": true,
+    "all11incoming_materialization_once": true,
+    "all11router_once": true
+  },
+  "audit_ok": true,
+  "commands": {
+    "dependency_install": [
+      "npm",
+      "--prefix",
+      "desktop",
+      "ci",
+      "--prefer-offline",
+      "--no-audit",
+      "--no-fund"
+    ],
+    "shipping_build": [
+      "npm",
+      "--prefix",
+      "desktop",
+      "run",
+      "build:electron",
+      "--",
+      "--plugin-skills-contracts"
+    ],
+    "contracts": [
+      "node",
+      "--test",
+      "--test-reporter=tap",
+      "desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs",
+      "desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs",
+      "desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs",
+      "desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs",
+      "desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
+    ],
+    "capture": [
+      "tee",
+      ".evidence/ocrm-plugin-edge.tap"
+    ],
+    "environment_additions": {
+      "FABUSHI_COORDINATOR_CARRIER_ARTIFACT": "${GITHUB_WORKSPACE}/desktop/dist/node-agent-coordinator/main.cjs"
+    },
+    "exit_evidence": "Original Actions build/test steps conclude success. The test shell uses set -euo pipefail, so successful pipeline status implies node and tee zero; receipt has no separate numeric process-exit fields.",
+    "API_steps": [
+      {
+        "name": "Install desktop dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7,
+        "started_at": "2026-11-03T04:29:24Z",
+        "completed_at": "2026-11-03T04:29:28Z"
+      },
+      {
+        "name": "Build Grok-shaped Electron runtime",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 8,
+        "started_at": "2026-11-03T04:29:28Z",
+        "completed_at": "2026-11-03T04:29:31Z"
+      },
+      {
+        "name": "Test Plugin Skills, model settings bridge and routed MCP carrier",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 9,
+        "started_at": "2026-11-03T04:29:31Z",
+        "completed_at": "2026-11-03T04:29:31Z"
+      },
+      {
+        "name": "Record exact-subject Plugin Skills edge evidence",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-11-03T04:29:31Z",
+        "completed_at": "2026-11-03T04:29:31Z"
+      },
+      {
+        "name": "Upload Plugin Skills edge evidence",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-11-03T04:29:31Z",
+        "completed_at": "2026-11-03T04:29:33Z"
+      }
+    ]
+  },
+  "counts": {
+    "cancelled": 0,
+    "fail": 0,
+    "pass": 148,
+    "skipped": 0,
+    "tests": 148,
+    "todo": 0
+  },
+  "top_level_count": 144,
+  "nested_names_by_parent": {
+    "Host refuses an actual Sand account read superseded by logout and login": [
+      "peek-before-logout-login",
+      "login-before-peek"
+    ],
+    "Host rejects account departure and unreadable current account after materialization": [
+      "departed",
+      "unreadable"
+    ]
+  },
+  "targets": [
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
+      "source_blob": "b8ff7fbdf1c8ff540fa4eaf1b9e798d12077d722",
+      "source_sha256": "6c992ca58be3569c3da5cc34c20c2b06ed905fb411b921a647dc45c5784ee0a2",
+      "expected_count": 24,
+      "observed_required_count": 24,
+      "name_occurrences": {
+        "Host rejects an unavailable SDK source but returns an authoritative empty snapshot": 1,
+        "Host rejects malformed raw listing shapes before materializing any entry": 1,
+        "Host rejects malformed or duplicate enabled IDs before SDK filtering": 1,
+        "Host captures enabled IDs before the real SDK omits inline content or nameless entries": 1,
+        "Host returns the actual SDK install path for a zero-skill plugin with dotted cache keys": 1,
+        "Host late failed materialization preserves a zero-skill winner and a fresh cache hit": 1,
+        "Host preserves opaque strings and bigint IDs above the safe-number range exactly": 1,
+        "local install permission failures never become remote authorization blocks": 1,
+        "Host authorization failures use the canonical DB ID when the slug matches another plugin's DB ID": 1,
+        "Host staging cleanup failure preserves the canonical authorization denial": 1,
+        "Host cleanup I/O failures preserve canonical remote denial and recovery": 1,
+        "Host cache-owned materialization failures cannot create authorization denials": 1,
+        "Host refuses an SDK auth denial without canonical identity instead of guessing from a slug or name": 1,
+        "remote Git clone authorization denial retains its canonical ID as an auth block": 1,
+        "Host defers SDK pruning even after a complete successful materialization": 1,
+        "one Host loader refreshes publisher identity for consecutive accounts": 1,
+        "Host refuses an actual Sand account read superseded by logout and login": 1,
+        "a Host identity lookup failure or invalid ID cannot reuse a prior successful identity": 1,
+        "Host pins listing identity and Git credentials then refuses an account change during the pass": 1,
+        "Host rejects account departure and unreadable current account after materialization": 1,
+        "Host accepts same-account renewal without reusing or mixing the pass credential": 1,
+        "Host does not equate different tokens with empty missing or ambiguous account subjects": 1,
+        "Host refuses a backend-context change before SDK credentials are consumed or after materialization": 1,
+        "Host refuses the previous Fabushi account while public browser login is pending": 1
+      },
+      "all_once": true
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.contract.test.ts",
+      "source_blob": "fa41d87a2e9f8b03ca7d8125309a96673d57482e",
+      "source_sha256": "8c890da0e880969dde45729f188290c374f313047328a49c6db0e580db38ed22",
+      "expected_count": 19,
+      "observed_required_count": 19,
+      "name_occurrences": {
+        "SDK distinguishes an unavailable source from an authoritative empty listing": 1,
+        "SDK explicit false defers both pruning sites": 1,
+        "SDK omitted option preserves the default per-plugin prune": 1,
+        "SDK explicit true preserves both pruning sites": 1,
+        "SDK missing-marketplace failures preserve the supplied canonical DB ID": 1,
+        "SDK installation failure retains canonical identity and old files during a partial pass": 1,
+        "failed cache publication removes only its staging directory": 1,
+        "filesystem EACCES during cache installation is an install failure, not clone authentication": 1,
+        "filesystem EPERM during cache installation is an install failure, not clone authentication": 1,
+        "filesystem EROFS during cache installation is an install failure, not clone authentication": 1,
+        "SDK cleanup I/O failures preserve the primary load category and raw causes": 1,
+        "an older failed install cannot remove a successor published cache directory": 1,
+        "SDK version-resolution failures reach the Host with their canonical DB ID": 1,
+        "SDK late failed materialization preserves the completed winner and a fresh cache hit": 1,
+        "SDK concurrent successful materializations reuse the first completed directory": 1,
+        "SDK incomplete and non-directory cache targets are preserved without installation": 1,
+        "SDK a target appearing during materialization is preserved without publication": 1,
+        "SDK a failed materialization removes only its owned staging directory": 1,
+        "SDK marker and publication failures do not report a successful materialization": 1
+      },
+      "all_once": true
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+      "source_blob": "a5352c321ee3da7a8561beda5f7ddb4dccd24801",
+      "source_sha256": "8b9b57516087d3f97a2c5279a7e4eb04b54596e058a8c8e34870e020e3cb0551",
+      "expected_count": 2,
+      "observed_required_count": 2,
+      "name_occurrences": {
+        "a throwing problem reporter cannot prevent protocol settlement": 1,
+        "MCP results retain their discriminants through native ports and the shipping Rust carrier": 1
+      },
+      "all_once": true
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "source_blob": "2a56f1e1ffb20ca3c65e5aaf57e3013dcbf4f427",
+      "source_sha256": "aacdcb91b8eaedb06aa006de31e2064f3b56e92afab6badbf7f42e41740bf320",
+      "expected_count": 78,
+      "observed_required_count": 78,
+      "name_occurrences": {
+        "shipping MCP runtime forwards discovery failure through the dedicated callback": 1,
+        "shipping MCP runtime preserves connector-auth reports through the dedicated callback": 1,
+        "MC-01 concurrent ensures share the reserved construction and manager": 1,
+        "MC-01 a synchronous factory reentry sees the already reserved promise": 1,
+        "MC-01/03 reset before invocation refuses the old factory": 1,
+        "MC-01/03 dispose before invocation refuses the old factory": 1,
+        "MC-02 late old success cannot adopt or erase replacement B": 1,
+        "MC-02 late old failure cannot adopt or erase replacement B": 1,
+        "MC-02 current factory throw retires callbacks and allows a fresh retry": 1,
+        "MC-02 current factory reject retires callbacks and allows a fresh retry": 1,
+        "MC-03 disposal returns while a factory is pending and owns its late cleanup": 1,
+        "MC-03 disposal shares observable cleanup before synchronous reentry": 1,
+        "MC-02 reset detaches before a disposer reentrantly creates B": 1,
+        "MC-02/03 reset observes cleanup throw without erasing B": 1,
+        "MC-02/03 reset observes cleanup reject without erasing B": 1,
+        "MC-02/03 late retired-manager cleanup failure remains in the old rejection": 1,
+        "MC-04 reentrant root setup cannot publish a retired manager": 1,
+        "MC-04 reentrant cleanup setup cannot publish a retired manager": 1,
+        "MC-04 reentrant observer setup cannot publish a retired manager": 1,
+        "MC-02 reset between setup and promise publication rejects the original waiter": 1,
+        "MC-02/04 setup failure retires callbacks, retains cleanup errors and permits retry": 1,
+        "MC-04 auth broadcast rechecks retirement during installation": 1,
+        "MC-04 auth broadcast rechecks retirement during completion": 1,
+        "MC-04 callbacks belong to the exact attempt while late scrub failures stay observable": 1,
+        "MC-05 token port refuses retirement at the entry boundary": 1,
+        "MC-05 token port refuses retirement at the service boundary": 1,
+        "MC-05 token port refuses retirement at the token boundary": 1,
+        "MC-06 shipping adapter reset rejects pending routed operations before facade I/O": 1,
+        "MC-06 shipping adapter dispose rejects pending routed operations before facade I/O": 1,
+        "MC-03 shipping adapter awaits and propagates manager teardown failure": 1,
+        "MB-02 current Box bridge ports preserve arguments and actual success or failure": 1,
+        "MB-01 all captured Box ports refuse after reset": 1,
+        "MB-01 all captured Box ports refuse after dispose": 1,
+        "MB-01 all captured Box ports refuse after construction failure": 1,
+        "MB-03 already admitted Box requests keep their actual late success": 1,
+        "MB-03 already admitted Box requests keep their actual late failure": 1,
+        "MB-04 shipping adapter reset refuses a facade paused before Box dispatch": 1,
+        "MB-04 shipping adapter dispose refuses a facade paused before Box dispatch": 1,
+        "MCP account retirement preserves B permissions after late A success": 1,
+        "MCP account retirement preserves B permissions after late A unavailable": 1,
+        "MCP account retirement drops an established cache and a held fresh resolution": 1,
+        "MCP account retirement fences a held backend listing before tool-cache publication": 1,
+        "MCP account retirement during the scope callback cannot restore account projections": 1,
+        "MD-01/03/05 a cold current owner rechecks retained tools against persisted same-account disable": 1,
+        "MD-02/03/06 Box preparation success preserves a disable committed before execution": 1,
+        "MD-02/03/06 Box preparation failure preserves a disable committed before execution": 1,
+        "MD-03/06 cold missing identity retains unavailable outcome and permissions": 1,
+        "MD-03/06 cold unavailable identity retains unavailable outcome and permissions": 1,
+        "MD-04/06 admitted http keeps late success after disable": 1,
+        "MD-04/06 admitted http keeps late rejection after disable": 1,
+        "MD-04/06 admitted http keeps late success after reset": 1,
+        "MD-04/06 admitted http keeps late rejection after reset": 1,
+        "MD-04/06 admitted stdio keeps late success after disable": 1,
+        "MD-04/06 admitted stdio keeps late rejection after disable": 1,
+        "MD-04/06 admitted stdio keeps late success after reset": 1,
+        "MD-04/06 admitted stdio keeps late rejection after reset": 1,
+        "PS-DESKTOP-01/03/04 registered uninstall awaits one Rust intent and preserves its full response": 1,
+        "PS-DESKTOP-04 settings failure after confirmation does not retry, fall back, or refresh again": 1,
+        "PS-DESKTOP-02/04 registered uninstall preserves not-removed without local mutation": 1,
+        "PS-DESKTOP-02/04 registered uninstall preserves unknown-result without local mutation": 1,
+        "PS-DESKTOP-02/04 registered uninstall preserves invalid-args without local mutation": 1,
+        "PS-DESKTOP-02/04 registered uninstall preserves missing-leg without local mutation": 1,
+        "PS-DESKTOP-06 replacement Coordinator leg cannot replay an admitted uninstall": 1,
+        "MO-05 default official credential bridge refuses reset across the service await": 1,
+        "MO-05 default official credential bridge refuses reset across the token await": 1,
+        "MO-05 real official disposal cannot obtain credentials for cancel after reset": 1,
+        "MO-05 real official disposal cannot obtain credentials for cancel after dispose": 1,
+        "MO-05 default official bridge retains current credential errors and unauthenticated message": 1,
+        "MO-06 actual official poll failure after reset cannot notify the replacement": 1,
+        "MO-06 actual official poll ready after reset cannot notify the replacement": 1,
+        "MO-06 actual official acknowledgment after reset keeps its admitted outcome without notifying B": 1,
+        "MO-06 actual official disconnect cleanup success after reset cannot notify B": 1,
+        "MO-06 actual official disconnect cleanup failure after reset cannot notify B": 1,
+        "MO-06 default official completion preserves zero-argument refresh and rechecks broadcast reset": 1,
+        "MO-07 default official mutation cannot write after its final scope await is retired": 1,
+        "MO-07 official pre-write admission refuses retirement after the final scope check fulfills": 1,
+        "MO-07 default official already-admitted write retains its success after reset": 1,
+        "MO-07 default official already-admitted write retains its failure after reset": 1
+      },
+      "all_once": true
+    },
+    {
+      "path": "source/electron-main/main-edge-model.contract.test.ts",
+      "source_blob": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+      "source_sha256": "a7f363d839450f5ebe920e98258651b3fe7a2e50f0824bd03b5d32718908a957",
+      "expected_count": 21,
+      "observed_required_count": 21,
+      "name_occurrences": {
+        "default-model RPC retains provider and mirrors only the acknowledged Host model": 1,
+        "invalid provider bindings reach the Host unchanged and refusal preserves mirror bytes": 1,
+        "explicit undefined provider is refused before JSON can turn it into a legacy default": 1,
+        "unavailable Host write or read leaves the last acknowledged default intact": 1,
+        "Host reads preserve metadata and acknowledged absent or null defaults clear the mirror": 1,
+        "legacy unbound defaults and malformed base-shape behavior stay compatible": 1,
+        "existing fast migration retains provider and model metadata through reopening": 1,
+        "account transitions clear bound model mirrors without changing legacy retention": 1,
+        "Computer Use keeps its existing parser, override and clear behavior": 1,
+        "real appWindow transport and served trust refuse foreign or nested-frame model requests": 1,
+        "router set waits for Host acknowledgement and mirrors its canonical provider": 1,
+        "router preserves all five configured providers and reconciles reads with diagnostic fallbacks": 1,
+        "router invalid requests and untrusted frames cause no Host or mirror effects": 1,
+        "router refuses malformed Host replies without local fallback and permits later reconciliation": 1,
+        "router Host refusal releases a queued read and read rejection does not poison later calls": 1,
+        "router unknown transport outcome can follow a Host commit and requires an explicit read": 1,
+        "router local persistence failure leaves the Host commit intact and a later get repairs the mirror": 1,
+        "router orders a held get before set through mirror persistence": 1,
+        "router orders a held set before get through mirror persistence": 1,
+        "router serializes two sets so a late acknowledgement cannot overwrite the later mirror": 1,
+        "a pending router IPC does not order unrelated methods or another MainEdge instance": 1
+      },
+      "all_once": true
+    }
+  ],
+  "MCP_new15_occurrences": {
+    "MO-05 default official credential bridge refuses reset across the service await": 1,
+    "MO-05 default official credential bridge refuses reset across the token await": 1,
+    "MO-05 real official disposal cannot obtain credentials for cancel after reset": 1,
+    "MO-05 real official disposal cannot obtain credentials for cancel after dispose": 1,
+    "MO-05 default official bridge retains current credential errors and unauthenticated message": 1,
+    "MO-06 actual official poll failure after reset cannot notify the replacement": 1,
+    "MO-06 actual official poll ready after reset cannot notify the replacement": 1,
+    "MO-06 actual official acknowledgment after reset keeps its admitted outcome without notifying B": 1,
+    "MO-06 actual official disconnect cleanup success after reset cannot notify B": 1,
+    "MO-06 actual official disconnect cleanup failure after reset cannot notify B": 1,
+    "MO-06 default official completion preserves zero-argument refresh and rechecks broadcast reset": 1,
+    "MO-07 default official mutation cannot write after its final scope await is retired": 1,
+    "MO-07 official pre-write admission refuses retirement after the final scope check fulfills": 1,
+    "MO-07 default official already-admitted write retains its success after reset": 1,
+    "MO-07 default official already-admitted write retains its failure after reset": 1
+  },
+  "MCP_prior63_retained": true,
+  "materialization11_occurrences": {
+    "SDK late failed materialization preserves the completed winner and a fresh cache hit": 1,
+    "SDK concurrent successful materializations reuse the first completed directory": 1,
+    "SDK incomplete and non-directory cache targets are preserved without installation": 1,
+    "SDK a target appearing during materialization is preserved without publication": 1,
+    "SDK a failed materialization removes only its owned staging directory": 1,
+    "SDK marker and publication failures do not report a successful materialization": 1,
+    "SDK cleanup I/O failures preserve the primary load category and raw causes": 1,
+    "Host late failed materialization preserves a zero-skill winner and a fresh cache hit": 1,
+    "Host staging cleanup failure preserves the canonical authorization denial": 1,
+    "Host cleanup I/O failures preserve canonical remote denial and recovery": 1,
+    "Host cache-owned materialization failures cannot create authorization denials": 1
+  },
+  "source_input_identities": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "2c9e310bff2dac5aa900ba4292742754ef0c059e",
+      "bytes": 444566,
+      "sha256": "8b5d69c8e6ec2e29939aed7af3453000d39eee14ddb612efb0602d924ecbbbdc",
+      "reported_sha256": "8b5d69c8e6ec2e29939aed7af3453000d39eee14ddb612efb0602d924ecbbbdc"
+    },
+    {
+      "path": "desktop/scripts/build-electron-runtime.mjs",
+      "blob": "8c5e5f1e35a3388a9032cbc72ef8ee6370119e1b",
+      "bytes": 4178,
+      "sha256": "04008955615fb4dbc62cb67b126c839376fefbb22d39ddd9b2ff899995246c11",
+      "reported_sha256": "04008955615fb4dbc62cb67b126c839376fefbb22d39ddd9b2ff899995246c11"
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "blob": "90dcae53b6f1d26c89ce231e9e067e80799ee1c7",
+      "bytes": 28445,
+      "sha256": "ae11fb579731b7a36b519cee2d57364d22b41fc55be8ae5a69664ff9a1a45fb1",
+      "reported_sha256": "ae11fb579731b7a36b519cee2d57364d22b41fc55be8ae5a69664ff9a1a45fb1"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-desktop.ts",
+      "blob": "98d57679b13b215fafe02fa61860edb95c660197",
+      "bytes": 7987,
+      "sha256": "c604a675c5bb1bd6cd196e3f8fecc123090da487accecb1d11c6e4a4b0343f43",
+      "reported_sha256": "c604a675c5bb1bd6cd196e3f8fecc123090da487accecb1d11c6e4a4b0343f43"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "blob": "2a56f1e1ffb20ca3c65e5aaf57e3013dcbf4f427",
+      "bytes": 103894,
+      "sha256": "aacdcb91b8eaedb06aa006de31e2064f3b56e92afab6badbf7f42e41740bf320",
+      "reported_sha256": "aacdcb91b8eaedb06aa006de31e2064f3b56e92afab6badbf7f42e41740bf320"
+    },
+    {
+      "path": "source/shared/rpc/coordinator-main.ts",
+      "blob": "c82ace78bc4c1b264aa3d2818944f83ed4919cfe",
+      "bytes": 1555,
+      "sha256": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08",
+      "reported_sha256": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "blob": "5fd897559799de1ffde183c64cac60f2a386b985",
+      "bytes": 83070,
+      "sha256": "181ac3f02e7cc29d804d99f14da75d6fbcffe6c6c2837df4999378a0cadf91b1",
+      "reported_sha256": "181ac3f02e7cc29d804d99f14da75d6fbcffe6c6c2837df4999378a0cadf91b1"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+      "blob": "6252635f8a7d1abeae26bc4913e3e4fb134d9e89",
+      "bytes": 19310,
+      "sha256": "fe741f8bb7de19e4e0f07d3826a36183a7ce0c368fc1d309c22ac41dde54e956",
+      "reported_sha256": "fe741f8bb7de19e4e0f07d3826a36183a7ce0c368fc1d309c22ac41dde54e956"
+    },
+    {
+      "path": "source/packages/cursor-plugins/cursor-marketplace.ts",
+      "blob": "6a2433588b5f17f3609e6ca85e4aa0f2a8612e21",
+      "bytes": 9690,
+      "sha256": "42649f4923d61e15918902261a08366a5413f1ce078e9cb8892527d85cd571b1",
+      "reported_sha256": "42649f4923d61e15918902261a08366a5413f1ce078e9cb8892527d85cd571b1"
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.ts",
+      "blob": "f0028c8fbecc602828fb6ed48dce9fd77855102c",
+      "bytes": 29116,
+      "sha256": "81dd7008e559587d5ce140918e585e7769fe7efb131214b51ec52451b6b4c0f6",
+      "reported_sha256": "81dd7008e559587d5ce140918e585e7769fe7efb131214b51ec52451b6b4c0f6"
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.contract.test.ts",
+      "blob": "fa41d87a2e9f8b03ca7d8125309a96673d57482e",
+      "bytes": 30540,
+      "sha256": "8c890da0e880969dde45729f188290c374f313047328a49c6db0e580db38ed22",
+      "reported_sha256": "8c890da0e880969dde45729f188290c374f313047328a49c6db0e580db38ed22"
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.ts",
+      "blob": "d81e1da13c9b39f4e2943ab48e8b9073bb8dc987",
+      "bytes": 13965,
+      "sha256": "159abbd621508f406a9eeb3044fb1b1627304914d4adbd4169348e24d1fb5279",
+      "reported_sha256": "159abbd621508f406a9eeb3044fb1b1627304914d4adbd4169348e24d1fb5279"
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
+      "blob": "b8ff7fbdf1c8ff540fa4eaf1b9e798d12077d722",
+      "bytes": 54353,
+      "sha256": "6c992ca58be3569c3da5cc34c20c2b06ed905fb411b921a647dc45c5784ee0a2",
+      "reported_sha256": "6c992ca58be3569c3da5cc34c20c2b06ed905fb411b921a647dc45c5784ee0a2"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+      "blob": "a50e82588d796974b19d8253c5b74351c35a44bf",
+      "bytes": 100962,
+      "sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e",
+      "reported_sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+      "blob": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+      "bytes": 6759,
+      "sha256": "ef57f3e973584ab1135e3be96f01f7b79738417eeffa2479d5232f6294bc3ade",
+      "reported_sha256": "ef57f3e973584ab1135e3be96f01f7b79738417eeffa2479d5232f6294bc3ade"
+    },
+    {
+      "path": "source/electron-main/main-edge.ts",
+      "blob": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+      "bytes": 25510,
+      "sha256": "7094d4eb76a3bfc58a205ba228a69cfc0a2b666209b9ff5e1b292a090aaeac8d",
+      "reported_sha256": "7094d4eb76a3bfc58a205ba228a69cfc0a2b666209b9ff5e1b292a090aaeac8d"
+    },
+    {
+      "path": "source/electron-main/main-edge-model.contract.test.ts",
+      "blob": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+      "bytes": 31517,
+      "sha256": "a7f363d839450f5ebe920e98258651b3fe7a2e50f0824bd03b5d32718908a957",
+      "reported_sha256": "a7f363d839450f5ebe920e98258651b3fe7a2e50f0824bd03b5d32718908a957"
+    },
+    {
+      "path": "source/shared/agents/sand-agent-model.ts",
+      "blob": "884157ba4f04ae3c126fad9c3a6b317acc0d9452",
+      "bytes": 1657,
+      "sha256": "16e2a76f850140ca3ebd61c4ba82b91dea964b472bfc96b5dfa1ef1777cdc571",
+      "reported_sha256": "16e2a76f850140ca3ebd61c4ba82b91dea964b472bfc96b5dfa1ef1777cdc571"
+    },
+    {
+      "path": "source/shared/node/settings/sand-settings-store.ts",
+      "blob": "f45786daa8f7851bf967877e86e04d0d76e6d166",
+      "bytes": 25451,
+      "sha256": "3ac393ed1562585ca14ce296b71345db226036a768516a6b69c679791760308a",
+      "reported_sha256": "3ac393ed1562585ca14ce296b71345db226036a768516a6b69c679791760308a"
+    },
+    {
+      "path": "frontend/src/recovered/contracts/desktop-bridge.ts",
+      "blob": "9b634d8d8e3d51a4e60424ebb55a17cb89432ca4",
+      "bytes": 20090,
+      "sha256": "41af68792eb28735150987159f76449e7f2c60716f44b2db34bd49e9d0ff0dee",
+      "reported_sha256": "41af68792eb28735150987159f76449e7f2c60716f44b2db34bd49e9d0ff0dee"
+    }
+  ],
+  "input_coverage_limit": "Existing plugin receipt captures20paths. Full7scope blobs are independently bound to immutableH/tree; only mcp-oauth.ts and mcp-runtime.contract.test.ts of those7 appear in this receipt input map. Future successful PRID source snapshots capture the complete trackedtree separately. No claim that this20path map is a complete compiler dependency graph.",
+  "skipped_steps": [
+    {
+      "name": "Check production architecture boundary",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 15,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Compile Grok Electron boundary contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 16,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Compile Fabushi product policy contract",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 17,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Test Grok Electron boundary contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 18,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Test Fabushi product policy contract",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 19,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Test recovered window chrome contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 20,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Check Agent workspace architecture boundary",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 21,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Check Grok architecture inventory",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 22,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Typecheck and build renderer",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 23,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Verify co-staged desktop runtime",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 24,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Enforce built desktop bundle boundary",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 25,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    },
+    {
+      "name": "Check Grok final architecture gate",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 26,
+      "started_at": "2026-11-03T04:29:34Z",
+      "completed_at": "2026-11-03T04:29:34Z"
+    }
+  ],
+  "limits": [
+    "Shipping esbuild bundle and selected Node contract evidence, not whole-graph TypeScript strict typecheck.",
+    "Controlled causal ports do not establish real account/provider or remote cancellation behavior.",
+    "Broad renderer architecture/build/UI gates remain skipped.",
+    "No Rust/native/PRID/source-workflow result borrowed from this renderer job.",
+    "No transfer of0c7 or another subject result."
+  ],
+  "unit_verified": false,
+  "independent_acceptance": false
+}

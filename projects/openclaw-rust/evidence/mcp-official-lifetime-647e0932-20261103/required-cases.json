@@ -1,0 +1,23 @@
+{
+  "tree": "33d8b4c55277806d465081db13891cbca230076e",
+  "testBlob": "2a56f1e1ffb20ca3c65e5aaf57e3013dcbf4f427",
+  "required": [
+    "MO-05 default official credential bridge refuses reset across the service await",
+    "MO-05 default official credential bridge refuses reset across the token await",
+    "MO-05 real official disposal cannot obtain credentials for cancel after reset",
+    "MO-05 real official disposal cannot obtain credentials for cancel after dispose",
+    "MO-05 default official bridge retains current credential errors and unauthenticated message",
+    "MO-06 actual official poll failure after reset cannot notify the replacement",
+    "MO-06 actual official poll ready after reset cannot notify the replacement",
+    "MO-06 actual official acknowledgment after reset keeps its admitted outcome without notifying B",
+    "MO-06 actual official disconnect cleanup success after reset cannot notify B",
+    "MO-06 actual official disconnect cleanup failure after reset cannot notify B",
+    "MO-06 default official completion preserves zero-argument refresh and rechecks broadcast reset",
+    "MO-07 default official mutation cannot write after its final scope await is retired",
+    "MO-07 official pre-write admission refuses retirement after the final scope check fulfills",
+    "MO-07 default official already-admitted write retains its success after reset",
+    "MO-07 default official already-admitted write retains its failure after reset"
+  ],
+  "authoredOnly": true,
+  "source": "Root source reading of exact 15 expanded MO names; authored only, no local execution"
+}

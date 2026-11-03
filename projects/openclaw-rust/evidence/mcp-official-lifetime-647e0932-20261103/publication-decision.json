@@ -1,0 +1,27 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "destination": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "visibility": "public, verifiedGitHubAPI",
+  "userAuthorization": "The current user explicitly requests productionimplementation, OCRM evidence preservation, timelycloudsave, and submission/push ofthis taskactualresults tothissameGitHubrepository withfullAPIreadback. Thisauthorizationcovers the newlyauthoredtaskreview/evidencerecords; accesspermissionsaloneare nottreatedasdisclosureauthorization.",
+  "priorAutomaticRejection": "Original26filecreate_tree rejected for unverifiedprivate-source/execution-record publicegress. Noalternate transport oractor used.",
+  "newEvidence": "Independentfull26fileprovenancereview foundnosecret/privateimportedsource/rawDB/executable/archive; allsourcepatches match this publicrepository andfixedpublicU; originalCI IDs/digests match samepublicActions. Newreportsare explicitlynovel taskanalysis withfixture/worker/CI metadata, notclaimedpreviouslypublic. Appendedd70/0ccorrectionproofs deriveonlyfromsamepublicsource/Actionscontrolledfixtures; no rawarchiveorDB payloaduploaded.",
+  "factualHoldResolved": {
+    "classification": "AUDITOR_ERROR: prior broad raw-byte absence/unrecoverability conclusion withdrawn",
+    "subject": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "originalArtifact": 13204320664,
+    "proof": {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.json",
+      "bytes": 64680,
+      "sha256": "4bdd465a6906d8045a3029a56e3377e9aee5bea1066ec00b3f72d304f8ef9d28"
+    },
+    "narrative": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.md",
+    "currentConclusion": "Original89-file consumer inventory has87direct members plus2lossless originalJSON u8 DB carriers. Each DB32768bytes SHA256678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974. Standalone paths andconsumer-tar were omitted; no original rawdata loss. Newarchivechange closes packaging only. No executioncredit transfers to d70/laterH.",
+    "history": "Preserve original audit/gap/reviewer reports unchanged; their broaderrawabsence conclusions are superseded bythis correction."
+  },
+  "excluded": "BlockedH5593rawarchive andallotherforeignwork remainexcluded. No realcredential/customer/device/profile/database dumpis included.",
+  "approvalStatus": "Thisrecordgrounds a newnormalautomaticreview request; itdoesnotoverrideanapprovaldenial.",
+  "unitVerified": false,
+  "globalAcceptance": false
+}

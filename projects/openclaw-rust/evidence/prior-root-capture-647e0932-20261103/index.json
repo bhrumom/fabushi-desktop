@@ -1,0 +1,77 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "role": "immutable evidence carrier, not a new inventory/ledger/RTM or shipping acceptance",
+  "subjectCommit": "d70f86f33b5e3c67545954b270373e1548809f4b",
+  "subjectTree": "4c4c9cfd3f5067fef57dca530042d149a8e2fc5c",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "members": [
+    {
+      "path": "r1-manifest.json",
+      "bytes": 959,
+      "sha256": "d3c49dc91798ac658ca05c2d8dac66adb1c0af304b9ad618754621bf8c237c0f",
+      "preservedFrom": "reviews/prid-capture-r1/manifest.json"
+    },
+    {
+      "path": "r1-complete.patch",
+      "bytes": 4031,
+      "sha256": "2930fcf66ba965a73ad2dedc39b27a81baa2e8da93f8ef0b196127da938bb880",
+      "preservedFrom": "reviews/prid-capture-r1/complete.patch"
+    },
+    {
+      "path": "r1-security-review.md",
+      "bytes": 15378,
+      "sha256": "40485fd535e47a90eb7f6eea43054b79c6d0b1237dfe82e0f9376b551c7bdcce",
+      "preservedFrom": "reviews/prid-capture-r1-security-review.md"
+    },
+    {
+      "path": "r1-structure-review.md",
+      "bytes": 15856,
+      "sha256": "9a1e016200217668a883de303e2dded1539eb4163f41c0ddafa79335b2d114bc",
+      "preservedFrom": "reviews/prid-capture-r1-structure-review.md"
+    },
+    {
+      "path": "review-decisions.json",
+      "bytes": 4961,
+      "sha256": "e4aa73f304929b8cf673a812d93d9cea516040c2a82cb0f7657507cc6c2a7c57",
+      "preservedFrom": "reviews/prid-capture-decisions.json",
+      "preservation": "Originaldecisionfieldsretained; appendedfactualcorrection andpriorhash"
+    },
+    {
+      "path": "original-0c7-capture-gap.json",
+      "bytes": 17503,
+      "sha256": "866151acbaa1ca9a2253aecd9fd318bf3d632667097e5fdfe4a5f8f20349dab6",
+      "preservedFrom": "ci-recovery/drt-exact/0c7-prior-root-capture-gap.json"
+    }
+  ],
+  "sourceReview": "MCP R2 and PRID capture R1 fresh general/security and structure/reuse/performance approved source only; root read complete reports",
+  "runtimeEvidence": {
+    "runtimeRunId": 41578381556,
+    "sourceRunId": 41578381536,
+    "renderer": "148/148TAPpassed atd70 including15newexactMCP names; boundedshippingbundleonly",
+    "linux": "50portablegroupspass,2fail; App/Automation/PRIDskipped, separateAppcompilefailure; originalfailuresevidencepreserved",
+    "source": "structuralworkflowterminalsuccess only",
+    "macOS": "queued atoriginalaudit",
+    "newArchive": "d70PRIDstep skipped; no executioncredit",
+    "aggregate": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-final-evidence-audit.md"
+  },
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "remaining": "Full Rust ownership and ecosystem/platform/package/upgrade/rollback/G01-G12/AC01-AC24 acceptance remain open; all eight canonical flags unchanged",
+  "reconstruction": "Review manifests bind exact bases/trees/blobs; preserved complete and fix patches reconstruct the immutable scopes. Publication readback binds all seven final files. Source-read facts and assessment limits remain literal.",
+  "rawEvidencePolicy": "Original Actions artifact IDs/digests remain in reports. No blocked H5593 raw archive, credentials, executables or new raw fixture payload is uploaded here.",
+  "factualCorrection": {
+    "classification": "AUDITOR_ERROR: prior broad raw-byte absence/unrecoverability conclusion withdrawn",
+    "subject": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "originalArtifact": 13204320664,
+    "proof": {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.json",
+      "bytes": 64680,
+      "sha256": "4bdd465a6906d8045a3029a56e3377e9aee5bea1066ec00b3f72d304f8ef9d28"
+    },
+    "narrative": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.md",
+    "currentConclusion": "Original89-file consumer inventory has87direct members plus2lossless originalJSON u8 DB carriers. Each DB32768bytes SHA256678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974. Standalone paths andconsumer-tar were omitted; no original rawdata loss. Newarchivechange closes packaging only. No executioncredit transfers to d70/laterH.",
+    "history": "Preserve original audit/gap/reviewer reports unchanged; their broaderrawabsence conclusions are superseded bythis correction."
+  }
+}

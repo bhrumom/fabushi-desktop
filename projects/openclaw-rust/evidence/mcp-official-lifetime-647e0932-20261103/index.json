@@ -1,0 +1,225 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "role": "immutable evidence carrier, not a new inventory/ledger/RTM or shipping acceptance",
+  "subjectCommit": "d70f86f33b5e3c67545954b270373e1548809f4b",
+  "subjectTree": "4c4c9cfd3f5067fef57dca530042d149a8e2fc5c",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "members": [
+    {
+      "path": "source-assessment.md",
+      "bytes": 19901,
+      "sha256": "9e462772cd29ebcf7279b64aad4d0928698e30d2d806a25ecad43ae72c225d9c",
+      "preservedFrom": "reviews/mcp-official-lifetime-assessment.md"
+    },
+    {
+      "path": "rust-admission-dependencies.md",
+      "bytes": 48990,
+      "sha256": "1cf828513cde0d6cfa72c468fd28c5c846da889e8b992097f2eba267cfb6b469",
+      "preservedFrom": "reviews/mcp-rust-admission-assessment.md"
+    },
+    {
+      "path": "r1-manifest.json",
+      "bytes": 2550,
+      "sha256": "4bb6d74a6871780f4e9178dc2d60b6d803331dbeec2f56d8fee29a21e7f492d3",
+      "preservedFrom": "reviews/mcp-official-r1/manifest.json"
+    },
+    {
+      "path": "r1-complete.patch",
+      "bytes": 38461,
+      "sha256": "e75ddf78d851dc731d244841c4bb958e337faafa930bea86248e9d7600027cd0",
+      "preservedFrom": "reviews/mcp-official-r1/complete.patch"
+    },
+    {
+      "path": "r1-security-review.md",
+      "bytes": 15494,
+      "sha256": "918d199e0673025cf1db8689427eb949d92cc20e2c391b817331368cde4e1c11",
+      "preservedFrom": "reviews/mcp-official-r1-security-review.md"
+    },
+    {
+      "path": "r1-structure-review.md",
+      "bytes": 12759,
+      "sha256": "aef7aa0edb801fbb94fff5b2a21a0f3e7ffdecf7c6d5012b394f7d9ec58d45fe",
+      "preservedFrom": "reviews/mcp-official-r1-structure-review.md"
+    },
+    {
+      "path": "r2-manifest.json",
+      "bytes": 2939,
+      "sha256": "8820fb59314bbf5a629c8cc6a5416b91109dc6bc7c7869b0a38e33ff94232d58",
+      "preservedFrom": "reviews/mcp-official-r2/manifest.json"
+    },
+    {
+      "path": "r2-complete.patch",
+      "bytes": 41916,
+      "sha256": "afaa7bdf640e94bf5f56ef710bf49eaf15fdbae6f5be636501faaff5d07757b9",
+      "preservedFrom": "reviews/mcp-official-r2/complete.patch"
+    },
+    {
+      "path": "r2-fix-delta.patch",
+      "bytes": 5523,
+      "sha256": "bef099701fa54b35f8af3088e0f92710b9ebdb21823e942e34572e1c01feb551",
+      "preservedFrom": "reviews/mcp-official-r2/fix-delta.patch"
+    },
+    {
+      "path": "required-cases.json",
+      "bytes": 1600,
+      "sha256": "dd02eccb23e931babe300dee3a04aad862d1cba7d1de98f95ec0ea9a3816802e",
+      "preservedFrom": "reviews/mcp-official-r2/required-cases.json"
+    },
+    {
+      "path": "r2-security-review.md",
+      "bytes": 16546,
+      "sha256": "f0ceea994846eadce317b1c39f46cc72e7a9a2a677647b33a453a37bbbfc90eb",
+      "preservedFrom": "reviews/mcp-official-r2-security-review.md"
+    },
+    {
+      "path": "r2-structure-review.md",
+      "bytes": 18002,
+      "sha256": "8d80738cba683458787145a258f6e720eba2d0d430cdc97e88cf7e614bc79366",
+      "preservedFrom": "reviews/mcp-official-r2-structure-review.md"
+    },
+    {
+      "path": "review-decisions.json",
+      "bytes": 7067,
+      "sha256": "dad0b16ef133a6feae8f94dc027c59250e3669c90716be1a24b80bf1db594f59",
+      "preservedFrom": "reviews/mcp-official-decisions.json"
+    },
+    {
+      "path": "publication-manifest.json",
+      "bytes": 2810,
+      "sha256": "228fbb8cae2b1362e770ce55dcabdc3fbf77e4d0bc50408c88950c3c6fb3bf8d",
+      "preservedFrom": "reviews/mcp-prid-publication/publication-972.json"
+    },
+    {
+      "path": "publication-readback.json",
+      "bytes": 3376,
+      "sha256": "5a2b6c9414f1c36afa0ae2de4446d3a3dae6ba01a370395de098886d87d57790",
+      "preservedFrom": "reviews/mcp-prid-publication/delivery.json"
+    }
+  ],
+  "sourceReview": "MCP R2 and PRID capture R1 fresh general/security and structure/reuse/performance approved source only; root read complete reports",
+  "runtimeEvidence": {
+    "runtimeRunId": 41578381556,
+    "sourceRunId": 41578381536,
+    "renderer": "148/148TAPpassed atd70 including15newexactMCP names; boundedshippingbundleonly",
+    "linux": "50portablegroupspass,2fail; App/Automation/PRIDskipped, separateAppcompilefailure; originalfailuresevidencepreserved",
+    "source": "structuralworkflowterminalsuccess only",
+    "macOS": "queued atoriginalaudit",
+    "newArchive": "d70PRIDstep skipped; no executioncredit",
+    "aggregate": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-final-evidence-audit.md"
+  },
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "remaining": "Full Rust ownership and ecosystem/platform/package/upgrade/rollback/G01-G12/AC01-AC24 acceptance remain open; all eight canonical flags unchanged",
+  "reconstruction": "Review manifests bind exact bases/trees/blobs; preserved complete and fix patches reconstruct the immutable scopes. Publication readback binds all seven final files. Source-read facts and assessment limits remain literal.",
+  "rawEvidencePolicy": "Original Actions artifact IDs/digests remain in reports. No blocked H5593 raw archive, credentials, executables or new raw fixture payload is uploaded here.",
+  "factualCorrection": {
+    "classification": "AUDITOR_ERROR: prior broad raw-byte absence/unrecoverability conclusion withdrawn",
+    "subject": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "originalArtifact": 13204320664,
+    "proof": {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.json",
+      "bytes": 64680,
+      "sha256": "4bdd465a6906d8045a3029a56e3377e9aee5bea1066ec00b3f72d304f8ef9d28"
+    },
+    "narrative": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.md",
+    "currentConclusion": "Original89-file consumer inventory has87direct members plus2lossless originalJSON u8 DB carriers. Each DB32768bytes SHA256678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974. Standalone paths andconsumer-tar were omitted; no original rawdata loss. Newarchivechange closes packaging only. No executioncredit transfers to d70/laterH.",
+    "history": "Preserve original audit/gap/reviewer reports unchanged; their broaderrawabsence conclusions are superseded bythis correction."
+  },
+  "executionMembers": [
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-final-evidence-audit.md",
+      "bytes": 10454,
+      "sha256": "551315cc328837530fafde965b2cc03b446eb5532378e6f6997568b97de9d7db"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-final-evidence-audit.json",
+      "bytes": 32029,
+      "sha256": "f0760a0a28d6bc86e272ae26808b99abd74c1bae53e94cf7ed33e5be88242484"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-final-report-index.json",
+      "bytes": 1776,
+      "sha256": "2f11fc3eb2acdc041a68074861a8691c56c5efbe9985021d61fab45a34945d41"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-portable-failure-diagnosis.md",
+      "bytes": 4454,
+      "sha256": "dba547660564c303ff0f14589925fc59c381862c393aa5843aadac4b8af6d417"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-portable-failure-diagnosis.json",
+      "bytes": 33883,
+      "sha256": "a06c7002016131c7faad4989dabb18126867a367d1b949e67d1da8d003613c9c"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-terminal-secondary-audit.json",
+      "bytes": 56314,
+      "sha256": "ec1df857c7d575b080acc958047fba26878c6142300f557a75797b86ca497752"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-plugin-audit.json",
+      "bytes": 32762,
+      "sha256": "7ab92f35663a4e417ed93a358cad266262c792badb67df96a1a1840ef2159397"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-portable-audit.json",
+      "bytes": 415924,
+      "sha256": "1cf4a9cdafd5f40b02e982b5143f98dc7f1ccb11b31d9ebc684cdc3193163454"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/d70-source-audit.json",
+      "bytes": 12871,
+      "sha256": "298617cc09b7915c2bb9daeb714b662d4aff5c0f22c19555ea23081757a4d555"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.md",
+      "bytes": 3916,
+      "sha256": "ce16836125c05b2795a98749249ad251feb3c02814eddaca76e180e1005f74a8"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.json",
+      "bytes": 64680,
+      "sha256": "4bdd465a6906d8045a3029a56e3377e9aee5bea1066ec00b3f72d304f8ef9d28"
+    }
+  ],
+  "pluginRecovery": {
+    "subject": "fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+    "tree": "ba707272d259b7da5f0def5f31eb3380ce6fd3e8",
+    "sourceReview": "FreshindependentAstra/Solxhigh approve4path immutable source; rootreadcomplete",
+    "runtime": "Noexecutionresultatthefa75checkpoint; preservedinto74 subject, separatefutureoriginalevidence required",
+    "members": [
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/plugin-auth-ci-recovery/manifest.json",
+        "bytes": 1838,
+        "sha256": "03a6db3152ce4454e0f74e4685579a29e63a4ebc0fb4e5aa7286a7b232f15eff"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/plugin-auth-ci-recovery/complete.patch",
+        "bytes": 7191,
+        "sha256": "c403ee62e75d7d4da5d1ea61ee72f0908f5c12aea3348f70d442c1a0a6130c3d"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/plugin-auth-ci-recovery/security-review.md",
+        "bytes": 11360,
+        "sha256": "050eb8690f5977008f9906dad3331725a3ab83a03f2132b516e9100bbda93d6c"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/plugin-auth-ci-recovery/structure-review.md",
+        "bytes": 13780,
+        "sha256": "d838c6df9414dbe5c60eddc1eb92fdf9b114423a6c1030184930ee1b5925585b"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/plugin-auth-ci-recovery/review-decisions.json",
+        "bytes": 5134,
+        "sha256": "45e1125f0d70e97a3dd4168f5976f33a618680106e7cdb2f793a0a96a42328ed"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/plugin-auth-ci-recovery/publication-readback.json",
+        "bytes": 2088,
+        "sha256": "26ab7b7ceb7aef71e69ea9d4f37497a29a3b81d83ffae68fc3e6004afe07cb27"
+      }
+    ]
+  }
+}

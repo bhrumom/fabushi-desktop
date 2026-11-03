@@ -1,0 +1,61 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 1,
+  "batch": "MCP-OFFICIAL-LIFETIME-v1",
+  "repositoryRoot": "/workspace/scratch/29e7135d8bfe/fabushi-desktop",
+  "base": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+  "baseTree": "a3d749529dfd92e985a085cea71807ff23b15088",
+  "startingHead": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+  "implementationSourceBase": "8e5cee76ebbe6e748dc6a8dc87d73142bf04109b",
+  "tree": "6f74362fb6f0ac0b37e66cc2c57c68614a65606b",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "scopeMode": "explicit5path currentuncommittedscope inisolatedindex; foreignworktreeexcluded",
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+      "blob": "f73275f0475f04702f4cbd44eeadcc4dcea8de0d",
+      "bytes": 37978,
+      "sha256": "c219ed7d479882f496d0e064bcb83875684cf18fef58fa6a87e0f5640ddd37f3",
+      "baseBlob": "2f6af6752039faee0418def3c9d3bf59c59002ac"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.ts",
+      "blob": "306336b67122cf6af3e5235dd70fe826c0ec864c",
+      "bytes": 8135,
+      "sha256": "543dae512796e1869f883ca75b1c9eb11819fd0e865e2d65ab4c0b04e8d8c368",
+      "baseBlob": "4236b468306aee00d727bbd59d27c15537fbf768"
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "blob": "90dcae53b6f1d26c89ce231e9e067e80799ee1c7",
+      "bytes": 28445,
+      "sha256": "ae11fb579731b7a36b519cee2d57364d22b41fc55be8ae5a69664ff9a1a45fb1",
+      "baseBlob": "6653252d5f12ad3e345ee9104dd58c93734594df"
+    },
+    {
+      "path": "source/electron-main/mcp/official-mcp-service.ts",
+      "blob": "a27e63e6abc6c3555a802ed9222e8d53ae876bf6",
+      "bytes": 23278,
+      "sha256": "ef16fa94c92a770386826bef1969f3ac0d519f6e70e1e5826dc834e29f2a5c84",
+      "baseBlob": "3da590f7908870f1c7ac7806326e6ed04093882c"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "blob": "dc8539423dfce5306e1ac96850c6bf098e308dc1",
+      "bytes": 101071,
+      "sha256": "d07b25b3277534eab108db7f3cff35ca35e55702d5b15b2b95ab1867ee32ff81",
+      "baseBlob": "c611c057f0dc57c35805adae759350d84c420ebe"
+    }
+  ],
+  "patches": {
+    "complete.patch": {
+      "base": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+      "bytes": 38461,
+      "sha256": "e75ddf78d851dc731d244841c4bb958e337faafa930bea86248e9d7600027cd0"
+    }
+  },
+  "authoredNewCases": 14,
+  "execution": "not-run; GitHubActions only"
+}

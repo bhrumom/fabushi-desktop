@@ -1,0 +1,455 @@
+{
+  "subject": {
+    "subject_commit": "d70f86f33b5e3c67545954b270373e1548809f4b",
+    "subject_tree": "4c4c9cfd3f5067fef57dca530042d149a8e2fc5c",
+    "run_id": "41578381556",
+    "run_attempt": "1",
+    "runner_os": "Linux",
+    "job": "sqlite-native-path",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    }
+  },
+  "artifact": {
+    "id": 13204704124,
+    "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-artifact-13204704124.zip",
+    "bytes": 464788,
+    "sha256": "37a64bad37cedad67277ceb7a71ffe40b47aa30bc38a778c708fddd7e635d005"
+  },
+  "receipt": {
+    "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-artifact-13204704124/channel-pending-recovery/receipt.json",
+    "bytes": 375717,
+    "sha256": "d1c0534713be71ba1c3bbbf2bd19a4f9c09366ac49bd99ad3371e06f3dde687f"
+  },
+  "source_authority": "Immutable git show at exact H; no mutable working-tree source or peer review verdict used.",
+  "evidence_bindings_consistent": true,
+  "inputs": 373,
+  "executed_groups": 52,
+  "failed_group_count": 2,
+  "retained_passing_groups": [
+    "generated-send-message-recorder",
+    "generated-send-message-contracts",
+    "integration",
+    "session-owner-namespace",
+    "codex-model-identity",
+    "codex-workspace-binding",
+    "codex-workspace-http",
+    "codex-model-regressions",
+    "memory-account-binding",
+    "checked-store",
+    "paired-device-sse",
+    "device-pairing-join",
+    "device-join-limit-state",
+    "device-join-ingress-http",
+    "device-join-legacy-http",
+    "device-join-tls",
+    "memory-synthesis-identity",
+    "production-memory-synthesis",
+    "session-claim-integration",
+    "session-claim-commit-custody",
+    "device-pairing",
+    "device-pairing-rotation-authority",
+    "device-pairing-rotation-gateway",
+    "device-pairing-revocation-authority",
+    "device-pairing-revocation-gateway",
+    "device-role-token-revocation-authority",
+    "device-role-token-revocation-gateway",
+    "device-token-rotation-wire-authority",
+    "device-token-rotation-wire-gateway",
+    "device-pairing-retained-stream",
+    "received-catalog-preparation",
+    "received-catalog-projection",
+    "received-catalog-toolset",
+    "received-catalog-runtime",
+    "preentry-cancellation-wiring",
+    "received-catalog-retry",
+    "received-catalog-builder-regressions",
+    "received-catalog-credential-match",
+    "channel-transport-chunks",
+    "plugin-uninstall-binding",
+    "plugin-uninstall-relay-handoff",
+    "plugin-cache-publication",
+    "plugin-session-consumer",
+    "provider-checkpoint-publication",
+    "provider-checkpoint-custody",
+    "generated-failure-history",
+    "canonical-root-admission",
+    "canonical-prior-root-image",
+    "canonical-prior-root-process",
+    "canonical-root-admission-contracts"
+  ],
+  "failures": [
+    {
+      "group": "plugin-uninstall-service",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--no-fail-fast",
+        "--test",
+        "mcp_service_contract",
+        "--test",
+        "plugin_skills_contract",
+        "--test",
+        "host_bundle_and_plugin_cache_contract",
+        "--test",
+        "workflow_store_contract",
+        "--test",
+        "workflow_commands_contract",
+        "--test",
+        "legacy_live_references_contract",
+        "--test",
+        "mcp_coordinator_relay_contract",
+        "--test",
+        "mcp_extension_contract",
+        "--test",
+        "mcp_production_contract",
+        "--test",
+        "host_production_extensions_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 101,
+      "capture_exit": 0,
+      "execution_error": null,
+      "oracle_accepted": false,
+      "required_positive_count": 11,
+      "required_positive_missing_or_nonunique": [],
+      "log": {
+        "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-artifact-13204704124/channel-pending-recovery/plugin-uninstall-service.log",
+        "bytes": 39708,
+        "sha256": "ea16bf0c3bb6756d16189ee7639bd0f2dee423b5daf8af715f74e6b271a31a4e"
+      },
+      "raw_failed_names": [
+        "desktop_service_contracts::desktop_refresh_and_sync_wait_for_the_actual_loader_and_status_reads_its_cache"
+      ],
+      "all_raw_result_summaries": [
+        {
+          "line": 769,
+          "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+        },
+        {
+          "line": 794,
+          "text": "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s"
+        },
+        {
+          "line": 803,
+          "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+        },
+        {
+          "line": 839,
+          "text": "test result: FAILED. 15 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s"
+        },
+        {
+          "line": 854,
+          "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+        },
+        {
+          "line": 864,
+          "text": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s"
+        },
+        {
+          "line": 894,
+          "text": "test result: ok. 23 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.32s"
+        },
+        {
+          "line": 905,
+          "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s"
+        },
+        {
+          "line": 918,
+          "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s"
+        },
+        {
+          "line": 939,
+          "text": "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s"
+        }
+      ],
+      "failure_excerpt": [
+        {
+          "line": 828,
+          "text": ""
+        },
+        {
+          "line": 829,
+          "text": "thread 'desktop_service_contracts::desktop_refresh_and_sync_wait_for_the_actual_loader_and_status_reads_its_cache' (14156) panicked at tests/mcp_coordinator_relay_contract.rs:889:9:"
+        },
+        {
+          "line": 830,
+          "text": "assertion `left == right` failed"
+        },
+        {
+          "line": 831,
+          "text": "  left: Object {\"authBlocked\": Array [Object {\"pluginId\": String(\"41\"), \"pluginName\": String(\"Calendar\")}], \"authRecovery\": Object {\"refreshOutcomeUnknown\": Bool(false), \"refusals\": Array [Object {\"pluginId\": String(\"41\"), \"pluginName\": String(\"Calendar\")}]}}"
+        },
+        {
+          "line": 832,
+          "text": " right: Object {\"authBlocked\": Array [Object {\"pluginId\": String(\"41\"), \"pluginName\": String(\"Calendar\")}]}"
+        },
+        {
+          "line": 833,
+          "text": "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
+        },
+        {
+          "line": 834,
+          "text": ""
+        },
+        {
+          "line": 835,
+          "text": ""
+        },
+        {
+          "line": 836,
+          "text": "failures:"
+        },
+        {
+          "line": 837,
+          "text": "    desktop_service_contracts::desktop_refresh_and_sync_wait_for_the_actual_loader_and_status_reads_its_cache"
+        },
+        {
+          "line": 838,
+          "text": ""
+        },
+        {
+          "line": 839,
+          "text": "test result: FAILED. 15 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s"
+        },
+        {
+          "line": 840,
+          "text": ""
+        }
+      ],
+      "classification": "TEST_FLAW",
+      "owner": "Existing Rust plugin-skills auth recovery / service test oracle",
+      "cause": "The exact-object status expectation omits authRecovery mandated by AR-08 for the actual retained refusal. The production projection contains the expected authBlocked and the required recovery projection.",
+      "fix_hint": "Keep the exact-object assertion and add the required authRecovery object, including refusals and refreshOutcomeUnknown=false. Preserve loader barriers, no-extra-request assertion, both later failed-loader paths and cache-byte invariance.",
+      "not_reached": "Assertions after line 892, including later failed-loader/cache-byte controls, were not reached in this test."
+    },
+    {
+      "group": "plugin-uninstall-state",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::mcp::plugin_skills::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 101,
+      "capture_exit": 0,
+      "execution_error": null,
+      "oracle_accepted": false,
+      "required_positive_count": 45,
+      "required_positive_missing_or_nonunique": [],
+      "log": {
+        "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-artifact-13204704124/channel-pending-recovery/plugin-uninstall-state.log",
+        "bytes": 37897,
+        "sha256": "2253b044dc51ffcab26b2d2796bdc7fc25d1fdcce9fb9d513a9d5fa4cdfdc6c4"
+      },
+      "raw_failed_names": [
+        "extensions::mcp::plugin_skills::sync_tests::poisoned_admission_fails_closed_for_retained_and_successor_readers_without_resetting_truth"
+      ],
+      "all_raw_result_summaries": [
+        {
+          "line": 793,
+          "text": "test result: FAILED. 91 passed; 1 failed; 0 ignored; 0 measured; 624 filtered out; finished in 1.33s"
+        }
+      ],
+      "failure_excerpt": [
+        {
+          "line": 780,
+          "text": ""
+        },
+        {
+          "line": 781,
+          "text": "---- extensions::mcp::plugin_skills::sync_tests::poisoned_admission_fails_closed_for_retained_and_successor_readers_without_resetting_truth stdout ----"
+        },
+        {
+          "line": 782,
+          "text": ""
+        },
+        {
+          "line": 783,
+          "text": "thread '<unnamed>' (14740) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:1738:9:"
+        },
+        {
+          "line": 784,
+          "text": "poison the private admission mutex"
+        },
+        {
+          "line": 785,
+          "text": ""
+        },
+        {
+          "line": 786,
+          "text": "thread 'extensions::mcp::plugin_skills::sync_tests::poisoned_admission_fails_closed_for_retained_and_successor_readers_without_resetting_truth' (14738) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:1756:108:"
+        },
+        {
+          "line": 787,
+          "text": "called `Result::unwrap()` on an `Err` value: \"plugin skills live admission poisoned\""
+        },
+        {
+          "line": 788,
+          "text": ""
+        },
+        {
+          "line": 789,
+          "text": ""
+        },
+        {
+          "line": 790,
+          "text": "failures:"
+        },
+        {
+          "line": 791,
+          "text": "    extensions::mcp::plugin_skills::sync_tests::poisoned_admission_fails_closed_for_retained_and_successor_readers_without_resetting_truth"
+        },
+        {
+          "line": 792,
+          "text": ""
+        },
+        {
+          "line": 793,
+          "text": "test result: FAILED. 91 passed; 1 failed; 0 ignored; 0 measured; 624 filtered out; finished in 1.33s"
+        },
+        {
+          "line": 794,
+          "text": ""
+        }
+      ],
+      "classification": "IMPL_BUG",
+      "owner": "Existing Rust PluginSkillsService retirement / refresh fencing",
+      "cause": "retire_for_replacement sets disposed and replacement_claimed, then its new fence_owned_refresh call propagates admission Mutex poison. This prevents constructing the mandatory same-Arc successor and consumes the one-shot claim even though admission already denies all readers.",
+      "fix_hint": "Handle only the admission Mutex poison at its lock boundary as an already terminally denied fence, preserving the poisoned Arc and no-I/O/no-reset behavior. Retain healthy exact-owner refresh fencing and propagate other/future errors explicitly. Do not blanket-ignore the helper Result, recover poisoned contents, clear poison, fork the admission owner or change the retained successor success assertion.",
+      "not_reached": "The successor unwrap at line 1756 fails; same-Arc, successor empty/current, startup poison error and final cache-byte assertions at 1757-1760 were not reached.",
+      "observed_limit": "No authorization widening is shown. Earlier retained-reader denial, empty current, retained index/cache and failed refresh/uninstall assertions completed before the lifecycle failure."
+    }
+  ],
+  "source_identities_and_excerpts": [
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "blob": "114898d12993ae7957175d82c43a54157fa4dbdc",
+      "bytes": 54583,
+      "sha256": "09efe631ea97b4cef73440b2468c474d25629f2e17b2435b20fd4c7b68227a82",
+      "excerpts": [
+        {
+          "first_line": 427,
+          "last_line": 438,
+          "text": "    fn is_denied(&self, plugin_id: &str) -> bool {\n        self.state\n            .lock()\n            .map(|state| {\n                state.recovery_fault\n                    || state.recovery_required\n                    || state.denied.contains_key(plugin_id)\n                    || state.durable.state.auth_refusals.contains_key(plugin_id)\n                    || state.durable.state.confirmed.contains(plugin_id)\n                    || state.durable.state.pending.contains_key(plugin_id)\n            })\n            .unwrap_or(true)"
+        },
+        {
+          "first_line": 741,
+          "last_line": 750,
+          "text": "    fn fence_owned_refresh(&self) -> Result<(), String> {\n        let mut live = self.admission.state.lock()\n            .map_err(|_| \"plugin skills live admission poisoned\".to_string())?;\n        if let Some(refresh) = live.refresh.as_mut() {\n            if Arc::ptr_eq(&refresh.owner, &self.refresh_owner) {\n                refresh.disposition = RefreshDisposition::Fenced;\n            }\n        }\n        Ok(())\n    }"
+        },
+        {
+          "first_line": 819,
+          "last_line": 837,
+          "text": "    pub fn auth_recovery_status(&self) -> Option<Value> {\n        let Ok(live) = self.admission.state.lock() else {\n            return Some(serde_json::json!({\n                \"refusals\": [], \"refreshOutcomeUnknown\": true,\n                \"fault\": \"admission-state-unavailable\",\n            }));\n        };\n        if !live.recovery_fault && !live.recovery_required && live.denied.is_empty() {\n            return None;\n        }\n        let mut status = serde_json::json!({\n            \"refusals\": live.denied.values().collect::<Vec<_>>(),\n            \"refreshOutcomeUnknown\": live.recovery_required,\n        });\n        if live.recovery_fault {\n            status[\"fault\"] = Value::String(\"admission-state-unavailable\".into());\n        }\n        Some(status)\n    }"
+        },
+        {
+          "first_line": 868,
+          "last_line": 900,
+          "text": "    pub(crate) fn successor_with_loader(\n        &self,\n        loader: Arc<dyn PluginSkillsLoader>,\n    ) -> Result<Self, String> {\n        self.retire_for_replacement()?;\n        Ok(Self::with_admission(\n            self.sand_root_dir.clone(),\n            loader,\n            Arc::clone(&self.admission),\n        ))\n    }\n\n    pub(crate) fn retire_for_replacement(&self) -> Result<(), String> {\n        // The predecessor's publication lock also orders committed cleanup.\n        // No successor may begin materialization before this one-shot claim.\n        let _publication = self\n            .publication\n            .lock()\n            .map_err(|_| \"plugin skills publication poisoned\".to_string())?;\n        let mut state = self\n            .state\n            .lock()\n            .map_err(|_| \"plugin skills state poisoned\".to_string())?;\n        if state.replacement_claimed {\n            return Err(\"plugin skills replacement already claimed\".into());\n        }\n        state.disposed = true;\n        state.replacement_claimed = true;\n        state.pending = None;\n        self.changed.notify_all();\n        drop(state);\n        self.fence_owned_refresh()\n    }"
+        },
+        {
+          "first_line": 936,
+          "last_line": 945,
+          "text": "    pub fn dispose(&self) {\n        let _publication = self.publication.lock().expect(\"plugin skills publication poisoned\");\n        let mut state = self.state.lock().expect(\"plugin skills state poisoned\");\n        state.disposed = true;\n        state.pending = None;\n        self.changed.notify_all();\n        drop(state);\n        // Repeated disposal of a predecessor cannot fence its successor's\n        // distinct owner/token. Keep this no-I/O boundary under composition.\n        let _ = self.fence_owned_refresh();"
+        }
+      ]
+    },
+    {
+      "path": "source/host/src/extensions/mcp/production.rs",
+      "blob": "fb672e8c3b9473607438a0db4fc733e205d5c59b",
+      "bytes": 12306,
+      "sha256": "2d404f48f2c5129317f646fa2f158570430cb1457d655536a7de392b00643eb9",
+      "excerpts": [
+        {
+          "first_line": 290,
+          "last_line": 307,
+          "text": "                    \"filePath\": record.file_path,\n                    \"pluginVersion\": record.plugin_version,\n                }))\n                .collect()\n        })\n    }\n\n    fn status(&self) -> serde_json::Value {\n        let mut status = serde_json::json!({ \"authBlocked\": self.current_auth_blocked() });\n        if let Some(recovery) = self.uninstall_recovery_status() {\n            status[\"uninstallRecovery\"] = recovery;\n        }\n        if let Some(recovery) = self.auth_recovery_status() {\n            status[\"authRecovery\"] = recovery;\n        }\n        status\n    }\n"
+        }
+      ]
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+      "blob": "3e14b69ace638bb62a7ddd16488cdca5f99e2cc2",
+      "bytes": 137366,
+      "sha256": "3df9f4a29b083b3946bcdcfc4eedb79336b4491546f8b3c0174251085b7eb544",
+      "excerpts": [
+        {
+          "first_line": 1730,
+          "last_line": 1761,
+          "text": "fn poisoned_admission_fails_closed_for_retained_and_successor_readers_without_resetting_truth() {\n    let h = Harness::new();\n    let seed = h.step(\"seed\", LoadStep::Loaded(two_plugins(&h.root, \"retained\"))).unwrap();\n    let bytes = fs::read(h.root.cache_path()).unwrap();\n    let reader = h.service.admission_reader();\n    let admission = Arc::clone(&h.service.admission);\n    assert!(thread::spawn(move || {\n        let _guard = admission.state.lock().unwrap();\n        panic!(\"poison the private admission mutex\");\n    }).join().is_err());\n    assert!(reader.is_denied(\"9\"));\n    assert!(reader.is_denied(\"10\"));\n    assert!(h.service.current().is_empty());\n    assert_eq!(h.service.current_index().unwrap().skills, seed);\n    assert_eq!(\n        h.call(\"poisoned-refresh\").finish().unwrap_err(),\n        \"plugin skills live admission poisoned\",\n    );\n    h.assert_calls(1);\n    assert_eq!(\n        h.service.begin_uninstall(\"9\").unwrap_err(),\n        \"plugin skills live admission poisoned\",\n    );\n    assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);\n    h.service.dispose();\n    assert_empty(h.call(\"disposed\").finish());\n    let successor = h.service.successor_with_loader(Arc::new(StaticLoader(two_plugins(&h.root, \"fresh\")))).unwrap();\n    assert!(Arc::ptr_eq(&reader, &successor.admission_reader()));\n    assert!(successor.current().is_empty());\n    assert_eq!(successor.sync(\"startup\").unwrap_err(), \"plugin skills live admission poisoned\");\n    assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);\n}"
+        }
+      ]
+    },
+    {
+      "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+      "blob": "597635f462d66ae10cea1ddad7d02a85fbf572ff",
+      "bytes": 47570,
+      "sha256": "3c4f3f42ffa21965fec2082ad4e0ad828a65e67bb34f598e5b48cf6a7b6a9926",
+      "excerpts": [
+        {
+          "first_line": 852,
+          "last_line": 910,
+          "text": "    fn desktop_refresh_and_sync_wait_for_the_actual_loader_and_status_reads_its_cache() {\n        let fixture = RealService::new();\n        for method in [\"refreshMcp\", \"syncPluginSkills\"] {\n            let service = Arc::clone(&fixture.service);\n            let (worker, result) = spawn_operation(move || {\n                service.dispatch_desktop_command(method, &json!({})).unwrap()\n            });\n            let request = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);\n            assert_eq!(request[\"payload\"][\"args\"], json!({}));\n            assert_eq!(fixture.relay.pending_count(), 1);\n            assert!(matches!(result.try_recv(), Err(mpsc::TryRecvError::Empty)),\n                \"acknowledgment cannot precede the actual sync result\");\n            fixture.resolve(&request, fixture.payload.clone());\n            let response = finish(worker, result).unwrap();\n            if method == \"refreshMcp\" {\n                assert_eq!(response, Value::Null);\n            } else {\n                let records = response.as_array().unwrap();\n                assert_eq!(records.len(), 1);\n                assert_eq!(records[0][\"id\"], \"plugin-41-schedule\");\n                assert_eq!(records[0][\"pluginId\"], \"41\");\n                assert_eq!(records[0][\"filePath\"], json!(fixture.skill_path));\n            }\n        }\n        let denied = json!({\n            \"plugins\":[], \"authBlocked\":[{\"pluginId\":\"41\",\"pluginName\":\"Calendar\"}],\n            \"listedPluginIds\":[\"41\"],\n            \"listedCacheKeys\":[{\"marketplaceSlug\":\"cursor\",\"pluginId\":\"calendar\"}],\n            \"publisherFacts\":{}, \"currentUserId\":11,\n        });\n        let service = Arc::clone(&fixture.service);\n        let (worker, result) = spawn_operation(move || {\n            service.dispatch_desktop_command(\"refreshMcp\", &json!({})).unwrap()\n        });\n        let request = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);\n        fixture.resolve(&request, denied);\n        assert_eq!(finish(worker, result).unwrap(), Value::Null);\n        assert_eq!(fixture.service.dispatch_desktop_command(\"getPluginSyncStatus\", &json!({}))\n            .unwrap().unwrap(), json!({\n                \"authBlocked\":[{\"pluginId\":\"41\",\"pluginName\":\"Calendar\"}],\n            }));\n        assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));\n        let before = fs::read(fixture.cache_path()).unwrap();\n        for method in [\"refreshMcp\", \"syncPluginSkills\"] {\n            let service = Arc::clone(&fixture.service);\n            let (worker, result) = spawn_operation(move || {\n                service.dispatch_desktop_command(method, &json!({})).unwrap()\n            });\n            let request = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);\n            fixture.relay.resolve(&json!({\n                \"requestId\":request[\"payload\"][\"requestId\"], \"ok\":false, \"error\":\"real loader failed\",\n            })).unwrap();\n            assert!(finish(worker, result).unwrap_err().contains(\"real loader failed\"));\n            assert_eq!(fs::read(fixture.cache_path()).unwrap(), before);\n        }\n        fixture.service.dispose().unwrap();\n        for method in [\"refreshMcp\", \"syncPluginSkills\", \"getPluginSyncStatus\"] {\n            assert!(fixture.service.dispatch_desktop_command(method, &json!({})).unwrap()\n                .unwrap_err().contains(\"closed\"));"
+        }
+      ]
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "blob": "5fd897559799de1ffde183c64cac60f2a386b985",
+      "bytes": 83070,
+      "sha256": "181ac3f02e7cc29d804d99f14da75d6fbcffe6c6c2837df4999378a0cadf91b1",
+      "excerpts": [
+        {
+          "first_line": 338,
+          "last_line": 347,
+          "text": "- **PS-LIVE-04 \u2014 Read-only sharing.** Expose a read-only admission reader from\n  the same owner. Every actual admission combines committed snapshot\n  eligibility with that reader. Consumers hold the reader, not a copied\n  denial table. `FileWorkflowStore` checks it on every plugin list/get/update\n  admission, including parse-cache hits, before reading or modifying skill\n  content. `current()` and every successful `sync` return, including a\n  completed coalesced pass, apply the same check. A poisoned admission or\n  forwarding-reader lock fails closed for plugin admission; it does not\n  silently become an empty denial set. Unrelated workflow families retain\n  their current behavior."
+        },
+        {
+          "first_line": 374,
+          "last_line": 411,
+          "text": "- **PS-LIVE-07 \u2014 Same-root stop/start.** Preserve legitimate MCP stop/start\n  within the same Host and Session lifetime. Host composition retains the\n  latest service `Arc` after `stop_mcp` takes its runtime. Before a replacement\n  can start, a crate-internal one-shot successor operation permanently fences\n  the predecessor through publication then state, and inherits its same\n  private admission `Arc`. A predecessor cannot fork two successor writers.\n  Reader binding to that same `Arc` is idempotent. Old loader/stage work and\n  delayed old-runtime stop cannot add refusals, rename a snapshot, clear the\n  successor's refusals, or dispose its local lifecycle state. Old committed\n  cleanup orders against handoff under old publication: briefly read the\n  one-shot replacement claim, drop state, then either skip superseded prune\n  or retain publication until the pure filesystem prune ends. Ordinary\n  dispose without a replacement claim keeps valid committed cleanup;\n  reporting remains outside publication and may finish after handoff. The\n  original PS-06 clause is narrowed consistently above.\n- **PS-LIVE-08 \u2014 Unbound startup and different roots.** Preserve MCP startup\n  before Session registration. Once a Session is registered it must bind to\n  the already-current service reader before that registration succeeds; both\n  startup orders must be serialized so neither can miss the other. If there\n  has never been a registered Session consumer in this Host, a stopped MCP\n  runtime may still restart with a different configured root: permanently\n  fence the old service and create a separate reader for the new root.\n  Never carry a denial-release operation from one root into another root's\n  retained reader. A later Session must match the current root. This is one\n  current Host binding, not a map of roots or a new permission registry.\n  A registered Session cannot be silently unbound or rebound to an unrelated\n  service by this operation; broader Session/account/root migration remains\n  open.\n- **PS-LIVE-09 \u2014 Failure-safe handoff.** Check root and known lifecycle\n  preconditions before retiring the old service. Once a successor has been\n  constructed, retain its `Arc` in Host before any later fallible Session\n  binding or startup action; a failed startup cannot leave Host pointing at\n  an already-consumed predecessor and make the next attempt fork or lose the\n  refusal state. Do not start polling after a binding error. Failed successor\n  retirement/one-shot claim does not create another writer. Pending old\n  callers wake under the existing dispose rules and return live-filtered\n  retained records; old runtime stop remains idempotent. Preserve existing\n  active-pass completion, panic recovery, recursive-sync refusal and real"
+        },
+        {
+          "first_line": 929,
+          "last_line": 935,
+          "text": "- **PR-07 \u2014 fresh owner and handoff.** Fresh construction loads this image and\n  publishes either its exact negative admission or a recovery fault. Host\n  preparation performs recovery I/O outside `PluginSkillsBinding`, then repeats\n  root/current-owner checks when installing the prepared service. A same-root\n  successor keeps the existing reader and facts; it must not replace them with\n  an earlier disk read. Preserve one-shot retirement, startup ordering and\n  failed-binding retry. A retired predecessor cannot settle a late ticket."
+        },
+        {
+          "first_line": 956,
+          "last_line": 962,
+          "text": "release; and normal reinstallation. Add an owned child-process oracle that exits\nafter durable reservation, after backend entry without a receipt, and after\nknown removal before successful refresh. A separate fresh process must enforce\nthe refusal with no replay while allowed plugin/user/managed controls remain.\nRetain all original shared-Arc successor tests; they are not restart evidence.\n\nRoot owns the contract, persistence/service protocol, production binding and"
+        },
+        {
+          "first_line": 1148,
+          "last_line": 1198,
+          "text": "**AR-07 \u2014 token lifetime and unchanged composition.** Every in-process refresh\nhas exact owner/token identity in the shared admission state. Dispose/retire\nholds P, fences its own active token, drops service-state before admission,\nand performs no I/O; `PluginSkillsBinding` may hold its lock around retirement.\nA clean known-fenced token retains healthy same-process cache availability;\nan inherited unknown remains unknown. The same-root successor inherits that\nArc and may replace the old fenced token at its next actual reservation under\nits own P, preserving all adverse facts. Old guards, old repeated dispose and\nlate results cannot touch a successor token or write through an old P. If the\nprocess ends before a later transition settles a fenced token, fresh startup\nis conservatively unknown, including a graceful shutdown in that window.\nThis bounded implementation does not promise offline availability after every\nsuch interrupted refresh. Fresh construction alone is not a same-root handoff.\nAuth-only writes do not advance the uninstall observation; real uninstall\ntransitions and integrity faults still fence old passes. No state/admission/\nbinding guard spans I/O, a clock, a loader or an external callback.\n\n**AR-08 \u2014 truthful existing status.** Keep cache `authBlocked` and existing\n`uninstallRecovery` semantics. Add optional `authRecovery` with sorted actual\n`refusals` and boolean `refreshOutcomeUnknown`; include fixed\n`fault: \"admission-state-unavailable\"` when integrity recovery is unsafe.\nPresent it only when facts, unknown or a fault exist, preserving the healthy\nempty status shape. This is a projection of the same owner, not a new grant,\nuninstall receipt or assertion that a remote effect stopped.\n\n**AR-09 \u2014 direct oracles and delivery.** Use the existing Actions Linux Host\ncache, strict command/capture receipts and actual shipping compilation. Extend\nexisting private-image/sync modules and the real MCP/Session owned-process\nharness; do not weaken retained assertions or use a copied reconciliation loop.\nRequired evidence covers:\n\n- strict v1/v2/legacy/unmarked migration, malformed/duplicate/alias/drift inputs;\n- intent reservation failure with zero loader calls; expected-versus-candidate\n  failure cuts, unknown readback and bytes retained; actual file publication\n  paths with narrow test-only I/O failure cuts identified as instrumentation;\n- real refusal plus invalid cache stage and real rename failure, then a distinct\n  child-process reader with offline loader: 9 excluded through Session get/list/\n  update/run/reference and actual provider prompt, 10/user/managed retained;\n- owned process loss at the durable-intent/loader boundary and a separate fresh\n  process: unknown, no replay, and later offline error cannot clear it; private\n  pre-outcome write controls establish the same pending image and fresh-owner\n  refusal without claiming every injected cut was a separate OS crash;\n- clean offline/malformed-result availability versus unknown partial recovery\n  with no old fallback; exact-ID/zero-Skill/current-denial release, failed cache\n  and journal release ordering, and truthful changed reporting;\n- existing healthy dispose, coalescing, recursion, panic, successor, old-prune\n  and pending-uninstall controls; held old loader/guard/dispose cannot alter a\n  successor's exact token or bytes. Preserve all original uninstall assertions;\n  update only private-format expectations to v2 and add the new field oracles.\n\nRoot owns the private schema, service, production status and shared capture."
+        }
+      ]
+    }
+  ],
+  "downstream": {
+    "automation_step_18": "skipped",
+    "actual_app_step_19": "skipped; source selection 100 outer / 203 commands is not execution credit",
+    "prior_root_step_20": "skipped; new current-consumer tar packaging has no runtime proof at d70"
+  },
+  "limits": [
+    "No local candidate execution, repair, rerun or GitHub mutation.",
+    "50 passing groups remain exact d70 observations, not transferable to another H.",
+    "Controlled poison-thread panic is the test setup; unexpected successor unwrap is the actual failure.",
+    "No compiler or environment root cause is supported by these original logs.",
+    "Global acceptance and all eight global flags remain false."
+  ],
+  "audit_instrument_history": "The initial auditor used an obsolete SGF summary count; preserved in d70-portable-audit-initial-instrument-observation.json. It was corrected to immutable d70 source count 17, without changing or rerunning any product test. Current original SGF evidence passes."
+}

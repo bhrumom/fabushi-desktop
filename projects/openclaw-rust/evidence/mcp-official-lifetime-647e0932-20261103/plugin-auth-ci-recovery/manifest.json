@@ -1,0 +1,44 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 1,
+  "scope": "AR-CI-01/02 complete four-path immutable recovery scope",
+  "base": "871b033c5b9aabbe322cc7322af92648939db9b5",
+  "startingHead": "871b033c5b9aabbe322cc7322af92648939db9b5",
+  "tree": "ba707272d259b7da5f0def5f31eb3380ce6fd3e8",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "preImplementationSpecBlob": "c99e744188d90d7b31448e45e9887148c835dda6",
+  "members": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "blob": "c99e744188d90d7b31448e45e9887148c835dda6",
+      "bytes": 85168,
+      "sha256": "13f417e3cb4be84844534cfa87f6ed3f145688305798389d53cd8a8545f1feb8"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "blob": "a0054eebb18e38b234689d72ca998dac3fd77901",
+      "bytes": 54745,
+      "sha256": "3d1b84f35987aecd493a7e969d2a412f6a3cfe16b821bde5d3ddd419070e3234"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+      "blob": "cb8abb868bef2469bded2dda87e0680e5c54b329",
+      "bytes": 137736,
+      "sha256": "a00c4a2831a73969216d9f76e9f23a4913b3e9d301139175f672240184d6b6b3"
+    },
+    {
+      "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+      "blob": "71144e4e578a51fd2281dcb6b743e5c7a11d569e",
+      "bytes": 47749,
+      "sha256": "4450bbc60739cf39db4c194e609f1423ac05f22cb2b67b8e144e6b84ccc2940f"
+    }
+  ],
+  "patchBytes": 7191,
+  "patchSha256": "c403ee62e75d7d4da5d1ea61ee72f0908f5c12aea3348f70d442c1a0a6130c3d",
+  "excluded": "DFA candidate, all foreign work and all evidence carrier files",
+  "execution": "not-run; Git identity snapshot only; GitHub Actions required",
+  "independentReview": "pending",
+  "unitVerified": false,
+  "globalAcceptance": false
+}

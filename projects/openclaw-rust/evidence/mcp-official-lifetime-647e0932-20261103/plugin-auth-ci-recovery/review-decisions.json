@@ -1,0 +1,97 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subjectH": "d70f86f33b5e3c67545954b270373e1548809f4b",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "base": "871b033c5b9aabbe322cc7322af92648939db9b5",
+  "runtimeRun": 41578381556,
+  "linuxJob": 125727154700,
+  "phase": "Published fa75 sourceidentityverified; both fresh independent source reviews approved/root fullread; no new Actions execution.",
+  "decisions": [
+    {
+      "id": "AR-CI-01",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "failure": "desktop_refresh_and_sync_wait_for_the_actual_loader_and_status_reads_its_cache expected only authBlocked after current completed refusal",
+      "rationale": "AR08 requires optional authRecovery containing actual refusals and refreshOutcomeUnknownfalse. Keep full equality and every prior loader/cache/lifecycle assertion, adding the required field only."
+    },
+    {
+      "id": "AR-CI-02",
+      "decision": "FIX",
+      "classification": "IMPL_BUG",
+      "failure": "poisoned_admission_fails_closed_for_retained_and_successor_readers_without_resetting_truth cannot construct sameArc successor after private admission poison",
+      "rationale": "New retire_for_replacement consumes disposed/replacement_claimed before propagating the no-I/O refresh-fence poison error. Existing PSLIVE07 and AR09 require original sharedArc successor/denial oracle. Poison already permanently denies all access; keep the same unavailable Arc without clearing/resetting/reading it and permit completed one-shot lifecycle handoff. Do not weaken the existing test to expect construction failure. Publication/state and duplicate-claim errors remain errors."
+    }
+  ],
+  "retainedEvidence": "d70 renderer148/148 and source structural workflow success remain bound to d70; native50 passing groups and failure records pending final independent classification. App/PRID skipped, no result transfer.",
+  "execution": "not-run; GitHub Actions only",
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "publication": {
+    "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+    "round": 1,
+    "sha": "fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+    "commitUrl": "https://github.com/bhrumom/fabushi-desktop/commit/fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+    "tree": "ba707272d259b7da5f0def5f31eb3380ce6fd3e8",
+    "parent": "871b033c5b9aabbe322cc7322af92648939db9b5",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "verified": true,
+    "verification": "GitHub connector complete commit/ref/tree/parent and all four full file bytes, Git blob, length and SHA256 readback; source identity only",
+    "files": [
+      {
+        "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "blob": "c99e744188d90d7b31448e45e9887148c835dda6",
+        "bytes": 85168,
+        "sha256": "13f417e3cb4be84844534cfa87f6ed3f145688305798389d53cd8a8545f1feb8",
+        "exactCommitPathAndFullBytesApiReadback": true
+      },
+      {
+        "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+        "blob": "a0054eebb18e38b234689d72ca998dac3fd77901",
+        "bytes": 54745,
+        "sha256": "3d1b84f35987aecd493a7e969d2a412f6a3cfe16b821bde5d3ddd419070e3234",
+        "exactCommitPathAndFullBytesApiReadback": true
+      },
+      {
+        "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+        "blob": "cb8abb868bef2469bded2dda87e0680e5c54b329",
+        "bytes": 137736,
+        "sha256": "a00c4a2831a73969216d9f76e9f23a4913b3e9d301139175f672240184d6b6b3",
+        "exactCommitPathAndFullBytesApiReadback": true
+      },
+      {
+        "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+        "blob": "71144e4e578a51fd2281dcb6b743e5c7a11d569e",
+        "bytes": 47749,
+        "sha256": "4450bbc60739cf39db4c194e609f1423ac05f22cb2b67b8e144e6b84ccc2940f",
+        "exactCommitPathAndFullBytesApiReadback": true
+      }
+    ],
+    "review": "Independent immutable reviews still active at publication",
+    "execution": "not-run; skip-ci recoverable checkpoint; exact-H GitHub Actions required",
+    "unitVerified": false,
+    "globalAcceptance": false,
+    "observedAt": "2026-11-03T04:47:09.519955+00:00"
+  },
+  "sourceReviews": [
+    {
+      "path": "reviews/plugin-auth-ci-r1-security-review.md",
+      "sha256": "050eb8690f5977008f9906dad3331725a3ab83a03f2132b516e9100bbda93d6c",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "launch": "forknone; actualtoolsettings",
+      "verdict": "APPROVE sourceonly; nofindings",
+      "rootRead": "complete"
+    },
+    {
+      "path": "reviews/plugin-auth-ci-r1-structure-review.md",
+      "sha256": "d838c6df9414dbe5c60eddc1eb92fdf9b114423a6c1030184930ee1b5925585b",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "launch": "forknone; actualtoolsettings",
+      "verdict": "APPROVE sourceonly; nofindings",
+      "rootRead": "complete"
+    }
+  ],
+  "sourceReviewLimit": "h.assert_calls(1) measures predecessor loader only; no direct successor loader-call measurement is claimed. Source traces successor failure before loader."
+}

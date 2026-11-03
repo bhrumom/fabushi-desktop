@@ -1,0 +1,107 @@
+diff --git a/projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md b/projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md
+index f73275f04..b5bf70250 100644
+--- a/projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md
++++ b/projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md
+@@ -537,7 +537,14 @@ of one existing official-service resource lifetime, not new OAuth policy.
+   dispose/reset, let replacement B commit its same-account image, then release
+   A and require zero A writes and exact unchanged B bytes. Include a current
+   successful write and a separately already-invoked held write to distinguish
+-  refusal from admitted outcome. Retain all prior MC/MR/MB/MD and official
++  refusal from admitted outcome. Additionally qualify the last pre-write check
++  independently: a real service with controlled scope I/O must retire after its
++  scope check has completed but before the mutation continuation invokes write.
++  Register the I/O completion notification before the awaited scope consumer,
++  then use that notification to queue retirement between the two continuations;
++  do not replace the production guard or guess elapsed delays. Require zero old
++  writes, unchanged stored bytes and a current replacement write positive.
++  Retain the default-composition cases and all prior MC/MR/MB/MD and official
+   controls; no credential or payload is added to diagnostics.
+ 
+ Allowed product paths are `source/electron-main/mcp/mcp-runtime.ts`,
+diff --git a/source/electron-main/mcp/mcp-runtime.contract.test.ts b/source/electron-main/mcp/mcp-runtime.contract.test.ts
+index dc8539423..2a56f1e1f 100644
+--- a/source/electron-main/mcp/mcp-runtime.contract.test.ts
++++ b/source/electron-main/mcp/mcp-runtime.contract.test.ts
+@@ -24,6 +24,7 @@ import { createProductionMcpOAuthAdapter, createProductionMcpOAuthPorts, createP
+ import type { ProductionServiceContext } from "../main-production-services.js";
+ import type { DesktopMcpManagerFacade } from "./desktop-mcp-manager.js";
+ import { createMcpRuntime } from "./mcp-runtime.js";
++import { OfficialMcpService } from "./official-mcp-service.js";
+ import { SandUserSecretsStore } from "../secrets/user-secrets-store.js";
+ 
+ test("shipping MCP runtime forwards discovery failure through the dedicated callback", async () => {
+@@ -2187,6 +2188,74 @@ test("MO-07 default official mutation cannot write after its final scope await i
+   }
+ });
+ 
++test("MO-07 official pre-write admission refuses retirement after the final scope check fulfills", { timeout: 10_000 }, async () => {
++  const accountScope = "a".repeat(64);
++  const finalScope = deferred<string>();
++  const entered = deferred<void>();
++  const retirementObserved = deferred<void>();
++  let holdFinalScope = false;
++  let stored = "{}";
++  const oldWrites: string[] = [];
++  const replacementWrites: string[] = [];
++  const unexpectedFetch = async (): Promise<Response> => { throw new Error("Unexpected official network I/O"); };
++  const old = new OfficialMcpService({
++    getScope: (): Promise<string> => {
++      if (!holdFinalScope) return Promise.resolve(accountScope);
++      holdFinalScope = false;
++      // Register before returning the native promise to scope()'s await. On
++      // release, this reaction queues retirement behind the scope continuation
++      // but ahead of the mutation continuation that scope then makes runnable.
++      void finalScope.promise.then(() => queueMicrotask(() => {
++        old.dispose();
++        retirementObserved.resolve();
++      }));
++      entered.resolve();
++      return finalScope.promise;
++    },
++    read: async scope => {
++      assert.equal(scope, accountScope);
++      holdFinalScope = true;
++      return stored;
++    },
++    write: async (scope, value) => {
++      assert.equal(scope, accountScope);
++      oldWrites.push(value);
++      stored = value;
++    },
++    fetch: unexpectedFetch,
++  });
++  const replacement = new OfficialMcpService({
++    getScope: () => Promise.resolve(accountScope),
++    read: async scope => { assert.equal(scope, accountScope); return stored; },
++    write: async (scope, value) => {
++      assert.equal(scope, accountScope);
++      replacementWrites.push(value);
++      stored = value;
++    },
++    fetch: unexpectedFetch,
++  });
++  let operation: Promise<void> | undefined;
++  try {
++    operation = old.install(OFFICIAL_ID, { ACCESS_TOKEN: "stale-provider" });
++    void operation.catch(() => {});
++    await entered.promise;
++    await replacement.install(OFFICIAL_ID, { ACCESS_TOKEN: "replacement-provider" });
++    assert.equal(replacementWrites.length, 1, "the current same-account service writes once");
++    assert.equal(JSON.parse(stored)[OFFICIAL_ID].token, "replacement-provider");
++    const committed = stored;
++    finalScope.resolve(accountScope);
++    await retirementObserved.promise;
++    await assert.rejects(operation, /disposed/);
++    assert.deepEqual(oldWrites, [], "the retired mutation never enters its write port");
++    assert.equal(stored, committed, "the replacement's exact stored bytes survive");
++  } finally {
++    finalScope.resolve(accountScope);
++    await Promise.allSettled(operation == null ? [] : [operation]);
++    old.dispose();
++    replacement.dispose();
++  }
++});
++
+ for (const result of ["success", "failure"] as const) {
+   test("MO-07 default official already-admitted write retains its " + result + " after reset", { timeout: 10_000 }, async t => {
+     const fixture = officialProductionFixture(t);

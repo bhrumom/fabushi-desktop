@@ -1,0 +1,165 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "MCP-OFFICIAL-LIFETIME-v1",
+  "phase": "Published and full API readback verified; exact-H Actions queued; no unit/global acceptance",
+  "at": "2026-11-03T03:57:08.192788+00:00",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "implementationBase": "8e5cee76ebbe6e748dc6a8dc87d73142bf04109b",
+  "sourceBase": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+  "assessment": {
+    "path": "reviews/mcp-official-lifetime-assessment.md",
+    "bytes": 19901,
+    "sha256": "9e462772cd29ebcf7279b64aad4d0928698e30d2d806a25ecad43ae72c225d9c",
+    "rootFullRead": true,
+    "sourceOnly": true
+  },
+  "specBeforeImplementation": {
+    "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+    "blob": "f73275f0475f04702f4cbd44eeadcc4dcea8de0d",
+    "bytes": 37978,
+    "sha256": "c219ed7d479882f496d0e064bcb83875684cf18fef58fa6a87e0f5640ddd37f3"
+  },
+  "allowedProductPaths": [
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.ts",
+      "baseBlob": "4236b468306aee00d727bbd59d27c15537fbf768"
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "baseBlob": "6653252d5f12ad3e345ee9104dd58c93734594df"
+    },
+    {
+      "path": "source/electron-main/mcp/official-mcp-service.ts",
+      "baseBlob": "3da590f7908870f1c7ac7806326e6ed04093882c"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "baseBlob": "c611c057f0dc57c35805adae759350d84c420ebe"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "MO-DEC-01",
+      "decision": "FIX",
+      "rationale": "Default official OAuth credential callback must reuse current runtime attempt getter, including cleanup. Preserve errors/backend; no replacement retry or retained cleanup credential."
+    },
+    {
+      "id": "MO-DEC-02",
+      "decision": "FIX",
+      "rationale": "Official changed callback and existing observer share runtime currentness forwarding helper; preserve exact official marker and no completion argument versus legacy completion forwarding."
+    },
+    {
+      "id": "MO-DEC-03",
+      "decision": "FIX",
+      "rationale": "Reuse official disposed latch after awaited scope and immediately before write; same-account stale writes refuse, admitted I/O retains outcome without replay or synthetic cancellation."
+    },
+    {
+      "id": "MO-DEC-04",
+      "decision": "ADOPT",
+      "rationale": "Minimal thin resource-bridge repair only; existing official business policy and full Rust migration remain open. Real default-composition controls in existing whole-file selected suite, no new workflow or test runtime."
+    },
+    {
+      "id": "MO-ORACLE-01",
+      "decision": "FIX",
+      "severity": "P2 verification gap",
+      "at": "2026-11-03T04:13:25.076032+00:00",
+      "rationale": "Current14default-composition cases hold final getScope I/O across disposal, so post-await scope guard alone satisfies them. They do not independently qualify the distinct scope-return-to-mutation continuation window requiring the last prewrite guard. Add a real-service controlled-I/O notification ordered before its scope await; queue retirement after scope continuation but before mutation continuation, requiring zero old write and current replacement positive. No production guard replacement, elapsed-delay guess or current implementation defect claim. Preserve all14 and prior suites.",
+      "specBeforeTest": {
+        "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+        "blob": "b5bf702509df7923163fb54ba87599bc3dfd338a",
+        "bytes": 38533,
+        "sha256": "bfd741eba2337e513051f3a24c44b216455967a58ab497805c21a77a91d6ae4f"
+      }
+    }
+  ],
+  "executableValidation": "not-run; GitHub Actions only",
+  "globalAcceptance": false,
+  "unitVerified": false,
+  "preservedIntegration": {
+    "incomingHead": "972779ecd290b90e407ffe651aa5c456c31e9f7f",
+    "incomingTree": "a75bb4706831a34b818e459f6be4df920560a2fe",
+    "base": "bb5a7f6098f952df6d388a672c4fb01045bc645c",
+    "paths": 9,
+    "fivePathScopeOverlap": false,
+    "source": "reviews/mcp-incoming-972/manifest.json",
+    "noAcceptanceTransfer": true
+  },
+  "r1SecurityReview": {
+    "path": "reviews/mcp-official-r1-security-review.md",
+    "sha256": "918d199e0673025cf1db8689427eb949d92cc20e2c391b817331368cde4e1c11",
+    "rootFullRead": true,
+    "verdict": "APPROVED_SOURCE_ONLY",
+    "actualModel": "gpt-6-astra",
+    "actualEffort": "xhigh",
+    "findings": 0,
+    "tree": "6f74362fb6f0ac0b37e66cc2c57c68614a65606b"
+  },
+  "r1StructureReview": {
+    "path": "reviews/mcp-official-r1-structure-review.md",
+    "sha256": "aef7aa0edb801fbb94fff5b2a21a0f3e7ffdecf7c6d5012b394f7d9ec58d45fe",
+    "rootFullRead": true,
+    "verdict": "APPROVED_SOURCE_ONLY",
+    "actualModel": "gpt-6.1-sol",
+    "actualEffort": "xhigh",
+    "findings": 0,
+    "tree": "6f74362fb6f0ac0b37e66cc2c57c68614a65606b"
+  },
+  "r2Freeze": {
+    "manifest": "reviews/mcp-official-r2/manifest.json",
+    "tree": "33d8b4c55277806d465081db13891cbca230076e",
+    "authoredNewCases": 15,
+    "productionBlobsUnchangedFromR1": true,
+    "rootReadSupplementalTest": true,
+    "at": "2026-11-03T04:17:19.928855+00:00"
+  },
+  "preservedIntegrationHistory": [
+    {
+      "incomingHead": "fdb0f6acb06165b6f2796961186e06a2de98c229",
+      "incomingTree": "abeb6ffdf09b676279462fea3b9e1f6d72abc1b6",
+      "base": "8e5cee76ebbe6e748dc6a8dc87d73142bf04109b",
+      "paths": 86,
+      "fivePathScopeOverlap": false,
+      "source": "reviews/mcp-incoming-fdb/manifest.json",
+      "noAcceptanceTransfer": true
+    },
+    {
+      "incomingHead": "bb5a7f6098f952df6d388a672c4fb01045bc645c",
+      "incomingTree": "5ad5f0e4a774947e22d6c3956775590503edac0c",
+      "base": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+      "paths": 55,
+      "fivePathScopeOverlap": false,
+      "source": "reviews/mcp-incoming-bb/manifest.json",
+      "noAcceptanceTransfer": true
+    }
+  ],
+  "r2SecurityReview": {
+    "path": "reviews/mcp-official-r2-security-review.md",
+    "sha256": "f0ceea994846eadce317b1c39f46cc72e7a9a2a677647b33a453a37bbbfc90eb",
+    "rootFullRead": true,
+    "verdict": "APPROVED_SOURCE_ONLY",
+    "findings": 0,
+    "actualModel": "gpt-6-astra",
+    "actualEffort": "xhigh",
+    "tree": "33d8b4c55277806d465081db13891cbca230076e"
+  },
+  "r2StructureReview": {
+    "path": "reviews/mcp-official-r2-structure-review.md",
+    "sha256": "8d80738cba683458787145a258f6e720eba2d0d430cdc97e88cf7e614bc79366",
+    "rootFullRead": true,
+    "verdict": "APPROVED_SOURCE_ONLY",
+    "findings": 0,
+    "actualModel": "gpt-6.1-sol",
+    "actualEffort": "xhigh",
+    "tree": "33d8b4c55277806d465081db13891cbca230076e"
+  },
+  "publication": {
+    "sha": "d70f86f33b5e3c67545954b270373e1548809f4b",
+    "tree": "4c4c9cfd3f5067fef57dca530042d149a8e2fc5c",
+    "parent": "972779ecd290b90e407ffe651aa5c456c31e9f7f",
+    "delivery": "reviews/mcp-prid-publication/delivery.json",
+    "verifiedSourceIdentity": true,
+    "runtimeRun": 41578381556,
+    "sourceRun": 41578381536
+  }
+}

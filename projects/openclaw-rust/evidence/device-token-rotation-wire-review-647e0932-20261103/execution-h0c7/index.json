@@ -1,0 +1,52 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "role": "immutable evidence carrier, not a new inventory/ledger/RTM or shipping acceptance",
+  "subjectCommit": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+  "subjectTree": "77aee57690a8d09cdf794f6459412ae26f604f1a",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "members": [
+    {
+      "path": "evidence-audit.md",
+      "bytes": 12839,
+      "sha256": "48806014d859966e389b5a3e1aa83d4562ae9ea9fb8c5b8301f5e9717556ef77",
+      "preservedFrom": "ci-recovery/drt-exact/0c7-evidence-audit.md"
+    },
+    {
+      "path": "evidence-audit.json",
+      "bytes": 20804,
+      "sha256": "67d413b99d6a7d720b157bfb0032f70dcdba60e8fbaa6c99dbac7d878a0da6b9",
+      "preservedFrom": "ci-recovery/drt-exact/0c7-evidence-audit.json"
+    }
+  ],
+  "sourceReview": "DTR R3 fresh general/security and structure/reuse/performance source reviews are retained in the parent evidence directory. This append records original0c7 Actions evidence only; it grants no MCP or new-H runtime credit.",
+  "runtimeEvidence": {
+    "runId": 41574595343,
+    "sourceRunId": 41574595364,
+    "portable": "52 groups / 372 inputs; DTR44 owner /14 HTTP /27 retained",
+    "App": "94 selected cases /191 commands /249 inputs",
+    "media": "12 Windows +12 Linux groups",
+    "source": "structural success; full recursive closure not established",
+    "PRID": "Original current-consumer bytecoverage complete via87directmembers+2originalJSON bytearrays; standaloneDB/tarpackaging absent. Seeappend-onlycorrection.",
+    "macOS": "queued at original audit; not passed"
+  },
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "remaining": "Full Rust ownership and ecosystem/platform/package/upgrade/rollback/G01-G12/AC01-AC24 acceptance remain open; all eight canonical flags unchanged",
+  "reconstruction": "Original0c7 commit/tree and original run/artifact IDs/digests are bound in the preserved audit. Prior DTR review manifests, patches and16-file publication readback remain in the parent evidence directory.",
+  "rawEvidencePolicy": "Original Actions artifact IDs/digests remain in reports. No blocked H5593 raw archive, credentials, executables or new raw fixture payload is uploaded here.",
+  "factualCorrection": {
+    "classification": "AUDITOR_ERROR: prior broad raw-byte absence/unrecoverability conclusion withdrawn",
+    "subject": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "originalArtifact": 13204320664,
+    "proof": {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.json",
+      "bytes": 64680,
+      "sha256": "4bdd465a6906d8045a3029a56e3377e9aee5bea1066ec00b3f72d304f8ef9d28"
+    },
+    "narrative": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.md",
+    "currentConclusion": "Original89-file consumer inventory has87direct members plus2lossless originalJSON u8 DB carriers. Each DB32768bytes SHA256678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974. Standalone paths andconsumer-tar were omitted; no original rawdata loss. Newarchivechange closes packaging only. No executioncredit transfers to d70/laterH.",
+    "history": "Preserve original audit/gap/reviewer reports unchanged; their broaderrawabsence conclusions are superseded bythis correction."
+  }
+}

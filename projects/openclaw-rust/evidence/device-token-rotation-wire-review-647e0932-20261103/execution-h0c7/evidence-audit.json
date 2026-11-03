@@ -1,0 +1,531 @@
+{
+  "subject_commit": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+  "subject_tree": "77aee57690a8d09cdf794f6459412ae26f604f1a",
+  "parent": "54b32b96ff827f4fee56fed494c866ca8c8b53ec",
+  "audit_recorded_utc": "2026-11-03T04:21:23.181210+00:00",
+  "configured_model_effort": "Parent assignment gpt-6-astra/xhigh; this records configuration, not model introspection.",
+  "campaign": "Same stateful original Actions evidence campaign. Earlier host capacity interruptions and e19/113 histories retained; this is not a retry or rerun.",
+  "runtime": {
+    "run_id": 41574595343,
+    "run_attempt": 1,
+    "head_sha": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "status": "queued",
+    "conclusion": null,
+    "jobs": [
+      {
+        "id": 125715057540,
+        "name": "sqlite-native-path",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-03T03:53:13Z",
+        "completed_at": "2026-11-03T04:17:29Z",
+        "nonpassing_steps": [
+          {
+            "name": "Preserve failed owned native-path and Automation fixtures",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 22,
+            "started_at": "2026-11-03T04:17:22Z",
+            "completed_at": "2026-11-03T04:17:22Z"
+          }
+        ]
+      },
+      {
+        "id": 125715057839,
+        "name": "rust-host",
+        "status": "queued",
+        "conclusion": null,
+        "started_at": "2026-11-03T03:50:44Z",
+        "completed_at": null,
+        "nonpassing_steps": []
+      },
+      {
+        "id": 125715057853,
+        "name": "OCRM media cleanup / Windows",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-03T03:53:03Z",
+        "completed_at": "2026-11-03T03:56:51Z",
+        "nonpassing_steps": []
+      },
+      {
+        "id": 125715057875,
+        "name": "renderer",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-03T04:04:04Z",
+        "completed_at": "2026-11-03T04:04:44Z",
+        "nonpassing_steps": [
+          {
+            "name": "Check production architecture boundary",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 15,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Compile Grok Electron boundary contracts",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 16,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Compile Fabushi product policy contract",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 17,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Test Grok Electron boundary contracts",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 18,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Test Fabushi product policy contract",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 19,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Test recovered window chrome contracts",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 20,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Check Agent workspace architecture boundary",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 21,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Check Grok architecture inventory",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 22,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Typecheck and build renderer",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 23,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Verify co-staged desktop runtime",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 24,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Enforce built desktop bundle boundary",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 25,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          },
+          {
+            "name": "Check Grok final architecture gate",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 26,
+            "started_at": "2026-11-03T04:04:41Z",
+            "completed_at": "2026-11-03T04:04:41Z"
+          }
+        ]
+      },
+      {
+        "id": 125715057981,
+        "name": "OCRM installation key restore boundary / Linux",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-03T04:04:38Z",
+        "completed_at": "2026-11-03T04:06:39Z",
+        "nonpassing_steps": []
+      },
+      {
+        "id": 125715058909,
+        "name": "platform-worker",
+        "status": "completed",
+        "conclusion": "skipped",
+        "started_at": "2026-11-03T03:50:45Z",
+        "completed_at": "2026-11-03T03:50:44Z",
+        "nonpassing_steps": []
+      },
+      {
+        "id": 125715059160,
+        "name": "Pressure profiler / ${{ matrix.os }}",
+        "status": "completed",
+        "conclusion": "skipped",
+        "started_at": "2026-11-03T03:50:45Z",
+        "completed_at": "2026-11-03T03:50:44Z",
+        "nonpassing_steps": []
+      }
+    ]
+  },
+  "source": {
+    "run_id": 41574595364,
+    "run_attempt": 1,
+    "head_sha": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "status": "completed",
+    "conclusion": "success",
+    "audit_consistent": true,
+    "scope": "G02 structural source evidence; final acceptance/source closure not established."
+  },
+  "independent_results": {
+    "portable": {
+      "audit_ok": true,
+      "groups": 52,
+      "inputs": 372,
+      "DTR_owner_HTTP_retained": [
+        44,
+        14,
+        27
+      ],
+      "final_artifact_byte_identical_to_before_App": true
+    },
+    "main_App": {
+      "audit_ok": true,
+      "selected_outer_cases": 94,
+      "commands": 191,
+      "inputs": 249,
+      "new_DTR_cases": [
+        {
+          "name": "tests::device_token_rotation_wire_tests::token_rotation_shipping_operator_replacement_preserves_node_and_local_after_reopen",
+          "named_invocation_prefix_count": 1,
+          "complete_named_success_count": 1,
+          "log_sha256": "f80343c5e329adb74b457cc1569ad365ab187f161d6c9c420b8e1d46b1ccc1a3",
+          "selected_command_exit": 0
+        },
+        {
+          "name": "tests::device_token_rotation_wire_tests::token_rotation_shipping_node_replacement_withholds_secret_and_preserves_pairing_after_reopen",
+          "named_invocation_prefix_count": 1,
+          "complete_named_success_count": 1,
+          "log_sha256": "9206996d1a67e7a4db1661f565ec44cd34af701a56bc3d6aa9f70ff698161a17",
+          "selected_command_exit": 0
+        },
+        {
+          "name": "tests::device_token_rotation_wire_tests::token_rotation_shipping_hook_keeps_sealed_identity_native_ceiling_and_existing_owner",
+          "named_invocation_prefix_count": 1,
+          "complete_named_success_count": 1,
+          "log_sha256": "1de4bde5dfa99b98ce9e3034e5566c9e49c3289989db93d80fa13b934e0be1b9",
+          "selected_command_exit": 0
+        }
+      ],
+      "startup_cases": 7,
+      "all_complete_named_successes_once": true
+    },
+    "media": [
+      {
+        "platform": "Windows",
+        "audit_consistent": true,
+        "groups": 12,
+        "result": "passed",
+        "inputs": 37
+      },
+      {
+        "platform": "Linux",
+        "audit_consistent": true,
+        "groups": 12,
+        "result": "passed",
+        "inputs": 37
+      }
+    ],
+    "Automation_link_preview": {
+      "audit_ok": true,
+      "Automation_inputs": 30,
+      "link_preview_inputs": 31,
+      "link_preview_own_groups": 3,
+      "filtered_App_cases": 3,
+      "reuse": "same-H Automation producer reused; no second composition command"
+    },
+    "PRID": {
+      "Actions_step_success": true,
+      "receipt_result": "passed",
+      "initial_directory_audit_ok": false,
+      "source_commands_provenance_children_persistent_image_audit_ok": true,
+      "current_source_snapshot_files_each": 9304,
+      "historical_with_test_overlay_snapshot_files_each": 9287,
+      "exact_commands": 8,
+      "utilities": 2,
+      "fresh_current_children": 8,
+      "historical_raw_payload_fully_audited_from_original_tar": true,
+      "current_consumer_raw_file_coverage_complete": false,
+      "missing_current_raw_files": [
+        {
+          "path": "cases/legacy-nonempty-no-alias/state-after/agents/.call-sessions.db",
+          "size": 32768,
+          "sha256": "678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974"
+        },
+        {
+          "path": "cases/present-empty/state-after/agents/.call-sessions.db",
+          "size": 32768,
+          "sha256": "678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974"
+        }
+      ],
+      "classification": "TEST_FLAW",
+      "boundary": "final artifact upload excludes hidden descendant files",
+      "product_failure_proved": false
+    }
+  },
+  "observed_failures": [
+    {
+      "classification": "TEST_FLAW",
+      "owner": "Existing prior-root capture and final evidence upload",
+      "scope": "two absent current-consumer raw DB files after hidden-file filtering",
+      "evidence": {
+        "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-prior-root-capture-gap.json",
+        "bytes": 17503,
+        "sha256": "866151acbaa1ca9a2253aecd9fd318bf3d632667097e5fdfe4a5f8f20349dab6"
+      },
+      "fix_hint": "Root will add a minimal allowlisted current-consumer archive before next H. No broad hidden-files toggle or rerun authorized/performed."
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13204320664,
+      "name": "ocrm-sqlite-native-path-0c7da50fcf457184f38d6a61b73f8e32810cff49-41574595343-1",
+      "declared_bytes": 4436927,
+      "declared_digest": "sha256:f3890cd4665c68767fb4f529a45dc5b9dd2ed8a8b94734eb8cbe61f9ff7bfd5d",
+      "local": {
+        "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-artifact-13204320664.zip",
+        "bytes": 4436927,
+        "sha256": "f3890cd4665c68767fb4f529a45dc5b9dd2ed8a8b94734eb8cbe61f9ff7bfd5d"
+      },
+      "size_and_digest_match": true
+    },
+    {
+      "id": 13203625848,
+      "name": "ocrm-media-cleanup-Linux-0c7da50fcf457184f38d6a61b73f8e32810cff49-41574595343-1",
+      "declared_bytes": 85824,
+      "declared_digest": "sha256:bec9802c239aaeba7868bafd4c5ff25eb9196223b4c688451b68633ce8ae8cc7",
+      "local": {
+        "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-artifact-13203625848.zip",
+        "bytes": 85824,
+        "sha256": "bec9802c239aaeba7868bafd4c5ff25eb9196223b4c688451b68633ce8ae8cc7"
+      },
+      "size_and_digest_match": true
+    },
+    {
+      "id": 13203366783,
+      "name": "ocrm-media-cleanup-Windows-0c7da50fcf457184f38d6a61b73f8e32810cff49-41574595343-1",
+      "declared_bytes": 89907,
+      "declared_digest": "sha256:9ca9cb1d7bc0cabf79dea6ea57740344ee8ed6c25b577771ff500e7283222a07",
+      "local": {
+        "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-artifact-13203366783.zip",
+        "bytes": 89907,
+        "sha256": "9ca9cb1d7bc0cabf79dea6ea57740344ee8ed6c25b577771ff500e7283222a07"
+      },
+      "size_and_digest_match": true
+    },
+    {
+      "id": 13203328129,
+      "name": "ocrm-linux-before-automation-0c7da50fcf457184f38d6a61b73f8e32810cff49-41574595343-1",
+      "declared_bytes": 471563,
+      "declared_digest": "sha256:af53a98eecf0fd6f53aaece3cffb47b4e03edc64c637980aa6179f0e6958eec7",
+      "local": {
+        "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-artifact-13203328129.zip",
+        "bytes": 471563,
+        "sha256": "af53a98eecf0fd6f53aaece3cffb47b4e03edc64c637980aa6179f0e6958eec7"
+      },
+      "size_and_digest_match": true
+    },
+    {
+      "id": 13203046754,
+      "name": "ocrm-p0-authority-0c7da50fcf457184f38d6a61b73f8e32810cff49",
+      "declared_bytes": 4951795,
+      "declared_digest": "sha256:628f4b1192311b0051f6a0228261bb04e8478f9b7d0b855e7fa735daea173515",
+      "local": {
+        "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-artifact-13203046754.zip",
+        "bytes": 4951795,
+        "sha256": "628f4b1192311b0051f6a0228261bb04e8478f9b7d0b855e7fa735daea173515"
+      },
+      "size_and_digest_match": true
+    }
+  ],
+  "full_original_job_logs": [
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-linux-terminal.log",
+      "bytes": 5522000,
+      "sha256": "8cec5717ee9f5603aef6a925ed64357cc1642ccb7669dfd04eff2ce5737414a3"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-windows-terminal-log.log",
+      "bytes": 822177,
+      "sha256": "3615fcf694b6789473113eb0623c1f2c0016f3497c8c9b78ba9e05f626fb6427"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-source-authority-log.log",
+      "bytes": 31518,
+      "sha256": "8a5fdc26c6d3e72f4441fed735fb71dbfa4030fd7597d8109e9c9eaabcabb089"
+    }
+  ],
+  "components": [
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-source-custody.json",
+      "bytes": 13691,
+      "sha256": "c16e8377245a0dfbd2e9b09ad3b04771ad688c99f0b2fb08562dee82530e773b"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-source-expectations.json",
+      "bytes": 317989,
+      "sha256": "d06fbb9183509a5b8b814a717e70ffaa2dc5b24daff961a1c4ad15f4e28098fd"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-portable-audit.json",
+      "bytes": 409649,
+      "sha256": "1337a870f8f01009a8e6a642659a0d255a3b29b4356075ed0a8afdc04bfa7bc3"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-portable-final-comparison.json",
+      "bytes": 183,
+      "sha256": "cdb806c150034811778ae32fee5bdb0c433bda042f30dd327da3c0cf66b1cfb1"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-app-audit.json",
+      "bytes": 335006,
+      "sha256": "09c3e8d37c6975035a7ce1bf841b347b884ea3a6133135ee478922943430cc32"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-app-name-occurrences.json",
+      "bytes": 36039,
+      "sha256": "7fd44f8daf32937a2213dbff7486affb0a1716e27b270f8478cadecbda42cff2"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-media-audit.json",
+      "bytes": 150638,
+      "sha256": "513504b7ec6cc0e05a5b411f32479599214aa1c01a51f53a6c181189e7cddeec"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-secondary-audit.json",
+      "bytes": 21573,
+      "sha256": "004c0df5b0bdf063e395c000fb89d74e6a9c3fffde248b297910bdd22d8cb790"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-source-audit.json",
+      "bytes": 12862,
+      "sha256": "67734c92f3a21340f6836613999b293858900ba6ecdf3f52eb13f7a0b13924c3"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-prior-root-audit.json",
+      "bytes": 50146,
+      "sha256": "a19e7a06263fff31ce17172e46173e750fcea4c90cf09578d9842839e53123f4"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-prior-root-details-audit.json",
+      "bytes": 16984,
+      "sha256": "716c9a28b68c5cddd71a66e686118250f6e7a9709d353bdde155e2d16dc3e017"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-prior-root-initial-observation.json",
+      "bytes": 574,
+      "sha256": "07369ff5965466b2396bce0cbbb6d7946dfbfd002a35cfa87d1383773ceaf789"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-prior-root-capture-gap.json",
+      "bytes": 17503,
+      "sha256": "866151acbaa1ca9a2253aecd9fd318bf3d632667097e5fdfe4a5f8f20349dab6"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-prior-root-source-expectations.json",
+      "bytes": 3246,
+      "sha256": "2cf762be80450a2d63096179f9efd8ef6b2c189f0572759bcee995ef743d115d"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-prid-git-blob-identities.json",
+      "bytes": 1493849,
+      "sha256": "6722f2a970f31c4e4eff662fdcd47f32310b1d197b40d16459c9812d3033a36e"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-jobs-stage12.json",
+      "bytes": 46902,
+      "sha256": "93b906ee92e9c410c62b22efded3b55f500602e4dd1e9544bffac21d74a69f99"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-runtime-after-linux.json",
+      "bytes": 29160,
+      "sha256": "16fc7788ee4374ab4971347ce85721716d143587932a04e801fa854f8e0a28c6"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-source-terminal.json",
+      "bytes": 29180,
+      "sha256": "9510f8bef653c2bc9f712ff6e9eb8dcd8f2d901395152dcd3ef06888f2ff05db"
+    }
+  ],
+  "historical_results_preserved": [
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/e19-evidence-audit.json",
+      "bytes": 6391,
+      "sha256": "9530303d1f3d991aa766014779994b3d222fab52a565cd410546dd3e620eb73d"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/113-evidence-audit.json",
+      "bytes": 5872,
+      "sha256": "faed5974633115bb0ba643f6d2e5cecd785ecfc6ab2225ff2f314ba792e016e0"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/113-dtr-http-failure-diagnosis.json",
+      "bytes": 22244,
+      "sha256": "dd0935a90c977615bcf9be7ebbd314cba96fb7451f5335727d9c6547f1d31bbe"
+    }
+  ],
+  "limits": {
+    "unit_verified": false,
+    "independent_acceptance": false,
+    "global_closure": false,
+    "completion_flags": {
+      "baseline_identity_accepted": false,
+      "ecosystem_compatibility_accepted": false,
+      "production_wiring_complete": false,
+      "release_accepted": false,
+      "responsibility_mapping_complete": false,
+      "rust_implementation_complete": false,
+      "source_closure_ready": false,
+      "ui_accepted": false
+    },
+    "macOS": "queued; no pass credit",
+    "renderer": "job success; broad build/architecture/UI steps skipped and not passing coverage",
+    "platform_pressure": "skipped",
+    "real_devices_providers_packages": "not established by this campaign",
+    "binary_hashes": "Actions-reported binary hashes linked to Cargo JSON and exact commands; raw executable binaries are not in the archive for independent rehash",
+    "newer_branch": "No credit transferred to8e5cee or future MCP checkpoint; audit subject remains0c7",
+    "historical_BASE": "e19 historical producer is explicitly separate from current0c7 Host/App",
+    "local_execution": "None. Only immutable source/data reads, original artifact extraction/hashes and report parsing.",
+    "GitHub_mutations": "None; no dispatch/rerun/cancel/upload."
+  },
+  "disposition": "SCOPED_RUNTIME_PASSES_WITH_PRID_UPLOAD_TEST_FLAW_AND_MACOS_PENDING",
+  "final_status_observation": {
+    "recorded_utc": "2026-11-03T04:23:05.191892+00:00",
+    "runtime": {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-runtime-final-observation.json",
+      "bytes": 29160,
+      "sha256": "16fc7788ee4374ab4971347ce85721716d143587932a04e801fa854f8e0a28c6"
+    },
+    "jobs": {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-jobs-final-observation.json",
+      "bytes": 46902,
+      "sha256": "93b906ee92e9c410c62b22efded3b55f500602e4dd1e9544bffac21d74a69f99"
+    },
+    "unchanged": "Linux and Windows completed success; macOS queued; runtime queued; platform/pressure skipped."
+  }
+}

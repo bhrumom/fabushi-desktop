@@ -1,0 +1,42 @@
+{
+  "subject_commit": "d70f86f33b5e3c67545954b270373e1548809f4b",
+  "reports": [
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-final-evidence-audit.md",
+      "bytes": 10454,
+      "sha256": "551315cc328837530fafde965b2cc03b446eb5532378e6f6997568b97de9d7db"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-final-evidence-audit.json",
+      "bytes": 32029,
+      "sha256": "f0760a0a28d6bc86e272ae26808b99abd74c1bae53e94cf7ed33e5be88242484"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-portable-failure-diagnosis.md",
+      "bytes": 4454,
+      "sha256": "dba547660564c303ff0f14589925fc59c381862c393aa5843aadac4b8af6d417"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-portable-failure-diagnosis.json",
+      "bytes": 33883,
+      "sha256": "a06c7002016131c7faad4989dabb18126867a367d1b949e67d1da8d003613c9c"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/d70-terminal-secondary-audit.json",
+      "bytes": 56314,
+      "sha256": "ec1df857c7d575b080acc958047fba26878c6142300f557a75797b86ca497752"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/0c7-original-json-carrier-correction.md",
+      "bytes": 3916,
+      "sha256": "ce16836125c05b2795a98749249ad251feb3c02814eddaca76e180e1005f74a8"
+    },
+    {
+      "path": "/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/0c7-original-json-carrier-correction.json",
+      "bytes": 64680,
+      "sha256": "4bdd465a6906d8045a3029a56e3377e9aee5bea1066ec00b3f72d304f8ef9d28"
+    }
+  ],
+  "no_global_acceptance": true,
+  "no_future_H_credit": true
+}

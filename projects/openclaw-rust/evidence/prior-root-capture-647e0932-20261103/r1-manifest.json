@@ -1,0 +1,25 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "PRID-CAPTURE-01",
+  "reviewRound": 1,
+  "base": "bb5a7f6098f952df6d388a672c4fb01045bc645c",
+  "tree": "404e67071f01a490187a7cd538ac31899a240d54",
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/canonical-prior-root-identity.md",
+      "blob": "5f3f7163dc44d7a5d160a82ea9236d91c2d524cf",
+      "bytes": 10258,
+      "sha256": "9cd4e53fcfa060ed4d5326c9bb178845b41b182255407297f95d2080ba28fce1"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_prior_root_contracts.py",
+      "blob": "93adbe6c32a5fe1531ac7f7baf1387a0b567c3d1",
+      "bytes": 17088,
+      "sha256": "d6a0bf23c7ccf0410646eb2dfe1bb5be0e81c35be8f273e8b41584c35240eaf8"
+    }
+  ],
+  "patchSha256": "2930fcf66ba965a73ad2dedc39b27a81baa2e8da93f8ef0b196127da938bb880",
+  "execution": "not-run; Actions only",
+  "specBeforeImplementation": "5f3f7163dc44d7a5d160a82ea9236d91c2d524cf"
+}

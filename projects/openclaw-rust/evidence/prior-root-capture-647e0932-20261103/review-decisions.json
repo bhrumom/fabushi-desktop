@@ -1,0 +1,74 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "PRID-CAPTURE-01",
+  "base": "bb5a7f6098f952df6d388a672c4fb01045bc645c",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "decision": "FIX",
+  "classification": "TEST_FLAW: evidence-upload incompleteness",
+  "originalSubject": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+  "originalRun": 41574595343,
+  "originalArtifact": 13204320664,
+  "originalArtifactSha256": "f3890cd4665c68767fb4f529a45dc5b9dd2ed8a8b94734eb8cbe61f9ff7bfd5d",
+  "cause": "The original scoped upload uses include-hidden-files=false. Four inventoried agents/.call-sessions.db files are absent from unpacked directories. Both historical copies remain recoverable from the original historical-fixtures.tar.gz; the two current-consumer state-after copies have no corresponding archive.",
+  "rationale": "Preserve the existing inventoried, closed current-consumer evidence subtree as its own tar.gz with an externally recorded archive digest, size and inventory digest. Keep the old consumer_inventory_sha256 field. Do not enable hidden-file uploads for the whole native evidence root, change production state, weaken assertions, or rewrite original H evidence as complete.",
+  "allowedPaths": [
+    "projects/openclaw-rust/docs/specs/canonical-prior-root-identity.md",
+    "projects/openclaw-rust/scripts/capture_prior_root_contracts.py"
+  ],
+  "retainedEvidence": "Original source/binary bindings, exact eight historical commands and two successful utilities, App94/191/249, portable52/372, Automation and link-preview remain distinct positive evidence at original H. Consumer raw-byte completeness is unproven at that H.",
+  "verification": "Fresh source review then existing GitHub Actions exact-H capture. Independent audit of the uploaded consumer archive must compare every inventoried member/path/size/hash, including both hidden DBs. No local execution or unmodified retry.",
+  "globalAcceptance": false,
+  "specBeforeImplementation": "5f3f7163dc44d7a5d160a82ea9236d91c2d524cf",
+  "frozenTree": "404e67071f01a490187a7cd538ac31899a240d54",
+  "at": "2026-11-03T04:20:29.487563+00:00",
+  "reviews": [
+    {
+      "path": "reviews/prid-capture-r1-security-review.md",
+      "sha256": "40485fd535e47a90eb7f6eea43054b79c6d0b1237dfe82e0f9376b551c7bdcce",
+      "rootFullRead": true,
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "findings": 0,
+      "actualModel": "gpt-6-astra",
+      "actualEffort": "xhigh",
+      "tree": "404e67071f01a490187a7cd538ac31899a240d54"
+    },
+    {
+      "path": "reviews/prid-capture-r1-structure-review.md",
+      "sha256": "9a1e016200217668a883de303e2dded1539eb4163f41c0ddafa79335b2d114bc",
+      "rootFullRead": true,
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "findings": 0,
+      "actualModel": "gpt-6.1-sol",
+      "actualEffort": "xhigh",
+      "tree": "404e67071f01a490187a7cd538ac31899a240d54"
+    }
+  ],
+  "phase": "Published and full API readback verified; exact-H Actions queued; no unit/global acceptance",
+  "adjudicatedAt": "2026-11-03T04:28:48.577692+00:00",
+  "publication": {
+    "sha": "d70f86f33b5e3c67545954b270373e1548809f4b",
+    "tree": "4c4c9cfd3f5067fef57dca530042d149a8e2fc5c",
+    "parent": "972779ecd290b90e407ffe651aa5c456c31e9f7f",
+    "delivery": "reviews/mcp-prid-publication/delivery.json",
+    "verifiedSourceIdentity": true,
+    "runtimeRun": 41578381556,
+    "sourceRun": 41578381536
+  },
+  "historicalDecisionSha256": "ffb3ac3a52c24f8e8f387983d8cc455b3661a8682f10e0337c4dd0332e0494af",
+  "factualCorrection": {
+    "classification": "AUDITOR_ERROR: prior broad raw-byte absence/unrecoverability conclusion withdrawn",
+    "subject": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "originalArtifact": 13204320664,
+    "proof": {
+      "path": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.json",
+      "bytes": 64680,
+      "sha256": "4bdd465a6906d8045a3029a56e3377e9aee5bea1066ec00b3f72d304f8ef9d28"
+    },
+    "narrative": "projects/openclaw-rust/evidence/mcp-official-lifetime-647e0932-20261103/execution-hd70/0c7-original-json-carrier-correction.md",
+    "currentConclusion": "Original89-file consumer inventory has87direct members plus2lossless originalJSON u8 DB carriers. Each DB32768bytes SHA256678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974. Standalone paths andconsumer-tar were omitted; no original rawdata loss. Newarchivechange closes packaging only. No executioncredit transfers to d70/laterH.",
+    "history": "Preserve original audit/gap/reviewer reports unchanged; their broaderrawabsence conclusions are superseded bythis correction."
+  },
+  "currentClassification": "TEST_FLAW: standalonecurrent-consumer archive packaging only; AUDITOR_ERROR for earlier unrecoverablerawbyte claim",
+  "currentPhase": "Sourcepublishedatd70; newtar runtime skipped duecausalupstreamfailures; original0c bytes fullyauditable"
+}

@@ -1,0 +1,68 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 2,
+  "batch": "MCP-OFFICIAL-LIFETIME-v1",
+  "repositoryRoot": "/workspace/scratch/29e7135d8bfe/fabushi-desktop",
+  "base": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+  "baseTree": "a3d749529dfd92e985a085cea71807ff23b15088",
+  "startingHead": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+  "implementationSourceBase": "8e5cee76ebbe6e748dc6a8dc87d73142bf04109b",
+  "tree": "33d8b4c55277806d465081db13891cbca230076e",
+  "priorReviewTree": "6f74362fb6f0ac0b37e66cc2c57c68614a65606b",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "scopeMode": "explicit five-path scope, isolated index; foreign work excluded",
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+      "blob": "b5bf702509df7923163fb54ba87599bc3dfd338a",
+      "bytes": 38533,
+      "sha256": "bfd741eba2337e513051f3a24c44b216455967a58ab497805c21a77a91d6ae4f",
+      "baseBlob": "2f6af6752039faee0418def3c9d3bf59c59002ac"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.ts",
+      "blob": "306336b67122cf6af3e5235dd70fe826c0ec864c",
+      "bytes": 8135,
+      "sha256": "543dae512796e1869f883ca75b1c9eb11819fd0e865e2d65ab4c0b04e8d8c368",
+      "baseBlob": "4236b468306aee00d727bbd59d27c15537fbf768"
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "blob": "90dcae53b6f1d26c89ce231e9e067e80799ee1c7",
+      "bytes": 28445,
+      "sha256": "ae11fb579731b7a36b519cee2d57364d22b41fc55be8ae5a69664ff9a1a45fb1",
+      "baseBlob": "6653252d5f12ad3e345ee9104dd58c93734594df"
+    },
+    {
+      "path": "source/electron-main/mcp/official-mcp-service.ts",
+      "blob": "a27e63e6abc6c3555a802ed9222e8d53ae876bf6",
+      "bytes": 23278,
+      "sha256": "ef16fa94c92a770386826bef1969f3ac0d519f6e70e1e5826dc834e29f2a5c84",
+      "baseBlob": "3da590f7908870f1c7ac7806326e6ed04093882c"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "blob": "2a56f1e1ffb20ca3c65e5aaf57e3013dcbf4f427",
+      "bytes": 103894,
+      "sha256": "aacdcb91b8eaedb06aa006de31e2064f3b56e92afab6badbf7f42e41740bf320",
+      "baseBlob": "c611c057f0dc57c35805adae759350d84c420ebe"
+    }
+  ],
+  "patches": {
+    "complete.patch": {
+      "base": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+      "bytes": 41916,
+      "sha256": "afaa7bdf640e94bf5f56ef710bf49eaf15fdbae6f5be636501faaff5d07757b9"
+    },
+    "fix-delta.patch": {
+      "base": "6f74362fb6f0ac0b37e66cc2c57c68614a65606b",
+      "bytes": 5523,
+      "sha256": "bef099701fa54b35f8af3088e0f92710b9ebdb21823e942e34572e1c01feb551"
+    }
+  },
+  "authoredNewCases": 15,
+  "execution": "not-run; GitHub Actions only",
+  "fixScope": "MO-ORACLE-01 supplemental pre-write admission oracle; all three product blobs and prior 14 default-composition cases unchanged"
+}
