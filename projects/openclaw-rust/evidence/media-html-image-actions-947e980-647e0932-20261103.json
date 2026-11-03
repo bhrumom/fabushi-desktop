@@ -1,0 +1,2647 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "subject_commit": "947e980bd3c9dcb06535127f5cedfd193b83f0fc",
+  "subject_tree": "686109128a616195e65d1c9018ccd5b0b9d2cc8a",
+  "fixed_upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "scope": "Exact-subject source authority, HHP-v2/IPB-v1 native Linux/Windows media controls and inherited CRA capture repair. Metadata and hashes only; raw execution evidence remains in the identified Actions artifacts. This is not FUA-v1 or final shipping acceptance.",
+  "source_authority": {
+    "run_id": 41566022521,
+    "source_job_id": 125687639066,
+    "persist_job_id": 125688266734,
+    "run_status": "completed",
+    "run_conclusion": "success",
+    "artifact_id": 13200015829,
+    "archive_sha256": "14906f0942d38d0e0235e2b683209b1677327e405b66c15f34509dacebfefbf9",
+    "receipt_sha256": "4fbcde3f35f2b26718705c1ef83e134705937640579b291f61c507f4259837e9",
+    "manifest_sha256_actual": "64b4e062c0f1cbc34c9383f2bf957eaa4bf1c55bf12ceaa9d88c58a0398859e4",
+    "manifest_digest_matches": true,
+    "gate_verdicts": {
+      "OCRM-G01-dependency-LFS-closure": "open",
+      "OCRM-G01-tracked-tree": "success",
+      "OCRM-G02-final": "not-run",
+      "OCRM-G02-structural": "success"
+    },
+    "completion_flags": {
+      "baseline_identity_accepted": false,
+      "ecosystem_compatibility_accepted": false,
+      "production_wiring_complete": false,
+      "release_accepted": false,
+      "responsibility_mapping_complete": false,
+      "rust_implementation_complete": false,
+      "source_closure_ready": false,
+      "ui_accepted": false
+    },
+    "tracked_entries": 62130,
+    "actual_subject_inputs_digest": "ef497aca68b07a1899a2278dde83405ee0010d04ce007ee2cd68e08e091221f0",
+    "subject_inputs_digest_matches": true,
+    "persist_observation": "2026-11-03T02:27:43.5322167Z No new source-derived shard content; no new commit or dispatch.",
+    "limits": "global tracked-source structural candidate; not dependency closure or unit admission"
+  },
+  "native_media": [
+    {
+      "platform": "Linux",
+      "artifact_id": 13199206815,
+      "run_id": "41566022474",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "receipt_sha256": "8cf935fe63e98df8d93fd7a7e8dac233fc643dfcd562d033abdcccb5b8661e67",
+      "reported_result": "passed",
+      "actual_total": 70,
+      "groups": [
+        {
+          "case": "cleanup-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::attachments::media_store::cleanup::tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "extensions::attachments::media_store::cleanup::tests::cleanup_rechecks_refreshed_mtime_before_unlink",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_ancestor",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_leaf",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_root",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_retries_failed_unlink_without_pruning_branch",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_top_level_prune_errors_propagate_with_partial_progress",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_uses_one_clock_and_strict_ttl_boundary"
+          ],
+          "actual_positive_count": 7,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              7,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "4ebc33f16ce83d443dc783949c931bac502b39de8aa4d582963f3ccc0c0ae75c",
+          "recorded_raw_sha256": "4ebc33f16ce83d443dc783949c931bac502b39de8aa4d582963f3ccc0c0ae75c",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "cleanup-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_media_store_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "remote_media_download_is_bounded_before_payload_acceptance",
+            "test_ocrm_device_pairing_qr_wiring",
+            "test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning",
+            "test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors",
+            "test_ocrm_media_store_delete_and_lifecycle",
+            "test_ocrm_media_store_filename_sanitization_and_truncation",
+            "test_ocrm_media_store_gateway_service_dispatch",
+            "test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers",
+            "test_ocrm_media_store_local_file_source_boundaries",
+            "test_ocrm_media_store_playback_cache_and_clean_old_media",
+            "test_ocrm_media_store_recursive_cleanup_preserves_raw_names",
+            "test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries",
+            "test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets",
+            "test_ocrm_media_store_remote_fixture_scope_and_filename_support",
+            "test_ocrm_media_store_save_and_read_buffer",
+            "test_ocrm_media_store_size_limit_rejection",
+            "test_ocrm_media_store_subdir_traversal_protection"
+          ],
+          "actual_positive_count": 17,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              17,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "e0621148c80cf333f13f0d75ef3706764779f47aabbabe33c2ceccb7fecaf0f7",
+          "recorded_raw_sha256": "e0621148c80cf333f13f0d75ef3706764779f47aabbabe33c2ceccb7fecaf0f7",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "html-policy",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_html_provenance_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "test_html_policy_public_assertion_trust_mime_and_byte_identity",
+            "test_html_policy_public_assertion_unicode_and_malformed_shape",
+            "test_html_provenance_filter_stale_rows",
+            "test_html_provenance_host_read_admission",
+            "test_html_provenance_marker_validation",
+            "test_html_provenance_permission_denied_retained_and_recovered",
+            "test_html_provenance_stale_link_kinds_and_recovery",
+            "test_html_provenance_stale_snapshot_order_and_missing_kinds",
+            "test_html_provenance_symlink_loop_retained_and_recovered",
+            "test_html_shape_ecmascript_whitespace",
+            "test_html_shape_header_word_boundaries",
+            "test_html_shape_utf16_window_boundaries"
+          ],
+          "actual_positive_count": 12,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              12,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "82b0f4fd8429577e2c8d5d498c1937051b6c4f3b6e59e765fcd4bd889ce9063e",
+          "recorded_raw_sha256": "82b0f4fd8429577e2c8d5d498c1937051b6c4f3b6e59e765fcd4bd889ce9063e",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "host-read-format",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_channel_and_local_roots_contract",
+            "test_ocrm_host_read_media_policy_format_admission",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "test_ocrm_host_read_media_policy_format_admission"
+          ],
+          "actual_positive_count": 1,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "f8efa63f39d41fbcc761ba32dd77007c577e396cd5bd077f6eeefb6a9a9f492b",
+          "recorded_raw_sha256": "f8efa63f39d41fbcc761ba32dd77007c577e396cd5bd077f6eeefb6a9a9f492b",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "explicit-html-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_web_media_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "test_ocrm_anthropic_inline_content_blocks_normalization",
+            "test_ocrm_remote_workspace_file_transfer",
+            "test_ocrm_web_media_animated_webp_preservation",
+            "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+            "test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+            "test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+            "test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+            "test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+            "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+            "test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+            "test_ocrm_web_media_explicit_html_utf16_shape_window",
+            "test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+            "test_ocrm_web_media_file_url_and_traversal_guards",
+            "test_ocrm_web_media_gateway_service_dispatch",
+            "test_ocrm_web_media_html_publication_requires_exact_mode",
+            "test_ocrm_web_media_local_loading_and_roots_boundary",
+            "web_media_local_reads_are_bounded_before_buffer_acceptance"
+          ],
+          "actual_positive_count": 17,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              17,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "a658b03d25a446459e7a547ceff769ed207c8eb86aebc6ebc037c6bce6304bda",
+          "recorded_raw_sha256": "a658b03d25a446459e7a547ceff769ed207c8eb86aebc6ebc037c6bce6304bda",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "image-probe-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_image_ops_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "test_ocrm_image_ops_animated_webp_detection",
+            "test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
+            "test_ocrm_image_ops_build_resize_side_grid",
+            "test_ocrm_image_ops_display_metadata_orientation_swap",
+            "test_ocrm_image_ops_gateway_dispatch",
+            "test_ocrm_image_ops_normalize_anthropic_inline_image",
+            "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+            "test_ocrm_image_ops_png_prefix_file_loader_and_retry",
+            "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry",
+            "test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry",
+            "test_ocrm_image_ops_png_probe_preserves_required_header_metadata",
+            "test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type",
+            "test_ocrm_image_ops_png_probe_rejects_zero_dimensions",
+            "test_ocrm_image_ops_prepare_attachment",
+            "test_ocrm_image_ops_quality_steps_ladder",
+            "test_ocrm_image_ops_still_png_and_apng_detection"
+          ],
+          "actual_positive_count": 16,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              16,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "c7076c02b0037339f39b06808dd7f34d6ebfa5a59c5aef0fad1215ac2ab74f0e",
+          "recorded_raw_sha256": "c7076c02b0037339f39b06808dd7f34d6ebfa5a59c5aef0fad1215ac2ab74f0e",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        }
+      ],
+      "input_bindings": [
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "exact_H_blob": "c653192ddc9107a213a2f72e73d9548f99dffbd4",
+          "receipt_git_blob_sha": "c653192ddc9107a213a2f72e73d9548f99dffbd4",
+          "normalized_worktree_blob_sha": "c653192ddc9107a213a2f72e73d9548f99dffbd4",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "83af629f2cdba15db4175165803bbd1178e710805511f45b93570682908c8c7b",
+          "receipt_working_tree_bytes": 486048
+        },
+        {
+          "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+          "exact_H_blob": "01d23d9ab56232776c9994abb53320032aa992bd",
+          "receipt_git_blob_sha": "01d23d9ab56232776c9994abb53320032aa992bd",
+          "normalized_worktree_blob_sha": "01d23d9ab56232776c9994abb53320032aa992bd",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "be77ffa1f3f3b91772dab6bb1a29dbe3eddefe2464d83da21d7101bef536597e",
+          "receipt_working_tree_bytes": 15925
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+          "exact_H_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+          "receipt_git_blob_sha": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+          "normalized_worktree_blob_sha": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "078041ad0e2a35f1395de1713a1bd501474fc183b09a75f0852743dea823c083",
+          "receipt_working_tree_bytes": 22227
+        },
+        {
+          "path": "projects/openclaw-rust/upstream.lock.json",
+          "exact_H_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+          "receipt_git_blob_sha": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+          "normalized_worktree_blob_sha": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+          "receipt_working_tree_bytes": 3495
+        },
+        {
+          "path": "source/host/Cargo.toml",
+          "exact_H_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+          "receipt_git_blob_sha": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+          "normalized_worktree_blob_sha": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+          "receipt_working_tree_bytes": 1856
+        },
+        {
+          "path": "source/host/Cargo.lock",
+          "exact_H_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+          "receipt_git_blob_sha": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+          "normalized_worktree_blob_sha": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+          "receipt_working_tree_bytes": 119989
+        },
+        {
+          "path": "source/host/build.rs",
+          "exact_H_blob": "c9ae9d84176310741c75416524d4658fa56d050b",
+          "receipt_git_blob_sha": "c9ae9d84176310741c75416524d4658fa56d050b",
+          "normalized_worktree_blob_sha": "c9ae9d84176310741c75416524d4658fa56d050b",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "782eed2f5c25c358e9f84a3ab6b19de214420824e09ac1c1a3ae77e8166b43cf",
+          "receipt_working_tree_bytes": 69588
+        },
+        {
+          "path": "source/host/src/lib.rs",
+          "exact_H_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+          "receipt_git_blob_sha": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+          "normalized_worktree_blob_sha": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "5634ab8eaafe9f88a75a855c74ef1d98def6050314aaf2ec966e283f202e8798",
+          "receipt_working_tree_bytes": 2975
+        },
+        {
+          "path": "source/host/src/extensions/attachments/media_store.rs",
+          "exact_H_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+          "receipt_git_blob_sha": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+          "normalized_worktree_blob_sha": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "8cf2757ba7ff661b99d6e091ee602fac97d21b9b3747f275362112743b422687",
+          "receipt_working_tree_bytes": 78603
+        },
+        {
+          "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+          "exact_H_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+          "receipt_git_blob_sha": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+          "normalized_worktree_blob_sha": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "0e844d09cbdc44bd9497b957eafa1e82679e0c615178a42846d6d11c73c35890",
+          "receipt_working_tree_bytes": 2027
+        },
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "exact_H_blob": "7cfeff678c334320515de0bc01200bdb6af39379",
+          "receipt_git_blob_sha": "7cfeff678c334320515de0bc01200bdb6af39379",
+          "normalized_worktree_blob_sha": "7cfeff678c334320515de0bc01200bdb6af39379",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "96af84d9fd740f9825111cc64da9d7cfcd82d6e3a03b74dfb0de907d25568830",
+          "receipt_working_tree_bytes": 87298
+        },
+        {
+          "path": "source/host/src/extensions/attachments/extension.rs",
+          "exact_H_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+          "receipt_git_blob_sha": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+          "normalized_worktree_blob_sha": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "0dc756671a349ce936284848a05dd5a6a9afb31a2d7b31f0349f3afe56bb0015",
+          "receipt_working_tree_bytes": 2705
+        },
+        {
+          "path": "source/host/src/host_production_extensions.rs",
+          "exact_H_blob": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+          "receipt_git_blob_sha": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+          "normalized_worktree_blob_sha": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "2cda71354abe6bd92ef86e870275a94f0d68c67db7068d89386e4226045667c6",
+          "receipt_working_tree_bytes": 90983
+        },
+        {
+          "path": "source/host/src/device_pairing_owner.rs",
+          "exact_H_blob": "cf6a5818c665f62d96ffa1af07ee0104c620ec9f",
+          "receipt_git_blob_sha": "cf6a5818c665f62d96ffa1af07ee0104c620ec9f",
+          "normalized_worktree_blob_sha": "cf6a5818c665f62d96ffa1af07ee0104c620ec9f",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "3f4383dacad3ee2282dda9b2470c9c8f28ec6161a0168a1192022ee181bceb45",
+          "receipt_working_tree_bytes": 80837
+        },
+        {
+          "path": "source/host/app/src/main.rs",
+          "exact_H_blob": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+          "receipt_git_blob_sha": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+          "normalized_worktree_blob_sha": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "87c1536d3a8bb6c4799c8c228bdc40290534903fd18664021387838a0194182c",
+          "receipt_working_tree_bytes": 989159
+        },
+        {
+          "path": "source/host/tests/openclaw_media_store_contract.rs",
+          "exact_H_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+          "receipt_git_blob_sha": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+          "normalized_worktree_blob_sha": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "5dea2784cc6fee31cee4dd266c9f8355a52b9bbccb99c3c47615db9302d1e704",
+          "receipt_working_tree_bytes": 31891
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+          "exact_H_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+          "receipt_git_blob_sha": "f0892088bfa3448441f7b92df6344692ac535932",
+          "normalized_worktree_blob_sha": "f0892088bfa3448441f7b92df6344692ac535932",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "294aa876496bb5e0efe2d59d29bfb21bc25fbdb4a4a9c6d0b723a8718d01af61",
+          "receipt_working_tree_bytes": 15095
+        },
+        {
+          "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+          "exact_H_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+          "receipt_git_blob_sha": "9087b941ce253ac261a453df3d8b0054e64804e2",
+          "normalized_worktree_blob_sha": "9087b941ce253ac261a453df3d8b0054e64804e2",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "d45556ae26bbd0bc6fcb86440619b063b3455286c442bd722d9c9d6dfc2d4256",
+          "receipt_working_tree_bytes": 15208
+        },
+        {
+          "path": "source/host/src/extensions/attachments/web_media.rs",
+          "exact_H_blob": "61291cf57b42408cd98c7fe7676d2a0694fa44d0",
+          "receipt_git_blob_sha": "61291cf57b42408cd98c7fe7676d2a0694fa44d0",
+          "normalized_worktree_blob_sha": "61291cf57b42408cd98c7fe7676d2a0694fa44d0",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "30bf9699720e33dd9c2bdbc08be5b95a9b42dc4a7ca2a056d62ff3a1a8bfc584",
+          "receipt_working_tree_bytes": 16343
+        },
+        {
+          "path": "source/host/src/extensions/attachments/media_reference.rs",
+          "exact_H_blob": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+          "receipt_git_blob_sha": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+          "normalized_worktree_blob_sha": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "7a80344e377760ef662d6b2ab708cb00cf6dbceba52c0b2d1201d5b4f7479917",
+          "receipt_working_tree_bytes": 10677
+        },
+        {
+          "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+          "exact_H_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+          "receipt_git_blob_sha": "64f7c72e44d904a4ba84c524577c24688c80c278",
+          "normalized_worktree_blob_sha": "64f7c72e44d904a4ba84c524577c24688c80c278",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "09d388e2ead4e0c7a4d78d2f4c0037bbfd60acdf20ff1c1b74159ee1db018586",
+          "receipt_working_tree_bytes": 19436
+        },
+        {
+          "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+          "exact_H_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+          "receipt_git_blob_sha": "47161efa7f1fb526c517de4394c739cfe3734623",
+          "normalized_worktree_blob_sha": "47161efa7f1fb526c517de4394c739cfe3734623",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "07edb09bb8dfcc4c806d9c41dd8fb7b1b08291d344667f19d3c25e38e25264b6",
+          "receipt_working_tree_bytes": 13428
+        },
+        {
+          "path": "source/host/tests/openclaw_web_media_contract.rs",
+          "exact_H_blob": "a90b5f913679b7e284f4970c42e8c2b774ee4c94",
+          "receipt_git_blob_sha": "a90b5f913679b7e284f4970c42e8c2b774ee4c94",
+          "normalized_worktree_blob_sha": "a90b5f913679b7e284f4970c42e8c2b774ee4c94",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "54e4d35a332617e8774f844e68de8ae2443dd947000e3b152dcc8a97d9c5e608",
+          "receipt_working_tree_bytes": 29492
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+          "exact_H_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+          "receipt_git_blob_sha": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+          "normalized_worktree_blob_sha": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "ded8ac231c4c5727fe66c69b8c41aec3fdf4213abe65d62c6f1e1da50fdd429b",
+          "receipt_working_tree_bytes": 5606
+        },
+        {
+          "path": "source/host/src/extensions/attachments/image_ops.rs",
+          "exact_H_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+          "receipt_git_blob_sha": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+          "normalized_worktree_blob_sha": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "91c345a94037a0ef218f9d8c64ba64d53762b57d4ec533fe3a06bc53e1450fee",
+          "receipt_working_tree_bytes": 19185
+        },
+        {
+          "path": "source/host/src/media_mime.rs",
+          "exact_H_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+          "receipt_git_blob_sha": "b380ea8446d859a03b594aa93040d1425d4f0662",
+          "normalized_worktree_blob_sha": "b380ea8446d859a03b594aa93040d1425d4f0662",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "524302269a83413e2ad87212c3b72819fecc8bdc644be1b910f508c0aa1c7217",
+          "receipt_working_tree_bytes": 12306
+        },
+        {
+          "path": "source/host/tests/openclaw_image_ops_contract.rs",
+          "exact_H_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+          "receipt_git_blob_sha": "f7230c34879341a9126e52b38bc1e2621db3b083",
+          "normalized_worktree_blob_sha": "f7230c34879341a9126e52b38bc1e2621db3b083",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "7821f5ce3646864a50446ee823e5fc600176a503326450449052f12794c7de65",
+          "receipt_working_tree_bytes": 22333
+        }
+      ],
+      "oracle_qualification": {
+        "scope": "Synthetic oracle qualification only; no product behavior evidence.",
+        "controls": [
+          {
+            "control": "positive",
+            "expected": true,
+            "observed": true
+          },
+          {
+            "control": "crlf-positive",
+            "expected": true,
+            "observed": true
+          },
+          {
+            "control": "missing",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "duplicate",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "unexpected",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "failed",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "ignored",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "zero-test",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "partial-log",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "duplicate-summary",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "failed-summary",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "nonzero-command",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "capture-error",
+            "expected": false,
+            "observed": false
+          }
+        ],
+        "accepted": true
+      },
+      "assessment_sha256": "adb51cca4df8ff24f50c2427a5fd347b73c055275c8496a796f89371eb0fe5da"
+    },
+    {
+      "platform": "Windows",
+      "artifact_id": 13199111641,
+      "run_id": "41566022474",
+      "run_attempt": "1",
+      "job": "media-store-windows",
+      "receipt_sha256": "ebe323ebc454d5b0911321313775bc0e5ef50c1fd80249c2a637d5316193d28c",
+      "reported_result": "passed",
+      "actual_total": 67,
+      "groups": [
+        {
+          "case": "cleanup-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::attachments::media_store::cleanup::tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "extensions::attachments::media_store::cleanup::tests::cleanup_rechecks_refreshed_mtime_before_unlink",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_ancestor",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_leaf",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_root",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_retries_failed_unlink_without_pruning_branch",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_top_level_prune_errors_propagate_with_partial_progress",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_uses_one_clock_and_strict_ttl_boundary",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_windows_identity_compares_full_file_id"
+          ],
+          "actual_positive_count": 8,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              8,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "e6108c7ad42c92cbf6dd2b8c5c35b67db925a1a46ee3ff3f14134a8cf0f3f3cf",
+          "recorded_raw_sha256": "e6108c7ad42c92cbf6dd2b8c5c35b67db925a1a46ee3ff3f14134a8cf0f3f3cf",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "cleanup-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_media_store_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "remote_media_download_is_bounded_before_payload_acceptance",
+            "test_ocrm_device_pairing_qr_wiring",
+            "test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning",
+            "test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors",
+            "test_ocrm_media_store_cleanup_protects_top_level_case_variants",
+            "test_ocrm_media_store_delete_and_lifecycle",
+            "test_ocrm_media_store_filename_sanitization_and_truncation",
+            "test_ocrm_media_store_gateway_service_dispatch",
+            "test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers",
+            "test_ocrm_media_store_local_file_source_boundaries",
+            "test_ocrm_media_store_playback_cache_and_clean_old_media",
+            "test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets",
+            "test_ocrm_media_store_remote_fixture_scope_and_filename_support",
+            "test_ocrm_media_store_save_and_read_buffer",
+            "test_ocrm_media_store_size_limit_rejection",
+            "test_ocrm_media_store_subdir_traversal_protection"
+          ],
+          "actual_positive_count": 16,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              16,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "3e5099eb7165cba85a7468d31888f2382c3f6161a27d9d2345d435e59f6d3c4f",
+          "recorded_raw_sha256": "3e5099eb7165cba85a7468d31888f2382c3f6161a27d9d2345d435e59f6d3c4f",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "html-policy",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_html_provenance_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "test_html_policy_public_assertion_trust_mime_and_byte_identity",
+            "test_html_policy_public_assertion_unicode_and_malformed_shape",
+            "test_html_provenance_filter_stale_rows",
+            "test_html_provenance_host_read_admission",
+            "test_html_provenance_marker_validation",
+            "test_html_provenance_stale_snapshot_order_and_missing_kinds",
+            "test_html_shape_ecmascript_whitespace",
+            "test_html_shape_header_word_boundaries",
+            "test_html_shape_utf16_window_boundaries"
+          ],
+          "actual_positive_count": 9,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              9,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "44dd0b4af25e6fbf526e82b5807f14bbe951b6c46fef360a66efa92c4f227ad6",
+          "recorded_raw_sha256": "44dd0b4af25e6fbf526e82b5807f14bbe951b6c46fef360a66efa92c4f227ad6",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "host-read-format",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_channel_and_local_roots_contract",
+            "test_ocrm_host_read_media_policy_format_admission",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "test_ocrm_host_read_media_policy_format_admission"
+          ],
+          "actual_positive_count": 1,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "a153791f647b683647049fc29e08467e2fc762e5005315e8f5d5fd5cc173f5e8",
+          "recorded_raw_sha256": "a153791f647b683647049fc29e08467e2fc762e5005315e8f5d5fd5cc173f5e8",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "explicit-html-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_web_media_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "test_ocrm_anthropic_inline_content_blocks_normalization",
+            "test_ocrm_remote_workspace_file_transfer",
+            "test_ocrm_web_media_animated_webp_preservation",
+            "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+            "test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+            "test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+            "test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+            "test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+            "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+            "test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+            "test_ocrm_web_media_explicit_html_utf16_shape_window",
+            "test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+            "test_ocrm_web_media_file_url_and_traversal_guards",
+            "test_ocrm_web_media_gateway_service_dispatch",
+            "test_ocrm_web_media_html_publication_requires_exact_mode",
+            "test_ocrm_web_media_local_loading_and_roots_boundary",
+            "web_media_local_reads_are_bounded_before_buffer_acceptance"
+          ],
+          "actual_positive_count": 17,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              17,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "1b16d1456fcad4c7b4230a62c596fe948fddcfd51260ad3d8702a0cd96636bf0",
+          "recorded_raw_sha256": "1b16d1456fcad4c7b4230a62c596fe948fddcfd51260ad3d8702a0cd96636bf0",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        },
+        {
+          "case": "image-probe-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_image_ops_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "observed_names": [
+            "test_ocrm_image_ops_animated_webp_detection",
+            "test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
+            "test_ocrm_image_ops_build_resize_side_grid",
+            "test_ocrm_image_ops_display_metadata_orientation_swap",
+            "test_ocrm_image_ops_gateway_dispatch",
+            "test_ocrm_image_ops_normalize_anthropic_inline_image",
+            "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+            "test_ocrm_image_ops_png_prefix_file_loader_and_retry",
+            "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry",
+            "test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry",
+            "test_ocrm_image_ops_png_probe_preserves_required_header_metadata",
+            "test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type",
+            "test_ocrm_image_ops_png_probe_rejects_zero_dimensions",
+            "test_ocrm_image_ops_prepare_attachment",
+            "test_ocrm_image_ops_quality_steps_ladder",
+            "test_ocrm_image_ops_still_png_and_apng_detection"
+          ],
+          "actual_positive_count": 16,
+          "missing_duplicate_required": [],
+          "unexpected_names": [],
+          "names_match_receipt": true,
+          "summaries": [
+            [
+              16,
+              0,
+              0
+            ]
+          ],
+          "summaries_match_receipt": true,
+          "actual_raw_sha256": "5abbe7a4593752026800488e8d58476a720f6c6f227d365876c349b69d7e9ee6",
+          "recorded_raw_sha256": "5abbe7a4593752026800488e8d58476a720f6c6f227d365876c349b69d7e9ee6",
+          "raw_hash_matches": true,
+          "reported_oracle_accepted": true
+        }
+      ],
+      "input_bindings": [
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "exact_H_blob": "c653192ddc9107a213a2f72e73d9548f99dffbd4",
+          "receipt_git_blob_sha": "c653192ddc9107a213a2f72e73d9548f99dffbd4",
+          "normalized_worktree_blob_sha": "c653192ddc9107a213a2f72e73d9548f99dffbd4",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "4bb2c8fc55cb2aa3e27c0e890fc64860a8ed7a45170e719c3796240d09154c21",
+          "receipt_working_tree_bytes": 491717
+        },
+        {
+          "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+          "exact_H_blob": "01d23d9ab56232776c9994abb53320032aa992bd",
+          "receipt_git_blob_sha": "01d23d9ab56232776c9994abb53320032aa992bd",
+          "normalized_worktree_blob_sha": "01d23d9ab56232776c9994abb53320032aa992bd",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "7b495500b7931814b10d9ef0c1971d4245e2bce410b29a3fca5ee81d50c334f2",
+          "receipt_working_tree_bytes": 16242
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+          "exact_H_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+          "receipt_git_blob_sha": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+          "normalized_worktree_blob_sha": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "f957f8d1e0732dc5e0f94430b79c277f133f4cc5959b001c55ca6887f4fb8545",
+          "receipt_working_tree_bytes": 22606
+        },
+        {
+          "path": "projects/openclaw-rust/upstream.lock.json",
+          "exact_H_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+          "receipt_git_blob_sha": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+          "normalized_worktree_blob_sha": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "67b80a262ce14ef7b12482fd9babd4628a10d1fa2056e470441908ec387e782e",
+          "receipt_working_tree_bytes": 3568
+        },
+        {
+          "path": "source/host/Cargo.toml",
+          "exact_H_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+          "receipt_git_blob_sha": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+          "normalized_worktree_blob_sha": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "c4cf147c6c8387d50ee1f2a7daffd8563c726b3fd94d0a1a47ed15e708cfe895",
+          "receipt_working_tree_bytes": 1915
+        },
+        {
+          "path": "source/host/Cargo.lock",
+          "exact_H_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+          "receipt_git_blob_sha": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+          "normalized_worktree_blob_sha": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "4a62a2a12fd09ba7a36e9001eee41fff03f4d37488dc2e439bcc134b3085efac",
+          "receipt_working_tree_bytes": 124809
+        },
+        {
+          "path": "source/host/build.rs",
+          "exact_H_blob": "c9ae9d84176310741c75416524d4658fa56d050b",
+          "receipt_git_blob_sha": "c9ae9d84176310741c75416524d4658fa56d050b",
+          "normalized_worktree_blob_sha": "c9ae9d84176310741c75416524d4658fa56d050b",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "627648c9e2e9843ba9ba05e8d7301e79b29dab4d580c43a4f0e9bf424338a798",
+          "receipt_working_tree_bytes": 71198
+        },
+        {
+          "path": "source/host/src/lib.rs",
+          "exact_H_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+          "receipt_git_blob_sha": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+          "normalized_worktree_blob_sha": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "7365cd5b4153b966c245f8497d10a8d4ba88ae9a3b19fbfeb7fc6cdc7810f472",
+          "receipt_working_tree_bytes": 3064
+        },
+        {
+          "path": "source/host/src/extensions/attachments/media_store.rs",
+          "exact_H_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+          "receipt_git_blob_sha": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+          "normalized_worktree_blob_sha": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "4af6634e7c4b139a2c4a9875d01a8e98214c48341dec6f85b76f76046ffdab9b",
+          "receipt_working_tree_bytes": 80607
+        },
+        {
+          "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+          "exact_H_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+          "receipt_git_blob_sha": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+          "normalized_worktree_blob_sha": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "d66b30a67de4783955cf4dd8a52e727da9dca37354e173483c555e360b5237f8",
+          "receipt_working_tree_bytes": 2108
+        },
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "exact_H_blob": "7cfeff678c334320515de0bc01200bdb6af39379",
+          "receipt_git_blob_sha": "7cfeff678c334320515de0bc01200bdb6af39379",
+          "normalized_worktree_blob_sha": "7cfeff678c334320515de0bc01200bdb6af39379",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "1e2950cd32d74d4907fef915ff606f226fd11e6a86a6ae60313cc9521f40e742",
+          "receipt_working_tree_bytes": 89588
+        },
+        {
+          "path": "source/host/src/extensions/attachments/extension.rs",
+          "exact_H_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+          "receipt_git_blob_sha": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+          "normalized_worktree_blob_sha": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "93db5e4d06cddd3882ac08fa6f0e054d18822a879defa0431c5960d3274be434",
+          "receipt_working_tree_bytes": 2790
+        },
+        {
+          "path": "source/host/src/host_production_extensions.rs",
+          "exact_H_blob": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+          "receipt_git_blob_sha": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+          "normalized_worktree_blob_sha": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "522d413a8660ed05cc14846c16d2e61f093c4b4b8649551ae1640bcdc8f216eb",
+          "receipt_working_tree_bytes": 93115
+        },
+        {
+          "path": "source/host/src/device_pairing_owner.rs",
+          "exact_H_blob": "cf6a5818c665f62d96ffa1af07ee0104c620ec9f",
+          "receipt_git_blob_sha": "cf6a5818c665f62d96ffa1af07ee0104c620ec9f",
+          "normalized_worktree_blob_sha": "cf6a5818c665f62d96ffa1af07ee0104c620ec9f",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "43051c162598f7c42c1b9b82e8c5c9da7ec50964c44a9c98a64b631cad0c7f0b",
+          "receipt_working_tree_bytes": 82870
+        },
+        {
+          "path": "source/host/app/src/main.rs",
+          "exact_H_blob": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+          "receipt_git_blob_sha": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+          "normalized_worktree_blob_sha": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "198b07f2054d905724c7edb081eeb4bf5090c9491655a9c29ad8a2e686842669",
+          "receipt_working_tree_bytes": 1010723
+        },
+        {
+          "path": "source/host/tests/openclaw_media_store_contract.rs",
+          "exact_H_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+          "receipt_git_blob_sha": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+          "normalized_worktree_blob_sha": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "3b0932a88f09e67d0493e92b7e52f85c7da4c33192520133a01fdf840c08a026",
+          "receipt_working_tree_bytes": 32695
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+          "exact_H_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+          "receipt_git_blob_sha": "f0892088bfa3448441f7b92df6344692ac535932",
+          "normalized_worktree_blob_sha": "f0892088bfa3448441f7b92df6344692ac535932",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "3eeee993e8b56d3b4ed42092162c1998bb401f8ec1caba41d150aa62aadf4f47",
+          "receipt_working_tree_bytes": 15306
+        },
+        {
+          "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+          "exact_H_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+          "receipt_git_blob_sha": "9087b941ce253ac261a453df3d8b0054e64804e2",
+          "normalized_worktree_blob_sha": "9087b941ce253ac261a453df3d8b0054e64804e2",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "fcd3a8b45964ffdfa0b8a389710ee2ba134178fb6f44fac854c237c085782246",
+          "receipt_working_tree_bytes": 15656
+        },
+        {
+          "path": "source/host/src/extensions/attachments/web_media.rs",
+          "exact_H_blob": "61291cf57b42408cd98c7fe7676d2a0694fa44d0",
+          "receipt_git_blob_sha": "61291cf57b42408cd98c7fe7676d2a0694fa44d0",
+          "normalized_worktree_blob_sha": "61291cf57b42408cd98c7fe7676d2a0694fa44d0",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "d7bf9de4aacd6b24ce4fc902204270406d226f7e1b00ae16df1c6bb7d4ea3a37",
+          "receipt_working_tree_bytes": 16777
+        },
+        {
+          "path": "source/host/src/extensions/attachments/media_reference.rs",
+          "exact_H_blob": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+          "receipt_git_blob_sha": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+          "normalized_worktree_blob_sha": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "67a4e3e20dab988904cbdd04ada0d3c4edd629d9f9892734248edc46be0ab1db",
+          "receipt_working_tree_bytes": 11001
+        },
+        {
+          "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+          "exact_H_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+          "receipt_git_blob_sha": "64f7c72e44d904a4ba84c524577c24688c80c278",
+          "normalized_worktree_blob_sha": "64f7c72e44d904a4ba84c524577c24688c80c278",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "2d45d9baf5d5ff1156e6424615952a12cf9a3755966ee0bf528d4097d96da6b5",
+          "receipt_working_tree_bytes": 19930
+        },
+        {
+          "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+          "exact_H_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+          "receipt_git_blob_sha": "47161efa7f1fb526c517de4394c739cfe3734623",
+          "normalized_worktree_blob_sha": "47161efa7f1fb526c517de4394c739cfe3734623",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "d34d50653a75a9731218d29dbf96120054b139ebb8ab87a76a51c14297a2a1ab",
+          "receipt_working_tree_bytes": 13783
+        },
+        {
+          "path": "source/host/tests/openclaw_web_media_contract.rs",
+          "exact_H_blob": "a90b5f913679b7e284f4970c42e8c2b774ee4c94",
+          "receipt_git_blob_sha": "a90b5f913679b7e284f4970c42e8c2b774ee4c94",
+          "normalized_worktree_blob_sha": "a90b5f913679b7e284f4970c42e8c2b774ee4c94",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "476d82369850c836868cdeb8d55ab7f7b6259e8342e408d0d2fe41623e6258a5",
+          "receipt_working_tree_bytes": 30195
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+          "exact_H_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+          "receipt_git_blob_sha": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+          "normalized_worktree_blob_sha": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "5aefd38601b4f0a27194728cfb4d3e8c24d467f456d9ce0f25259dcd0e426e21",
+          "receipt_working_tree_bytes": 5687
+        },
+        {
+          "path": "source/host/src/extensions/attachments/image_ops.rs",
+          "exact_H_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+          "receipt_git_blob_sha": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+          "normalized_worktree_blob_sha": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "a0b7c66cfae2ca992aaef4e9ea8da42efab5b960343e7f1460e36b41b2ee47f4",
+          "receipt_working_tree_bytes": 19681
+        },
+        {
+          "path": "source/host/src/media_mime.rs",
+          "exact_H_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+          "receipt_git_blob_sha": "b380ea8446d859a03b594aa93040d1425d4f0662",
+          "normalized_worktree_blob_sha": "b380ea8446d859a03b594aa93040d1425d4f0662",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "ba75b5233b5cd75c0fa70ecbae78af2ada7580ce27dc7ebe72b12ae8f9273758",
+          "receipt_working_tree_bytes": 12707
+        },
+        {
+          "path": "source/host/tests/openclaw_image_ops_contract.rs",
+          "exact_H_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+          "receipt_git_blob_sha": "f7230c34879341a9126e52b38bc1e2621db3b083",
+          "normalized_worktree_blob_sha": "f7230c34879341a9126e52b38bc1e2621db3b083",
+          "blob_binding_matches": true,
+          "before_after_equal": true,
+          "receipt_working_tree_sha256": "a0c240c5f53654bac7a0a5ef4422dba6c97ac5279256affd20a1ae381ecc65b4",
+          "receipt_working_tree_bytes": 22892
+        }
+      ],
+      "oracle_qualification": {
+        "scope": "Synthetic oracle qualification only; no product behavior evidence.",
+        "controls": [
+          {
+            "control": "positive",
+            "expected": true,
+            "observed": true
+          },
+          {
+            "control": "crlf-positive",
+            "expected": true,
+            "observed": true
+          },
+          {
+            "control": "missing",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "duplicate",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "unexpected",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "failed",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "ignored",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "zero-test",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "partial-log",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "duplicate-summary",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "failed-summary",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "nonzero-command",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "capture-error",
+            "expected": false,
+            "observed": false
+          }
+        ],
+        "accepted": true
+      },
+      "assessment_sha256": "fd299033a00e8a1043704ea79b5a46056fb640b544c50e580cb4b08095ef524c"
+    }
+  ],
+  "media_archives": [
+    {
+      "artifact_id": 13199206815,
+      "sha256": "10d2a37bffabedc4f6d595255c41bb34f5e42d729d2a9a225a2d490d1530d1e9",
+      "bytes": 43785
+    },
+    {
+      "artifact_id": 13199111641,
+      "sha256": "d687ef0506bf6a22ee4e9307aec611d9e29be05b52b499c87fcc0df044b2e2ad",
+      "bytes": 45881
+    }
+  ],
+  "shared_capture_repair": {
+    "owner_commit": "ff0d456f322094ca82f063942f548f8d7fe90f00",
+    "run_id": "41566022474",
+    "run_attempt": "1",
+    "job": "sqlite-native-path",
+    "artifact_id": 13199551944,
+    "archive_sha256": "fd6f8f8ce572e55c012a50bbbfb76586cfb37a5b52ab6654c961668f24837f3a",
+    "receipt_sha256": "977cc411a5cfa5420ac53e59473f16c42c46a18f0f20f546c50ee2b6e6395823",
+    "qualification_controls": [
+      {
+        "case": "standard-expected-panic-success",
+        "expected": true,
+        "actual": true
+      },
+      {
+        "case": "standard-ordinary-success",
+        "expected": true,
+        "actual": true
+      },
+      {
+        "case": "expected-panic-did-not-occur",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "wrong-panic-message",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "ordinary-failure",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "ignored-case",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "ignored-summary",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "duplicate-name",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "malformed-decoration",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "trailing-content",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "missing-summary",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "zero-tests",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "command-refusal",
+        "expected": false,
+        "actual": false
+      },
+      {
+        "case": "capture-refusal",
+        "expected": false,
+        "actual": false
+      }
+    ],
+    "target_groups": [
+      {
+        "case": "canonical-root-admission",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "production_checkpoint_restart_contract",
+          "canonical_root_admission_",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "required_names": [
+          "canonical_root_admission_valid_roots_advance_across_explicit_invocations",
+          "canonical_root_admission_pre_projection_drift_prevents_provider_execution",
+          "canonical_root_admission_post_projection_drift_prevents_provider_execution",
+          "canonical_root_admission_strict_read_failures_preserve_durable_state",
+          "canonical_root_admission_completed_owner_retirement_prevents_provider_execution",
+          "canonical_root_admission_same_sink_staging_and_persistence_keep_captured_base",
+          "canonical_root_admission_early_errors_permanently_revoke_prior_completion",
+          "canonical_root_admission_post_durable_journal_failure_refuses_stale_sink"
+        ],
+        "actual_positive_names": [
+          "canonical_root_admission_completed_owner_retirement_prevents_provider_execution",
+          "canonical_root_admission_early_errors_permanently_revoke_prior_completion",
+          "canonical_root_admission_post_durable_journal_failure_refuses_stale_sink",
+          "canonical_root_admission_post_projection_drift_prevents_provider_execution",
+          "canonical_root_admission_pre_projection_drift_prevents_provider_execution",
+          "canonical_root_admission_same_sink_staging_and_persistence_keep_captured_base",
+          "canonical_root_admission_strict_read_failures_preserve_durable_state",
+          "canonical_root_admission_valid_roots_advance_across_explicit_invocations"
+        ],
+        "actual_positive_count": 8,
+        "required_missing_or_nonunique": [],
+        "names_match_receipt": true,
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "summaries_match_receipt": true,
+        "reported_oracle_accepted": true,
+        "raw_sha256": "e984f67e27561b6704721c0a51a899d5d4294946f1318aba7d2625bfcb46cced",
+        "raw_hash_matches": true,
+        "expected_panic_success_names": []
+      },
+      {
+        "case": "canonical-root-admission-contracts",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--no-fail-fast",
+          "--test",
+          "production_turn_agent_owner_contract",
+          "--test",
+          "production_agent_checkpoint_contract",
+          "--test",
+          "production_agent_store_recovery_contract",
+          "--test",
+          "canonical_checkpoint_recovery_contract",
+          "--test",
+          "host_runner_composition_production_wiring_contract",
+          "--test",
+          "transcript_mirror_production_provider_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "required_names": [
+          "production_owner_retains_not_started_when_input_preparation_refuses",
+          "production_sink_rejects_stale_snapshot_before_mirror_recovery",
+          "production_sink_keeps_invocation_snapshot_binding_after_own_success",
+          "original_turn_observations_are_object_safe_unavailable_by_default_and_absent_until_real_commit",
+          "original_turn_journal_commit_failure_after_durable_root_and_confirmation_cannot_mint_observation",
+          "original_turn_prior_snapshot_is_checked_under_the_actual_store_mutation_guard",
+          "composed_sink_refuses_durable_root_corruption_before_child_blobs_or_mirror_preparation",
+          "already_composed_shipping_sink_rechecks_before_staging_and_before_persisting",
+          "fresh_actual_owners_distinguish_no_root_from_persisted_empty_protobuf",
+          "legacy_fixed_roots_and_direct_references_remain_readable_and_same_id_drift_refuses_reentry",
+          "host_runner_composition_owns_transcript_checkpoint_wiring",
+          "shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror"
+        ],
+        "actual_positive_names": [
+          "already_composed_shipping_sink_rechecks_before_staging_and_before_persisting",
+          "bad_root_blobs_refuse_shipping_readiness_and_repeated_open_without_publication",
+          "both_root_cas_operations_refuse_absent_or_non_string_binding_without_confirming_user",
+          "closed_db_and_cached_binding_drift_refuse_canonical_readiness",
+          "corrupt_metadata_never_becomes_an_empty_session_or_gets_seeded_on_reopen",
+          "failed_open_can_be_retried_after_real_blob_repair_and_after_fresh_workers_reopen",
+          "fresh_actual_owners_distinguish_no_root_from_persisted_empty_protobuf",
+          "legacy_fixed_roots_and_direct_references_remain_readable_and_same_id_drift_refuses_reentry",
+          "preparation_recovers_real_generated_orphan_then_fresh_owner_opens_the_same_root",
+          "preparation_validates_selected_recovery_candidate_before_cas_and_does_not_skip_it",
+          "required_direct_refs_are_checked_by_actual_owner_not_only_root_protobuf",
+          "shipping_checkpoint_round_trip_preserves_generated_turn_and_unknown_wire_fields",
+          "checked_backend_fire_wiring_oracle_rejects_bypasses_and_dead_calls",
+          "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation",
+          "desktop_uninstall_has_its_own_native_registry_group_without_changing_the_frozen_surface",
+          "generated_agent_stream_owns_canonical_stream_attempt_runtime",
+          "group_member_turn_keeps_generated_lifecycle_without_private_state",
+          "host_runner_composition_owns_computer_use_session_lifecycle",
+          "host_runner_composition_owns_shipping_runner_construction",
+          "host_runner_composition_owns_transcript_checkpoint_wiring",
+          "host_runner_composition_owns_turn_decoration_order",
+          "host_runner_composition_owns_turn_state_surface_wiring",
+          "host_runner_composition_settles_only_its_owned_shutdown_surfaces",
+          "production_memory_tool_refuses_corrupt_append_destinations_and_recovers_after_repair",
+          "runner_construction_oracle_allows_test_only_constructors_and_preserves_source",
+          "runner_construction_oracle_rejects_delegation_present_only_in_tests",
+          "runner_construction_oracle_rejects_production_runner_constructor",
+          "runner_construction_oracle_rejects_production_turn_owner_constructor",
+          "runner_construction_scope_refuses_boundaries_inside_incomplete_prefixes",
+          "runner_construction_scope_refuses_missing_duplicate_or_malformed_boundaries",
+          "runner_construction_scope_refuses_production_after_test_module",
+          "shell_terminal_watch_shipping_path_uses_canonical_permission_and_generated_watermark",
+          "shipping_backend_fire_returns_checked_owner_discovery_and_callback_boundary",
+          "shipping_backend_schedule_returns_typed_attempt_to_the_actual_completion_callback",
+          "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+          "shipping_host_has_one_runner_composition_entrypoint",
+          "shipping_skills_cache_and_prompt_use_the_bound_session_store_and_root",
+          "shipping_source_oracle_refuses_ambiguous_or_incomplete_boundaries",
+          "shipping_source_oracle_rejects_production_after_any_test_module_close",
+          "shipping_source_oracle_requires_boundary_and_retains_production_violations",
+          "typed_backend_attempt_wiring_oracle_rejects_wrong_owners_results_and_dead_calls",
+          "canonical_text_turn_checkpoint_preserves_prior_wire_and_appends_turn_reference",
+          "generated_turn_checkpoint_hashes_and_references_tool_steps_before_assistant_text",
+          "missing_confirmed_message_aborts_root_advance",
+          "original_turn_journal_commit_failure_after_durable_root_and_confirmation_cannot_mint_observation",
+          "original_turn_observation_overflow_is_permanent_without_failing_successful_checkpoints",
+          "original_turn_observations_are_object_safe_unavailable_by_default_and_absent_until_real_commit",
+          "original_turn_prior_snapshot_is_checked_under_the_actual_store_mutation_guard",
+          "original_turn_skip_and_legacy_success_or_swallowed_write_failure_never_expose_observations",
+          "owner_does_not_settle_completed_before_agent_checkpoint_succeeds",
+          "production_sink_can_checkpoint_inside_existing_localpool_executor",
+          "production_sink_can_stage_generated_state_before_outer_stream_final_persist",
+          "production_sink_commits_real_agent_wire_through_mirror_and_agent_store",
+          "production_sink_keeps_invocation_snapshot_binding_after_own_success",
+          "production_sink_rejects_stale_snapshot_before_mirror_recovery",
+          "settled_checkpoint_suppresses_compaction_stale_tokens_and_appends_timing",
+          "cached_empty_or_stale_state_refuses_changed_durable_root_until_checked_reload",
+          "cached_same_id_drift_refuses_before_pending_recovery_and_materialization_repairs",
+          "checked_production_open_distinguishes_initialized_empty_from_present_empty_checkpoint",
+          "checked_reset_preserves_last_good_snapshot_while_legacy_bool_reset_keeps_its_contract",
+          "composed_sink_refuses_durable_root_corruption_before_child_blobs_or_mirror_preparation",
+          "legacy_empty_root_maintenance_refreshes_the_existing_cached_agent_store",
+          "malformed_metadata_is_rejected_before_seeding_repair_or_owner_cache_and_can_be_repaired",
+          "normalized_empty_root_remains_readable_without_widening_raw_string_cas",
+          "production_checkpoint_writes_refuse_durable_root_corruption_without_writing_or_confirming",
+          "production_consumers_refuse_missing_or_corrupt_checkpoint_and_recover_after_repair",
+          "root_refusal_preserves_pending_profile_recovery_until_original_bytes_are_repaired",
+          "storage_open_failure_does_not_become_an_empty_cached_checkpoint",
+          "callback_custody_is_unavailable_for_success_failure_and_cancellation",
+          "generated_subagent_admission_requires_the_captured_lifecycle_revision",
+          "production_owner_and_facade_have_no_custody_before_first_invocation",
+          "production_owner_binds_disk_pressure_summarization_and_profile_lifecycle",
+          "production_owner_freezes_build_input_and_privacy_once",
+          "production_owner_releases_uncommitted_disk_pressure_on_dispose",
+          "production_owner_resets_custody_before_build_validation_refuses",
+          "production_owner_retains_not_started_when_input_preparation_refuses",
+          "production_runner_resets_custody_before_prompt_admission_refuses",
+          "shipping_runner_preserves_the_bound_summarization_owner_and_errors",
+          "shipping_sand_agent_owner_fails_closed_without_user_prompt",
+          "shipping_sand_agent_owner_marks_upgrade_quiesce_in_terminal_settlement",
+          "shipping_sand_agent_owner_preserves_projected_request_identity_through_terminal_settlement",
+          "shipping_sand_agent_owner_preserves_retryable_transport_failure",
+          "shipping_sand_agent_owner_settles_box_help_as_waiting_user",
+          "shipping_sand_agent_owner_settles_completed_turn_once",
+          "shipping_sand_agent_owner_settles_provider_cancellation",
+          "shipping_sand_agent_runner_exposes_generated_subagent_control_surface",
+          "shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime",
+          "production_checkpoint_preserves_journal_and_legacy_views",
+          "production_provider_derives_generated_tool_occurrence_with_canonical_json_projection",
+          "provider_routes_real_worker_blob_store_through_shared_journal",
+          "shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror"
+        ],
+        "actual_positive_count": 91,
+        "required_missing_or_nonunique": [],
+        "names_match_receipt": true,
+        "summaries": [
+          [
+            12,
+            0,
+            0
+          ],
+          [
+            29,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            12,
+            0,
+            0
+          ],
+          [
+            19,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            0
+          ]
+        ],
+        "summaries_match_receipt": true,
+        "reported_oracle_accepted": true,
+        "raw_sha256": "8138d3140932737e9014ecd4da8abf16df477b180f7eb490c9dfcb99f955bb62",
+        "raw_hash_matches": true,
+        "expected_panic_success_names": [
+          "runner_construction_oracle_rejects_delegation_present_only_in_tests",
+          "runner_construction_oracle_rejects_production_runner_constructor",
+          "runner_construction_oracle_rejects_production_turn_owner_constructor"
+        ],
+        "actual_target_summaries": [
+          {
+            "target": "canonical_checkpoint_recovery_contract",
+            "passed": 12,
+            "failed": 0,
+            "ignored": 0
+          },
+          {
+            "target": "host_runner_composition_production_wiring_contract",
+            "passed": 29,
+            "failed": 0,
+            "ignored": 0
+          },
+          {
+            "target": "production_agent_checkpoint_contract",
+            "passed": 15,
+            "failed": 0,
+            "ignored": 0
+          },
+          {
+            "target": "production_agent_store_recovery_contract",
+            "passed": 12,
+            "failed": 0,
+            "ignored": 0
+          },
+          {
+            "target": "production_turn_agent_owner_contract",
+            "passed": 19,
+            "failed": 0,
+            "ignored": 0
+          },
+          {
+            "target": "transcript_mirror_production_provider_contract",
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0
+          }
+        ],
+        "actual_unique_positive_name_count": 91
+      }
+    ],
+    "all_shared_groups": [
+      {
+        "case": "integration",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 213,
+        "summaries": [
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            48,
+            0,
+            0
+          ],
+          [
+            6,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            0
+          ],
+          [
+            6,
+            0,
+            0
+          ],
+          [
+            21,
+            0,
+            0
+          ],
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            19,
+            0,
+            0
+          ],
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            6,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            18,
+            0,
+            0
+          ],
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            27,
+            0,
+            0
+          ],
+          [
+            14,
+            0,
+            0
+          ],
+          [
+            9,
+            0,
+            0
+          ],
+          [
+            5,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "aff12e50fce39ff7d08fd57ca7efba0ea8f17f74a3fd3a29a9c2f54fbe603f8b",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "session-owner-namespace",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 56,
+        "summaries": [
+          [
+            19,
+            0,
+            0
+          ],
+          [
+            28,
+            0,
+            0
+          ],
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "49e687f21b89e44b2c84f35462708fbba8129212180aef4544f387f49279d883",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "codex-model-identity",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 10,
+        "summaries": [
+          [
+            10,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "1d410bd8b7f72e4dea11f4d762473e038de0a6718988da828aee80d234ac9900",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "codex-workspace-binding",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 7,
+        "summaries": [
+          [
+            7,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "b4f711567eb5e48a507a16f5823e9e018b593066c3ea8d0a9155287df1e54ab9",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "codex-workspace-http",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 11,
+        "summaries": [
+          [
+            11,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "17bc5cc0040aeb7c65e7230c257553fd6ab5bd8c3ede35feff6375f51333aab0",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "codex-model-regressions",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 100,
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            11,
+            0,
+            0
+          ],
+          [
+            9,
+            0,
+            0
+          ],
+          [
+            14,
+            0,
+            0
+          ],
+          [
+            50,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "cb7b394f2ac1634d5137478a3b6c9624b8f7b5d9a1be307068a213bb4da47da8",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "memory-account-binding",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 2,
+        "summaries": [
+          [
+            2,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "b7d0b305e1ea247978d427d1fff316b5396bc45be811d43e2805620ba3f67796",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "checked-store",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 3,
+        "summaries": [
+          [
+            3,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "a5f21ad1266ef7e91f2c0300894d1e26f45d0295dbf2cc0bb2bc3c14c597a791",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "paired-device-sse",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 1,
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "cd6f8799c2ac85da59df8339b5aad017ea4549c9078bb0199fc84b445e737357",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-pairing-join",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 8,
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "5cc029f5c28a064f4e20785a4f5235b9963bb1051acdc7ef4d5815a2e9b1b0c5",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-join-limit-state",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 11,
+        "summaries": [
+          [
+            11,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "16144f019314179dc60a86eba899cfcb32612938e02b24ee189b92be7a92703c",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-join-ingress-http",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 7,
+        "summaries": [
+          [
+            7,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "9ff9c2cad892337e153da59a2887dcaa95e05f27f69b637a7f0550271d2f12c7",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-join-legacy-http",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 2,
+        "summaries": [
+          [
+            2,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "dc796b85e8401e6aecd5194b00e49bda4ac67bfa663e07fb70b697fd12c893fc",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-join-tls",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 1,
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "6279b816f71656f07f008fe22cf900cbce156dfb160ba784573c4c3a43f1bde0",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "production-memory-synthesis",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 2,
+        "summaries": [
+          [
+            2,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "f9c4c3f628756171076b8c3f9d34c0060424cfc0b89cc16ea433587cc637061f",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "session-claim-integration",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 83,
+        "summaries": [
+          [
+            24,
+            0,
+            0
+          ],
+          [
+            59,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "bd016ca841b5c1b0343d9e719e3998e7492ceee0e010728c51166d67e6089c1b",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "session-claim-commit-custody",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 9,
+        "summaries": [
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "c428de79b43d883e43e942682544c475b0dcbcb2f1c4e5f6bbae8082fd0cf058",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-pairing",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 20,
+        "summaries": [
+          [
+            20,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "d37743f60a161777eb3aaa145b66524212ba503204c8c90fd42fdb6c5c3c6e3c",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-pairing-rotation-authority",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 9,
+        "summaries": [
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "804c0619e9b12191cf80cc17c7730950fccb0496fb8ef905f9b573647ff6a504",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-pairing-rotation-gateway",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 8,
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "2f91a173bde2d8635ac15c4314b0209416ad3fbf91da3944d82ed1ac723524dc",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-pairing-revocation-authority",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 26,
+        "summaries": [
+          [
+            26,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "7ed58d9ee3e09325f7c8c6d9172022ba877088955e40f6d35f25d3fb062e37cc",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-pairing-revocation-gateway",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 8,
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "b853eee8e554b35ac0691926aa25447a53c53a78e49e6abdd725fa418a8dc77b",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "device-pairing-retained-stream",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 14,
+        "summaries": [
+          [
+            14,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "ff33e38c9f3bf3926678c2e980ab4aeacaef7b401eed00efba8e5012ae3c7571",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "received-catalog-preparation",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 7,
+        "summaries": [
+          [
+            7,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "bdb5bd24b49e0c8e05d2111feda1d88861b1ffd7aaed0213f4a00d28306487aa",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "received-catalog-projection",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 12,
+        "summaries": [
+          [
+            12,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "a6edb791fc1adb4e42dad4340651a7bb67f23ab7b31c09255eaa73d66165fe5c",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "received-catalog-toolset",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 10,
+        "summaries": [
+          [
+            10,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "6b69aaa613331d4c95a89b65462291a870227067d88d8418db0c47bb4e93a3e3",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "received-catalog-runtime",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 19,
+        "summaries": [
+          [
+            19,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "8ae698742446c3c7bd55e2efb59125d894136c240b8cd4098cf9c84e754ae44f",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "preentry-cancellation-wiring",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 21,
+        "summaries": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "21bcf93cbee941002e3c3c58efb1c8072ab43b95147d2ae921dd807f473676de",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "received-catalog-retry",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 1,
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "acf3ed8015e12c0b0ceccfc8ffd00a874cfb992aee57c92030a6b78d8ddb6e8f",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "received-catalog-builder-regressions",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 13,
+        "summaries": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "5269d608d204a7472b19a08fa1bd293fbeef413cfce21e990f1bb0b1c3eacec6",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "received-catalog-credential-match",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 5,
+        "summaries": [
+          [
+            5,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "d2c3effdee6ec4bfbfaf60fb7a9d27a5de01130b0cb18597888b7594f3181570",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "channel-transport-chunks",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 20,
+        "summaries": [
+          [
+            20,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "9687a699ebc550b2b7b88257f20afe0db70221a7e7cd2045a4f63bda3be5869a",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "plugin-uninstall-service",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 101,
+        "summaries": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            19,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            16,
+            0,
+            0
+          ],
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            0
+          ],
+          [
+            21,
+            0,
+            1
+          ],
+          [
+            5,
+            0,
+            0
+          ],
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "6597f9de4e85682007a3edf1c18e530e727d1f78f874dceafce4fa4431ad75f6",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "plugin-uninstall-state",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 73,
+        "summaries": [
+          [
+            73,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "187e36d79059686a3ba57bf41289ca78df7aa5ee1771875acc5c7c1105e19ac1",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "plugin-uninstall-binding",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 9,
+        "summaries": [
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "1796d6db5f8a98fcbc57024e270b7d14fae536f97ec9f86bac7d41d03f385f93",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "plugin-uninstall-relay-handoff",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 1,
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "82cb2c1577624293ed7abb60f98e877487632d61b5de2e48c3462dcb3e615f87",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "plugin-cache-publication",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 3,
+        "summaries": [
+          [
+            3,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "b05b76c8bf3295a442b06156d087a288c9f78103abff4a287ab95bae29db6b14",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "plugin-session-consumer",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 3,
+        "summaries": [
+          [
+            3,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "69e0e4da697ebd68393330f7ae6bab52838527c07549108536c4b59fb7bfb5e3",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "provider-checkpoint-publication",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 7,
+        "summaries": [
+          [
+            7,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "fb66ed003fa6abfb6ace0fe958433eb6c9b22996bad4081d7464503082f1a598",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "provider-checkpoint-custody",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 16,
+        "summaries": [
+          [
+            16,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "ef358dd7166c10f69d619df454bb4e9a4bc36da49a00a5d07a5c4799816c78a5",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "generated-failure-history",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 9,
+        "summaries": [
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "563c092e2c70a0e1d4230b925046cb5392a703f2028d8b88a37781a7ee08fbe7",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "canonical-root-admission",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 8,
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "e984f67e27561b6704721c0a51a899d5d4294946f1318aba7d2625bfcb46cced",
+        "raw_hash_matches": true
+      },
+      {
+        "case": "canonical-root-admission-contracts",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "actual_positive_count": 91,
+        "summaries": [
+          [
+            12,
+            0,
+            0
+          ],
+          [
+            29,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            12,
+            0,
+            0
+          ],
+          [
+            19,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            0
+          ]
+        ],
+        "reported_oracle_accepted": true,
+        "raw_sha256": "8138d3140932737e9014ecd4da8abf16df477b180f7eb490c9dfcb99f955bb62",
+        "raw_hash_matches": true
+      }
+    ],
+    "input_count": 186,
+    "all_186_input_hashes_match_subject": true,
+    "all_43_command_and_capture_exits_zero": true,
+    "all_43_oracles_accepted": true,
+    "complete_assessment_sha256": "5639b1406942b5677940b7ff238c55c6d1d71848aaa83bca38391a3457462975",
+    "previous_failure": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a run41564137858 remains failed TEST_FLAW; no relabeling. 91 summary positives versus88 parsed names retained in prior task evidence."
+  },
+  "remaining_at_observation": {
+    "timestamp_utc": "2026-11-03T02:35:42Z",
+    "linux_runtime_job": "in_progress; later App/Automation owners not yet assessed",
+    "macos": {
+      "job_id": 125687640887,
+      "status": "queued",
+      "media_result": "no execution evidence"
+    },
+    "final_source_closure": "open",
+    "all_eight_global_flags": false,
+    "final_acceptance": "not granted"
+  },
+  "limits": [
+    "No FUA-v1 runtime result is represented here.",
+    "Linux/Windows bounded controls do not stand in for native macOS, UI/Runner/channel consumers, full generated HTML lifecycle, codec/provider/plugin/node/device compatibility, packaging or full OCRM acceptance.",
+    "This evidence carrier is distinct from subject947e980 and from any eventual shipping artifact.",
+    "Only data decoding/hashing/source reading occurred locally; executable checks ran in GitHub Actions."
+  ],
+  "worker_provenance": "Read-only collector spawned with fork_turns=none and explicit reasoning_effort=xhigh accepted; configured model retained. Root read reports and GitHub job/commit/source identities. Earlier checkpoint effort wording is preserved with correction.",
+  "later_job_metadata": {
+    "observed_at": "2026-11-03T02:40:41Z",
+    "run_id": 41566022474,
+    "linux_job_id": 125687640774,
+    "steps": [
+      {
+        "number": 18,
+        "name": "Test typed Automation admission and actual owners on the existing Linux Host cache",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "number": 19,
+        "name": "Check and execute the actual Automation, Settings and channel App owners on Linux",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "number": 20,
+        "name": "Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache",
+        "status": "in_progress",
+        "conclusion": null
+      }
+    ],
+    "macos_job_id": 125687640887,
+    "macos_status": "queued",
+    "limit": "Job-step metadata only; the complete media and shared raw-log assessments above are the bounded claims of this carrier. No final Linux job or macOS pass is claimed."
+  }
+}
