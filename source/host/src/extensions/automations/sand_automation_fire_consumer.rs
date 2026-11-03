@@ -238,7 +238,7 @@ impl AutomationFireBackendRuntime {
         }
 
         let has_owed_work = !self.states.is_empty();
-        self.drained_notify_seq = self.notify_seq;
+        let drain_notify_seq = self.notify_seq;
         if !has_owed_work {
             if notify_connected {
                 let should_drain = match self.last_poll_at_ms {
@@ -271,19 +271,36 @@ impl AutomationFireBackendRuntime {
                 "/sand/automation-events/poll",
                 &json!({ "ackRunUuids": ack_run_uuids }),
             )?;
+            // Check the whole list before advancing custody or successful-drain state.
             let events = response
-                .get("events")
+                .as_object()
+                .and_then(|response| response.get("events"))
                 .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default();
+                .ok_or_else(|| AutomationsBackendError::Decode(
+                    "automation poll response must be an object with an events array".into(),
+                ))?
+                .iter()
+                .enumerate()
+                .map(|(index, raw)| {
+                    BackendAutomationFire::from_value(raw)
+                        .filter(|event| {
+                            [&event.id, &event.sand_agent_id, &event.automation_id]
+                                .iter()
+                                .all(|id| !id.trim().is_empty())
+                        })
+                        .ok_or_else(|| AutomationsBackendError::Decode(format!(
+                            "invalid automation poll event at index {index}",
+                        )))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            self.drained_notify_seq = drain_notify_seq;
             if self.notify_seq == self.drained_notify_seq {
                 self.notify_pending = false;
             }
             self.last_poll_at_ms = Some(now_ms);
             let returned = events
                 .iter()
-                .filter_map(|event| event.get("id").and_then(Value::as_str))
-                .map(str::to_string)
+                .map(|event| event.id.clone())
                 .collect::<BTreeSet<_>>();
 
             self.states.retain(|id, state| {
@@ -291,8 +308,7 @@ impl AutomationFireBackendRuntime {
             });
 
             let mut delivered = 0usize;
-            for raw in events {
-                let Some(event) = BackendAutomationFire::from_value(&raw) else { continue };
+            for event in events {
                 if self.states.contains_key(&event.id) {
                     continue;
                 }

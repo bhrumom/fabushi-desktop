@@ -1,0 +1,406 @@
+diff --git a/projects/openclaw-rust/inventory/index.json b/projects/openclaw-rust/inventory/index.json
+index a4f62bdd60e624b630b0e735bb42e020e8f82a35..6905d89a058a59f09a2ec3f5b3b4afc6f751919d 100644
+--- a/projects/openclaw-rust/inventory/index.json
++++ b/projects/openclaw-rust/inventory/index.json
+@@ -35,6 +35,36 @@
+     "unread": 62067,
+     "unreviewed_applicable": 0
+   },
++  "pending_mapping_additions": {
++    "from_canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
++    "entries": [
++      {
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
++        "path": "src/gateway/agent-turn/agent-run-final-media.ts",
++        "blob_sha": "f4bf5b4308cb2a7160ad1db0142160d14fb71551"
++      },
++      {
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
++        "path": "src/gateway/agent-turn/agent-run-media.ts",
++        "blob_sha": "27a3a65974fad078872b257ee28cafccdad4691f"
++      },
++      {
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
++        "path": "src/infra/sqlite-worker-error.ts",
++        "blob_sha": "b13f8354e7244d630ee274b3b0debf9a3f5bb8c6"
++      },
++      {
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
++        "path": "src/gateway/managed-image-attachments.custody.ts",
++        "blob_sha": "1975104ea6cdcfea25d3bc4362edbaea5e673adf"
++      },
++      {
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
++        "path": "src/media/store.read-scope.ts",
++        "blob_sha": "73515a9ed6a2dc9f1a0adddc638d542ad1323ee5"
++      }
++    ]
++  },
+   "project_id": "OCRM-001",
+   "spec_revision": 2,
+   "upstream": {
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 2f0d7d43f54c9abedebbe25f40f21acd20a19c30..99fd980c1f8bee47327efc49e59e0d5544dcf46f 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -36788,8 +36788,8 @@
+       "evidence_refs": [
+         "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-unknown-current-audit.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/current-owner-audit.md",
+         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-concurrency-consumer-notes.md",
+         "source/host/src/extensions/session/agent_db.rs",
+         "source/host/src/attachment_paths.rs",
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index d62c6816905709d9dfed939a3581633488d9921c..bd1a56a6990168c384bb553c269a3fc1b695a14a 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -1396,7 +1396,7 @@
+         "source/host/app/src/tests/local_media_file_url_tests.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R23",
+@@ -1553,7 +1553,7 @@
+         "source/host/tests/channel_attachment_contract.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R24",
+@@ -2919,7 +2919,7 @@
+         "source/host/app/src/tests/local_media_file_url_tests.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC23",
+@@ -3099,7 +3099,7 @@
+         "source/host/tests/channel_attachment_contract.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+diff --git a/source/host/src/extensions/session/agent_db.rs b/source/host/src/extensions/session/agent_db.rs
+index 6c27e9bb9f665b1160457b9acc29dd5d64fba289..87186bc4b246d88a5ce51ebda0623b76f4425d3d 100644
+--- a/source/host/src/extensions/session/agent_db.rs
++++ b/source/host/src/extensions/session/agent_db.rs
+@@ -9186,8 +9186,8 @@ mod media_settlement_tests {
+             assert_eq!(std::fs::read(&self.original).unwrap(), b"retained media original");
+         }
+ 
+-        fn assert_committed_storage(&self, entry: &Value) {
+-            assert_eq!(self.rows(), vec![entry.clone(), json!({
++        fn expected_committed_entries(&self, entry: &Value) -> Vec<Value> {
++            vec![entry.clone(), json!({
+                 "id": RECEIPT_ID,
+                 "kind": "outgoing-media-settlement",
+                 "sessionKey": self.admission.session_key,
+@@ -9195,7 +9195,11 @@ mod media_settlement_tests {
+                 "lifecycleRevision": self.admission.lifecycle_revision,
+                 "mediaPaths": [self.original.to_string_lossy()],
+                 "transcriptEntryIds": [SEND_ID],
+-            })]);
++            })]
++        }
++
++        fn assert_committed_storage(&self, entry: &Value) {
++            assert_eq!(self.rows(), self.expected_committed_entries(entry));
+             let mut released = self.admission.clone();
+             released.admitted_media_work_id = None;
+             released.admitted_media_paths.clear();
+@@ -9359,7 +9363,10 @@ mod media_settlement_tests {
+ 
+         for _ in 0..2 {
+             let reopened = SandAgentDb::open_existing_agent(fixture.owner.db_path(), 0).unwrap();
+-            assert_eq!(reopened.get_transcript_entries().unwrap(), vec![entry.clone()]);
++            assert_eq!(
++                reopened.get_transcript_entries().unwrap(),
++                fixture.expected_committed_entries(&entry),
++            );
+             assert!(reopened.read_session_work_admission().unwrap().unwrap()
+                 .admitted_media_work_id.is_none());
+             reopened.close(false);
+@@ -9574,7 +9581,10 @@ mod media_settlement_tests {
+         assert!(fault.was_applied());
+         fixture.assert_retired(1);
+         assert!(!other.is_closed(), "unknown must retire only the invoking connection");
+-        assert_eq!(other.get_transcript_entries().unwrap(), vec![entry.clone()]);
++        assert_eq!(
++            other.get_transcript_entries().unwrap(),
++            fixture.expected_committed_entries(&entry),
++        );
+         fixture.assert_committed_storage(&entry);
+         events.assert_none();
+         other.close(false);
+diff --git a/source/host/tests/openclaw_chat_cron_node_contract.rs b/source/host/tests/openclaw_chat_cron_node_contract.rs
+index b6a107dda12c867e57e7cd6ff38d245308f723ea..2bde1d3f9ab87f53e00079140a414ad492ac2ab6 100644
+--- a/source/host/tests/openclaw_chat_cron_node_contract.rs
++++ b/source/host/tests/openclaw_chat_cron_node_contract.rs
+@@ -635,10 +635,10 @@ fn test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout
+ #[test]
+ fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
+     let list_start = SHIPPING_HOST_MAIN
+-        .find("fn call_openclaw_cron_list(")
++        .find("fn list_openclaw_cron_jobs(")
+         .expect("shipping cron.list owner exists");
+     let list_end = SHIPPING_HOST_MAIN[list_start..]
+-        .find("\n    fn call_openclaw_cron_trigger(")
++        .find("\nfn trigger_openclaw_cron_job(")
+         .map(|offset| list_start + offset)
+         .expect("shipping cron.list function boundary exists");
+     let list = &SHIPPING_HOST_MAIN[list_start..list_end];
+@@ -651,18 +651,35 @@ fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
+     assert!(!list.contains("if let Ok(records)"));
+ 
+     let trigger_start = SHIPPING_HOST_MAIN
+-        .find("fn call_openclaw_cron_trigger(")
++        .find("fn trigger_openclaw_cron_job(")
+         .expect("shipping cron.trigger owner exists");
+     let trigger_end = SHIPPING_HOST_MAIN[trigger_start..]
+-        .find("\n    fn call_openclaw_node_register(")
++        .find("\nimpl UnifiedGatewayApi {")
+         .map(|offset| trigger_start + offset)
+         .expect("shipping cron.trigger function boundary exists");
+     let trigger = &SHIPPING_HOST_MAIN[trigger_start..trigger_end];
+     assert!(trigger.contains("previous_run_id"));
+     assert!(trigger.contains("record.runs.first()"));
+-    assert!(trigger.contains(".first()\n                    .filter"));
++    assert!(trigger.contains(".first()\n                .filter"));
+     assert!(trigger.contains("\"action\": if finished"));
+     assert!(trigger.contains("unwrap_or(\"accepted\")"));
+     assert!(!trigger.contains("if let Ok(records)"));
+     assert!(!trigger.contains("format!(\"run-{}\", uuid::Uuid::new_v4())"));
++
++    let list_wrapper_start = SHIPPING_HOST_MAIN
++        .find("fn call_openclaw_cron_list(")
++        .expect("shipping cron.list entry exists");
++    let trigger_wrapper_start = SHIPPING_HOST_MAIN[list_wrapper_start..]
++        .find("\n    fn call_openclaw_cron_trigger(")
++        .map(|offset| list_wrapper_start + offset)
++        .expect("shipping cron.trigger entry exists");
++    let trigger_wrapper_end = SHIPPING_HOST_MAIN[trigger_wrapper_start..]
++        .find("\n    fn call_openclaw_node_register(")
++        .map(|offset| trigger_wrapper_start + offset)
++        .expect("shipping cron.trigger entry boundary exists");
++    let list_wrapper = &SHIPPING_HOST_MAIN[list_wrapper_start..trigger_wrapper_start];
++    let trigger_wrapper = &SHIPPING_HOST_MAIN[trigger_wrapper_start..trigger_wrapper_end];
++    assert!(list_wrapper.contains("list_openclaw_cron_jobs(&store, args)"));
++    assert!(trigger_wrapper.contains("trigger_openclaw_cron_job(&store, args, |run_args|"));
++    assert!(trigger_wrapper.contains("self.call(\"runAgentAutomationNow\", run_args)"));
+ }
+diff --git a/source/host/tests/openclaw_sessions_and_config_contract.rs b/source/host/tests/openclaw_sessions_and_config_contract.rs
+index ba7dde9c12eb14cb0a0615a49a013a2e126b860d..35719fc77edb1fea8f7acf0b22524c6eff7b29aa 100644
+--- a/source/host/tests/openclaw_sessions_and_config_contract.rs
++++ b/source/host/tests/openclaw_sessions_and_config_contract.rs
+@@ -1693,6 +1693,9 @@ const MEDIA_COMMIT_OWNER_TAIL: &str = r#"match result {
+ fn media_commit_inherent_impl<'a>(file: &'a syn::File, owner: &str) -> Option<&'a syn::ItemImpl> {
+     let mut candidates = file.items.iter().filter_map(|item| {
+         let syn::Item::Impl(item) = item else { return None; };
++        // Only inherent implementations can own this method. Trait bodies
++        // remain in the complete source inspected by the global command checks.
++        if item.trait_.is_some() { return None; }
+         let syn::Type::Path(ty) = item.self_ty.as_ref() else { return None; };
+         ty.path.segments.last()
+             .is_some_and(|segment| segment.ident == owner)
+@@ -1787,7 +1790,7 @@ fn media_commit_owner_is_handled(source: &str) -> Option<()> {
+             let item = input.parse::<syn::Item>()?;
+             let syn::Item::Impl(implementation) = item else { continue; };
+             let syn::Type::Path(ty) = implementation.self_ty.as_ref() else { continue; };
+-            if !ty.path.is_ident("SandAgentDb") { continue; }
++            if implementation.trait_.is_some() || !ty.path.is_ident("SandAgentDb") { continue; }
+             boundary.call(syn::Attribute::parse_outer)?;
+             boundary.parse::<syn::Token![impl]>()?;
+             boundary.parse::<syn::Type>()?;
+@@ -1860,6 +1863,10 @@ fn media_commit_owner_is_handled(source: &str) -> Option<()> {
+ }
+ 
+ fn source_without_owned_media_commit_adapter(source: &str) -> Option<String> {
++    // Rust normalizes source CRLF before tokenization, while include_str!
++    // retains checkout bytes. Only this oracle image uses logical newlines.
++    let source = source.replace("\r\n", "\n");
++    let source = source.as_str();
+     media_commit_owner_is_handled(source)?;
+     // Prove the rollback method too, but keep all of it in the remaining scope.
+     media_commit_checked_method_source(source, "rollback", MEDIA_ROLLBACK_METHOD)?;
+@@ -1882,7 +1889,14 @@ fn source_without_owned_transaction_commit_adapters(source: &str) -> Option<Stri
+ 
+ #[test]
+ fn media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = source.as_str();
++    let actual_drop = r#"impl Drop for SandAgentDb {
++    fn drop(&mut self) {
++        self.close(false);
++    }
++}"#;
++    assert!(source.contains(actual_drop), "the actual baseline includes the existing Drop trait owner");
+     check_session_admission_guard_owners(source)
+         .expect("the existing owner-local admission requirements, including all three media guards, remain intact");
+     let media_scope = source_without_owned_media_commit_adapter(source)
+@@ -1893,6 +1907,27 @@ fn media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards() {
+     let remaining = source_without_owned_transaction_commit_adapters(source)
+         .expect("independent media proof composes with the original channel proof");
+     assert!(!remaining.contains("db.execute_batch(\"COMMIT\")?;"));
++    assert!(remaining.contains(actual_drop), "the complete Drop implementation stays in the global scope");
++    let crlf_source = source.replace('\n', "\r\n");
++    assert_eq!(
++        source_without_owned_transaction_commit_adapters(&crlf_source)
++            .expect("the same actual owner and trait baseline must be accepted with CRLF"),
++        remaining,
++        "line-ending transport must preserve the complete unexempted source",
++    );
++
++    let harmless_traits = r#"trait MediaOracleObservation { fn observe(&self); }
++impl MediaOracleObservation for SandAgentDb { fn observe(&self) {} }
++impl MediaOracleObservation for MediaSettlementCommands { fn observe(&self) {} }"#;
++    let coexistence = format!("{source}\n{harmless_traits}");
++    let remaining = source_without_owned_transaction_commit_adapters(&coexistence)
++        .expect("independent traits can coexist with both exact inherent owners");
++    assert!(remaining.contains(harmless_traits), "trait implementations receive no source exemption");
++    assert_eq!(
++        source_without_owned_transaction_commit_adapters(&coexistence.replace('\n', "\r\n"))
++            .expect("trait coexistence remains accepted with CRLF"),
++        remaining,
++    );
+ 
+     for body in [
+         "!(transaction.commit().is_ok())",
+@@ -1909,7 +1944,8 @@ fn media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards() {
+ 
+ #[test]
+ fn media_commit_oracle_rejects_missing_duplicate_or_conditional_helper() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = source.as_str();
+     for changed in [
+         source.replacen(MEDIA_RAW_COMMIT_METHOD, "", 1),
+         source.replacen("impl MediaSettlementCommands {", "impl OtherCommands {", 1),
+@@ -1941,7 +1977,8 @@ fn media_commit_oracle_rejects_missing_duplicate_or_conditional_helper() {
+ 
+ #[test]
+ fn media_commit_oracle_rejects_missing_duplicate_or_conditional_owner() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = source.as_str();
+     let start = source.find(MEDIA_COMMIT_OWNER_SIGNATURE).expect("actual media signature");
+     let method = source[start..].split("\n    /// Atomically commits one guarded compaction entry")
+         .next().expect("adjacent owner boundary");
+@@ -1971,7 +2008,8 @@ fn media_commit_oracle_rejects_missing_duplicate_or_conditional_owner() {
+ 
+ #[test]
+ fn media_commit_oracle_rejects_changed_commit_or_rollback_commands() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = source.as_str();
+     for changed_method in [
+         MEDIA_RAW_COMMIT_METHOD.replace("db.execute_batch(\"COMMIT\")?;", "Ok::<(), rusqlite::Error>(())?;"),
+         MEDIA_RAW_COMMIT_METHOD.replace("db.execute_batch(\"COMMIT\")?;", "let _ = db.execute_batch(\"COMMIT\");"),
+@@ -1997,7 +2035,8 @@ fn media_commit_oracle_rejects_changed_commit_or_rollback_commands() {
+ 
+ #[test]
+ fn media_commit_oracle_rejects_extra_aliased_or_macro_callers() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = source.as_str();
+     for call in [
+         "commands.commit(db)?;",
+         "let alias = commands; alias.commit(db)?;",
+@@ -2025,11 +2064,29 @@ fn media_commit_oracle_rejects_extra_aliased_or_macro_callers() {
+     assert!(syn::parse_file(&nested).is_ok());
+     assert!(source_without_owned_transaction_commit_adapters(&nested).is_none(),
+         "a helper sibling is not part of the method-sized exception");
++
++    for owner in ["SandAgentDb", "MediaSettlementCommands"] {
++        for call in [
++            "let alias = commands; alias.commit(db)?;",
++            "let alias = commands; alias.r#commit(db)?;",
++        ] {
++            let changed = format!(
++                "{source}\nimpl MediaOracleCaller for {owner} {{ fn invoke(&self) {{ {call} }} }}"
++            );
++            assert!(syn::parse_file(&changed).is_ok(), "trait caller counterfactual syntax: {owner}");
++            let crlf = changed.replace('\n', "\r\n");
++            for image in [&changed, &crlf] {
++                assert!(source_without_owned_transaction_commit_adapters(image).is_none(),
++                    "LF and CRLF must retain an excluded trait's aliased helper call: {owner}");
++            }
++        }
++    }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_discarded_or_changed_settlement_handling() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = source.as_str();
+     for changed_tail in [
+         format!("{MEDIA_COMMIT_OWNER_TAIL}; Ok(0)"),
+         format!("#[cfg(test)] {MEDIA_COMMIT_OWNER_TAIL}"),
+@@ -2046,6 +2103,8 @@ fn media_commit_oracle_rejects_discarded_or_changed_settlement_handling() {
+         assert!(syn::parse_file(&changed).is_ok(), "settlement-tail fixture syntax");
+         assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
+             "the returned outcome must retain commit error, rollback, autocommit, retirement and publication handling");
++        assert!(source_without_owned_transaction_commit_adapters(&changed.replace('\n', "\r\n")).is_none(),
++            "CRLF must preserve every settlement-tail mutation rejection");
+     }
+     let write_start = "let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {";
+     let writes = format!("{MEDIA_COMMIT_OWNER_PREFIX}\n        {write_start}");
+@@ -2063,7 +2122,8 @@ fn media_commit_oracle_rejects_discarded_or_changed_settlement_handling() {
+ 
+ #[test]
+ fn media_commit_oracle_rejects_changed_unknown_entry_handling() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = source.as_str();
+     for changed_prefix in [
+         MEDIA_COMMIT_OWNER_PREFIX.replace("TranscriptCommitUnknown", "WorkAdmissionInvalid"),
+         MEDIA_COMMIT_OWNER_PREFIX.replace("self.retire_channel_inbound_connection(&mut guard);", ""),
+@@ -2081,22 +2141,28 @@ fn media_commit_oracle_rejects_changed_unknown_entry_handling() {
+ 
+ #[test]
+ fn media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = source.as_str();
+     let direct = "db.execute_batch(\"COMMIT\")?;";
+     let unguarded = format!("fn unguarded_media_owner() {{ {direct} }}");
+     let writes = format!("{MEDIA_COMMIT_OWNER_PREFIX}\n        let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {{");
+     for changed in [
+         format!("{unguarded}\n{source}"),
+         format!("{source}\n{unguarded}"),
++        format!("{source}\nimpl RawMediaOwner for SandAgentDb {{ fn unguarded(&self) {{ {direct} }} }}"),
++        format!("{source}\nimpl RawMediaOwner for MediaSettlementCommands {{ fn unguarded(&self) {{ {direct} }} }}"),
+         source.replacen(MEDIA_RAW_COMMIT_METHOD,
+             &format!("{MEDIA_RAW_COMMIT_METHOD}\n{unguarded}"), 1),
+         source.replacen(writes.as_str(), &format!("{writes}\n{direct}"), 1),
+     ] {
+         assert!(syn::parse_file(&changed).is_ok(), "raw-owner fixture syntax");
+-        let remaining = source_without_owned_transaction_commit_adapters(&changed)
+-            .expect("the unchanged bounded adapters still prove their own handling");
+-        assert!(remaining.contains(direct),
+-            "the unchanged global prohibition must still reject every other raw COMMIT owner");
++        let crlf = changed.replace('\n', "\r\n");
++        for image in [&changed, &crlf] {
++            let remaining = source_without_owned_transaction_commit_adapters(image)
++                .expect("the unchanged bounded adapters still prove their own handling");
++            assert!(remaining.contains(direct),
++                "LF and CRLF must preserve the global prohibition for every other raw COMMIT owner");
++        }
+     }
+ }
+ 

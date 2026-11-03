@@ -1,0 +1,106 @@
+{
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 2,
+  "contract": "OCRM-AUTOMATION-POLL-CUSTODY-v1",
+  "root_phase": {
+    "model": "configured GPT-6 Astra Pro",
+    "effort": "configured/inherited; no parent override surface",
+    "scope": "production custody, source authority, review synthesis and evidence"
+  },
+  "base": "b15e58957a597997363e1273f2f32a222365c310",
+  "snapshot": "bd3dd6919c9bb6e71ba54ddf67919b9f3d324a1a",
+  "tree": "e9b2613c22285207c5c061592909f69bc830a8de",
+  "implementation": {
+    "agent": "/root/automation_poll_custody_impl",
+    "requested_effort": "xhigh",
+    "requested_model": "configured",
+    "fork_turns": "none",
+    "observed_status": "completed",
+    "report_root_full_read": true,
+    "diff_root_full_read": true,
+    "source_files": 2,
+    "execution": "not run; Actions only"
+  },
+  "reviews": [
+    {
+      "agent": "/root/automation_poll_custody_general_r1",
+      "requested_effort": "xhigh",
+      "requested_model": "configured",
+      "fork_turns": "none",
+      "status": "completed",
+      "full_frozen_scope": true,
+      "blind": true,
+      "verdict": "APPROVE_SOURCE_SCOPE_NO_FINDINGS",
+      "report": "r1-general-review.md",
+      "report_bytes": 21080,
+      "report_sha256": "0b8f593c34175e32feb6eaa98446ff221bd4815b72fe48624f1756e95a9a2e5b",
+      "root_full_report_read": true,
+      "requested_settings_sent_via_exposed_launch_fields": true,
+      "independent_effective_runtime_introspection": "not exposed; not asserted"
+    },
+    {
+      "agent": "/root/automation_poll_custody_structure_r1",
+      "requested_effort": "xhigh",
+      "requested_model": "gpt-6.1-sol",
+      "fork_turns": "none",
+      "status": "completed",
+      "full_frozen_scope": true,
+      "blind": true,
+      "verdict": "APPROVE_SOURCE_SCOPE_NO_FINDINGS",
+      "report": "r1-structure-review.md",
+      "report_bytes": 16240,
+      "report_sha256": "acbda5ea6bcbe629bca689585990e1a0694b1dd3d0ec38cb025a30a2712bb120",
+      "root_full_report_read": true,
+      "requested_settings_sent_via_exposed_launch_fields": true,
+      "independent_effective_runtime_introspection": "not exposed; not asserted"
+    }
+  ],
+  "model_effort_limit": "Launcher accepts explicit fields; no independent runtime model/effort introspection exposed. Do not equate prompt text with setting.",
+  "decisions": [
+    {
+      "id": "AP-01",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "recorded_before_implementation": "docs/specs/sand-completion-ack-safety.md#checked-poll-custody--ocrm-automation-poll-custody-v1 and /tmp/automation-poll-custody-contract.json",
+      "finding": "Unchecked successful JSON can release Reported custody and partially dispatch while ignoring malformed entries.",
+      "fix": "Validate complete envelope/list before state or completion side effects, preserve exact wire identities and existing completion error/backoff rules."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "AP01",
+      "source_status": "implemented; two fresh independent source reviews complete with no findings",
+      "execution_status": "not run",
+      "acceptance": "pending"
+    },
+    {
+      "id": "AP02",
+      "source_status": "implemented; two fresh independent source reviews complete with no findings",
+      "execution_status": "not run",
+      "acceptance": "pending"
+    },
+    {
+      "id": "AP03",
+      "source_status": "implemented; two fresh independent source reviews complete with no findings",
+      "execution_status": "not run",
+      "acceptance": "pending"
+    },
+    {
+      "id": "AP04",
+      "source_status": "implemented; two fresh independent source reviews complete with no findings",
+      "execution_status": "not run",
+      "acceptance": "pending"
+    }
+  ],
+  "source_accounting": "Existing OCRM-R21/AC21 and OCRM-RESP-CRON-SESSION-REAPER-001 retained; crossref only, no status/flags/schema/U changes.",
+  "remaining": "Durable terminal-alias settlement, Sand principal/account-lifetime binding, deployed ACK/idempotency contracts, restart recovery, all full fixed-U and final product gates remain open.",
+  "root_synthesis": {
+    "decision": "ACCEPT_SOURCE_REVIEWS",
+    "findings": [],
+    "source_fix_round_required": false,
+    "whole_five_file_scope_reviewed": true,
+    "convergence": "R1; both fresh blind reports full-read by root; no source findings requiring change",
+    "limits": "Source review only; no execution or deployed-service/full-OCRM approval."
+  },
+  "snapshot_context_clarification": "session-context.json explains starting_head as copied source checkpoint; actual bare HEAD unborn, no checked-out developer state/index involved. Immutable source/diff unaffected."
+}

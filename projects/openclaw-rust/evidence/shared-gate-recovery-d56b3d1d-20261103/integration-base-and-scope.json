@@ -1,0 +1,51 @@
+{
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 2,
+  "fixed_U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "integration_base": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+  "base_tree": "518e019acc61861af909fcfd48a5c103a7ac7fe3",
+  "source_contract": "OCRM-AUTOMATION-POLL-CUSTODY-v1",
+  "review_snapshot": "bd3dd6919c9bb6e71ba54ddf67919b9f3d324a1a",
+  "review_scope_source_unchanged_across_incoming_commits": true,
+  "files": [
+    {
+      "path": "docs/specs/sand-completion-ack-safety.md",
+      "base_blob": "cbe3ceeb072ee9756235ac926f0c09021448ab8c",
+      "reviewed_candidate_blob": "5d1fe5c453e51445ac9c563191e3c6d571d81182",
+      "bytes": 10482,
+      "sha256": "40eed97e6ecfbd29748e5f846c1ca1818a17887f775ac6b2b2fed26146415bc9"
+    },
+    {
+      "path": "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
+      "base_blob": "7d5f3e50f3a20aa5f142fdfa029cdcc6d40e06c9",
+      "reviewed_candidate_blob": "f7f6789daa21fb21cd09296be049b6e925dfb301",
+      "bytes": 12243,
+      "sha256": "c88a2752f81a54e1a298680654181bb846ef2232d32ea0495add88540b6b4b6d"
+    },
+    {
+      "path": "source/host/tests/automations_backend_contract.rs",
+      "base_blob": "45174d8010a61d631bd4d605ecc1df515a619bbc",
+      "reviewed_candidate_blob": "11a9405442efa9acbbadfcdff879c0a996d1dee0",
+      "bytes": 63156,
+      "sha256": "447172503558301ea6b135dbe6954d71800ebe8eb8e5d68cc6dda021fd98818f"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "base_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "reviewed_candidate_blob": "37f90cfcddef5fbc917d07b5fa5468707a4bc452",
+      "bytes": 452895,
+      "sha256": "eb6786021b38996ea8f39307a4932398ed239f5c19c5974c559b5dc8d0520588"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+      "base_blob": "b0a62da2cc86b5479047458019bbb3adfc2b16d1",
+      "reviewed_candidate_blob": "978c7521d46f4dc95edb5e5347bcb890ea2a2582",
+      "bytes": 100390,
+      "sha256": "4f5064dcbd01c32f8396d15c2da386aab40ce927aef70758837353c4f4d01a5e"
+    }
+  ],
+  "preserve_incoming": "All fc187ec source/media/cron/ledger changes and all14faff5 Actions-derived inventory/shards unchanged. Do not copy local alternative source/media candidates into target tree.",
+  "no_execution_claim": "Reviews are source-only; exact published H compile/contracts/negative controls and shipping wiring require Actions. No global acceptance promotion.",
+  "source_carrier_separation": "b15 is historical evidence carrier, H74 original failures; incomingfc and14 identities do not become results for the next AP subject.",
+  "at_utc": "2026-11-03T05:18:10.342723+00:00"
+}

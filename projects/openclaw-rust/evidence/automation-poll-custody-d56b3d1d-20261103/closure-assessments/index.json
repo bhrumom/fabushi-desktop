@@ -1,0 +1,34 @@
+{
+  "fixed_U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "reports": [
+    {
+      "path": "next-automation-closure-gap.md",
+      "sha256": "d217118675c8ddb8bd98e008d2b5e7b3a2f867efd94564a3ff27ee1b8a6a7430",
+      "bytes": 58921,
+      "root_full_read": true,
+      "kind": "source-only prerequisite/gap assessment, not implementation or acceptance"
+    },
+    {
+      "path": "automation-durable-settlement-identity.md",
+      "sha256": "6df1072c600c7672c7bb8ff8e5218bff0bb2ddca85976d24b0661e0c988498ac",
+      "bytes": 63910,
+      "root_full_read": true,
+      "kind": "source-only prerequisite/gap assessment, not implementation or acceptance"
+    },
+    {
+      "path": "automation-custody-minimal-seam.md",
+      "sha256": "4be66d97a8a2c6541216cad28b36db8bece2eec4225162a623d38c9f49194999",
+      "bytes": 19617,
+      "root_full_read": true,
+      "kind": "source-only prerequisite/gap assessment, not implementation or acceptance"
+    },
+    {
+      "path": "next-channel-closure-gap.md",
+      "sha256": "8b4653fb0601c244fe21c2449c93b7bc936fe855f819ef772d9c17949d826e87",
+      "bytes": 43584,
+      "root_full_read": true,
+      "kind": "source-only prerequisite/gap assessment, not implementation or acceptance"
+    }
+  ],
+  "state": "Unimplemented follow-on gaps preserved for resumable work; report exact bases/read scopes govern, revalidate current source before changes."
+}

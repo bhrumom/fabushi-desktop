@@ -58,3 +58,81 @@ unresolved.
 AC1: source-level focused contract is present; execution receipt is pending.
 AC2: pending exact-head Actions result.
 AC3: pending publication and reply.
+
+
+## Checked poll custody — OCRM-AUTOMATION-POLL-CUSTODY-v1
+
+Decision **AP-01 — FIX / IMPL_BUG**, frozen before implementation on
+`871b033c5b9aabbe322cc7322af92648939db9b5` (the affected Automation source is
+unchanged from `bb5a7f6098f952df6d388a672c4fb01045bc645c`). Fixed upstream remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. This continuation supersedes the older
+correction's instruction to leave successful poll parsing unchanged only for
+the acceptance boundary specified below. All completion-error rules remain.
+
+The shipping `ProductionAutomationsLifecycle` constructs the Reqwest transport
+and the existing `AutomationFireBackendRuntime`. Reqwest's successful HTTP/JSON
+response is not itself a checked poll list. Currently an absent or non-array
+`events` becomes an empty list, after which every absent Reported ID is removed.
+A malformed member is skipped only after that removal. A successful-looking
+error document can therefore discard the client's ACK-owed custody. This is a
+source-confirmed local state defect; no deployed service incident is asserted.
+
+### Behavior and unique owner
+
+- **AP01:** the existing fire consumer must validate the complete poll response
+  before it removes a Reported ID, records a successful drain, dispatches any
+  returned fire or retries any Completed report. Require an object containing
+  an `events` array. Every member must satisfy the existing required fire shape:
+  string `id`, `sandAgentId`, `automationId`, unsigned integer `timestampMs`;
+  the three identity strings must contain a non-whitespace character. Preserve
+  their exact bytes; do not normalize or merge distinct identifiers. Keep the
+  existing optional revision/time/event interpretation and tolerate unrelated
+  response/event fields. Duplicate valid IDs retain the existing at-most-one
+  in-memory dispatch rule; do not invent a new wire uniqueness requirement.
+- **AP02:** any invalid envelope/member returns the existing Decode error with
+  a non-sensitive shape/index diagnostic. It preserves all Running, Completed
+  and Reported entries and their exact completion payloads. The existing error
+  backoff applies. No valid prefix may dispatch and no completion may retry
+  before a later wholly valid poll. A failed attempt is not a successful drain.
+- **AP03:** a wholly valid response keeps existing behavior: Reported IDs still
+  returned remain owed; absent Reported IDs may be released under the existing
+  successful-absence client policy; unseen valid fires enter the same Running
+  state and actual dispatch callback; failed dispatch releases only its own
+  volatile entry; Completed retries follow the current completion-error rules.
+  An explicit valid empty array is still accepted. Existing readiness, notify,
+  server delay, stop and unschedulable behavior remain in the same owner.
+- **AP04:** successful-absence remains an unverified service assumption, not an
+  explicit per-ID ACK receipt. Do not add a fictional response field, change
+  endpoint/auth/provider selection, infer a Sand principal from native account
+  identity, clear custody on 401/404/409, or claim durable restart recovery.
+  Production state remains in the existing consumer. This necessary response
+  contract is independent of the still-open terminal-alias history eviction,
+  persisted settlement phases, account/lifetime binding and deployed semantics.
+
+### Causal verification and integration
+
+Extend the existing `automations_backend_contract` through its actual consumer
+and controlled final transport. Seed Running, Completed with an unconfirmed
+completion, and Reported IDs through real poll/complete methods. For missing,
+null, wrong-type or malformed-member responses (including a valid prefix),
+assert Decode, unchanged custody, zero additional dispatch/completion calls,
+unchanged exact pending completion, repeated exact ACK bodies, and the existing
+backoff. Then return a valid response and demonstrate actual retry, per-ID ACK
+retention/release and eventual valid-empty release. Include exact opaque IDs,
+valid duplicate-ID suppression and optional/extra-field compatibility controls.
+Retain all existing success/delay, unknown completion, no-replay, alias, checked
+history, Running custody, App callback and production wiring assertions.
+
+Only the existing Rust fire consumer and its contract tests require production
+or oracle edits. Root owns this spec, the existing workflow's exact positive
+name/input receipt additions, and the narrow existing OCRM responsibility
+anchors. Do not add a module, dependency, store, schema, scheduler or bridge.
+Freeze the full delta for fresh general and structure/reuse/performance review;
+run affected compilation/contracts only in GitHub Actions at the new exact H.
+No local or htch-runtime verification is permitted. A loopback or controlled
+transport result cannot establish deployed service/provider/account acceptance.
+
+Rollback restores the old malformed-success custody loss; no persisted user
+data changes. The historical api2.cursor.sh statement above identifies that
+older correction's baseline only. Current configured origin is not proof of
+service ownership. Full fixed-U closure and every G01–G12/AC01–AC24 gate remain.

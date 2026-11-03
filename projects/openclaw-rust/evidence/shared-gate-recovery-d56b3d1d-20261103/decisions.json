@@ -1,0 +1,170 @@
+{
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 2,
+  "fixed_U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "failed_subject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "source_base": "b15e58957a597997363e1273f2f32a222365c310",
+  "decisions": [
+    {
+      "id": "SG74-SOURCE-01",
+      "decision": "FIX",
+      "classification": "IMPL_BUG",
+      "scope": "source declaration integration",
+      "root_full_report_read": true,
+      "finding": "Source run41580539540/job125734077461 rejected five undeclared reverse responsibility links; identity/path rows exist and validation remains sound.",
+      "authority": "Existing source_review.py pending_mapping_additions and validate_source_responsibility_links contract; OCRM §17.2; current MSU responsibility/spec.",
+      "fix": "Declare exactly the five missing tuples anchored to unchanged canonical digest, then let existing Actions materialize full rows/shards/manifest and counters.",
+      "from_canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+      "entries": [
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/gateway/agent-turn/agent-run-final-media.ts",
+          "blob_sha": "f4bf5b4308cb2a7160ad1db0142160d14fb71551"
+        },
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/gateway/agent-turn/agent-run-media.ts",
+          "blob_sha": "27a3a65974fad078872b257ee28cafccdad4691f"
+        },
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/gateway/managed-image-attachments.custody.ts",
+          "blob_sha": "1975104ea6cdcfea25d3bc4362edbaea5e673adf"
+        },
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/infra/sqlite-worker-error.ts",
+          "blob_sha": "b13f8354e7244d630ee274b3b0debf9a3f5bb8c6"
+        },
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/media/store.read-scope.ts",
+          "blob_sha": "73515a9ed6a2dc9f1a0adddc638d542ad1323ee5"
+        }
+      ],
+      "retained_proof": "33 source-review controls and21 inventory-materialization controls passed in original run; unchanged failed log retained.",
+      "forbidden": "Do not edit validator, synthetic controls, shard/counter, literal read/review facts or eight completion flags. Do not claim declared H passes strict committed audit.",
+      "required_evidence": "Source workflow precheck/materialization/strict gate and guarded derived commit, then source and runtime exact materialized child H; all product and final acceptance still pending.",
+      "review_report": "source-74-reverse-link-diagnosis.md"
+    },
+    {
+      "id": "SG74-MEDIA-OWNER-01",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "root_full_report_read": true,
+      "tests": [
+        "media_settlement_lost_commit_acknowledgement_retires_without_publication",
+        "media_settlement_fault_matches_three_identities_and_only_its_exact_owner"
+      ],
+      "cause": "get_transcript_entries is the existing complete owner projection and includes outgoing-media-settlement; two tests incorrectly expect only visible send after independently proving literal send+receipt durable state.",
+      "fix": "Preserve exact literal two-row durable image/fence/bytes assertions; compare owner projection with those independently checked rows, and independently assert actual get_transcript_page shows exactly the send. Preserve all fault, retirement, handle, generation, publication, replay and two fresh reopen assertions.",
+      "production_changes": "none; do not filter owner recovery receipts to satisfy a presentation expectation.",
+      "evidence": "Original H74 owner group11passed2failed, cargo101/capture0; failures occur only after real committed receipt and fault/retirement assertions."
+    },
+    {
+      "id": "SG74-MEDIA-ORACLE-02",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "root_full_report_read": true,
+      "cause": "Two oracle selectors include impl Drop for SandAgentDb as an inherent owner: uniqueness fails first; subsequent grammar parser would fail on for even if only first site were fixed.",
+      "fix": "Both selectors exclude trait impl only as inherent candidates; preserve every trait token in remaining whole-source rawCOMMIT/caller/alias/macro checks. Retain exact helper/signature/prefix/three guards/tail/unique caller contracts. Add actual baseline acceptance and changed-source controls per negative family, benign trait positive and trait rawCOMMIT/alias negatives.",
+      "production_changes": "none; do not change or hide production Drop or raise caller allowance.",
+      "invalidated_evidence": "Six old media rejection tests had an already-failing baseline; their syntax evidence is retained but ok does not qualify mutation sensitivity. Repair and run unchanged/full affected cases on newH.",
+      "evidence": "Original H74 commit group21passed6failed, cargo101/capture0, no execution_error; other independently meaningful positives retained."
+    },
+    {
+      "id": "SG74-MEDIA-WINDOWS-03",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "recorded_before_ast_fix": true,
+      "failed_test": "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+      "failure": "Windows original line1945 actual media signature; commit group20passed7failed vs Linux21passed6failed.",
+      "cause": "Windows working agent_db.rs is the exact CRLF projection of the Git source:436762B/SHA256276b6c58a5260c7c0c3fd1561d65249eba307827767c894e149ba0e4bcb9fdb9; include_str preserves those bytes while multiline Rust expected literals use LF, so find/replacen/exact method matching fails. No .gitattributes applies.",
+      "fix": "Use one explicit paired-CRLF-to-LF source-image normalization for the affected literal oracle/actual-source mutation fixture. Preserve all other bytes/tokens, lone CR, attributes, trait source and caller/raw-COMMIT scope. Qualify LF and CRLF actual positives plus altered-command/handler/trait negatives; no repository/global checkout or production EOL change.",
+      "required_evidence": "Retain all fixed13owner+27commit names; Linux and Windows exact-new-H Actions must execute complete repaired mutation families.",
+      "classification_limit": "Legitimate platform checkout exposed a test fixture/oracle defect; not evidence of a production transaction failure or broken environment."
+    }
+  ],
+  "media_failure_decision": "Original native failures remain TEST_FLAW with original logs preserved. Incomingfc187ec supplies fixes; the alternate frozen SG74 source snapshot is not applied. Exact current-H execution remains required.",
+  "execution_policy": "GitHub Actions only; no local/htch project execution",
+  "media_diagnosis_report": "media-74-gate-diagnosis.md",
+  "media_root_source_reads": [
+    "full MSU-v1 and MAC-v1",
+    "full agent_db_serde.rs and agent_db_transcript_pages.rs",
+    "actual owner read API and two failing tests/fixture/retirement/storage",
+    "oracle1693-2101 and rawCOMMIT global consumer, actual Drop impl",
+    "media transaction relevant entry/receipt/admission/append; diagnosis holds full4799-5104 and adjacent readers"
+  ],
+  "windows_original_evidence": "original-media-evidence-audit.json and windows/original-receipt.json; root read every failure block, no project code executed",
+  "review_round_1": [
+    {
+      "path": "source-r1-general-review.md",
+      "bytes": 18375,
+      "sha256": "5eb990d9293ae04e32e7a9343371508c0d737c97ae31dd9a911c87ea6bba0602",
+      "root_full_report_read": true,
+      "verdict": "no actionable findings in immutable declared scope",
+      "model_requested": "configured",
+      "effort_requested": "xhigh",
+      "effective_backend_settings": "Not independently exposed by host; requested launch setting recorded, no inferred applied-setting attestation."
+    },
+    {
+      "path": "source-r1-structure-review.md",
+      "bytes": 17999,
+      "sha256": "ed6a47c574be6b4b24289649f6a3bd4a007ccb252851a7a5c5316f500db15b5a",
+      "root_full_report_read": true,
+      "verdict": "no actionable findings in immutable declared scope",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "xhigh",
+      "effective_backend_settings": "Not independently exposed by host; requested launch setting recorded, no inferred applied-setting attestation."
+    },
+    {
+      "path": "media-r1-general-review.md",
+      "bytes": 23815,
+      "sha256": "abf20435c5543e5312de9d8368834ff0f52d2aaa78e3c232197980414ef0c9a0",
+      "root_full_report_read": true,
+      "verdict": "no actionable findings in immutable declared scope",
+      "model_requested": "configured",
+      "effort_requested": "xhigh",
+      "effective_backend_settings": "Not independently exposed by host; requested launch setting recorded, no inferred applied-setting attestation."
+    },
+    {
+      "path": "media-r1-structure-review.md",
+      "bytes": 17998,
+      "sha256": "696672b7c81b26f6fa9ac7bb2a83fa61a342b2ebb4671d4aba0190166eef0b43",
+      "root_full_report_read": true,
+      "verdict": "APPROVE source review; no blocking findings, one P3 NON_BLOCKING edge",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "xhigh",
+      "effective_backend_settings": "Requested launch setting; applied backend settings not independently exposed."
+    }
+  ],
+  "integration_adjudication": {
+    "at_utc": "2026-11-03T05:16:35.506173+00:00",
+    "incoming_head": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+    "materialized_child": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+    "root_full_incoming_non_evidence_diff_read": true,
+    "classification_decisions_unchanged": true,
+    "source_candidate": "Incoming37ffd has exactly the same five responsibility/path/blob triples and canonical anchor; parsed index is otherwise equal. Preserve incoming order and Actions-derived index/shards rather than overwrite with the frozen pending declaration.",
+    "media_candidate": "Incomingfc187ec independently repairs all three diagnosed causes: literal complete send+receipt expectations, both inherent selectors, paired-CRLF image before actual fixture literal lookups. Root read all incoming hunks and actual channel composition. Preserve incoming test helper and additional trait/raw-COMMIT controls. Do not replace it with the separately reviewed unpublished SG74 candidate.",
+    "supplemental_unpublished_candidate": "Frozen media patch/reviews remain recoverable source-only candidate evidence. Its additional direct visible-page assertions and broader per-case LF/CRLF qualification are not published target behavior, not execution evidence, and not claimed to be present in incomingfc187ec.",
+    "preserved_other_changes": "Incoming cron helper/native-wrapper projection assertions and six corrected ledger/RTM evidence refs remain untouched. Incoming changes do not promote flags.",
+    "source_execution_observed": "GitHub API run41582614099 source-authority job125740666138 and persistence job125741350050 completed success; full logs and derived-child strict results require separate readback. Child runs41582877770 source and41582879885 runtime started; no current-child pass claimed.",
+    "next_publication_source_scope": "Only separately reviewed five-file OCRM-AUTOMATION-POLL-CUSTODY-v1 production/spec/tests/workflow delta; all fc/14 incoming source paths retained.",
+    "scope_note": "This is root integration adjudication, not either blind reviewer verdict for fc187ec. Existing FIX classifications remain; an equivalent independently published fix is reused, not reversed."
+  },
+  "non_blocking_observations": [
+    {
+      "id": "STR-P3-01",
+      "classification": "NON_BLOCKING",
+      "decision": "DEFER",
+      "root_full_report_read": true,
+      "finding": "Repeated paired-CRLF normalization can consume an overlapping retained CR in CR CR LF; exact frozen original blobs contain zero CR, so no false pass/failure established for the declared source.",
+      "rationale": "AGENTS prohibits a fix round driven solely by NON_BLOCKING. The frozen supplemental SG74 source is also unpublished and will not replace concurrent incoming fixes. Preserve observation; any future arbitrary mixed-byte contract needs one external normalization boundary and composition control. No current-H runtime or acceptance waiver."
+    }
+  ],
+  "review_convergence": {
+    "source": "R1 complete, both reports root full-read, no findings",
+    "media": "R1 complete, both reports root full-read, no blocking findings; P3 recorded without source edit",
+    "execution": "Frozen snapshots remain unexecuted. Incoming equivalent source retained; exact integrated-H Actions required."
+  }
+}

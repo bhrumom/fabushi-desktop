@@ -1,0 +1,13 @@
+{
+  "scope_base": "b15e58957a597997363e1273f2f32a222365c310",
+  "scope_snapshot": "bd3dd6919c9bb6e71ba54ddf67919b9f3d324a1a",
+  "snapshot_mechanism": "equivalent read-isolated source copies plus private Git index over exact base tree",
+  "starting_head_field_meaning": "The r1 manifest starting_head is the authoring/source checkpoint, not a claim of a checked-out developer HEAD. This dedicated bare object database has an unborn HEAD and the authoring directory is not a checkout. No real developer HEAD/index was read or modified for snapshotting.",
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_identity": "read-only Git fetches and connector API full identity/readback of b15 already verified",
+  "remote_after_freeze": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "incoming_change": "evidence files only; explicit Git diff of every AP and proposed shared-gate source path is empty",
+  "immutable_source_unchanged": true,
+  "private_index": "/tmp/automation-poll-custody-r1-private-index",
+  "execution": "No project executable validation; Git/source and original evidence inspection only"
+}

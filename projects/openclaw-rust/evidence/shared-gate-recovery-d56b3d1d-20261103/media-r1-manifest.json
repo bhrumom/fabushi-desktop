@@ -1,0 +1,45 @@
+{
+  "contract": "SG74-MEDIA-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_bare_root": "/tmp/ocrm-source-84120837.git",
+  "authoring_root": "/workspace/scratch/fadc4429f7a8/fusion-shared-gates-74-20261103",
+  "base": "b15e58957a597997363e1273f2f32a222365c310",
+  "authoring_checkpoint": "b15e58957a597997363e1273f2f32a222365c310",
+  "checked_out_head": null,
+  "head_context": "Explicit-file source copies and private index over exact base; dedicated bareHEAD unborn, no developer index/checkout used.",
+  "snapshot_commit": "1cf5d76383b363535ba33864273d06a2bebe7b65",
+  "tree": "86f7d2de95296a494ac89f4b06f11b85fe16bbcf",
+  "scope_paths": [
+    "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+    "source/host/src/extensions/session/agent_db.rs",
+    "source/host/tests/openclaw_sessions_and_config_contract.rs"
+  ],
+  "files": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "blob": "06b9c5c721aec53449f68684b352ebde89f130a6",
+      "bytes": 17241,
+      "characters": 17233,
+      "sha256": "d4481e0f03074d4c8dae2d0be1051247c58cd25e8db5d4cf7baf04ded042231b"
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "blob": "8ffec064fad5e220fa1b2dadbb3fe9bc975f0d67",
+      "bytes": 427027,
+      "characters": 427025,
+      "sha256": "5cf63b89b1d2c1d9b4c283b60257376cddc087ac4051aa5936ff4cadf0bd2ea3"
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "blob": "85e3552d92e96037ea44a3923dac89a342166179",
+      "bytes": 170216,
+      "characters": 170216,
+      "sha256": "6415e02b5915074acba5e9b3ed5e7d894fb8f02f91d84bb0b4a4e46bebcf0802"
+    }
+  ],
+  "diff_bytes": 32962,
+  "diff_sha256": "4f3ca38e7183442d94dd86c1f6c8a992487bc4b89af9a9b97a0bb74c922c19f6",
+  "private_index": "/tmp/shared-media-74-r1-private-index",
+  "published": false,
+  "execution": "not run; GitHub Actions only"
+}

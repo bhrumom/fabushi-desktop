@@ -20,8 +20,8 @@ use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::
     ScheduledCloudAutomation, sand_cloud_definition,
 };
 use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::{
-    AutomationFireBackendRuntime, BackendAutomationFire, FireCompletion, NOTIFY_DRAIN_FLOOR_MS,
-    NOTIFY_SAFETY_POLL_MS,
+    AUTOMATION_FIRE_ERROR_BACKOFF_MS, AutomationFireBackendRuntime, BackendAutomationFire,
+    FireCompletion, MAX_NEXT_POLL_DELAY_MS, NOTIFY_DRAIN_FLOOR_MS, NOTIFY_SAFETY_POLL_MS,
 };
 use mahayana_host_runtime::extensions::session::agent_db::CronSessionRunRecord;
 use mahayana_host_runtime::extensions::session::agent_session::{
@@ -227,6 +227,342 @@ fn fire_runtime_polls_delivers_reports_and_acks_on_next_poll() {
         calls[2],
         ("/sand/automation-events/poll".into(), json!({"ackRunUuids":["run-1"]}))
     );
+}
+
+fn fire_poll_event(id: &str) -> Value {
+    json!({
+        "id": id,
+        "sandAgentId": "agent-1",
+        "automationId": "cloud-1",
+        "timestampMs": 10,
+    })
+}
+
+#[test]
+fn fire_runtime_invalid_poll_preserves_all_custody_until_checked_recovery() {
+    let envelope_error = "automation poll response must be an object with an events array";
+    let mut invalid_responses = vec![
+        Value::Null, json!([]), json!(true), json!(42), json!("opaque response"),
+        json!({"error":"opaque response"}),
+        json!({"events":null}), json!({"events":true}), json!({"events":42}),
+        json!({"events":"opaque response"}), json!({"events":{}}),
+    ].into_iter().map(|response| (response, envelope_error.to_string())).collect::<Vec<_>>();
+    let mut invalid_events = vec![
+        Value::Null, json!([]), json!(true), json!(42), json!("opaque event"), json!({}),
+    ];
+    for field in ["id", "sandAgentId", "automationId", "timestampMs"] {
+        let mut event = fire_poll_event("reported-a");
+        event.as_object_mut().unwrap().remove(field);
+        invalid_events.push(event);
+    }
+    for field in ["id", "sandAgentId", "automationId"] {
+        for value in [
+            Value::Null, json!(true), json!(42), json!([]), json!({}),
+            json!(""), json!(" \t\r\n\u{2003}\u{00a0}"),
+        ] {
+            let mut event = fire_poll_event("reported-a");
+            event[field] = value;
+            invalid_events.push(event);
+        }
+    }
+    for value in [
+        Value::Null, json!("10"), json!(true), json!([]), json!({}),
+        json!(-1), json!(1.5), json!(1.0), json!(18446744073709551616.0),
+    ] {
+        let mut event = fire_poll_event("reported-a");
+        event["timestampMs"] = value;
+        invalid_events.push(event);
+    }
+    // Even an already-owed member or a duplicate after a valid prefix must be checked.
+    let mut invalid_duplicate = fire_poll_event("new-prefix");
+    invalid_duplicate["timestampMs"] = json!(-1);
+    invalid_events.push(invalid_duplicate);
+    invalid_responses.extend(invalid_events.into_iter().map(|event| (
+        json!({"events":[fire_poll_event("new-prefix"), event], "nextPollAfterMs":60000}),
+        "invalid automation poll event at index 1".into(),
+    )));
+    invalid_responses.push((
+        json!({"events":[null, fire_poll_event("new-prefix")]}),
+        "invalid automation poll event at index 0".into(),
+    ));
+
+    for (invalid, diagnostic) in invalid_responses {
+        let completion_error = AutomationsBackendError::Status {
+            path: "/sand/automation-runs/complete".into(), status: 409,
+        };
+        let completion = FireCompletion::failed(" exact pending error \t\n\u{2003}");
+        let pending_report = json!({
+            "runUuid":"completed", "status":"failed", "errorMessage":completion.error_message,
+        });
+        let transport = MockTransport::with_responses(vec![
+            Ok(json!({"events":[
+                fire_poll_event("running"), fire_poll_event("completed"),
+                fire_poll_event("reported-a"), fire_poll_event("reported-b"),
+            ]})),
+            Err(completion_error.clone()), Ok(json!({})), Ok(json!({})),
+            Ok(invalid.clone()), Ok(invalid.clone()),
+            Ok(json!({"events":[
+                fire_poll_event("running"), fire_poll_event("completed"),
+                fire_poll_event("reported-a"), fire_poll_event("new-prefix"),
+                fire_poll_event("retry-dispatch"),
+            ]})),
+            Ok(json!({})),
+            Ok(json!({"events":[
+                fire_poll_event("running"), fire_poll_event("completed"),
+                fire_poll_event("new-prefix"), fire_poll_event("retry-dispatch"),
+            ]})),
+            Ok(json!({"events":[]})),
+        ]);
+        let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
+        let mut dispatched = Vec::new();
+        assert_eq!(runtime.tick(100, false, false, |event| {
+            dispatched.push(event.id.clone());
+            true
+        }).unwrap(), 4);
+        assert_eq!(runtime.complete("completed", completion), Err(completion_error));
+        runtime.complete("reported-a", FireCompletion::succeeded()).unwrap();
+        runtime.complete("reported-b", FireCompletion::succeeded()).unwrap();
+        runtime.complete("unknown", FireCompletion::failed("unknown completion")).unwrap();
+        let mut expected_calls: Vec<(String, Value)> = vec![
+            ("/sand/automation-events/poll".into(), json!({"ackRunUuids":[]})),
+            ("/sand/automation-runs/complete".into(), pending_report.clone()),
+            ("/sand/automation-runs/complete".into(), json!({
+                "runUuid":"reported-a", "status":"succeeded", "errorMessage":null,
+            })),
+            ("/sand/automation-runs/complete".into(), json!({
+                "runUuid":"reported-b", "status":"succeeded", "errorMessage":null,
+            })),
+        ];
+        assert_eq!(transport.calls(), expected_calls);
+        let owed_ack = json!({"ackRunUuids":["reported-a","reported-b"]});
+        for attempt in 0..2u64 {
+            let now = 200 + attempt * AUTOMATION_FIRE_ERROR_BACKOFF_MS;
+            assert_eq!(runtime.tick(now, false, false, |event| {
+                dispatched.push(event.id.clone());
+                true
+            }), Err(AutomationsBackendError::Decode(diagnostic.clone())), "response={invalid}");
+            expected_calls.push(("/sand/automation-events/poll".into(), owed_ack.clone()));
+            assert_eq!(transport.calls(), expected_calls, "no completion retry: {invalid}");
+            assert_eq!(runtime.pending_len(), 4, "custody retained: {invalid}");
+            assert!(runtime.is_running("running"));
+            for id in ["completed", "reported-a", "reported-b", "new-prefix"] {
+                assert!(!runtime.is_running(id), "state changed for {id}: {invalid}");
+            }
+            assert_eq!(dispatched.len(), 4, "no valid prefix dispatch: {invalid}");
+            for blocked_at in [now + 1, now + AUTOMATION_FIRE_ERROR_BACKOFF_MS - 1] {
+                assert_eq!(runtime.tick(blocked_at, false, false, |_| {
+                    panic!("backoff must not dispatch")
+                }).unwrap(), 0);
+                assert_eq!(transport.calls(), expected_calls, "backoff retained: {invalid}");
+            }
+        }
+
+        let recovered_at = 200 + 2 * AUTOMATION_FIRE_ERROR_BACKOFF_MS;
+        assert_eq!(runtime.tick(recovered_at, false, false, |event| {
+            dispatched.push(event.id.clone());
+            event.id != "retry-dispatch"
+        }).unwrap(), 1);
+        expected_calls.extend([
+            ("/sand/automation-events/poll".into(), owed_ack),
+            ("/sand/automation-runs/complete".into(), pending_report),
+        ]);
+        assert_eq!(transport.calls(), expected_calls, "exact deferred completion payload");
+        assert_eq!(runtime.pending_len(), 4);
+        assert!(runtime.is_running("running"));
+        assert!(runtime.is_running("new-prefix"));
+        assert!(!runtime.is_running("retry-dispatch"));
+        assert!(!runtime.is_running("completed"));
+
+        assert_eq!(runtime.tick(recovered_at + 1, false, false, |event| {
+            dispatched.push(event.id.clone());
+            true
+        }).unwrap(), 1);
+        expected_calls.push((
+            "/sand/automation-events/poll".into(),
+            json!({"ackRunUuids":["completed","reported-a"]}),
+        ));
+        assert_eq!(transport.calls(), expected_calls, "only absent Reported IDs released");
+        assert_eq!(runtime.pending_len(), 4);
+        assert!(runtime.is_running("retry-dispatch"));
+        assert_eq!(dispatched, vec![
+            "running", "completed", "reported-a", "reported-b", "new-prefix",
+            "retry-dispatch", "retry-dispatch",
+        ]);
+
+        assert_eq!(runtime.tick(recovered_at + 2, false, false, |_| {
+            panic!("empty poll must not dispatch")
+        }).unwrap(), 0);
+        expected_calls.push((
+            "/sand/automation-events/poll".into(), json!({"ackRunUuids":["completed"]}),
+        ));
+        assert_eq!(transport.calls(), expected_calls);
+        assert_eq!(runtime.pending_len(), 3, "valid empty releases only Reported custody");
+        for id in ["running", "new-prefix", "retry-dispatch"] {
+            assert!(runtime.is_running(id));
+        }
+    }
+}
+
+#[test]
+fn fire_runtime_invalid_poll_does_not_consume_notify_or_unschedulable_drain() {
+    for already_drained in [false, true] {
+        let mut responses = Vec::new();
+        if already_drained {
+            responses.push(Ok(json!({"events":[]})));
+        }
+        responses.extend([
+            Ok(json!({"events":null,"nextPollAfterMs":60000})),
+            Ok(json!({"events":[],"nextPollAfterMs":5000})),
+        ]);
+        if already_drained {
+            responses.push(Ok(json!({"events":[]})));
+        }
+        let transport = MockTransport::with_responses(responses);
+        let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
+        assert_eq!(runtime.tick_with_state(1, false, false, false, true, |_| true).unwrap(), 0);
+        runtime.stop();
+        assert_eq!(runtime.tick(2, false, false, |_| true).unwrap(), 0);
+        assert!(transport.calls().is_empty());
+        runtime.start();
+
+        let failed_at = if already_drained {
+            runtime.tick_with_state(100, true, false, true, true, |_| true).unwrap();
+            runtime.request_drain();
+            100 + NOTIFY_DRAIN_FLOOR_MS
+        } else {
+            100
+        };
+        assert!(matches!(runtime.tick_with_state(
+            failed_at, true, false, true, already_drained, |_| true,
+        ), Err(AutomationsBackendError::Decode(_))));
+        let calls_after_failure = transport.calls().len();
+        assert_eq!(calls_after_failure, if already_drained { 2 } else { 1 });
+        let retry_at = failed_at + AUTOMATION_FIRE_ERROR_BACKOFF_MS;
+        assert_eq!(runtime.tick_with_state(
+            retry_at - 1, true, false, true, already_drained, |_| true,
+        ).unwrap(), 0);
+        assert_eq!(transport.calls().len(), calls_after_failure);
+        assert_eq!(runtime.tick_with_state(
+            retry_at, true, false, true, already_drained, |_| true,
+        ).unwrap(), 0);
+        assert_eq!(transport.calls().len(), calls_after_failure + 1,
+            "failed poll must leave the initial/notify drain eligible");
+        assert_eq!(runtime.tick_with_state(
+            retry_at + 1, true, false, true, already_drained, |_| true,
+        ).unwrap(), 0);
+        assert_eq!(transport.calls().len(), calls_after_failure + 1);
+        if already_drained {
+            // Disconnecting removes the notify gate so this observes the actual server delay.
+            assert_eq!(runtime.tick(retry_at + 4_999, false, false, |_| true).unwrap(), 0);
+            assert_eq!(transport.calls().len(), calls_after_failure + 1);
+            assert_eq!(runtime.tick(retry_at + 5_000, false, false, |_| true).unwrap(), 0);
+            assert_eq!(transport.calls().len(), calls_after_failure + 2);
+        } else {
+            assert_eq!(runtime.tick_with_state(
+                retry_at + MAX_NEXT_POLL_DELAY_MS + NOTIFY_SAFETY_POLL_MS,
+                false, false, true, false, |_| true,
+            ).unwrap(), 0);
+            assert_eq!(transport.calls().len(), calls_after_failure + 1,
+                "only the valid poll consumes the one unschedulable drain");
+        }
+        assert_eq!(runtime.pending_len(), 0);
+        assert!(transport.calls().iter().all(|(path, body)| {
+            path == "/sand/automation-events/poll" && body == &json!({"ackRunUuids":[]})
+        }));
+    }
+}
+
+#[test]
+fn fire_runtime_checked_poll_preserves_opaque_ids_duplicates_and_optional_fields() {
+    let opaque = " \tRun/\u{00e9}\u{2003}";
+    let nfc = "Run/\u{00e9}";
+    let nfd = "Run/e\u{0301}";
+    let different_case = "run/\u{00e9}";
+    let agent = " \tagent/\u{00e9}\n";
+    let automation = " cloud/e\u{0301}\t";
+    let event = json!({"payload":[" exact event ", false], "unrelated":42});
+    let full = json!({
+        "id":opaque, "sandAgentId":agent, "automationId":automation,
+        "timestampMs":0, "definitionRevision":" revision \t", "scheduledForMs":u64::MAX,
+        "event":event, "futureField":{"ignored":true},
+    });
+    let mut duplicate = full.clone();
+    duplicate["sandAgentId"] = json!("another-valid-agent");
+    duplicate["timestampMs"] = json!(99);
+    duplicate["event"] = json!({"duplicate":true});
+    let mut missing_optional = fire_poll_event(nfc);
+    missing_optional["timestampMs"] = json!(u64::MAX);
+    let mut wrong_optional = fire_poll_event(nfd);
+    wrong_optional["definitionRevision"] = json!(42);
+    wrong_optional["scheduledForMs"] = json!(-1);
+    wrong_optional["event"] = json!(false);
+    let mut null_optional = fire_poll_event(different_case);
+    null_optional["definitionRevision"] = Value::Null;
+    null_optional["scheduledForMs"] = Value::Null;
+    null_optional["event"] = Value::Null;
+    let transport = MockTransport::with_responses(vec![
+        Ok(json!({
+            "events":[full, duplicate.clone(), missing_optional, wrong_optional, null_optional],
+            "futureField":["ignored"], "nextPollAfterMs":"legacy optional value",
+        })),
+        Ok(json!({})), Ok(json!({})), Ok(json!({})), Ok(json!({})),
+        Ok(json!({"events":[duplicate.clone(), duplicate]})),
+        Ok(json!({"events":[]})),
+    ]);
+    let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
+    let mut dispatched = Vec::new();
+    assert_eq!(runtime.tick(100, false, false, |fire| {
+        dispatched.push(fire.clone());
+        true
+    }).unwrap(), 4);
+    assert_eq!(dispatched, vec![
+        BackendAutomationFire {
+            id:opaque.into(), sand_agent_id:agent.into(), automation_id:automation.into(),
+            timestamp_ms:0, definition_revision:Some(" revision \t".into()),
+            scheduled_for_ms:Some(u64::MAX), event:Some(event),
+        },
+        BackendAutomationFire {
+            id:nfc.into(), sand_agent_id:"agent-1".into(), automation_id:"cloud-1".into(),
+            timestamp_ms:u64::MAX, definition_revision:None, scheduled_for_ms:None, event:None,
+        },
+        BackendAutomationFire {
+            id:nfd.into(), sand_agent_id:"agent-1".into(), automation_id:"cloud-1".into(),
+            timestamp_ms:10, definition_revision:None, scheduled_for_ms:None, event:Some(json!(false)),
+        },
+        BackendAutomationFire {
+            id:different_case.into(), sand_agent_id:"agent-1".into(), automation_id:"cloud-1".into(),
+            timestamp_ms:10, definition_revision:None, scheduled_for_ms:None, event:None,
+        },
+    ]);
+    assert_eq!(runtime.pending_len(), 4);
+    let mut expected_calls: Vec<(String, Value)> = vec![(
+        "/sand/automation-events/poll".into(), json!({"ackRunUuids":[]}),
+    )];
+    for id in [opaque, nfc, nfd, different_case] {
+        assert!(runtime.is_running(id));
+        runtime.complete(id, FireCompletion::succeeded()).unwrap();
+        expected_calls.push((
+            "/sand/automation-runs/complete".into(),
+            json!({"runUuid":id,"status":"succeeded","errorMessage":null}),
+        ));
+    }
+    assert_eq!(runtime.tick(101, false, false, |_| {
+        panic!("duplicate Reported IDs must not dispatch")
+    }).unwrap(), 0);
+    assert_eq!(runtime.pending_len(), 1);
+    expected_calls.push((
+        "/sand/automation-events/poll".into(),
+        json!({"ackRunUuids":[opaque,nfd,nfc,different_case]}),
+    ));
+    assert_eq!(transport.calls(), expected_calls, "opaque completion and ACK identity bytes");
+    assert_eq!(runtime.tick(102, false, false, |_| {
+        panic!("valid empty poll must not dispatch")
+    }).unwrap(), 0);
+    expected_calls.push((
+        "/sand/automation-events/poll".into(), json!({"ackRunUuids":[opaque]}),
+    ));
+    assert_eq!(transport.calls(), expected_calls);
+    assert_eq!(runtime.pending_len(), 0);
 }
 
 #[test]

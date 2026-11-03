@@ -1,0 +1,41 @@
+diff --git a/projects/openclaw-rust/inventory/index.json b/projects/openclaw-rust/inventory/index.json
+index a4f62bdd60e624b630b0e735bb42e020e8f82a35..60a9159101b5eb8ce42a8e29c5ddb942c2324783 100644
+--- a/projects/openclaw-rust/inventory/index.json
++++ b/projects/openclaw-rust/inventory/index.json
+@@ -35,6 +35,36 @@
+     "unread": 62067,
+     "unreviewed_applicable": 0
+   },
++  "pending_mapping_additions": {
++    "entries": [
++      {
++        "blob_sha": "f4bf5b4308cb2a7160ad1db0142160d14fb71551",
++        "path": "src/gateway/agent-turn/agent-run-final-media.ts",
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
++      },
++      {
++        "blob_sha": "27a3a65974fad078872b257ee28cafccdad4691f",
++        "path": "src/gateway/agent-turn/agent-run-media.ts",
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
++      },
++      {
++        "blob_sha": "1975104ea6cdcfea25d3bc4362edbaea5e673adf",
++        "path": "src/gateway/managed-image-attachments.custody.ts",
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
++      },
++      {
++        "blob_sha": "b13f8354e7244d630ee274b3b0debf9a3f5bb8c6",
++        "path": "src/infra/sqlite-worker-error.ts",
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
++      },
++      {
++        "blob_sha": "73515a9ed6a2dc9f1a0adddc638d542ad1323ee5",
++        "path": "src/media/store.read-scope.ts",
++        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
++      }
++    ],
++    "from_canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93"
++  },
+   "project_id": "OCRM-001",
+   "spec_revision": 2,
+   "upstream": {

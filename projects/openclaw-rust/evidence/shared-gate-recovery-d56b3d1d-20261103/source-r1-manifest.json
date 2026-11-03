@@ -1,0 +1,24 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_bare_root": "/tmp/ocrm-source-84120837.git",
+  "base": "b15e58957a597997363e1273f2f32a222365c310",
+  "authoring_checkpoint": "b15e58957a597997363e1273f2f32a222365c310",
+  "checked_out_head": null,
+  "head_context": "Read-isolated source copies/private index, not developer checkout; bare HEAD unborn. Exact base and full source tree used.",
+  "snapshot_commit": "87012a9cc62b1102bb3fe95ff759747aff9beee0",
+  "tree": "e8ee7c61202c5228545f90572266bd6797d12acb",
+  "scope_paths": [
+    "projects/openclaw-rust/inventory/index.json"
+  ],
+  "file": {
+    "path": "projects/openclaw-rust/inventory/index.json",
+    "blob": "60a9159101b5eb8ce42a8e29c5ddb942c2324783",
+    "bytes": 2972,
+    "characters": 2972,
+    "sha256": "2d7adae73c322ea5aadfe13fede7d4ddfe06e14321cb8e29b0b053686ec8e03d"
+  },
+  "diff_sha256": "3fcc6e184f4d71cdc9de20738cd96dd0d540e1d60752a43a4bbd686df2f70f42",
+  "diff_bytes": 1671,
+  "private_index": "/tmp/shared-source-74-r1-private-index",
+  "published": false
+}

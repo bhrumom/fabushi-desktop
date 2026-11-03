@@ -1,0 +1,62 @@
+{
+  "contract": "OCRM-AUTOMATION-POLL-CUSTODY-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_bare_root": "/tmp/ocrm-source-84120837.git",
+  "authoring_root": "/workspace/scratch/fadc4429f7a8/fusion-automation-poll-custody-20261103",
+  "base": "b15e58957a597997363e1273f2f32a222365c310",
+  "starting_head": "b15e58957a597997363e1273f2f32a222365c310",
+  "scope_mode": "explicit-five-files-including-uncommitted-content",
+  "scope_paths": [
+    "docs/specs/sand-completion-ack-safety.md",
+    "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
+    "source/host/tests/automations_backend_contract.rs",
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
+  ],
+  "tree": "e9b2613c22285207c5c061592909f69bc830a8de",
+  "snapshot_commit": "bd3dd6919c9bb6e71ba54ddf67919b9f3d324a1a",
+  "published": false,
+  "private_index": "/tmp/automation-poll-custody-r1-private-index",
+  "files": [
+    {
+      "path": "docs/specs/sand-completion-ack-safety.md",
+      "blob": "5d1fe5c453e51445ac9c563191e3c6d571d81182",
+      "bytes": 10482,
+      "characters": 10474,
+      "sha256": "40eed97e6ecfbd29748e5f846c1ca1818a17887f775ac6b2b2fed26146415bc9"
+    },
+    {
+      "path": "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
+      "blob": "f7f6789daa21fb21cd09296be049b6e925dfb301",
+      "bytes": 12243,
+      "characters": 12243,
+      "sha256": "c88a2752f81a54e1a298680654181bb846ef2232d32ea0495add88540b6b4b6d"
+    },
+    {
+      "path": "source/host/tests/automations_backend_contract.rs",
+      "blob": "11a9405442efa9acbbadfcdff879c0a996d1dee0",
+      "bytes": 63156,
+      "characters": 63156,
+      "sha256": "447172503558301ea6b135dbe6954d71800ebe8eb8e5d68cc6dda021fd98818f"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "37f90cfcddef5fbc917d07b5fa5468707a4bc452",
+      "bytes": 452895,
+      "characters": 452895,
+      "sha256": "eb6786021b38996ea8f39307a4932398ed239f5c19c5974c559b5dc8d0520588"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+      "blob": "978c7521d46f4dc95edb5e5347bcb890ea2a2582",
+      "bytes": 100390,
+      "characters": 100301,
+      "sha256": "4f5064dcbd01c32f8396d15c2da386aab40ce927aef70758837353c4f4d01a5e"
+    }
+  ],
+  "diff_path": "/tmp/automation-poll-custody-r1.diff",
+  "diff_sha256": "71f03b5df18591280d9477fe99b8fd2e0c9f9613f0c0bbb301285e89acddf15e",
+  "diff_bytes": 31602,
+  "changed_path_status": "M\t.github/workflows/rust-desktop-runtime.yml\nM\tdocs/specs/sand-completion-ack-safety.md\nM\tprojects/openclaw-rust/docs/specs/cron-session-reaper.md\nM\tsource/host/src/extensions/automations/sand_automation_fire_consumer.rs\nM\tsource/host/tests/automations_backend_contract.rs\n",
+  "verification": "not run locally; Git/source snapshot only; Actions pending"
+}

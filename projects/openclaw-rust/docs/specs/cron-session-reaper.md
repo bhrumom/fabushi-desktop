@@ -1473,3 +1473,17 @@ bytes/cron rows, and all disabled/revision/event controls. Require this existing
 case's positive result in the same portable receipt; no production gate is
 weakened and no executed failure is claimed from this source review.
 
+
+
+### Checked poll custody prerequisite — OCRM-AUTOMATION-POLL-CUSTODY-v1
+
+The existing completion/ACK consumer must validate the whole returned poll list
+before relinquishing Reported custody or dispatching a valid prefix. The bounded
+contract and causal oracles are in
+[Sand completion acknowledgement safety](../../../../docs/specs/sand-completion-ack-safety.md#checked-poll-custody--ocrm-automation-poll-custody-v1).
+This continues the existing `OCRM-RESP-CRON-SESSION-REAPER-001` backend-custody
+and `OCRM-R21`/`OCRM-AC21` evidence anchors; their statuses, source-read history
+and all completion flags remain unchanged. Exact-H Actions are required. Terminal
+alias retention, durable settlement/restart, account binding and deployed
+completion/ACK semantics remain open; a valid empty list is only the existing
+client release criterion, not new service authority.
