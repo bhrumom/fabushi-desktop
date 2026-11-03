@@ -1,0 +1,214 @@
+{
+  "schema": "ocrm-immutable-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BGC-v1",
+  "round": 4,
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_id": 1375312893,
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "original_base": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+  "starting_head": "6d65324235ad4077e4d28bbe4d953d6b74e35254",
+  "candidate": {
+    "commit": "51c6bf1f2cb027a89689aad9fb3781965c8080ec",
+    "tree": "f7559b8b6bb6689d68348f655743a5c4b7543bb6",
+    "parent": "6d65324235ad4077e4d28bbe4d953d6b74e35254",
+    "role": "immutable integration candidate; unapplied and never an execution result"
+  },
+  "authority": {
+    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "spec_path": "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+    "spec_blob": "2872f428079705bf2aef12bef9b09adcac18e458"
+  },
+  "scope": {
+    "mode": "complete-original-scope-with-focused-delta",
+    "path_count": 10,
+    "uncommitted_included": false,
+    "staging": "Immutable GitHub blobs/trees; no working index or executable validation",
+    "carrier": {
+      "commit": "016dd44b7ea083df02b706f125559bc685dde58c",
+      "tree": "6c1daef57772119acefd6e9d22299e95747915e1",
+      "role": "original-base scoped review carrier; not execution or shipping subject"
+    },
+    "complete_diff": {
+      "path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/review-r4/complete.diff",
+      "blob": "e0f077f5209b6673765f63ac682f026e3d5a10b6",
+      "bytes": 363302,
+      "sha256": "f750e65f3ab131d054133cfe34224d0468b4e17c6524187a05bab2df8cfade34"
+    },
+    "fix_delta": {
+      "from_candidate": "e93728bd720075aff0d53efac5cc66c164ec8f19",
+      "from_tree": "44f42b6725396d90b3af1ae3b1e2f28a3fa3d670",
+      "path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/review-r4/fix.diff",
+      "blob": "5a7cfc10346dedba872b703aacb0c31686030284",
+      "bytes": 51820,
+      "sha256": "4e13356e8ddd77b38b64ee97c3f60c2ea4693a4b7f65b1bfdf838ea96ae0eafa",
+      "paths": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "source/box-exec-daemon/src/server.rs"
+      ]
+    },
+    "integrity": {
+      "github_compare_file_count": 10,
+      "added": 2,
+      "modified": 8,
+      "deleted": 0,
+      "renamed": 0,
+      "binary": 0,
+      "all_modes": "100644",
+      "source_and_diff_readback": true
+    },
+    "inherited_changes": "All previous BGC production, terminal consumer, Host consumer, source/RTM/ledger and configuration-helper integration remain complete context; no original path/hunk omitted."
+  },
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "M",
+      "base_blob": "9574d29d4e494d0f3a30b6ffcad275e222b07275",
+      "blob": "6e315ffc0419a883b13065705c70b4db996cb9f2",
+      "bytes": 466089,
+      "sha256": "45a74db7dbe52cbfff005dc041e4a1ad70fe7113967f0933b34f00168657d76a",
+      "changed_since_r3": true,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+      "status": "A",
+      "base_blob": null,
+      "blob": "b0a23c54e127da4ed859d5ea6a561f29ea408639",
+      "bytes": 13582,
+      "sha256": "38afc80cca85543361312b675fb3e8ab3685d0c6043726bbfda6ed0a5665e08f",
+      "changed_since_r3": true,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "M",
+      "base_blob": "b634f9f80b670dfa6342492dcc73a7e1b11fdee4",
+      "blob": "d0c3081bba725956e5eb261150c6c57513dedaea",
+      "bytes": 1487764,
+      "sha256": "f2949d1fe52afa2276845da50a683536151703b9666a9697f30e4062cf489449",
+      "changed_since_r3": false,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "M",
+      "base_blob": "625672c7e2a78de347023b2e0c162e6e123b78a1",
+      "blob": "4a415a830fccdfec7b7ae73fa16133929c84652f",
+      "bytes": 174692,
+      "sha256": "1300b5434880a1f8a67d99e87ac9c47a34cb5bfa361b86d6bf676108a6e6cedc",
+      "changed_since_r3": false,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "M",
+      "base_blob": "6895c24549a81f5c0b346170975fe850e383d956",
+      "blob": "083b67625c01f02ba01ab507a87bd20275f8a0cf",
+      "bytes": 183812,
+      "sha256": "5880b1d82a6b5ce362aeb1fbca270b28a3c2d9c23b51765d81e0911f0b75a73e",
+      "changed_since_r3": true,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/record_configuration_evidence.py",
+      "status": "A",
+      "base_blob": null,
+      "blob": "aa9984a83b002747d26960b85b3ef7ba83b70d98",
+      "bytes": 50320,
+      "sha256": "f519d76272e49fe852207253ca1b86fac99fde3287872a99d186790e4bed7825",
+      "changed_since_r3": false,
+      "mode": "100644"
+    },
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "status": "M",
+      "base_blob": "9e3e46179bbc25bf323bc886e9e33d1506792306",
+      "blob": "03fef6d1747fcce67e12bbeb3e0a30e79d2f181c",
+      "bytes": 285927,
+      "sha256": "a96d3aca3e716b25d17b5292de2c6897cd8db498f17e5e7e3b3aa4700251847b",
+      "changed_since_r3": true,
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/src/runner/background_work.rs",
+      "status": "M",
+      "base_blob": "ff23459450b9ddad39e53c775be32245e0fa7b35",
+      "blob": "275261c1676f2eac5acdb8378280c5d8f0e69e07",
+      "bytes": 32641,
+      "sha256": "60248fb7e30d011ad27db38190f5207b9f3c375c3f8b22df46a8d7b95b82e8bb",
+      "changed_since_r3": false,
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/tests/background_work_contract.rs",
+      "status": "M",
+      "base_blob": "50670c53ce79a8575a153435b9770e0220be826d",
+      "blob": "fc2d1724e2978450bd3a40fc584afa8d50587403",
+      "bytes": 28591,
+      "sha256": "a3262b1303b6d9474a002b5b481fefe5e86a716b53f42e4baa7f6ee81bd9483d",
+      "changed_since_r3": false,
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "status": "M",
+      "base_blob": "23941b650376d23c07c67064f49c083bf7db8689",
+      "blob": "a9da224c6c05e89d67eb3efe8a6233a7a486b013",
+      "bytes": 51682,
+      "sha256": "a99990d937a6c08a9842f1e06528c2f2e36bd1de0ab6106ddc4df17b295aa143",
+      "changed_since_r3": false,
+      "mode": "100644"
+    }
+  ],
+  "reviews": {
+    "general": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "state": "pending"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "state": "pending"
+    },
+    "fresh_blind": true,
+    "kind": "focused-reader-oracle-and-exact-selection",
+    "max_rounds": 10,
+    "reason": "Actual concurrency oracle correction and selection/capture integration require source, adjacent recovery owners and strict evidence checks; complete original source scope remains available."
+  },
+  "validation": {
+    "execution_subject": null,
+    "state": "not-run-for-recovery",
+    "prior_subject": "6d3806857b58887245ae861c15c0ecb740e5d7d6",
+    "selected_scope": "background-custody-recovery",
+    "groups": 4,
+    "exact_named_cases": 4,
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "shipping_compile": "locked mahayana-app-host",
+    "required_names": [
+      "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+      "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
+      "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission",
+      "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+    ],
+    "scope_controls": 16,
+    "full_plan_retained": true,
+    "full_acceptance": false
+  },
+  "acceptance": {
+    "source_review": "pending",
+    "full_unit_verified": false,
+    "global_flags_promoted": false
+  }
+}
