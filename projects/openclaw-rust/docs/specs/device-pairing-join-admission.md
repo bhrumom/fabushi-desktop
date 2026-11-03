@@ -285,13 +285,25 @@ After fresh independent review, `djc-reader-observation` selects exactly the
 retained lock case and these two controls on Ubuntu24.04 and macOS15. For each
 name use the existing target with `cargo test --locked --manifest-path
 source/host/Cargo.toml --test device_pairing_join_admission_contract NAME --
---exact --test-threads=1 --nocapture`; compile that changed target first. The
+--exact --test-threads=1 --show-output`; compile that changed target first. The
 receipt binds the complete expected three-name subset and exact commands to
 H and the preserved full target plan, with zero failed/ignored/measured tests,
 no missing/duplicated names, actual command/capture exits and before/after source
 identities. Carry unchanged historical positives without reporting their
 execution at the new H; keep the ordinary full target requirements, including
 the original reader assertion, intact.
+
+The existing supervisor retains child output only for failure diagnostics and
+deletes it after a successful report. For these three actual cases only, qualify
+and emit the structured child boundary/control records before accepted cleanup.
+Bind the expected case and record kind to the same terminal/ready/completion
+receipt; missing, malformed, duplicated or mismatched records fail. Preserve
+raw failure diagnostics and every other case's supervision behavior. Project
+only the declared structured records, never nested libtest results/summaries.
+The outer command uses show-output so ordinary named libtest results remain
+complete while captured records are shown; the owned child's existing exact
+nocapture argv remains unchanged. Output recovery is necessary instrument
+plumbing, not another product hook or a relaxation of child acceptance.
 
 This authorizes one changed-instrument focused campaign, not another unchanged
 broad run. If the8-second assertion still fails, preserve it and classify the

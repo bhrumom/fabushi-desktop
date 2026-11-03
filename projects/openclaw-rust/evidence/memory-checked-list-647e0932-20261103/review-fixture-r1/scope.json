@@ -1,0 +1,85 @@
+{
+  "schema": "ocrm-immutable-review-scope-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "session": "memory-fixture-lifecycle-647e0932-20261103",
+  "round": 1,
+  "base_commit": "711c1d12267c9962292eada78369c6f0d05849e7",
+  "base_tree": "7a8ef3102ef22948015bd0c1ad7fdf9c388e2c51",
+  "starting_head": "711c1d12267c9962292eada78369c6f0d05849e7",
+  "snapshot_commit": "056db10924bf22d23168331879046a7c847b1991",
+  "snapshot_tree": "9f4ba60aeccad7acaa7d8796e061a8898b2815a8",
+  "scope_mode": "explicit-six-path-causal-fixture-recovery",
+  "uncommitted_state": "Only declared source blobs; no workspace index or other session state mutated",
+  "complete_scope": [
+    {
+      "path": "source/host/tests/transcript_manager_contract.rs",
+      "status": "modified",
+      "before_blob": "a4f71a536beda9e2509653fe4b819d3da3d79eda",
+      "after_blob": "3c101cdc79e57d5a792d3d7ed3989fadf614a091"
+    },
+    {
+      "path": "source/host/tests/agent_state_contract.rs",
+      "status": "modified",
+      "before_blob": "e006bafd844737c3a778e4b3569198e17bd7657b",
+      "after_blob": "50349ee51834af3234511a8ae30c37209491f145"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "modified",
+      "before_blob": "0768505f6cb4b52c6e0b2b9e14b66e844b64604e",
+      "after_blob": "dc247fba2ad33dac654de6205d273f71fe7fd8da"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "modified",
+      "before_blob": "60165b9589cf057c491b63ae08be49f031efd7e5",
+      "after_blob": "7afb89051bed8f84df5465a7771f289510de257a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json",
+      "status": "modified",
+      "before_blob": "8c4e86de0769a6f50bceec6f7be056ea801664d1",
+      "after_blob": "410c00aee0046c8689d7b61a2fd4b3dbdb36a6d3"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "modified",
+      "before_blob": "4966c264bf2b83fac44a3683d1a2f24cfece04af",
+      "after_blob": "cfa7a9da48c4d049af12d21b7eeeb17ab17a86c0"
+    }
+  ],
+  "complete_patch": {
+    "blob": "c37f67d534b99745fff157896a123f469a91cc46",
+    "bytes": 86749,
+    "sha256": "d8f3dc43a0aa3bdaea3c9147e355f4620ae3467384b63c24ec634a3b1fa00387",
+    "rename_aware": true,
+    "binary_safe": true,
+    "binary_changes": 0,
+    "renames": 0,
+    "qualification": "All six entries are UTF-8 modified regular files, no renames or binary input."
+  },
+  "spec": {
+    "path": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+    "blob": "4d654dadff225fb1a2329b2ce2302583fc657391",
+    "contract": "MGL-08"
+  },
+  "validation": "No local executable validation; future Actions must bind exact pushed H",
+  "phases": {
+    "implementation": {
+      "model": "configured-parent",
+      "effort": "xhigh",
+      "reason": "real fixture owner lifetime and Windows native path semantics; shared fail-closed scoped evidence"
+    },
+    "review": {
+      "general": {
+        "model": "configured-parent",
+        "effort": "xhigh"
+      },
+      "structure": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh"
+      }
+    }
+  }
+}

@@ -565,6 +565,30 @@
         "replacing failure with DJC-07 positive",
         "claiming private COMMIT duration from public-call timestamps"
       ]
+    },
+    {
+      "id": "DJC-OBSERVATION-CARRIER-001",
+      "decision": "FIX",
+      "category": "TEST_FLAW",
+      "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+      "reason": "Source inspection proves successful JoinChildReport::accept removes owned child stdout/stderr without emitting the child's new boundary trace. Outer --nocapture also interleaves libtest prefixes with diagnostics, defeating the existing strict named-result oracle.",
+      "fix": "Only the three DJC-09 actual cases qualify and project their structured child boundary/control records before accepted cleanup. Preserve report receipt identity/terminal gates and other cases. Use --show-output for the three outer exact-name commands, leaving child --nocapture argv and all deadlines/assertions unchanged.",
+      "source_blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
+      "source_ranges": [
+        [
+          267,
+          279
+        ],
+        [
+          347,
+          426
+        ],
+        [
+          437,
+          513
+        ]
+      ],
+      "decision_before_source_upload": true
     }
   ],
   "retained": {
@@ -598,7 +622,8 @@
       "macos-15"
     ],
     "compile": "Only changed Host integration target",
-    "budget": "One changed-instrument focused Actions campaign after fresh independent source review; classify any retained failure using the new boundaries before another action."
+    "budget": "One changed-instrument focused Actions campaign after fresh independent source review; classify any retained failure using the new boundaries before another action.",
+    "outer_output": "--show-output; project only validated structured child records before successful owned-root cleanup. No raw child libtest summary projection."
   },
   "acceptance": {
     "full_unit_verified": false,

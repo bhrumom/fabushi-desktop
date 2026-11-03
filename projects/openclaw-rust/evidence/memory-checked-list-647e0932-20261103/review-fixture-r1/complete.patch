@@ -1,0 +1,732 @@
+diff --git a/source/host/tests/transcript_manager_contract.rs b/source/host/tests/transcript_manager_contract.rs
+index a4f71a536beda9e2509653fe4b819d3da3d79eda..3c101cdc79e57d5a792d3d7ed3989fadf614a091 100644
+--- a/source/host/tests/transcript_manager_contract.rs
++++ b/source/host/tests/transcript_manager_contract.rs
+@@ -2,7 +2,7 @@
+ use std::future::{ready, Future};
+ use std::pin::Pin;
+ use std::sync::atomic::{AtomicU64, Ordering};
+-use std::sync::{Arc, Mutex, mpsc};
++use std::sync::{Arc, Mutex, Weak, mpsc};
+ use std::thread;
+ use std::time::{Duration, SystemTime, UNIX_EPOCH};
+ 
+@@ -545,7 +545,8 @@
+ // cannot masquerade as refusal by the production Gateway entry.
+ struct MemoryGatewaySelectorFixture {
+     root: std::path::PathBuf,
+-    manager: TranscriptManager,
++    manager: Option<TranscriptManager>,
++    session_owner: Weak<ProductionSessionWorkers>,
+     expected: Value,
+     before: Vec<(std::path::PathBuf, Option<Vec<u8>>)>,
+     notifications: Arc<AtomicU64>,
+@@ -591,7 +592,8 @@
+         fs::create_dir(&root).expect("create exclusively owned memory selector fixture");
+         let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+         let mut fixture = Self {
+-            manager: TranscriptManager::new(&root, Arc::clone(&sessions)),
++            manager: Some(TranscriptManager::new(&root, Arc::clone(&sessions))),
++            session_owner: Arc::downgrade(&sessions),
+             root,
+             expected: Value::Null,
+             before: Vec::new(),
+@@ -623,8 +625,12 @@
+         fixture
+     }
+ 
++    fn manager(&self) -> &TranscriptManager {
++        self.manager.as_ref().expect("live memory selector manager")
++    }
++
+     fn read(&self, args: Value) -> Result<Value, String> {
+-        self.manager.dispatch_memory_gateway_call("getAgentMemories", &args)
++        self.manager().dispatch_memory_gateway_call("getAgentMemories", &args)
+             .expect("existing memory read command must remain registered")
+     }
+ 
+@@ -663,11 +669,19 @@
+         if let Some(unsubscribe) = self.unsubscribe.take() {
+             unsubscribe();
+         }
+-        self.manager.dispose();
+-        let cleanup = fs::remove_dir_all(&self.root);
+-        if !thread::panicking() {
+-            cleanup.expect("remove owned memory selector fixture");
++        if let Some(manager) = self.manager.take() {
++            manager.dispose();
++            drop(manager);
+         }
++        // dispose() stops work, but the Session-owned CallSession SQLite handle
++        // closes only when all manager fields and their Session Arcs are dropped.
++        // Preserve a failing fixture without a second panic or premature deletion.
++        if thread::panicking() {
++            return;
++        }
++        assert!(self.session_owner.upgrade().is_none(),
++            "memory selector Session owner must be destroyed before fixture cleanup");
++        fs::remove_dir_all(&self.root).expect("remove owned memory selector fixture");
+     }
+ }
+ 
+@@ -756,7 +770,7 @@
+     use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
+ 
+     let mut fixture = MemoryGatewaySelectorFixture::new();
+-    let record = fixture.manager.session_workers().memory_service().store_for_agent("C:outside")
++    let record = fixture.manager().session_workers().memory_service().store_for_agent("C:outside")
+         .add_memory("Unix literal colon profile", MemoryGatewaySelectorFixture::DAY_MS, MemoryKind::Profile)
+         .expect("literal colon store").expect("literal colon record");
+     fixture.before = memory_gateway_selector_files(&fixture.root);
+@@ -785,7 +799,7 @@
+         assert_eq!(fixture.read(json!({"id": missing})).expect("safe missing ID"), json!([]));
+         fixture.assert_valid_read();
+     }
+-    assert!(fixture.manager.dispatch_memory_gateway_call(
++    assert!(fixture.manager().dispatch_memory_gateway_call(
+         "getAgentMemories.extra", &json!({"id": "../outside"}),
+     ).is_none(), "unknown methods keep the existing unhandled outcome");
+     fixture.assert_valid_read();
+@@ -839,7 +853,7 @@
+         let original_error = fs::read_to_string(&destination).expect_err("invalid UTF-8 fixture");
+         assert_eq!(original_error.kind(), std::io::ErrorKind::InvalidData);
+         fixture.before = memory_gateway_selector_files(&fixture.root);
+-        assert_eq!(fixture.manager.session_workers().memory_service()
++        assert_eq!(fixture.manager().session_workers().memory_service()
+             .list(MemoryGatewaySelectorFixture::AGENT_ID).len(), 1,
+             "the old best-effort result would silently omit a real fact");
+ 
+@@ -885,7 +899,7 @@
+         };
+         eprintln!("MGL manager obstacle profile={profile_obstacle}: native error {:?}",
+             native_error.as_ref().map(|error| (error.kind(), error.raw_os_error())));
+-        let error = fixture.manager.session_workers().memory_service()
++        let error = fixture.manager().session_workers().memory_service()
+             .list_checked(MemoryGatewaySelectorFixture::AGENT_ID).expect_err("checked store refuses type obstacle");
+         if profile_obstacle {
+             let native_error = native_error.expect("profile read failed");
+
+diff --git a/source/host/tests/agent_state_contract.rs b/source/host/tests/agent_state_contract.rs
+index e006bafd844737c3a778e4b3569198e17bd7657b..50349ee51834af3234511a8ae30c37209491f145 100644
+--- a/source/host/tests/agent_state_contract.rs
++++ b/source/host/tests/agent_state_contract.rs
+@@ -365,25 +365,39 @@
+     #[test]
+     fn both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration() {
+         let root = temp_root("supplied-store-invalid-id");
++        fs::create_dir(&root).expect("create exclusively owned invalid-ID fixture");
++        let cleanup_root = fs::canonicalize(&root).expect("canonical owned cleanup root");
+         for (index, id) in ["", " agent", "agent ", "../escape", "a/b", "a\\b", ".", "..", "a\0b"]
+             .into_iter().enumerate()
+         {
+             assert_both_state_constructors_reject(&root, index, id);
+         }
+         let invalid_root = root.join("invalid-with-migration-source");
+-        let legacy = invalid_root.join("agents/ invalid /workflows/untouched-invalid");
++        fs::create_dir(&invalid_root).expect("create exclusively owned migration root");
++        // Windows needs an existing canonical root to preserve the exact trailing
++        // space. Append native components separately under its verbatim spelling.
++        let invalid_root = fs::canonicalize(&invalid_root).expect("canonical migration root");
++        let agents = invalid_root.join("agents");
++        let legacy = agents.join(" invalid ").join("workflows").join("untouched-invalid");
+         fs::create_dir_all(&legacy).unwrap();
++        let agent_names = fs::read_dir(&agents).expect("actual migration agent directory")
++            .map(|entry| entry.expect("actual migration agent entry").file_name())
++            .collect::<Vec<_>>();
++        assert_eq!(agent_names, vec![std::ffi::OsString::from(" invalid ")],
++            "the migration fixture must contain the exact whitespace-bearing component");
+         let legacy_file = legacy.join(LEGACY_WORKFLOW_FILENAME);
+         let raw = "---\nname: Untouched invalid\n---\nDO_NOT_MIGRATE\n";
+         fs::write(&legacy_file, raw).unwrap();
++        assert_eq!(fs::read(&legacy_file).expect("qualified migration sentinel"), raw.as_bytes());
+         let caller_root = root.join("independent-caller");
+         let supplied = FileWorkflowStore::new(caller_root.join("agents/valid"), caller_root.join("workflows"));
+         assert!(SandAgentState::new(&invalid_root, " invalid ").is_err());
+         assert!(SandAgentState::new_with_workflow_store(&invalid_root, " invalid ", supplied).is_err());
+         assert_eq!(fs::read_to_string(&legacy_file).unwrap(), raw,
+             "invalid IDs must be refused before a default-store migration can move this file");
+-        assert!(!invalid_root.join("workflows/untouched-invalid").exists());
+-        let _ = fs::remove_dir_all(root);
++        let destination = invalid_root.join("workflows").join("untouched-invalid");
++        assert!(!destination.exists());
++        fs::remove_dir_all(&cleanup_root).expect("remove owned invalid-ID fixture");
+     }
+ 
+     #[test]
+
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index 0768505f6cb4b52c6e0b2b9e14b66e844b64604e..dc247fba2ad33dac654de6205d273f71fe7fd8da 100644
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -1,6 +1,6 @@
+ import hashlib, json, os, pathlib, re, subprocess
+ validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
+-if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list"):
++if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle"):
+     raise ValueError("Unknown portable contract scope")
+ root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
+     else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
+@@ -381,6 +381,7 @@
+     "source/host/src/gateway_command_error.rs",
+     "source/host/src/device_pairing_owner.rs",
+     "source/host/src/extensions/session/production.rs",
++    "source/host/src/extensions/session/call_session.rs",
+     "source/host/src/extensions/memory/memory_service.rs",
+     "source/host/src/extensions/transcript/transcript_manager.rs",
+     "source/host/tests/memory_service_contract.rs",
+@@ -1741,6 +1742,19 @@
+         raise ValueError("Memory native plan is incomplete or duplicated")
+     return [(label, list(command), list(required)) for label, command, required in selected]
+ 
++memory_fixture_lifecycle_labels = (
++    "memory-checked-list-manager", "memory-checked-list-agent-state",
++)
++
++def memory_fixture_lifecycle_plan(platform):
++    selected = [case for case in memory_checked_list_plan(platform)
++        if case[0] in memory_fixture_lifecycle_labels]
++    if ([case[0] for case in selected] != list(memory_fixture_lifecycle_labels)
++        or [len(case[2]) for case in selected] != [7, 10]
++        or len({name for _, _, names in selected for name in names}) != 17):
++        raise ValueError("Memory fixture recovery requires the two exact parent groups")
++    return selected
++
+ memory_checked_list_cases = memory_checked_list_plan(memory_checked_list_native_platform)
+ memory_checked_list_required = {label: tuple(required)
+     for label, _, required in memory_checked_list_cases}
+@@ -1805,13 +1819,15 @@
+ djc_qualified_name = "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
+ 
+ def select_portable_cases(scope, declared):
+-    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list"):
++    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle"):
+         raise ValueError("Unknown portable contract scope")
+     indexed = {label: (label, command, required) for label, command, required in declared}
+     if len(indexed) != len(declared):
+         raise ValueError("Duplicate portable case label")
+-    if scope == "memory-checked-list":
+-        selected = memory_checked_list_plan(memory_checked_list_native_platform)
++    if scope in ("memory-checked-list", "memory-fixture-lifecycle"):
++        selected = (memory_fixture_lifecycle_plan(memory_checked_list_native_platform)
++            if scope == "memory-fixture-lifecycle"
++            else memory_checked_list_plan(memory_checked_list_native_platform))
+         for parent, expected in memory_checked_list_parent_contracts.items():
+             if parent not in indexed:
+                 raise ValueError("Memory checked listing lost a full-plan parent")
+@@ -2024,9 +2040,35 @@
+     memory_checked_list_selection_controls.append(
+         {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
+     assert actual == expected, f"MGL platform plan failed: {platform}"
++memory_fixture_lifecycle_selection_controls = []
++for control, declared, expected in memory_checked_list_variants:
++    try:
++        selected = select_portable_cases("memory-fixture-lifecycle", declared)
++        actual = (selected == memory_fixture_lifecycle_plan(memory_checked_list_native_platform)
++            and len(selected) == 2 and sum(len(row[2]) for row in selected) == 17)
++    except ValueError:
++        actual = False
++    memory_fixture_lifecycle_selection_controls.append(
++        {"case": control, "expected": expected, "actual": actual})
++    assert actual == expected, f"MGL fixture selection oracle failed: {control}"
++for platform, expected in [("unix", True), ("windows", True), ("foreign", False)]:
++    try:
++        selected = memory_fixture_lifecycle_plan(platform)
++        names = {name for _, _, required in selected for name in required}
++        actual = (len(selected) == 2 and len(names) == 17
++            and ("memory_gateway_manager_rejects_native_drive_relative_selector" in names) == (platform == "windows")
++            and ("memory_gateway_manager_preserves_literal_colon_agent_selector" in names) == (platform == "unix")
++            and ("live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration" in names) == (platform == "windows")
++            and ("live_admission::both_state_constructors_keep_literal_colon_agent_paths" in names) == (platform == "unix"))
++    except ValueError:
++        actual = False
++    memory_fixture_lifecycle_selection_controls.append(
++        {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
++    assert actual == expected, f"MGL fixture platform plan failed: {platform}"
++
+ for selected_scope, expected in [("full", True), ("custody-recovery", True),
+     ("background-custody", True), ("background-custody-recovery", True),
+-    ("memory-checked-list", False)]:
++    ("memory-checked-list", False), ("memory-fixture-lifecycle", False)]:
+     actual = any(label.startswith("box-response-")
+         for label, _, _ in select_portable_cases(selected_scope, full_cases))
+     selection_controls.append({"case": "box-producer-required-" + selected_scope,
+@@ -2252,6 +2294,12 @@
+         for label, required in memory_checked_list_required.items()},
+     "memory_checked_list_selection_controls": memory_checked_list_selection_controls,
+     "memory_checked_list_inputs_before": memory_checked_list_inputs_before,
++    "memory_fixture_lifecycle_contract": "MGL-08",
++    "memory_fixture_lifecycle_selected_here": validation_scope == "memory-fixture-lifecycle",
++    "memory_fixture_lifecycle_expected_positive_count": 17,
++    "memory_fixture_lifecycle_required_names": {label: list(required)
++        for label, _, required in memory_fixture_lifecycle_plan(memory_checked_list_native_platform)},
++    "memory_fixture_lifecycle_selection_controls": memory_fixture_lifecycle_selection_controls,
+     "box_producer_required_by_selection": box_producer_required,
+     "validation_scope": validation_scope,
+     "scope_selection_controls": selection_controls,
+@@ -2352,10 +2400,39 @@
+         "prompt/synthesis reads, devices, Windows packages and full acceptance remain open. "
+         "Requirement metadata elsewhere in this receipt is not execution.")
+ 
++if validation_scope == "memory-fixture-lifecycle":
++    receipt["scope"] = ("MGL-08 fixture recovery: the existing Manager and AgentState groups only, "
++        "including strict owner-destruction-before-deletion, qualified exact whitespace migration "
++        "sentinel, original refusal/byte-preservation/recovery assertions and native path controls. "
++        "Seventeen named cases are selected on each platform. No unchanged store, HTTP, Agent-path, "
++        "Session-path or extension group is executed here; no shipping App or package acceptance.")
++    retained = {
++        "Linux": ("511bcebf08738c59ec0313a425a591a327d9cd20", "41648714149", "125960843306"),
++        "macOS": ("511bcebf08738c59ec0313a425a591a327d9cd20", "41648714149", "125960843500"),
++        "Windows": ("6266a77e72159b92e72c84ef8f0423caf1416a78", "41652461179", "125973925583"),
++    }[os.environ["RUNNER_OS"]]
++    receipt["memory_fixture_retained_history"] = {
++        "subject_commit": retained[0], "run_id": retained[1], "run_attempt": 1, "job_id": retained[2],
++        "required_names": {label: list(required) for label, _, required in memory_checked_list_cases
++            if label not in memory_fixture_lifecycle_labels},
++        "role": "Historical positives only; not executed or revalidated at this subject.",
++        "assessment": ("projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/"
++            + ("h6266-exhaustion-and-decisions.json" if os.name == "nt" else "h511bce-terminal-assessment.json")),
++        "prior_windows_failures_retained": True,
++    }
++    receipt["shipping_host_verification"] = {
++        "result": "not-executed", "accepted": False,
++        "reason": "Only two test fixtures changed. Refresh their exact target graphs; retained production compilation is historical, not a new shipping result.",
++    }
++
+ # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
+ # the complete Host test graph once; this is a compile gate, not test evidence.
+ constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
+-if validation_scope == "memory-checked-list" and os.name == "nt":
++if validation_scope == "memory-fixture-lifecycle":
++    constructor_command = constructor_command[:-1]
++    for _, command, _ in cases:
++        constructor_command.extend(["--test", command[command.index("--test") + 1]])
++elif validation_scope == "memory-checked-list" and os.name == "nt":
+     # Windows adds these actual native consumers; unrelated all-target and App
+     # compatibility is an explicit separate gate, not a passing compile claim.
+     constructor_command = constructor_command[:-1]
+
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 60165b9589cf057c491b63ae08be49f031efd7e5..7afb89051bed8f84df5465a7771f289510de257a 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -21,6 +21,7 @@
+           - ocrm-background-custody-recovery
+           - ocrm-memory-checked-list
+           - ocrm-memory-native-binding
++          - ocrm-memory-fixture-lifecycle
+           - ocrm-local-exec-runtime
+           - ocrm-local-exec-capture
+   push:
+@@ -81,7 +82,7 @@
+ 
+ jobs:
+   rust-host:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: macos-15
+     timeout-minutes: 90
+     steps:
+@@ -3019,7 +3020,7 @@
+           retention-days: 90
+ 
+   config-restore-linux:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: OCRM installation key restore boundary / Linux
+     runs-on: ubuntu-24.04
+     timeout-minutes: 45
+@@ -3180,7 +3181,7 @@
+           retention-days: 90
+ 
+   sqlite-native-path:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: ubuntu-24.04
+     # LDB adds two native domains and normal Host/Coordinator builds; existing
+     # product observation deadlines and failure assertions remain unchanged.
+@@ -4482,7 +4483,7 @@
+           retention-days: 90
+ 
+   media-store-windows:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: OCRM media cleanup / Windows
+     runs-on: windows-2025
+     timeout-minutes: 45
+@@ -4529,7 +4530,7 @@
+           retention-days: 90
+ 
+   pressure-profiler-platform:
+-    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: Pressure profiler / ${{ matrix.os }}
+     runs-on: ${{ matrix.os }}
+     timeout-minutes: 45
+@@ -4585,7 +4586,7 @@
+           -- --exact --nocapture
+ 
+   platform-worker:
+-    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 45
+     steps:
+@@ -4625,7 +4626,7 @@
+         run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+ 
+   renderer:
+-    if: ${{ !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):'))) }}
++    if: ${{ !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):'))) }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 30
+     env:
+@@ -5553,23 +5554,23 @@
+ 
+ 
+   custody-recovery:
+-    if: ${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) }}
++    if: ${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) }}
+     name: OCRM selected native contracts / ${{ matrix.os }}
+     runs-on: ${{ matrix.os }}
+     timeout-minutes: 60
+     strategy:
+       fail-fast: false
+       matrix:
+-        os: ${{ fromJSON(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) && '["windows-2025"]' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) && '["ubuntu-24.04", "macos-15", "windows-2025"]' || '["ubuntu-24.04", "macos-15"]') }}
++        os: ${{ fromJSON(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) && '["windows-2025"]' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))) && '["ubuntu-24.04", "macos-15", "windows-2025"]' || '["ubuntu-24.04", "macos-15"]') }}
+     env:
+       CARGO_TERM_COLOR: never
+       CARGO_BUILD_JOBS: '2'
+       CARGO_PROFILE_DEV_DEBUG: '0'
+       CARGO_PROFILE_TEST_DEBUG: '0'
+       CARGO_INCREMENTAL: '0'
+-      OCRM_PORTABLE_SCOPE: ${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}
+-      OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/unselected-palette.json
+-      TMPDIR: ${{ github.workspace }}/.evidence/${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/owned-tmp
++      OCRM_PORTABLE_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}
++      OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/unselected-palette.json
++      TMPDIR: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/owned-tmp
+       PYTHONUTF8: '1'
+     steps:
+       - name: Preserve exact tracked bytes on the disposable Windows runner
+@@ -5614,7 +5615,7 @@
+           sudo apt-get update
+           sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+       - name: Compile the exact shipping Host for the selected recovery
+-        if: ${{ runner.os != 'Windows' }}
++        if: ${{ runner.os != 'Windows' && env.OCRM_PORTABLE_SCOPE != 'memory-fixture-lifecycle' }}
+         id: shipping_host
+         shell: bash
+         run: |
+
+diff --git a/projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json
+index 8c4e86de0769a6f50bceec6f7be056ea801664d1..410c00aee0046c8689d7b61a2fd4b3dbdb36a6d3 100644
+--- a/projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json
+@@ -16,10 +16,10 @@
+     "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+     "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+     "spec": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+-    "spec_blob": "c081c6d5701510b699bb734fcd5a11fb0f156638",
++    "spec_blob": "4d654dadff225fb1a2329b2ce2302583fc657391",
+     "spec_lines": [
+       138,
+-      269
++      357
+     ],
+     "native_preservation": true,
+     "modules": [
+@@ -44,9 +44,10 @@
+       "MGL-06",
+       "MGS-05",
+       "MGS-06",
+-      "MGL-07"
++      "MGL-07",
++      "MGL-08"
+     ],
+-    "spec_carrier": "e2b91700f145b9b13bb77cdf6f7981aafd433627"
++    "spec_carrier": "d7e1bbae7b2c2426872f77c2015e20d75853d652"
+   },
+   "behavior": {
+     "entry": "Existing native getAgentMemories HTTP/Gateway command; required trimmed canonical Agent selector and existing current credential/scope/role admission. The same canonical native-component validator is consumed by Agent/Conversation path helpers and both actual SandAgentState constructors.",
+@@ -221,6 +222,40 @@
+         "memory_gateway_checked_list_manager_preserves_path_type_failures",
+         "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover"
+       ]
++    },
++    {
++      "id": "MGL-08",
++      "claim": "The unchanged Memory refusal and recovery assertions reach terminal success after real fixture owners are destroyed before strict deletion; exact whitespace migration sentinel is qualified before both actual AgentState constructors. Required on all three selected platforms.",
++      "tests": [
++        "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
++        "memory_gateway_rejects_path_selectors_before_external_memory_read",
++        "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
++        "memory_gateway_preserves_projection_order_and_hundred_record_limit",
++        "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
++        "memory_gateway_checked_list_manager_preserves_path_type_failures",
++        "memory_gateway_manager_preserves_literal_colon_agent_selector",
++        "routes_memory_to_agent_user_and_joined_project_shards",
++        "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
++        "owns_profile_settings_channel_and_avatar_mutations",
++        "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
++        "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
++        "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
++        "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
++        "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
++        "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
++        "live_admission::both_state_constructors_keep_literal_colon_agent_paths"
++      ],
++      "platform_specific_controls": {
++        "Windows": [
++          "memory_gateway_manager_rejects_native_drive_relative_selector",
++          "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration"
++        ],
++        "Unix": [
++          "memory_gateway_manager_preserves_literal_colon_agent_selector",
++          "live_admission::both_state_constructors_keep_literal_colon_agent_paths"
++        ]
++      },
++      "execution": "pending new focused Actions subject; historical failed groups remain failed"
+     }
+   ],
+   "source_review": {
+@@ -463,6 +498,18 @@
+         "blob": "844be87e4a278bca99bc4968bbf85b6d751983b9",
+         "depth": "complete file",
+         "fact": "resolve_sand_data_root_override admits only Path::is_absolute values; get_sand_root_dir_with chooses that same root before user-data-dir and variant fallback. The selected Session-path fixture must supply a native absolute path."
++      },
++      {
++        "path": "source/host/src/extensions/session/call_session.rs",
++        "blob": "f97f628ec14618ab2788bdf5b5c301f7a00c81f6",
++        "ranges": [
++          [
++            77,
++            98
++          ]
++        ],
++        "depth": "Constructor/retained connection lifetime contract read; not whole-file reading",
++        "fact": "CallSessionStore retains Mutex<rusqlite::Connection> under agents/.call-sessions.db. Session disposal does not destroy this field while fixture-owned manager Arcs remain."
+       }
+     ],
+     "ledger_relationship": "OCRM remains the only inventory/ledger/RTM. This native preservation supplement is linked to the six existing RTM rows without inventing an upstream Memory equivalence row. Existing OCRM-RESP-GW-DISPATCH-REGISTRY-001 and MGA method/role/pairing/revocation responsibilities remain adjacent dependencies; their status and source histories are unchanged.",
+@@ -509,6 +556,28 @@
+             53
+           ],
+           "fact": "PATH_NOT_FOUND is NotFound, while ERROR_DIRECTORY is NotADirectory; raw error kind alone is not portable absence proof."
++        },
++        {
++          "repository": "rust-lang/rust",
++          "commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
++          "path": "library/std/src/fs.rs",
++          "blob": "0dd250acff8378dc1aa59f63d7e3a37e5b1369e3",
++          "lines": [
++            2949,
++            2965
++          ],
++          "fact": "canonicalize returns an absolute native path, extended-length on Windows; append individual components."
++        },
++        {
++          "repository": "rust-lang/rust",
++          "commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
++          "path": "library/std/src/sys/path/windows.rs",
++          "blob": "1c7bf50d1907f8b0c69f7ca2e27bff527652cc04",
++          "lines": [
++            118,
++            132
++          ],
++          "fact": "Already-verbatim paths preserve the exact whitespace component; short DOS paths can pass through unchanged."
+         }
+       ],
+       "credit": "Contract review only; not full dependency reading or new fixed-U credit. Full recursive dependency/generated/LFS/resource/legal closure remains open."
+@@ -554,6 +623,7 @@
+       "source/host/src/gateway_command_error.rs",
+       "source/host/src/device_pairing_owner.rs",
+       "source/host/src/extensions/session/production.rs",
++      "source/host/src/extensions/session/call_session.rs",
+       "source/host/src/extensions/memory/memory_service.rs",
+       "source/host/src/extensions/transcript/transcript_manager.rs",
+       "source/host/tests/memory_service_contract.rs",
+@@ -574,8 +644,8 @@
+       "source/host/src/workflows/workflow_store.rs"
+     ],
+     "retained": "All inherited full-plan command groups and requirements remain. The existing integration and namespace groups gain applicable current-platform required names, and three explicit native owner groups are added to the portable full plan. Scoped execution does not execute unrelated groups. Historical failed DJC check remains non-passing and retained.",
+-    "source_review": "pending complete immutable 14-path candidate and fresh focused GENERAL/STRUCTURE review",
+-    "execution": "not-run",
++    "source_review": "H511 complete frozen 14-path scope converged in independent GENERAL/STRUCTURE review. MGL-08 two-fixture/shared selection recovery requires its own complete immutable review before execution.",
++    "execution": "H511 Linux/macOS: 66 selected names each passed; Windows failed before Cargo. H6266 Windows: 58 names passed, 7 failed; two incomplete groups retained. No full MGL acceptance.",
+     "platform_groups": {
+       "unix": [
+         {
+@@ -941,10 +1011,39 @@
+         }
+       ]
+     },
+-    "windows_checkout": "Use core.autocrlf=false only on the disposable Windows Actions runner before checkout, retaining strict before/after source byte equivalence to H; reuse existing Windows Host cache."
++    "windows_checkout": "Use core.autocrlf=false only on the disposable Windows Actions runner before checkout, retaining strict before/after source byte equivalence to H; reuse existing Windows Host cache.",
++    "fixture_recovery": {
++      "contract": "MGL-08",
++      "workflow_scope": "ocrm-memory-fixture-lifecycle",
++      "capture_scope": "memory-fixture-lifecycle",
++      "decision_commit": "d7e1bbae7b2c2426872f77c2015e20d75853d652",
++      "assessment": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
++      "selected_groups": [
++        "memory-checked-list-manager",
++        "memory-checked-list-agent-state"
++      ],
++      "selected_named_cases": {
++        "Linux": 17,
++        "macOS": 17,
++        "Windows": 17
++      },
++      "compile": "Only the two changed test targets, cargo check --locked --manifest-path source/host/Cargo.toml --test transcript_manager_contract --test agent_state_contract. No unchanged shipping App compilation.",
++      "selection_controls": 36,
++      "box_producer_required": false,
++      "box_selection_controls": 6,
++      "original_full_counts_preserved": {
++        "Linux": 66,
++        "macOS": 66,
++        "Windows": 65
++      },
++      "source_bindings": 35,
++      "carry_forward": "Five unchanged groups: H511 Linux/macOS 49 names each; H6266 Windows 48 names. Preserve original run/job/subject and failures. New receipt executes 17 names only and is never a full-candidate result.",
++      "execution": "not-run",
++      "stop_condition": "Any further failure requires causal assessment; no unchanged replay or lowered oracle."
++    }
+   },
+   "open_work": [
+-    "Actual Windows native oracles are authored and selected but not executed yet. Windows shipping App signal_hook iterator incompatibility, device names/trailing-dot alias policy and native link-capability cases remain separate open platform requirements.",
++    "Windows store/HTTP/Agent-path/Session-path/extension scoped groups passed at H6266. Manager/AgentState terminal cleanup/sentinel failures remain pending MGL-08 recovery on all three platforms. Windows shipping App signal handling, reserved-device/trailing-dot policy and native link-capability cases remain open.",
+     "Atomic multi-file snapshots, external filesystem races, symlink confinement and hostile directory replacement.",
+     "Strict prompt/synthesis reads and source-derived episode concurrency/reconciliation outside checked native listing.",
+     "Actual full App lifecycle and any rendered Memory UI, live providers/channels/plugins/nodes/devices.",
+
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 4966c264bf2b83fac44a3683d1a2f24cfece04af..cfa7a9da48c4d049af12d21b7eeeb17ab17a86c0 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -955,7 +955,9 @@
+         "source/host/tests/host_storage_contract.rs",
+         "source/host/tests/agent_state_contract.rs",
+         "source/host/tests/session_paths_contract.rs",
+-        "source/host/tests/memory_extension_contract.rs"
++        "source/host/tests/memory_extension_contract.rs",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R13",
+@@ -992,7 +994,8 @@
+         "MGL-06",
+         "MGS-05",
+         "MGS-06",
+-        "MGL-07"
++        "MGL-07",
++        "MGL-08"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -1706,7 +1709,9 @@
+         "source/host/tests/host_storage_contract.rs",
+         "source/host/tests/agent_state_contract.rs",
+         "source/host/tests/session_paths_contract.rs",
+-        "source/host/tests/memory_extension_contract.rs"
++        "source/host/tests/memory_extension_contract.rs",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R24",
+@@ -1797,7 +1802,8 @@
+         "MGL-06",
+         "MGS-05",
+         "MGS-06",
+-        "MGL-07"
++        "MGL-07",
++        "MGL-08"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -2569,7 +2575,9 @@
+         "source/host/tests/host_storage_contract.rs",
+         "source/host/tests/agent_state_contract.rs",
+         "source/host/tests/session_paths_contract.rs",
+-        "source/host/tests/memory_extension_contract.rs"
++        "source/host/tests/memory_extension_contract.rs",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC13",
+@@ -2591,7 +2599,8 @@
+         "MGL-06",
+         "MGS-05",
+         "MGS-06",
+-        "MGL-07"
++        "MGL-07",
++        "MGL-08"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -2823,7 +2832,9 @@
+         "source/host/tests/host_storage_contract.rs",
+         "source/host/tests/agent_state_contract.rs",
+         "source/host/tests/session_paths_contract.rs",
+-        "source/host/tests/memory_extension_contract.rs"
++        "source/host/tests/memory_extension_contract.rs",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC17",
+@@ -2872,7 +2883,8 @@
+         "MGL-06",
+         "MGS-05",
+         "MGS-06",
+-        "MGL-07"
++        "MGL-07",
++        "MGL-08"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -2953,7 +2965,9 @@
+         "source/host/tests/host_storage_contract.rs",
+         "source/host/tests/agent_state_contract.rs",
+         "source/host/tests/session_paths_contract.rs",
+-        "source/host/tests/memory_extension_contract.rs"
++        "source/host/tests/memory_extension_contract.rs",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC18",
+@@ -2984,7 +2998,8 @@
+         "MGL-06",
+         "MGS-05",
+         "MGS-06",
+-        "MGL-07"
++        "MGL-07",
++        "MGL-08"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -3441,7 +3456,9 @@
+         "source/host/tests/host_storage_contract.rs",
+         "source/host/tests/agent_state_contract.rs",
+         "source/host/tests/session_paths_contract.rs",
+-        "source/host/tests/memory_extension_contract.rs"
++        "source/host/tests/memory_extension_contract.rs",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+@@ -3532,7 +3549,8 @@
+         "MGL-06",
+         "MGS-05",
+         "MGS-06",
+-        "MGL-07"
++        "MGL-07",
++        "MGL-08"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
