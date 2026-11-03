@@ -3076,3 +3076,75 @@ fn openclaw_gateway_role_and_scope_enforcement() {
 
     server.close();
 }
+
+struct SessionModelNativeContextApi {
+    pairing: DevicePairingOwner,
+}
+
+impl GatewayApi for SessionModelNativeContextApi {
+    fn call(&self, _method: &str, _args: Value) -> Result<Value, GatewayCommandError> {
+        Ok(json!({}))
+    }
+    fn authenticate_device_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
+        self.pairing.authenticate_device_token(token)
+    }
+    fn call_with_context(
+        &self,
+        method: &str,
+        _args: Value,
+        context: &GatewayCommandContext,
+    ) -> Result<Value, GatewayCommandError> {
+        Ok(json!({
+            "method": method,
+            "authenticated": context.authenticated,
+            "native": context.native_operator_control,
+        }))
+    }
+}
+
+#[test]
+fn gateway_session_model_native_authority_is_not_promoted_by_paired_operator_write() {
+    let pairing = DevicePairingOwner::in_memory().unwrap();
+    let pending = pairing.handle_pair_request(&json!({
+        "deviceId": "model-operator",
+        "publicKey": "model-operator-public-key",
+        "platform": "macos",
+        "roles": ["operator"],
+        "scopes": ["operator.read", "operator.write"],
+    })).unwrap();
+    pairing.handle_pair_approve(&json!({"requestId": pending["requestId"]})).unwrap();
+    let rotated = pairing.handle_pair_rotate_token(&json!({
+        "deviceId": "model-operator", "role": "operator",
+    })).unwrap();
+    let paired = rotated["token"].as_str().unwrap();
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(SessionModelNativeContextApi { pairing }),
+        events: GatewayEventHub::default(), local_exec: None, webauthn: None,
+        config: config(Some("native-secret")), started_at: 1,
+    }).unwrap();
+    let port = server.port();
+    let invoke = |token: &str, extra: &str, method: &str| request(port, &format!(
+        "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {token}\r\n{extra}Content-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+    ));
+    let native = invoke("native-secret", "", "sessions.get");
+    assert!(native.starts_with("HTTP/1.1 200 OK"), "{native}");
+    assert_eq!(json_body(&native)["native"], true);
+    let paired_read = invoke(paired, "", "sessions.get");
+    assert!(paired_read.starts_with("HTTP/1.1 200 OK"), "{paired_read}");
+    assert_eq!(json_body(&paired_read)["authenticated"], true);
+    assert_eq!(json_body(&paired_read)["native"], false);
+    let paired_write = invoke(paired, "x-sand-scope: operator.write\r\n", "sessions.patch");
+    assert!(paired_write.starts_with("HTTP/1.1 200 OK"), "{paired_write}");
+    assert_eq!(json_body(&paired_write)["native"], false);
+    let narrowed = invoke("native-secret", "x-sand-scope: operator.read\r\n", "sessions.get");
+    assert!(narrowed.starts_with("HTTP/1.1 200 OK"), "{narrowed}");
+    assert_eq!(json_body(&narrowed)["native"], false);
+    let rejected_write = invoke("native-secret", "x-sand-scope: operator.read\r\n", "sessions.patch");
+    assert!(rejected_write.starts_with("HTTP/1.1 403 Forbidden"), "{rejected_write}");
+    let unknown = invoke("not-issued", "", "sessions.patch");
+    assert!(unknown.starts_with("HTTP/1.1 401 Unauthorized"), "{unknown}");
+    server.close();
+}
