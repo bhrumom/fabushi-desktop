@@ -1194,7 +1194,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
     // Canonical SavedSublist message-membership relation + MessageQueued pin restoration:
     // 1. Peer sends a message in `child_id`, and owner forwards it into `saved_parent_id`
     //    with preserved forward origin (`drop_sender_names: false`).
-    service
+    let peer_send_envelopes = service
         .handle(
             ClientEnvelope::new(
                 context("human:peer", "peer-source-for-saved-sublist"),
@@ -1212,50 +1212,42 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
             17,
         )
         .unwrap();
-    let peer_source_msg_id = service
-        .engine()
-        .state()
-        .messages
-        .get(&child_id)
-        .unwrap()
-        .values()
-        .find(|msg| msg.client_message_id.0 == "client:peer-source-1")
-        .unwrap()
-        .id
-        .clone();
+    let peer_source_msg_id = peer_send_envelopes
+        .iter()
+        .find_map(|env| match &env.event {
+            ServerEvent::MessageChanged { message } => Some(message.id.clone()),
+            _ => None,
+        })
+        .expect("peer source message id");
 
-    service
+    let preserved_fwd_envelopes = service
         .handle(
             ClientEnvelope::new(
                 context("human:owner", "forward-preserved-to-saved"),
-                ClientCommand::ForwardMessages {
-                    from_conversation_id: child_id.clone(),
-                    to_conversation_id: saved_parent_id.clone(),
-                    message_ids: vec![peer_source_msg_id.clone()],
-                    client_batch_id: "batch:saved-sublist-preserved".into(),
-                    reply_to_message_id: None,
+                ClientCommand::ForwardMessage {
+                    source_conversation_id: child_id.clone(),
+                    message_id: peer_source_msg_id.clone(),
+                    destination_conversation_id: saved_parent_id.clone(),
+                    client_message_id: ClientMessageId("batch:saved-sublist-preserved".into()),
                     thread_root_message_id: None,
                     scheduled_at_ms: None,
                     silent: false,
-                    protected_content: false,
-                    drop_sender_names: false,
-                    drop_captions: false,
+                    privacy: mahayana_messaging::ForwardPrivacy {
+                        drop_sender_names: false,
+                        drop_captions: false,
+                    },
                 },
             ),
             18,
         )
         .unwrap();
-    let preserved_saved_msg_id = service
-        .engine()
-        .state()
-        .messages
-        .get(&saved_parent_id)
-        .unwrap()
-        .values()
-        .find(|msg| msg.client_message_id.0.starts_with("batch:saved-sublist-preserved"))
-        .unwrap()
-        .id
-        .clone();
+    let preserved_saved_msg_id = preserved_fwd_envelopes
+        .iter()
+        .find_map(|env| match &env.event {
+            ServerEvent::MessageChanged { message } => Some(message.id.clone()),
+            _ => None,
+        })
+        .expect("preserved saved message id");
 
     // Non-empty SavedSublist window succeeds for a message genuinely forwarded from `human:peer`
     service
@@ -1276,38 +1268,34 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
 
     // 2. Forwarding with `drop_sender_names: true` clears `forward_origin`, so it belongs to
     //    `human:owner`'s self sublist and fails closed for `human:peer`'s sublist.
-    service
+    let anon_fwd_envelopes = service
         .handle(
             ClientEnvelope::new(
                 context("human:owner", "forward-anon-to-saved"),
-                ClientCommand::ForwardMessages {
-                    from_conversation_id: child_id.clone(),
-                    to_conversation_id: saved_parent_id.clone(),
-                    message_ids: vec![peer_source_msg_id.clone()],
-                    client_batch_id: "batch:saved-sublist-anon".into(),
-                    reply_to_message_id: None,
+                ClientCommand::ForwardMessage {
+                    source_conversation_id: child_id.clone(),
+                    message_id: peer_source_msg_id.clone(),
+                    destination_conversation_id: saved_parent_id.clone(),
+                    client_message_id: ClientMessageId("batch:saved-sublist-anon".into()),
                     thread_root_message_id: None,
                     scheduled_at_ms: None,
                     silent: false,
-                    protected_content: false,
-                    drop_sender_names: true,
-                    drop_captions: false,
+                    privacy: mahayana_messaging::ForwardPrivacy {
+                        drop_sender_names: true,
+                        drop_captions: false,
+                    },
                 },
             ),
             20,
         )
         .unwrap();
-    let anon_saved_msg_id = service
-        .engine()
-        .state()
-        .messages
-        .get(&saved_parent_id)
-        .unwrap()
-        .values()
-        .find(|msg| msg.client_message_id.0.starts_with("batch:saved-sublist-anon"))
-        .unwrap()
-        .id
-        .clone();
+    let anon_saved_msg_id = anon_fwd_envelopes
+        .iter()
+        .find_map(|env| match &env.event {
+            ServerEvent::MessageChanged { message } => Some(message.id.clone()),
+            _ => None,
+        })
+        .expect("anon saved message id");
 
     let anon_on_peer_sublist = service
         .handle(
@@ -1392,18 +1380,18 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
         .handle(
             ClientEnvelope::new(
                 context("human:owner", "forward-second-preserved-to-saved"),
-                ClientCommand::ForwardMessages {
-                    from_conversation_id: child_id.clone(),
-                    to_conversation_id: saved_parent_id.clone(),
-                    message_ids: vec![peer_source_msg_id],
-                    client_batch_id: "batch:saved-sublist-restore-pin".into(),
-                    reply_to_message_id: None,
+                ClientCommand::ForwardMessage {
+                    source_conversation_id: child_id.clone(),
+                    message_id: peer_source_msg_id,
+                    destination_conversation_id: saved_parent_id.clone(),
+                    client_message_id: ClientMessageId("batch:saved-sublist-restore-pin".into()),
                     thread_root_message_id: None,
                     scheduled_at_ms: None,
                     silent: false,
-                    protected_content: false,
-                    drop_sender_names: false,
-                    drop_captions: false,
+                    privacy: mahayana_messaging::ForwardPrivacy {
+                        drop_sender_names: false,
+                        drop_captions: false,
+                    },
                 },
             ),
             25,
@@ -1466,13 +1454,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
             .map(|pos| pos.message_id.as_str()),
         Some(message_id.0.as_str())
     );
-    assert_eq!(
-        migrated_child
-            .draft
-            .as_ref()
-            .map(|draft| draft.text.as_str()),
-        Some("migrated topic draft")
-    );
+    assert_eq!(migrated_child.draft_text.as_str(), "migrated topic draft");
 }
 
 #[test]

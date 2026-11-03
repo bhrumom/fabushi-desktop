@@ -1373,3 +1373,299 @@ fn paid_send_plan_approval_consumption_and_story_share_at_time_revalidation() {
         .revalidate_source([&protected_story], &sender_id, false, false, 500)
         .is_none());
 }
+
+#[test]
+fn forward_panel_option_cycle_draft_lifecycle_forced_info_and_custom_emoji_stripping() {
+    // 1. ForwardHideAuthorPolicy & ForwardPrivacy::cycle_next
+    assert_eq!(
+        ForwardPrivacy::evaluate_hide_author_policy(true, false, true, true),
+        ForwardHideAuthorPolicy::DisallowedForcedForwardInfo
+    );
+    assert_eq!(
+        ForwardPrivacy::evaluate_hide_author_policy(false, true, false, true),
+        ForwardHideAuthorPolicy::DisallowedRichPageWithoutAuthorCapability
+    );
+    assert_eq!(
+        ForwardPrivacy::evaluate_hide_author_policy(false, true, true, false),
+        ForwardHideAuthorPolicy::PremiumRequiredForRichPage
+    );
+    assert_eq!(
+        ForwardPrivacy::evaluate_hide_author_policy(false, true, true, true),
+        ForwardHideAuthorPolicy::Allowed
+    );
+
+    // With captions: PreserveInfo -> NoSenderNames -> NoNamesAndCaptions -> PreserveInfo
+    let p0 = ForwardPrivacy::default();
+    let p1 = p0.cycle_next(true, ForwardHideAuthorPolicy::Allowed);
+    assert_eq!(
+        p1,
+        ForwardPrivacy {
+            drop_sender_names: true,
+            drop_captions: false,
+        }
+    );
+    let p2 = p1.cycle_next(true, ForwardHideAuthorPolicy::Allowed);
+    assert_eq!(
+        p2,
+        ForwardPrivacy {
+            drop_sender_names: true,
+            drop_captions: true,
+        }
+    );
+    let p3 = p2.cycle_next(true, ForwardHideAuthorPolicy::Allowed);
+    assert_eq!(p3, ForwardPrivacy::default());
+
+    // Without captions: PreserveInfo -> NoSenderNames -> PreserveInfo
+    assert_eq!(
+        p1.cycle_next(false, ForwardHideAuthorPolicy::Allowed),
+        ForwardPrivacy::default()
+    );
+    // Disallowed policy clamps cycle to PreserveInfo
+    assert_eq!(
+        p0.cycle_next(true, ForwardHideAuthorPolicy::PremiumRequiredForRichPage),
+        ForwardPrivacy::default()
+    );
+
+    // 2. ForwardDraftState source removal and typed-destination destruction
+    let topic_dest =
+        ConversationDestination::topic(ConversationId::new("conv:forum"), "topic:77");
+    let mut draft = ForwardDraftState::new(
+        topic_dest.clone(),
+        ConversationId::new("conv:source"),
+        vec!["msg:1".into(), "msg:2".into(), "msg:1".into()],
+        ForwardPrivacy {
+            drop_sender_names: false,
+            drop_captions: true,
+        },
+        true,
+        ForwardHideAuthorPolicy::Allowed,
+    )
+    .expect("valid forward draft");
+    assert_eq!(
+        draft.source_message_ids,
+        vec!["msg:1".to_string(), "msg:2".to_string()]
+    );
+    assert_eq!(
+        draft.privacy,
+        ForwardPrivacy {
+            drop_sender_names: true,
+            drop_captions: true,
+        }
+    );
+    assert_eq!(draft.cycle_to_next_option(), ForwardPrivacy::default());
+    assert_eq!(
+        draft.cycle_to_next_option(),
+        ForwardPrivacy {
+            drop_sender_names: true,
+            drop_captions: false,
+        }
+    );
+
+    let deleted_one = std::collections::BTreeSet::from(["msg:1".to_string()]);
+    assert!(draft.remove_deleted_source_messages(&deleted_one));
+    assert_eq!(draft.source_message_ids, vec!["msg:2".to_string()]);
+    assert!(!draft.is_empty());
+
+    // Unrelated topic destruction leaves the draft intact; matching topic destruction clears it
+    assert!(!draft.clear_if_destination_destroyed(
+        &ConversationId::new("conv:forum"),
+        &ConversationChildIdentity::Topic {
+            root_message_id: "topic:other".into(),
+        },
+    ));
+    assert!(!draft.is_empty());
+    assert!(draft.clear_if_destination_destroyed(
+        &ConversationId::new("conv:forum"),
+        &ConversationChildIdentity::Topic {
+            root_message_id: "topic:77".into(),
+        },
+    ));
+    assert!(draft.is_empty());
+    assert_eq!(draft.privacy, ForwardPrivacy::default());
+
+    // 3. Engine ForwardMessage: Poll clamps to PreserveInfo; anonymous forward strips CustomEmoji
+    //    for non-premium sender and preserves CustomEmoji for premium sender.
+    let mut engine = MessagingEngine::new();
+    let author_id = ActorId::new("human:author");
+    let non_premium_id = ActorId::new("human:regular");
+    let premium_id = ActorId::new("human:premium");
+    let mut premium_actor = Actor::human("human:premium", "Premium");
+    premium_actor.capabilities = vec!["premium".into()];
+    for actor in [
+        Actor::human("human:author", "Author"),
+        Actor::human("human:regular", "Regular"),
+        premium_actor,
+    ] {
+        engine.execute(Command::UpsertActor { actor }).unwrap();
+    }
+    let conv_id = ConversationId::new("conv:fwd-rules");
+    engine
+        .execute(Command::UpsertConversation {
+            conversation: Conversation::direct(
+                "conv:fwd-rules",
+                "Forward Rules",
+                vec![
+                    participant("human:author", ParticipantRole::Owner),
+                    participant("human:regular", ParticipantRole::Member),
+                    participant("human:premium", ParticipantRole::Member),
+                ],
+                10,
+            ),
+        })
+        .unwrap();
+
+    // Queue a Poll message and a Text message containing CustomEmoji + Bold
+    engine
+        .execute(Command::QueueMessage {
+            conversation_id: conv_id.clone(),
+            local_message_id: MessageId::new("msg:poll:1"),
+            client_message_id: ClientMessageId("c:poll:1".into()),
+            sender_id: author_id.clone(),
+            content: MessageContent::Poll {
+                question: FormattedText::plain("Vote?"),
+                options: vec![
+                    PollOption {
+                        id: "opt:1".into(),
+                        text: "Yes".into(),
+                        voter_count: 0,
+                        chosen: false,
+                    },
+                    PollOption {
+                        id: "opt:2".into(),
+                        text: "No".into(),
+                        voter_count: 0,
+                        chosen: false,
+                    },
+                ],
+                anonymous: true,
+                multiple_answers: false,
+                quiz: false,
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            created_at_ms: 20,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+        })
+        .unwrap();
+
+    engine
+        .execute(Command::QueueMessage {
+            conversation_id: conv_id.clone(),
+            local_message_id: MessageId::new("msg:emoji:1"),
+            client_message_id: ClientMessageId("c:emoji:1".into()),
+            sender_id: author_id,
+            content: MessageContent::Text {
+                text: FormattedText {
+                    text: "⭐ bold".into(),
+                    entities: vec![
+                        TextEntity {
+                            offset_utf16: 0,
+                            length_utf16: 1,
+                            kind: TextEntityKind::CustomEmoji("emoji:star:1".into()),
+                        },
+                        TextEntity {
+                            offset_utf16: 2,
+                            length_utf16: 4,
+                            kind: TextEntityKind::Bold,
+                        },
+                    ],
+                },
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            created_at_ms: 21,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+        })
+        .unwrap();
+
+    // Forwarding a Poll with drop_sender_names=true clamps to PreserveInfo (keeps forward_origin)
+    engine
+        .execute(Command::ForwardMessage {
+            source_conversation_id: conv_id.clone(),
+            message_id: MessageId::new("msg:poll:1"),
+            destination_conversation_id: conv_id.clone(),
+            local_message_id: MessageId::new("msg:poll:fwd"),
+            client_message_id: ClientMessageId("c:poll:fwd".into()),
+            sender_id: non_premium_id.clone(),
+            thread_root_message_id: None,
+            created_at_ms: 30,
+            scheduled_at_ms: None,
+            silent: false,
+            privacy: ForwardPrivacy {
+                drop_sender_names: true,
+                drop_captions: true,
+            },
+        })
+        .unwrap();
+    let fwd_poll = &engine.state().messages[&conv_id][&MessageId::new("msg:poll:fwd")];
+    assert_eq!(
+        fwd_poll.forward_origin.as_deref(),
+        Some("conv:fwd-rules:msg:poll:1")
+    );
+
+    // Forwarding custom-emoji message with drop_sender_names=true by non-premium strips CustomEmoji but keeps Bold
+    engine
+        .execute(Command::ForwardMessage {
+            source_conversation_id: conv_id.clone(),
+            message_id: MessageId::new("msg:emoji:1"),
+            destination_conversation_id: conv_id.clone(),
+            local_message_id: MessageId::new("msg:emoji:fwd:regular"),
+            client_message_id: ClientMessageId("c:emoji:fwd:regular".into()),
+            sender_id: non_premium_id,
+            thread_root_message_id: None,
+            created_at_ms: 31,
+            scheduled_at_ms: None,
+            silent: false,
+            privacy: ForwardPrivacy {
+                drop_sender_names: true,
+                drop_captions: false,
+            },
+        })
+        .unwrap();
+    let fwd_regular = &engine.state().messages[&conv_id][&MessageId::new("msg:emoji:fwd:regular")];
+    assert_eq!(fwd_regular.forward_origin, None);
+    match &fwd_regular.content {
+        MessageContent::Text { text } => {
+            assert_eq!(text.entities.len(), 1);
+            assert_eq!(text.entities[0].kind, TextEntityKind::Bold);
+        }
+        other => panic!("unexpected content: {other:?}"),
+    }
+
+    // Forwarding custom-emoji message with drop_sender_names=true by premium actor keeps CustomEmoji and Bold
+    engine
+        .execute(Command::ForwardMessage {
+            source_conversation_id: conv_id.clone(),
+            message_id: MessageId::new("msg:emoji:1"),
+            destination_conversation_id: conv_id.clone(),
+            local_message_id: MessageId::new("msg:emoji:fwd:premium"),
+            client_message_id: ClientMessageId("c:emoji:fwd:premium".into()),
+            sender_id: premium_id,
+            thread_root_message_id: None,
+            created_at_ms: 32,
+            scheduled_at_ms: None,
+            silent: false,
+            privacy: ForwardPrivacy {
+                drop_sender_names: true,
+                drop_captions: false,
+            },
+        })
+        .unwrap();
+    let fwd_premium = &engine.state().messages[&conv_id][&MessageId::new("msg:emoji:fwd:premium")];
+    assert_eq!(fwd_premium.forward_origin, None);
+    match &fwd_premium.content {
+        MessageContent::Text { text } => {
+            assert_eq!(text.entities.len(), 2);
+            assert_eq!(
+                text.entities[0].kind,
+                TextEntityKind::CustomEmoji("emoji:star:1".into())
+            );
+            assert_eq!(text.entities[1].kind, TextEntityKind::Bold);
+        }
+        other => panic!("unexpected content: {other:?}"),
+    }
+}

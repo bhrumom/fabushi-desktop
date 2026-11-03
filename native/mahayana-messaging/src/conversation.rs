@@ -631,6 +631,111 @@ impl ConversationDestinationSelection {
     }
 }
 
+/// Live forward draft state bound to a `ConversationDestination`
+/// (`ForwardPanel::update` / `itemRemoved` / `applyOptions` / `editToNextOption`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ForwardDraftState {
+    pub destination: ConversationDestination,
+    pub source_conversation_id: ConversationId,
+    pub source_message_ids: Vec<String>,
+    pub privacy: crate::message::ForwardPrivacy,
+    pub has_captions: bool,
+    pub hide_author_policy: crate::message::ForwardHideAuthorPolicy,
+}
+
+impl ForwardDraftState {
+    pub fn new(
+        destination: ConversationDestination,
+        source_conversation_id: ConversationId,
+        source_message_ids: Vec<String>,
+        requested_privacy: crate::message::ForwardPrivacy,
+        has_captions: bool,
+        hide_author_policy: crate::message::ForwardHideAuthorPolicy,
+    ) -> Option<Self> {
+        if !destination.is_valid() || !source_conversation_id.is_valid() {
+            return None;
+        }
+        let mut unique_ids = Vec::new();
+        let mut seen = std::collections::BTreeSet::new();
+        for raw in source_message_ids {
+            let trimmed = raw.trim();
+            if !trimmed.is_empty() && seen.insert(trimmed.to_string()) {
+                unique_ids.push(trimmed.to_string());
+            }
+        }
+        if unique_ids.is_empty() {
+            return None;
+        }
+        let mut draft = Self {
+            destination,
+            source_conversation_id,
+            source_message_ids: unique_ids,
+            privacy: crate::message::ForwardPrivacy::default(),
+            has_captions,
+            hide_author_policy,
+        };
+        draft.apply_options(requested_privacy);
+        Some(draft)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.source_message_ids.is_empty()
+    }
+
+    pub fn apply_options(
+        &mut self,
+        requested_privacy: crate::message::ForwardPrivacy,
+    ) -> crate::message::ForwardPrivacy {
+        let mut normalized = requested_privacy.normalized_for_policy(self.hide_author_policy);
+        if !self.has_captions && normalized.drop_captions {
+            normalized.drop_captions = false;
+        }
+        self.privacy = normalized;
+        self.privacy
+    }
+
+    pub fn cycle_to_next_option(&mut self) -> crate::message::ForwardPrivacy {
+        self.privacy = self
+            .privacy
+            .cycle_next(self.has_captions, self.hide_author_policy);
+        self.privacy
+    }
+
+    /// Removes deleted source message IDs from the live forward draft (`ForwardPanel::itemRemoved`).
+    pub fn remove_deleted_source_messages(
+        &mut self,
+        deleted_message_ids: &std::collections::BTreeSet<String>,
+    ) -> bool {
+        if deleted_message_ids.is_empty() || self.source_message_ids.is_empty() {
+            return false;
+        }
+        let before = self.source_message_ids.len();
+        self.source_message_ids
+            .retain(|id| !deleted_message_ids.contains(id));
+        if self.source_message_ids.is_empty() {
+            self.privacy = crate::message::ForwardPrivacy::default();
+        }
+        self.source_message_ids.len() != before
+    }
+
+    /// Clears the live forward draft when its typed `Topic`, `SavedSublist`, or
+    /// nested `Conversation` destination is destroyed.
+    pub fn clear_if_destination_destroyed(
+        &mut self,
+        parent_conversation_id: &ConversationId,
+        destroyed_child: &ConversationChildIdentity,
+    ) -> bool {
+        let matches = &self.destination.conversation_id == parent_conversation_id
+            && self.destination.child.as_ref() == Some(destroyed_child);
+        if matches {
+            self.source_message_ids.clear();
+            self.privacy = crate::message::ForwardPrivacy::default();
+        }
+        matches
+    }
+}
+
 #[cfg(test)]
 mod child_destination_tests {
     use super::*;

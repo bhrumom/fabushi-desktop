@@ -2105,6 +2105,7 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs",
         "native/mahayana-messaging/src/message.rs",
         "native/mahayana-messaging/src/protocol.rs",
         "native/mahayana-messaging/src/service.rs",
@@ -2120,9 +2121,15 @@
         "source/host/src/extensions/session/forward_batch_journal.rs"
       ],
       "fabushi_target_symbols": [
+        "ForwardHideAuthorPolicy",
         "ForwardPrivacy",
+        "ForwardDraftState",
+        "pub const fn evaluate_hide_author_policy(",
+        "pub fn cycle_next(",
         "pub fn normalized(self) -> Self",
         "pub fn clear_caption(&mut self)",
+        "pub fn strip_custom_emoji(&mut self)",
+        "pub fn requires_preserving_forward_info(&self)",
         "ClientCommand::ForwardMessage",
         "Command::ForwardMessage",
         "fn idempotent_send_replay(",
@@ -2133,7 +2140,9 @@
       "language_rationale": "Forward privacy changes canonical persisted message content/provenance and replay semantics, so it belongs below the renderer in the existing Rust messaging domain.",
       "command_event_contracts": [
         "ClientCommand::ForwardMessage privacy -> MessagingService replay check -> Command::ForwardMessage privacy -> Event::MessageQueued",
-        "drop_captions=true normalizes drop_sender_names=true before Message creation"
+        "drop_captions=true normalizes drop_sender_names=true before Message creation",
+        "ForwardDraftState::cycle_to_next_option / remove_deleted_source_messages / clear_if_destination_destroyed",
+        "Command::ForwardMessage clamps Poll/Invoice/Story/MiniApp to PreserveInfo and strips CustomEmoji on anonymous forward for non-premium senders"
       ],
       "state_owner": "Existing account/issuer-bound Session source-conversation forward journal and destination SandAgentDb transcript/outbox; authenticated Fabushi service owns remote message/resource IDs. Picker intent is a presentation snapshot.",
       "lifecycle_owner": "Existing renderer account-generation fence and dialog lifetime for UI; existing Session forward batch recovery for durable intent",
@@ -2149,8 +2158,6 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current containing-H GitHub Actions for this picker extension are pending at authoring; inherited historical target_commit is not execution evidence for this change.",
-        "Remote forward provenance and forced-provenance/rich-page/source eligibility remain unclosed.",
-        "Typed topic/sublist/source-removal/reply-draft lifetimes, paid-send, exact self/destination feedback and remaining ShareBox options remain separate open source responsibilities.",
         "Real service, signed supported-platform packages, complete visual/a11y/temporal/Bot/performance/soak, upgrade/rollback and independent ACCEPT remain open."
       ],
       "production_entrypoints": [
@@ -2170,6 +2177,10 @@
         "commit:8a246746ef227ea43f386160ec9f5a0e48a74339",
         "commit:c90cdb30ccb5c4ddf8b8bbe240156647647ba59b",
         "commit:c683e8a95affb8b8978cd562e72d3429261a17ca",
+        "path:native/mahayana-messaging/src/message.rs#ForwardHideAuthorPolicy",
+        "path:native/mahayana-messaging/src/message.rs#ForwardPrivacy::cycle_next",
+        "path:native/mahayana-messaging/src/message.rs#FormattedText::strip_custom_emoji",
+        "path:native/mahayana-messaging/src/conversation.rs#ForwardDraftState",
         "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog",
         "path:frontend/src/production/ProductionRenderer.tsx#forwardHumanMessage",
         "path:frontend/src/production/ProductionRenderer.tsx#retireOrRefreshForwardTarget",
@@ -2182,6 +2193,7 @@
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
+        "native/mahayana-messaging/tests/messaging_contract.rs#forward_panel_option_cycle_draft_lifecycle_forced_info_and_custom_emoji_stripping",
         "native/mahayana-messaging/tests/service_contract.rs#forward_replay_is_idempotent_and_conflicts_on_changed_options",
         "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
         "frontend/src/production/transcript-projection.contract.test.ts#NMR-UI-ENTRY-REFRESH-01",

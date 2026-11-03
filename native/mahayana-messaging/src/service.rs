@@ -882,7 +882,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .messages
                     .get(source_conversation_id)
                     .and_then(|messages| messages.get(message_id));
-                let privacy = privacy.normalized();
+                let force_preserve = source
+                    .is_some_and(|message| message.content.requires_preserving_forward_info());
+                let privacy = privacy.normalized_for_source(force_preserve);
                 let expected_origin = if privacy.drop_sender_names {
                     None
                 } else {
@@ -894,10 +896,24 @@ impl<S: MessagingStateStore> MessagingService<S> {
                             }),
                     )
                 };
+                let sender_can_keep_custom_emoji = self
+                    .engine
+                    .state()
+                    .actors
+                    .get(actor_id)
+                    .is_some_and(|actor| {
+                        actor.capabilities.iter().any(|cap| {
+                            cap.eq_ignore_ascii_case("premium")
+                                || cap.eq_ignore_ascii_case("can_send_custom_emoji")
+                        })
+                    });
                 let expected_content = source.map(|message| {
                     let mut content = message.content.clone();
                     if privacy.drop_captions {
                         content.clear_caption();
+                    }
+                    if privacy.drop_sender_names && !sender_can_keep_custom_emoji {
+                        content.strip_custom_emoji();
                     }
                     content
                 });

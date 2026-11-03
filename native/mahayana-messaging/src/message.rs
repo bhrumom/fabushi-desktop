@@ -94,6 +94,16 @@ impl FormattedText {
         self.text.insert_str(0, prefix);
         Ok(())
     }
+
+    /// Drops `TextEntityKind::CustomEmoji` spans when forward provenance is hidden
+    /// for a sender without custom-emoji/premium authoring rights, while preserving
+    /// standard formatting entities (`history_view_forward_panel.cpp` / `apiwrap.cpp`).
+    pub fn strip_custom_emoji(&mut self) -> usize {
+        let before = self.entities.len();
+        self.entities
+            .retain(|entity| !matches!(entity.kind, TextEntityKind::CustomEmoji(_)));
+        before.saturating_sub(self.entities.len())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -162,6 +172,16 @@ pub struct ReplyMarkup {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub enum ForwardHideAuthorPolicy {
+    #[default]
+    Allowed,
+    DisallowedForcedForwardInfo,
+    DisallowedRichPageWithoutAuthorCapability,
+    PremiumRequiredForRichPage,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ForwardPrivacy {
     #[serde(default)]
     pub drop_sender_names: bool,
@@ -183,6 +203,26 @@ impl ForwardPrivacy {
         }
     }
 
+    /// Evaluates whether forward-author hiding is allowed, disallowed by source/capability,
+    /// or gated on sender premium (`CanHideForwardAuthor` / `HideForwardAuthorPremiumRequired`
+    /// in `history_view_forward_panel.cpp`).
+    pub const fn evaluate_hide_author_policy(
+        force_preserve_forward_info: bool,
+        has_rich_page: bool,
+        can_author_rich_messages: bool,
+        sender_has_premium: bool,
+    ) -> ForwardHideAuthorPolicy {
+        if force_preserve_forward_info {
+            ForwardHideAuthorPolicy::DisallowedForcedForwardInfo
+        } else if has_rich_page && !can_author_rich_messages {
+            ForwardHideAuthorPolicy::DisallowedRichPageWithoutAuthorCapability
+        } else if has_rich_page && !sender_has_premium {
+            ForwardHideAuthorPolicy::PremiumRequiredForRichPage
+        } else {
+            ForwardHideAuthorPolicy::Allowed
+        }
+    }
+
     /// Clamps forward privacy options against source-item eligibility (`CanHideForwardAuthor` /
     /// `NormalizeForwardOptions`). When the source message requires preserving forward attribution,
     /// both `drop_sender_names` and `drop_captions` are clamped to `false`.
@@ -191,6 +231,36 @@ impl ForwardPrivacy {
             Self::default()
         } else {
             self.normalized()
+        }
+    }
+
+    pub fn normalized_for_policy(self, policy: ForwardHideAuthorPolicy) -> Self {
+        if matches!(policy, ForwardHideAuthorPolicy::Allowed) {
+            self.normalized()
+        } else {
+            Self::default()
+        }
+    }
+
+    /// Cycles `PreserveInfo -> NoSenderNames -> NoNamesAndCaptions (when captions exist) -> PreserveInfo`
+    /// (`ForwardPanel::editToNextOption`).
+    pub fn cycle_next(self, has_captions: bool, policy: ForwardHideAuthorPolicy) -> Self {
+        if !matches!(policy, ForwardHideAuthorPolicy::Allowed) {
+            return Self::default();
+        }
+        let current = self.normalized();
+        if !current.drop_sender_names {
+            Self {
+                drop_sender_names: true,
+                drop_captions: false,
+            }
+        } else if !current.drop_captions && has_captions {
+            Self {
+                drop_sender_names: true,
+                drop_captions: true,
+            }
+        } else {
+            Self::default()
         }
     }
 
@@ -351,6 +421,42 @@ impl MessageContent {
             _ => return,
         };
         *caption = FormattedText::plain("");
+    }
+
+    pub fn has_caption(&self) -> bool {
+        match self {
+            Self::Photo { caption, .. }
+            | Self::Video { caption, .. }
+            | Self::Animation { caption, .. }
+            | Self::Audio { caption, .. }
+            | Self::Voice { caption, .. }
+            | Self::Document { caption, .. } => !caption.text.is_empty(),
+            _ => false,
+        }
+    }
+
+    pub fn requires_preserving_forward_info(&self) -> bool {
+        matches!(
+            self,
+            Self::Poll { .. }
+                | Self::Invoice { .. }
+                | Self::Story { .. }
+                | Self::MiniApp { .. }
+        )
+    }
+
+    pub fn strip_custom_emoji(&mut self) -> usize {
+        match self {
+            Self::Text { text }
+            | Self::Photo { caption: text, .. }
+            | Self::Video { caption: text, .. }
+            | Self::Animation { caption: text, .. }
+            | Self::Audio { caption: text, .. }
+            | Self::Voice { caption: text, .. }
+            | Self::Document { caption: text, .. }
+            | Self::Poll { question: text, .. } => text.strip_custom_emoji(),
+            _ => 0,
+        }
     }
 }
 

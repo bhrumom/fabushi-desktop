@@ -663,7 +663,8 @@ impl MessagingState {
             .collect::<Vec<_>>();
         for (destination, actor_id, draft) in legacy_drafts {
             if let Some(child) = self.child_state_mut(destination, actor_id) {
-                if child.draft.is_none()
+                if child.draft_text.trim().is_empty()
+                    && child.draft_reply_to_message_id.is_none()
                     && (!draft.text.trim().is_empty() || draft.reply_to_message_id.is_some())
                 {
                     child.set_draft(draft.text, draft.reply_to_message_id, draft.updated_at_ms);
@@ -2135,7 +2136,8 @@ impl MessagingEngine {
                         message_id: local_message_id,
                     });
                 }
-                let privacy = privacy.normalized();
+                let privacy =
+                    privacy.normalized_for_source(original.content.requires_preserving_forward_info());
                 let forward_origin = if privacy.drop_sender_names {
                     None
                 } else {
@@ -2151,6 +2153,21 @@ impl MessagingEngine {
                 let mut content = original.content;
                 if privacy.drop_captions {
                     content.clear_caption();
+                }
+                if privacy.drop_sender_names {
+                    let sender_can_keep_custom_emoji = self
+                        .state
+                        .actors
+                        .get(&sender_id)
+                        .is_some_and(|actor| {
+                            actor.capabilities.iter().any(|cap| {
+                                cap.eq_ignore_ascii_case("premium")
+                                    || cap.eq_ignore_ascii_case("can_send_custom_emoji")
+                            })
+                        });
+                    if !sender_can_keep_custom_emoji {
+                        content.strip_custom_emoji();
+                    }
                 }
                 let is_saved_messages = matches!(conversation.kind, ConversationKind::SavedMessages);
                 let message = Message {
