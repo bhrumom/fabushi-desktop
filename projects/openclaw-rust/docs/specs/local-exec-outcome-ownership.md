@@ -236,6 +236,15 @@ for this daemon. Do not replace the executor with a partial file-only or test ow
   A changed package manifest/lock invalidates dependent build/runtime evidence,
   not unrelated historical source facts. Preserve failures and source-independent
   positives. Stop at a failed shared build before promoting downstream evidence.
+  Select this affected batch through an explicit `ocrm-local-exec-runtime`
+  scope in the same workflow (or its declared migration-branch push prefix).
+  Reuse the current Linux identity/startup capture, Node/Rust toolchains and
+  Host target cache; execute actual native domains, normal Host/Coordinator
+  builds, all LPI/LDB names, and the existing renderer build/ONP/LXO and affected
+  bridge receipts. Exclude unrelated native media/restore/platform/pressure
+  jobs from that explicit selection only. Preserve normal full validation and
+  existing scopes; retain historical failed DJC/LPI results without rerunning an
+  unchanged failed instrument or treating an unselected check as approved.
 
 ### Scope, delivery and acceptance
 
