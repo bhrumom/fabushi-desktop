@@ -41,7 +41,9 @@ pub const DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES: usize = 100 * 1024 * 1024;
 pub const MAX_LOCAL_EXEC_SHELL_STREAM_BYTES: usize = 256 * 1024;
 pub const MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES: usize = 64 * 1024;
 pub const DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT: usize = 128;
-pub const LOCAL_EXEC_OPERATION_JOURNAL_VERSION: u32 = 2;
+// Version 3 preserves unresolved custody under bounded retention. Version-2
+// readers must reject this image instead of applying their older eviction rule.
+pub const LOCAL_EXEC_OPERATION_JOURNAL_VERSION: u32 = 3;
 static LOCAL_EXEC_OPERATION_JOURNAL_TMP_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 pub fn describe_local_exec_bytes(bytes: usize) -> String {
@@ -201,6 +203,12 @@ pub enum GatewayLocalExecOperationStatus {
     Failed,
 }
 
+impl GatewayLocalExecOperationStatus {
+    fn is_known_terminal(self) -> bool {
+        matches!(self, Self::Completed | Self::Cancelled | Self::Failed)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GatewayLocalExecOperationRecord {
@@ -249,23 +257,21 @@ struct GatewayLocalExecOperationState {
 
 impl GatewayLocalExecOperationState {
     fn load(path: PathBuf) -> Self {
-        let (operation_history, operation_journal_error) =
-            match GatewayLocalExecManager::load_operation_history(
-                &path,
-                DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
-            ) {
-                Ok(history) => (history, None),
-                Err(error) => (VecDeque::new(), Some(error.message)),
-            };
-        Self {
+        let mut state = Self {
             active_operations: HashMap::new(),
-            operation_history,
+            operation_history: VecDeque::new(),
             operation_history_limit: DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
             operation_journal_path: path,
-            operation_journal_error,
+            operation_journal_error: None,
             #[cfg(test)]
             before_journal_publish: None,
+        };
+        if let Err(error) = GatewayLocalExecManager::load_operation_history(&mut state) {
+            // A parsed image remains queryable when publishing its migration or
+            // recovery fails. Journal health still forbids every new effect.
+            state.operation_journal_error = Some(error.message);
         }
+        state
     }
 }
 
@@ -659,13 +665,31 @@ impl GatewayLocalExecManager {
             .unwrap_or(u64::MAX)
     }
 
-    fn load_operation_history(
-        path: &Path,
+    fn prune_known_operation_history(
+        history: &mut VecDeque<GatewayLocalExecOperationRecord>,
         limit: usize,
-    ) -> Result<VecDeque<GatewayLocalExecOperationRecord>, SandLocalExecError> {
-        let bytes = match fs::read(path) {
+    ) -> bool {
+        let mut remaining = history.len().saturating_sub(limit);
+        let requested = remaining;
+        // Retain order and skip every unresolved record, even if a legacy
+        // image contains more protected custody than the current capacity.
+        history.retain(|record| {
+            if remaining > 0 && record.status.is_known_terminal() {
+                remaining -= 1;
+                false
+            } else {
+                true
+            }
+        });
+        remaining != requested
+    }
+
+    fn load_operation_history(
+        state: &mut GatewayLocalExecOperationState,
+    ) -> Result<(), SandLocalExecError> {
+        let bytes = match fs::read(&state.operation_journal_path) {
             Ok(bytes) => bytes,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(VecDeque::new()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
             Err(error) => {
                 return Err(SandLocalExecError::new(format!(
                     "local-exec operation journal read failed closed: {error}"
@@ -678,9 +702,9 @@ impl GatewayLocalExecManager {
                     "local-exec operation journal is corrupt and execution is disabled: {error}"
                 ))
             })?;
-        if journal.version != LOCAL_EXEC_OPERATION_JOURNAL_VERSION {
+        if journal.version != 2 && journal.version != LOCAL_EXEC_OPERATION_JOURNAL_VERSION {
             return Err(SandLocalExecError::new(format!(
-                "local-exec operation journal version {} is unsupported; expected {}; execution is disabled",
+                "local-exec operation journal version {} is unsupported; expected 2 or {}; execution is disabled",
                 journal.version, LOCAL_EXEC_OPERATION_JOURNAL_VERSION
             )));
         }
@@ -694,7 +718,7 @@ impl GatewayLocalExecManager {
                 "local-exec operation journal contains duplicate operationId records; execution is disabled",
             ));
         }
-        let mut recovered_uncertain = false;
+        let mut must_publish = journal.version != LOCAL_EXEC_OPERATION_JOURNAL_VERSION;
         for record in &mut journal.records {
             if matches!(
                 record.status,
@@ -703,22 +727,27 @@ impl GatewayLocalExecManager {
             ) {
                 record.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
                 record.settled_at_ms = Some(Self::now_ms());
-                recovered_uncertain = true;
+                must_publish = true;
             }
         }
-        if journal.records.len() > limit.max(1) {
-            let keep_from = journal.records.len() - limit.max(1);
-            journal.records.drain(..keep_from);
-        }
-        let history = journal.records.into_iter().collect::<VecDeque<_>>();
-        if recovered_uncertain {
-            Self::persist_operation_history(path, &history).map_err(|error| {
+        let mut history = journal.records.into_iter().collect::<VecDeque<_>>();
+        must_publish |= Self::prune_known_operation_history(
+            &mut history,
+            state.operation_history_limit.max(1),
+        );
+        state.operation_history = history;
+        if must_publish {
+            // Keep parsed custody in the owner before attempting publication.
+            // An error may follow atomic replacement; it proves neither that
+            // the prior bytes survived nor that the new image is durable.
+            Self::persist_operation_snapshot(state).map_err(|error| {
                 SandLocalExecError::new(format!(
-                    "local-exec process-death recovery could not persist outcome_unknown state; execution is disabled: {error}"
+                    "local-exec operation journal migration, recovery or retention changes could not be durably published; execution is disabled: {}",
+                    error.message
                 ))
             })?;
         }
-        Ok(history)
+        Ok(())
     }
 
     #[cfg(windows)]
@@ -955,6 +984,21 @@ impl GatewayLocalExecManager {
                     "local-exec operationId already exists and will not be replayed: {operation_id}"
                 )));
             }
+            let capacity = state.operation_history_limit.max(1);
+            let protected_history = state.operation_history.iter()
+                .filter(|record| !record.status.is_known_terminal())
+                .count();
+            if protected_history.saturating_add(state.active_operations.len()) >= capacity {
+                return Err(SandLocalExecError::new(format!(
+                    "local-exec operation journal capacity {capacity} is occupied by unresolved operations; execution was refused before dispatch"
+                )));
+            }
+            // Reserve one place for this exact invocation before sending its
+            // frame. Finishing will move that place from active to history.
+            let history_capacity = capacity - state.active_operations.len() - 1;
+            let previous_history = (state.operation_history.len() > history_capacity)
+                .then(|| state.operation_history.clone());
+            Self::prune_known_operation_history(&mut state.operation_history, history_capacity);
             state.active_operations.insert(
                 operation_id.to_string(),
                 GatewayLocalExecActiveOperation {
@@ -968,6 +1012,11 @@ impl GatewayLocalExecManager {
                 // No provider frame has been sent. This transaction still owns
                 // the registration it is rolling back.
                 state.active_operations.remove(operation_id);
+                if let Some(previous_history) = previous_history {
+                    state.operation_history = previous_history;
+                }
+                // This restores only in-memory history. A failed durability
+                // barrier may already have replaced the on-disk image.
                 return Err(error);
             }
             Ok(bridge_request_id)
@@ -1018,9 +1067,8 @@ impl GatewayLocalExecManager {
             }
             let active = state.active_operations.remove(operation_id)
                 .expect("the matching registration is held by this state transaction");
-            while state.operation_history.len() >= state.operation_history_limit.max(1) {
-                state.operation_history.pop_front();
-            }
+            // Admission already reserved this place. Moving active custody
+            // into history must never evict another unresolved operation.
             let (stdout, stdout_truncated) = result
                 .map(|result| durable_shell_output(&result.stdout, result.stdout_truncated))
                 .unwrap_or_default();
@@ -1563,6 +1611,29 @@ mod operation_journal_fail_closed_tests {
         }
     }
 
+    fn unloaded_operation_state(
+        path: PathBuf,
+        limit: usize,
+    ) -> GatewayLocalExecOperationState {
+        GatewayLocalExecOperationState {
+            active_operations: HashMap::new(),
+            operation_history: VecDeque::new(),
+            operation_history_limit: limit,
+            operation_journal_path: path,
+            operation_journal_error: None,
+            before_journal_publish: None,
+        }
+    }
+
+    fn load_test_operation_history(
+        path: &Path,
+        limit: usize,
+    ) -> Result<VecDeque<GatewayLocalExecOperationRecord>, SandLocalExecError> {
+        let mut state = unloaded_operation_state(path.to_path_buf(), limit);
+        GatewayLocalExecManager::load_operation_history(&mut state)?;
+        Ok(state.operation_history)
+    }
+
     const OPERATION_TEST_BOUND: Duration = Duration::from_secs(5);
 
     struct OperationTestDirectory(PathBuf);
@@ -1733,6 +1804,28 @@ mod operation_journal_fail_closed_tests {
         json!({"kind":"control","message":{"streamClose":{"id":1}}})
     }
 
+    fn test_stderr(data: &str) -> Value {
+        json!({"kind":"client","message":{"id":1,"shellStream":{"stderr":{"data":data}}}})
+    }
+
+    fn read_test_operation_journal(path: &Path) -> GatewayLocalExecOperationJournal {
+        serde_json::from_slice(&fs::read(path).expect("read actual operation journal"))
+            .expect("decode actual operation journal")
+    }
+
+    fn write_test_operation_journal(
+        path: &Path,
+        version: u32,
+        records: &[GatewayLocalExecOperationRecord],
+    ) -> Vec<u8> {
+        let bytes = serde_json::to_vec(&GatewayLocalExecOperationJournal {
+            version,
+            records: records.to_vec(),
+        }).expect("encode fixture journal");
+        fs::write(path, &bytes).expect("write fixture journal");
+        bytes
+    }
+
     #[test]
     fn operation_owner_is_lazy_and_shared_by_distinct_permission_facades() {
         let fixture = ShellOperationFixture::new("lazy-shared");
@@ -1858,7 +1951,7 @@ mod operation_journal_fail_closed_tests {
             assert!(!record.aborted, "{label}");
             assert_eq!(record.stdout, if activity { "bounded partial output" } else { "" }, "{label}");
             assert_eq!(record.bridge_request_id, request["requestId"].as_str().unwrap());
-            let persisted = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
+            let persisted = load_test_operation_history(&fixture.directory.journal(), 128)
                 .expect("actual durable unknown record");
             assert_eq!(persisted.front(), Some(&record), "{label}");
         }
@@ -1953,7 +2046,7 @@ mod operation_journal_fail_closed_tests {
         assert!(record.stdout_truncated);
         assert!(record.stdout.len() <= MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES);
         assert!(output.starts_with(&record.stdout));
-        let recovered = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
+        let recovered = load_test_operation_history(&fixture.directory.journal(), 128)
             .expect("UTF-8 durable unknown output");
         assert_eq!(recovered.front(), Some(&record));
     }
@@ -2077,7 +2170,7 @@ mod operation_journal_fail_closed_tests {
         let record = fixture.record("transaction-id");
         assert_eq!(record.status, GatewayLocalExecOperationStatus::Completed);
         assert_eq!(record.stdout, "transaction output");
-        let persisted = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
+        let persisted = load_test_operation_history(&fixture.directory.journal(), 128)
             .expect("real ordered journal publication");
         assert_eq!(persisted.len(), 1);
         assert_eq!(persisted.front(), Some(&record));
@@ -2088,10 +2181,549 @@ mod operation_journal_fail_closed_tests {
     }
 
     #[test]
+    fn unknown_custody_survives_known_terminal_churn_and_reopen() {
+        let fixture = ShellOperationFixture::new("retained-unknown-churn");
+        fixture.owner.with_state(|state| state.operation_history_limit = 3);
+        let unknown = fixture.start("retained-unknown", None);
+        let unknown_request = fixture.frame("exec");
+        fixture.reply(&unknown_request, vec![
+            test_stdout("unresolved stdout 界"),
+            test_stderr("unresolved stderr"),
+            test_close(),
+        ]);
+        assert!(unknown.join().expect("unknown worker").expect("unknown result").outcome_unknown);
+        assert_eq!(fixture.frame("cancel")["requestId"], unknown_request["requestId"]);
+        let retained = fixture.record("retained-unknown");
+
+        for index in 0usize..9 {
+            let operation_id = format!("known-churn-{index}");
+            let shell = fixture.start(&operation_id, None);
+            let request = fixture.frame("exec");
+            assert_ne!(request["requestId"], unknown_request["requestId"]);
+            let admitted = read_test_operation_journal(&fixture.directory.journal());
+            assert_eq!(admitted.version, 3);
+            assert!(admitted.records.len() <= 3, "active registrations also consume capacity");
+            assert!(admitted.records.contains(&retained));
+            let status = match index % 3 {
+                0 => GatewayLocalExecOperationStatus::Completed,
+                1 => GatewayLocalExecOperationStatus::Cancelled,
+                _ => GatewayLocalExecOperationStatus::Failed,
+            };
+            let terminal = if status == GatewayLocalExecOperationStatus::Failed {
+                json!({"kind":"control","message":{"throw":{
+                    "error":"known refusal","errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED"
+                }}})
+            } else {
+                test_exit(17, status == GatewayLocalExecOperationStatus::Cancelled)
+            };
+            fixture.reply(&request, vec![terminal]);
+            let outcome = shell.join().expect("known terminal worker");
+            if status == GatewayLocalExecOperationStatus::Failed {
+                assert!(!outcome.expect_err("known refusal").is_outcome_unknown());
+            } else {
+                let result = outcome.expect("observed Exit");
+                assert!(!result.outcome_unknown);
+                assert_eq!(result.exit_code, Some(17));
+                assert_eq!(result.aborted, status == GatewayLocalExecOperationStatus::Cancelled);
+            }
+            assert_eq!(fixture.frame("cancel")["requestId"], request["requestId"]);
+            assert_eq!(fixture.record(&operation_id).status, status);
+            assert_eq!(fixture.record("retained-unknown"), retained);
+            let history = fixture.manager.operation_history();
+            assert_eq!(history.len(), (index + 2).min(3));
+            assert_eq!(history.first(), Some(&retained));
+            if index >= 2 {
+                assert!(fixture.manager.operation(&format!("known-churn-{}", index - 2)).is_none(),
+                    "the oldest eligible known record is evicted");
+            }
+        }
+
+        let before_refusal = fs::read(fixture.directory.journal()).expect("retained journal");
+        let duplicate = fixture.manager.execute_shell(
+            &GatewayLocalToolScope::default(),
+            "must-not-replay", "/tmp", "retained-unknown",
+        ).expect_err("churn cannot forget unresolved identity");
+        assert!(!duplicate.is_outcome_unknown());
+        assert!(duplicate.message.contains("already exists"));
+        assert_eq!(fs::read(fixture.directory.journal()).unwrap(), before_refusal);
+        assert_eq!(fixture.record("retained-unknown"), retained);
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+        let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
+            GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
+            fixture.directory.journal(),
+        );
+        assert_eq!(reopened.operation_for_agent("lxo-agent", "retained-unknown"), Some(retained));
+        assert_eq!(reopened.operation_history(), fixture.manager.operation_history());
+        let duplicate = reopened.execute_shell(
+            &GatewayLocalToolScope::default(),
+            "must-not-replay-after-restart", "/tmp", "retained-unknown",
+        ).expect_err("recovery preserves the duplicate fence");
+        assert!(!duplicate.is_outcome_unknown());
+        assert!(duplicate.message.contains("already exists"));
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn protected_history_and_active_capacity_refuse_before_dispatch_then_known_exit_releases_room() {
+        let fixture = ShellOperationFixture::new("protected-active-capacity");
+        fixture.owner.with_state(|state| state.operation_history_limit = 2);
+        let unknown = fixture.start("protected-history", None);
+        let unknown_request = fixture.frame("exec");
+        fixture.reply(&unknown_request, vec![test_stdout("keep this output"), test_close()]);
+        assert!(unknown.join().expect("unknown worker").expect("unknown result").outcome_unknown);
+        assert_eq!(fixture.frame("cancel")["requestId"], unknown_request["requestId"]);
+        let protected = fixture.record("protected-history");
+
+        let active = fixture.start("reserved-active", None);
+        let active_request = fixture.frame("exec");
+        let second = fixture.facade(Arc::new(AllowGate));
+        for (index, expected_status) in [
+            GatewayLocalExecOperationStatus::Accepted,
+            GatewayLocalExecOperationStatus::Running,
+        ].into_iter().enumerate() {
+            if expected_status == GatewayLocalExecOperationStatus::Running {
+                fixture.reply(&active_request, vec![test_stdout("live output")]);
+                fixture.wait_running("reserved-active");
+            }
+            let active_before = fixture.record("reserved-active");
+            assert_eq!(active_before.status, expected_status);
+            let bytes_before = fs::read(fixture.directory.journal()).expect("full journal");
+            let operation_id = format!("capacity-refused-{index}");
+            let error = second.execute_shell(
+                &GatewayLocalToolScope::default(),
+                "must-not-enter", "/tmp", &operation_id,
+            ).expect_err("protected plus active consumes all capacity");
+            assert!(!error.is_outcome_unknown());
+            assert!(error.message.contains("capacity"));
+            assert_eq!(fixture.record("protected-history"), protected);
+            assert_eq!(fixture.record("reserved-active"), active_before);
+            assert!(second.operation(&operation_id).is_none());
+            assert_eq!(fs::read(fixture.directory.journal()).unwrap(), bytes_before);
+            assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+
+        fixture.reply(&active_request, vec![test_exit(0, false)]);
+        assert!(!active.join().expect("active worker").expect("known Exit").outcome_unknown);
+        assert_eq!(fixture.frame("cancel")["requestId"], active_request["requestId"]);
+        assert_eq!(fixture.record("reserved-active").status, GatewayLocalExecOperationStatus::Completed);
+
+        let next = fixture.start("after-known-exit", None);
+        let next_request = fixture.frame("exec");
+        assert_eq!(fixture.record("protected-history"), protected);
+        assert!(second.operation("reserved-active").is_none(), "known history supplies the next slot");
+        let admitted = read_test_operation_journal(&fixture.directory.journal());
+        assert_eq!(admitted.records.len(), 2);
+        assert!(admitted.records.contains(&protected));
+        fixture.reply(&next_request, vec![test_exit(130, true)]);
+        let result = next.join().expect("next worker").expect("observed aborted Exit");
+        assert!(result.aborted);
+        assert!(!result.outcome_unknown);
+        assert_eq!(fixture.frame("cancel")["requestId"], next_request["requestId"]);
+        assert_eq!(fixture.record("after-known-exit").status, GatewayLocalExecOperationStatus::Cancelled);
+        assert_eq!(fixture.record("protected-history"), protected);
+        assert_eq!(fixture.manager.operation_history().len(), 2);
+    }
+
+    #[test]
+    fn concurrent_facades_reserve_capacity_inside_durable_admission() {
+        let fixture = ShellOperationFixture::new("concurrent-capacity");
+        let (paused_send, paused_receive) = mpsc::channel();
+        let (resume_send, resume_receive) = mpsc::channel();
+        let resume_receive = Arc::new(Mutex::new(resume_receive));
+        let pause_once = Arc::new(std::sync::atomic::AtomicBool::new(true));
+        fixture.owner.with_state(|state| {
+            state.operation_history_limit = 1;
+            state.before_journal_publish = Some(Arc::new(move || {
+                if pause_once.swap(false, Ordering::AcqRel) {
+                    paused_send.send(()).expect("admission reached durable publication");
+                    resume_receive.lock().expect("admission release gate")
+                        .recv_timeout(OPERATION_TEST_BOUND).expect("bounded admission release");
+                }
+            }));
+        });
+
+        let start = Arc::new(std::sync::Barrier::new(3));
+        let (result_send, result_receive) = mpsc::channel();
+        let mut workers = Vec::new();
+        for (operation_id, manager) in [
+            ("concurrent-left", fixture.facade(Arc::new(AllowGate))),
+            ("concurrent-right", fixture.facade(Arc::new(AllowGate))),
+        ] {
+            let start = Arc::clone(&start);
+            let result_send = result_send.clone();
+            workers.push(std::thread::spawn(move || {
+                start.wait();
+                let result = manager.execute_shell(
+                    &GatewayLocalToolScope {
+                        agent_id: Some("lxo-agent".into()),
+                        tool_call_id: Some(operation_id.into()),
+                        action: None,
+                    },
+                    "concurrent-command", "/tmp", operation_id,
+                );
+                result_send.send((operation_id, result)).expect("publish contender outcome");
+            }));
+        }
+        start.wait();
+        paused_receive.recv_timeout(OPERATION_TEST_BOUND).expect("paused real admission");
+        assert!(matches!(fixture.owner.state.try_lock(), Err(std::sync::TryLockError::WouldBlock)));
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)),
+            "the provider cannot see a frame before its slot is durably reserved");
+        resume_send.send(()).expect("publish reserved capacity");
+        let request = fixture.frame("exec");
+        let (refused_id, refusal) = result_receive.recv_timeout(OPERATION_TEST_BOUND)
+            .expect("the second facade is refused while the admitted operation remains active");
+        let error = refusal.expect_err("only one active registration fits");
+        assert!(!error.is_outcome_unknown());
+        assert!(error.message.contains("capacity"));
+        assert!(fixture.manager.operation(refused_id).is_none());
+        let admitted_id = if refused_id == "concurrent-left" { "concurrent-right" } else { "concurrent-left" };
+        let admitted = fixture.record(admitted_id);
+        assert_eq!(admitted.status, GatewayLocalExecOperationStatus::Accepted);
+        assert_eq!(admitted.bridge_request_id, request["requestId"].as_str().unwrap());
+        let durable = read_test_operation_journal(&fixture.directory.journal());
+        assert_eq!(durable.version, 3);
+        assert_eq!(durable.records, vec![admitted]);
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+        fixture.reply(&request, vec![test_exit(0, false)]);
+        let (completed_id, completion) = result_receive.recv_timeout(OPERATION_TEST_BOUND)
+            .expect("admitted invocation observes Exit");
+        assert_eq!(completed_id, admitted_id);
+        assert!(!completion.expect("known completion").outcome_unknown);
+        for worker in workers {
+            worker.join().expect("concurrent facade worker");
+        }
+        assert_eq!(fixture.frame("cancel")["requestId"], request["requestId"]);
+        assert_eq!(fixture.manager.operation_history().len(), 1);
+        assert_eq!(fixture.record(admitted_id).status, GatewayLocalExecOperationStatus::Completed);
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn version_two_migration_preserves_all_recoverable_record_fields() {
+        for include_active in [false, true] {
+            let directory = OperationTestDirectory::new("version-two-migration");
+            let mut original = Vec::new();
+            for (index, status) in [
+                GatewayLocalExecOperationStatus::OutcomeUnknown,
+                GatewayLocalExecOperationStatus::Completed,
+                GatewayLocalExecOperationStatus::Cancelled,
+                GatewayLocalExecOperationStatus::Failed,
+                GatewayLocalExecOperationStatus::Accepted,
+                GatewayLocalExecOperationStatus::Running,
+            ].into_iter().enumerate() {
+                if !include_active && matches!(status,
+                    GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running)
+                {
+                    continue;
+                }
+                let mut record = test_record(&format!("legacy-field-{index}"), status);
+                record.bridge_request_id = format!("legacy-bridge-{index}");
+                record.agent_id = Some(format!("legacy-agent-{index}"));
+                record.stdout = format!("legacy stdout 界 {index}");
+                record.stderr = format!("legacy stderr {index}");
+                record.stdout_truncated = index % 2 == 0;
+                record.stderr_truncated = index % 2 != 0;
+                record.exit_code = matches!(status,
+                    GatewayLocalExecOperationStatus::Completed | GatewayLocalExecOperationStatus::Cancelled)
+                    .then_some(17);
+                record.aborted = status == GatewayLocalExecOperationStatus::Cancelled;
+                record.settled_at_ms = Some(100 + index as u64);
+                original.push(record);
+            }
+            let legacy_bytes = write_test_operation_journal(&directory.journal(), 2, &original);
+            let recovered = load_test_operation_history(&directory.journal(), 8)
+                .expect("migrate supported version 2");
+            assert_eq!(recovered.len(), original.len());
+            for (before, after) in original.iter().zip(recovered.iter()) {
+                let mut expected = before.clone();
+                if matches!(before.status,
+                    GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running)
+                {
+                    expected.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
+                    assert!(after.settled_at_ms.is_some());
+                    expected.settled_at_ms = after.settled_at_ms;
+                }
+                assert_eq!(after, &expected, "migration preserves identity, output and known facts");
+            }
+            let persisted_bytes = fs::read(directory.journal()).expect("durable version-3 migration");
+            assert_ne!(persisted_bytes, legacy_bytes, "even a settled version-2 image is upgraded");
+            let persisted = read_test_operation_journal(&directory.journal());
+            assert_eq!(persisted.version, 3, "version 3 is the retention semantic boundary");
+            assert_eq!(persisted.records, recovered.iter().cloned().collect::<Vec<_>>());
+            let reopened = load_test_operation_history(&directory.journal(), 8)
+                .expect("reopen migrated image");
+            assert_eq!(reopened, recovered);
+            assert_eq!(fs::read(directory.journal()).unwrap(), persisted_bytes,
+                "an unchanged version-3 image requires no further rewrite");
+        }
+    }
+
+    #[test]
+    fn version_two_migration_is_durable_before_a_new_provider_frame() {
+        let fixture = ShellOperationFixture::new("migration-before-admission");
+        let mut retained = test_record("legacy-before-admission", GatewayLocalExecOperationStatus::OutcomeUnknown);
+        retained.bridge_request_id = "legacy-bridge-before-admission".into();
+        retained.stdout = "preexisting uncertain output 界".into();
+        retained.stdout_truncated = true;
+        write_test_operation_journal(&fixture.directory.journal(), 2, &[retained.clone()]);
+        assert!(fixture.owner.state.lock().expect("lazy migration owner").is_none());
+
+        let shell = fixture.start("after-migration", None);
+        let request = fixture.frame("exec");
+        let published = read_test_operation_journal(&fixture.directory.journal());
+        assert_eq!(published.version, 3, "new effects require the version-3 retention boundary");
+        assert_eq!(published.records.len(), 2);
+        assert!(published.records.contains(&retained));
+        let active = fixture.record("after-migration");
+        assert_eq!(active.status, GatewayLocalExecOperationStatus::Accepted);
+        assert_eq!(active.bridge_request_id, request["requestId"].as_str().unwrap());
+        assert!(published.records.contains(&active));
+        assert_eq!(fixture.manager.operation("legacy-before-admission"), Some(retained.clone()));
+
+        fixture.reply(&request, vec![test_exit(0, false)]);
+        assert!(!shell.join().expect("post-migration worker").expect("known Exit").outcome_unknown);
+        assert_eq!(fixture.frame("cancel")["requestId"], request["requestId"]);
+        let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
+            GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
+            fixture.directory.journal(),
+        );
+        assert_eq!(reopened.operation("legacy-before-admission"), Some(retained));
+        assert_eq!(reopened.operation("after-migration").unwrap().status,
+            GatewayLocalExecOperationStatus::Completed);
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn startup_prunes_only_oldest_known_terminals_and_persists_the_result() {
+        for version in [2, 3] {
+            let directory = OperationTestDirectory::new("startup-selective-pruning");
+            let mut records = vec![
+                test_record("old-completed", GatewayLocalExecOperationStatus::Completed),
+                test_record("old-unknown", GatewayLocalExecOperationStatus::OutcomeUnknown),
+                test_record("old-cancelled", GatewayLocalExecOperationStatus::Cancelled),
+                test_record("old-failed", GatewayLocalExecOperationStatus::Failed),
+                test_record("new-unknown", GatewayLocalExecOperationStatus::OutcomeUnknown),
+                test_record("new-completed", GatewayLocalExecOperationStatus::Completed),
+            ];
+            records[1].stdout = "retain oldest unknown stdout".into();
+            records[1].stdout_truncated = true;
+            records[4].stderr = "retain newer unknown stderr".into();
+            records[4].stderr_truncated = true;
+            write_test_operation_journal(&directory.journal(), version, &records);
+            let expected = vec![records[1].clone(), records[4].clone(), records[5].clone()];
+            let loaded = load_test_operation_history(&directory.journal(), 3)
+                .expect("prune eligible known history during load");
+            assert_eq!(loaded.iter().cloned().collect::<Vec<_>>(), expected);
+            let persisted = read_test_operation_journal(&directory.journal());
+            assert_eq!(persisted.version, 3);
+            assert_eq!(persisted.records, expected,
+                "pruning is durably published even without active recovery or a format upgrade");
+        }
+    }
+
+    #[test]
+    fn protected_legacy_overcapacity_remains_queryable_and_blocks_new_effects() {
+        for version in [2, 3] {
+            let fixture = ShellOperationFixture::new("protected-legacy-overcapacity");
+            let protected: Vec<_> = (0..=DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT).map(|index| {
+                let status = match index {
+                    1 => GatewayLocalExecOperationStatus::Accepted,
+                    2 => GatewayLocalExecOperationStatus::Running,
+                    _ => GatewayLocalExecOperationStatus::OutcomeUnknown,
+                };
+                let mut record = test_record(&format!("protected-legacy-{index}"), status);
+                record.bridge_request_id = format!("legacy-request-{index}");
+                record.stdout = format!("recoverable stdout 界 {index}");
+                record.stderr = format!("recoverable stderr {index}");
+                record.stdout_truncated = index % 2 == 0;
+                record.stderr_truncated = index % 2 != 0;
+                record
+            }).collect();
+            let mut records = vec![test_record("evictable-old", GatewayLocalExecOperationStatus::Completed)];
+            records.extend(protected.iter().cloned());
+            records.push(test_record("evictable-new", GatewayLocalExecOperationStatus::Failed));
+            write_test_operation_journal(&fixture.directory.journal(), version, &records);
+
+            fixture.manager.ensure_operation_journal_healthy().expect("valid overcapacity image loads");
+            assert_eq!(fixture.manager.operation_history().len(), protected.len());
+            for before in &protected {
+                let after = fixture.manager.operation_for_agent("agent-test", &before.operation_id)
+                    .expect("every protected legacy identity remains queryable");
+                let mut expected = before.clone();
+                if matches!(before.status,
+                    GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running)
+                {
+                    expected.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
+                    assert!(after.settled_at_ms.is_some());
+                    expected.settled_at_ms = after.settled_at_ms;
+                }
+                assert_eq!(after, expected);
+                assert!(fixture.manager.operation_for_agent("other-agent", &before.operation_id).is_none());
+            }
+            assert!(fixture.manager.operation("evictable-old").is_none());
+            assert!(fixture.manager.operation("evictable-new").is_none());
+            let persisted = read_test_operation_journal(&fixture.directory.journal());
+            assert_eq!(persisted.version, 3);
+            assert_eq!(persisted.records, fixture.manager.operation_history());
+            let before_refusals = fs::read(fixture.directory.journal()).unwrap();
+            let error = fixture.manager.execute_shell(
+                &GatewayLocalToolScope::default(),
+                "must-not-enter", "/tmp", "overcapacity-refused",
+            ).expect_err("protected legacy custody cannot be truncated to admit another effect");
+            assert!(!error.is_outcome_unknown());
+            assert!(error.message.contains("capacity"));
+            assert!(fixture.manager.operation("overcapacity-refused").is_none());
+            let duplicate = fixture.manager.execute_shell(
+                &GatewayLocalToolScope::default(),
+                "must-not-replay", "/tmp", "protected-legacy-0",
+            ).expect_err("overcapacity recovery retains the duplicate identity");
+            assert!(!duplicate.is_outcome_unknown());
+            assert!(duplicate.message.contains("already exists"));
+            assert_eq!(fs::read(fixture.directory.journal()).unwrap(), before_refusals);
+            assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+            let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
+                GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
+                fixture.directory.journal(),
+            );
+            assert_eq!(reopened.operation_history(), fixture.manager.operation_history());
+        }
+    }
+
+    #[test]
+    fn failed_migration_retains_parsed_custody_and_latches_admission_failure() {
+        let fixture = ShellOperationFixture::new("failed-version-two-migration");
+        let mut unknown = test_record("migration-unknown", GatewayLocalExecOperationStatus::OutcomeUnknown);
+        unknown.stdout = "unknown output survives failed migration 界".into();
+        unknown.stdout_truncated = true;
+        let mut running = test_record("migration-running", GatewayLocalExecOperationStatus::Running);
+        running.bridge_request_id = "legacy-running-request".into();
+        running.stderr = "running output survives failed migration".into();
+        running.stderr_truncated = true;
+        let legacy_bytes = write_test_operation_journal(&fixture.directory.journal(), 2, &[
+            unknown.clone(),
+            running.clone(),
+            test_record("migration-known", GatewayLocalExecOperationStatus::Completed),
+        ]);
+        let mut state = unloaded_operation_state(fixture.directory.journal(), 2);
+        let journal_path = fixture.directory.journal();
+        let retained_path = fixture.directory.0.join("before-fault.json");
+        state.before_journal_publish = Some(Arc::new(move || {
+            fs::rename(&journal_path, &retained_path).expect("retain the exact pre-migration bytes");
+            fs::create_dir(&journal_path).expect("force actual replacement failure before rename");
+        }));
+        let error = GatewayLocalExecManager::load_operation_history(&mut state)
+            .expect_err("real migration publication fails");
+        assert!(error.message.contains("migration"));
+        assert!(state.operation_journal_error.is_some());
+        assert_eq!(state.operation_history.len(), 2);
+        assert_eq!(state.operation_history.front(), Some(&unknown));
+        let recovered_running = state.operation_history.back().unwrap().clone();
+        let mut expected_running = running.clone();
+        expected_running.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
+        expected_running.settled_at_ms = recovered_running.settled_at_ms;
+        assert!(recovered_running.settled_at_ms.is_some());
+        assert_eq!(recovered_running, expected_running);
+        *fixture.owner.state.lock().expect("install loaded owner state") = Some(state);
+
+        assert_eq!(fixture.manager.operation("migration-unknown"), Some(unknown.clone()));
+        assert_eq!(fixture.manager.operation("migration-running"), Some(recovered_running));
+        let error = fixture.manager.execute_shell(
+            &GatewayLocalToolScope::default(),
+            "must-not-enter", "/tmp", "failed-migration-admission",
+        ).expect_err("failed migration blocks admission before a provider frame");
+        assert!(!error.is_outcome_unknown());
+        assert!(error.message.contains("fail-closed"));
+        assert!(fixture.manager.operation("failed-migration-admission").is_none());
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        assert_eq!(fs::read(fixture.directory.0.join("before-fault.json")).unwrap(), legacy_bytes,
+            "this injected failure occurs before replacement; later durability failures need not preserve old bytes");
+
+        fs::remove_dir(fixture.directory.journal()).expect("remove only the owned fault directory");
+        fs::rename(fixture.directory.0.join("before-fault.json"), fixture.directory.journal())
+            .expect("restore the retained version-2 input for fresh-owner recovery");
+        assert!(fixture.manager.ensure_operation_journal_healthy().is_err(),
+            "repairing the filesystem does not silently clear a live owner's failed migration");
+        let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
+            GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
+            fixture.directory.journal(),
+        );
+        reopened.ensure_operation_journal_healthy().expect("fresh owner durably retries migration");
+        assert_eq!(reopened.operation("migration-unknown"), Some(unknown));
+        let recovered_running = reopened.operation("migration-running").unwrap();
+        assert_eq!(recovered_running.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
+        assert_eq!(recovered_running.bridge_request_id, running.bridge_request_id);
+        assert_eq!(recovered_running.stderr, running.stderr);
+        assert!(recovered_running.stderr_truncated);
+        assert_eq!(read_test_operation_journal(&fixture.directory.journal()).version, 3);
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn admission_publication_failure_restores_history_without_dispatch() {
+        let fixture = ShellOperationFixture::new("failed-capacity-reservation");
+        let mut unknown = test_record("reservation-unknown", GatewayLocalExecOperationStatus::OutcomeUnknown);
+        unknown.stdout = "protected output".into();
+        let known = test_record("reservation-known", GatewayLocalExecOperationStatus::Completed);
+        write_test_operation_journal(&fixture.directory.journal(), 3, &[unknown.clone(), known.clone()]);
+        let journal_path = fixture.directory.journal();
+        let retained_path = fixture.directory.0.join("before-fault.json");
+        fixture.owner.with_state(|state| {
+            state.operation_history_limit = 2;
+            state.before_journal_publish = Some(Arc::new(move || {
+                fs::rename(&journal_path, &retained_path).expect("retain pre-admission input");
+                fs::create_dir(&journal_path).expect("refuse actual reservation publication");
+            }));
+        });
+        let error = fixture.manager.execute_shell(
+            &GatewayLocalToolScope::default(),
+            "must-not-enter", "/tmp", "failed-reservation",
+        ).expect_err("unpublished capacity cannot authorize provider dispatch");
+        assert!(!error.is_outcome_unknown());
+        assert!(error.message.contains("persistence"));
+        assert!(fixture.manager.ensure_operation_journal_healthy().is_err());
+        assert_eq!(fixture.manager.operation_history(), vec![unknown.clone(), known]);
+        assert_eq!(fixture.manager.operation("reservation-unknown"), Some(unknown));
+        assert!(fixture.manager.operation("failed-reservation").is_none());
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn unsupported_and_duplicate_journals_block_admission_without_rewriting() {
+        for (label, version, duplicate) in [
+            ("old-unsupported", 1, false),
+            ("future-unsupported", 4, false),
+            ("legacy-duplicates", 2, true),
+            ("current-duplicates", 3, true),
+        ] {
+            let fixture = ShellOperationFixture::new(label);
+            let mut records = vec![test_record("invalid-image-identity",
+                GatewayLocalExecOperationStatus::OutcomeUnknown)];
+            if duplicate {
+                records.push(test_record("invalid-image-identity",
+                    GatewayLocalExecOperationStatus::Completed));
+            }
+            let original = write_test_operation_journal(&fixture.directory.journal(), version, &records);
+            let error = fixture.manager.execute_shell(
+                &GatewayLocalToolScope::default(),
+                "must-not-enter", "/tmp", "invalid-image-admission",
+            ).expect_err("invalid journal cannot authorize a provider frame");
+            assert!(!error.is_outcome_unknown());
+            assert!(error.message.contains(if duplicate { "duplicate" } else { "unsupported" }));
+            assert_eq!(fs::read(fixture.directory.journal()).unwrap(), original);
+            assert!(fixture.manager.operation("invalid-image-admission").is_none());
+            assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+    }
+
+    #[test]
     fn corrupt_journal_fails_closed_instead_of_becoming_empty_history() {
         let path = unique_test_path("corrupt");
         fs::write(&path, b"{not-json").expect("write corrupt journal");
-        let error = GatewayLocalExecManager::load_operation_history(&path, 8)
+        let error = load_test_operation_history(&path, 8)
             .expect_err("corrupt journal must fail closed");
         assert!(error.message.contains("corrupt"));
         let _ = fs::remove_file(path);
@@ -2101,7 +2733,7 @@ mod operation_journal_fail_closed_tests {
     fn unknown_journal_version_fails_closed() {
         let path = unique_test_path("version");
         fs::write(&path, br#"{"version":999,"records":[]}"#).expect("write versioned journal");
-        let error = GatewayLocalExecManager::load_operation_history(&path, 8)
+        let error = load_test_operation_history(&path, 8)
             .expect_err("unknown version must fail closed");
         assert!(error.message.contains("unsupported"));
         let _ = fs::remove_file(path);
@@ -2118,7 +2750,7 @@ mod operation_journal_fail_closed_tests {
         GatewayLocalExecManager::persist_operation_history(&path, &history)
             .expect("persist accepted journal");
 
-        let recovered = GatewayLocalExecManager::load_operation_history(&path, 8)
+        let recovered = load_test_operation_history(&path, 8)
             .expect("recover accepted journal");
         let record = recovered.front().expect("accepted record");
         assert_eq!(
@@ -2127,7 +2759,7 @@ mod operation_journal_fail_closed_tests {
         );
         assert!(record.settled_at_ms.is_some());
 
-        let second = GatewayLocalExecManager::load_operation_history(&path, 8)
+        let second = load_test_operation_history(&path, 8)
             .expect("re-read accepted recovery");
         assert_eq!(
             second.front().expect("accepted record").status,
@@ -2148,7 +2780,7 @@ mod operation_journal_fail_closed_tests {
             .expect("persist running journal");
 
         let recovered =
-            GatewayLocalExecManager::load_operation_history(&path, 8).expect("recover journal");
+            load_test_operation_history(&path, 8).expect("recover journal");
         let record = recovered.front().expect("record");
         assert_eq!(
             record.status,
@@ -2156,7 +2788,7 @@ mod operation_journal_fail_closed_tests {
         );
         assert!(record.settled_at_ms.is_some());
 
-        let second = GatewayLocalExecManager::load_operation_history(&path, 8)
+        let second = load_test_operation_history(&path, 8)
             .expect("re-read recovered journal");
         assert_eq!(
             second.front().expect("record").status,
@@ -2246,7 +2878,7 @@ mod operation_journal_fail_closed_tests {
         GatewayLocalExecManager::persist_operation_history(&path, &history)
             .expect("persist completed output");
 
-        let recovered = GatewayLocalExecManager::load_operation_history(&path, 8)
+        let recovered = load_test_operation_history(&path, 8)
             .expect("reload completed output");
         let recovered = recovered.front().expect("recovered record");
         assert_eq!(recovered.status, GatewayLocalExecOperationStatus::Completed);

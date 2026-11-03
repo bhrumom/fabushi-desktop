@@ -279,7 +279,17 @@ LXO_MANAGER_NAMES = [
     "atomic_persistence_failure_is_reported",
     "pre_send_journal_failure_does_not_send_exec_frame",
     "completed_bounded_output_round_trips_through_journal",
-    "duplicate_operation_id_from_durable_history_is_not_replayed"
+    "duplicate_operation_id_from_durable_history_is_not_replayed",
+    "unknown_custody_survives_known_terminal_churn_and_reopen",
+    "protected_history_and_active_capacity_refuse_before_dispatch_then_known_exit_releases_room",
+    "concurrent_facades_reserve_capacity_inside_durable_admission",
+    "version_two_migration_preserves_all_recoverable_record_fields",
+    "version_two_migration_is_durable_before_a_new_provider_frame",
+    "startup_prunes_only_oldest_known_terminals_and_persists_the_result",
+    "protected_legacy_overcapacity_remains_queryable_and_blocks_new_effects",
+    "failed_migration_retains_parsed_custody_and_latches_admission_failure",
+    "admission_publication_failure_restores_history_without_dispatch",
+    "unsupported_and_duplicate_journals_block_admission_without_rewriting"
 ]
 LXO_GATEWAY_NAMES = [
     "sandbox_projects_provider_state_and_user_computers",
@@ -292,7 +302,9 @@ LXO_GATEWAY_NAMES = [
     "exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel",
     "exec_manager_does_not_mark_cancel_when_provider_rejects_delivery",
     "exec_manager_drives_real_os_process_to_bounded_terminal_result",
-    "exec_manager_cancel_maps_to_real_child_termination_and_history"
+    "exec_manager_cancel_maps_to_real_child_termination_and_history",
+    "host_local_exec_unknown_survives_churn_and_restart_without_replay",
+    "host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal"
 ]
 LXO_CODEC_NAMES = [
     "production_codec_accepts_exec_client_json_and_ignores_unknown_fields",
@@ -318,6 +330,8 @@ LXO_EXTENSION_NAMES = [
 ]
 LXO_INPUTS = [
     "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+    "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+    "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-decision.json",
     "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
     "source/host/src/extensions/local_exec/local_exec_error.rs",
     "source/host/src/extensions/local_exec/local_exec_bridge.rs",
@@ -546,12 +560,12 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This executable verification is GitHub Actions-only.")
     ROOT.mkdir(parents=True, exist_ok=False)
-    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native", "MSU-v1-native", "LXO-v1-native"],
+    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native", "MSU-v1-native", "LXO-v1-native", "LXR-v1-native"],
                "result": "failed-or-incomplete", "executions": [],
                "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
     save(receipt)
     receipt["media_settlement_scope"] = "MSU-v1 native file-backed AgentDb commands exercise confirmed success/refusal, actual COMMIT acknowledgement loss, actual rollback authorizer denial, deferred COMMIT failure, exact connection retirement, one-shot identity-bound fault leases and zero unknown-success publication; local cleanup custody retains sealed media through abort/Drop. Tool error-class controls prove unknown does not invoke destructive build-error cleanup. These native cases do not execute the actual App, Session first-open recovery or generated Runner consumer; their separate Linux App receipt remains required. No arbitrary crash-point, live service, complete read-scope or final migration acceptance is claimed."
-    receipt["local_exec_outcome_scope"] = "Actual shared LocalExec operation owner and real bridge consumers: atomic admission/settlement/publication, invocation identity, typed uncertainty, cancellation without Exit, known refusal/Exit, bounded output, journal failures and restart, generated optional error-code decoding and existing telemetry. Existing real OS child controls retain confirmed termination. Registered Runner and actual App/protocol consumers have separate Linux receipts. No physical device, full process-tree controller, external provider, package or global acceptance."
+    receipt["local_exec_outcome_scope"] = "Actual shared LocalExec operation owner and real bridge consumers: atomic admission/settlement/publication, invocation identity, typed uncertainty, cancellation without Exit, known refusal/Exit, bounded output, journal failures and restart, generated optional error-code decoding and existing telemetry. LXR-v1 additionally requires protected unknown retention through known-result churn and fresh owners, history-plus-active capacity reservations before dispatch, known-terminal capacity release, two-facade ordering, durable version-2 to version-3 migration, selective pruning, protected legacy over-capacity, and failed-publication/future-version negatives. The bridge retention cases execute the actual Host owner and production bridge with controlled provider frames in isolated owned child invocations; they do not prove real provider or device compatibility. Version 3 is a rollback refusal guard; package rollback acceptance remains open. Existing real OS child controls retain confirmed termination. Registered Runner and actual App/protocol consumers have separate Linux receipts. No physical device, full process-tree controller, file-publication outcome propagation, external provider, package or global acceptance."
     try:
         head = output(["git", "rev-parse", "HEAD"])
         if head != os.environ["FABUSHI_TARGET_SHA"]:

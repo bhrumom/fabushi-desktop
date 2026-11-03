@@ -1,0 +1,478 @@
+diff --git a/source/host/tests/device_pairing_join_admission_contract.rs b/source/host/tests/device_pairing_join_admission_contract.rs
+index 3f36315eb6ca999bb1fc467019dc03efdc548746..b69c095b11c05d58225b5bc4e453e0f74bc18713 100644
+--- a/source/host/tests/device_pairing_join_admission_contract.rs
++++ b/source/host/tests/device_pairing_join_admission_contract.rs
+@@ -85,6 +85,10 @@ struct Fixture {
+ impl Fixture {
+     fn new(label: &str) -> Self {
+         let root = std::env::temp_dir().join(format!("fabushi-join-{label}-{}", uuid::Uuid::new_v4()));
++        Self::in_owned_root(root)
++    }
++
++    fn in_owned_root(root: PathBuf) -> Self {
+         fs::create_dir(&root).expect("exclusively create owned fixture directory");
+         let db_path = root.join("device-pairing.db");
+         let owner = DevicePairingOwner::new(&db_path).expect("open durable pairing owner");
+@@ -241,18 +245,254 @@ fn assert_http(response: &str, status: &str) -> Value {
+     serde_json::from_str(body).expect("JSON Gateway body")
+ }
+ 
++const JOIN_CHILD_CASE: &str = "FABUSHI_DJC_CHILD_CASE";
++const JOIN_CHILD_ROOT: &str = "FABUSHI_DJC_CHILD_ROOT";
++const JOIN_CHILD_TOKEN: &str = "FABUSHI_DJC_CHILD_TOKEN";
++const JOIN_CHILD_MODE: &str = "FABUSHI_DJC_CHILD_MODE";
++
++#[derive(Debug, PartialEq, Eq)]
++enum JoinChildOutcome {
++    Completed,
++    MissingReceipt,
++    MismatchedReceipt,
++    InvalidReadyReceipt,
++    FailedExit,
++    TimedOut,
++    WaitFailed,
++}
++
++struct JoinChildReport {
++    outcome: JoinChildOutcome,
++    terminal: bool,
++    ready: bool,
++    root: PathBuf,
++    details: String,
++}
++
++impl JoinChildReport {
++    fn accept(self, expected: JoinChildOutcome) {
++        assert!(
++            self.terminal && self.ready && self.outcome == expected,
++            "DJC owned child failed; evidence retained at {}: {:?}; {}",
++            self.root.display(), self.outcome, self.details,
++        );
++        fs::remove_dir_all(&self.root).expect("remove only terminal, accepted child evidence");
++    }
++}
++
++struct OwnedJoinChild {
++    child: std::process::Child,
++    root: PathBuf,
++    terminal: bool,
++    stop_attempted: bool,
++}
++
++impl OwnedJoinChild {
++    fn poll(&mut self) -> std::io::Result<Option<std::process::ExitStatus>> {
++        let status = self.child.try_wait()?;
++        if status.is_some() {
++            self.terminal = true;
++        }
++        Ok(status)
++    }
++
++    fn stop_and_reap(&mut self) -> String {
++        self.stop_attempted = true;
++        let deadline = Instant::now() + Duration::from_secs(5);
++        let kill_error = self.child.kill().err();
++        loop {
++            match self.poll() {
++                Ok(Some(status)) => return format!(
++                    "owned child reaped after stop: {status}; kill_error={kill_error:?}",
++                ),
++                Ok(None) if Instant::now() < deadline => {
++                    thread::sleep(Duration::from_millis(10));
++                }
++                Ok(None) => return format!(
++                    "owned child termination unconfirmed after 5s; kill_error={kill_error:?}",
++                ),
++                Err(error) => return format!(
++                    "owned child reap failed: {error}; kill_error={kill_error:?}",
++                ),
++            }
++        }
++    }
++}
++
++impl Drop for OwnedJoinChild {
++    fn drop(&mut self) {
++        if !self.terminal && !self.stop_attempted {
++            let diagnostic = self.stop_and_reap();
++            eprintln!("DJC parent unwound; evidence retained at {}: {diagnostic}", self.root.display());
++        }
++    }
++}
++
++fn child_receipt(token: &str, pid: u32, case: &str, mode: &str) -> String {
++    format!("{token}\n{pid}\n{case}\n{mode}\n")
++}
++
++fn write_child_receipt(root: &Path, name: &str, receipt: &str) {
++    let mut file = fs::OpenOptions::new().write(true).create_new(true).open(root.join(name))
++        .expect("exclusively create owned child receipt");
++    file.write_all(receipt.as_bytes()).expect("write complete child receipt");
++    file.flush().expect("flush child receipt");
++}
++
++fn supervise_join_child(case: &str, mode: &str) -> JoinChildReport {
++    let root = std::env::temp_dir().join(format!("fabushi-join-child-{}", uuid::Uuid::new_v4()));
++    fs::create_dir(&root).expect("exclusively create parent-owned child directory");
++    let token = uuid::Uuid::new_v4().to_string();
++    let stdout = fs::OpenOptions::new().write(true).create_new(true).open(root.join("stdout"))
++        .expect("create owned child stdout");
++    let stderr = fs::OpenOptions::new().write(true).create_new(true).open(root.join("stderr"))
++        .expect("create owned child stderr");
++    let child = std::process::Command::new(std::env::current_exe().expect("current exact test binary"))
++        .args(["--exact", case, "--nocapture", "--test-threads=1"])
++        .env(JOIN_CHILD_CASE, case)
++        .env(JOIN_CHILD_ROOT, &root)
++        .env(JOIN_CHILD_TOKEN, &token)
++        .env(JOIN_CHILD_MODE, mode)
++        .stdin(std::process::Stdio::null())
++        .stdout(stdout)
++        .stderr(stderr)
++        .spawn()
++        .unwrap_or_else(|error| panic!("DJC child spawn failed; retained {}: {error}", root.display()));
++    let pid = child.id();
++    let expected = child_receipt(&token, pid, case, mode);
++    let mut owned = OwnedJoinChild { child, root: root.clone(), terminal: false, stop_attempted: false };
++    let started = Instant::now();
++    // The synthetic timeout control first proves child entry, then deliberately
++    // parks. It qualifies this supervisor only, never SQLite refusal behavior.
++    let budget = if mode == "control-timeout" { Duration::from_secs(10) } else { Duration::from_secs(120) };
++    let deadline = started + budget;
++    let mut control_ready_at = None;
++    let (mut outcome, mut details) = loop {
++        match owned.poll() {
++            Ok(Some(status)) => break (
++                if status.success() { JoinChildOutcome::Completed } else { JoinChildOutcome::FailedExit },
++                format!("pid={pid}; elapsed_ms={}; exit={status}", started.elapsed().as_millis()),
++            ),
++            Err(error) => break (JoinChildOutcome::WaitFailed, format!("pid={pid}; wait failed: {error}")),
++            Ok(None) => {}
++        }
++        if mode == "control-timeout"
++            && control_ready_at.is_none()
++            && fs::read_to_string(root.join("ready")).is_ok_and(|value| value == expected)
++        {
++            control_ready_at = Some(Instant::now());
++        }
++        if Instant::now() >= deadline
++            || control_ready_at.is_some_and(|ready: Instant| ready.elapsed() >= Duration::from_millis(100))
++        {
++            break (JoinChildOutcome::TimedOut, format!("pid={pid}; outer deadline expired; elapsed_ms={}", started.elapsed().as_millis()));
++        }
++        thread::sleep(Duration::from_millis(10));
++    };
++    if !owned.terminal {
++        details.push_str(&format!("; {}", owned.stop_and_reap()));
++    }
++    let ready = fs::read_to_string(root.join("ready")).is_ok_and(|value| value == expected);
++    if outcome == JoinChildOutcome::Completed {
++        outcome = if !ready {
++            JoinChildOutcome::InvalidReadyReceipt
++        } else {
++            match fs::read_to_string(root.join("complete")) {
++                Ok(value) if value == expected => JoinChildOutcome::Completed,
++                Ok(_) => JoinChildOutcome::MismatchedReceipt,
++                Err(error) if error.kind() == std::io::ErrorKind::NotFound => JoinChildOutcome::MissingReceipt,
++                Err(error) => {
++                    details.push_str(&format!("; completion receipt read failed: {error}"));
++                    JoinChildOutcome::MismatchedReceipt
++                }
++            }
++        };
++    }
++    // Regular owned files cannot deadlock on undrained child pipe output. These
++    // diagnostics are included in the parent failure, including partial output
++    // after a timeout. Successful libtest output may remain captured.
++    for name in ["stdout", "stderr"] {
++        let output = fs::read_to_string(root.join(name))
++            .unwrap_or_else(|error| format!("owned output unavailable: {error}"));
++        details.push_str(&format!("\nchild {name}:\n{output}"));
++    }
++    JoinChildReport { outcome, terminal: owned.terminal, ready, root, details }
++}
++
++fn isolated_join_case(case: &str, body: fn(&Path)) {
++    if let Some(selected) = std::env::var_os(JOIN_CHILD_CASE) {
++        assert_eq!(selected.to_str(), Some(case), "child must run its exact selected case");
++        assert_eq!(
++            std::env::args().skip(1).collect::<Vec<_>>(),
++            vec!["--exact", case, "--nocapture", "--test-threads=1"],
++            "child must enter through the exact same test binary selector",
++        );
++        let root = PathBuf::from(std::env::var_os(JOIN_CHILD_ROOT).expect("parent-owned child root"));
++        assert!(root.is_dir(), "parent must create the child root");
++        let token = std::env::var(JOIN_CHILD_TOKEN).expect("parent-issued invocation token");
++        let mode = std::env::var(JOIN_CHILD_MODE).expect("parent-selected child mode");
++        let receipt = child_receipt(&token, std::process::id(), case, &mode);
++        write_child_receipt(&root, "ready", &receipt);
++        match mode.as_str() {
++            "actual" => body(&root),
++            "control-valid" => {}
++            "control-missing" => return,
++            "control-mismatch" => {
++                write_child_receipt(&root, "complete", "wrong-invocation\n");
++                return;
++            }
++            "control-timeout" => loop { thread::park(); },
++            _ => panic!("unknown DJC child mode"),
++        }
++        write_child_receipt(&root, "complete", &receipt);
++        return;
++    }
++
++    if case == "join_storage_commit_refusal_never_publishes_payload" {
++        for (mode, expected) in [
++            ("control-valid", JoinChildOutcome::Completed),
++            ("control-missing", JoinChildOutcome::MissingReceipt),
++            ("control-mismatch", JoinChildOutcome::MismatchedReceipt),
++            ("control-timeout", JoinChildOutcome::TimedOut),
++        ] {
++            supervise_join_child(case, mode).accept(expected);
++        }
++        eprintln!("DJC owned-child harness controls passed; these are not SQL refusal evidence");
++    }
++    supervise_join_child(case, "actual").accept(JoinChildOutcome::Completed);
++}
++
++fn join_phase(started: Instant, phase: &str) {
++    eprintln!("DJC phase={phase}; elapsed_ms={}", started.elapsed().as_millis());
++}
++
++fn join_result_phase(started: Instant, result: &Result<Option<Value>, GatewayCommandError>) {
++    let class = match result {
++        Ok(Some(_)) => "payload",
++        Ok(None) => "miss",
++        Err(GatewayCommandError::Internal(_)) => "internal-error",
++        Err(_) => "other-error",
++    };
++    eprintln!("DJC phase=owner-returned; elapsed_ms={}; result_class={class}", started.elapsed().as_millis());
++}
++
+ fn wait_for_uncommitted_write(
+     journal: &Path,
+-    result: &mpsc::Receiver<Result<Option<Value>, GatewayCommandError>>,
+-) {
++    completion: &mpsc::Receiver<()>,
++) -> Result<(), &'static str> {
+     let deadline = Instant::now() + Duration::from_secs(2);
+     loop {
+         if fs::metadata(journal).is_ok_and(|metadata| metadata.len() > 0) {
+-            return;
++            return Ok(());
++        }
++        match completion.try_recv() {
++            Err(mpsc::TryRecvError::Empty) => {}
++            Ok(()) => return Err("owner returned before an actual journaled write was observed"),
++            Err(mpsc::TryRecvError::Disconnected) => return Err("owner disconnected before an actual journaled write was observed"),
++        }
++        if Instant::now() >= deadline {
++            return Err("no causal evidence of the blocked consumption write within 2s");
+         }
+-        assert!(matches!(result.try_recv(), Err(mpsc::TryRecvError::Empty)),
+-            "owner returned or disconnected before an actual journaled write was observed");
+-        assert!(Instant::now() < deadline, "no causal evidence of the blocked consumption write");
+         thread::sleep(Duration::from_millis(5));
+     }
+ }
+@@ -303,30 +543,74 @@ fn join_storage_write_failure_preserves_row_and_redacts_errors() {
+ 
+ #[test]
+ fn join_storage_commit_refusal_never_publishes_payload() {
+-    let mut fixture = Fixture::new("commit-refusal");
+-    let code = fixture.register(&payload());
+-    let before = fixture.observe(&code);
+-    let blocker = fixture.read_fence();
+-    let journal = fixture.root.join("device-pairing.db-journal");
+-    assert!(!journal.exists(), "fresh committed fixture has no leftover journal");
+-    // SQLite's SHARED reader permits the owner's immediate transaction and
+-    // journaled write, but refuses the EXCLUSIVE lock needed to commit. The
+-    // locked rusqlite 0.39.0 connection has a five-second busy timeout.
+-    let refusal = thread::scope(|scope| {
+-        let (sender, receiver) = mpsc::channel();
+-        let owner = fixture.owner();
+-        let code = &code;
+-        scope.spawn(move || sender.send(owner.redeem_device_pairing_join_code(code)).expect("deliver owned result"));
+-        wait_for_uncommitted_write(&journal, &receiver);
+-        receiver.recv_timeout(Duration::from_secs(8)).expect("bounded actual commit refusal")
++    isolated_join_case("join_storage_commit_refusal_never_publishes_payload", |root| {
++        let started = Instant::now();
++        let mut fixture = Fixture::in_owned_root(root.join("commit-refusal"));
++        let code = fixture.register(&payload());
++        let before = fixture.observe(&code);
++        let blocker = fixture.read_fence();
++        join_phase(started, "reader-fence-acquired");
++        let journal = fixture.root.join("device-pairing.db-journal");
++        assert!(!journal.exists(), "fresh committed fixture has no leftover journal");
++        // The real SHARED reader permits the immediate transaction and journaled
++        // write but prevents the EXCLUSIVE commit lock. rusqlite's five-second
++        // busy timeout is not an operation-wide deadline. Keep the original 8s
++        // observation failure, then collect the result under the same fence.
++        let mut observation_failures = Vec::new();
++        let refusal = thread::scope(|scope| {
++            let (sender, receiver) = mpsc::channel();
++            let owner = fixture.owner();
++            let code = &code;
++            let worker = scope.spawn(move || {
++                join_phase(started, "owner-call-started");
++                let result = owner.redeem_device_pairing_join_code(code);
++                join_result_phase(started, &result);
++                let _ = sender.send(());
++                result
++            });
++            match wait_for_uncommitted_write(&journal, &receiver) {
++                Ok(()) => join_phase(started, "journaled-write-observed"),
++                Err(failure) => {
++                    join_phase(started, "journal-observation-failed");
++                    observation_failures.push(failure);
++                }
++            }
++            match receiver.recv_timeout(Duration::from_secs(8)) {
++                Ok(()) => join_phase(started, "completion-notification-received"),
++                Err(mpsc::RecvTimeoutError::Timeout) => {
++                    join_phase(started, "original-8s-observation-expired");
++                    observation_failures.push("bounded actual commit refusal: original 8s observation timed out");
++                }
++                Err(mpsc::RecvTimeoutError::Disconnected) => {
++                    join_phase(started, "completion-notification-disconnected");
++                    observation_failures.push("owner completion notification disconnected");
++                }
++            }
++            // Joining does not release the reader fence. The parent process
++            // owns the 120s diagnostic deadline and 5s stop/reap boundary.
++            worker.join().expect("join the owned actual redemption worker")
++        });
++        let error = match refusal {
++            Err(error) => error,
++            Ok(None) => panic!("failed commit cannot become a miss"),
++            Ok(Some(_)) => panic!("failed commit cannot publish a payload"),
++        };
++        assert_storage_error(error, &code);
++        join_phase(started, "storage-error-status-and-redaction-checked");
++        blocker.execute_batch("ROLLBACK").expect("release only fixture's read fence");
++        blocker.close().expect("close fixture reader");
++        join_phase(started, "reader-fence-explicitly-released");
++        assert_eq!(fixture.observe(&code), before, "known refused commit rolled back its marker");
++        join_phase(started, "refused-row-preservation-checked");
++        fixture.reopen();
++        join_phase(started, "owner-reopened");
++        assert_eq!(fixture.owner().redeem_device_pairing_join_code(&code).expect("retry only after explicit fixture unlock"), Some(payload()));
++        join_phase(started, "fresh-redemption-after-unlock-checked");
++        fixture.assert_consumed(&before);
++        join_phase(started, "consumed-marker-checked");
++        assert!(observation_failures.is_empty(),
++            "DJC original observation failed despite later diagnostics: {observation_failures:?}");
+     });
+-    assert_storage_error(refusal.expect_err("failed commit cannot publish a payload"), &code);
+-    blocker.execute_batch("ROLLBACK").expect("release only fixture's read fence");
+-    blocker.close().expect("close fixture reader");
+-    assert_eq!(fixture.observe(&code), before, "known refused commit rolled back its marker");
+-    fixture.reopen();
+-    assert_eq!(fixture.owner().redeem_device_pairing_join_code(&code).expect("retry only after explicit fixture unlock"), Some(payload()));
+-    fixture.assert_consumed(&before);
+ }
+ 
+ #[test]
+@@ -391,32 +675,78 @@ fn join_expiry_and_legacy_json_preserve_single_use_contract() {
+ 
+ #[test]
+ fn join_expiry_is_rechecked_after_a_delayed_successful_commit() {
+-    let fixture = Fixture::new("delayed-expiry");
+-    let expires_at_ms = now_ms() + 3_000;
+-    let code = fixture.owner().register_device_pairing_join_code(&payload(), expires_at_ms).expect("register bounded future code");
+-    let before = fixture.observe(&code);
+-    let blocker = fixture.read_fence();
+-    let journal = fixture.root.join("device-pairing.db-journal");
+-    assert!(!journal.exists());
+-    let result = thread::scope(|scope| {
+-        let (sender, receiver) = mpsc::channel();
+-        let owner = fixture.owner();
+-        let code = &code;
+-        scope.spawn(move || sender.send(owner.redeem_device_pairing_join_code(code)).expect("deliver owned result"));
+-        wait_for_uncommitted_write(&journal, &receiver);
+-        assert!(now_ms() < expires_at_ms, "write must be witnessed while the code is still live");
+-        let deadline = Instant::now() + Duration::from_secs(4);
+-        while now_ms() <= expires_at_ms {
+-            assert!(Instant::now() < deadline, "fixture clock did not reach its declared expiry");
+-            thread::sleep(Duration::from_millis(10));
+-        }
+-        assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)), "held reader must prevent early publication");
+-        blocker.execute_batch("ROLLBACK").expect("allow the actual pending commit after expiry");
+-        receiver.recv_timeout(Duration::from_secs(4)).expect("bounded successful commit result")
++    isolated_join_case("join_expiry_is_rechecked_after_a_delayed_successful_commit", |root| {
++        let started = Instant::now();
++        let fixture = Fixture::in_owned_root(root.join("delayed-expiry"));
++        let expires_at_ms = now_ms() + 3_000;
++        let code = fixture.owner().register_device_pairing_join_code(&payload(), expires_at_ms).expect("register bounded future code");
++        let before = fixture.observe(&code);
++        let blocker = fixture.read_fence();
++        join_phase(started, "reader-fence-acquired");
++        let journal = fixture.root.join("device-pairing.db-journal");
++        assert!(!journal.exists());
++        let mut observation_failures = Vec::new();
++        let result = thread::scope(|scope| {
++            let (sender, receiver) = mpsc::channel();
++            let owner = fixture.owner();
++            let code = &code;
++            let worker = scope.spawn(move || {
++                join_phase(started, "owner-call-started");
++                let result = owner.redeem_device_pairing_join_code(code);
++                join_result_phase(started, &result);
++                let _ = sender.send(());
++                result
++            });
++            match wait_for_uncommitted_write(&journal, &receiver) {
++                Ok(()) => join_phase(started, "journaled-write-observed"),
++                Err(failure) => {
++                    join_phase(started, "journal-observation-failed");
++                    observation_failures.push(failure);
++                }
++            }
++            if now_ms() >= expires_at_ms {
++                observation_failures.push("write must be witnessed while the code is still live");
++            }
++            let deadline = Instant::now() + Duration::from_secs(4);
++            while now_ms() <= expires_at_ms {
++                if Instant::now() >= deadline {
++                    observation_failures.push("fixture clock did not reach its declared expiry within 4s");
++                    break;
++                }
++                thread::sleep(Duration::from_millis(10));
++            }
++            if !matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)) {
++                observation_failures.push("held reader must prevent early publication");
++            }
++            // A clock-observation failure never authorizes releasing the fence
++            // before expiry. Preserve the actual worker result even on failure.
++            if now_ms() > expires_at_ms {
++                if blocker.execute_batch("ROLLBACK").is_ok() {
++                    join_phase(started, "reader-fence-released-after-expiry");
++                } else {
++                    observation_failures.push("allow the actual pending commit after expiry: fixture rollback failed");
++                }
++            }
++            match receiver.recv_timeout(Duration::from_secs(4)) {
++                Ok(()) => join_phase(started, "completion-notification-received"),
++                Err(mpsc::RecvTimeoutError::Timeout) => {
++                    join_phase(started, "original-4s-result-observation-expired");
++                    observation_failures.push("bounded successful commit result: original 4s observation timed out");
++                }
++                Err(mpsc::RecvTimeoutError::Disconnected) => {
++                    observation_failures.push("owner completion notification disconnected");
++                }
++            }
++            worker.join().expect("join the owned actual redemption worker")
++        });
++        blocker.close().expect("close expired-code reader fence");
++        assert!(result.expect("released commit succeeds").is_none(), "expired payload must not escape after a delayed commit");
++        join_phase(started, "expired-payload-withheld-checked");
++        fixture.assert_consumed(&before);
++        join_phase(started, "consumed-marker-checked");
++        assert!(observation_failures.is_empty(),
++            "DJC original delayed-expiry observation failed: {observation_failures:?}");
+     });
+-    blocker.close().expect("close expired-code reader fence");
+-    assert!(result.expect("released commit succeeds").is_none(), "expired payload must not escape after a delayed commit");
+-    fixture.assert_consumed(&before);
+ }
+ 
+ #[test]

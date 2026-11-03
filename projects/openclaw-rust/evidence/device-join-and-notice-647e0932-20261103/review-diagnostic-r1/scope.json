@@ -1,0 +1,58 @@
+{
+  "schema": "ocrm-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "original_base": "6c1f95b92c9ca7b4289259dfd340dafff0956c4c",
+  "starting_head": "6c1f95b92c9ca7b4289259dfd340dafff0956c4c",
+  "subject": "850b197058e10e46bfeb20d9fd50f6986084f582",
+  "tree": "ab8beed1c32d352cef16fe87598cdc2685f79a1e",
+  "scope_mode": "one existing test target; all changes from exact base",
+  "uncommitted_state": "All supplied candidate bytes represented in the one declared immutable blob; no local working-tree claim.",
+  "files": [
+    {
+      "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+      "old_blob": "3f36315eb6ca999bb1fc467019dc03efdc548746",
+      "new_blob": "b69c095b11c05d58225b5bc4e453e0f74bc18713",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 384,
+      "dels": 54,
+      "complete": true
+    }
+  ],
+  "diff": {
+    "path": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/review-diagnostic-r1/full.diff",
+    "utf8_bytes": 23841,
+    "sha256": "58e933146361d638312948382e167a5d71c4c6918f34f9a7e65dc747e86d2eef",
+    "complete": true
+  },
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+    "blob": "db2763c061d6808038a4f699695d44b31571067b"
+  },
+  "required_review": {
+    "general": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh"
+    },
+    "reason": "Blocking native SQLite call lifetime; preserve actual result and all original observation/semantic assertions under bounded owned child."
+  },
+  "execution": "not-run; GitHub Actions only",
+  "limits": [
+    "Snapshot does not move the branch or prove behavior.",
+    "Historical H14 failures remain failed and belong to H14.",
+    "No production semantics, public schema, deps, capture selector, product scope, global flags or gate status changed."
+  ]
+}

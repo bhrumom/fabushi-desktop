@@ -1,0 +1,93 @@
+{
+  "schema": "ocrm-review-fix-decision-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "DJC-v1 diagnostic follow-up",
+  "round": 1,
+  "original_base": "6c1f95b92c9ca7b4289259dfd340dafff0956c4c",
+  "subject": "850b197058e10e46bfeb20d9fd50f6986084f582",
+  "tree": "ab8beed1c32d352cef16fe87598cdc2685f79a1e",
+  "scope_blob": "f119d4318e0e0884bfe65ba7d946f54d1dd6cad3",
+  "full_diff_blob": "edf4f51bb93390989a4ff1a20671a92d328eea3a",
+  "reviews": [
+    {
+      "agent": "/root/djc_r1_general",
+      "verdict": "REQUEST_CHANGES",
+      "finding": {
+        "id": "GENERAL-01",
+        "alias": "DJC-R1-G-EVIDENCE-RETENTION-01",
+        "severity": "P2",
+        "classification": "TEST_ORACLE_EVIDENCE",
+        "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+        "source_blob": "b69c095b11c05d58225b5bc4e453e0f74bc18713",
+        "failure": "Child Fixture::drop deletes nested SQLite directory at successful body return before completion receipt and terminal parent acceptance. Receipt write/exit/timeout failures retainlogs but loseSQLfixture.",
+        "fix": "Parent owns directory cleanup for child fixtures; childDrop still closesresources; retain ordinary6testcleanup. Qualify completedbody plusrejectedterminalreceipt preservingnestedfixture andparent cleanup onacceptedcompletion."
+      },
+      "candidate": "850b197058e10e46bfeb20d9fd50f6986084f582",
+      "tree": "ab8beed1c32d352cef16fe87598cdc2685f79a1e",
+      "readDepth": "Full811-linecandidate, relevantoldsource, completeSpec/AGENTS/scope; sixunchangedtestbodiesbyteidentical; deepactualowner redemption, Gatewayownership/status/closure, Appcomposition, pinnedSQLite/build, Linux/macOS selectors/receipts.",
+      "source_only": true,
+      "executed": false,
+      "launch": {
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "fork_turns": "none",
+        "tool_accepted": true,
+        "backend_introspection": false
+      },
+      "limits": [
+        "No change converts failedSQL orobservationinto success; findinglosesfailureevidence.",
+        "ExactRuststdlibimplementation readunavailable; noadditionalOSinternalclaim."
+      ]
+    },
+    {
+      "agent": "/root/djc_r1_structure",
+      "verdict": "APPROVE_SOURCE_ONLY",
+      "candidate": "850b197058e10e46bfeb20d9fd50f6986084f582",
+      "tree": "ab8beed1c32d352cef16fe87598cdc2685f79a1e",
+      "full_scope": {
+        "files": 1,
+        "hunks": 4,
+        "adds": 384,
+        "dels": 54,
+        "complete_reconstruction": true
+      },
+      "findings": [],
+      "read_depth": "Fullold481/new811 andall479diff lines;AGENTS/Spec/scope; actualowner/Gateway/build; relevant Linux/macOScapture; subprocessprecedents; twofixedUjoincode sourcescomplete withpathmembership.",
+      "source_only": true,
+      "executed": false,
+      "launch": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "fork_turns": "none",
+        "tool_accepted": true,
+        "backend_introspection": false
+      },
+      "limit": "Source reviewer did not identify later-rootacceptedGENERAL-01; finalrootdecision doesnotpromote approvaloverconcreteevidencedefect."
+    }
+  ],
+  "decisions": [
+    {
+      "id": "DJC-R1-G-EVIDENCE-RETENTION-01",
+      "review_alias": "GENERAL-01",
+      "severity": "P2",
+      "classification": "TEST_ORACLE_EVIDENCE",
+      "decision": "FIX",
+      "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+      "source_blob": "b69c095b11c05d58225b5bc4e453e0f74bc18713",
+      "failure": "Successful childbody dropsFixture anddeletesnestedSQLiteevidence before completionreceiptwrite andparentterminalacceptance. A laterreceipt/exit/timeout failure leaveslogswithoutDB.",
+      "rationale": "Rootconfirmed concrete ordering inFixture::drop→bodyreturn→completionwrite→parentaccept. STRUCTURE approval doesnotrefutethis specific scenario. This repairs evidence custody, not production redemption semantics.",
+      "repair": "Child-scopedFixture must releaseowners/connections butdeferdirectoryremovalto parentreport acceptance. OrdinaryFixture::new retainscurrentinprocesscleanup. AddownedcontrolswithrealnestedDB afterbodycompletion andmissing/mismatchedcompletionproof; assertretentionbeforeclassificationacceptance andparentcleanupafteracceptedterminalcontrol.",
+      "preserve": [
+        "All8toptestidentities and6unchangedbodies",
+        "Original8scommitrefusal and2s/3s/4sexpiryobservations remainfailedwhenexpired",
+        "ActualworkerResult,readerfence,storageerror/status/redaction,exactrow/reopen/freshredemption/marker assertions",
+        "120sactualouter and5sownedkill/reap; no cleanupbeforeconfirmedterminalacceptance",
+        "No production source, schema, dependencies or capture/workflowchanges"
+      ],
+      "required_re_review": "Freshblind general andstructure review ofcompleteoriginalscope plusproperR1→R2delta andbotheditedcallers/harness; no executionbefore frozenH."
+    }
+  ],
+  "execution": "not-run; GitHub Actions only",
+  "state": "REQUEST_CHANGES; durableFIXbeforeany source correction",
+  "global_flags_changed": false
+}

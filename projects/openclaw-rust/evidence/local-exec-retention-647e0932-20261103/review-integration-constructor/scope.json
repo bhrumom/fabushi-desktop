@@ -1,0 +1,212 @@
+{
+  "schema": "ocrm-review-scope-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXR-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "base": "6c1f95b92c9ca7b4289259dfd340dafff0956c4c",
+  "base_tree": "fee1c87355b94c16759354f97f5dc7fb8f1fe453",
+  "candidate": "37c21eeaa36d2a087a81a5d53fe890160d14eccb",
+  "tree": "fd1118b804a0ff11ec3995dd56be06c8c6d1ff6e",
+  "source_snapshot": "aa6cf8435457ecff9893adb81ce58495763e51e1",
+  "source_snapshot_tree": "97c2f686ed953c3218db7558028d5914f2040fcd",
+  "previous_integration_candidate": "e6083b806f140aa9426cb65eb7eb9001acd43bc7",
+  "authority_blob": "59f624bce2f9552cd9bd1134c1ff6facb6ed6cfc",
+  "scope": "All6 declared paths and35hunks relative to this exact integration base; complete full.diff and current source blobs. Focused integration assessment also compares incoming source/capture/accounting and all non-scope tree entries.",
+  "files": [
+    {
+      "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+      "old_blob": null,
+      "new_blob": "5bfe96af850152b7d4aa753fe27361f9b280d031",
+      "old_mode": null,
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "added",
+      "rename": false,
+      "binary": false,
+      "hunks": 1,
+      "adds": 117,
+      "dels": 0,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "old_blob": "d0ddf13556345df0ea1d2a7f2d496016f46c82d7",
+      "new_blob": "8c3fd83608d5929aa21a3d0bad7d5c53fecd9080",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 10,
+      "dels": 6,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "old_blob": "34e6053174b198921ed4fbea3a1f8307aa8dabd0",
+      "new_blob": "073e031c67647c06a848f6ade737b8fca5b1399b",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 3,
+      "adds": 6,
+      "dels": 3,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "old_blob": "1876291c37991e047704105fc104587e3c6cf364",
+      "new_blob": "9e9e49980faf730b5277a12fcf20f249430753a5",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 18,
+      "dels": 4,
+      "complete": true
+    },
+    {
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "old_blob": "cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9",
+      "new_blob": "8f99af02826365fb2d12971114ff5bf62551883e",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 21,
+      "adds": 675,
+      "dels": 43,
+      "complete": true
+    },
+    {
+      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "old_blob": "9ffcc5994757b16c75963bfc9efdeb37699d1cd9",
+      "new_blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 2,
+      "adds": 484,
+      "dels": 6,
+      "complete": true
+    }
+  ],
+  "full_diff": {
+    "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-integration-constructor/full.diff",
+    "utf8_bytes": 97633,
+    "sha256": "dfc5228a32921e02e1121126222258fa00cf5bce58ea2ded5eaf1554533e11b8",
+    "complete": true
+  },
+  "incoming_preservation": {
+    "base": "e4785646a7cd9322660ae9d5edcd2bc99dd8ad58",
+    "head": "6c1f95b92c9ca7b4289259dfd340dafff0956c4c",
+    "commits": [
+      "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+      "6c1f95b92c9ca7b4289259dfd340dafff0956c4c"
+    ],
+    "files": [
+      {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "sha": "be337df95486a162166afd16dd22b0c2f3b1a6b3"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/general.md",
+        "sha": "51282be20bec163ebcadfcf29c1ee88ae00147be"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/fix-delta.diff",
+        "sha": "471b50503be2936ed14105749609eb803a45e9df"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/full.diff",
+        "sha": "90da47f3910061885378588cd3aa0d47877eeed1"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/scope.json",
+        "sha": "d35d627a822f6eb8e1afd3d6b8dc88dbb2a1419e"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+        "sha": "ce649cd09cefb4c2bec99f8c2d0b94a266645e7a"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "sha": "d0ddf13556345df0ea1d2a7f2d496016f46c82d7"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "sha": "34e6053174b198921ed4fbea3a1f8307aa8dabd0"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "sha": "94020e6d2ff811d3fd897f312e3f545b0863e5d3"
+      },
+      {
+        "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+        "sha": "5abfe49ac6f73e0dec5988a7c90359d35bb2118d"
+      },
+      {
+        "path": "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+        "sha": "683dea3a140a1b5a9b266ca3e3500d49e1905f35"
+      }
+    ],
+    "accounting_merge": "Only6 existing LXR responsibility fields and3 RTM references; all new Skills fields retained.",
+    "capture": "Portable capture changes are4additionalrequiredSkillsnames andconstructor scope; existingLXO/Box sourcebindings retained; nativecapturebytes unchanged.",
+    "source_convergence_of_other_owners": "not assessed"
+  },
+  "identical_source_candidate_blobs": [
+    {
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "blob": "8f99af02826365fb2d12971114ff5bf62551883e"
+    },
+    {
+      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "blob": "9e9e49980faf730b5277a12fcf20f249430753a5"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+      "blob": "5bfe96af850152b7d4aa753fe27361f9b280d031"
+    }
+  ],
+  "merged_paths": [
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "old_blob": "d0ddf13556345df0ea1d2a7f2d496016f46c82d7",
+      "new_blob": "8c3fd83608d5929aa21a3d0bad7d5c53fecd9080"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "old_blob": "34e6053174b198921ed4fbea3a1f8307aa8dabd0",
+      "new_blob": "073e031c67647c06a848f6ade737b8fca5b1399b"
+    }
+  ],
+  "semantic_assessment": {
+    "ledger_fields": 6,
+    "rtm_evidence_references": 3,
+    "status_readfacts_flags_changed": false
+  },
+  "review_phase": "fresh read-only integration assessment; no separate source verdict for incoming Skills/Box",
+  "execution": "not-run; GitHub Actions only; exact subject evidence still required",
+  "limits": [
+    "Historical H14 results not attributed to this candidate.",
+    "No all-source/read closure or final gate acceptance implied.",
+    "All implementation source/capture/contract blobs match source snapshot; only accounting merge differs."
+  ]
+}

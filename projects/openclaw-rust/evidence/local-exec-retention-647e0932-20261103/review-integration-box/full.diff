@@ -1,0 +1,1671 @@
+diff --git a/projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..5bfe96af850152b7d4aa753fe27361f9b280d031 100644
+--- /dev/null
++++ b/projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json
+@@ -0,0 +1,117 @@
++{
++  "schema": "ocrm-scoped-production-contract-v1",
++  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
++  "contract": "LXR-v1",
++  "implementation_base": "a3a58c9bb5804041e2c2dacc1d7c51a2561efd01",
++  "upstream": {
++    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
++    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
++  },
++  "authority": {
++    "path": "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
++    "commit": "a3a58c9bb5804041e2c2dacc1d7c51a2561efd01",
++    "blob": "59f624bce2f9552cd9bd1134c1ff6facb6ed6cfc"
++  },
++  "decision": {
++    "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-decision.json",
++    "blob": "79e4fb938f28513b4f41fd462c2965807ab43040",
++    "id": "LXO-RETENTION-01",
++    "decision": "FIX"
++  },
++  "chain": {
++    "entry": "Existing ExternalShell / local node system.run",
++    "owner": "HostLocalExecExtension shared GatewayLocalExecOperationOwner",
++    "producer": "GatewayLocalExecManager registration, terminal movement and journal loader",
++    "consumer": "Existing real bridge, agent-scoped status/history, ProductionExternalMachineExecutor and App node helper",
++    "storage": "Existing host-local-exec-operations.json; private version3 writer accepts version2 migration; no new store or public wire"
++  },
++  "requirements": [
++    "Preserve Accepted/Running/OutcomeUnknown identity and observed output; evict only eligible known terminal history.",
++    "Reserve total history+active capacity under the existing owner transaction before dispatch; refuse a full protected set without another provider frame.",
++    "Retain protected legacy over-capacity images and fail closed for fresh admission.",
++    "Durable migration/recovery/pruning precedes new effects; failed publication latches failure without claiming prior byte image survived a post-replacement error.",
++    "Version3 guards rollback against old version2-only eviction semantics; do not downgrade or recreate lost history."
++  ],
++  "review_depth": {
++    "target": "Scoped implementation/state-machine/storage/consumer review of actual owners plus independently acquired exact-H caller references. Full-source lexical acquisition is not full-file deep reading.",
++    "upstream": "Retain fixed-U identities and original LXO source/dossier facts; no canonical source-review rows are upgraded.",
++    "caller_closure": {
++      "subject": "4fb025cf9639ab9e7e558b3184d4544fbc80a100",
++      "tree": "dd38bb0a35dab1f159c069e7457c08fc0b4483d6",
++      "host_rust_blobs": 1273,
++      "host_rust_utf8_bytes": 20896852,
++      "cargo_manifests": 201,
++      "cargo_manifest_utf8_bytes": 193864,
++      "additional_consumer": "source/mahayana/mahayana-rs/mahayana-model",
++      "additional_rust_blobs": 3,
++      "additional_rust_utf8_bytes": 59840,
++      "method": "Exact immutable blob lexical acquisition with tree byte-size checks; deep reading restricted to positive callers, declarations, actual representation consumers and pertinent fixture bodies. Not a full-file deep-read or compiler-expanded coverage claim.",
++      "journal_format_owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
++      "external_format_consumers": "None identified in the declared exact Rust source/Cargo closure. Existing Runner/App fault fixtures replace the same file with a directory; neither parses the private format. Durable-file policy names/excludes this same journal. Public Runner record projection is unchanged.",
++      "acquisition_gaps": [],
++      "limits": [
++        "Non-Rust/provider protocol already belongs to LXO source review; no protocol change in LXR.",
++        "Out-of-repository consumers and generated compiler output are not covered by lexical source analysis."
++      ]
++    }
++  },
++  "oracles": {
++    "owner_target": "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests",
++    "bridge_target": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
++    "required_behaviors": [
++      "unknown survives known-result churn and fresh owner",
++      "duplicate/refused capacity causes no new provider frame",
++      "known terminal releases bounded capacity",
++      "shared facade/concurrent registration preserves reservations",
++      "legacy version2 migration and protected over-capacity retention",
++      "failed migration and unsupported/corrupt version negatives"
++    ],
++    "bridge_required_names": [
++      "host_local_exec_unknown_survives_churn_and_restart_without_replay",
++      "host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal"
++    ],
++    "bridge_execution_boundary": "Two test-only exact child invocations of the existing integration binary isolate SAND_DATA_ROOT; actual Host owner/bridge perform 260 total controlled request/reply exchanges. Child-specific receipt, owned logs, deadline and exact Child reaping are required. This is not real provider/device compatibility.",
++    "owner_required_names": [
++      "unknown_custody_survives_known_terminal_churn_and_reopen",
++      "protected_history_and_active_capacity_refuse_before_dispatch_then_known_exit_releases_room",
++      "concurrent_facades_reserve_capacity_inside_durable_admission",
++      "version_two_migration_preserves_all_recoverable_record_fields",
++      "version_two_migration_is_durable_before_a_new_provider_frame",
++      "startup_prunes_only_oldest_known_terminals_and_persists_the_result",
++      "protected_legacy_overcapacity_remains_queryable_and_blocks_new_effects",
++      "failed_migration_retains_parsed_custody_and_latches_admission_failure",
++      "admission_publication_failure_restores_history_without_dispatch",
++      "unsupported_and_duplicate_journals_block_admission_without_rewriting"
++    ]
++  },
++  "capture": {
++    "workflow": ".github/workflows/rust-desktop-runtime.yml",
++    "script": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
++    "platforms": [
++      "Linux",
++      "macOS",
++      "Windows"
++    ],
++    "selection": "Extend existing local-exec-owner and local-exec-gateway commands, required names and before/after input bindings; no per-file campaign."
++  },
++  "verification": "not-run",
++  "acceptance": "pending",
++  "global_flags_changed": false,
++  "limits": [
++    "LXO and LPI source delivery is not executable verification.",
++    "Shared PluginSkills v2 source repairs must converge before dependent combined-H acceptance.",
++    "No full physical-device, process-tree, FileTransfer unknown-result, package/upgrade/rollback or global migration acceptance."
++  ],
++  "changed_source": [
++    {
++      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
++      "base_blob": "cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9",
++      "candidate_blob": "8f99af02826365fb2d12971114ff5bf62551883e"
++    },
++    {
++      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
++      "base_blob": "9ffcc5994757b16c75963bfc9efdeb37699d1cd9",
++      "candidate_blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86"
++    }
++  ]
++}
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 3c947cf0ce6f87a441104a414023f7e8fbfdf293..ba33a8fc8a87ce33e35469bbd5fd97dc1489d02e 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -1665,7 +1665,8 @@
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "source/host/app/src/tests/local_exec_outcome_tests.rs",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -1701,9 +1702,10 @@
+         "This row does not claim a remote Gateway caller, reconnect scheduler, remote manifest publication or physical worker executor",
+         "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller",
+         "Actual local system.run reports EXECUTION_OUTCOME_UNKNOWN with stable operation/result identity when no authoritative Exit or durable settlement is available; known refusal stays EXECUTION_ERROR",
+-        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
++        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
++        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
+       ],
+-      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed",
++      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
+       "oracle_ids": [],
+       "owner_decision": "Record local producer/state/consumer wiring separately from the full NodeHost transport and worker responsibility",
+       "postconditions": [
+@@ -9754,7 +9756,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -9785,9 +9788,10 @@
+         "Environment variables are stripped of non-allowlisted credentials",
+         "Distinct permission facades from one Host extension share one lazy operation owner and one ordered journal publication transaction",
+         "A refused or duplicate invocation cannot mutate another operation; identity and agent checks precede owner-scoped cancellation",
+-        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
++        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
++        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
+       ],
+-      "migration_rollback": "Disable sandboxed tool execution in runner config",
++      "migration_rollback": "Disable sandboxed tool execution in runner config; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
+       "oracle_ids": [
+         "OCRM-EXEC-O01",
+         "OCRM-EXEC-O02"
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 2f247e19440928eeeaf7cec5fa9fef6c47bd16a8..1191c9b59021c088543fb87a4e7db9bbe4db4e36 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -1133,7 +1133,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R16",
+@@ -2334,7 +2335,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC11",
+@@ -2566,7 +2568,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC16",
+diff --git a/projects/openclaw-rust/scripts/capture_media_cleanup.py b/projects/openclaw-rust/scripts/capture_media_cleanup.py
+index 1876291c37991e047704105fc104587e3c6cf364..9e9e49980faf730b5277a12fcf20f249430753a5 100644
+--- a/projects/openclaw-rust/scripts/capture_media_cleanup.py
++++ b/projects/openclaw-rust/scripts/capture_media_cleanup.py
+@@ -279,7 +279,17 @@
+     "atomic_persistence_failure_is_reported",
+     "pre_send_journal_failure_does_not_send_exec_frame",
+     "completed_bounded_output_round_trips_through_journal",
+-    "duplicate_operation_id_from_durable_history_is_not_replayed"
++    "duplicate_operation_id_from_durable_history_is_not_replayed",
++    "unknown_custody_survives_known_terminal_churn_and_reopen",
++    "protected_history_and_active_capacity_refuse_before_dispatch_then_known_exit_releases_room",
++    "concurrent_facades_reserve_capacity_inside_durable_admission",
++    "version_two_migration_preserves_all_recoverable_record_fields",
++    "version_two_migration_is_durable_before_a_new_provider_frame",
++    "startup_prunes_only_oldest_known_terminals_and_persists_the_result",
++    "protected_legacy_overcapacity_remains_queryable_and_blocks_new_effects",
++    "failed_migration_retains_parsed_custody_and_latches_admission_failure",
++    "admission_publication_failure_restores_history_without_dispatch",
++    "unsupported_and_duplicate_journals_block_admission_without_rewriting"
+ ]
+ LXO_GATEWAY_NAMES = [
+     "sandbox_projects_provider_state_and_user_computers",
+@@ -292,7 +302,9 @@
+     "exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel",
+     "exec_manager_does_not_mark_cancel_when_provider_rejects_delivery",
+     "exec_manager_drives_real_os_process_to_bounded_terminal_result",
+-    "exec_manager_cancel_maps_to_real_child_termination_and_history"
++    "exec_manager_cancel_maps_to_real_child_termination_and_history",
++    "host_local_exec_unknown_survives_churn_and_restart_without_replay",
++    "host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal"
+ ]
+ LXO_CODEC_NAMES = [
+     "production_codec_accepts_exec_client_json_and_ignores_unknown_fields",
+@@ -318,6 +330,8 @@
+ ]
+ LXO_INPUTS = [
+     "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
++    "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
++    "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-decision.json",
+     "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+     "source/host/src/extensions/local_exec/local_exec_error.rs",
+     "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+@@ -546,12 +560,12 @@ def main():
+     if os.environ.get("GITHUB_ACTIONS") != "true":
+         raise SystemExit("This executable verification is GitHub Actions-only.")
+     ROOT.mkdir(parents=True, exist_ok=False)
+-    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native", "MSU-v1-native", "LXO-v1-native"],
++    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native", "MSU-v1-native", "LXO-v1-native", "LXR-v1-native"],
+                "result": "failed-or-incomplete", "executions": [],
+                "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
+     save(receipt)
+     receipt["media_settlement_scope"] = "MSU-v1 native file-backed AgentDb commands exercise confirmed success/refusal, actual COMMIT acknowledgement loss, actual rollback authorizer denial, deferred COMMIT failure, exact connection retirement, one-shot identity-bound fault leases and zero unknown-success publication; local cleanup custody retains sealed media through abort/Drop. Tool error-class controls prove unknown does not invoke destructive build-error cleanup. These native cases do not execute the actual App, Session first-open recovery or generated Runner consumer; their separate Linux App receipt remains required. No arbitrary crash-point, live service, complete read-scope or final migration acceptance is claimed."
+-    receipt["local_exec_outcome_scope"] = "Actual shared LocalExec operation owner and real bridge consumers: atomic admission/settlement/publication, invocation identity, typed uncertainty, cancellation without Exit, known refusal/Exit, bounded output, journal failures and restart, generated optional error-code decoding and existing telemetry. Existing real OS child controls retain confirmed termination. Registered Runner and actual App/protocol consumers have separate Linux receipts. No physical device, full process-tree controller, external provider, package or global acceptance."
++    receipt["local_exec_outcome_scope"] = "Actual shared LocalExec operation owner and real bridge consumers: atomic admission/settlement/publication, invocation identity, typed uncertainty, cancellation without Exit, known refusal/Exit, bounded output, journal failures and restart, generated optional error-code decoding and existing telemetry. LXR-v1 additionally requires protected unknown retention through known-result churn and fresh owners, history-plus-active capacity reservations before dispatch, known-terminal capacity release, two-facade ordering, durable version-2 to version-3 migration, selective pruning, protected legacy over-capacity, and failed-publication/future-version negatives. The bridge retention cases execute the actual Host owner and production bridge with controlled provider frames in isolated owned child invocations; they do not prove real provider or device compatibility. Version 3 is a rollback refusal guard; package rollback acceptance remains open. Existing real OS child controls retain confirmed termination. Registered Runner and actual App/protocol consumers have separate Linux receipts. No physical device, full process-tree controller, file-publication outcome propagation, external provider, package or global acceptance."
+     try:
+         head = output(["git", "rev-parse", "HEAD"])
+         if head != os.environ["FABUSHI_TARGET_SHA"]:
+diff --git a/source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs b/source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs
+index cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9..8f99af02826365fb2d12971114ff5bf62551883e 100644
+--- a/source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs
++++ b/source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs
+@@ -41,7 +41,9 @@ pub const DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES: usize = 100 * 1024 * 1024;
+ pub const MAX_LOCAL_EXEC_SHELL_STREAM_BYTES: usize = 256 * 1024;
+ pub const MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES: usize = 64 * 1024;
+ pub const DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT: usize = 128;
+-pub const LOCAL_EXEC_OPERATION_JOURNAL_VERSION: u32 = 2;
++// Version 3 preserves unresolved custody under bounded retention. Version-2
++// readers must reject this image instead of applying their older eviction rule.
++pub const LOCAL_EXEC_OPERATION_JOURNAL_VERSION: u32 = 3;
+ static LOCAL_EXEC_OPERATION_JOURNAL_TMP_COUNTER: AtomicU64 = AtomicU64::new(1);
+ 
+ pub fn describe_local_exec_bytes(bytes: usize) -> String {
+@@ -201,6 +203,12 @@ pub enum GatewayLocalExecOperationStatus {
+     Failed,
+ }
+ 
++impl GatewayLocalExecOperationStatus {
++    fn is_known_terminal(self) -> bool {
++        matches!(self, Self::Completed | Self::Cancelled | Self::Failed)
++    }
++}
++
+ #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+ #[serde(rename_all = "camelCase")]
+ pub struct GatewayLocalExecOperationRecord {
+@@ -249,23 +257,21 @@ struct GatewayLocalExecOperationState {
+ 
+ impl GatewayLocalExecOperationState {
+     fn load(path: PathBuf) -> Self {
+-        let (operation_history, operation_journal_error) =
+-            match GatewayLocalExecManager::load_operation_history(
+-                &path,
+-                DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
+-            ) {
+-                Ok(history) => (history, None),
+-                Err(error) => (VecDeque::new(), Some(error.message)),
+-            };
+-        Self {
++        let mut state = Self {
+             active_operations: HashMap::new(),
+-            operation_history,
++            operation_history: VecDeque::new(),
+             operation_history_limit: DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
+             operation_journal_path: path,
+-            operation_journal_error,
++            operation_journal_error: None,
+             #[cfg(test)]
+             before_journal_publish: None,
++        };
++        if let Err(error) = GatewayLocalExecManager::load_operation_history(&mut state) {
++            // A parsed image remains queryable when publishing its migration or
++            // recovery fails. Journal health still forbids every new effect.
++            state.operation_journal_error = Some(error.message);
+         }
++        state
+     }
+ }
+ 
+@@ -659,13 +665,31 @@ impl GatewayLocalExecManager {
+             .unwrap_or(u64::MAX)
+     }
+ 
+-    fn load_operation_history(
+-        path: &Path,
++    fn prune_known_operation_history(
++        history: &mut VecDeque<GatewayLocalExecOperationRecord>,
+         limit: usize,
+-    ) -> Result<VecDeque<GatewayLocalExecOperationRecord>, SandLocalExecError> {
+-        let bytes = match fs::read(path) {
++    ) -> bool {
++        let mut remaining = history.len().saturating_sub(limit);
++        let requested = remaining;
++        // Retain order and skip every unresolved record, even if a legacy
++        // image contains more protected custody than the current capacity.
++        history.retain(|record| {
++            if remaining > 0 && record.status.is_known_terminal() {
++                remaining -= 1;
++                false
++            } else {
++                true
++            }
++        });
++        remaining != requested
++    }
++
++    fn load_operation_history(
++        state: &mut GatewayLocalExecOperationState,
++    ) -> Result<(), SandLocalExecError> {
++        let bytes = match fs::read(&state.operation_journal_path) {
+             Ok(bytes) => bytes,
+-            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(VecDeque::new()),
++            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
+             Err(error) => {
+                 return Err(SandLocalExecError::new(format!(
+                     "local-exec operation journal read failed closed: {error}"
+@@ -678,9 +702,9 @@ impl GatewayLocalExecManager {
+                     "local-exec operation journal is corrupt and execution is disabled: {error}"
+                 ))
+             })?;
+-        if journal.version != LOCAL_EXEC_OPERATION_JOURNAL_VERSION {
++        if journal.version != 2 && journal.version != LOCAL_EXEC_OPERATION_JOURNAL_VERSION {
+             return Err(SandLocalExecError::new(format!(
+-                "local-exec operation journal version {} is unsupported; expected {}; execution is disabled",
++                "local-exec operation journal version {} is unsupported; expected 2 or {}; execution is disabled",
+                 journal.version, LOCAL_EXEC_OPERATION_JOURNAL_VERSION
+             )));
+         }
+@@ -694,7 +718,7 @@ impl GatewayLocalExecManager {
+                 "local-exec operation journal contains duplicate operationId records; execution is disabled",
+             ));
+         }
+-        let mut recovered_uncertain = false;
++        let mut must_publish = journal.version != LOCAL_EXEC_OPERATION_JOURNAL_VERSION;
+         for record in &mut journal.records {
+             if matches!(
+                 record.status,
+@@ -703,22 +727,27 @@ impl GatewayLocalExecManager {
+             ) {
+                 record.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
+                 record.settled_at_ms = Some(Self::now_ms());
+-                recovered_uncertain = true;
++                must_publish = true;
+             }
+         }
+-        if journal.records.len() > limit.max(1) {
+-            let keep_from = journal.records.len() - limit.max(1);
+-            journal.records.drain(..keep_from);
+-        }
+-        let history = journal.records.into_iter().collect::<VecDeque<_>>();
+-        if recovered_uncertain {
+-            Self::persist_operation_history(path, &history).map_err(|error| {
++        let mut history = journal.records.into_iter().collect::<VecDeque<_>>();
++        must_publish |= Self::prune_known_operation_history(
++            &mut history,
++            state.operation_history_limit.max(1),
++        );
++        state.operation_history = history;
++        if must_publish {
++            // Keep parsed custody in the owner before attempting publication.
++            // An error may follow atomic replacement; it proves neither that
++            // the prior bytes survived nor that the new image is durable.
++            Self::persist_operation_snapshot(state).map_err(|error| {
+                 SandLocalExecError::new(format!(
+-                    "local-exec process-death recovery could not persist outcome_unknown state; execution is disabled: {error}"
++                    "local-exec operation journal migration, recovery or retention changes could not be durably published; execution is disabled: {}",
++                    error.message
+                 ))
+             })?;
+         }
+-        Ok(history)
++        Ok(())
+     }
+ 
+     #[cfg(windows)]
+@@ -955,6 +984,21 @@ impl GatewayLocalExecManager {
+                     "local-exec operationId already exists and will not be replayed: {operation_id}"
+                 )));
+             }
++            let capacity = state.operation_history_limit.max(1);
++            let protected_history = state.operation_history.iter()
++                .filter(|record| !record.status.is_known_terminal())
++                .count();
++            if protected_history.saturating_add(state.active_operations.len()) >= capacity {
++                return Err(SandLocalExecError::new(format!(
++                    "local-exec operation journal capacity {capacity} is occupied by unresolved operations; execution was refused before dispatch"
++                )));
++            }
++            // Reserve one place for this exact invocation before sending its
++            // frame. Finishing will move that place from active to history.
++            let history_capacity = capacity - state.active_operations.len() - 1;
++            let previous_history = (state.operation_history.len() > history_capacity)
++                .then(|| state.operation_history.clone());
++            Self::prune_known_operation_history(&mut state.operation_history, history_capacity);
+             state.active_operations.insert(
+                 operation_id.to_string(),
+                 GatewayLocalExecActiveOperation {
+@@ -968,6 +1012,11 @@ impl GatewayLocalExecManager {
+                 // No provider frame has been sent. This transaction still owns
+                 // the registration it is rolling back.
+                 state.active_operations.remove(operation_id);
++                if let Some(previous_history) = previous_history {
++                    state.operation_history = previous_history;
++                }
++                // This restores only in-memory history. A failed durability
++                // barrier may already have replaced the on-disk image.
+                 return Err(error);
+             }
+             Ok(bridge_request_id)
+@@ -1018,9 +1067,8 @@ impl GatewayLocalExecManager {
+             }
+             let active = state.active_operations.remove(operation_id)
+                 .expect("the matching registration is held by this state transaction");
+-            while state.operation_history.len() >= state.operation_history_limit.max(1) {
+-                state.operation_history.pop_front();
+-            }
++            // Admission already reserved this place. Moving active custody
++            // into history must never evict another unresolved operation.
+             let (stdout, stdout_truncated) = result
+                 .map(|result| durable_shell_output(&result.stdout, result.stdout_truncated))
+                 .unwrap_or_default();
+@@ -1563,6 +1611,29 @@ mod operation_journal_fail_closed_tests {
+         }
+     }
+ 
++    fn unloaded_operation_state(
++        path: PathBuf,
++        limit: usize,
++    ) -> GatewayLocalExecOperationState {
++        GatewayLocalExecOperationState {
++            active_operations: HashMap::new(),
++            operation_history: VecDeque::new(),
++            operation_history_limit: limit,
++            operation_journal_path: path,
++            operation_journal_error: None,
++            before_journal_publish: None,
++        }
++    }
++
++    fn load_test_operation_history(
++        path: &Path,
++        limit: usize,
++    ) -> Result<VecDeque<GatewayLocalExecOperationRecord>, SandLocalExecError> {
++        let mut state = unloaded_operation_state(path.to_path_buf(), limit);
++        GatewayLocalExecManager::load_operation_history(&mut state)?;
++        Ok(state.operation_history)
++    }
++
+     const OPERATION_TEST_BOUND: Duration = Duration::from_secs(5);
+ 
+     struct OperationTestDirectory(PathBuf);
+@@ -1733,6 +1804,28 @@ mod operation_journal_fail_closed_tests {
+         json!({"kind":"control","message":{"streamClose":{"id":1}}})
+     }
+ 
++    fn test_stderr(data: &str) -> Value {
++        json!({"kind":"client","message":{"id":1,"shellStream":{"stderr":{"data":data}}}})
++    }
++
++    fn read_test_operation_journal(path: &Path) -> GatewayLocalExecOperationJournal {
++        serde_json::from_slice(&fs::read(path).expect("read actual operation journal"))
++            .expect("decode actual operation journal")
++    }
++
++    fn write_test_operation_journal(
++        path: &Path,
++        version: u32,
++        records: &[GatewayLocalExecOperationRecord],
++    ) -> Vec<u8> {
++        let bytes = serde_json::to_vec(&GatewayLocalExecOperationJournal {
++            version,
++            records: records.to_vec(),
++        }).expect("encode fixture journal");
++        fs::write(path, &bytes).expect("write fixture journal");
++        bytes
++    }
++
+     #[test]
+     fn operation_owner_is_lazy_and_shared_by_distinct_permission_facades() {
+         let fixture = ShellOperationFixture::new("lazy-shared");
+@@ -1858,7 +1951,7 @@ mod operation_journal_fail_closed_tests {
+             assert!(!record.aborted, "{label}");
+             assert_eq!(record.stdout, if activity { "bounded partial output" } else { "" }, "{label}");
+             assert_eq!(record.bridge_request_id, request["requestId"].as_str().unwrap());
+-            let persisted = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
++            let persisted = load_test_operation_history(&fixture.directory.journal(), 128)
+                 .expect("actual durable unknown record");
+             assert_eq!(persisted.front(), Some(&record), "{label}");
+         }
+@@ -1953,7 +2046,7 @@ mod operation_journal_fail_closed_tests {
+         assert!(record.stdout_truncated);
+         assert!(record.stdout.len() <= MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES);
+         assert!(output.starts_with(&record.stdout));
+-        let recovered = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
++        let recovered = load_test_operation_history(&fixture.directory.journal(), 128)
+             .expect("UTF-8 durable unknown output");
+         assert_eq!(recovered.front(), Some(&record));
+     }
+@@ -2077,7 +2170,7 @@ mod operation_journal_fail_closed_tests {
+         let record = fixture.record("transaction-id");
+         assert_eq!(record.status, GatewayLocalExecOperationStatus::Completed);
+         assert_eq!(record.stdout, "transaction output");
+-        let persisted = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
++        let persisted = load_test_operation_history(&fixture.directory.journal(), 128)
+             .expect("real ordered journal publication");
+         assert_eq!(persisted.len(), 1);
+         assert_eq!(persisted.front(), Some(&record));
+@@ -2087,11 +2180,550 @@ mod operation_journal_fail_closed_tests {
+             "a terminal/admission handoff cannot dispatch a second invocation");
+     }
+ 
++    #[test]
++    fn unknown_custody_survives_known_terminal_churn_and_reopen() {
++        let fixture = ShellOperationFixture::new("retained-unknown-churn");
++        fixture.owner.with_state(|state| state.operation_history_limit = 3);
++        let unknown = fixture.start("retained-unknown", None);
++        let unknown_request = fixture.frame("exec");
++        fixture.reply(&unknown_request, vec![
++            test_stdout("unresolved stdout 界"),
++            test_stderr("unresolved stderr"),
++            test_close(),
++        ]);
++        assert!(unknown.join().expect("unknown worker").expect("unknown result").outcome_unknown);
++        assert_eq!(fixture.frame("cancel")["requestId"], unknown_request["requestId"]);
++        let retained = fixture.record("retained-unknown");
++
++        for index in 0usize..9 {
++            let operation_id = format!("known-churn-{index}");
++            let shell = fixture.start(&operation_id, None);
++            let request = fixture.frame("exec");
++            assert_ne!(request["requestId"], unknown_request["requestId"]);
++            let admitted = read_test_operation_journal(&fixture.directory.journal());
++            assert_eq!(admitted.version, 3);
++            assert!(admitted.records.len() <= 3, "active registrations also consume capacity");
++            assert!(admitted.records.contains(&retained));
++            let status = match index % 3 {
++                0 => GatewayLocalExecOperationStatus::Completed,
++                1 => GatewayLocalExecOperationStatus::Cancelled,
++                _ => GatewayLocalExecOperationStatus::Failed,
++            };
++            let terminal = if status == GatewayLocalExecOperationStatus::Failed {
++                json!({"kind":"control","message":{"throw":{
++                    "error":"known refusal","errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED"
++                }}})
++            } else {
++                test_exit(17, status == GatewayLocalExecOperationStatus::Cancelled)
++            };
++            fixture.reply(&request, vec![terminal]);
++            let outcome = shell.join().expect("known terminal worker");
++            if status == GatewayLocalExecOperationStatus::Failed {
++                assert!(!outcome.expect_err("known refusal").is_outcome_unknown());
++            } else {
++                let result = outcome.expect("observed Exit");
++                assert!(!result.outcome_unknown);
++                assert_eq!(result.exit_code, Some(17));
++                assert_eq!(result.aborted, status == GatewayLocalExecOperationStatus::Cancelled);
++            }
++            assert_eq!(fixture.frame("cancel")["requestId"], request["requestId"]);
++            assert_eq!(fixture.record(&operation_id).status, status);
++            assert_eq!(fixture.record("retained-unknown"), retained);
++            let history = fixture.manager.operation_history();
++            assert_eq!(history.len(), (index + 2).min(3));
++            assert_eq!(history.first(), Some(&retained));
++            if index >= 2 {
++                assert!(fixture.manager.operation(&format!("known-churn-{}", index - 2)).is_none(),
++                    "the oldest eligible known record is evicted");
++            }
++        }
++
++        let before_refusal = fs::read(fixture.directory.journal()).expect("retained journal");
++        let duplicate = fixture.manager.execute_shell(
++            &GatewayLocalToolScope::default(),
++            "must-not-replay", "/tmp", "retained-unknown",
++        ).expect_err("churn cannot forget unresolved identity");
++        assert!(!duplicate.is_outcome_unknown());
++        assert!(duplicate.message.contains("already exists"));
++        assert_eq!(fs::read(fixture.directory.journal()).unwrap(), before_refusal);
++        assert_eq!(fixture.record("retained-unknown"), retained);
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++
++        let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
++            GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
++            fixture.directory.journal(),
++        );
++        assert_eq!(reopened.operation_for_agent("lxo-agent", "retained-unknown"), Some(retained));
++        assert_eq!(reopened.operation_history(), fixture.manager.operation_history());
++        let duplicate = reopened.execute_shell(
++            &GatewayLocalToolScope::default(),
++            "must-not-replay-after-restart", "/tmp", "retained-unknown",
++        ).expect_err("recovery preserves the duplicate fence");
++        assert!(!duplicate.is_outcome_unknown());
++        assert!(duplicate.message.contains("already exists"));
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++    }
++
++    #[test]
++    fn protected_history_and_active_capacity_refuse_before_dispatch_then_known_exit_releases_room() {
++        let fixture = ShellOperationFixture::new("protected-active-capacity");
++        fixture.owner.with_state(|state| state.operation_history_limit = 2);
++        let unknown = fixture.start("protected-history", None);
++        let unknown_request = fixture.frame("exec");
++        fixture.reply(&unknown_request, vec![test_stdout("keep this output"), test_close()]);
++        assert!(unknown.join().expect("unknown worker").expect("unknown result").outcome_unknown);
++        assert_eq!(fixture.frame("cancel")["requestId"], unknown_request["requestId"]);
++        let protected = fixture.record("protected-history");
++
++        let active = fixture.start("reserved-active", None);
++        let active_request = fixture.frame("exec");
++        let second = fixture.facade(Arc::new(AllowGate));
++        for (index, expected_status) in [
++            GatewayLocalExecOperationStatus::Accepted,
++            GatewayLocalExecOperationStatus::Running,
++        ].into_iter().enumerate() {
++            if expected_status == GatewayLocalExecOperationStatus::Running {
++                fixture.reply(&active_request, vec![test_stdout("live output")]);
++                fixture.wait_running("reserved-active");
++            }
++            let active_before = fixture.record("reserved-active");
++            assert_eq!(active_before.status, expected_status);
++            let bytes_before = fs::read(fixture.directory.journal()).expect("full journal");
++            let operation_id = format!("capacity-refused-{index}");
++            let error = second.execute_shell(
++                &GatewayLocalToolScope::default(),
++                "must-not-enter", "/tmp", &operation_id,
++            ).expect_err("protected plus active consumes all capacity");
++            assert!(!error.is_outcome_unknown());
++            assert!(error.message.contains("capacity"));
++            assert_eq!(fixture.record("protected-history"), protected);
++            assert_eq!(fixture.record("reserved-active"), active_before);
++            assert!(second.operation(&operation_id).is_none());
++            assert_eq!(fs::read(fixture.directory.journal()).unwrap(), bytes_before);
++            assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++        }
++
++        fixture.reply(&active_request, vec![test_exit(0, false)]);
++        assert!(!active.join().expect("active worker").expect("known Exit").outcome_unknown);
++        assert_eq!(fixture.frame("cancel")["requestId"], active_request["requestId"]);
++        assert_eq!(fixture.record("reserved-active").status, GatewayLocalExecOperationStatus::Completed);
++
++        let next = fixture.start("after-known-exit", None);
++        let next_request = fixture.frame("exec");
++        assert_eq!(fixture.record("protected-history"), protected);
++        assert!(second.operation("reserved-active").is_none(), "known history supplies the next slot");
++        let admitted = read_test_operation_journal(&fixture.directory.journal());
++        assert_eq!(admitted.records.len(), 2);
++        assert!(admitted.records.contains(&protected));
++        fixture.reply(&next_request, vec![test_exit(130, true)]);
++        let result = next.join().expect("next worker").expect("observed aborted Exit");
++        assert!(result.aborted);
++        assert!(!result.outcome_unknown);
++        assert_eq!(fixture.frame("cancel")["requestId"], next_request["requestId"]);
++        assert_eq!(fixture.record("after-known-exit").status, GatewayLocalExecOperationStatus::Cancelled);
++        assert_eq!(fixture.record("protected-history"), protected);
++        assert_eq!(fixture.manager.operation_history().len(), 2);
++    }
++
++    #[test]
++    fn concurrent_facades_reserve_capacity_inside_durable_admission() {
++        let fixture = ShellOperationFixture::new("concurrent-capacity");
++        let (paused_send, paused_receive) = mpsc::channel();
++        let (resume_send, resume_receive) = mpsc::channel();
++        let resume_receive = Arc::new(Mutex::new(resume_receive));
++        let pause_once = Arc::new(std::sync::atomic::AtomicBool::new(true));
++        fixture.owner.with_state(|state| {
++            state.operation_history_limit = 1;
++            state.before_journal_publish = Some(Arc::new(move || {
++                if pause_once.swap(false, Ordering::AcqRel) {
++                    paused_send.send(()).expect("admission reached durable publication");
++                    resume_receive.lock().expect("admission release gate")
++                        .recv_timeout(OPERATION_TEST_BOUND).expect("bounded admission release");
++                }
++            }));
++        });
++
++        let start = Arc::new(std::sync::Barrier::new(3));
++        let (result_send, result_receive) = mpsc::channel();
++        let mut workers = Vec::new();
++        for (operation_id, manager) in [
++            ("concurrent-left", fixture.facade(Arc::new(AllowGate))),
++            ("concurrent-right", fixture.facade(Arc::new(AllowGate))),
++        ] {
++            let start = Arc::clone(&start);
++            let result_send = result_send.clone();
++            workers.push(std::thread::spawn(move || {
++                start.wait();
++                let result = manager.execute_shell(
++                    &GatewayLocalToolScope {
++                        agent_id: Some("lxo-agent".into()),
++                        tool_call_id: Some(operation_id.into()),
++                        action: None,
++                    },
++                    "concurrent-command", "/tmp", operation_id,
++                );
++                result_send.send((operation_id, result)).expect("publish contender outcome");
++            }));
++        }
++        start.wait();
++        paused_receive.recv_timeout(OPERATION_TEST_BOUND).expect("paused real admission");
++        assert!(matches!(fixture.owner.state.try_lock(), Err(std::sync::TryLockError::WouldBlock)));
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)),
++            "the provider cannot see a frame before its slot is durably reserved");
++        resume_send.send(()).expect("publish reserved capacity");
++        let request = fixture.frame("exec");
++        let (refused_id, refusal) = result_receive.recv_timeout(OPERATION_TEST_BOUND)
++            .expect("the second facade is refused while the admitted operation remains active");
++        let error = refusal.expect_err("only one active registration fits");
++        assert!(!error.is_outcome_unknown());
++        assert!(error.message.contains("capacity"));
++        assert!(fixture.manager.operation(refused_id).is_none());
++        let admitted_id = if refused_id == "concurrent-left" { "concurrent-right" } else { "concurrent-left" };
++        let admitted = fixture.record(admitted_id);
++        assert_eq!(admitted.status, GatewayLocalExecOperationStatus::Accepted);
++        assert_eq!(admitted.bridge_request_id, request["requestId"].as_str().unwrap());
++        let durable = read_test_operation_journal(&fixture.directory.journal());
++        assert_eq!(durable.version, 3);
++        assert_eq!(durable.records, vec![admitted]);
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++
++        fixture.reply(&request, vec![test_exit(0, false)]);
++        let (completed_id, completion) = result_receive.recv_timeout(OPERATION_TEST_BOUND)
++            .expect("admitted invocation observes Exit");
++        assert_eq!(completed_id, admitted_id);
++        assert!(!completion.expect("known completion").outcome_unknown);
++        for worker in workers {
++            worker.join().expect("concurrent facade worker");
++        }
++        assert_eq!(fixture.frame("cancel")["requestId"], request["requestId"]);
++        assert_eq!(fixture.manager.operation_history().len(), 1);
++        assert_eq!(fixture.record(admitted_id).status, GatewayLocalExecOperationStatus::Completed);
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++    }
++
++    #[test]
++    fn version_two_migration_preserves_all_recoverable_record_fields() {
++        for include_active in [false, true] {
++            let directory = OperationTestDirectory::new("version-two-migration");
++            let mut original = Vec::new();
++            for (index, status) in [
++                GatewayLocalExecOperationStatus::OutcomeUnknown,
++                GatewayLocalExecOperationStatus::Completed,
++                GatewayLocalExecOperationStatus::Cancelled,
++                GatewayLocalExecOperationStatus::Failed,
++                GatewayLocalExecOperationStatus::Accepted,
++                GatewayLocalExecOperationStatus::Running,
++            ].into_iter().enumerate() {
++                if !include_active && matches!(status,
++                    GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running)
++                {
++                    continue;
++                }
++                let mut record = test_record(&format!("legacy-field-{index}"), status);
++                record.bridge_request_id = format!("legacy-bridge-{index}");
++                record.agent_id = Some(format!("legacy-agent-{index}"));
++                record.stdout = format!("legacy stdout 界 {index}");
++                record.stderr = format!("legacy stderr {index}");
++                record.stdout_truncated = index % 2 == 0;
++                record.stderr_truncated = index % 2 != 0;
++                record.exit_code = matches!(status,
++                    GatewayLocalExecOperationStatus::Completed | GatewayLocalExecOperationStatus::Cancelled)
++                    .then_some(17);
++                record.aborted = status == GatewayLocalExecOperationStatus::Cancelled;
++                record.settled_at_ms = Some(100 + index as u64);
++                original.push(record);
++            }
++            let legacy_bytes = write_test_operation_journal(&directory.journal(), 2, &original);
++            let recovered = load_test_operation_history(&directory.journal(), 8)
++                .expect("migrate supported version 2");
++            assert_eq!(recovered.len(), original.len());
++            for (before, after) in original.iter().zip(recovered.iter()) {
++                let mut expected = before.clone();
++                if matches!(before.status,
++                    GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running)
++                {
++                    expected.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
++                    assert!(after.settled_at_ms.is_some());
++                    expected.settled_at_ms = after.settled_at_ms;
++                }
++                assert_eq!(after, &expected, "migration preserves identity, output and known facts");
++            }
++            let persisted_bytes = fs::read(directory.journal()).expect("durable version-3 migration");
++            assert_ne!(persisted_bytes, legacy_bytes, "even a settled version-2 image is upgraded");
++            let persisted = read_test_operation_journal(&directory.journal());
++            assert_eq!(persisted.version, 3, "version 3 is the retention semantic boundary");
++            assert_eq!(persisted.records, recovered.iter().cloned().collect::<Vec<_>>());
++            let reopened = load_test_operation_history(&directory.journal(), 8)
++                .expect("reopen migrated image");
++            assert_eq!(reopened, recovered);
++            assert_eq!(fs::read(directory.journal()).unwrap(), persisted_bytes,
++                "an unchanged version-3 image requires no further rewrite");
++        }
++    }
++
++    #[test]
++    fn version_two_migration_is_durable_before_a_new_provider_frame() {
++        let fixture = ShellOperationFixture::new("migration-before-admission");
++        let mut retained = test_record("legacy-before-admission", GatewayLocalExecOperationStatus::OutcomeUnknown);
++        retained.bridge_request_id = "legacy-bridge-before-admission".into();
++        retained.stdout = "preexisting uncertain output 界".into();
++        retained.stdout_truncated = true;
++        write_test_operation_journal(&fixture.directory.journal(), 2, &[retained.clone()]);
++        assert!(fixture.owner.state.lock().expect("lazy migration owner").is_none());
++
++        let shell = fixture.start("after-migration", None);
++        let request = fixture.frame("exec");
++        let published = read_test_operation_journal(&fixture.directory.journal());
++        assert_eq!(published.version, 3, "new effects require the version-3 retention boundary");
++        assert_eq!(published.records.len(), 2);
++        assert!(published.records.contains(&retained));
++        let active = fixture.record("after-migration");
++        assert_eq!(active.status, GatewayLocalExecOperationStatus::Accepted);
++        assert_eq!(active.bridge_request_id, request["requestId"].as_str().unwrap());
++        assert!(published.records.contains(&active));
++        assert_eq!(fixture.manager.operation("legacy-before-admission"), Some(retained.clone()));
++
++        fixture.reply(&request, vec![test_exit(0, false)]);
++        assert!(!shell.join().expect("post-migration worker").expect("known Exit").outcome_unknown);
++        assert_eq!(fixture.frame("cancel")["requestId"], request["requestId"]);
++        let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
++            GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
++            fixture.directory.journal(),
++        );
++        assert_eq!(reopened.operation("legacy-before-admission"), Some(retained));
++        assert_eq!(reopened.operation("after-migration").unwrap().status,
++            GatewayLocalExecOperationStatus::Completed);
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++    }
++
++    #[test]
++    fn startup_prunes_only_oldest_known_terminals_and_persists_the_result() {
++        for version in [2, 3] {
++            let directory = OperationTestDirectory::new("startup-selective-pruning");
++            let mut records = vec![
++                test_record("old-completed", GatewayLocalExecOperationStatus::Completed),
++                test_record("old-unknown", GatewayLocalExecOperationStatus::OutcomeUnknown),
++                test_record("old-cancelled", GatewayLocalExecOperationStatus::Cancelled),
++                test_record("old-failed", GatewayLocalExecOperationStatus::Failed),
++                test_record("new-unknown", GatewayLocalExecOperationStatus::OutcomeUnknown),
++                test_record("new-completed", GatewayLocalExecOperationStatus::Completed),
++            ];
++            records[1].stdout = "retain oldest unknown stdout".into();
++            records[1].stdout_truncated = true;
++            records[4].stderr = "retain newer unknown stderr".into();
++            records[4].stderr_truncated = true;
++            write_test_operation_journal(&directory.journal(), version, &records);
++            let expected = vec![records[1].clone(), records[4].clone(), records[5].clone()];
++            let loaded = load_test_operation_history(&directory.journal(), 3)
++                .expect("prune eligible known history during load");
++            assert_eq!(loaded.iter().cloned().collect::<Vec<_>>(), expected);
++            let persisted = read_test_operation_journal(&directory.journal());
++            assert_eq!(persisted.version, 3);
++            assert_eq!(persisted.records, expected,
++                "pruning is durably published even without active recovery or a format upgrade");
++        }
++    }
++
++    #[test]
++    fn protected_legacy_overcapacity_remains_queryable_and_blocks_new_effects() {
++        for version in [2, 3] {
++            let fixture = ShellOperationFixture::new("protected-legacy-overcapacity");
++            let protected: Vec<_> = (0..=DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT).map(|index| {
++                let status = match index {
++                    1 => GatewayLocalExecOperationStatus::Accepted,
++                    2 => GatewayLocalExecOperationStatus::Running,
++                    _ => GatewayLocalExecOperationStatus::OutcomeUnknown,
++                };
++                let mut record = test_record(&format!("protected-legacy-{index}"), status);
++                record.bridge_request_id = format!("legacy-request-{index}");
++                record.stdout = format!("recoverable stdout 界 {index}");
++                record.stderr = format!("recoverable stderr {index}");
++                record.stdout_truncated = index % 2 == 0;
++                record.stderr_truncated = index % 2 != 0;
++                record
++            }).collect();
++            let mut records = vec![test_record("evictable-old", GatewayLocalExecOperationStatus::Completed)];
++            records.extend(protected.iter().cloned());
++            records.push(test_record("evictable-new", GatewayLocalExecOperationStatus::Failed));
++            write_test_operation_journal(&fixture.directory.journal(), version, &records);
++
++            fixture.manager.ensure_operation_journal_healthy().expect("valid overcapacity image loads");
++            assert_eq!(fixture.manager.operation_history().len(), protected.len());
++            for before in &protected {
++                let after = fixture.manager.operation_for_agent("agent-test", &before.operation_id)
++                    .expect("every protected legacy identity remains queryable");
++                let mut expected = before.clone();
++                if matches!(before.status,
++                    GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running)
++                {
++                    expected.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
++                    assert!(after.settled_at_ms.is_some());
++                    expected.settled_at_ms = after.settled_at_ms;
++                }
++                assert_eq!(after, expected);
++                assert!(fixture.manager.operation_for_agent("other-agent", &before.operation_id).is_none());
++            }
++            assert!(fixture.manager.operation("evictable-old").is_none());
++            assert!(fixture.manager.operation("evictable-new").is_none());
++            let persisted = read_test_operation_journal(&fixture.directory.journal());
++            assert_eq!(persisted.version, 3);
++            assert_eq!(persisted.records, fixture.manager.operation_history());
++            let before_refusals = fs::read(fixture.directory.journal()).unwrap();
++            let error = fixture.manager.execute_shell(
++                &GatewayLocalToolScope::default(),
++                "must-not-enter", "/tmp", "overcapacity-refused",
++            ).expect_err("protected legacy custody cannot be truncated to admit another effect");
++            assert!(!error.is_outcome_unknown());
++            assert!(error.message.contains("capacity"));
++            assert!(fixture.manager.operation("overcapacity-refused").is_none());
++            let duplicate = fixture.manager.execute_shell(
++                &GatewayLocalToolScope::default(),
++                "must-not-replay", "/tmp", "protected-legacy-0",
++            ).expect_err("overcapacity recovery retains the duplicate identity");
++            assert!(!duplicate.is_outcome_unknown());
++            assert!(duplicate.message.contains("already exists"));
++            assert_eq!(fs::read(fixture.directory.journal()).unwrap(), before_refusals);
++            assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++
++            let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
++                GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
++                fixture.directory.journal(),
++            );
++            assert_eq!(reopened.operation_history(), fixture.manager.operation_history());
++        }
++    }
++
++    #[test]
++    fn failed_migration_retains_parsed_custody_and_latches_admission_failure() {
++        let fixture = ShellOperationFixture::new("failed-version-two-migration");
++        let mut unknown = test_record("migration-unknown", GatewayLocalExecOperationStatus::OutcomeUnknown);
++        unknown.stdout = "unknown output survives failed migration 界".into();
++        unknown.stdout_truncated = true;
++        let mut running = test_record("migration-running", GatewayLocalExecOperationStatus::Running);
++        running.bridge_request_id = "legacy-running-request".into();
++        running.stderr = "running output survives failed migration".into();
++        running.stderr_truncated = true;
++        let legacy_bytes = write_test_operation_journal(&fixture.directory.journal(), 2, &[
++            unknown.clone(),
++            running.clone(),
++            test_record("migration-known", GatewayLocalExecOperationStatus::Completed),
++        ]);
++        let mut state = unloaded_operation_state(fixture.directory.journal(), 2);
++        let journal_path = fixture.directory.journal();
++        let retained_path = fixture.directory.0.join("before-fault.json");
++        state.before_journal_publish = Some(Arc::new(move || {
++            fs::rename(&journal_path, &retained_path).expect("retain the exact pre-migration bytes");
++            fs::create_dir(&journal_path).expect("force actual replacement failure before rename");
++        }));
++        let error = GatewayLocalExecManager::load_operation_history(&mut state)
++            .expect_err("real migration publication fails");
++        assert!(error.message.contains("migration"));
++        assert!(state.operation_journal_error.is_some());
++        assert_eq!(state.operation_history.len(), 2);
++        assert_eq!(state.operation_history.front(), Some(&unknown));
++        let recovered_running = state.operation_history.back().unwrap().clone();
++        let mut expected_running = running.clone();
++        expected_running.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
++        expected_running.settled_at_ms = recovered_running.settled_at_ms;
++        assert!(recovered_running.settled_at_ms.is_some());
++        assert_eq!(recovered_running, expected_running);
++        *fixture.owner.state.lock().expect("install loaded owner state") = Some(state);
++
++        assert_eq!(fixture.manager.operation("migration-unknown"), Some(unknown.clone()));
++        assert_eq!(fixture.manager.operation("migration-running"), Some(recovered_running));
++        let error = fixture.manager.execute_shell(
++            &GatewayLocalToolScope::default(),
++            "must-not-enter", "/tmp", "failed-migration-admission",
++        ).expect_err("failed migration blocks admission before a provider frame");
++        assert!(!error.is_outcome_unknown());
++        assert!(error.message.contains("fail-closed"));
++        assert!(fixture.manager.operation("failed-migration-admission").is_none());
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++        assert_eq!(fs::read(fixture.directory.0.join("before-fault.json")).unwrap(), legacy_bytes,
++            "this injected failure occurs before replacement; later durability failures need not preserve old bytes");
++
++        fs::remove_dir(fixture.directory.journal()).expect("remove only the owned fault directory");
++        fs::rename(fixture.directory.0.join("before-fault.json"), fixture.directory.journal())
++            .expect("restore the retained version-2 input for fresh-owner recovery");
++        assert!(fixture.manager.ensure_operation_journal_healthy().is_err(),
++            "repairing the filesystem does not silently clear a live owner's failed migration");
++        let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
++            GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
++            fixture.directory.journal(),
++        );
++        reopened.ensure_operation_journal_healthy().expect("fresh owner durably retries migration");
++        assert_eq!(reopened.operation("migration-unknown"), Some(unknown));
++        let recovered_running = reopened.operation("migration-running").unwrap();
++        assert_eq!(recovered_running.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
++        assert_eq!(recovered_running.bridge_request_id, running.bridge_request_id);
++        assert_eq!(recovered_running.stderr, running.stderr);
++        assert!(recovered_running.stderr_truncated);
++        assert_eq!(read_test_operation_journal(&fixture.directory.journal()).version, 3);
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++    }
++
++    #[test]
++    fn admission_publication_failure_restores_history_without_dispatch() {
++        let fixture = ShellOperationFixture::new("failed-capacity-reservation");
++        let mut unknown = test_record("reservation-unknown", GatewayLocalExecOperationStatus::OutcomeUnknown);
++        unknown.stdout = "protected output".into();
++        let known = test_record("reservation-known", GatewayLocalExecOperationStatus::Completed);
++        write_test_operation_journal(&fixture.directory.journal(), 3, &[unknown.clone(), known.clone()]);
++        let journal_path = fixture.directory.journal();
++        let retained_path = fixture.directory.0.join("before-fault.json");
++        fixture.owner.with_state(|state| {
++            state.operation_history_limit = 2;
++            state.before_journal_publish = Some(Arc::new(move || {
++                fs::rename(&journal_path, &retained_path).expect("retain pre-admission input");
++                fs::create_dir(&journal_path).expect("refuse actual reservation publication");
++            }));
++        });
++        let error = fixture.manager.execute_shell(
++            &GatewayLocalToolScope::default(),
++            "must-not-enter", "/tmp", "failed-reservation",
++        ).expect_err("unpublished capacity cannot authorize provider dispatch");
++        assert!(!error.is_outcome_unknown());
++        assert!(error.message.contains("persistence"));
++        assert!(fixture.manager.ensure_operation_journal_healthy().is_err());
++        assert_eq!(fixture.manager.operation_history(), vec![unknown.clone(), known]);
++        assert_eq!(fixture.manager.operation("reservation-unknown"), Some(unknown));
++        assert!(fixture.manager.operation("failed-reservation").is_none());
++        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++    }
++
++    #[test]
++    fn unsupported_and_duplicate_journals_block_admission_without_rewriting() {
++        for (label, version, duplicate) in [
++            ("old-unsupported", 1, false),
++            ("future-unsupported", 4, false),
++            ("legacy-duplicates", 2, true),
++            ("current-duplicates", 3, true),
++        ] {
++            let fixture = ShellOperationFixture::new(label);
++            let mut records = vec![test_record("invalid-image-identity",
++                GatewayLocalExecOperationStatus::OutcomeUnknown)];
++            if duplicate {
++                records.push(test_record("invalid-image-identity",
++                    GatewayLocalExecOperationStatus::Completed));
++            }
++            let original = write_test_operation_journal(&fixture.directory.journal(), version, &records);
++            let error = fixture.manager.execute_shell(
++                &GatewayLocalToolScope::default(),
++                "must-not-enter", "/tmp", "invalid-image-admission",
++            ).expect_err("invalid journal cannot authorize a provider frame");
++            assert!(!error.is_outcome_unknown());
++            assert!(error.message.contains(if duplicate { "duplicate" } else { "unsupported" }));
++            assert_eq!(fs::read(fixture.directory.journal()).unwrap(), original);
++            assert!(fixture.manager.operation("invalid-image-admission").is_none());
++            assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
++        }
++    }
++
+     #[test]
+     fn corrupt_journal_fails_closed_instead_of_becoming_empty_history() {
+         let path = unique_test_path("corrupt");
+         fs::write(&path, b"{not-json").expect("write corrupt journal");
+-        let error = GatewayLocalExecManager::load_operation_history(&path, 8)
++        let error = load_test_operation_history(&path, 8)
+             .expect_err("corrupt journal must fail closed");
+         assert!(error.message.contains("corrupt"));
+         let _ = fs::remove_file(path);
+@@ -2101,7 +2733,7 @@ mod operation_journal_fail_closed_tests {
+     fn unknown_journal_version_fails_closed() {
+         let path = unique_test_path("version");
+         fs::write(&path, br#"{"version":999,"records":[]}"#).expect("write versioned journal");
+-        let error = GatewayLocalExecManager::load_operation_history(&path, 8)
++        let error = load_test_operation_history(&path, 8)
+             .expect_err("unknown version must fail closed");
+         assert!(error.message.contains("unsupported"));
+         let _ = fs::remove_file(path);
+@@ -2118,7 +2750,7 @@ mod operation_journal_fail_closed_tests {
+         GatewayLocalExecManager::persist_operation_history(&path, &history)
+             .expect("persist accepted journal");
+ 
+-        let recovered = GatewayLocalExecManager::load_operation_history(&path, 8)
++        let recovered = load_test_operation_history(&path, 8)
+             .expect("recover accepted journal");
+         let record = recovered.front().expect("accepted record");
+         assert_eq!(
+@@ -2127,7 +2759,7 @@ mod operation_journal_fail_closed_tests {
+         );
+         assert!(record.settled_at_ms.is_some());
+ 
+-        let second = GatewayLocalExecManager::load_operation_history(&path, 8)
++        let second = load_test_operation_history(&path, 8)
+             .expect("re-read accepted recovery");
+         assert_eq!(
+             second.front().expect("accepted record").status,
+@@ -2148,15 +2780,15 @@ mod operation_journal_fail_closed_tests {
+             .expect("persist running journal");
+ 
+         let recovered =
+-            GatewayLocalExecManager::load_operation_history(&path, 8).expect("recover journal");
++            load_test_operation_history(&path, 8).expect("recover journal");
+         let record = recovered.front().expect("record");
+         assert_eq!(
+             record.status,
+             GatewayLocalExecOperationStatus::OutcomeUnknown
+         );
+         assert!(record.settled_at_ms.is_some());
+ 
+-        let second = GatewayLocalExecManager::load_operation_history(&path, 8)
++        let second = load_test_operation_history(&path, 8)
+             .expect("re-read recovered journal");
+         assert_eq!(
+             second.front().expect("record").status,
+@@ -2246,7 +2878,7 @@ mod operation_journal_fail_closed_tests {
+         GatewayLocalExecManager::persist_operation_history(&path, &history)
+             .expect("persist completed output");
+ 
+-        let recovered = GatewayLocalExecManager::load_operation_history(&path, 8)
++        let recovered = load_test_operation_history(&path, 8)
+             .expect("reload completed output");
+         let recovered = recovered.front().expect("recovered record");
+         assert_eq!(recovered.status, GatewayLocalExecOperationStatus::Completed);
+diff --git a/source/host/tests/gateway_local_exec_sand_box_contract.rs b/source/host/tests/gateway_local_exec_sand_box_contract.rs
+index 9ffcc5994757b16c75963bfc9efdeb37699d1cd9..84897a0934d4728a511abb9e6f6ac4948fc96b86 100644
+--- a/source/host/tests/gateway_local_exec_sand_box_contract.rs
++++ b/source/host/tests/gateway_local_exec_sand_box_contract.rs
+@@ -1,18 +1,30 @@
++use std::collections::HashSet;
++use std::fs;
++use std::path::{Path, PathBuf};
+ use std::sync::{Arc, Mutex, mpsc};
+ use std::thread;
+ use std::process::{Child, Command};
+-use std::time::Duration;
++use std::time::{Duration, Instant};
+ 
++use mahayana_host_runtime::durable_file_policy::SAND_LOCAL_EXEC_OPERATION_JOURNAL_FILE_NAME;
++use mahayana_host_runtime::extensions::local_exec::extension::{
++    HostLocalExecExtension, start_local_exec_extension,
++};
+ use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::{
+-    DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GatewayLocalExecFailureReport,
+-    GatewayLocalExecOperationStatus, GatewayLocalExecSandBox,
+-    GatewayLocalToolGate, GatewayLocalToolScope,
++    DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT, DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES,
++    MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES, GatewayLocalExecFailureReport, GatewayLocalExecManager,
++    GatewayLocalExecOperationRecord, GatewayLocalExecOperationStatus, GatewayLocalExecSandBox,
++    GatewayLocalExecShellResult, GatewayLocalToolGate, GatewayLocalToolScope,
+     create_bridge_user_computers, local_exec_file_too_large_message,
+ };
+ use mahayana_host_runtime::extensions::local_exec::local_exec_failure_classifier::LocalExecFailureClass;
+-use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::SandLocalExecBridge;
++use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::{
++    LocalExecProviderRegistration, SandLocalExecBridge,
++};
+ use mahayana_host_runtime::extensions::local_exec::local_exec_error::SandLocalExecError;
+-use serde_json::json;
++use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
++use mahayana_host_runtime::host_paths::{SAND_DATA_ROOT_ENV, get_sand_root_dir};
++use serde_json::{Value, json};
+ 
+ #[derive(Default)]
+ struct FakeGate {
+@@ -706,3 +718,469 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
+     assert_eq!(settled.status, GatewayLocalExecOperationStatus::Cancelled);
+     assert_eq!(manager.operation_history_for_agent(&agent_id).len(), 1);
+ }
++
++
++const RETENTION_CHILD_TEST_ENV: &str = "FABUSHI_LXR_CHILD_TEST";
++const RETENTION_CHILD_TOKEN_ENV: &str = "FABUSHI_LXR_CHILD_TOKEN";
++const RETENTION_AGENT: &str = "lxr-agent";
++const RETENTION_BOUND: Duration = Duration::from_secs(5);
++
++struct RetentionChild {
++    child: Child,
++    reaped: bool,
++}
++
++impl RetentionChild {
++    fn wait(&mut self) -> Result<std::process::ExitStatus, String> {
++        let deadline = Instant::now() + Duration::from_secs(120);
++        loop {
++            match self.child.try_wait() {
++                Ok(Some(status)) => {
++                    self.reaped = true;
++                    return Ok(status);
++                }
++                Ok(None) => {}
++                Err(error) => return Err(format!("owned retention child wait failed: {error}")),
++            }
++            if Instant::now() >= deadline {
++                return Err("owned retention child exceeded its deadline".into());
++            }
++            thread::sleep(Duration::from_millis(5));
++        }
++    }
++
++    fn stop(&mut self) {
++        if self.reaped {
++            return;
++        }
++        if matches!(self.child.try_wait(), Ok(Some(_))) {
++            self.reaped = true;
++            return;
++        }
++        // This Child was spawned here and creates only worker threads. Never
++        // search for or signal a process by name or an inferred process group.
++        let kill_result = self.child.kill();
++        let deadline = Instant::now() + RETENTION_BOUND;
++        while Instant::now() < deadline {
++            if matches!(self.child.try_wait(), Ok(Some(_))) {
++                self.reaped = true;
++                return;
++            }
++            thread::sleep(Duration::from_millis(5));
++        }
++        eprintln!(
++            "retention child {} could not be reaped; kill result: {kill_result:?}",
++            self.child.id(),
++        );
++    }
++}
++
++impl Drop for RetentionChild {
++    fn drop(&mut self) {
++        self.stop();
++    }
++}
++
++fn run_retention_contract(test_name: &str, case: impl FnOnce(&Path)) {
++    if std::env::var(RETENTION_CHILD_TEST_ENV).ok().as_deref() == Some(test_name) {
++        let root = PathBuf::from(
++            std::env::var_os(SAND_DATA_ROOT_ENV).expect("private retention child root"),
++        );
++        assert_eq!(get_sand_root_dir(), root);
++        case(&root);
++        fs::write(
++            root.join("completed.json"),
++            json!({
++                "test": test_name,
++                "pid": std::process::id(),
++                "token": std::env::var(RETENTION_CHILD_TOKEN_ENV).expect("child invocation token"),
++            }).to_string(),
++        ).expect("write receipt only after all retention assertions");
++        return;
++    }
++
++    // Set the production root only on an exact child invocation. Other tests
++    // in this integration binary may run concurrently and keep their own root.
++    let token = uuid::Uuid::new_v4().to_string();
++    let root = std::env::temp_dir().join(format!("fabushi-local-exec-retention-{token}"));
++    fs::create_dir(&root).expect("create private retention root");
++    let stdout_path = root.join("child-stdout.txt");
++    let stderr_path = root.join("child-stderr.txt");
++    let mut child = RetentionChild {
++        child: Command::new(std::env::current_exe().expect("integration test executable"))
++            .args(["--exact", test_name, "--nocapture", "--test-threads=1"])
++            .env(RETENTION_CHILD_TEST_ENV, test_name)
++            .env(RETENTION_CHILD_TOKEN_ENV, &token)
++            .env(SAND_DATA_ROOT_ENV, &root)
++            .stdout(fs::File::create(&stdout_path).expect("owned child stdout"))
++            .stderr(fs::File::create(&stderr_path).expect("owned child stderr"))
++            .spawn()
++            .expect("spawn exact retention contract child"),
++        reaped: false,
++    };
++    let pid = child.child.id();
++    let outcome = child.wait();
++    if outcome.is_err() {
++        child.stop();
++    }
++    let stdout = fs::read_to_string(&stdout_path).expect("read child stdout");
++    let stderr = fs::read_to_string(&stderr_path).expect("read child stderr");
++    let status = outcome.unwrap_or_else(|error| panic!(
++        "{error}; reaped={}; retained artifacts: {}\n{stdout}\n{stderr}",
++        child.reaped, root.display(),
++    ));
++    assert!(
++        status.success(),
++        "retention child failed: {status}; retained artifacts: {}\n{stdout}\n{stderr}",
++        root.display(),
++    );
++    let receipt: Value = serde_json::from_slice(
++        &fs::read(root.join("completed.json")).expect("child assertion completion receipt"),
++    ).expect("completion receipt JSON");
++    assert_eq!(receipt["test"], test_name, "an empty test selection cannot pass");
++    assert_eq!(receipt["pid"].as_u64(), Some(u64::from(pid)));
++    assert_eq!(receipt["token"], token);
++    fs::remove_dir_all(&root).expect("remove only the reaped successful child's root");
++}
++
++type RetentionShell = thread::JoinHandle<Result<GatewayLocalExecShellResult, SandLocalExecError>>;
++
++/// Real Host ownership, publication and transport use the existing gate fixture.
++/// Provider replies are injected only after receiving each actual exec frame.
++struct HostRetentionFixture {
++    extension: HostLocalExecExtension,
++    _registration: LocalExecProviderRegistration,
++    receive: mpsc::Receiver<Value>,
++    provider_id: String,
++    requests: Mutex<HashSet<String>>,
++    root: PathBuf,
++}
++
++impl HostRetentionFixture {
++    fn new(root: &Path) -> Self {
++        assert_eq!(get_sand_root_dir(), root);
++        let telemetry = HostTelemetryService::open_with_identity_tags(
++            root.join("retention-telemetry.jsonl"), Default::default(),
++        ).expect("real Host telemetry");
++        let extension = start_local_exec_extension(telemetry.logs.clone());
++        let (send, receive) = mpsc::channel();
++        let registration = extension.register_provider(send);
++        let welcome = receive.recv_timeout(RETENTION_BOUND).expect("Host provider welcome");
++        assert_eq!(welcome["kind"], "welcome");
++        let provider_id = welcome["providerId"].as_str().expect("provider identity").to_string();
++        extension.submit_responses(json!({
++            "providerId": provider_id,
++            "frames": [{
++                "kind": "hello", "localRoot": root, "terminalsFolder": root.join("terminals"),
++                "computerId": "lxr-computer", "label": "Retention contract",
++            }],
++        }));
++        Self {
++            extension,
++            _registration: registration,
++            receive,
++            provider_id,
++            requests: Mutex::new(HashSet::new()),
++            root: root.to_path_buf(),
++        }
++    }
++
++    fn facade(&self) -> GatewayLocalExecManager {
++        // Independent permission gates and a cloned Host extension must still
++        // share the same capacity, operation identities and journal transaction.
++        self.extension.clone()
++            .sandbox(Arc::new(FakeGate::default()))
++            .exec_manager()
++    }
++
++    fn scope(operation_id: &str) -> GatewayLocalToolScope {
++        GatewayLocalToolScope {
++            agent_id: Some(RETENTION_AGENT.into()),
++            tool_call_id: Some(operation_id.into()),
++            action: Some("run-command".into()),
++        }
++    }
++
++    fn start(&self, manager: &GatewayLocalExecManager, operation_id: &str) -> RetentionShell {
++        let manager = manager.clone();
++        let operation_id = operation_id.to_string();
++        let cwd = self.root.to_string_lossy().into_owned();
++        thread::spawn(move || manager.execute_shell_with_timeout(
++            &Self::scope(&operation_id), "retention-contract", &cwd, &operation_id,
++            Some(RETENTION_BOUND),
++        ))
++    }
++
++    fn exec(&self, operation_id: &str) -> Value {
++        let frame = self.receive.recv_timeout(RETENTION_BOUND).expect("actual provider exec");
++        assert_eq!(frame["kind"], "exec");
++        assert_eq!(frame["serverMessage"]["shellStreamArgs"]["toolCallId"], operation_id);
++        assert_eq!(frame["serverMessage"]["shellStreamArgs"]["command"], "retention-contract");
++        let request_id = frame["requestId"].as_str().expect("bridge request identity").to_string();
++        assert_ne!(request_id, self.provider_id);
++        assert!(
++            self.requests.lock().expect("captured request identities").insert(request_id),
++            "each delivered invocation must use a distinct real bridge request identity",
++        );
++        frame
++    }
++
++    fn reply(&self, exec: &Value, frames: Vec<Value>) {
++        let frames = frames.into_iter().map(|mut frame| {
++            frame["requestId"] = exec["requestId"].clone();
++            frame
++        }).collect::<Vec<_>>();
++        self.extension.submit_responses(json!({
++            "providerId": self.provider_id, "frames": frames,
++        }));
++    }
++
++    fn finish(
++        &self,
++        exec: &Value,
++        shell: RetentionShell,
++    ) -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
++        let result = shell.join().expect("bounded shell worker");
++        let cancel = self.receive.recv_timeout(RETENTION_BOUND).expect("request cleanup frame");
++        assert_eq!(cancel["kind"], "cancel");
++        assert_eq!(cancel["requestId"], exec["requestId"]);
++        result
++    }
++
++    fn unknown(
++        &self,
++        manager: &GatewayLocalExecManager,
++        operation_id: &str,
++        stdout: &str,
++        stderr: &str,
++    ) -> GatewayLocalExecOperationRecord {
++        let shell = self.start(manager, operation_id);
++        let exec = self.exec(operation_id);
++        self.reply(&exec, vec![
++            json!({"kind":"client","message":{
++                "id":exec["serverMessage"]["id"],"shellStream":{"stdout":{"data":stdout}},
++            }}),
++            json!({"kind":"client","message":{
++                "id":exec["serverMessage"]["id"],"shellStream":{"stderr":{"data":stderr}},
++            }}),
++            json!({"kind":"control","message":{"streamClose":{"id":exec["serverMessage"]["id"]}}}),
++        ]);
++        let result = self.finish(&exec, shell).expect("no-Exit unknown result");
++        assert!(result.outcome_unknown);
++        assert_eq!(result.request_id, operation_id);
++        assert_eq!(result.exit_code, None);
++        assert!(!result.aborted);
++        assert_eq!(result.stdout, stdout);
++        assert_eq!(result.stderr, stderr);
++        assert!(!result.stdout_truncated);
++        assert!(!result.stderr_truncated);
++        let record = manager.operation_for_agent(RETENTION_AGENT, operation_id)
++            .expect("unknown record remains owned");
++        assert_eq!(record.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
++        assert_eq!(record.operation_id, operation_id);
++        assert_eq!(record.bridge_request_id, exec["requestId"].as_str().unwrap());
++        assert_eq!(record.exit_code, None);
++        assert!(!record.aborted);
++        assert!(record.settled_at_ms.is_some());
++        record
++    }
++
++    fn exit(&self, exec: &Value, aborted: bool) {
++        self.reply(exec, vec![json!({"kind":"client","message":{
++            "id":exec["serverMessage"]["id"],
++            "shellStream":{"exit":{"code":if aborted { 130 } else { 0 },"cwd":self.root,"aborted":aborted}},
++        }})]);
++    }
++
++    fn journal_path(&self) -> PathBuf {
++        self.root.join(SAND_LOCAL_EXEC_OPERATION_JOURNAL_FILE_NAME)
++    }
++
++    fn journal_records(&self) -> Vec<GatewayLocalExecOperationRecord> {
++        let journal: Value = serde_json::from_slice(
++            &fs::read(self.journal_path()).expect("read real operation journal"),
++        ).expect("operation journal JSON");
++        assert_eq!(journal["version"], 3, "protected custody uses the version-3 writer");
++        serde_json::from_value(journal["records"].clone()).expect("same private record shape")
++    }
++
++    fn assert_refused_without_dispatch(
++        &self,
++        manager: &GatewayLocalExecManager,
++        operation_id: &str,
++        cause: &str,
++    ) {
++        let history = manager.operation_history();
++        let bytes = fs::read(self.journal_path()).expect("journal before refused admission");
++        let error = manager.execute_shell_with_timeout(
++            &Self::scope(operation_id), "must-not-replay", &self.root.to_string_lossy(),
++            operation_id, Some(RETENTION_BOUND),
++        ).expect_err("admission must refuse before any provider frame");
++        assert!(!error.is_outcome_unknown(), "refused admission entered no effect");
++        assert!(error.message.contains(cause), "unexpected admission error: {error}");
++        assert_eq!(manager.operation_history(), history, "refusal cannot retire another operation");
++        assert_eq!(fs::read(self.journal_path()).unwrap(), bytes, "refusal cannot rewrite custody");
++        assert!(
++            matches!(
++                self.receive.recv_timeout(Duration::from_millis(25)),
++                Err(mpsc::RecvTimeoutError::Timeout),
++            ),
++            "no exec or cancel frame may follow a refused admission",
++        );
++    }
++}
++
++#[test]
++fn host_local_exec_unknown_survives_churn_and_restart_without_replay() {
++    run_retention_contract(
++        "host_local_exec_unknown_survives_churn_and_restart_without_replay",
++        |root| {
++            let operation_id = "lxr-original-unknown";
++            let retained = {
++                let fixture = HostRetentionFixture::new(root);
++                let first = fixture.facade();
++                let second = fixture.facade();
++                assert!(first.operation_history().is_empty());
++                let output = "界".repeat(MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES / 3 + 1);
++                let retained = fixture.unknown(
++                    &first, operation_id, &output, "original stderr remains queryable",
++                );
++                assert_eq!(retained.stdout, "界".repeat(MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES / 3));
++                assert!(retained.stdout_truncated);
++                assert_eq!(retained.stderr, "original stderr remains queryable");
++                assert!(!retained.stderr_truncated);
++                assert_eq!(second.operation(operation_id), Some(retained.clone()));
++
++                // More than the production capacity of known results used to
++                // evict this older unknown. Exercise all three eligible states.
++                let churn = DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT + 2;
++                for index in 0..churn {
++                    let known_id = format!("lxr-known-{index}");
++                    let manager = if index % 2 == 0 { &first } else { &second };
++                    let shell = fixture.start(manager, &known_id);
++                    let exec = fixture.exec(&known_id);
++                    let status = if index % 3 == 2 {
++                        fixture.reply(&exec, vec![json!({"kind":"control","message":{"throw":{
++                            "error":"controlled pre-entry refusal",
++                            "errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED",
++                        }}})]);
++                        let error = fixture.finish(&exec, shell).expect_err("known refusal control");
++                        assert!(!error.is_outcome_unknown());
++                        assert!(error.message.contains("controlled pre-entry refusal"));
++                        GatewayLocalExecOperationStatus::Failed
++                    } else {
++                        let aborted = index % 3 == 1;
++                        fixture.exit(&exec, aborted);
++                        let result = fixture.finish(&exec, shell).expect("observed Exit control");
++                        assert!(!result.outcome_unknown);
++                        assert_eq!(result.aborted, aborted);
++                        assert_eq!(result.exit_code, Some(if aborted { 130 } else { 0 }));
++                        if aborted {
++                            GatewayLocalExecOperationStatus::Cancelled
++                        } else {
++                            GatewayLocalExecOperationStatus::Completed
++                        }
++                    };
++                    assert_eq!(manager.operation(&known_id).unwrap().status, status);
++                }
++
++                let history = first.operation_history();
++                assert_eq!(history.len(), DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT);
++                assert_eq!(history.first(), Some(&retained));
++                assert_eq!(history[1].operation_id, "lxr-known-3", "evict oldest eligible known history");
++                for index in 0..3 {
++                    assert!(first.operation(&format!("lxr-known-{index}")).is_none());
++                }
++                assert_eq!(second.operation_history(), history, "independent facades share retention");
++                assert_eq!(fixture.journal_records(), history);
++                assert_eq!(fixture.requests.lock().unwrap().len(), churn + 1);
++                assert_eq!(first.operation_for_agent(RETENTION_AGENT, operation_id), Some(retained.clone()));
++                assert!(second.operation_for_agent("other-agent", operation_id).is_none());
++                assert!(second.operation_history_for_agent("other-agent").is_empty());
++                retained
++            };
++
++            // Every original facade and its Host owner is gone. This owner must
++            // recover the identical unresolved identity/output from real disk.
++            let reopened = HostRetentionFixture::new(root);
++            let fresh = reopened.facade();
++            assert_eq!(fresh.operation_for_agent(RETENTION_AGENT, operation_id), Some(retained.clone()));
++            assert_eq!(fresh.operation_history().first(), Some(&retained));
++            reopened.assert_refused_without_dispatch(&fresh, operation_id, "already exists");
++            assert_eq!(fresh.operation(operation_id), Some(retained));
++            assert!(reopened.requests.lock().unwrap().is_empty());
++        },
++    );
++}
++
++#[test]
++fn host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal() {
++    run_retention_contract(
++        "host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal",
++        |root| {
++            let protected = {
++                let fixture = HostRetentionFixture::new(root);
++                let first = fixture.facade();
++                let second = fixture.facade();
++                assert!(first.operation_history().is_empty());
++                let mut protected = Vec::new();
++                for index in 0..(DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT - 1) {
++                    let operation_id = format!("lxr-capacity-unknown-{index}");
++                    let output = format!("observed output {index}");
++                    let record = fixture.unknown(&first, &operation_id, &output, "uncertain stderr");
++                    assert_eq!(record.stdout, output);
++                    assert_eq!(record.stderr, "uncertain stderr");
++                    assert!(!record.stdout_truncated);
++                    assert!(!record.stderr_truncated);
++                    protected.push(record);
++                }
++                assert_eq!(second.operation_history(), protected);
++
++                let active_id = "lxr-final-reserved-place";
++                let shell = fixture.start(&first, active_id);
++                let exec = fixture.exec(active_id);
++                let active = first.operation(active_id).expect("active reservation");
++                assert_eq!(active.status, GatewayLocalExecOperationStatus::Accepted);
++                assert_eq!(second.operation(active_id), Some(active.clone()));
++                let snapshot = fixture.journal_records();
++                assert_eq!(snapshot.len(), DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT);
++                assert_eq!(snapshot.iter().find(|record| record.operation_id == active_id), Some(&active));
++                fixture.assert_refused_without_dispatch(&second, "lxr-active-capacity-refusal", "capacity");
++                assert_eq!(first.operation(active_id), Some(active), "refusal cannot settle the active owner");
++                assert_eq!(first.operation_history(), protected);
++                assert!(second.operation("lxr-active-capacity-refusal").is_none());
++
++                // Only a positively observed Exit makes the reserved place
++                // eligible for reuse. All preceding unknowns remain protected.
++                fixture.exit(&exec, false);
++                let result = fixture.finish(&exec, shell).expect("known terminal releases capacity");
++                assert!(!result.outcome_unknown);
++                assert_eq!(result.exit_code, Some(0));
++                assert_eq!(first.operation(active_id).unwrap().status, GatewayLocalExecOperationStatus::Completed);
++                let replacement = fixture.unknown(
++                    &second, "lxr-reused-known-place", "replacement output", "replacement stderr",
++                );
++                assert_eq!(replacement.stdout, "replacement output");
++                assert_eq!(replacement.stderr, "replacement stderr");
++                protected.push(replacement);
++                assert!(first.operation(active_id).is_none(), "only the known terminal was evicted");
++                assert_eq!(protected.len(), DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT);
++                assert_eq!(first.operation_history(), protected);
++                assert_eq!(second.operation_history(), protected);
++                assert_eq!(fixture.journal_records(), protected);
++                fixture.assert_refused_without_dispatch(&first, "lxr-all-unknown-refusal", "capacity");
++                assert!(second.operation("lxr-all-unknown-refusal").is_none());
++                assert_eq!(fixture.requests.lock().unwrap().len(), DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT + 1);
++                protected
++            };
++
++            let reopened = HostRetentionFixture::new(root);
++            let fresh = reopened.facade();
++            assert_eq!(fresh.operation_history(), protected, "all unknown records survive a fresh owner");
++            reopened.assert_refused_without_dispatch(&fresh, "lxr-reopened-capacity-refusal", "capacity");
++            assert!(fresh.operation("lxr-reopened-capacity-refusal").is_none());
++            assert_eq!(reopened.journal_records(), protected);
++            assert!(reopened.requests.lock().unwrap().is_empty());
++        },
++    );
++}

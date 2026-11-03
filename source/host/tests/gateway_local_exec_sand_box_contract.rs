@@ -1,18 +1,30 @@
+use std::collections::HashSet;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::process::{Child, Command};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
+use mahayana_host_runtime::durable_file_policy::SAND_LOCAL_EXEC_OPERATION_JOURNAL_FILE_NAME;
+use mahayana_host_runtime::extensions::local_exec::extension::{
+    HostLocalExecExtension, start_local_exec_extension,
+};
 use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::{
-    DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GatewayLocalExecFailureReport,
-    GatewayLocalExecOperationStatus, GatewayLocalExecSandBox,
-    GatewayLocalToolGate, GatewayLocalToolScope,
+    DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT, DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES,
+    MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES, GatewayLocalExecFailureReport, GatewayLocalExecManager,
+    GatewayLocalExecOperationRecord, GatewayLocalExecOperationStatus, GatewayLocalExecSandBox,
+    GatewayLocalExecShellResult, GatewayLocalToolGate, GatewayLocalToolScope,
     create_bridge_user_computers, local_exec_file_too_large_message,
 };
 use mahayana_host_runtime::extensions::local_exec::local_exec_failure_classifier::LocalExecFailureClass;
-use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::SandLocalExecBridge;
+use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::{
+    LocalExecProviderRegistration, SandLocalExecBridge,
+};
 use mahayana_host_runtime::extensions::local_exec::local_exec_error::SandLocalExecError;
-use serde_json::json;
+use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
+use mahayana_host_runtime::host_paths::{SAND_DATA_ROOT_ENV, get_sand_root_dir};
+use serde_json::{Value, json};
 
 #[derive(Default)]
 struct FakeGate {
@@ -705,4 +717,470 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
         .expect("settled cancelled operation");
     assert_eq!(settled.status, GatewayLocalExecOperationStatus::Cancelled);
     assert_eq!(manager.operation_history_for_agent(&agent_id).len(), 1);
+}
+
+
+const RETENTION_CHILD_TEST_ENV: &str = "FABUSHI_LXR_CHILD_TEST";
+const RETENTION_CHILD_TOKEN_ENV: &str = "FABUSHI_LXR_CHILD_TOKEN";
+const RETENTION_AGENT: &str = "lxr-agent";
+const RETENTION_BOUND: Duration = Duration::from_secs(5);
+
+struct RetentionChild {
+    child: Child,
+    reaped: bool,
+}
+
+impl RetentionChild {
+    fn wait(&mut self) -> Result<std::process::ExitStatus, String> {
+        let deadline = Instant::now() + Duration::from_secs(120);
+        loop {
+            match self.child.try_wait() {
+                Ok(Some(status)) => {
+                    self.reaped = true;
+                    return Ok(status);
+                }
+                Ok(None) => {}
+                Err(error) => return Err(format!("owned retention child wait failed: {error}")),
+            }
+            if Instant::now() >= deadline {
+                return Err("owned retention child exceeded its deadline".into());
+            }
+            thread::sleep(Duration::from_millis(5));
+        }
+    }
+
+    fn stop(&mut self) {
+        if self.reaped {
+            return;
+        }
+        if matches!(self.child.try_wait(), Ok(Some(_))) {
+            self.reaped = true;
+            return;
+        }
+        // This Child was spawned here and creates only worker threads. Never
+        // search for or signal a process by name or an inferred process group.
+        let kill_result = self.child.kill();
+        let deadline = Instant::now() + RETENTION_BOUND;
+        while Instant::now() < deadline {
+            if matches!(self.child.try_wait(), Ok(Some(_))) {
+                self.reaped = true;
+                return;
+            }
+            thread::sleep(Duration::from_millis(5));
+        }
+        eprintln!(
+            "retention child {} could not be reaped; kill result: {kill_result:?}",
+            self.child.id(),
+        );
+    }
+}
+
+impl Drop for RetentionChild {
+    fn drop(&mut self) {
+        self.stop();
+    }
+}
+
+fn run_retention_contract(test_name: &str, case: impl FnOnce(&Path)) {
+    if std::env::var(RETENTION_CHILD_TEST_ENV).ok().as_deref() == Some(test_name) {
+        let root = PathBuf::from(
+            std::env::var_os(SAND_DATA_ROOT_ENV).expect("private retention child root"),
+        );
+        assert_eq!(get_sand_root_dir(), root);
+        case(&root);
+        fs::write(
+            root.join("completed.json"),
+            json!({
+                "test": test_name,
+                "pid": std::process::id(),
+                "token": std::env::var(RETENTION_CHILD_TOKEN_ENV).expect("child invocation token"),
+            }).to_string(),
+        ).expect("write receipt only after all retention assertions");
+        return;
+    }
+
+    // Set the production root only on an exact child invocation. Other tests
+    // in this integration binary may run concurrently and keep their own root.
+    let token = uuid::Uuid::new_v4().to_string();
+    let root = std::env::temp_dir().join(format!("fabushi-local-exec-retention-{token}"));
+    fs::create_dir(&root).expect("create private retention root");
+    let stdout_path = root.join("child-stdout.txt");
+    let stderr_path = root.join("child-stderr.txt");
+    let mut child = RetentionChild {
+        child: Command::new(std::env::current_exe().expect("integration test executable"))
+            .args(["--exact", test_name, "--nocapture", "--test-threads=1"])
+            .env(RETENTION_CHILD_TEST_ENV, test_name)
+            .env(RETENTION_CHILD_TOKEN_ENV, &token)
+            .env(SAND_DATA_ROOT_ENV, &root)
+            .stdout(fs::File::create(&stdout_path).expect("owned child stdout"))
+            .stderr(fs::File::create(&stderr_path).expect("owned child stderr"))
+            .spawn()
+            .expect("spawn exact retention contract child"),
+        reaped: false,
+    };
+    let pid = child.child.id();
+    let outcome = child.wait();
+    if outcome.is_err() {
+        child.stop();
+    }
+    let stdout = fs::read_to_string(&stdout_path).expect("read child stdout");
+    let stderr = fs::read_to_string(&stderr_path).expect("read child stderr");
+    let status = outcome.unwrap_or_else(|error| panic!(
+        "{error}; reaped={}; retained artifacts: {}\n{stdout}\n{stderr}",
+        child.reaped, root.display(),
+    ));
+    assert!(
+        status.success(),
+        "retention child failed: {status}; retained artifacts: {}\n{stdout}\n{stderr}",
+        root.display(),
+    );
+    let receipt: Value = serde_json::from_slice(
+        &fs::read(root.join("completed.json")).expect("child assertion completion receipt"),
+    ).expect("completion receipt JSON");
+    assert_eq!(receipt["test"], test_name, "an empty test selection cannot pass");
+    assert_eq!(receipt["pid"].as_u64(), Some(u64::from(pid)));
+    assert_eq!(receipt["token"], token);
+    fs::remove_dir_all(&root).expect("remove only the reaped successful child's root");
+}
+
+type RetentionShell = thread::JoinHandle<Result<GatewayLocalExecShellResult, SandLocalExecError>>;
+
+/// Real Host ownership, publication and transport use the existing gate fixture.
+/// Provider replies are injected only after receiving each actual exec frame.
+struct HostRetentionFixture {
+    extension: HostLocalExecExtension,
+    _registration: LocalExecProviderRegistration,
+    receive: mpsc::Receiver<Value>,
+    provider_id: String,
+    requests: Mutex<HashSet<String>>,
+    root: PathBuf,
+}
+
+impl HostRetentionFixture {
+    fn new(root: &Path) -> Self {
+        assert_eq!(get_sand_root_dir(), root);
+        let telemetry = HostTelemetryService::open_with_identity_tags(
+            root.join("retention-telemetry.jsonl"), Default::default(),
+        ).expect("real Host telemetry");
+        let extension = start_local_exec_extension(telemetry.logs.clone());
+        let (send, receive) = mpsc::channel();
+        let registration = extension.register_provider(send);
+        let welcome = receive.recv_timeout(RETENTION_BOUND).expect("Host provider welcome");
+        assert_eq!(welcome["kind"], "welcome");
+        let provider_id = welcome["providerId"].as_str().expect("provider identity").to_string();
+        extension.submit_responses(json!({
+            "providerId": provider_id,
+            "frames": [{
+                "kind": "hello", "localRoot": root, "terminalsFolder": root.join("terminals"),
+                "computerId": "lxr-computer", "label": "Retention contract",
+            }],
+        }));
+        Self {
+            extension,
+            _registration: registration,
+            receive,
+            provider_id,
+            requests: Mutex::new(HashSet::new()),
+            root: root.to_path_buf(),
+        }
+    }
+
+    fn facade(&self) -> GatewayLocalExecManager {
+        // Independent permission gates and a cloned Host extension must still
+        // share the same capacity, operation identities and journal transaction.
+        self.extension.clone()
+            .sandbox(Arc::new(FakeGate::default()))
+            .exec_manager()
+    }
+
+    fn scope(operation_id: &str) -> GatewayLocalToolScope {
+        GatewayLocalToolScope {
+            agent_id: Some(RETENTION_AGENT.into()),
+            tool_call_id: Some(operation_id.into()),
+            action: Some("run-command".into()),
+        }
+    }
+
+    fn start(&self, manager: &GatewayLocalExecManager, operation_id: &str) -> RetentionShell {
+        let manager = manager.clone();
+        let operation_id = operation_id.to_string();
+        let cwd = self.root.to_string_lossy().into_owned();
+        thread::spawn(move || manager.execute_shell_with_timeout(
+            &Self::scope(&operation_id), "retention-contract", &cwd, &operation_id,
+            Some(RETENTION_BOUND),
+        ))
+    }
+
+    fn exec(&self, operation_id: &str) -> Value {
+        let frame = self.receive.recv_timeout(RETENTION_BOUND).expect("actual provider exec");
+        assert_eq!(frame["kind"], "exec");
+        assert_eq!(frame["serverMessage"]["shellStreamArgs"]["toolCallId"], operation_id);
+        assert_eq!(frame["serverMessage"]["shellStreamArgs"]["command"], "retention-contract");
+        let request_id = frame["requestId"].as_str().expect("bridge request identity").to_string();
+        assert_ne!(request_id, self.provider_id);
+        assert!(
+            self.requests.lock().expect("captured request identities").insert(request_id),
+            "each delivered invocation must use a distinct real bridge request identity",
+        );
+        frame
+    }
+
+    fn reply(&self, exec: &Value, frames: Vec<Value>) {
+        let frames = frames.into_iter().map(|mut frame| {
+            frame["requestId"] = exec["requestId"].clone();
+            frame
+        }).collect::<Vec<_>>();
+        self.extension.submit_responses(json!({
+            "providerId": self.provider_id, "frames": frames,
+        }));
+    }
+
+    fn finish(
+        &self,
+        exec: &Value,
+        shell: RetentionShell,
+    ) -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
+        let result = shell.join().expect("bounded shell worker");
+        let cancel = self.receive.recv_timeout(RETENTION_BOUND).expect("request cleanup frame");
+        assert_eq!(cancel["kind"], "cancel");
+        assert_eq!(cancel["requestId"], exec["requestId"]);
+        result
+    }
+
+    fn unknown(
+        &self,
+        manager: &GatewayLocalExecManager,
+        operation_id: &str,
+        stdout: &str,
+        stderr: &str,
+    ) -> GatewayLocalExecOperationRecord {
+        let shell = self.start(manager, operation_id);
+        let exec = self.exec(operation_id);
+        self.reply(&exec, vec![
+            json!({"kind":"client","message":{
+                "id":exec["serverMessage"]["id"],"shellStream":{"stdout":{"data":stdout}},
+            }}),
+            json!({"kind":"client","message":{
+                "id":exec["serverMessage"]["id"],"shellStream":{"stderr":{"data":stderr}},
+            }}),
+            json!({"kind":"control","message":{"streamClose":{"id":exec["serverMessage"]["id"]}}}),
+        ]);
+        let result = self.finish(&exec, shell).expect("no-Exit unknown result");
+        assert!(result.outcome_unknown);
+        assert_eq!(result.request_id, operation_id);
+        assert_eq!(result.exit_code, None);
+        assert!(!result.aborted);
+        assert_eq!(result.stdout, stdout);
+        assert_eq!(result.stderr, stderr);
+        assert!(!result.stdout_truncated);
+        assert!(!result.stderr_truncated);
+        let record = manager.operation_for_agent(RETENTION_AGENT, operation_id)
+            .expect("unknown record remains owned");
+        assert_eq!(record.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
+        assert_eq!(record.operation_id, operation_id);
+        assert_eq!(record.bridge_request_id, exec["requestId"].as_str().unwrap());
+        assert_eq!(record.exit_code, None);
+        assert!(!record.aborted);
+        assert!(record.settled_at_ms.is_some());
+        record
+    }
+
+    fn exit(&self, exec: &Value, aborted: bool) {
+        self.reply(exec, vec![json!({"kind":"client","message":{
+            "id":exec["serverMessage"]["id"],
+            "shellStream":{"exit":{"code":if aborted { 130 } else { 0 },"cwd":self.root,"aborted":aborted}},
+        }})]);
+    }
+
+    fn journal_path(&self) -> PathBuf {
+        self.root.join(SAND_LOCAL_EXEC_OPERATION_JOURNAL_FILE_NAME)
+    }
+
+    fn journal_records(&self) -> Vec<GatewayLocalExecOperationRecord> {
+        let journal: Value = serde_json::from_slice(
+            &fs::read(self.journal_path()).expect("read real operation journal"),
+        ).expect("operation journal JSON");
+        assert_eq!(journal["version"], 3, "protected custody uses the version-3 writer");
+        serde_json::from_value(journal["records"].clone()).expect("same private record shape")
+    }
+
+    fn assert_refused_without_dispatch(
+        &self,
+        manager: &GatewayLocalExecManager,
+        operation_id: &str,
+        cause: &str,
+    ) {
+        let history = manager.operation_history();
+        let bytes = fs::read(self.journal_path()).expect("journal before refused admission");
+        let error = manager.execute_shell_with_timeout(
+            &Self::scope(operation_id), "must-not-replay", &self.root.to_string_lossy(),
+            operation_id, Some(RETENTION_BOUND),
+        ).expect_err("admission must refuse before any provider frame");
+        assert!(!error.is_outcome_unknown(), "refused admission entered no effect");
+        assert!(error.message.contains(cause), "unexpected admission error: {error}");
+        assert_eq!(manager.operation_history(), history, "refusal cannot retire another operation");
+        assert_eq!(fs::read(self.journal_path()).unwrap(), bytes, "refusal cannot rewrite custody");
+        assert!(
+            matches!(
+                self.receive.recv_timeout(Duration::from_millis(25)),
+                Err(mpsc::RecvTimeoutError::Timeout),
+            ),
+            "no exec or cancel frame may follow a refused admission",
+        );
+    }
+}
+
+#[test]
+fn host_local_exec_unknown_survives_churn_and_restart_without_replay() {
+    run_retention_contract(
+        "host_local_exec_unknown_survives_churn_and_restart_without_replay",
+        |root| {
+            let operation_id = "lxr-original-unknown";
+            let retained = {
+                let fixture = HostRetentionFixture::new(root);
+                let first = fixture.facade();
+                let second = fixture.facade();
+                assert!(first.operation_history().is_empty());
+                let output = "界".repeat(MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES / 3 + 1);
+                let retained = fixture.unknown(
+                    &first, operation_id, &output, "original stderr remains queryable",
+                );
+                assert_eq!(retained.stdout, "界".repeat(MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES / 3));
+                assert!(retained.stdout_truncated);
+                assert_eq!(retained.stderr, "original stderr remains queryable");
+                assert!(!retained.stderr_truncated);
+                assert_eq!(second.operation(operation_id), Some(retained.clone()));
+
+                // More than the production capacity of known results used to
+                // evict this older unknown. Exercise all three eligible states.
+                let churn = DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT + 2;
+                for index in 0..churn {
+                    let known_id = format!("lxr-known-{index}");
+                    let manager = if index % 2 == 0 { &first } else { &second };
+                    let shell = fixture.start(manager, &known_id);
+                    let exec = fixture.exec(&known_id);
+                    let status = if index % 3 == 2 {
+                        fixture.reply(&exec, vec![json!({"kind":"control","message":{"throw":{
+                            "error":"controlled pre-entry refusal",
+                            "errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED",
+                        }}})]);
+                        let error = fixture.finish(&exec, shell).expect_err("known refusal control");
+                        assert!(!error.is_outcome_unknown());
+                        assert!(error.message.contains("controlled pre-entry refusal"));
+                        GatewayLocalExecOperationStatus::Failed
+                    } else {
+                        let aborted = index % 3 == 1;
+                        fixture.exit(&exec, aborted);
+                        let result = fixture.finish(&exec, shell).expect("observed Exit control");
+                        assert!(!result.outcome_unknown);
+                        assert_eq!(result.aborted, aborted);
+                        assert_eq!(result.exit_code, Some(if aborted { 130 } else { 0 }));
+                        if aborted {
+                            GatewayLocalExecOperationStatus::Cancelled
+                        } else {
+                            GatewayLocalExecOperationStatus::Completed
+                        }
+                    };
+                    assert_eq!(manager.operation(&known_id).unwrap().status, status);
+                }
+
+                let history = first.operation_history();
+                assert_eq!(history.len(), DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT);
+                assert_eq!(history.first(), Some(&retained));
+                assert_eq!(history[1].operation_id, "lxr-known-3", "evict oldest eligible known history");
+                for index in 0..3 {
+                    assert!(first.operation(&format!("lxr-known-{index}")).is_none());
+                }
+                assert_eq!(second.operation_history(), history, "independent facades share retention");
+                assert_eq!(fixture.journal_records(), history);
+                assert_eq!(fixture.requests.lock().unwrap().len(), churn + 1);
+                assert_eq!(first.operation_for_agent(RETENTION_AGENT, operation_id), Some(retained.clone()));
+                assert!(second.operation_for_agent("other-agent", operation_id).is_none());
+                assert!(second.operation_history_for_agent("other-agent").is_empty());
+                retained
+            };
+
+            // Every original facade and its Host owner is gone. This owner must
+            // recover the identical unresolved identity/output from real disk.
+            let reopened = HostRetentionFixture::new(root);
+            let fresh = reopened.facade();
+            assert_eq!(fresh.operation_for_agent(RETENTION_AGENT, operation_id), Some(retained.clone()));
+            assert_eq!(fresh.operation_history().first(), Some(&retained));
+            reopened.assert_refused_without_dispatch(&fresh, operation_id, "already exists");
+            assert_eq!(fresh.operation(operation_id), Some(retained));
+            assert!(reopened.requests.lock().unwrap().is_empty());
+        },
+    );
+}
+
+#[test]
+fn host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal() {
+    run_retention_contract(
+        "host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal",
+        |root| {
+            let protected = {
+                let fixture = HostRetentionFixture::new(root);
+                let first = fixture.facade();
+                let second = fixture.facade();
+                assert!(first.operation_history().is_empty());
+                let mut protected = Vec::new();
+                for index in 0..(DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT - 1) {
+                    let operation_id = format!("lxr-capacity-unknown-{index}");
+                    let output = format!("observed output {index}");
+                    let record = fixture.unknown(&first, &operation_id, &output, "uncertain stderr");
+                    assert_eq!(record.stdout, output);
+                    assert_eq!(record.stderr, "uncertain stderr");
+                    assert!(!record.stdout_truncated);
+                    assert!(!record.stderr_truncated);
+                    protected.push(record);
+                }
+                assert_eq!(second.operation_history(), protected);
+
+                let active_id = "lxr-final-reserved-place";
+                let shell = fixture.start(&first, active_id);
+                let exec = fixture.exec(active_id);
+                let active = first.operation(active_id).expect("active reservation");
+                assert_eq!(active.status, GatewayLocalExecOperationStatus::Accepted);
+                assert_eq!(second.operation(active_id), Some(active.clone()));
+                let snapshot = fixture.journal_records();
+                assert_eq!(snapshot.len(), DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT);
+                assert_eq!(snapshot.iter().find(|record| record.operation_id == active_id), Some(&active));
+                fixture.assert_refused_without_dispatch(&second, "lxr-active-capacity-refusal", "capacity");
+                assert_eq!(first.operation(active_id), Some(active), "refusal cannot settle the active owner");
+                assert_eq!(first.operation_history(), protected);
+                assert!(second.operation("lxr-active-capacity-refusal").is_none());
+
+                // Only a positively observed Exit makes the reserved place
+                // eligible for reuse. All preceding unknowns remain protected.
+                fixture.exit(&exec, false);
+                let result = fixture.finish(&exec, shell).expect("known terminal releases capacity");
+                assert!(!result.outcome_unknown);
+                assert_eq!(result.exit_code, Some(0));
+                assert_eq!(first.operation(active_id).unwrap().status, GatewayLocalExecOperationStatus::Completed);
+                let replacement = fixture.unknown(
+                    &second, "lxr-reused-known-place", "replacement output", "replacement stderr",
+                );
+                assert_eq!(replacement.stdout, "replacement output");
+                assert_eq!(replacement.stderr, "replacement stderr");
+                protected.push(replacement);
+                assert!(first.operation(active_id).is_none(), "only the known terminal was evicted");
+                assert_eq!(protected.len(), DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT);
+                assert_eq!(first.operation_history(), protected);
+                assert_eq!(second.operation_history(), protected);
+                assert_eq!(fixture.journal_records(), protected);
+                fixture.assert_refused_without_dispatch(&first, "lxr-all-unknown-refusal", "capacity");
+                assert!(second.operation("lxr-all-unknown-refusal").is_none());
+                assert_eq!(fixture.requests.lock().unwrap().len(), DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT + 1);
+                protected
+            };
+
+            let reopened = HostRetentionFixture::new(root);
+            let fresh = reopened.facade();
+            assert_eq!(fresh.operation_history(), protected, "all unknown records survive a fresh owner");
+            reopened.assert_refused_without_dispatch(&fresh, "lxr-reopened-capacity-refusal", "capacity");
+            assert!(fresh.operation("lxr-reopened-capacity-refusal").is_none());
+            assert_eq!(reopened.journal_records(), protected);
+            assert!(reopened.requests.lock().unwrap().is_empty());
+        },
+    );
 }

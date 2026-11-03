@@ -1,0 +1,288 @@
+{
+  "schema": "ocrm-source-integration-review-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXR-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "base": "f4a96bdfbf606e98d298c40059c82e1020cc22e0",
+  "base_tree": "8ae9d6c6044fb32b1a4a35291ff42d98b8cfee8c",
+  "candidate": "860d40e88a959dfe57dec13bb5df86e7f357717f",
+  "tree": "74bb01d3283900670a90c7c25b6a68d87fa70bd6",
+  "source_snapshot": "aa6cf8435457ecff9893adb81ce58495763e51e1",
+  "source_snapshot_tree": "97c2f686ed953c3218db7558028d5914f2040fcd",
+  "authority_blob": "59f624bce2f9552cd9bd1134c1ff6facb6ed6cfc",
+  "scope": "Mechanical integration of the complete LXR source candidate over incoming Skills admission repair and historical evidence carrier. Only the two accounting blobs differ from the first LXR source snapshot; all runtime/test/capture/source-contract bytes are identical.",
+  "incoming_production_commit": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "incoming_paths": [
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/structure.md",
+      "blob": "330f75777e21c0cf81f944ababb22b3f3f1b721f"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+      "blob": "155f4dff0f6fe7c7f9f1f3210296beac7bf81a6a"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "3a966124085449eaa6684e76f9a4cc597e6b0b94"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "0c95f4c725bc8dcd8a2c4e668e6b8824e2c79ab6"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "4d36a626d71b3794b2b64ef8a899aaa739ee65fa"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "blob": "56c8c4fc5596e63121ec09624bc8eaff693f9595"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+      "blob": "93ed0cccd79bcb4c8a7a68ed537017ca6fcc1c8f"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+      "blob": "80807849a210630af4617ac5db6ab41b0b134230"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+      "blob": "8b8a03ccde91dfbf5a20ca141d84a073ab9c19b5"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/skill_publish.rs",
+      "blob": "d93b54fb169ae09dd6db809dd125f665be5f3545"
+    },
+    {
+      "path": "source/host/src/workflows/workflow_store.rs",
+      "blob": "dd3945c0b454eea446397e033632fac93e60a17d"
+    },
+    {
+      "path": "source/host/tests/mcp_service_contract.rs",
+      "blob": "2fa0aba1e0fa7ac3c3e67c8b392fe43197f0a14a"
+    },
+    {
+      "path": "source/host/tests/workflow_store_contract.rs",
+      "blob": "7d927e0dc69d9183d84dcdec7a31469ae062f74e"
+    }
+  ],
+  "unchanged_source_candidate_paths": [
+    {
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "blob": "8f99af02826365fb2d12971114ff5bf62551883e"
+    },
+    {
+      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "blob": "9e9e49980faf730b5277a12fcf20f249430753a5"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+      "blob": "5bfe96af850152b7d4aa753fe27361f9b280d031"
+    }
+  ],
+  "merged_paths": [
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "incoming_blob": "3a966124085449eaa6684e76f9a4cc597e6b0b94",
+      "first_candidate_blob": "e3523e0399fa40b5a575c2af6c27061cbae8f804",
+      "merged_blob": "60857ceae833f9ad5a25115e430afefc022492d9",
+      "replayed_hunks": 4
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "incoming_blob": "0c95f4c725bc8dcd8a2c4e668e6b8824e2c79ab6",
+      "first_candidate_blob": "3032697ec150cea8e36348180ee763c946f7fc5f",
+      "merged_blob": "03e074c3b94ac2a9713867c5ec96121a5cefb2eb",
+      "replayed_hunks": 3
+    }
+  ],
+  "files": [
+    {
+      "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+      "old_blob": null,
+      "new_blob": "5bfe96af850152b7d4aa753fe27361f9b280d031",
+      "old_mode": null,
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "added",
+      "rename": false,
+      "binary": false,
+      "hunks": 1,
+      "adds": 117,
+      "dels": 0,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "old_blob": "3a966124085449eaa6684e76f9a4cc597e6b0b94",
+      "new_blob": "60857ceae833f9ad5a25115e430afefc022492d9",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 10,
+      "dels": 6,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "old_blob": "0c95f4c725bc8dcd8a2c4e668e6b8824e2c79ab6",
+      "new_blob": "03e074c3b94ac2a9713867c5ec96121a5cefb2eb",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 3,
+      "adds": 6,
+      "dels": 3,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "old_blob": "1876291c37991e047704105fc104587e3c6cf364",
+      "new_blob": "9e9e49980faf730b5277a12fcf20f249430753a5",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 18,
+      "dels": 4,
+      "complete": true
+    },
+    {
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "old_blob": "cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9",
+      "new_blob": "8f99af02826365fb2d12971114ff5bf62551883e",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 21,
+      "adds": 675,
+      "dels": 43,
+      "complete": true
+    },
+    {
+      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "old_blob": "9ffcc5994757b16c75963bfc9efdeb37699d1cd9",
+      "new_blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 2,
+      "adds": 484,
+      "dels": 6,
+      "complete": true
+    }
+  ],
+  "full_diff": {
+    "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-integration/full.diff",
+    "blob": "8f7496d6101ffcf79c715fe09816a832c3cbd0f8",
+    "hunks": 35,
+    "complete_reconstructed": true
+  },
+  "semantic_assessment": {
+    "ledgerFlags": {
+      "baseline_identity_accepted": false,
+      "ecosystem_compatibility_accepted": false,
+      "production_wiring_complete": false,
+      "release_accepted": false,
+      "responsibility_mapping_complete": false,
+      "rust_implementation_complete": false,
+      "source_closure_ready": false,
+      "ui_accepted": false
+    },
+    "rtmFlags": {
+      "baseline_identity_accepted": false,
+      "ecosystem_compatibility_accepted": false,
+      "production_wiring_complete": false,
+      "release_accepted": false,
+      "responsibility_mapping_complete": false,
+      "rust_implementation_complete": false,
+      "source_closure_ready": false,
+      "ui_accepted": false
+    },
+    "responsibilities": [
+      {
+        "index": 5,
+        "id": "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001",
+        "status": {
+          "acceptance": "pending",
+          "implementation": "implemented",
+          "mapping": "mapped",
+          "read": "read-complete",
+          "verification": "not-run",
+          "wiring": "wired"
+        }
+      },
+      {
+        "index": 68,
+        "id": "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
+        "status": {
+          "acceptance": "pending",
+          "implementation": "implemented",
+          "mapping": "reviewed",
+          "read": "read-complete",
+          "verification": "not-run",
+          "wiring": "wired"
+        }
+      }
+    ],
+    "rows": [
+      {
+        "index": 15,
+        "id": "OCRM-R16"
+      },
+      {
+        "index": 34,
+        "id": "OCRM-AC11"
+      },
+      {
+        "index": 39,
+        "id": "OCRM-AC16"
+      }
+    ]
+  },
+  "ledger_delta_fields": [
+    "responsibilities.5.evidence_refs.8",
+    "responsibilities.5.invariants.6",
+    "responsibilities.5.migration_rollback",
+    "responsibilities.68.evidence_refs.8",
+    "responsibilities.68.invariants.5",
+    "responsibilities.68.migration_rollback"
+  ],
+  "rtm_delta_fields": [
+    "rows.15.evidence_refs.19",
+    "rows.34.evidence_refs.43",
+    "rows.39.evidence_refs.7"
+  ],
+  "non_scope_blob_changes": [],
+  "capture_dependency": "Incoming capture_portable_contracts.py4d36a626d71b3794b2b64ef8a899aaa739ee65fa adds shared Skills v2 selectors and retains LXO Runner/App selections. LXR native capture includes the actual portable script in its before/after bindings; no historical source hash is substituted.",
+  "execution": "not-run",
+  "limits": [
+    "No source verdict is inferred for concurrent Skills repair from preserving its bytes.",
+    "LXO/LPI/LXR exact-H Actions remain required; no global flag or historical subject promotion."
+  ],
+  "review_phase": {
+    "model": "configured parent model",
+    "effort": "xhigh",
+    "reason": "Concurrent production and causal evidence integration requires independent source and accounting preservation assessment."
+  }
+}

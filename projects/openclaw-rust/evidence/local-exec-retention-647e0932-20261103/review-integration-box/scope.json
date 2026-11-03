@@ -1,0 +1,265 @@
+{
+  "schema": "ocrm-source-integration-review-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXR-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "base": "1b879482eda97746404c34fada3e86933c9ef2fe",
+  "base_tree": "a42b9dbf202a4085fb2512d5d933fc55033b45a4",
+  "candidate": "e6083b806f140aa9426cb65eb7eb9001acd43bc7",
+  "tree": "ab61b2fef4d5b95e441358d716e53a1e2a770336",
+  "source_snapshot": "aa6cf8435457ecff9893adb81ce58495763e51e1",
+  "source_snapshot_tree": "97c2f686ed953c3218db7558028d5914f2040fcd",
+  "previous_integration_candidate": "860d40e88a959dfe57dec13bb5df86e7f357717f",
+  "authority_blob": "59f624bce2f9552cd9bd1134c1ff6facb6ed6cfc",
+  "scope": "Complete unchanged LXR runtime/test/capture/source-contract blobs integrated over later Box foreground capture and Skills R2 review evidence. Only ledger/RTM acquire the same LXR additions; no incoming source or completion state is overwritten.",
+  "incoming_box": {
+    "production": "152467880098cd87581ca279be4d2bc872a7620b",
+    "review_carrier": "c06900dfa561c8c20f7eef244c70877e3bb91566",
+    "server_blob": "c586ea57bec0bd0513a5f21f4532b98c08fbaf7b",
+    "host_contract_blob": "23941b650376d23c07c67064f49c083bf7db8689",
+    "portable_capture_blob": "4084e2cc84a2a2957e2a7829dad185ad1ef55f09"
+  },
+  "incoming_skills": {
+    "production": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+    "review_carrier": "8fb24ba966e4048569b6a768b6cdad56d409ef43",
+    "review_scope_blob": "ab57f8983acc660f7eb4f8ca80778d2e6418ab7b"
+  },
+  "incoming_paths": [
+    {
+      "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/full.diff",
+      "blob": "deed9b45d7e6c168d93692a0da44a5b70dbadfc6"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/scope.json",
+      "blob": "53fe2ada1c70a3b847a6fa7f435f1e8e81b9bd5d"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+      "blob": "56f2b90582c2de7b1fe8e04efd7bd397e9a25f35"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/fix-delta.diff",
+      "blob": "ad0276d15ab16cd6d109240c3942e54491700102"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/full.diff",
+      "blob": "1a60df0cd1d7cd1a19b982f89ddf6adf0c1d3319"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/scope.json",
+      "blob": "ab57f8983acc660f7eb4f8ca80778d2e6418ab7b"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "3c947cf0ce6f87a441104a414023f7e8fbfdf293"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "2f247e19440928eeeaf7cec5fa9fef6c47bd16a8"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "4084e2cc84a2a2957e2a7829dad185ad1ef55f09"
+    },
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "blob": "c586ea57bec0bd0513a5f21f4532b98c08fbaf7b"
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "blob": "23941b650376d23c07c67064f49c083bf7db8689"
+    }
+  ],
+  "djc_decision": {
+    "commit": "1b879482eda97746404c34fada3e86933c9ef2fe",
+    "blob": "678afe076beb96533628cac9424754696595fd28",
+    "scope": "Pre-code decision only; no changed DJC test/source is included."
+  },
+  "identical_source_candidate_blobs": [
+    {
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "blob": "8f99af02826365fb2d12971114ff5bf62551883e"
+    },
+    {
+      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "blob": "9e9e49980faf730b5277a12fcf20f249430753a5"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+      "blob": "5bfe96af850152b7d4aa753fe27361f9b280d031"
+    }
+  ],
+  "merged_paths": [
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "incoming_blob": "3c947cf0ce6f87a441104a414023f7e8fbfdf293",
+      "first_candidate_blob": "e3523e0399fa40b5a575c2af6c27061cbae8f804",
+      "merged_blob": "ba33a8fc8a87ce33e35469bbd5fd97dc1489d02e",
+      "replayed_hunks": 4
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "incoming_blob": "2f247e19440928eeeaf7cec5fa9fef6c47bd16a8",
+      "first_candidate_blob": "3032697ec150cea8e36348180ee763c946f7fc5f",
+      "merged_blob": "1191c9b59021c088543fb87a4e7db9bbe4db4e36",
+      "replayed_hunks": 3
+    }
+  ],
+  "files": [
+    {
+      "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+      "old_blob": null,
+      "new_blob": "5bfe96af850152b7d4aa753fe27361f9b280d031",
+      "old_mode": null,
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "added",
+      "rename": false,
+      "binary": false,
+      "hunks": 1,
+      "adds": 117,
+      "dels": 0,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "old_blob": "3c947cf0ce6f87a441104a414023f7e8fbfdf293",
+      "new_blob": "ba33a8fc8a87ce33e35469bbd5fd97dc1489d02e",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 10,
+      "dels": 6,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "old_blob": "2f247e19440928eeeaf7cec5fa9fef6c47bd16a8",
+      "new_blob": "1191c9b59021c088543fb87a4e7db9bbe4db4e36",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 3,
+      "adds": 6,
+      "dels": 3,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "old_blob": "1876291c37991e047704105fc104587e3c6cf364",
+      "new_blob": "9e9e49980faf730b5277a12fcf20f249430753a5",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 18,
+      "dels": 4,
+      "complete": true
+    },
+    {
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "old_blob": "cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9",
+      "new_blob": "8f99af02826365fb2d12971114ff5bf62551883e",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 21,
+      "adds": 675,
+      "dels": 43,
+      "complete": true
+    },
+    {
+      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "old_blob": "9ffcc5994757b16c75963bfc9efdeb37699d1cd9",
+      "new_blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 2,
+      "adds": 484,
+      "dels": 6,
+      "complete": true
+    }
+  ],
+  "full_diff": {
+    "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-integration-box/full.diff",
+    "blob": "e6004d32ce0d45458f5f6cfe237ab1ba8ddb6f2d",
+    "hunks": 35,
+    "complete_reconstructed": true
+  },
+  "semantic_assessment": {
+    "parity-ledger.json": {
+      "changed_fields": [
+        "responsibilities.5.evidence_refs.8",
+        "responsibilities.5.invariants.6",
+        "responsibilities.5.migration_rollback",
+        "responsibilities.68.evidence_refs.8",
+        "responsibilities.68.invariants.5",
+        "responsibilities.68.migration_rollback"
+      ],
+      "completion_flags": {
+        "baseline_identity_accepted": false,
+        "ecosystem_compatibility_accepted": false,
+        "production_wiring_complete": false,
+        "release_accepted": false,
+        "responsibility_mapping_complete": false,
+        "rust_implementation_complete": false,
+        "source_closure_ready": false,
+        "ui_accepted": false
+      },
+      "flags_unchanged": true
+    },
+    "requirements-traceability-matrix.json": {
+      "changed_fields": [
+        "rows.15.evidence_refs.19",
+        "rows.34.evidence_refs.43",
+        "rows.39.evidence_refs.7"
+      ],
+      "completion_flags": {
+        "baseline_identity_accepted": false,
+        "ecosystem_compatibility_accepted": false,
+        "production_wiring_complete": false,
+        "release_accepted": false,
+        "responsibility_mapping_complete": false,
+        "rust_implementation_complete": false,
+        "source_closure_ready": false,
+        "ui_accepted": false
+      },
+      "flags_unchanged": true
+    }
+  },
+  "non_scope_blob_changes": [],
+  "capture_boundary": "Native LXR source capture is unchanged from first source snapshot; its before/after input binding includes the actual latest portable script and current owner/consumer/dependency bytes. Incoming Box additions preserve existing LocalExec/Skills groups. Reading/preserving incoming producer changes does not approve that producer's source review.",
+  "execution": "not-run",
+  "review_phase": {
+    "model": "configured parent model",
+    "effort": "xhigh",
+    "reason": "Independent preservation and causal capture review of concurrent production integration."
+  },
+  "limits": [
+    "No new source verdict for concurrent Box or Skills fixes.",
+    "No runtime transfer from H14 or previous source snapshots.",
+    "DJC diagnostic implementation is a separate pending batch.",
+    "All eight global flags and every scoped verification/acceptance state remain unchanged."
+  ]
+}

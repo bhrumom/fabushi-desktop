@@ -1665,7 +1665,8 @@
         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
         "source/host/app/src/tests/local_exec_outcome_tests.rs",
         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
       ],
       "existing_owner_candidates": [
         {
@@ -1701,9 +1702,10 @@
         "This row does not claim a remote Gateway caller, reconnect scheduler, remote manifest publication or physical worker executor",
         "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller",
         "Actual local system.run reports EXECUTION_OUTCOME_UNKNOWN with stable operation/result identity when no authoritative Exit or durable settlement is available; known refusal stays EXECUTION_ERROR",
-        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
+        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
+        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
       ],
-      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed",
+      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
       "oracle_ids": [],
       "owner_decision": "Record local producer/state/consumer wiring separately from the full NodeHost transport and worker responsibility",
       "postconditions": [
@@ -9754,7 +9756,8 @@
         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
       ],
       "existing_owner_candidates": [
         {
@@ -9785,9 +9788,10 @@
         "Environment variables are stripped of non-allowlisted credentials",
         "Distinct permission facades from one Host extension share one lazy operation owner and one ordered journal publication transaction",
         "A refused or duplicate invocation cannot mutate another operation; identity and agent checks precede owner-scoped cancellation",
-        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
+        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
+        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
       ],
-      "migration_rollback": "Disable sandboxed tool execution in runner config",
+      "migration_rollback": "Disable sandboxed tool execution in runner config; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
       "oracle_ids": [
         "OCRM-EXEC-O01",
         "OCRM-EXEC-O02"

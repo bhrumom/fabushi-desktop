@@ -1,0 +1,117 @@
+{
+  "schema": "ocrm-scoped-production-contract-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXR-v1",
+  "implementation_base": "a3a58c9bb5804041e2c2dacc1d7c51a2561efd01",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+    "commit": "a3a58c9bb5804041e2c2dacc1d7c51a2561efd01",
+    "blob": "59f624bce2f9552cd9bd1134c1ff6facb6ed6cfc"
+  },
+  "decision": {
+    "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-decision.json",
+    "blob": "79e4fb938f28513b4f41fd462c2965807ab43040",
+    "id": "LXO-RETENTION-01",
+    "decision": "FIX"
+  },
+  "chain": {
+    "entry": "Existing ExternalShell / local node system.run",
+    "owner": "HostLocalExecExtension shared GatewayLocalExecOperationOwner",
+    "producer": "GatewayLocalExecManager registration, terminal movement and journal loader",
+    "consumer": "Existing real bridge, agent-scoped status/history, ProductionExternalMachineExecutor and App node helper",
+    "storage": "Existing host-local-exec-operations.json; private version3 writer accepts version2 migration; no new store or public wire"
+  },
+  "requirements": [
+    "Preserve Accepted/Running/OutcomeUnknown identity and observed output; evict only eligible known terminal history.",
+    "Reserve total history+active capacity under the existing owner transaction before dispatch; refuse a full protected set without another provider frame.",
+    "Retain protected legacy over-capacity images and fail closed for fresh admission.",
+    "Durable migration/recovery/pruning precedes new effects; failed publication latches failure without claiming prior byte image survived a post-replacement error.",
+    "Version3 guards rollback against old version2-only eviction semantics; do not downgrade or recreate lost history."
+  ],
+  "review_depth": {
+    "target": "Scoped implementation/state-machine/storage/consumer review of actual owners plus independently acquired exact-H caller references. Full-source lexical acquisition is not full-file deep reading.",
+    "upstream": "Retain fixed-U identities and original LXO source/dossier facts; no canonical source-review rows are upgraded.",
+    "caller_closure": {
+      "subject": "4fb025cf9639ab9e7e558b3184d4544fbc80a100",
+      "tree": "dd38bb0a35dab1f159c069e7457c08fc0b4483d6",
+      "host_rust_blobs": 1273,
+      "host_rust_utf8_bytes": 20896852,
+      "cargo_manifests": 201,
+      "cargo_manifest_utf8_bytes": 193864,
+      "additional_consumer": "source/mahayana/mahayana-rs/mahayana-model",
+      "additional_rust_blobs": 3,
+      "additional_rust_utf8_bytes": 59840,
+      "method": "Exact immutable blob lexical acquisition with tree byte-size checks; deep reading restricted to positive callers, declarations, actual representation consumers and pertinent fixture bodies. Not a full-file deep-read or compiler-expanded coverage claim.",
+      "journal_format_owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "external_format_consumers": "None identified in the declared exact Rust source/Cargo closure. Existing Runner/App fault fixtures replace the same file with a directory; neither parses the private format. Durable-file policy names/excludes this same journal. Public Runner record projection is unchanged.",
+      "acquisition_gaps": [],
+      "limits": [
+        "Non-Rust/provider protocol already belongs to LXO source review; no protocol change in LXR.",
+        "Out-of-repository consumers and generated compiler output are not covered by lexical source analysis."
+      ]
+    }
+  },
+  "oracles": {
+    "owner_target": "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests",
+    "bridge_target": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+    "required_behaviors": [
+      "unknown survives known-result churn and fresh owner",
+      "duplicate/refused capacity causes no new provider frame",
+      "known terminal releases bounded capacity",
+      "shared facade/concurrent registration preserves reservations",
+      "legacy version2 migration and protected over-capacity retention",
+      "failed migration and unsupported/corrupt version negatives"
+    ],
+    "bridge_required_names": [
+      "host_local_exec_unknown_survives_churn_and_restart_without_replay",
+      "host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal"
+    ],
+    "bridge_execution_boundary": "Two test-only exact child invocations of the existing integration binary isolate SAND_DATA_ROOT; actual Host owner/bridge perform 260 total controlled request/reply exchanges. Child-specific receipt, owned logs, deadline and exact Child reaping are required. This is not real provider/device compatibility.",
+    "owner_required_names": [
+      "unknown_custody_survives_known_terminal_churn_and_reopen",
+      "protected_history_and_active_capacity_refuse_before_dispatch_then_known_exit_releases_room",
+      "concurrent_facades_reserve_capacity_inside_durable_admission",
+      "version_two_migration_preserves_all_recoverable_record_fields",
+      "version_two_migration_is_durable_before_a_new_provider_frame",
+      "startup_prunes_only_oldest_known_terminals_and_persists_the_result",
+      "protected_legacy_overcapacity_remains_queryable_and_blocks_new_effects",
+      "failed_migration_retains_parsed_custody_and_latches_admission_failure",
+      "admission_publication_failure_restores_history_without_dispatch",
+      "unsupported_and_duplicate_journals_block_admission_without_rewriting"
+    ]
+  },
+  "capture": {
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "script": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+    "platforms": [
+      "Linux",
+      "macOS",
+      "Windows"
+    ],
+    "selection": "Extend existing local-exec-owner and local-exec-gateway commands, required names and before/after input bindings; no per-file campaign."
+  },
+  "verification": "not-run",
+  "acceptance": "pending",
+  "global_flags_changed": false,
+  "limits": [
+    "LXO and LPI source delivery is not executable verification.",
+    "Shared PluginSkills v2 source repairs must converge before dependent combined-H acceptance.",
+    "No full physical-device, process-tree, FileTransfer unknown-result, package/upgrade/rollback or global migration acceptance."
+  ],
+  "changed_source": [
+    {
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "base_blob": "cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9",
+      "candidate_blob": "8f99af02826365fb2d12971114ff5bf62551883e"
+    },
+    {
+      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "base_blob": "9ffcc5994757b16c75963bfc9efdeb37699d1cd9",
+      "candidate_blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86"
+    }
+  ]
+}
