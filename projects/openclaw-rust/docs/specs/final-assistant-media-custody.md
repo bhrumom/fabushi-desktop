@@ -138,7 +138,9 @@ error is not proof that COMMIT did not happen. [MSU-v1](media-settlement-unknown
 now requires typed unknown propagation, sealing cleanup authority before the
 owner call, retirement of every unknown DB connection, and retained media on
 unknown/abort/Drop. Only a confirmed precommit refusal authorizes cleanup.
-Confirmed success settles local custody before publication, ACK or success count.
+Confirmed success settles local custody before App publication, ACK or success
+count. Existing DB listeners still run after COMMIT and before the App-local
+terminal transition; same-ID reentry refuses while that entry remains held.
 Same-ID terminal entries remain in the existing App index to prevent recreation;
 multiple distinct images and exact-source reuse remain supported before seal.
 

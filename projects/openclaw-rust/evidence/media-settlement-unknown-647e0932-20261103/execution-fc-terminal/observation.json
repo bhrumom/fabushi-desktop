@@ -1,0 +1,11 @@
+{
+  "observed_at": "2026-11-03 05:32:17 UTC",
+  "scope": "One bounded API observation; no polling. Newly completed Hfc Linux terminal evidence only.",
+  "effort": "xhigh inherited; configured parent model retained",
+  "subject_commit": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "subject_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "run_id": 41582614116,
+  "run_attempt": 1,
+  "job_id": 125740667771
+}

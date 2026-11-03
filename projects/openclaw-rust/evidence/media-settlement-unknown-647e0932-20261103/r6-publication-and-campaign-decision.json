@@ -1,0 +1,316 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "recorded_at": "2026-11-03 05:53:26 UTC",
+  "decision": "ADOPT_ONE_BOUNDED_CHANGED_INPUT_ACTIONS_SET_AFTER_R6_SOURCE_CONVERGENCE",
+  "authority": "The user's current full-fusion instruction authorizes necessary push/PR/dispatch and persistent implementation. AGENTS adaptive-verification cap required an independent assessment; that assessment is complete. This explicit root decision adopts exactly one new-input execution set and grants no automatic subsequent rerun.",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "reviewed_source_tree": "4b94e525d6790d6f355ea6e2113db02cb5e5a46f",
+  "review_manifest_sha256": "893fd4fd0b5ef6787935956ea5156a6a0bcd9ed7dcda0f49ffe1f8d0f9cabe88",
+  "original_review_parent": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "publication_parent": "edcd0ed893f0a09b97cd3663d49287db0d7ec797",
+  "publication_parent_tree": "7b0b5e6a6cee2e339b49d366dba08487a6ac5b62",
+  "incoming_preservation": {
+    "parent": "4e80e161c6cc539f4c120d64f91421619a57def1",
+    "parent_tree": "efb2a28c92d2f24cd4f6bbbd84d86709c0b2f028",
+    "all_parent_non_tree_leaves_preserved": true,
+    "added_evidence_files": 33,
+    "reviewed_source_parent_matches": 22,
+    "changed_source_paths": []
+  },
+  "source_publication_paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e89c27654614752fd4700e6506735bee3bde25a8",
+      "sha256": "5fbdb25aec5808c0cf4121de18b6ccad8ae8e9c9194e69fc2d54c419c1b4eeed",
+      "bytes": 11432
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8235f203e5ac0797f73cb2d9002b64eeb1f69110",
+      "sha256": "0d4f2404690782d5ba490fefe8272e7e079dcaa1465984a74bfd2f2dd667350c",
+      "bytes": 16099
+    },
+    {
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fc1f056a318fee390e0c8e67cdda361d94f0c3a5",
+      "sha256": "92f462fc7c7763b909daabd805bc0f33161f156e842234ae2ea83ea8070fd0e3",
+      "bytes": 58219
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "32a7218874c4b03e27a9872adf339186fab50f28",
+      "sha256": "d88e69128092c78915fbc17463e3bf98f325cb2e10f408cce58558be619204df",
+      "bytes": 170525
+    },
+    {
+      "path": "source/host/tests/background_wakes_production_contract.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1c38f0bfde3e23cb0d227d1c4dfb4bd5b4d0b713",
+      "sha256": "281cfdaa4b4c28a89dab0474340775c43d17b0b3b01808c9842c26f4a1460529",
+      "bytes": 190974
+    }
+  ],
+  "reviewed_source_bindings": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "25e80da72d20d4dbfed8ab6f2a50a3eff62b53af",
+      "sha256": "68f0f49cc3d6d5f1c96156a4a96e862555accdcc6fe015a36ed5195f2e524803",
+      "bytes": 456079
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e89c27654614752fd4700e6506735bee3bde25a8",
+      "sha256": "5fbdb25aec5808c0cf4121de18b6ccad8ae8e9c9194e69fc2d54c419c1b4eeed",
+      "bytes": 11432
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8235f203e5ac0797f73cb2d9002b64eeb1f69110",
+      "sha256": "0d4f2404690782d5ba490fefe8272e7e079dcaa1465984a74bfd2f2dd667350c",
+      "bytes": 16099
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "285f9ca672947d9ad054832557c0b4abf38a0d68",
+      "sha256": "d8b197d9e9bf18b5a7f1515116ef524bcf20d518382618cab1f9446c3ae70c8b",
+      "bytes": 1457556
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1bdbd1ca17b2ff334f365183c51bcd15c7ca0871",
+      "sha256": "e724440db1cb0391d4512c03f8fab5f7e3a08f5762e35c42c82b41f3fa271961",
+      "bytes": 161514
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "sha256": "c71338af5e81e39aae5e76485d1b9d2762d9df211eeb0d2bdfc0be005157d5f2",
+      "bytes": 33117
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f5f3d5624568cb553441b8ca0c0f63aff76ebeae",
+      "sha256": "e101cf22f5dbda30f2a024010bff64e13d0ed4bee7b6dbac89afee4c629d8b2e",
+      "bytes": 105974
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+      "bytes": 1899
+    },
+    {
+      "path": "source/host/app/Cargo.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "sha256": "3c16c8f1be109308612041e0543a935ea4b7748ed33279e061a44ba975e7846b",
+      "bytes": 864
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "sha256": "0ca4e2e81b459ac57c1a9aab9b31b54ef2d421d7131970519aa4f58faaa0011f",
+      "bytes": 998098
+    },
+    {
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "sha256": "616866391e288b5bc61436f2452cf9717c65fd380ea6d0b60d6d49ad43c18c50",
+      "bytes": 126331
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "sha256": "a310f803114b6e3274ea6b8256a09ee2b5f590ef614508f22f8b8947e4126944",
+      "bytes": 36330
+    },
+    {
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fc1f056a318fee390e0c8e67cdda361d94f0c3a5",
+      "sha256": "92f462fc7c7763b909daabd805bc0f33161f156e842234ae2ea83ea8070fd0e3",
+      "bytes": 58219
+    },
+    {
+      "path": "source/host/src/attachment_paths.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "sha256": "ce4ac8bc522d1b20ff97b486942dfbe2aacd1ff0f65ee70a0b657f6960fff381",
+      "bytes": 13178
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "sha256": "1d1632094c80d6ba204f7c3a75db5eab0619628b25898449a1880e5ccca81900",
+      "bytes": 426814
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "sha256": "b5cac3ef9d0d761ce0a0f63dabf6a930524822f0758b47714a8ee6da3900f995",
+      "bytes": 290084
+    },
+    {
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "sha256": "4e18cb4e29e5947ee200ca69c9ff4816ca753e9319573a1695e0736d3a55c3c1",
+      "bytes": 94621
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "sha256": "2da2145a57c5ad7d245bd36c6463a731cc511059d87d9366f68fe385d5758e87",
+      "bytes": 16904
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "32a7218874c4b03e27a9872adf339186fab50f28",
+      "sha256": "d88e69128092c78915fbc17463e3bf98f325cb2e10f408cce58558be619204df",
+      "bytes": 170525
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "sha256": "c76305ea99623c4f5cda5f18d323328cf508583b7f3d8dd3a4f78ca33f12b257",
+      "bytes": 29914
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aa5ef87202903d9ba344a4e1e7fbe6ffedb04772",
+      "sha256": "b1605cfab7367390177f63c25d6264b575ace04813bc4a3999f876ec1e5f994a",
+      "bytes": 1778
+    },
+    {
+      "path": "source/host/tests/background_wakes_production_contract.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1c38f0bfde3e23cb0d227d1c4dfb4bd5b4d0b713",
+      "sha256": "281cfdaa4b4c28a89dab0474340775c43d17b0b3b01808c9842c26f4a1460529",
+      "bytes": 190974
+    }
+  ],
+  "independent_assessment": {
+    "path": "msu-r6-campaign-directness.md",
+    "sha256": "0d11de1d64e7a30a91ba0755b366d47f7884d8d35f78c465b0badf9526b621dd",
+    "root_read": "complete",
+    "finding": "Required instrument remains reachable; R6 repairs two concrete TEST_FLAW causes and changes the merged COMMIT oracle. No environmental exhaustion is established."
+  },
+  "prior_campaigns": [
+    {
+      "label": "H74 normal",
+      "sha": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "source_run": 41580539540,
+      "runtime_run": 41580539491,
+      "attempt": 1,
+      "state": "consumed; original failures retained"
+    },
+    {
+      "label": "Hfc focused recovery",
+      "sha": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+      "source_run": 41582614099,
+      "runtime_run": 41582614116,
+      "attempt": 1,
+      "state": "consumed; source/native positives retained; Linux terminal failure retained"
+    },
+    {
+      "label": "R5 plan",
+      "state": "SUSPENDED_BEFORE_TRIGGER; no execution occurred"
+    },
+    {
+      "label": "Evidence carriers",
+      "commits": [
+        "4e80e161c6cc539f4c120d64f91421619a57def1",
+        "edcd0ed893f0a09b97cd3663d49287db0d7ec797"
+      ],
+      "state": "[skip ci]; source unchanged; no execution campaign"
+    }
+  ],
+  "repaired_causes": [
+    {
+      "classification": "TEST_FLAW",
+      "observed": "Hfc background 47 passed /1 failed; obsolete custody.rollback source literal",
+      "repair_blob": "1c38f0bfde3e23cb0d227d1c4dfb4bd5b4d0b713",
+      "required": "Exact shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths raw positive, all original48 target names and48/0/0, enclosing cargo/capture exit0; actual LF/CRLF and16controls execute within the unchanged named test"
+    },
+    {
+      "classification": "TEST_FLAW",
+      "observed": "Hfc link-preview App test build E0609 accepted.context.duplicate; actual automation_app skipped",
+      "repair_blob": "fc1f056a318fee390e0c8e67cdda361d94f0c3a5",
+      "required": "Actual corrected App test build plus compiled feature observations and named App cases"
+    }
+  ],
+  "verification_selection": {
+    "launch": "One existing scoped writer push on the final immutable commit after tree/core/readback binding. No additional workflow dispatch if this push creates the applicable run set.",
+    "unavoidable_existing_carrier_superset": "Native19groups, portable full contract carrier including background48, Linux actual automation_app and prerequisites/link-preview; inherited Device/Automation controls preserved. Do not describe this as only three isolated commands or revoke still-valid historical positives.",
+    "required": [
+      "New COMMIT oracle32a7218874c4b03e27a9872adf339186fab50f28: transaction-commit-owners27 named results,0failed/ignored and cargo/capture0; exact source/log/input binding.",
+      "Repaired background shipping test explicit raw positive and whole48target48/0/0; empty missing-name arrays alone cannot approve.",
+      "Actual App ordinary shipping Host library feature-off and actual App test dependency ordinary Host library feature-on, bound to compiled artifacts and sources.",
+      "Actual MSU8,LFA6,SGF3,cron5 executions with real fault observations, owner recovery, exact names/outcomes; inherited App controls remain required.",
+      "Link-preview real App3 and same-subject prerequisite receipts; no invented skipped-producer receipt.",
+      "Applicable exact-subject source structural/history checks, preserving fixedU and separate generated-output carrier provenance."
+    ],
+    "retained_evidence": "Hfc source33risk-review/21materialization and native Linux210/Windows205 positives retain Hfc identities,19groups each; they do not execute any R6 changed oracle/App fixture.",
+    "no_automatic_fourth_campaign": true,
+    "stop_rules": [
+      "Do not rerun unchanged failing subject or duplicate push/dispatch for green.",
+      "Any new failure remains non-passing, classified IMPL_BUG/TEST_FLAW/environment from original logs.",
+      "A further execution requires a fresh causal/exhaustion assessment and explicit root decision; this decision does not authorize it.",
+      "Queued/skipped/missing/cancelled is not acceptance or established environmental unrecoverability."
+    ]
+  },
+  "status": "SOURCE_CONVERGED; ACTIONS_NOT_STARTED; FINAL_COMMIT_TO_BE_BOUND_BEFORE_BRANCH_ADVANCE",
+  "full_acceptance": "All G01–G12/AC01–AC24 and eight global completion flags remain unaccepted/false. No scoped verified promotion or final equivalence claim."
+}

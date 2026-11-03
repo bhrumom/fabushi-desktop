@@ -1,0 +1,801 @@
+--- a/projects/openclaw-rust/docs/specs/final-assistant-media-custody.md
++++ b/projects/openclaw-rust/docs/specs/final-assistant-media-custody.md
+@@ -138,7 +138,9 @@
+ now requires typed unknown propagation, sealing cleanup authority before the
+ owner call, retirement of every unknown DB connection, and retained media on
+ unknown/abort/Drop. Only a confirmed precommit refusal authorizes cleanup.
+-Confirmed success settles local custody before publication, ACK or success count.
++Confirmed success settles local custody before App publication, ACK or success
++count. Existing DB listeners still run after COMMIT and before the App-local
++terminal transition; same-ID reentry refuses while that entry remains held.
+ Same-ID terminal entries remain in the existing App index to prevent recreation;
+ multiple distinct images and exact-source reuse remain supported before seal.
+ 
+--- a/projects/openclaw-rust/docs/specs/media-settlement-unknown.md
++++ b/projects/openclaw-rust/docs/specs/media-settlement-unknown.md
+@@ -11,6 +11,10 @@
+ Scoped source reads do not alter historical full-reading facts or global flags.
+ The existing source-authority Actions workflow derives canonical inventory
+ mapping/counts from these exact-U references; no local generator is run.
++New responsibility links must first be declared through the existing
++`inventory/index.json::pending_mapping_additions`, anchored to the unchanged
++canonical inventory digest. Actions consumes only the exact declared missing
++links; historical rows, reading facts and completion flags are not hand-edited.
+ 
+ ## Authority, current problem and scope
+ 
+@@ -148,8 +152,10 @@
+   raw input receipts retain their original bytes and hashes. Require both LF and
+   CRLF actual-owner positives, changed-branch and trait-owned unsafe negatives,
+   and evidence that each destructive substitution really changes its input.
+-  These repair the exact-H74 oracle failures without changing product behavior
+-  or weakening the global prohibition.
++  Each media mutation starts from a proven actual-source baseline and binds
++  exactly one intended replacement site; every media mutation negative exercises
++  both line endings. These repair the exact-H74 oracle failures without changing
++  product behavior or weakening the global prohibition.
+ - **MSU-07 / exact fault port:** the existing SandAgentDb exposes a hidden
+   `MediaSettlementTestFault::{LoseCommitAcknowledgement, RefuseRollback}` and
+   `arm_media_settlement_fault_for_test(session, revision, work, fault)` returning
+--- a/source/host/app/src/tests/media_settlement_unknown_tests.rs
++++ b/source/host/app/src/tests/media_settlement_unknown_tests.rs
+@@ -802,7 +802,7 @@
+         persist_accepted_send_prompt_context(&sessions, &args, accepted)
+             .map_err(|error| ProductionSendError::Internal(format!("{error:?}")))
+     }).unwrap();
+-    assert!(accepted.context.accepted_durably && !accepted.context.duplicate);
++    assert!(accepted.context.accepted_durably && !accepted.duplicate);
+     let control = runtime.capture_routed_turn_start(&fixture.agent_id, STREAM).unwrap();
+     let cancellation = registry.register_routed_provider_with_cancellation(
+         &fixture.agent_id, STREAM, false, control.cancellation(),
+--- a/source/host/tests/background_wakes_production_contract.rs
++++ b/source/host/tests/background_wakes_production_contract.rs
+@@ -2847,6 +2847,228 @@
+     }
+ }
+ 
++// This deliberately bounded wiring check follows ordinary abort into the
++// shipping sink's guarded cleanup helper. It does not establish transaction,
++// filesystem or concurrency behavior; the real App/owner cases do that.
++fn shipping_abort_reports_guarded_media_cleanup(file: &syn::File) -> bool {
++    use syn::parse::Parser;
++
++    fn path(value: &syn::Path, names: &[&str]) -> bool {
++        value.leading_colon.is_none() && value.segments.len() == names.len()
++            && value.segments.iter().zip(names).all(|(segment, name)| {
++                segment.ident == *name && matches!(segment.arguments, syn::PathArguments::None)
++            })
++    }
++    fn named(value: &syn::Expr, names: &[&str]) -> bool {
++        matches!(value, syn::Expr::Path(value)
++            if value.attrs.is_empty() && value.qself.is_none() && path(&value.path, names))
++    }
++    fn binding(value: &syn::Pat, name: &str, mutable: bool) -> bool {
++        matches!(value, syn::Pat::Ident(value)
++            if value.attrs.is_empty() && value.ident == name && value.by_ref.is_none()
++                && value.subpat.is_none() && value.mutability.is_some() == mutable)
++    }
++    fn variant<'a>(value: &'a syn::Pat, name: &str) -> Option<&'a syn::Pat> {
++        match value {
++            syn::Pat::TupleStruct(value) if value.attrs.is_empty() && value.qself.is_none()
++                && path(&value.path, &[name]) && value.elems.len() == 1 => Some(&value.elems[0]),
++            _ => None,
++        }
++    }
++    fn field(value: &syn::Expr, base: &str, member: &str) -> bool {
++        matches!(value, syn::Expr::Field(value)
++            if value.attrs.is_empty() && named(&value.base, &[base])
++                && matches!(&value.member, syn::Member::Named(name) if name == member))
++    }
++    fn borrowed(value: &syn::Expr, name: &str, mutable: bool) -> bool {
++        matches!(value, syn::Expr::Reference(value)
++            if value.attrs.is_empty() && value.mutability.is_some() == mutable
++                && named(&value.expr, &[name]))
++    }
++    fn is_false(value: &syn::Expr) -> bool {
++        matches!(value, syn::Expr::Lit(value) if value.attrs.is_empty()
++            && matches!(&value.lit, syn::Lit::Bool(value) if !value.value))
++    }
++    fn method<'a>(value: &'a syn::Expr, name: &str) -> Option<&'a syn::ExprMethodCall> {
++        match value {
++            syn::Expr::MethodCall(value) if value.attrs.is_empty() && value.method == name
++                && value.turbofish.is_none() => Some(value),
++            _ => None,
++        }
++    }
++    fn field_call(value: &syn::Expr, base: &str, member: &str, name: &str) -> bool {
++        method(value, name).is_some_and(|call| {
++            call.args.is_empty() && field(&call.receiver, base, member)
++        })
++    }
++    fn bare_return(value: &syn::Expr) -> bool {
++        matches!(value, syn::Expr::Return(value) if value.attrs.is_empty() && value.expr.is_none())
++    }
++    fn returns(block: &syn::Block) -> bool {
++        matches!(block.stmts.as_slice(), [syn::Stmt::Expr(value, _)] if bare_return(value))
++    }
++    fn local_value<'a>(local: &'a syn::Local, name: &str) -> Option<&'a syn::Expr> {
++        if !local.attrs.is_empty() || !binding(&local.pat, name, false) { return None; }
++        let init = local.init.as_ref()?;
++        init.diverge.is_none().then_some(init.expr.as_ref())
++    }
++    fn or_return(local: &syn::Local) -> Option<&syn::Expr> {
++        if !local.attrs.is_empty() { return None; }
++        let init = local.init.as_ref()?;
++        let (_, diverge) = init.diverge.as_ref()?;
++        match diverge.as_ref() {
++            syn::Expr::Block(block) if block.attrs.is_empty() && block.label.is_none()
++                && returns(&block.block) => Some(init.expr.as_ref()),
++            _ => None,
++        }
++    }
++    fn log(value: &syn::Macro, message: &str) -> bool {
++        if !path(&value.path, &["eprintln"]) { return false; }
++        let Ok(args) = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated
++            .parse2(value.tokens.clone()) else { return false; };
++        args.len() == 3
++            && matches!(&args[0], syn::Expr::Lit(value) if value.attrs.is_empty()
++                && matches!(&value.lit, syn::Lit::Str(value) if value.value() == message))
++            && field(&args[1], "self", "agent_id") && named(&args[2], &["tool_call_id"])
++    }
++    fn signature(value: &syn::ImplItemFn, args: &[&str]) -> bool {
++        let sig = &value.sig;
++        value.attrs.is_empty() && value.defaultness.is_none()
++            && matches!(value.vis, syn::Visibility::Inherited)
++            && sig.constness.is_none() && sig.asyncness.is_none() && sig.unsafety.is_none()
++            && sig.abi.is_none() && sig.variadic.is_none() && sig.generics.params.is_empty()
++            && sig.generics.where_clause.is_none() && matches!(sig.output, syn::ReturnType::Default)
++            && sig.inputs.len() == args.len() + 1
++            && matches!(&sig.inputs[0], syn::FnArg::Receiver(receiver)
++                if receiver.attrs.is_empty() && receiver.reference.is_some()
++                    && receiver.mutability.is_none() && receiver.colon_token.is_none())
++            && sig.inputs.iter().skip(1).zip(args).all(|(argument, name)| {
++                matches!(argument, syn::FnArg::Typed(argument)
++                    if argument.attrs.is_empty() && binding(&argument.pat, name, false))
++            })
++    }
++    fn abort(value: &syn::ImplItemFn) -> bool {
++        let [syn::Stmt::Local(entry), syn::Stmt::Local(pending),
++            syn::Stmt::Expr(delegate, Some(_))] = value.block.stmts.as_slice() else { return false; };
++        let Some(lookup) = or_return(entry).and_then(|value| method(value, "pending_media_entry")) else { return false; };
++        let Some(syn::Expr::Call(lock)) = or_return(pending) else { return false; };
++        let Some(delegate) = method(delegate, "rollback_pending_media") else { return false; };
++        signature(value, &["tool_call_id"])
++            && variant(&entry.pat, "Ok").and_then(|value| variant(value, "Some"))
++                .is_some_and(|value| binding(value, "entry", false))
++            && named(&lookup.receiver, &["self"]) && lookup.args.len() == 2
++            && named(&lookup.args[0], &["tool_call_id"]) && is_false(&lookup.args[1])
++            && variant(&pending.pat, "Ok").is_some_and(|value| binding(value, "pending", true))
++            && lock.attrs.is_empty() && named(&lock.func, &["Self", "try_pending_media"])
++            && lock.args.len() == 1 && borrowed(&lock.args[0], "entry", false)
++            && named(&delegate.receiver, &["self"]) && delegate.args.len() == 3
++            && borrowed(&delegate.args[0], "pending", true)
++            && named(&delegate.args[1], &["tool_call_id"]) && is_false(&delegate.args[2])
++    }
++    fn phase(value: &syn::Pat, name: &str) -> bool {
++        matches!(value, syn::Pat::Path(value) if value.attrs.is_empty() && value.qself.is_none()
++            && path(&value.path, &["PendingOutgoingMediaPhase", name]))
++    }
++    fn rollback(value: &syn::ImplItemFn) -> bool {
++        let [syn::Stmt::Local(errors), syn::Stmt::Expr(syn::Expr::Assign(aborted), Some(_)),
++            syn::Stmt::Expr(clear, Some(_)), syn::Stmt::Expr(syn::Expr::Assign(owned), Some(_)),
++            syn::Stmt::Local(complete), syn::Stmt::Expr(syn::Expr::ForLoop(report), _),
++            syn::Stmt::Expr(syn::Expr::If(refuse), _), syn::Stmt::Expr(syn::Expr::If(release), _)] =
++            value.block.stmts.as_slice() else { return false; };
++        let Some(syn::Expr::Match(cleanup)) = local_value(errors, "errors") else { return false; };
++        let [collecting, confirmed, retain] = cleanup.arms.as_slice() else { return false; };
++        let syn::Expr::Block(confirmed_body) = confirmed.body.as_ref() else { return false; };
++        let [syn::Stmt::Expr(confirmed_call, None)] = confirmed_body.block.stmts.as_slice() else { return false; };
++        let Some(complete_call) = local_value(complete, "cleanup_complete").and_then(|value| method(value, "is_empty")) else { return false; };
++        let [syn::Stmt::Macro(report_log)] = report.body.stmts.as_slice() else { return false; };
++        let syn::Expr::Unary(failed) = refuse.cond.as_ref() else { return false; };
++        if !signature(value, &["pending", "tool_call_id", "confirmed_precommit_refusal"])
++            || !cleanup.attrs.is_empty() || !field(&cleanup.expr, "pending", "phase")
++            || cleanup.arms.iter().any(|arm| !arm.attrs.is_empty())
++            || !phase(&collecting.pat, "Collecting") || collecting.guard.is_some()
++            || !field_call(&collecting.body, "pending", "custody", "rollback")
++            || !phase(&confirmed.pat, "OwnerSettlementPending")
++            || !confirmed.guard.as_ref().is_some_and(|(_, value)| named(value, &["confirmed_precommit_refusal"]))
++            || !confirmed_body.attrs.is_empty() || confirmed_body.label.is_some()
++            || !field_call(confirmed_call, "pending", "custody", "rollback_after_confirmed_refusal")
++            || !matches!(&retain.pat, syn::Pat::Wild(value) if value.attrs.is_empty())
++            || retain.guard.is_some() || !bare_return(&retain.body)
++            || !aborted.attrs.is_empty() || !field(&aborted.left, "pending", "phase")
++            || !named(&aborted.right, &["PendingOutgoingMediaPhase", "Aborted"])
++            || !field_call(clear, "pending", "resolved_sources", "clear")
++            || !owned.attrs.is_empty() || !field(&owned.left, "pending", "has_owned_media")
++            || !is_false(&owned.right) || !named(&complete_call.receiver, &["errors"])
++            || !complete_call.args.is_empty() || !report.attrs.is_empty() || report.label.is_some()
++            || !binding(&report.pat, "error", false) || !named(&report.expr, &["errors"])
++            || !report_log.attrs.is_empty() || !log(&report_log.mac,
++                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}")
++            || !refuse.attrs.is_empty() || refuse.else_branch.is_some() || !failed.attrs.is_empty()
++            || !matches!(failed.op, syn::UnOp::Not(_)) || !named(&failed.expr, &["cleanup_complete"])
++            || !returns(&refuse.then_branch)
++        { return false; }
++
++        // This exact tail is after the failed-cleanup return, with the same
++        // entry's durable identity and checked release diagnostic.
++        let syn::Expr::Let(identity) = release.cond.as_ref() else { return false; };
++        let syn::Pat::Tuple(names) = identity.pat.as_ref() else { return false; };
++        let syn::Expr::Tuple(values) = identity.expr.as_ref() else { return false; };
++        let [syn::Stmt::Expr(syn::Expr::Match(settle), _)] = release.then_branch.stmts.as_slice() else { return false; };
++        let Some(call) = method(&settle.expr, "release_session_media_admission") else { return false; };
++        let [accepted, failed] = settle.arms.as_slice() else { return false; };
++        let syn::Expr::Assign(clear_work) = accepted.body.as_ref() else { return false; };
++        let syn::Expr::Macro(release_log) = failed.body.as_ref() else { return false; };
++        release.attrs.is_empty() && release.else_branch.is_none() && identity.attrs.is_empty()
++            && names.attrs.is_empty() && names.elems.len() == 2
++            && variant(&names.elems[0], "Some").is_some_and(|value| binding(value, "revision", false))
++            && variant(&names.elems[1], "Some").is_some_and(|value| binding(value, "work_id", false))
++            && values.attrs.is_empty() && values.elems.len() == 2
++            && field_call(&values.elems[0], "pending", "lifecycle_revision", "as_deref")
++            && field_call(&values.elems[1], "pending", "media_work_id", "as_deref")
++            && settle.attrs.is_empty() && field(&call.receiver, "self", "sessions") && call.args.len() == 3
++            && matches!(&call.args[0], syn::Expr::Reference(value) if value.attrs.is_empty()
++                && value.mutability.is_none() && field(&value.expr, "self", "agent_id"))
++            && named(&call.args[1], &["revision"]) && named(&call.args[2], &["work_id"])
++            && settle.arms.iter().all(|arm| arm.attrs.is_empty() && arm.guard.is_none())
++            && variant(&accepted.pat, "Ok").is_some_and(|value| matches!(value, syn::Pat::Wild(value) if value.attrs.is_empty()))
++            && clear_work.attrs.is_empty() && field(&clear_work.left, "pending", "media_work_id")
++            && named(&clear_work.right, &["None"])
++            && variant(&failed.pat, "Err").is_some_and(|value| binding(value, "error", false))
++            && release_log.attrs.is_empty() && log(&release_log.mac,
++                "mahayana-host outgoing_media_admission_release_failed agent={} tool_call={} error={error}")
++    }
++
++    if !channel_failure_unconditional(&file.attrs) { return false; }
++    let mut abort_owner = None;
++    let mut rollback_owner = None;
++    for item in &file.items {
++        let syn::Item::Impl(owner) = item else { continue; };
++        let syn::Type::Path(target) = owner.self_ty.as_ref() else { continue; };
++        if !target.path.segments.last().is_some_and(|part| part.ident == "ProductionSendMessageSink") { continue; }
++        let trait_sink = owner.trait_.as_ref().is_some_and(|(_, value, _)| {
++            value.segments.last().is_some_and(|part| part.ident == "SendMessageSink")
++        });
++        if owner.trait_.is_some() && !trait_sink { continue; }
++        let method_name = if trait_sink { "abort_attachment_custody" } else { "rollback_pending_media" };
++        let methods: Vec<_> = owner.items.iter().filter_map(|item| match item {
++            syn::ImplItem::Fn(value) if value.sig.ident == method_name => Some(value),
++            _ => None,
++        }).collect();
++        if !trait_sink && methods.is_empty() { continue; }
++        if !owner.attrs.is_empty() || target.qself.is_some()
++            || !path(&target.path, &["ProductionSendMessageSink"])
++            || owner.defaultness.is_some() || owner.unsafety.is_some()
++            || !owner.generics.params.is_empty() || owner.generics.where_clause.is_some()
++            || methods.len() != 1
++            || owner.trait_.as_ref().is_some_and(|(negative, value, _)| {
++                negative.is_some() || !path(value, &["SendMessageSink"])
++            })
++        { return false; }
++        let slot = if trait_sink { &mut abort_owner } else { &mut rollback_owner };
++        if slot.replace(methods[0]).is_some() { return false; }
++    }
++    abort_owner.is_some_and(abort) && rollback_owner.is_some_and(rollback)
++}
++
+ #[test]
+ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths() {
+     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+@@ -2927,12 +3149,134 @@
+     assert!(persisted_entry < dispatch, "delivery dispatch must follow transcript persistence");
+     assert!(SHIPPING_HOST.contains("deliveryOperationId"));
+     assert!(SHIPPING_HOST.contains("delivery_operation_id: Option<String>"));
+-    assert!(SHIPPING_HOST.contains(
+-        "for cleanup_error in custody.rollback()"
+-    ));
+-    assert!(SHIPPING_HOST.contains(
+-        "outgoing_media_cleanup_failed agent={} tool={} error={cleanup_error}"
+-    ));
++    // Preserve the cleanup/error-publication responsibility through its
++    // actual shipping delegation, with controls inside this existing test.
++    let normalized_host = SHIPPING_HOST.replace("\r\n", "\n");
++    for (line_ending, source) in [
++        ("LF", normalized_host.clone()),
++        ("CRLF", normalized_host.replace('\n', "\r\n")),
++    ] {
++        let parsed = syn::parse_file(&source).expect("actual shipping source must parse");
++        assert!(shipping_abort_reports_guarded_media_cleanup(&parsed),
++            "actual shipping abort must preserve guarded cleanup and its diagnostics ({line_ending})");
++    }
++    for (control, before, after) in [
++        (
++            "skip delegation behind a dead branch",
++            "        self.rollback_pending_media(&mut pending, tool_call_id, false);\n    }\n\n    fn read_media_dimensions(",
++            "        if false { self.rollback_pending_media(&mut pending, tool_call_id, false); }\n    }\n\n    fn read_media_dimensions(",
++        ),
++        (
++            "ordinary abort cannot claim confirmed precommit refusal",
++            "        self.rollback_pending_media(&mut pending, tool_call_id, false);\n    }\n\n    fn read_media_dimensions(",
++            "        self.rollback_pending_media(&mut pending, tool_call_id, true);\n    }\n\n    fn read_media_dimensions(",
++        ),
++        (
++            "ordinary abort cannot create an entry",
++            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };",
++            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, true) else { return };",
++        ),
++        (
++            "ordinary abort must use the same entry's nonblocking lock",
++            "        let Ok(mut pending) = Self::try_pending_media(&entry) else { return };",
++            "        let Ok(mut pending) = entry.lock() else { return };",
++        ),
++        (
++            "pending rollback requires the same confirmed refusal",
++            "            PendingOutgoingMediaPhase::OwnerSettlementPending if confirmed_precommit_refusal => {",
++            "            PendingOutgoingMediaPhase::OwnerSettlementPending => {",
++        ),
++        (
++            "unknown and terminal phases must return without cleanup",
++            "            _ => return,\n        };\n        pending.phase = PendingOutgoingMediaPhase::Aborted;",
++            "            _ => pending.custody.rollback_after_confirmed_refusal(),\n        };\n        pending.phase = PendingOutgoingMediaPhase::Aborted;",
++        ),
++        (
++            "returned cleanup errors cannot be discarded",
++            r#"        for error in errors {
++            eprintln!(
++                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}",
++                self.agent_id, tool_call_id
++            );
++        }"#,
++            "        for error in errors { let _ = error; }",
++        ),
++        (
++            "cleanup diagnostics must publish the returned error",
++            "\"mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}\"",
++            "\"mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error=unavailable\"",
++        ),
++        (
++            "fence release cannot run before cleanup",
++            "        let errors = match pending.phase {",
++            r#"        let _ = self.sessions.release_session_media_admission(
++            &self.agent_id,
++            pending.lifecycle_revision.as_deref().unwrap_or_default(),
++            pending.media_work_id.as_deref().unwrap_or_default(),
++        );
++        let errors = match pending.phase {"#,
++        ),
++        (
++            "cleanup failure cannot fall through to fence release",
++            "        if !cleanup_complete {\n            return;\n        }",
++            "        if !cleanup_complete { let _ = cleanup_complete; }",
++        ),
++        (
++            "abort cannot remove and recreate the indexed identity",
++            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };",
++            r#"        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };
++        self.pending_media.lock().unwrap().remove(tool_call_id);
++        let _ = self.pending_media_entry(tool_call_id, true);"#,
++        ),
++        (
++            "the shipping file cannot be conditional",
++            "//! Grok-aligned Mahayana Host process entrypoint.",
++            "#![cfg(test)]\n//! Grok-aligned Mahayana Host process entrypoint.",
++        ),
++        (
++            "the shipping trait implementation cannot be conditional",
++            "impl SendMessageSink for ProductionSendMessageSink {",
++            "#[cfg(test)]\nimpl SendMessageSink for ProductionSendMessageSink {",
++        ),
++        (
++            "the cleanup helper cannot be conditional",
++            "    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
++            "    #[cfg(test)]\n    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
++        ),
++        (
++            "the shipping trait owner must be unique",
++            "impl SendMessageSink for ProductionSendMessageSink {",
++            r#"impl SendMessageSink for ProductionSendMessageSink {
++    fn abort_attachment_custody(&self, tool_call_id: &str) {
++        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };
++        let Ok(mut pending) = Self::try_pending_media(&entry) else { return };
++        self.rollback_pending_media(&mut pending, tool_call_id, false);
++    }
++}
++
++impl SendMessageSink for ProductionSendMessageSink {"#,
++        ),
++        (
++            "the inherent cleanup helper must be unique",
++            "    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
++            "    fn rollback_pending_media(&self) {}\n\n    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
++        ),
++    ] {
++        assert_ne!(before, after, "control must change its intended site: {control}");
++        assert_eq!(normalized_host.matches(before).count(), 1,
++            "control must bind one actual shipping site: {control}");
++        let mutated = normalized_host.replacen(before, after, 1);
++        assert_ne!(mutated, normalized_host, "control cannot be a no-op: {control}");
++        for (line_ending, source) in [
++            ("LF", mutated.clone()), ("CRLF", mutated.replace('\n', "\r\n")),
++        ] {
++            let parsed = syn::parse_file(&source).unwrap_or_else(|error| {
++                panic!("control must remain Rust syntax: {control} ({line_ending}): {error}");
++            });
++            assert!(!shipping_abort_reports_guarded_media_cleanup(&parsed),
++                "unsafe or ambiguous wiring must fail: {control} ({line_ending})");
++        }
++    }
+ 
+     assert!(SHIPPING_HOST.contains("queue_channel_delivery_failure("));
+     assert!(SHIPPING_HOST.contains("\"markedAtMs\": marked_at_ms"));
+--- a/source/host/tests/openclaw_sessions_and_config_contract.rs
++++ b/source/host/tests/openclaw_sessions_and_config_contract.rs
+@@ -1891,6 +1891,35 @@
+     source_without_owned_channel_commit_adapter(&owners)
+ }
+ 
++fn media_commit_oracle_fixture() -> String {
++    let source = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
++    assert!(source_without_owned_transaction_commit_adapters(&source).is_some(),
++        "media counterfactuals require a proven actual-source baseline");
++    source
++}
++
++fn replace_media_commit_site(source: &str, before: &str, after: &str) -> String {
++    assert_eq!(source.matches(before).count(), 1,
++        "media mutation must bind exactly one intended source site");
++    assert_ne!(before, after, "media mutation must change its intended source site");
++    source.replacen(before, after, 1)
++}
++
++fn assert_media_commit_rejected_for_both_line_endings(
++    original: &str,
++    changed: &str,
++    reason: &str,
++) {
++    assert_ne!(original, changed, "media counterfactual must change actual source: {reason}");
++    for (line_ending, source) in [
++        ("LF", changed.to_string()),
++        ("CRLF", changed.replace('\n', "\r\n")),
++    ] {
++        assert!(source_without_owned_transaction_commit_adapters(&source).is_none(),
++            "{reason} ({line_ending})");
++    }
++}
++
+ #[test]
+ fn media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards() {
+     let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+@@ -1907,12 +1936,21 @@
+         .expect("the actual media command and consumer must establish the bounded exception");
+     assert!(media_scope.contains(CHANNEL_RAW_COMMIT_METHOD));
+     assert!(media_scope.contains(MEDIA_ROLLBACK_METHOD));
++    assert!(media_scope.contains(actual_drop), "the media-only proof preserves the complete Drop implementation");
+     assert_eq!(media_scope.matches("db.execute_batch(\"COMMIT\")?;").count(), 1);
+     let remaining = source_without_owned_transaction_commit_adapters(source)
+         .expect("independent media proof composes with the original channel proof");
+     assert!(!remaining.contains("db.execute_batch(\"COMMIT\")?;"));
+     assert!(remaining.contains(actual_drop), "the complete Drop implementation stays in the global scope");
+     let crlf_source = source.replace('\n', "\r\n");
++    check_session_admission_guard_owners(&crlf_source)
++        .expect("physical CRLF retains the same owner-local admission requirements");
++    assert_eq!(
++        source_without_owned_media_commit_adapter(&crlf_source)
++            .expect("CRLF must retain the same method-sized media proof"),
++        media_scope,
++        "the media-only residual source is identical after logical newline normalization",
++    );
+     assert_eq!(
+         source_without_owned_transaction_commit_adapters(&crlf_source)
+             .expect("the same actual owner and trait baseline must be accepted with CRLF"),
+@@ -1927,6 +1965,7 @@
+     assert_ne!(coexistence, source);
+     let coexistence_remaining = source_without_owned_transaction_commit_adapters(&coexistence)
+         .expect("independent traits can coexist with both exact inherent owners");
++    assert!(coexistence_remaining.contains(harmless_traits), "trait implementations receive no source exemption");
+     assert_eq!(coexistence_remaining, format!("{remaining}\n{harmless_traits}"),
+         "both complete harmless trait implementations must stay in the global scope");
+     assert_eq!(
+@@ -1943,95 +1982,101 @@
+         let ordinary = format!(
+             "{source}\nfn unrelated_raii(transaction: rusqlite::Transaction<'_>) -> bool {{ {body} }}"
+         );
+-        assert!(source_without_owned_transaction_commit_adapters(&ordinary).is_some(),
+-            "the new proof must preserve existing zero-argument RAII positives: {body}");
++        let crlf = ordinary.replace('\n', "\r\n");
++        for image in [&ordinary, &crlf] {
++            assert!(source_without_owned_transaction_commit_adapters(image).is_some(),
++                "both line endings preserve existing zero-argument RAII positives: {body}");
++        }
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_missing_duplicate_or_conditional_helper() {
+-    let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+-    let source = image.as_str();
++    let source = media_commit_oracle_fixture();
+     for changed in [
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD, "", 1),
+-        source.replacen("impl MediaSettlementCommands {", "impl OtherCommands {", 1),
+-        source.replacen("impl MediaSettlementCommands {", "impl other::MediaSettlementCommands {", 1),
+-        source.replacen("impl MediaSettlementCommands {", "impl MediaOracleTrait for MediaSettlementCommands {", 1),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD, ""),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl OtherCommands {"),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl other::MediaSettlementCommands {"),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl MediaOracleTrait for MediaSettlementCommands {"),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {",
++            "impl MediaCommandsTrait for MediaSettlementCommands {"),
+         format!("{source}\nimpl MediaSettlementCommands {{}}"),
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-            &format!("{MEDIA_RAW_COMMIT_METHOD}\n{MEDIA_RAW_COMMIT_METHOD}"), 1),
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-            &format!("/* {MEDIA_RAW_COMMIT_METHOD} */ fn commit() {{ other_command(); }}"), 1),
+-        source.replacen("impl MediaSettlementCommands {",
+-            "#[cfg(any())] impl MediaSettlementCommands {", 1),
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-            &format!("#[cfg(test)] {MEDIA_RAW_COMMIT_METHOD}"), 1),
+-        source.replacen(MEDIA_ROLLBACK_METHOD,
+-            &format!("#[cfg(test)] {MEDIA_ROLLBACK_METHOD}"), 1),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++            &format!("{MEDIA_RAW_COMMIT_METHOD}\n{MEDIA_RAW_COMMIT_METHOD}")),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++            &format!("/* {MEDIA_RAW_COMMIT_METHOD} */ fn commit() {{ other_command(); }}")),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {",
++            "#[cfg(any())] impl MediaSettlementCommands {"),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++            &format!("#[cfg(test)] {MEDIA_RAW_COMMIT_METHOD}")),
++        replace_media_commit_site(&source, MEDIA_ROLLBACK_METHOD,
++            &format!("#[cfg(test)] {MEDIA_ROLLBACK_METHOD}")),
+         format!("#![cfg(any())]\n{source}"),
+     ] {
+         assert_ne!(changed, source, "helper counterfactual must change its source");
+         assert!(syn::parse_file(&changed).is_ok(), "helper counterfactual must retain Rust syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "a missing, foreign, ambiguous, conditional, or textual helper cannot receive the exception");
+     }
+     for changed in [
+-        source.replacen("impl MediaSettlementCommands {", "impl MediaSettlementCommands", 1),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl MediaSettlementCommands"),
+         format!("{source}\nfn malformed() {{"),
+     ] {
+         assert_ne!(changed, source, "malformed counterfactual must change its source");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none());
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
++            "malformed helper source cannot receive the exception");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_missing_duplicate_or_conditional_owner() {
+-    let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+-    let source = image.as_str();
++    let source = media_commit_oracle_fixture();
++    assert_eq!(source.matches(MEDIA_COMMIT_OWNER_SIGNATURE).count(), 1);
+     let start = source.find(MEDIA_COMMIT_OWNER_SIGNATURE).expect("actual media signature");
+-    let method = source[start..].split("\n    /// Atomically commits one guarded compaction entry")
+-        .next().expect("adjacent owner boundary");
++    let boundary = "\n    /// Atomically commits one guarded compaction entry";
++    assert_eq!(source[start..].matches(boundary).count(), 1);
++    let (method, _) = source[start..].split_once(boundary).expect("adjacent owner boundary");
+     assert!(method.ends_with("    }\n"), "the duplication fixture is one complete method");
+     for changed in [
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("append_transcript_entries_and_release_media", "other_media_owner"), 1),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("append_transcript_entries_and_release_media", "other_media_owner")),
+         format!("{source}\nimpl SandAgentDb {{ {method} }}"),
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &format!("{method}\n{MEDIA_COMMIT_OWNER_SIGNATURE}"), 1),
+-        source.replacen("impl SandAgentDb {", "#[cfg(any())] impl SandAgentDb {", 1),
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &format!("#[cfg(test)] {MEDIA_COMMIT_OWNER_SIGNATURE}"), 1),
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &MEDIA_COMMIT_OWNER_SIGNATURE.replacen("pub fn", "pub(crate) fn", 1), 1),
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("-> Result<usize, AgentDbProjectionError>", "-> Result<usize, String>"), 1),
+-        source.replacen("impl SandAgentDb {", "impl other::SandAgentDb {", 1),
+-        source.replacen("impl SandAgentDb {", "impl MediaOracleTrait for SandAgentDb {", 1),
+-        source.replacen(MEDIA_COMMIT_OWNER_TAIL,
+-            &format!("/* {MEDIA_COMMIT_OWNER_TAIL} */ Ok(0)"), 1),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &format!("{method}\n{MEDIA_COMMIT_OWNER_SIGNATURE}")),
++        replace_media_commit_site(&source, "impl SandAgentDb {", "#[cfg(any())] impl SandAgentDb {"),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &format!("#[cfg(test)] {MEDIA_COMMIT_OWNER_SIGNATURE}")),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("pub fn", "pub(crate) fn")),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("-> Result<usize, AgentDbProjectionError>", "-> Result<usize, String>")),
++        replace_media_commit_site(&source, "impl SandAgentDb {", "impl other::SandAgentDb {"),
++        replace_media_commit_site(&source, "impl SandAgentDb {", "impl MediaOracleTrait for SandAgentDb {"),
++        replace_media_commit_site(&source, "impl SandAgentDb {", "impl MediaOwnerTrait for SandAgentDb {"),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_TAIL,
++            &format!("/* {MEDIA_COMMIT_OWNER_TAIL} */ Ok(0)")),
+     ] {
+         assert_ne!(changed, source, "owner counterfactual must change its source");
+         assert!(syn::parse_file(&changed).is_ok(), "owner counterfactual must retain Rust syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "only one unconditional actual media owner with the typed signature earns the exception");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_changed_commit_or_rollback_commands() {
+-    let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+-    let source = image.as_str();
++    let source = media_commit_oracle_fixture();
+     for changed_method in [
+         MEDIA_RAW_COMMIT_METHOD.replace("db.execute_batch(\"COMMIT\")?;", "Ok::<(), rusqlite::Error>(())?;"),
+         MEDIA_RAW_COMMIT_METHOD.replace("db.execute_batch(\"COMMIT\")?;", "let _ = db.execute_batch(\"COMMIT\");"),
+         MEDIA_RAW_COMMIT_METHOD.replace("        Ok(())", "        another_transaction(); Ok(())"),
+         MEDIA_RAW_COMMIT_METHOD.replace("return Err(rusqlite::Error::InvalidQuery);", "return Ok(());"),
+     ] {
+-        let changed = source.replacen(MEDIA_RAW_COMMIT_METHOD, &changed_method, 1);
++        let changed = replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD, &changed_method);
+         assert_ne!(changed_method, MEDIA_RAW_COMMIT_METHOD);
+         assert_ne!(changed, source, "COMMIT mutation must touch the actual command");
+         assert!(syn::parse_file(&changed).is_ok());
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "a changed real command or acknowledgement boundary must revoke the exception");
+     }
+     for changed_method in [
+@@ -2039,19 +2084,18 @@
+         MEDIA_ROLLBACK_METHOD.replace("drop(refusal);", "std::mem::forget(refusal);"),
+         MEDIA_ROLLBACK_METHOD.replace("        result\n", "        Ok(())\n"),
+     ] {
+-        let changed = source.replacen(MEDIA_ROLLBACK_METHOD, &changed_method, 1);
++        let changed = replace_media_commit_site(&source, MEDIA_ROLLBACK_METHOD, &changed_method);
+         assert_ne!(changed_method, MEDIA_ROLLBACK_METHOD);
+         assert_ne!(changed, source, "ROLLBACK mutation must touch the actual command");
+         assert!(syn::parse_file(&changed).is_ok());
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "real rollback and authorizer cleanup must remain in the exact command method");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_extra_aliased_or_macro_callers() {
+-    let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+-    let source = image.as_str();
++    let source = media_commit_oracle_fixture();
+     for call in [
+         "commands.commit(db)?;",
+         "let alias = commands; alias.commit(db)?;",
+@@ -2072,14 +2116,14 @@
+         let changed = format!("{source}\nfn extra_media_owner() {{ {call} }}");
+         assert_ne!(changed, source);
+         assert!(syn::parse_file(&changed).is_ok(), "extra caller fixture syntax: {call}");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
+-            "normalization must leave every extra or unbounded call visible: {call}");
+-    }
+-    let nested = source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-        &format!("{MEDIA_RAW_COMMIT_METHOD}\nfn extra(&self, db: &rusqlite::Connection) {{ self.commit(db)?; }}"), 1);
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
++            &format!("normalization must leave every extra or unbounded call visible: {call}"));
++    }
++    let nested = replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++        &format!("{MEDIA_RAW_COMMIT_METHOD}\nfn extra(&self, db: &rusqlite::Connection) {{ self.commit(db)?; }}"));
+     assert_ne!(nested, source, "nested caller must be inserted into the actual helper");
+     assert!(syn::parse_file(&nested).is_ok());
+-    assert!(source_without_owned_transaction_commit_adapters(&nested).is_none(),
++    assert_media_commit_rejected_for_both_line_endings(&source, &nested,
+         "a helper sibling is not part of the method-sized exception");
+     for owner in ["SandAgentDb", "MediaSettlementCommands"] {
+         for call in [
+@@ -2092,19 +2136,15 @@
+             );
+             assert_ne!(changed, source);
+             assert!(syn::parse_file(&changed).is_ok(), "trait caller counterfactual syntax: {owner}");
+-            let crlf = changed.replace('\n', "\r\n");
+-            for image in [&changed, &crlf] {
+-                assert!(source_without_owned_transaction_commit_adapters(image).is_none(),
+-                    "LF and CRLF must retain an excluded trait's direct or aliased helper call: {owner}");
+-            }
++            assert_media_commit_rejected_for_both_line_endings(&source, &changed,
++                &format!("LF and CRLF must retain an excluded trait's direct or aliased helper call: {owner}"));
+         }
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_discarded_or_changed_settlement_handling() {
+-    let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+-    let source = image.as_str();
++    let source = media_commit_oracle_fixture();
+     for changed_tail in [
+         format!("{MEDIA_COMMIT_OWNER_TAIL}; Ok(0)"),
+         format!("#[cfg(test)] {MEDIA_COMMIT_OWNER_TAIL}"),
+@@ -2117,14 +2157,12 @@
+         MEDIA_COMMIT_OWNER_TAIL.replace("if !db.is_autocommit()", "if false"),
+         MEDIA_COMMIT_OWNER_TAIL.replace("return Err(AgentDbProjectionError::TranscriptCommitUnknown(error.to_string()));", "return Ok(inserted.len());"),
+     ] {
+-        let changed = source.replacen(MEDIA_COMMIT_OWNER_TAIL, &changed_tail, 1);
++        let changed = replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_TAIL, &changed_tail);
+         assert_ne!(changed_tail, MEDIA_COMMIT_OWNER_TAIL);
+         assert_ne!(changed, source, "settlement-tail mutation must touch the actual owner");
+         assert!(syn::parse_file(&changed).is_ok(), "settlement-tail fixture syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "the returned outcome must retain commit error, rollback, autocommit, retirement and publication handling");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed.replace('\n', "\r\n")).is_none(),
+-            "CRLF must preserve every settlement-tail mutation rejection");
+     }
+     let write_start = "let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {";
+     let writes = format!("{MEDIA_COMMIT_OWNER_PREFIX}\n        {write_start}");
+@@ -2132,20 +2170,19 @@
+         "let result = (async || -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {",
+         "let result = (move || -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {",
+     ] {
+-        let changed_writes = writes.replacen(write_start, replacement, 1);
+-        let changed = source.replacen(writes.as_str(), &changed_writes, 1);
++        let changed_writes = replace_media_commit_site(&writes, write_start, replacement);
++        let changed = replace_media_commit_site(&source, writes.as_str(), &changed_writes);
+         assert_ne!(changed_writes, writes);
+         assert_ne!(changed, source, "closure mutation must touch the actual owner");
+         assert!(syn::parse_file(&changed).is_ok(), "deferred-body fixture syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "an altered write-closure entry cannot borrow the proven tail");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_changed_unknown_entry_handling() {
+-    let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+-    let source = image.as_str();
++    let source = media_commit_oracle_fixture();
+     for changed_prefix in [
+         MEDIA_COMMIT_OWNER_PREFIX.replace("TranscriptCommitUnknown", "WorkAdmissionInvalid"),
+         MEDIA_COMMIT_OWNER_PREFIX.replace("self.retire_channel_inbound_connection(&mut guard);", ""),
+@@ -2154,19 +2191,18 @@
+         MEDIA_COMMIT_OWNER_PREFIX.replace("if db.is_autocommit()", "if true"),
+         MEDIA_COMMIT_OWNER_PREFIX.replace("let mut guard = match self.connection.lock()", "#[cfg(test)] let mut guard = match self.connection.lock()"),
+     ] {
+-        let changed = source.replacen(MEDIA_COMMIT_OWNER_PREFIX, &changed_prefix, 1);
++        let changed = replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_PREFIX, &changed_prefix);
+         assert_ne!(changed_prefix, MEDIA_COMMIT_OWNER_PREFIX);
+         assert_ne!(changed, source, "entry mutation must touch the actual owner");
+         assert!(syn::parse_file(&changed).is_ok(), "entry failure fixture syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "poisoned/prior/unsettled-BEGIN ownership cannot become ordinary refusal or retain the connection");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method() {
+-    let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+-    let source = image.as_str();
++    let source = media_commit_oracle_fixture();
+     let direct = "db.execute_batch(\"COMMIT\")?;";
+     let unguarded = format!("fn unguarded_media_owner() {{ {direct} }}");
+     let writes = format!("{MEDIA_COMMIT_OWNER_PREFIX}\n        let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {{");
+@@ -2175,18 +2211,24 @@
+         format!("{source}\n{unguarded}"),
+         format!("{source}\nimpl RawMediaOwner for SandAgentDb {{ fn unguarded(&self) {{ {direct} }} }}"),
+         format!("{source}\nimpl RawMediaOwner for MediaSettlementCommands {{ fn unguarded(&self) {{ {direct} }} }}"),
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-            &format!("{MEDIA_RAW_COMMIT_METHOD}\n{unguarded}"), 1),
+-        source.replacen(writes.as_str(), &format!("{writes}\n{direct}"), 1),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++            &format!("{MEDIA_RAW_COMMIT_METHOD}\n{unguarded}")),
++        replace_media_commit_site(&source, writes.as_str(), &format!("{writes}\n{direct}")),
++        format!("{source}\nimpl HiddenRawCommit for SandAgentDb {{ {unguarded} }}"),
++        format!("{source}\nimpl HiddenRawCommit for MediaSettlementCommands {{ {unguarded} }}"),
+     ] {
+         assert_ne!(changed, source, "raw-owner counterfactual must change its source");
+         assert!(syn::parse_file(&changed).is_ok(), "raw-owner fixture syntax");
+-        let crlf = changed.replace('\n', "\r\n");
+-        for image in [&changed, &crlf] {
+-            let remaining = source_without_owned_transaction_commit_adapters(image)
++        for (line_ending, changed) in [
++            ("LF", changed.clone()),
++            ("CRLF", changed.replace('\n', "\r\n")),
++        ] {
++            let remaining = source_without_owned_transaction_commit_adapters(&changed)
+                 .expect("the unchanged bounded adapters still prove their own handling");
++            assert!(remaining.contains(direct),
++                "the unchanged global prohibition must still reject every other raw COMMIT owner ({line_ending})");
+             assert_eq!(remaining.matches(direct).count(), 1,
+-                "LF and CRLF must preserve the global prohibition for every other raw COMMIT owner");
++                "LF and CRLF must preserve the global prohibition for every other raw COMMIT owner ({line_ending})");
+         }
+     }
+ }

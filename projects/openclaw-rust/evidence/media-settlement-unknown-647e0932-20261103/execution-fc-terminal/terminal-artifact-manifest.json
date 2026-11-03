@@ -1,0 +1,560 @@
+{
+  "artifact_id": 13207615800,
+  "zip_bytes": 493564,
+  "zip_sha256": "67e6c96370531240a7d079a500b77860857f1bd144a6e62ab8d74d0ffa79b3c5",
+  "api_digest_match": true,
+  "members": [
+    {
+      "name": "build-storage-subject.json",
+      "bytes": 586,
+      "sha256": "cbcc0f7da994e07e6a4f2687296899e55e17572261a5687193caebec5edc05e0",
+      "lf": 18,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/canonical-prior-root-process.log",
+      "bytes": 27724,
+      "sha256": "3b233656e2873e5548d810f95d60878ae60d69b00cfbe09069e13f6b084ab443",
+      "lf": 760,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/canonical-prior-root-image.log",
+      "bytes": 25405,
+      "sha256": "a0dca6a55cc2090e11a86137c8d31755479833d86099f54640a1267bc21cfe9c",
+      "lf": 692,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/canonical-root-admission-contracts.log",
+      "bytes": 36563,
+      "sha256": "081f882fb8925c3a8b07f44b77854e2e0414213f5a76ed400506ea3ba7391e7d",
+      "lf": 879,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/canonical-root-admission.log",
+      "bytes": 28060,
+      "sha256": "95af8489284431b7f0b884fa1602975a34e1210f78eff73203d50522bff132bc",
+      "lf": 765,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/channel-transport-chunks.log",
+      "bytes": 30085,
+      "sha256": "83762f07b86aaae569567f8ac5893a92e4649a642d5ac514bad2cf26dbe01c37",
+      "lf": 809,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/checked-store.log",
+      "bytes": 25303,
+      "sha256": "b6e0bffe3bfd40fa2ba10c5175e079a1211eb2ffb946155e75e0f50e78c9d659",
+      "lf": 691,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/codex-model-identity.log",
+      "bytes": 26260,
+      "sha256": "3e207437374d6f8a489e8ada65477ddc57d7f3e140ae9c8803f873366ae2f6b7",
+      "lf": 698,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/codex-model-regressions.log",
+      "bytes": 38675,
+      "sha256": "fe87bc822a531996df41884eb529a8477e32df1f6d57be812ce8f85884e7fa83",
+      "lf": 907,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/codex-workspace-http.log",
+      "bytes": 27671,
+      "sha256": "d98c487b98c5f3c318ea059eaf82dc17652fe666706022f43f820b9018860d53",
+      "lf": 705,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/codex-workspace-binding.log",
+      "bytes": 25758,
+      "sha256": "30225b5576e16d16918adda888689d4c8162a7b1110b95fab262c14e7662892d",
+      "lf": 695,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-join-ingress-http.log",
+      "bytes": 27956,
+      "sha256": "026ad37639f3dac002b83ab72319f79f71e1ad266904d149587a2a3bf9166177",
+      "lf": 765,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-join-legacy-http.log",
+      "bytes": 27610,
+      "sha256": "71e3ce1cd01bd9da7c68384076d4c7f067cd7f06c9db2e49567b2e23f225fcf8",
+      "lf": 760,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-join-limit-state.log",
+      "bytes": 26012,
+      "sha256": "35195f22986db229e28d1d617928b0ef0bf661ace08b4b3121e346e11b76ca34",
+      "lf": 699,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-join-tls.log",
+      "bytes": 27406,
+      "sha256": "b4d69b765cb9e0be80cebe2f636e822fd763b4e54d6b38b55bcec34586ed2109",
+      "lf": 758,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-pairing-join.log",
+      "bytes": 28048,
+      "sha256": "2fdc6ba2a6e48b7b206277ae76894becf6b6b67cc1ced96354a4b9e5aae2cb46",
+      "lf": 766,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-pairing-retained-stream.log",
+      "bytes": 30043,
+      "sha256": "4d0dd5376215598cf27ba7ad03cd50216017df28e133f1fa5f72c9c9200110e1",
+      "lf": 785,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-pairing-revocation-authority.log",
+      "bytes": 29563,
+      "sha256": "6ea0d954b3c0371d126997bc1f711ee8b6ac8a1c6e7d74ace2064539226ca2d9",
+      "lf": 784,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-pairing-revocation-gateway.log",
+      "bytes": 28259,
+      "sha256": "bcaa400a373c4c42330756c24b59a043f7d5f4631d1ddbbdbe92511e687c1940",
+      "lf": 766,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-pairing-rotation-authority.log",
+      "bytes": 28187,
+      "sha256": "5656690a62afc6f23be7b25265c5a9ca7e87a5c04a88bc3ae8a280e5804e0bc1",
+      "lf": 767,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-pairing-rotation-gateway.log",
+      "bytes": 28197,
+      "sha256": "95e71dfd31a244af81559684fe65762632916c648cecbd53a2aa660c8eb5f092",
+      "lf": 766,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-pairing.log",
+      "bytes": 28767,
+      "sha256": "3427cade460ae626a296b0a39d85c58be3ea28a9095742923b48bf30b19d8c9e",
+      "lf": 778,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-role-token-revocation-authority.log",
+      "bytes": 29847,
+      "sha256": "b0ae171ee2938a14c12e478617af7ce1b9ff2d82bf074d2a396de65823be54cc",
+      "lf": 785,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-role-token-revocation-gateway.log",
+      "bytes": 28398,
+      "sha256": "6b2fd5c7dca7da87fed01dc7a41fe39e3305982259dc153a211fce38896eda3f",
+      "lf": 768,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-token-rotation-wire-authority.log",
+      "bytes": 31293,
+      "sha256": "8aba48890b90938698933bf9c490bc897ebadf2fd1bbe5be361f69df3ee04905",
+      "lf": 802,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/generated-failure-history.log",
+      "bytes": 28254,
+      "sha256": "c036ba654b8e4a838244893062a218c34b689acac5b330e108199680353d8f09",
+      "lf": 767,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/device-token-rotation-wire-gateway.log",
+      "bytes": 28893,
+      "sha256": "b607059bec6c66f6312f69672d4f154db91b749a5b882eda90f6c47f2abe5f2b",
+      "lf": 772,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/generated-send-message-contracts.log",
+      "bytes": 31693,
+      "sha256": "07cf9d4d3310d95e149bfe095d9464ee32887b34bb02610e1ce1b828797f94ac",
+      "lf": 816,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/generated-send-message-recorder.log",
+      "bytes": 28928,
+      "sha256": "40703fc1bf6ade47cc8858342e4d49be49c97a61ce1f924e0733c812a582ab79",
+      "lf": 718,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/integration.log",
+      "bytes": 50298,
+      "sha256": "b4c853603bc9676993ebca8c57e143bed45d1cc3683371cd7aba7e583156a8b7",
+      "lf": 1085,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/memory-account-binding.log",
+      "bytes": 27537,
+      "sha256": "dd85a0df7a307f22a6f228a58352db52ac916f14ce1f34f26f23e3d2510ec2e9",
+      "lf": 759,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/memory-synthesis-identity.log",
+      "bytes": 25565,
+      "sha256": "f787b3ce0c7e439265b9ba73e6ef51521a32a41298bef460cb22316d0fcd1d25",
+      "lf": 694,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/paired-device-sse.log",
+      "bytes": 24928,
+      "sha256": "1de342f620aee7811fdf5baf5650585e112800553f3c2ae17af38441dbf19e55",
+      "lf": 689,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/plugin-cache-publication.log",
+      "bytes": 25170,
+      "sha256": "68392fb4925adcfbc21d0121ced92db42c2ebf6071338b6bdb69b54655268449",
+      "lf": 691,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/plugin-session-consumer.log",
+      "bytes": 25232,
+      "sha256": "2c32111df8b361b2841555c7debca4d4b86969a0b3f39607891c9b2726251c06",
+      "lf": 691,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/plugin-uninstall-binding.log",
+      "bytes": 26065,
+      "sha256": "33b14053e633eb71483153ff695f2049e48de5af934dc5357950887532b08755",
+      "lf": 697,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/plugin-uninstall-relay-handoff.log",
+      "bytes": 24946,
+      "sha256": "82e697c31b89dd81a1c02e673ad1079269d3bf954dc79c3307e9afbfb8d9e5dc",
+      "lf": 689,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/plugin-uninstall-service.log",
+      "bytes": 38639,
+      "sha256": "b9b850880912cb66a0d33fc7ac319ee775c7042511cc0d1547b9e3f31432a815",
+      "lf": 925,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/plugin-uninstall-state.log",
+      "bytes": 37095,
+      "sha256": "c63887b13600d65b4168850cd35963ef82d0b126d4903c0a97e7a17adb21f355",
+      "lf": 780,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/preentry-cancellation-wiring.log",
+      "bytes": 29588,
+      "sha256": "37dfc29be936fe8810af808faa458c6260f0b023eba68e42a90a1da4f783f5b5",
+      "lf": 791,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/production-memory-synthesis.log",
+      "bytes": 25077,
+      "sha256": "4c4d3dcf47007e38cb4e6df1cf32899f2b9839f0fe71d124123d95d008bdc392",
+      "lf": 690,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/provider-checkpoint-custody.log",
+      "bytes": 28804,
+      "sha256": "2a4cac3b8e1149e522815904eebeaaf97e3d33fc8634b5453f81b28e6d1b035b",
+      "lf": 774,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/provider-checkpoint-publication.log",
+      "bytes": 25846,
+      "sha256": "517bc1dcebe3a6c572fc9bf9ccd26cbf7ea1f89b7bf19c55011a13955d27a186",
+      "lf": 695,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/receipt.json",
+      "bytes": 379370,
+      "sha256": "a4674fa34aef061e605ff6dda391b62923543c7bacdd56b4810c6de7aa5f3c14",
+      "lf": 6123,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/received-catalog-builder-regressions.log",
+      "bytes": 29309,
+      "sha256": "d7df43cd5ef9c57ec341ad5c56dc6c3d5463efdac0bcda3bf97dbf6234105d48",
+      "lf": 795,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/received-catalog-credential-match.log",
+      "bytes": 27884,
+      "sha256": "d92de6f128e7eaaf79f8c0e54c3428518ce0e8a78e29c477bfc7b9fc88e27cc6",
+      "lf": 763,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/received-catalog-preparation.log",
+      "bytes": 28056,
+      "sha256": "7615d17b6bff9acb0d7fdf8f14c71b6d5e69b2c4e57f7488df89df5875305418",
+      "lf": 765,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/received-catalog-projection.log",
+      "bytes": 28465,
+      "sha256": "d5754501fae7b0508624eb85b1fb363bdac452b270bd4864842972bc2b99ec68",
+      "lf": 770,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/received-catalog-retry.log",
+      "bytes": 24946,
+      "sha256": "f164b9b3abc19b9201b14bc73635d320b4dff39679d07adc1269b09e6af56d2f",
+      "lf": 689,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/received-catalog-runtime.log",
+      "bytes": 29240,
+      "sha256": "ac926a448e7bf5c4482328d2490ec933f0d31ca89c603512b7d76d7d65e6371f",
+      "lf": 777,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/received-catalog-toolset.log",
+      "bytes": 28218,
+      "sha256": "1cb0a5ba07bfe069b4f7f86e517317b3cf5f4ac588dacf9f85207bcfcca0a8aa",
+      "lf": 768,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/session-claim-commit-custody.log",
+      "bytes": 26022,
+      "sha256": "5e85e32bbc550d3578be26336d1c7af27339365af5dd2df06f000d16653737b5",
+      "lf": 697,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/session-claim-integration.log",
+      "bytes": 34710,
+      "sha256": "2ab2faa1863b359e5a7b9b306a17bad64347a867c16b01a9cb5b0a534fa09ab4",
+      "lf": 855,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "channel-pending-recovery/session-owner-namespace.log",
+      "bytes": 32531,
+      "sha256": "a47e0a2454827b38a660261669148fd9fd32a3da729475f2846b68053a0ebf04",
+      "lf": 826,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "link-preview-native-gateway/app.log",
+      "bytes": 50299,
+      "sha256": "c265d5f46491b731b3335823853bcce900fd23b655f0b07bf03ac0b0701eedbc",
+      "lf": 1100,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "link-preview-native-gateway/coordinator.log",
+      "bytes": 12771,
+      "sha256": "0c3c18e79486a24da6fa2930a8605a3b00397e4fe736798e174f4b6245e09c84",
+      "lf": 193,
+      "crlf": 9,
+      "bare_cr": 0
+    },
+    {
+      "name": "link-preview-native-gateway/host.log",
+      "bytes": 31770,
+      "sha256": "4244745b08b11ca3f8f106e8c663aa74ba35dde40cbb0a4f26816a6718460dae",
+      "lf": 816,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "link-preview-native-gateway/receipt.json",
+      "bytes": 26167,
+      "sha256": "10acd50d74c9f0e1a162f74045e0fb45a09209fc2927e7f3808e90975ca67be2",
+      "lf": 404,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "media-input-policy/projection.log",
+      "bytes": 24938,
+      "sha256": "e58462876cf4db5be08823539a362cc32d70aaa085af70dd4320d3bb78ee59ba",
+      "lf": 689,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "media-input-policy/publication.log",
+      "bytes": 25956,
+      "sha256": "f528b4b526728a36947610dadb6b3b6688f402117dd43a7847bd1a7d14aba903",
+      "lf": 697,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "media-input-policy/receipt.json",
+      "bytes": 20215,
+      "sha256": "0d6aa3b77c22b55e18a6c5aaf098a4ffffc58692fde824ca501bc801f719b2e9",
+      "lf": 291,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "media-input-policy/tests.log",
+      "bytes": 36545,
+      "sha256": "b541f9709727fa05d239a80231418f34605190e2545e05350f14667aee8714c4",
+      "lf": 901,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "media-input-policy/unicode.log",
+      "bytes": 25094,
+      "sha256": "b18165a090dac31951feb999ead3cccdc53ad8975e1cfa8dca20e0bc7cc2cdfb",
+      "lf": 690,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "owned-fixtures.tar",
+      "bytes": 40960,
+      "sha256": "17aa32c41e5e6c22ec722fa47e21b9128eb6834a2b74a70a6ae926e44dff0957",
+      "lf": 34,
+      "crlf": 0,
+      "bare_cr": 7
+    },
+    {
+      "name": "palette-message/41582614116-1/palette-rust-results.json",
+      "bytes": 3294,
+      "sha256": "77b231e96fe63ce334f94a6c4c8845a1a56b9bc6fb332a7ec1210ee28bf5aac0",
+      "lf": 126,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "receipt.json",
+      "bytes": 9768,
+      "sha256": "532c7ac086e5764e1b1cdd57ac4cfd36c6aca68d49eaaa84404ff59c44c5ee21",
+      "lf": 150,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "storage-after-owner-checks.txt",
+      "bytes": 207,
+      "sha256": "dc2c5b87f3c8dea5877ab5812adaea8b68cc2c0fb99ad3bf8b6739eaf210e5af",
+      "lf": 4,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "storage-before.txt",
+      "bytes": 207,
+      "sha256": "f9a17cad827ad49cdb1d8634f2d9ea3ca9461fdd88add0cc9d3ef781c79ff8fa",
+      "lf": 4,
+      "crlf": 0,
+      "bare_cr": 0
+    },
+    {
+      "name": "tests.log",
+      "bytes": 34796,
+      "sha256": "5ab92b99a75ef924b201c8498a9675d8f113093f38c87703dfc6888854e9d30f",
+      "lf": 861,
+      "crlf": 0,
+      "bare_cr": 0
+    }
+  ]
+}

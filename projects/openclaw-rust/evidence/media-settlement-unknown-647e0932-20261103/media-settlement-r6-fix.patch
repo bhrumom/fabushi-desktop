@@ -1,0 +1,971 @@
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -366,6 +366,7 @@
+               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
++              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+               "source/host/src/gateway_config.rs",
+               "source/host/src/host_event_bus.rs",
+               "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+@@ -462,6 +463,7 @@
+               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
++              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+               "source/host/src/device_pairing_owner.rs",
+               "source/host/src/extensions/node_host/runtime_state.rs",
+               "source/host/src/extensions/node_host/session_registry.rs",
+@@ -1230,6 +1232,8 @@
+               tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization \
+               tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects \
+               tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls \
++              tests::config_secret_boundary_tests::fresh_bearer_http_config_mutation_requires_current_approval \
++              tests::config_secret_boundary_tests::fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners \
+               tests::original_turn_recovery_tests::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work \
+               tests::original_turn_recovery_tests::original_turn_completed_marker_retains_fresh_pending_corrupt_ack_and_live_work \
+               tests::original_turn_recovery_tests::original_turn_marker_retains_unbound_missing_and_foreign_original_references \
+@@ -2449,6 +2453,9 @@
+               "retained_authorization_replacement_leaves_other_roles_and_devices_current",
+               "retained_authorization_reopen_requires_fresh_owner_issued_provenance",
+               "revocation_and_retained_authorization_propagate_storage_read_failure",
++              "fresh_authorization_requires_approved_role_and_entire_canonical_grant",
++              "fresh_authorization_rejects_corrupt_decisive_storage_without_writes",
++              "fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary",
+           ]
+           revocation_http_required = [
+               "paired_revoke_self_operator_only_delivers_final_reply_and_reports_bound_context_once",
+@@ -2662,7 +2669,8 @@
+               and all(case["oracle_accepted"] for case in wiring_cases))
+           rotation_receipt = {key: subject[key] for key in (
+               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+-          rotation_receipt.update({"contract": "DPA-v1/DVR-v1/DRT-v1/DTR-v1", "executions": rotation_cases,
++          rotation_receipt.update({"contract": "DPA-v1/DVR-v1/DRT-v1/DTR-v1/OCRM-DEVICE-FRESH-AUTHORIZATION-v1", "executions": rotation_cases,
++              "fresh_bearer_admission_scope": "Existing pairing owner reuses the same current-credential validator before issuing a fresh sealed proof. Approved role and complete canonical live grant are required; typed currentness refusal is absent authentication, decisive corruption remains a fixed internal error, and every outcome preserves exact persisted state. Retained/management proof checks and valid repair/reopen controls remain mandatory. Actual TCP config.set to the App Settings helper and mutation-sensitive shipping source bindings have separate App evidence; no full App construction, handshake, issuer-generation or physical-device acceptance is claimed.",
+               "shipping_wiring_regressions": wiring_cases,
+               "existing_node_binding_positive": node_binding_control,
+               "existing_node_binding_command": node_binding_command,
+@@ -3004,6 +3012,9 @@
+               "media_http_error_scope": "Actual AttachmentsService buffer/save dispatch stops failed-response diagnostics at the bounded prefix without awaiting EOF, preserves remote status, formats Unicode safely, redacts the existing bot-token pattern and leaves the store unchanged. Controlled HTTP fixtures and supplied-byte cases do not establish outer Host HTTP registration, general SSRF, redirect/proxy, idle-timeout, redaction, chat-wiring or real provider parity.",
+               "media_input_policy_scope": "Actual AttachmentsService file RPCs reject malformed explicit resolved policy before decoding or URL processing, preserve omitted/null defaults and valid restrictive limits, and shared file/image source handling rejects '=' and '==' without arithmetic panic or underflow-generated size errors. Longer malformed input retains upstream size-before-validation precedence. This does not establish URL allowlist/redirect/cancellation parity, real PDF or HEIC behavior, accepted-turn multimodal composition, or real service acceptance.",
+               "config_public_secret_contract": "OCRM-CONFIG-PUBLIC-SECRET-v1",
++              "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
++              "fresh_bearer_admission_app_tests": ["tests::config_secret_boundary_tests::fresh_bearer_http_config_mutation_requires_current_approval", "tests::config_secret_boundary_tests::fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners"],
++              "fresh_bearer_admission_scope": "Actual file-backed DevicePairingOwner, TCP Gateway ingress and App dispatch_public_settings_command/Settings consumer decide fresh role/grant/corruption refusal before dispatch or state mutation and retain ordinary native/read/writer/reopen controls. Separate mutation-sensitive source bindings and App compilation bind the shipping owner/authentication/configuration chain. The fixture does not construct the complete UnifiedGatewayApi or establish packaged/remote-device acceptance.",
+               "config_revision_input_contract": "CS05-INPUT-v1",
+               "config_revision_input_app_tests": ["tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects", "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls"],
+               "config_revision_input_result": "passed",
+@@ -3884,12 +3895,22 @@
+           ]
+           legacy_slot_occurrences = {name: passed.count(name) for name in legacy_slot_tests}
+           legacy_slot_passed = all(count == 1 for count in legacy_slot_occurrences.values())
++          poll_custody_tests = [
++              "fire_runtime_invalid_poll_preserves_all_custody_until_checked_recovery",
++              "fire_runtime_invalid_poll_does_not_consume_notify_or_unschedulable_drain",
++              "fire_runtime_checked_poll_preserves_opaque_ids_duplicates_and_optional_fields",
++          ]
++          poll_custody_occurrences = {name: passed.count(name) for name in poll_custody_tests}
++          poll_custody_passed = all(count == 1 for count in poll_custody_occurrences.values())
+           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+-          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and memory_consumer_passed and legacy_slot_passed and head == os.environ["FABUSHI_TARGET_SHA"]
++          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and memory_consumer_passed and legacy_slot_passed and poll_custody_passed and head == os.environ["FABUSHI_TARGET_SHA"]
+           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+           inputs = [
+               ".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock",
+               "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
++              "docs/specs/sand-completion-ack-safety.md",
++              "source/host/src/extensions/automations/backend_transport.rs",
++              "source/host/src/extensions/automations/production_lifecycle.rs",
+               "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+               "source/host/src/extensions/memory/memory_service.rs",
+               "source/host/src/extensions/memory/memory_synthesis_service.rs",
+@@ -3931,6 +3952,11 @@
+               "legacy_slot_required_tests": legacy_slot_tests,
+               "legacy_slot_positive_occurrences": legacy_slot_occurrences,
+               "legacy_slot_passed": legacy_slot_passed,
++              "poll_custody_contract": "OCRM-AUTOMATION-POLL-CUSTODY-v1",
++              "poll_custody_required_tests": poll_custody_tests,
++              "poll_custody_positive_occurrences": poll_custody_occurrences,
++              "poll_custody_passed": poll_custody_passed,
++              "poll_custody_scope": "Actual existing AutomationFireBackendRuntime poll/complete/dispatch state machine with controlled final transport; invalid complete-list decode retains Running/Completed/Reported custody and exact payloads, applies backoff without consuming successful notify/drain, then permits valid retry and per-ID ACK handling. Exact identity, valid duplicate, optional/extra-field controls retained. This is local in-memory response acceptance, not persisted restart recovery, Sand principal binding or deployed ACK/idempotency evidence.",
+               "target_and_owned_child_summaries": summaries, "summaries_pass": summaries_pass,
+               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
+               "log_sha256": hashlib.sha256(log).hexdigest(),
+@@ -4001,6 +4027,7 @@
+               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
++              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+               "source/host/src/device_pairing_owner.rs",
+               "source/host/src/extensions/node_host/runtime_state.rs",
+               "source/host/src/extensions/node_host/session_registry.rs",
+@@ -4078,6 +4105,8 @@
+           })
+           receipt = {
+               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1/DVR-v1/DRT-v1/DTR-v1",
++              "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
++              "fresh_bearer_admission_scope": "Actual file-backed pairing owner and TCP Gateway execute ordinary config.set through the real App Settings helper, with zero dispatch/commit/state effects on fresh role/grant or decisive-storage refusal and valid native/read/writer/reopen controls. Shipping UnifiedGatewayApi auth/configuration/shared-owner composition has separate mutation-sensitive source bindings plus this affected App compilation; the test does not instantiate the complete App or claim remote/device/package acceptance.",
+               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
+               "model_contract": "CMI-v1/CWB-v1",
+               "local_media_file_url_contract": "LFA-v1",
+@@ -4206,6 +4235,8 @@
+                   "public_key_refusal_precedes_all_four_routes_and_read_normalization",
+                   "public_config_set_rejects_malformed_base_hash_before_owner_effects",
+                   "public_config_set_revision_input_preserves_newer_commit_and_legacy_controls",
++                  "fresh_bearer_http_config_mutation_requires_current_approval",
++                  "fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners",
+               ]]
+               required += ["tests::channel_failure_readiness_tests::" + name for name in [
+                   "channel_failure_settings_commit_rearms_paused_head_with_exact_marker",
+--- a/projects/openclaw-rust/docs/specs/media-settlement-unknown.md
++++ b/projects/openclaw-rust/docs/specs/media-settlement-unknown.md
+@@ -143,12 +143,19 @@
+   New negative controls must reject an extra/aliased media caller, ambiguous
+   or conditionally excluded helper/owner, altered COMMIT/rollback/retirement
+   classification, discarded handling and a hidden raw-COMMIT owner elsewhere.
+-  The unique owner is its inherent implementation; unrelated trait impls such
+-  as the real `Drop` implementation remain in the global checked source but
+-  cannot be miscounted as additional inherent owners. Literal source matching
+-  may normalize CRLF to LF, without weakening syntax or ownership checks.
+-  Actual-source positives and the media mutation negatives must exercise both
+-  line endings, with each textual mutation bound to its intended source site.
++  Distinguish inherent owner implementations from the actual `Drop` trait
++  implementation when selecting and parsing the one media owner. Trait bodies
++  remain in the global unsafe-call/raw-COMMIT scan and can never receive the
++  bounded inherent-method exception. Keep duplicate/foreign/conditional inherent
++  owner and trait-only owner refusals. For source comparison only, normalize
++  CRLF checkout newlines to LF before literal substitutions and token comparison;
++  raw input receipts retain their original bytes and hashes. Require both LF and
++  CRLF actual-owner positives, changed-branch and trait-owned unsafe negatives,
++  and evidence that each destructive substitution really changes its input.
++  Each media mutation starts from a proven actual-source baseline and binds
++  exactly one intended replacement site; every media mutation negative exercises
++  both line endings. These repair the exact-H74 oracle failures without changing
++  product behavior or weakening the global prohibition.
+ - **MSU-07 / exact fault port:** the existing SandAgentDb exposes a hidden
+   `MediaSettlementTestFault::{LoseCommitAcknowledgement, RefuseRollback}` and
+   `arm_media_settlement_fault_for_test(session, revision, work, fault)` returning
+@@ -175,10 +182,15 @@
+   successful settlement/replay, known refusal and fault-slot isolation/lease
+   lifetime. Inspect committed rows, receipt/fence, owner usability and
+   publication effects through the real owner and separate file-backed reader.
+-  The DB getter returns the complete owner row sequence, including its hidden
+-  settlement receipt. Fresh-owner assertions must require the exact send and
+-  receipt payload/order as well as the independently read SQL state; presentation
+-  filtering must not be imposed on the canonical DB getter by a test fixture.
++  The owner getter includes the hidden settlement receipt; only the Session
++  presentation projection filters it. The lost-ACK reopen and exact-other-owner
++  controls must therefore compare the complete ordered send-plus-receipt image,
++  using the fixture's independently specified receipt identity, session,
++  lifecycle, work, media paths and transcript IDs. Preserve the complete raw-row
++  equality and every retirement, no-publication, fence, retained-file and repeated
++  reopen check. This repairs the two test expectations observed at exact H
++  `74f11d3d31c6245ac5886dc0181460b2d4349744` in Runtime `41580539491`
++  attempt 1; it changes no product projection or settlement behavior.
+ - **MSU-10 / actual App controls:** use existing file-backed App fixtures and
+   real production sinks/Session/Runtime. Required cases are actual COMMIT/lost
+   ACK; receipt refusal after a proven inserted send with actual ROLLBACK
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -9061,7 +9061,7 @@
+     },
+     {
+       "adr_refs": [],
+-      "behavior": "Pairing token derivation, single-use auth key invalidation, authenticated rotation, and selected-role credential retirement through the existing durable DevicePairingOwner; fresh and retained admission observe the same retirement marker. DTR-v1 adds the bound device.token.rotate protocol contract with an optional resulting grant, approved-role issuance/repair, preserved supported metadata and sealed same-device-only replacement delivery. Issued scope spelling remains consistent across fresh, retained and adjacent management consumers; approved primary-only successors become usable through the same atomic selected-role materialization.",
++      "behavior": "Pairing token derivation, single-use auth key invalidation, authenticated rotation, and selected-role credential retirement through the existing durable DevicePairingOwner; fresh and retained admission observe the same retirement marker. DTR-v1 adds the bound device.token.rotate protocol contract with an optional resulting grant, approved-role issuance/repair, preserved supported metadata and sealed same-device-only replacement delivery. Issued scope spelling remains consistent across fresh, retained and adjacent management consumers; approved primary-only successors become usable through the same atomic selected-role materialization. DFA-v1 checks current approved role and the entire canonical live grant in the same owner before a fresh bearer proof escapes to ordinary Gateway consumers.",
+       "blocker_ids": [
+         "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
+         "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
+@@ -9077,7 +9077,8 @@
+         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
+         "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+-        "projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json"
++        "projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -9138,7 +9139,8 @@
+         "Every HTTP protocol-rotation request uses the bound owner hook. Native and cross-device callers receive no bearer; paired same-device delivery is decided from the sealed proof after the single durable commit.",
+         "Persisted, live and admitted credential scope grants share ECMAScript canonical spelling and exact policy comparison in DevicePairingOwner; literal NEL grants never become canonical admin. Explicit legacy DPA request normalization and native identity/role adapters retain their separate contracts.",
+         "Primary-only selected approval is materialized by appending only that normalized role to the original role array in the token UPDATE. Existing members/order remain intact; already-present membership preserves original bytes. Currentness still requires role-array membership, so withdrawal retires the successor even if its primary label remains.",
+-        "Current caller admission decodes only the decisive approved baseline or its SQL-NULL fallback. Unused malformed fallback storage cannot invalidate an otherwise valid issued successor; malformed decisive storage still fails closed."
++        "Current caller admission decodes only the decisive approved baseline or its SQL-NULL fallback. Unused malformed fallback storage cannot invalidate an otherwise valid issued successor; malformed decisive storage still fails closed.",
++        "DFA-v1: fresh lookup and retained validation share one connection-taking current-credential/grant validator. Fresh typed Unauthorized alone becomes absent authentication; decisive stored corruption remains a fixed internal error. Both outcomes and success preserve the exact durable pairing image, with no revision or activity write."
+       ],
+       "migration_rollback": "Single-use key clearing ensures forward secrecy; DRT-v1 uses existing token/surface columns without schema migration. Rollback must not restore a version that accepts tombstoned credentials without explicit credential retirement/migration. DTR-v1 also uses the existing schema; disabling its registration must retain committed token generations and never revive a predecessor credential.",
+       "oracle_ids": [
+@@ -9148,12 +9150,14 @@
+       "postconditions": [
+         "Auth key set to None after worker launch",
+         "DRT-v1: only selected revokedAtMs and, for node only, both node surface columns change with one existing revision increment and a successful commit; fresh and retained original credentials lose authority without deleting the pairing.",
+-        "DTR-v1: one checked revision and target update commit a fresh selected token, normalized resulting scopes, preserved supported lifecycle/opaque metadata, and node-only surface invalidation. The exact receipt distinguishes in-band from withheld delivery, and old selected fingerprints fail existing fresh/retained admission. Primary-only selected membership commits and rolls back with the token, surfaces and revision. A fresh successor passes currentness immediately and after reopen; no unselected primary role is revived."
++        "DTR-v1: one checked revision and target update commit a fresh selected token, normalized resulting scopes, preserved supported lifecycle/opaque metadata, and node-only surface invalidation. The exact receipt distinguishes in-band from withheld delivery, and old selected fingerprints fail existing fresh/retained admission. Primary-only selected membership commits and rolls back with the token, surfaces and revision. A fresh successor passes currentness immediately and after reopen; no unselected primary role is revived.",
++        "DFA-v1: unapproved fresh credentials cannot dispatch config.set or alter the real Settings file. Valid current writers reach the existing App Settings helper; repair/reopen accepts only a new genuine proof from the current owner. Full UnifiedGatewayApi construction and remote/physical-device acceptance remain separate."
+       ],
+       "preconditions": [
+         "Valid enrollment state and one-time auth key",
+         "DRT-v1: closed deviceId/role request and existing selected role token; current sealed operator pairing authority or admitted native authority, intersected with the singular header ceiling.",
+-        "DTR-v1: closed deviceId/role/optional-scopes request, current sealed pairing authority or admitted native ceiling, approved target role and a strictly typed decisive approval baseline; an approved role need not already have a valid active credential."
++        "DTR-v1: closed deviceId/role/optional-scopes request, current sealed pairing authority or admitted native ceiling, approved target role and a strictly typed decisive approval baseline; an approved role need not already have a valid active credential.",
++        "DFA-v1: an ordinary explicit paired bearer must match an active exact credential, approved role and complete live grant within the decisive approved baseline before Gateway dispatch."
+       ],
+       "required_evidence_dimensions": [
+         "unit",
+@@ -9172,7 +9176,7 @@
+       ],
+       "responsibility_kind": "business-runtime",
+       "reviewer": "xuyao@ombhrum.com",
+-      "risk": "High: sealed credential currentness, intersected management authority, cross-device information disclosure, durable selected-role mutation and retained connection effects require deep review. DTR-v1 additionally requires result-grant normalization/caps, repair versus corruption, secret delivery, issuance races and lost-response scrutiny. Historical read/mapping status is preserved, not a new claim of full fixed-U or dependency review. Issuer-generation policy, external credential cache/WebSocket fencing, precise upstream node-surface compatibility and real device/platform acceptance remain open. Fresh-issuance to later management scope interpretation, selected-primary materialization, decisive approval reads and rollback are explicit causal controls; all remain unverified until exact-H Actions.",
++      "risk": "High: sealed credential currentness, intersected management authority, cross-device information disclosure, durable selected-role mutation and retained connection effects require deep review. DTR-v1 additionally requires result-grant normalization/caps, repair versus corruption, secret delivery, issuance races and lost-response scrutiny. Historical read/mapping status is preserved, not a new claim of full fixed-U or dependency review. Issuer-generation policy, external credential cache/WebSocket fencing, precise upstream node-surface compatibility and real device/platform acceptance remain open. Fresh-issuance to later management scope interpretation, selected-primary materialization, decisive approval reads and rollback are explicit causal controls; all remain unverified until exact-H Actions. DFA-v1 adds first-admission role/whole-grant validation and causal fixture preservation; source binding is reported separately from actual HTTP/helper execution, and exact-H Actions plus scoped authority/coverage remain required.",
+       "selected_owner": "source/host/src/device_pairing_owner.rs",
+       "source_refs": [
+         {
+@@ -9233,12 +9237,15 @@
+         "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "source/host/tests/device_pairing_revocation_authority_contract.rs",
++        "source/host/app/src/tests/config_secret_boundary_tests.rs"
+       ],
+       "typed_contracts": [
+         "Single-use token invalidation",
+         "DRT-v1: device.token.revoke retires one existing role without removing the pairing; HTTP dispatch never falls back from bound authority to native dispatch.",
+-        "DTR-v1: device.token.rotate -> {deviceId, role, scopes, rotatedAtMs, tokenDelivery, token?}; HTTP carries optional sealed proof plus singular native/header ceiling to DevicePairingOwner::rotate_token_with_authority."
++        "DTR-v1: device.token.rotate -> {deviceId, role, scopes, rotatedAtMs, tokenDelivery, token?}; HTTP carries optional sealed proof plus singular native/header ceiling to DevicePairingOwner::rotate_token_with_authority.",
++        "DFA-v1: authenticate_device_token -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError>; no wire/schema change, no alternate proof issuer, store or downstream policy owner."
+       ],
+       "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
+     },
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -175,6 +175,7 @@
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+         "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+         "projects/openclaw-rust/docs/specs/cron-job-identity.md",
+         "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
+         "source/host/app/src/tests/cron_job_identity_tests.rs"
+@@ -734,7 +735,10 @@
+         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
+-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
++        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
++        "source/host/tests/device_pairing_revocation_authority_contract.rs",
++        "source/host/app/src/tests/config_secret_boundary_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R10",
+@@ -886,7 +890,9 @@
+         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+         "source/host/src/extensions/memory/production_identity_tests.rs",
+-        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
++        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
++        "source/host/app/src/tests/config_secret_boundary_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R13",
+@@ -2254,6 +2260,8 @@
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+         "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
++        "source/host/app/src/tests/config_secret_boundary_tests.rs",
+         "projects/openclaw-rust/docs/specs/cron-job-identity.md",
+         "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
+         "source/host/app/src/tests/cron_job_identity_tests.rs"
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -92,6 +92,7 @@
+     "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+     "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+     "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
++    "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+     "source/host/src/gateway_config.rs",
+     "source/host/src/host_event_bus.rs",
+     "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+@@ -451,6 +452,9 @@
+     "retained_authorization_replacement_leaves_other_roles_and_devices_current",
+     "retained_authorization_reopen_requires_fresh_owner_issued_provenance",
+     "revocation_and_retained_authorization_propagate_storage_read_failure",
++    "fresh_authorization_requires_approved_role_and_entire_canonical_grant",
++    "fresh_authorization_rejects_corrupt_decisive_storage_without_writes",
++    "fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary",
+ ]
+ revocation_http_required = [
+     "paired_revoke_self_operator_only_delivers_final_reply_and_reports_bound_context_once",
+@@ -1047,6 +1051,8 @@
+     assert actual == expected, f"CRA result oracle control failed: {label}"
+ 
+ receipt = {
++    "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
++    "fresh_bearer_admission_scope": "Actual existing pairing owner refuses a fresh proof when the approved role or whole canonical live grant is no longer current, preserves fixed decisive-storage errors and exact durable state, and admits repaired valid state after reopen. Retained proof checks keep their existing issuer and late-admission semantics. Actual HTTP config.set through the App Settings helper and shipping source bindings are separately required in the App receipt; these owner controls do not establish full App construction, remote handshake, last-use writes, issuer-generation or physical-device acceptance.",
+     "media_settlement_support_scope": "MSU-v1 support only: actual Tool construction-error classification and the independently bounded media COMMIT adapter/consumer proof, composed with all retained channel/admission/raw-COMMIT controls. Real file-backed media DB faults and local cleanup states are required by the separate native-media receipt; eight private App/Session/Runner cases and ordinary shipping feature-off compilation are required by the separate Linux App receipt. No runtime or full acceptance is inferred from source-oracle positives.",
+     "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
+     "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DRT-v1", "DTR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1", "MSI-v1", "OCRM-CANONICAL-PRIOR-ROOT-IDENTITY-v1"],
+--- a/source/host/app/src/tests/media_settlement_unknown_tests.rs
++++ b/source/host/app/src/tests/media_settlement_unknown_tests.rs
+@@ -802,7 +802,7 @@
+         persist_accepted_send_prompt_context(&sessions, &args, accepted)
+             .map_err(|error| ProductionSendError::Internal(format!("{error:?}")))
+     }).unwrap();
+-    assert!(accepted.context.accepted_durably && !accepted.context.duplicate);
++    assert!(accepted.context.accepted_durably && !accepted.duplicate);
+     let control = runtime.capture_routed_turn_start(&fixture.agent_id, STREAM).unwrap();
+     let cancellation = registry.register_routed_provider_with_cancellation(
+         &fixture.agent_id, STREAM, false, control.cancellation(),
+--- a/source/host/tests/background_wakes_production_contract.rs
++++ b/source/host/tests/background_wakes_production_contract.rs
+@@ -2847,6 +2847,228 @@
+     }
+ }
+ 
++// This deliberately bounded wiring check follows ordinary abort into the
++// shipping sink's guarded cleanup helper. It does not establish transaction,
++// filesystem or concurrency behavior; the real App/owner cases do that.
++fn shipping_abort_reports_guarded_media_cleanup(file: &syn::File) -> bool {
++    use syn::parse::Parser;
++
++    fn path(value: &syn::Path, names: &[&str]) -> bool {
++        value.leading_colon.is_none() && value.segments.len() == names.len()
++            && value.segments.iter().zip(names).all(|(segment, name)| {
++                segment.ident == *name && matches!(segment.arguments, syn::PathArguments::None)
++            })
++    }
++    fn named(value: &syn::Expr, names: &[&str]) -> bool {
++        matches!(value, syn::Expr::Path(value)
++            if value.attrs.is_empty() && value.qself.is_none() && path(&value.path, names))
++    }
++    fn binding(value: &syn::Pat, name: &str, mutable: bool) -> bool {
++        matches!(value, syn::Pat::Ident(value)
++            if value.attrs.is_empty() && value.ident == name && value.by_ref.is_none()
++                && value.subpat.is_none() && value.mutability.is_some() == mutable)
++    }
++    fn variant<'a>(value: &'a syn::Pat, name: &str) -> Option<&'a syn::Pat> {
++        match value {
++            syn::Pat::TupleStruct(value) if value.attrs.is_empty() && value.qself.is_none()
++                && path(&value.path, &[name]) && value.elems.len() == 1 => Some(&value.elems[0]),
++            _ => None,
++        }
++    }
++    fn field(value: &syn::Expr, base: &str, member: &str) -> bool {
++        matches!(value, syn::Expr::Field(value)
++            if value.attrs.is_empty() && named(&value.base, &[base])
++                && matches!(&value.member, syn::Member::Named(name) if name == member))
++    }
++    fn borrowed(value: &syn::Expr, name: &str, mutable: bool) -> bool {
++        matches!(value, syn::Expr::Reference(value)
++            if value.attrs.is_empty() && value.mutability.is_some() == mutable
++                && named(&value.expr, &[name]))
++    }
++    fn is_false(value: &syn::Expr) -> bool {
++        matches!(value, syn::Expr::Lit(value) if value.attrs.is_empty()
++            && matches!(&value.lit, syn::Lit::Bool(value) if !value.value))
++    }
++    fn method<'a>(value: &'a syn::Expr, name: &str) -> Option<&'a syn::ExprMethodCall> {
++        match value {
++            syn::Expr::MethodCall(value) if value.attrs.is_empty() && value.method == name
++                && value.turbofish.is_none() => Some(value),
++            _ => None,
++        }
++    }
++    fn field_call(value: &syn::Expr, base: &str, member: &str, name: &str) -> bool {
++        method(value, name).is_some_and(|call| {
++            call.args.is_empty() && field(&call.receiver, base, member)
++        })
++    }
++    fn bare_return(value: &syn::Expr) -> bool {
++        matches!(value, syn::Expr::Return(value) if value.attrs.is_empty() && value.expr.is_none())
++    }
++    fn returns(block: &syn::Block) -> bool {
++        matches!(block.stmts.as_slice(), [syn::Stmt::Expr(value, _)] if bare_return(value))
++    }
++    fn local_value<'a>(local: &'a syn::Local, name: &str) -> Option<&'a syn::Expr> {
++        if !local.attrs.is_empty() || !binding(&local.pat, name, false) { return None; }
++        let init = local.init.as_ref()?;
++        init.diverge.is_none().then_some(init.expr.as_ref())
++    }
++    fn or_return(local: &syn::Local) -> Option<&syn::Expr> {
++        if !local.attrs.is_empty() { return None; }
++        let init = local.init.as_ref()?;
++        let (_, diverge) = init.diverge.as_ref()?;
++        match diverge.as_ref() {
++            syn::Expr::Block(block) if block.attrs.is_empty() && block.label.is_none()
++                && returns(&block.block) => Some(init.expr.as_ref()),
++            _ => None,
++        }
++    }
++    fn log(value: &syn::Macro, message: &str) -> bool {
++        if !path(&value.path, &["eprintln"]) { return false; }
++        let Ok(args) = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated
++            .parse2(value.tokens.clone()) else { return false; };
++        args.len() == 3
++            && matches!(&args[0], syn::Expr::Lit(value) if value.attrs.is_empty()
++                && matches!(&value.lit, syn::Lit::Str(value) if value.value() == message))
++            && field(&args[1], "self", "agent_id") && named(&args[2], &["tool_call_id"])
++    }
++    fn signature(value: &syn::ImplItemFn, args: &[&str]) -> bool {
++        let sig = &value.sig;
++        value.attrs.is_empty() && value.defaultness.is_none()
++            && matches!(value.vis, syn::Visibility::Inherited)
++            && sig.constness.is_none() && sig.asyncness.is_none() && sig.unsafety.is_none()
++            && sig.abi.is_none() && sig.variadic.is_none() && sig.generics.params.is_empty()
++            && sig.generics.where_clause.is_none() && matches!(sig.output, syn::ReturnType::Default)
++            && sig.inputs.len() == args.len() + 1
++            && matches!(&sig.inputs[0], syn::FnArg::Receiver(receiver)
++                if receiver.attrs.is_empty() && receiver.reference.is_some()
++                    && receiver.mutability.is_none() && receiver.colon_token.is_none())
++            && sig.inputs.iter().skip(1).zip(args).all(|(argument, name)| {
++                matches!(argument, syn::FnArg::Typed(argument)
++                    if argument.attrs.is_empty() && binding(&argument.pat, name, false))
++            })
++    }
++    fn abort(value: &syn::ImplItemFn) -> bool {
++        let [syn::Stmt::Local(entry), syn::Stmt::Local(pending),
++            syn::Stmt::Expr(delegate, Some(_))] = value.block.stmts.as_slice() else { return false; };
++        let Some(lookup) = or_return(entry).and_then(|value| method(value, "pending_media_entry")) else { return false; };
++        let Some(syn::Expr::Call(lock)) = or_return(pending) else { return false; };
++        let Some(delegate) = method(delegate, "rollback_pending_media") else { return false; };
++        signature(value, &["tool_call_id"])
++            && variant(&entry.pat, "Ok").and_then(|value| variant(value, "Some"))
++                .is_some_and(|value| binding(value, "entry", false))
++            && named(&lookup.receiver, &["self"]) && lookup.args.len() == 2
++            && named(&lookup.args[0], &["tool_call_id"]) && is_false(&lookup.args[1])
++            && variant(&pending.pat, "Ok").is_some_and(|value| binding(value, "pending", true))
++            && lock.attrs.is_empty() && named(&lock.func, &["Self", "try_pending_media"])
++            && lock.args.len() == 1 && borrowed(&lock.args[0], "entry", false)
++            && named(&delegate.receiver, &["self"]) && delegate.args.len() == 3
++            && borrowed(&delegate.args[0], "pending", true)
++            && named(&delegate.args[1], &["tool_call_id"]) && is_false(&delegate.args[2])
++    }
++    fn phase(value: &syn::Pat, name: &str) -> bool {
++        matches!(value, syn::Pat::Path(value) if value.attrs.is_empty() && value.qself.is_none()
++            && path(&value.path, &["PendingOutgoingMediaPhase", name]))
++    }
++    fn rollback(value: &syn::ImplItemFn) -> bool {
++        let [syn::Stmt::Local(errors), syn::Stmt::Expr(syn::Expr::Assign(aborted), Some(_)),
++            syn::Stmt::Expr(clear, Some(_)), syn::Stmt::Expr(syn::Expr::Assign(owned), Some(_)),
++            syn::Stmt::Local(complete), syn::Stmt::Expr(syn::Expr::ForLoop(report), _),
++            syn::Stmt::Expr(syn::Expr::If(refuse), _), syn::Stmt::Expr(syn::Expr::If(release), _)] =
++            value.block.stmts.as_slice() else { return false; };
++        let Some(syn::Expr::Match(cleanup)) = local_value(errors, "errors") else { return false; };
++        let [collecting, confirmed, retain] = cleanup.arms.as_slice() else { return false; };
++        let syn::Expr::Block(confirmed_body) = confirmed.body.as_ref() else { return false; };
++        let [syn::Stmt::Expr(confirmed_call, None)] = confirmed_body.block.stmts.as_slice() else { return false; };
++        let Some(complete_call) = local_value(complete, "cleanup_complete").and_then(|value| method(value, "is_empty")) else { return false; };
++        let [syn::Stmt::Macro(report_log)] = report.body.stmts.as_slice() else { return false; };
++        let syn::Expr::Unary(failed) = refuse.cond.as_ref() else { return false; };
++        if !signature(value, &["pending", "tool_call_id", "confirmed_precommit_refusal"])
++            || !cleanup.attrs.is_empty() || !field(&cleanup.expr, "pending", "phase")
++            || cleanup.arms.iter().any(|arm| !arm.attrs.is_empty())
++            || !phase(&collecting.pat, "Collecting") || collecting.guard.is_some()
++            || !field_call(&collecting.body, "pending", "custody", "rollback")
++            || !phase(&confirmed.pat, "OwnerSettlementPending")
++            || !confirmed.guard.as_ref().is_some_and(|(_, value)| named(value, &["confirmed_precommit_refusal"]))
++            || !confirmed_body.attrs.is_empty() || confirmed_body.label.is_some()
++            || !field_call(confirmed_call, "pending", "custody", "rollback_after_confirmed_refusal")
++            || !matches!(&retain.pat, syn::Pat::Wild(value) if value.attrs.is_empty())
++            || retain.guard.is_some() || !bare_return(&retain.body)
++            || !aborted.attrs.is_empty() || !field(&aborted.left, "pending", "phase")
++            || !named(&aborted.right, &["PendingOutgoingMediaPhase", "Aborted"])
++            || !field_call(clear, "pending", "resolved_sources", "clear")
++            || !owned.attrs.is_empty() || !field(&owned.left, "pending", "has_owned_media")
++            || !is_false(&owned.right) || !named(&complete_call.receiver, &["errors"])
++            || !complete_call.args.is_empty() || !report.attrs.is_empty() || report.label.is_some()
++            || !binding(&report.pat, "error", false) || !named(&report.expr, &["errors"])
++            || !report_log.attrs.is_empty() || !log(&report_log.mac,
++                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}")
++            || !refuse.attrs.is_empty() || refuse.else_branch.is_some() || !failed.attrs.is_empty()
++            || !matches!(failed.op, syn::UnOp::Not(_)) || !named(&failed.expr, &["cleanup_complete"])
++            || !returns(&refuse.then_branch)
++        { return false; }
++
++        // This exact tail is after the failed-cleanup return, with the same
++        // entry's durable identity and checked release diagnostic.
++        let syn::Expr::Let(identity) = release.cond.as_ref() else { return false; };
++        let syn::Pat::Tuple(names) = identity.pat.as_ref() else { return false; };
++        let syn::Expr::Tuple(values) = identity.expr.as_ref() else { return false; };
++        let [syn::Stmt::Expr(syn::Expr::Match(settle), _)] = release.then_branch.stmts.as_slice() else { return false; };
++        let Some(call) = method(&settle.expr, "release_session_media_admission") else { return false; };
++        let [accepted, failed] = settle.arms.as_slice() else { return false; };
++        let syn::Expr::Assign(clear_work) = accepted.body.as_ref() else { return false; };
++        let syn::Expr::Macro(release_log) = failed.body.as_ref() else { return false; };
++        release.attrs.is_empty() && release.else_branch.is_none() && identity.attrs.is_empty()
++            && names.attrs.is_empty() && names.elems.len() == 2
++            && variant(&names.elems[0], "Some").is_some_and(|value| binding(value, "revision", false))
++            && variant(&names.elems[1], "Some").is_some_and(|value| binding(value, "work_id", false))
++            && values.attrs.is_empty() && values.elems.len() == 2
++            && field_call(&values.elems[0], "pending", "lifecycle_revision", "as_deref")
++            && field_call(&values.elems[1], "pending", "media_work_id", "as_deref")
++            && settle.attrs.is_empty() && field(&call.receiver, "self", "sessions") && call.args.len() == 3
++            && matches!(&call.args[0], syn::Expr::Reference(value) if value.attrs.is_empty()
++                && value.mutability.is_none() && field(&value.expr, "self", "agent_id"))
++            && named(&call.args[1], &["revision"]) && named(&call.args[2], &["work_id"])
++            && settle.arms.iter().all(|arm| arm.attrs.is_empty() && arm.guard.is_none())
++            && variant(&accepted.pat, "Ok").is_some_and(|value| matches!(value, syn::Pat::Wild(value) if value.attrs.is_empty()))
++            && clear_work.attrs.is_empty() && field(&clear_work.left, "pending", "media_work_id")
++            && named(&clear_work.right, &["None"])
++            && variant(&failed.pat, "Err").is_some_and(|value| binding(value, "error", false))
++            && release_log.attrs.is_empty() && log(&release_log.mac,
++                "mahayana-host outgoing_media_admission_release_failed agent={} tool_call={} error={error}")
++    }
++
++    if !channel_failure_unconditional(&file.attrs) { return false; }
++    let mut abort_owner = None;
++    let mut rollback_owner = None;
++    for item in &file.items {
++        let syn::Item::Impl(owner) = item else { continue; };
++        let syn::Type::Path(target) = owner.self_ty.as_ref() else { continue; };
++        if !target.path.segments.last().is_some_and(|part| part.ident == "ProductionSendMessageSink") { continue; }
++        let trait_sink = owner.trait_.as_ref().is_some_and(|(_, value, _)| {
++            value.segments.last().is_some_and(|part| part.ident == "SendMessageSink")
++        });
++        if owner.trait_.is_some() && !trait_sink { continue; }
++        let method_name = if trait_sink { "abort_attachment_custody" } else { "rollback_pending_media" };
++        let methods: Vec<_> = owner.items.iter().filter_map(|item| match item {
++            syn::ImplItem::Fn(value) if value.sig.ident == method_name => Some(value),
++            _ => None,
++        }).collect();
++        if !trait_sink && methods.is_empty() { continue; }
++        if !owner.attrs.is_empty() || target.qself.is_some()
++            || !path(&target.path, &["ProductionSendMessageSink"])
++            || owner.defaultness.is_some() || owner.unsafety.is_some()
++            || !owner.generics.params.is_empty() || owner.generics.where_clause.is_some()
++            || methods.len() != 1
++            || owner.trait_.as_ref().is_some_and(|(negative, value, _)| {
++                negative.is_some() || !path(value, &["SendMessageSink"])
++            })
++        { return false; }
++        let slot = if trait_sink { &mut abort_owner } else { &mut rollback_owner };
++        if slot.replace(methods[0]).is_some() { return false; }
++    }
++    abort_owner.is_some_and(abort) && rollback_owner.is_some_and(rollback)
++}
++
+ #[test]
+ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths() {
+     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+@@ -2927,12 +3149,134 @@
+     assert!(persisted_entry < dispatch, "delivery dispatch must follow transcript persistence");
+     assert!(SHIPPING_HOST.contains("deliveryOperationId"));
+     assert!(SHIPPING_HOST.contains("delivery_operation_id: Option<String>"));
+-    assert!(SHIPPING_HOST.contains(
+-        "for cleanup_error in custody.rollback()"
+-    ));
+-    assert!(SHIPPING_HOST.contains(
+-        "outgoing_media_cleanup_failed agent={} tool={} error={cleanup_error}"
+-    ));
++    // Preserve the cleanup/error-publication responsibility through its
++    // actual shipping delegation, with controls inside this existing test.
++    let normalized_host = SHIPPING_HOST.replace("\r\n", "\n");
++    for (line_ending, source) in [
++        ("LF", normalized_host.clone()),
++        ("CRLF", normalized_host.replace('\n', "\r\n")),
++    ] {
++        let parsed = syn::parse_file(&source).expect("actual shipping source must parse");
++        assert!(shipping_abort_reports_guarded_media_cleanup(&parsed),
++            "actual shipping abort must preserve guarded cleanup and its diagnostics ({line_ending})");
++    }
++    for (control, before, after) in [
++        (
++            "skip delegation behind a dead branch",
++            "        self.rollback_pending_media(&mut pending, tool_call_id, false);\n    }\n\n    fn read_media_dimensions(",
++            "        if false { self.rollback_pending_media(&mut pending, tool_call_id, false); }\n    }\n\n    fn read_media_dimensions(",
++        ),
++        (
++            "ordinary abort cannot claim confirmed precommit refusal",
++            "        self.rollback_pending_media(&mut pending, tool_call_id, false);\n    }\n\n    fn read_media_dimensions(",
++            "        self.rollback_pending_media(&mut pending, tool_call_id, true);\n    }\n\n    fn read_media_dimensions(",
++        ),
++        (
++            "ordinary abort cannot create an entry",
++            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };",
++            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, true) else { return };",
++        ),
++        (
++            "ordinary abort must use the same entry's nonblocking lock",
++            "        let Ok(mut pending) = Self::try_pending_media(&entry) else { return };",
++            "        let Ok(mut pending) = entry.lock() else { return };",
++        ),
++        (
++            "pending rollback requires the same confirmed refusal",
++            "            PendingOutgoingMediaPhase::OwnerSettlementPending if confirmed_precommit_refusal => {",
++            "            PendingOutgoingMediaPhase::OwnerSettlementPending => {",
++        ),
++        (
++            "unknown and terminal phases must return without cleanup",
++            "            _ => return,\n        };\n        pending.phase = PendingOutgoingMediaPhase::Aborted;",
++            "            _ => pending.custody.rollback_after_confirmed_refusal(),\n        };\n        pending.phase = PendingOutgoingMediaPhase::Aborted;",
++        ),
++        (
++            "returned cleanup errors cannot be discarded",
++            r#"        for error in errors {
++            eprintln!(
++                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}",
++                self.agent_id, tool_call_id
++            );
++        }"#,
++            "        for error in errors { let _ = error; }",
++        ),
++        (
++            "cleanup diagnostics must publish the returned error",
++            "\"mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}\"",
++            "\"mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error=unavailable\"",
++        ),
++        (
++            "fence release cannot run before cleanup",
++            "        let errors = match pending.phase {",
++            r#"        let _ = self.sessions.release_session_media_admission(
++            &self.agent_id,
++            pending.lifecycle_revision.as_deref().unwrap_or_default(),
++            pending.media_work_id.as_deref().unwrap_or_default(),
++        );
++        let errors = match pending.phase {"#,
++        ),
++        (
++            "cleanup failure cannot fall through to fence release",
++            "        if !cleanup_complete {\n            return;\n        }",
++            "        if !cleanup_complete { let _ = cleanup_complete; }",
++        ),
++        (
++            "abort cannot remove and recreate the indexed identity",
++            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };",
++            r#"        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };
++        self.pending_media.lock().unwrap().remove(tool_call_id);
++        let _ = self.pending_media_entry(tool_call_id, true);"#,
++        ),
++        (
++            "the shipping file cannot be conditional",
++            "//! Grok-aligned Mahayana Host process entrypoint.",
++            "#![cfg(test)]\n//! Grok-aligned Mahayana Host process entrypoint.",
++        ),
++        (
++            "the shipping trait implementation cannot be conditional",
++            "impl SendMessageSink for ProductionSendMessageSink {",
++            "#[cfg(test)]\nimpl SendMessageSink for ProductionSendMessageSink {",
++        ),
++        (
++            "the cleanup helper cannot be conditional",
++            "    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
++            "    #[cfg(test)]\n    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
++        ),
++        (
++            "the shipping trait owner must be unique",
++            "impl SendMessageSink for ProductionSendMessageSink {",
++            r#"impl SendMessageSink for ProductionSendMessageSink {
++    fn abort_attachment_custody(&self, tool_call_id: &str) {
++        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };
++        let Ok(mut pending) = Self::try_pending_media(&entry) else { return };
++        self.rollback_pending_media(&mut pending, tool_call_id, false);
++    }
++}
++
++impl SendMessageSink for ProductionSendMessageSink {"#,
++        ),
++        (
++            "the inherent cleanup helper must be unique",
++            "    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
++            "    fn rollback_pending_media(&self) {}\n\n    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
++        ),
++    ] {
++        assert_ne!(before, after, "control must change its intended site: {control}");
++        assert_eq!(normalized_host.matches(before).count(), 1,
++            "control must bind one actual shipping site: {control}");
++        let mutated = normalized_host.replacen(before, after, 1);
++        assert_ne!(mutated, normalized_host, "control cannot be a no-op: {control}");
++        for (line_ending, source) in [
++            ("LF", mutated.clone()), ("CRLF", mutated.replace('\n', "\r\n")),
++        ] {
++            let parsed = syn::parse_file(&source).unwrap_or_else(|error| {
++                panic!("control must remain Rust syntax: {control} ({line_ending}): {error}");
++            });
++            assert!(!shipping_abort_reports_guarded_media_cleanup(&parsed),
++                "unsafe or ambiguous wiring must fail: {control} ({line_ending})");
++        }
++    }
+ 
+     assert!(SHIPPING_HOST.contains("queue_channel_delivery_failure("));
+     assert!(SHIPPING_HOST.contains("\"markedAtMs\": marked_at_ms"));
+--- a/source/host/tests/openclaw_sessions_and_config_contract.rs
++++ b/source/host/tests/openclaw_sessions_and_config_contract.rs
+@@ -1862,11 +1862,15 @@
+     handled.then_some(())
+ }
+ 
++fn media_commit_source_image(source: &str) -> String {
++    // include_str! preserves checkout CRLF, while Rust source literals use LF.
++    // This image is only for the oracle; original input receipts stay raw.
++    source.replace("\r\n", "\n")
++}
++
+ fn source_without_owned_media_commit_adapter(source: &str) -> Option<String> {
+-    // Rust normalizes source CRLF before tokenization, while include_str!
+-    // retains checkout bytes. Only this oracle image uses logical newlines.
+-    let source = source.replace("\r\n", "\n");
+-    let source = source.as_str();
++    let image = media_commit_source_image(source);
++    let source = image.as_str();
+     media_commit_owner_is_handled(source)?;
+     // Prove the rollback method too, but keep all of it in the remaining scope.
+     media_commit_checked_method_source(source, "rollback", MEDIA_ROLLBACK_METHOD)?;
+@@ -1888,7 +1892,7 @@
+ }
+ 
+ fn media_commit_oracle_fixture() -> String {
+-    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    let source = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
+     assert!(source_without_owned_transaction_commit_adapters(&source).is_some(),
+         "media counterfactuals require a proven actual-source baseline");
+     source
+@@ -1918,8 +1922,8 @@
+ 
+ #[test]
+ fn media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
+-    let source = source.as_str();
++    let image = media_commit_source_image(include_str!("../src/extensions/session/agent_db.rs"));
++    let source = image.as_str();
+     let actual_drop = r#"impl Drop for SandAgentDb {
+     fn drop(&mut self) {
+         self.close(false);
+@@ -1958,13 +1962,16 @@
+ impl MediaOracleObservation for SandAgentDb { fn observe(&self) {} }
+ impl MediaOracleObservation for MediaSettlementCommands { fn observe(&self) {} }"#;
+     let coexistence = format!("{source}\n{harmless_traits}");
+-    let remaining = source_without_owned_transaction_commit_adapters(&coexistence)
++    assert_ne!(coexistence, source);
++    let coexistence_remaining = source_without_owned_transaction_commit_adapters(&coexistence)
+         .expect("independent traits can coexist with both exact inherent owners");
+-    assert!(remaining.contains(harmless_traits), "trait implementations receive no source exemption");
++    assert!(coexistence_remaining.contains(harmless_traits), "trait implementations receive no source exemption");
++    assert_eq!(coexistence_remaining, format!("{remaining}\n{harmless_traits}"),
++        "both complete harmless trait implementations must stay in the global scope");
+     assert_eq!(
+         source_without_owned_transaction_commit_adapters(&coexistence.replace('\n', "\r\n"))
+             .expect("trait coexistence remains accepted with CRLF"),
+-        remaining,
++        coexistence_remaining,
+     );
+ 
+     for body in [
+@@ -1990,6 +1997,7 @@
+         replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD, ""),
+         replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl OtherCommands {"),
+         replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl other::MediaSettlementCommands {"),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl MediaOracleTrait for MediaSettlementCommands {"),
+         replace_media_commit_site(&source, "impl MediaSettlementCommands {",
+             "impl MediaCommandsTrait for MediaSettlementCommands {"),
+         format!("{source}\nimpl MediaSettlementCommands {{}}"),
+@@ -2005,6 +2013,7 @@
+             &format!("#[cfg(test)] {MEDIA_ROLLBACK_METHOD}")),
+         format!("#![cfg(any())]\n{source}"),
+     ] {
++        assert_ne!(changed, source, "helper counterfactual must change its source");
+         assert!(syn::parse_file(&changed).is_ok(), "helper counterfactual must retain Rust syntax");
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "a missing, foreign, ambiguous, conditional, or textual helper cannot receive the exception");
+@@ -2013,6 +2022,7 @@
+         replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl MediaSettlementCommands"),
+         format!("{source}\nfn malformed() {{"),
+     ] {
++        assert_ne!(changed, source, "malformed counterfactual must change its source");
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "malformed helper source cannot receive the exception");
+     }
+@@ -2041,10 +2051,12 @@
+         replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
+             &MEDIA_COMMIT_OWNER_SIGNATURE.replace("-> Result<usize, AgentDbProjectionError>", "-> Result<usize, String>")),
+         replace_media_commit_site(&source, "impl SandAgentDb {", "impl other::SandAgentDb {"),
++        replace_media_commit_site(&source, "impl SandAgentDb {", "impl MediaOracleTrait for SandAgentDb {"),
+         replace_media_commit_site(&source, "impl SandAgentDb {", "impl MediaOwnerTrait for SandAgentDb {"),
+         replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_TAIL,
+             &format!("/* {MEDIA_COMMIT_OWNER_TAIL} */ Ok(0)")),
+     ] {
++        assert_ne!(changed, source, "owner counterfactual must change its source");
+         assert!(syn::parse_file(&changed).is_ok(), "owner counterfactual must retain Rust syntax");
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "only one unconditional actual media owner with the typed signature earns the exception");
+@@ -2061,6 +2073,8 @@
+         MEDIA_RAW_COMMIT_METHOD.replace("return Err(rusqlite::Error::InvalidQuery);", "return Ok(());"),
+     ] {
+         let changed = replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD, &changed_method);
++        assert_ne!(changed_method, MEDIA_RAW_COMMIT_METHOD);
++        assert_ne!(changed, source, "COMMIT mutation must touch the actual command");
+         assert!(syn::parse_file(&changed).is_ok());
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "a changed real command or acknowledgement boundary must revoke the exception");
+@@ -2071,6 +2085,8 @@
+         MEDIA_ROLLBACK_METHOD.replace("        result\n", "        Ok(())\n"),
+     ] {
+         let changed = replace_media_commit_site(&source, MEDIA_ROLLBACK_METHOD, &changed_method);
++        assert_ne!(changed_method, MEDIA_ROLLBACK_METHOD);
++        assert_ne!(changed, source, "ROLLBACK mutation must touch the actual command");
+         assert!(syn::parse_file(&changed).is_ok());
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "real rollback and authorizer cleanup must remain in the exact command method");
+@@ -2098,26 +2114,30 @@
+         "r#commit!(commands, db)?;",
+     ] {
+         let changed = format!("{source}\nfn extra_media_owner() {{ {call} }}");
++        assert_ne!(changed, source);
+         assert!(syn::parse_file(&changed).is_ok(), "extra caller fixture syntax: {call}");
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             &format!("normalization must leave every extra or unbounded call visible: {call}"));
+     }
+     let nested = replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
+         &format!("{MEDIA_RAW_COMMIT_METHOD}\nfn extra(&self, db: &rusqlite::Connection) {{ self.commit(db)?; }}"));
++    assert_ne!(nested, source, "nested caller must be inserted into the actual helper");
+     assert!(syn::parse_file(&nested).is_ok());
+     assert_media_commit_rejected_for_both_line_endings(&source, &nested,
+         "a helper sibling is not part of the method-sized exception");
+     for owner in ["SandAgentDb", "MediaSettlementCommands"] {
+         for call in [
++            "commands.commit(db)?;",
+             "let alias = commands; alias.commit(db)?;",
+             "let alias = commands; alias.r#commit(db)?;",
+         ] {
+             let changed = format!(
+                 "{source}\nimpl MediaOracleCaller for {owner} {{ fn invoke(&self) {{ {call} }} }}"
+             );
++            assert_ne!(changed, source);
+             assert!(syn::parse_file(&changed).is_ok(), "trait caller counterfactual syntax: {owner}");
+             assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+-                "both line endings retain an excluded trait's aliased helper call");
++                &format!("LF and CRLF must retain an excluded trait's direct or aliased helper call: {owner}"));
+         }
+     }
+ }
+@@ -2138,6 +2158,8 @@
+         MEDIA_COMMIT_OWNER_TAIL.replace("return Err(AgentDbProjectionError::TranscriptCommitUnknown(error.to_string()));", "return Ok(inserted.len());"),
+     ] {
+         let changed = replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_TAIL, &changed_tail);
++        assert_ne!(changed_tail, MEDIA_COMMIT_OWNER_TAIL);
++        assert_ne!(changed, source, "settlement-tail mutation must touch the actual owner");
+         assert!(syn::parse_file(&changed).is_ok(), "settlement-tail fixture syntax");
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "the returned outcome must retain commit error, rollback, autocommit, retirement and publication handling");
+@@ -2150,6 +2172,8 @@
+     ] {
+         let changed_writes = replace_media_commit_site(&writes, write_start, replacement);
+         let changed = replace_media_commit_site(&source, writes.as_str(), &changed_writes);
++        assert_ne!(changed_writes, writes);
++        assert_ne!(changed, source, "closure mutation must touch the actual owner");
+         assert!(syn::parse_file(&changed).is_ok(), "deferred-body fixture syntax");
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "an altered write-closure entry cannot borrow the proven tail");
+@@ -2168,6 +2192,8 @@
+         MEDIA_COMMIT_OWNER_PREFIX.replace("let mut guard = match self.connection.lock()", "#[cfg(test)] let mut guard = match self.connection.lock()"),
+     ] {
+         let changed = replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_PREFIX, &changed_prefix);
++        assert_ne!(changed_prefix, MEDIA_COMMIT_OWNER_PREFIX);
++        assert_ne!(changed, source, "entry mutation must touch the actual owner");
+         assert!(syn::parse_file(&changed).is_ok(), "entry failure fixture syntax");
+         assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "poisoned/prior/unsettled-BEGIN ownership cannot become ordinary refusal or retain the connection");
+@@ -2183,15 +2209,15 @@
+     for changed in [
+         format!("{unguarded}\n{source}"),
+         format!("{source}\n{unguarded}"),
++        format!("{source}\nimpl RawMediaOwner for SandAgentDb {{ fn unguarded(&self) {{ {direct} }} }}"),
++        format!("{source}\nimpl RawMediaOwner for MediaSettlementCommands {{ fn unguarded(&self) {{ {direct} }} }}"),
+         replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
+             &format!("{MEDIA_RAW_COMMIT_METHOD}\n{unguarded}")),
+         replace_media_commit_site(&source, writes.as_str(), &format!("{writes}\n{direct}")),
+         format!("{source}\nimpl HiddenRawCommit for SandAgentDb {{ {unguarded} }}"),
+         format!("{source}\nimpl HiddenRawCommit for MediaSettlementCommands {{ {unguarded} }}"),
+-        format!("{source}\nimpl RawMediaOwner for SandAgentDb {{ fn unguarded(&self) {{ {direct} }} }}"),
+-        format!("{source}\nimpl RawMediaOwner for MediaSettlementCommands {{ fn unguarded(&self) {{ {direct} }} }}"),
+     ] {
+-        assert_ne!(changed, source, "raw COMMIT counterfactual must add a real owner");
++        assert_ne!(changed, source, "raw-owner counterfactual must change its source");
+         assert!(syn::parse_file(&changed).is_ok(), "raw-owner fixture syntax");
+         for (line_ending, changed) in [
+             ("LF", changed.clone()),
+@@ -2201,6 +2227,8 @@
+                 .expect("the unchanged bounded adapters still prove their own handling");
+             assert!(remaining.contains(direct),
+                 "the unchanged global prohibition must still reject every other raw COMMIT owner ({line_ending})");
++            assert_eq!(remaining.matches(direct).count(), 1,
++                "LF and CRLF must preserve the global prohibition for every other raw COMMIT owner ({line_ending})");
+         }
+     }
+ }
+@@ -2536,13 +2564,16 @@
+     ] {
+         assert_eq!(source.matches(before).count(), 1, "mutation must bind one production site");
+         let mutated = source.replacen(before, after, 1);
++        assert_ne!(mutated, source);
+         assert!(source_without_owned_channel_commit_adapter(&mutated).is_none(),
+             "missing transaction error ownership must revoke the exception");
+     }
+     assert!(source_without_owned_channel_commit_adapter("fn broken(").is_none());
+-    assert!(source_without_owned_channel_commit_adapter(&source.replace(
++    let missing_helper = source.replace(
+         "impl ChannelInboundTransactionControl {", "impl MissingChannelTransactionControl {",
+-    )).is_none());
++    );
++    assert_ne!(missing_helper, source);
++    assert!(source_without_owned_channel_commit_adapter(&missing_helper).is_none());
+ }
+ 
+ fn channel_commit_oracle_fixture() -> String {
+@@ -2598,6 +2629,7 @@
+         fixture.replacen(CHANNEL_RAW_COMMIT_METHOD,
+             &format!("{CHANNEL_RAW_COMMIT_METHOD}\n{unsafe_owner}"), 1),
+     ] {
++        assert_ne!(source, fixture, "unsafe-owner counterfactual must change its fixture");
+         let owners = agent_db_transaction_owner_source(&source).expect("unchanged adapter boundary");
+         assert!(owners.contains("db.execute_batch(\"COMMIT\")?;"),
+             "the original owner assertion must still reject this direct propagation: {source}");
+@@ -2679,16 +2711,21 @@
+         "Err(error) if db.is_autocommit() => channel_inbound_transaction_failure(db, channel_inbound_storage_failure(error), true, control),",
+         "_ => (ChannelInboundAppendOutcome::Committed { inserted_count }, false),",
+     ] {
+-        assert!(agent_db_transaction_owner_source(&fixture.replacen(error_arm, replacement, 1)).is_none(),
++        let changed = fixture.replacen(error_arm, replacement, 1);
++        assert_ne!(changed, fixture);
++        assert!(agent_db_transaction_owner_source(&changed).is_none(),
+             "the actual unguarded error arm must retain unknown/rollback handling: {replacement}");
+     }
+     let discarded = fixture.replacen(CHANNEL_COMMIT_OWNER_TAIL,
+         &format!("{CHANNEL_COMMIT_OWNER_TAIL}; ignored_outcome()"), 1);
++    assert_ne!(discarded, fixture);
+     assert!(agent_db_transaction_owner_source(&discarded).is_none());
+     let test_only_caller = fixture.replacen("fn append_channel_inbound_transaction",
+         "#[cfg(test)] fn append_channel_inbound_transaction", 1);
++    assert_ne!(test_only_caller, fixture);
+     assert!(agent_db_transaction_owner_source(&test_only_caller).is_none());
+     let wrong_owner = fixture.replacen("fn append_channel_inbound_transaction", "fn other_owner", 1);
++    assert_ne!(wrong_owner, fixture);
+     assert!(agent_db_transaction_owner_source(&wrong_owner).is_none());
+ }
+ 
+@@ -2712,6 +2749,7 @@
+             "impl ChannelInboundTransactionControl", 1),
+         format!("{fixture}\nfn malformed() {{"),
+     ] {
++        assert_ne!(source, fixture, "helper counterfactual must change its fixture");
+         assert!(agent_db_transaction_owner_source(&source).is_none(),
+             "only the complete unambiguous production command method may be excluded: {source}");
+     }
+@@ -2735,10 +2773,12 @@
+         "if let Err(error) = db.execute_batch(\"COMMIT\") { return Err(error); }",
+         1,
+     );
++    assert_ne!(rewritten, source);
+     let hidden_owner = format!(
+         "\nfn unguarded_commit(db: &rusqlite::Connection) -> Result<(), rusqlite::Error> {{ {direct} Ok(()) }}\n{boundary}"
+     );
+     let hidden = rewritten.replacen(boundary, &hidden_owner, 1);
++    assert_ne!(hidden, rewritten);
+     assert!(syn::parse_file(&hidden).is_ok(), "counterfactual must remain valid source syntax");
+     assert_eq!(hidden.matches(direct).count(), 1);
+     assert!(source_without_owned_channel_commit_adapter(&hidden).is_none(),

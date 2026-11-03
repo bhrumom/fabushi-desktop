@@ -1,0 +1,13 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "decision": "ADOPT_R6_BOUND_ABORT_WIRING_REPAIR",
+  "pre_edit_FIX": "MSU-ROOT-R6-002",
+  "source_parent_blob": "2da45cf1dbca8a80ef341f4624ea877b1629d9f9",
+  "candidate_blob": "1c38f0bfde3e23cb0d227d1c4dfb4bd5b4d0b713",
+  "candidate_sha256": "281cfdaa4b4c28a89dab0474340775c43d17b0b3b01808c9842c26f4a1460529",
+  "root_read": "Full proposed helper, all16 qualification controls, entire implementation note and changed source against actual App owners read. Final delta from preliminary9a1 strengthens the duplicate-trait control with an otherwise qualifying abort method, isolating uniqueness from missing-method refusal. Root reread final helper/control text and Appheader/abort/cleanup/lock boundaries.",
+  "scope": "Replace only the two obsolete whole-file cleanup/log literals and insert bounded test helper. All48 test declarations and unrelated channel assertions remain. This is source wiring qualification, not proof of full runtime custody or name resolution.",
+  "decision_before_applying": true,
+  "open_execution": "Fresh independent focused review, actual LFCRLF positive/negative execution, repaired original shipping named test and full48target result remain required on newH. No local executable verification."
+}

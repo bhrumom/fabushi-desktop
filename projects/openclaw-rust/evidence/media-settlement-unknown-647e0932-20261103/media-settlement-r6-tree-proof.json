@@ -1,0 +1,17 @@
+{
+  "tree": "4b94e525d6790d6f355ea6e2113db02cb5e5a46f",
+  "parent_commit": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "parent_tree": "efb2a28c92d2f24cd4f6bbbd84d86709c0b2f028",
+  "untruncated": true,
+  "scoped_paths": 22,
+  "scoped_all_match": true,
+  "changed_paths": [
+    "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+    "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+    "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+    "source/host/tests/background_wakes_production_contract.rs",
+    "source/host/tests/openclaw_sessions_and_config_contract.rs"
+  ],
+  "all_other_parent_leaves_preserved": true,
+  "source_only": true
+}

@@ -1,0 +1,1085 @@
+warning: unused import: `mahayana_host_protocol::ComputerAccessibilityNode`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:14:5
+   |
+14 | use mahayana_host_protocol::ComputerAccessibilityNode;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `mahayana_host_protocol::ComputerSemanticAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:18:5
+   |
+18 | use mahayana_host_protocol::ComputerSemanticAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `mahayana_host_protocol::ComputerWindowAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:21:5
+   |
+21 | use mahayana_host_protocol::ComputerWindowAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `mahayana-computer` (lib) generated 3 warnings (run `cargo fix --lib -p mahayana-computer` to apply 3 suggestions)
+warning: unused import: `AgentActivity`
+  --> src/extensions/transcript/production_runtime.rs:15:44
+   |
+15 | use crate::sand_activity::{ActivityUpdate, AgentActivity};
+   |                                            ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `DateTime`
+ --> src/extensions/transcript/automation_run_path.rs:5:14
+  |
+5 | use chrono::{DateTime, Local, TimeZone, Utc};
+  |              ^^^^^^^^
+
+warning: unused import: `ConversationStructureRefs`
+  --> src/extensions/session/session_conversation_state.rs:34:5
+   |
+34 |     ConversationStructureRefs, OutlineItem as RecoveryOutlineItem,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> src/extensions/box_store_sync/sand_box_store_v2_client.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `SandBoxStoreCompletedPart`
+  --> src/extensions/box_store_sync/sand_box_store_v2_client.rs:12:5
+   |
+12 |     SandBoxStoreCompletedPart, SandBoxStoreListPage, SandBoxStoreMultipartCompletion,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `json`
+  --> src/extensions/box_store_sync/production.rs:16:18
+   |
+16 | use serde_json::{json, Map, Value};
+   |                  ^^^^
+
+warning: unused imports: `BOX_STORE_BLOBS_PREFIX` and `BOX_STORE_MANIFEST_VERSION`
+  --> src/extensions/box_store_sync/production.rs:38:46
+   |
+38 |     BoxStoreManifest, BoxStoreManifestEntry, BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH,
+   |                                              ^^^^^^^^^^^^^^^^^^^^^^
+39 |     BOX_STORE_MANIFEST_VERSION, SAND_MANIFEST_V2_ENV,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES`
+  --> src/extensions/box_store_sync/production.rs:56:40
+   |
+56 |     plan_periodic_cycle, BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `WorkspaceIgnore`
+  --> src/extensions/box_store_sync/production.rs:86:28
+   |
+86 |     load_workspace_ignore, WorkspaceIgnore, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS,
+   |                            ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fmt`
+ --> src/extensions/box_lifecycle/production.rs:1:5
+  |
+1 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `run_codex_direct_responses_with_cancel`
+  --> src/extensions/inference/provider_session.rs:35:45
+   |
+35 |     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `DiskPressureReport`
+  --> src/extensions/forever_box/disk_pressure.rs:17:44
+   |
+17 |     DiskPressureLevel, DiskPressureLogger, DiskPressureReport, DiskPressureReporter,
+   |                                            ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `regex::Regex`
+  --> src/extensions/attachments/input_files.rs:13:5
+   |
+13 | use regex::Regex;
+   |     ^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/attachments/load_options.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `SaveMediaSourceError`
+  --> src/extensions/attachments/media_fetch.rs:22:5
+   |
+22 |     SaveMediaSourceError, SaveMediaSourceErrorCode,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `PathBuf` and `Path`
+ --> src/extensions/attachments/media_generation_service.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^  ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/extensions/attachments/media_probe.rs:1:5
+  |
+1 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fs::File`
+ --> src/extensions/attachments/media_probe.rs:2:5
+  |
+2 | use std::fs::File;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Read`
+ --> src/extensions/attachments/media_probe.rs:3:5
+  |
+3 | use std::io::Read;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::path::Path`
+ --> src/extensions/attachments/media_probe.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::sync::LazyLock`
+ --> src/extensions/attachments/media_probe.rs:5:5
+  |
+5 | use std::sync::LazyLock;
+  |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::time::Instant`
+ --> src/extensions/attachments/media_probe.rs:6:5
+  |
+6 | use std::time::Instant;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SeekFrom` and `Seek`
+ --> src/extensions/attachments/media_store.rs:3:27
+  |
+3 | use std::io::{self, Read, Seek, SeekFrom, Write};
+  |                           ^^^^  ^^^^^^^^
+
+warning: unused import: `Component`
+ --> src/extensions/attachments/media_store.rs:4:17
+  |
+4 | use std::path::{Component, Path, PathBuf};
+  |                 ^^^^^^^^^
+
+warning: unused imports: `Value` and `json`
+  --> src/extensions/attachments/media_store.rs:10:18
+   |
+10 | use serde_json::{Value, json};
+   |                  ^^^^^  ^^^^
+
+warning: unused import: `format_media_size`
+  --> src/extensions/attachments/media_store.rs:15:70
+   |
+15 |     MEDIA_FILE_MODE, SaveMediaSourceError, SaveMediaSourceErrorCode, format_media_size,
+   |                                                                      ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/attachments/media_understanding_service.rs:1:33
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `std::collections::HashSet`
+ --> src/extensions/attachments/parse_output.rs:8:5
+  |
+8 | use std::collections::HashSet;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+  --> src/extensions/attachments/remote_workspace_file.rs:10:17
+   |
+10 | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+
+warning: unused import: `Sha256`
+  --> src/extensions/attachments/staged_inputs.rs:13:20
+   |
+13 | use sha2::{Digest, Sha256};
+   |                    ^^^^^^
+
+warning: unused import: `ImageMetadata`
+  --> src/extensions/attachments/web_media.rs:20:35
+   |
+20 |     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
+   |                                   ^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/content_search/search_index_writer.rs:3:17
+  |
+3 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/plugin_sdk/api_baseline.rs:2:33
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `PathBuf`
+ --> src/extensions/plugin_sdk/api_baseline.rs:3:23
+  |
+3 | use std::path::{Path, PathBuf};
+  |                       ^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/plugin_sdk/archive_blob.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `json`
+ --> src/extensions/plugin_sdk/channel_entry.rs:2:18
+  |
+2 | use serde_json::{json, Value};
+  |                  ^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/extensions/plugin_sdk/channel_entry.rs:3:5
+  |
+3 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Engine as _` and `engine::general_purpose::STANDARD`
+ --> src/extensions/plugins/clawhub.rs:1:14
+  |
+1 | use base64::{engine::general_purpose::STANDARD, Engine as _};
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^
+
+warning: unused import: `Sha256`
+ --> src/extensions/plugins/clawhub.rs:3:20
+  |
+3 | use sha2::{Digest, Sha256};
+  |                    ^^^^^^
+
+warning: unused import: `HashMap`
+ --> src/extensions/plugins/commands.rs:2:24
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: unused import: `Arc`
+ --> src/extensions/plugins/commands.rs:4:17
+  |
+4 | use std::sync::{Arc, Condvar, Mutex};
+  |                 ^^^
+
+warning: unused import: `Arc`
+ --> src/extensions/plugins/computer_use.rs:3:17
+  |
+3 | use std::sync::{Arc, Mutex};
+  |                 ^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/plugins/config.rs:3:33
+  |
+3 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `Map`
+ --> src/runner/tools/sand_multitask_todo_tool.rs:5:18
+  |
+5 | use serde_json::{Map, Value, json};
+  |                  ^^^
+
+warning: unused import: `std::fmt`
+ --> src/box/box_transfer.rs:3:5
+  |
+3 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `Arc`
+ --> src/workflows/workflow_library.rs:5:17
+  |
+5 | use std::sync::{Arc, OnceLock};
+  |                 ^^^
+
+warning: unused import: `HashMap`
+ --> src/agents/agent_roster.rs:1:24
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: unused import: `ProductionAgentStoreWorkerBackend`
+ --> src/transcript_mirror/production_provider.rs:6:5
+  |
+6 |     ProductionAgentStoreWorkerBackend, TranscriptMirrorOffloadPool, WorkerBlobStore,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/device_pairing_owner.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `Digest`
+  --> src/extensions/attachments/staged_inputs.rs:13:12
+   |
+13 | use sha2::{Digest, Sha256};
+   |            ^^^^^^
+
+warning: unused import: `Digest`
+ --> src/extensions/plugins/clawhub.rs:3:12
+  |
+3 | use sha2::{Digest, Sha256};
+  |            ^^^^^^
+
+warning: unused import: `PermissionsExt`
+  --> src/extensions/snapshot/git_backup_manager.rs:14:54
+   |
+14 | use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
+   |                                                      ^^^^^^^^^^^^^^
+
+warning: unused variable: `session_key`
+   --> src/extensions/transcript/agent_to_agent_messaging.rs:302:44
+    |
+302 |         let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
+    |                                            ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_session_key`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+    --> src/extensions/transcript/production_runtime.rs:1592:13
+     |
+1592 |         let mut result = if suppress_stale_turn {
+     |             ----^^^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_echo_entry_id` is never read
+    --> src/extensions/transcript/production_runtime.rs:1396:59
+     |
+1396 |         let mut persisted_echo_entry_id: Option<String> = None;
+     |                                                           ^^^^ this value is reassigned later and never used
+...
+1438 |                             persisted_echo_entry_id =
+     |                             ----------------------- `persisted_echo_entry_id` is overwritten here before the previous value is read
+     |
+     = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_send_context` is never read
+    --> src/extensions/transcript/production_runtime.rs:1397:42
+     |
+1397 |         let mut persisted_send_context = PersistedSendContext::default();
+     |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+1437 |                             persisted_send_context = persisted.into();
+     |                             ---------------------- `persisted_send_context` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:2069:13
+     |
+2069 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:2694:13
+     |
+2694 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:5155:13
+     |
+5155 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/box_store_sync/box_copy_in.rs:948:25
+    |
+948 |                     let mut event = build_copy_in_watchdog_event(
+    |                         ----^^^^^
+    |                         |
+    |                         help: remove this `mut`
+
+warning: value assigned to `manifest_committed` is never read
+    --> src/extensions/box_store_sync/production.rs:1555:17
+     |
+1555 |                 manifest_committed = false;
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+  --> src/extensions/cloud_workers/store.rs:60:13
+   |
+60 |         let mut file = File::open(path).map_err(CloudWorkerStoreError::Read)?;
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+warning: value assigned to `held` is never read
+   --> src/extensions/telemetry/structured_log_telemetry.rs:312:29
+    |
+312 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `held` is never read
+   --> src/extensions/telemetry/structured_log_telemetry.rs:329:29
+    |
+329 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: unused variable: `current_ref`
+   --> src/extensions/inference/model_picker_service.rs:374:9
+    |
+374 |     let current_ref = format!("{}/{}", params.current_provider, params.current_model);
+    |         ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_current_ref`
+
+warning: value assigned to `should_sync` is never read
+   --> src/extensions/wallpaper/wallpaper_service.rs:149:9
+    |
+149 |           should_sync = false;
+    |           ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+185 | /         should_sync = wait_for_next(
+186 | |             &inner,
+187 | |             &receiver,
+188 | |             Duration::from_millis(remaining_ms),
+189 | |         );
+    | |_________- `should_sync` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_probe.rs:268:9
+    |
+268 |     let mut audio_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_probe.rs:279:9
+    |
+279 |     let mut video_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_store.rs:614:9
+    |
+614 |     let mut file = options.open(path)?;
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `ttl`
+  --> src/extensions/plugin_sdk/channel_runtime.rs:98:36
+   |
+98 |     pub fn claim(&self, key: &str, ttl: Duration) -> ReplayClaimResult {
+   |                                    ^^^ help: if this is intentional, prefix it with an underscore: `_ttl`
+
+warning: unused variable: `v`
+    --> src/extensions/plugins/capability_catalog.rs:2298:17
+     |
+2298 |         for (k, v) in configured_channels {
+     |                 ^ help: if this is intentional, prefix it with an underscore: `_v`
+
+warning: variable does not need to be mutable
+   --> src/extensions/snapshot/git_backup_manager.rs:764:9
+    |
+764 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/snapshot/git_backup_manager.rs:877:9
+    |
+877 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/runner/tools/send_message_schema.rs:221:21
+    |
+221 |                 let mut path = prefix.clone();
+    |                     ----^^^^
+    |                     |
+    |                     help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/runner/tools/communicate_tool.rs:126:9
+    |
+126 |     let mut payload = executing_payload(tool_name, activity);
+    |         ----^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `stderr`
+   --> src/box/box_windows.rs:173:53
+    |
+173 |         ShellExecutionOutcome::Success { exit_code, stderr }
+    |                                                     ^^^^^^ help: try ignoring the field: `stderr: _`
+
+warning: method `sync_baseline` is never used
+    --> src/extensions/transcript/automation_runtime.rs:1260:8
+     |
+ 494 | impl AutomationRuntime {
+     | ---------------------- method in this implementation
+...
+1260 |     fn sync_baseline(&self, agent_id: &str, definitions: &[AutomationRecord]) {
+     |        ^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `assert_agent_transcript_write_admission` is never used
+    --> src/extensions/session/production.rs:2500:8
+     |
+ 269 | impl ProductionSessionWorkers {
+     | ----------------------------- method in this implementation
+...
+2500 |     fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_download_owner` is never used
+   --> src/extensions/box_store_sync/box_copy_in.rs:550:4
+    |
+550 | fn apply_download_owner(path: &Path, owner: Option<(u32, u32)>) -> Result<(), String> {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `openclaw_portable_backup_enabled` is never used
+   --> src/extensions/box_store_sync/production.rs:105:4
+    |
+105 | fn openclaw_portable_backup_enabled() -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `load_manifest` is never used
+    --> src/extensions/box_store_sync/production.rs:1723:4
+     |
+1723 | fn load_manifest(store: &dyn BoxObjectStore) -> Result<Option<BoxStoreManifest>, String> {
+     |    ^^^^^^^^^^^^^
+
+warning: function `write_manifest_if_unchanged` is never used
+    --> src/extensions/box_store_sync/production.rs:1727:4
+     |
+1727 | fn write_manifest_if_unchanged(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `write_manifest` is never used
+    --> src/extensions/box_store_sync/production.rs:1754:4
+     |
+1754 | fn write_manifest(
+     |    ^^^^^^^^^^^^^^
+
+warning: function `sync_store_db_snapshots` is never used
+    --> src/extensions/box_store_sync/production.rs:2257:4
+     |
+2257 | fn sync_store_db_snapshots(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `sync_store_db_snapshots_with_options` is never used
+    --> src/extensions/box_store_sync/production.rs:2277:4
+     |
+2277 | fn sync_store_db_snapshots_with_options(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_excluded` is never used
+    --> src/extensions/box_store_sync/production.rs:2783:4
+     |
+2783 | fn is_excluded(rel_path: &str, excludes: &[&str]) -> bool {
+     |    ^^^^^^^^^^^
+
+warning: constant `MAX_ENV_NAME_CHARS` is never used
+ --> src/extensions/cloud_workers/auxiliary.rs:6:7
+  |
+6 | const MAX_ENV_NAME_CHARS: usize = 128;
+  |       ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_ARCHIVE_MEMBER_CHARS` is never used
+ --> src/extensions/cloud_workers/artifact_admission.rs:8:7
+  |
+8 | const MAX_ARCHIVE_MEMBER_CHARS: usize = 4096;
+  |       ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_archive_member_path` is never used
+   --> src/extensions/cloud_workers/artifact_admission.rs:204:8
+    |
+204 | pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifactAdmissionError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_windows_drive_path` is never used
+   --> src/extensions/cloud_workers/artifact_admission.rs:224:4
+    |
+224 | fn is_windows_drive_path(path: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `windows_instance_name` and `windows_previous_profile_interval` are never read
+   --> src/extensions/telemetry/pressure_cpu_profiler.rs:320:5
+    |
+316 | struct ProductionCpuProfilerState {
+    |        -------------------------- fields in this struct
+...
+320 |     windows_instance_name: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+321 |     windows_previous_profile_interval: Option<u64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps` is never used
+    --> src/extensions/inference/provider_session.rs:1696:4
+     |
+1696 | fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text` is never used
+    --> src/extensions/inference/provider_session.rs:2688:4
+     |
+2688 | fn run_openrouter_provider_text(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text_with_lifecycle` is never used
+    --> src/extensions/inference/provider_session.rs:2702:4
+     |
+2702 | fn run_openrouter_provider_text_with_lifecycle(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `revocation_reason` is never read
+   --> src/extensions/mcp/installable_package/policy.rs:418:5
+    |
+409 | struct TrustKey {
+    |        -------- field in this struct
+...
+418 |     revocation_reason: String,
+    |     ^^^^^^^^^^^^^^^^^
+    |
+    = note: `TrustKey` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: method `as_str` is never used
+  --> src/extensions/node_host/secret_materializer.rs:35:19
+   |
+20 | impl NodeHostSecretInputRef {
+   | --------------------------- method in this implementation
+...
+35 |     pub(crate) fn as_str(&self) -> &str {
+   |                   ^^^^^^
+
+warning: associated function `new` is never used
+  --> src/extensions/node_host/secret_materializer.rs:68:19
+   |
+65 | impl NodeHostCloudflareAccessCredentials {
+   | ---------------------------------------- associated function in this implementation
+...
+68 |     pub(crate) fn new(
+   |                   ^^^
+
+warning: function `sysconf_pages` is never used
+   --> src/host_system_info.rs:119:4
+    |
+119 | fn sysconf_pages(name: libc::c_int, label: &str) -> Result<u64, String> {
+    |    ^^^^^^^^^^^^^
+
+warning: function `hex_nibble` is never used
+   --> src/agent_isolation/conversation_blob_store.rs:392:4
+    |
+392 | fn hex_nibble(value: u8) -> Option<u8> {
+    |    ^^^^^^^^^^
+
+warning: variant `Enum` is never constructed
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-6d7e1a4dbbebd760/out/agent_tool_json_schema.rs:5:47
+  |
+5 | enum AgentToolJsonMapValueKind { Scalar(u64), Enum(&'static [(i64, &'static str)]), Message(&'static str) }
+  |      -------------------------                ^^^^
+  |      |
+  |      variant in this enum
+  |
+  = note: `AgentToolJsonMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `optional` is never read
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-6d7e1a4dbbebd760/out/agent_tool_json_schema.rs:9:123
+  |
+9 | struct AgentToolJsonFieldDescriptor { number: u64, json_name: &'static str, kind: AgentToolJsonFieldKind, repeated: bool, optional: b...
+  |        ---------------------------- field in this struct                                                                  ^^^^^^^^
+  |
+  = note: `AgentToolJsonFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variant `Enum` is never constructed
+ --> src/cloud_agents/cloud_agent_trace_format.rs:8:5
+  |
+6 | enum CloudAgentProtoMapValueKind {
+  |      --------------------------- variant in this enum
+7 |     Scalar(u64),
+8 |     Enum,
+  |     ^^^^
+  |
+  = note: `CloudAgentProtoMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `proto_name` is never read
+  --> src/cloud_agents/cloud_agent_trace_format.rs:26:5
+   |
+24 | struct CloudAgentProtoFieldDescriptor {
+   |        ------------------------------ field in this struct
+25 |     number: u64,
+26 |     proto_name: &'static str,
+   |     ^^^^^^^^^^
+   |
+   = note: `CloudAgentProtoFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `db_path` is never read
+  --> src/device_pairing_owner.rs:17:5
+   |
+15 | pub struct DevicePairingOwner {
+   |            ------------------ field in this struct
+16 |     conn: Mutex<Connection>,
+17 |     db_path: Option<PathBuf>,
+   |     ^^^^^^^
+
+warning: `mahayana-host-runtime` (lib) generated 105 warnings (run `cargo fix --lib -p mahayana-host-runtime` to apply 68 suggestions)
+   Compiling mahayana-host-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/host)
+    Finished `test` profile [unoptimized] target(s) in 10.55s
+     Running tests/agent_content_search_contract.rs (source/host/target/debug/deps/agent_content_search_contract-0efa69a11c80892c)
+
+running 7 tests
+test frozen_limits_and_entry_text_projection_match_grok ... ok
+test matches_walk_newest_first_skip_hidden_peers_and_preserve_roles ... ok
+test snippet_collapses_whitespace_preserves_case_and_applies_frozen_window ... ok
+test unicode_snippet_keeps_character_windows_and_whitespace_contract ... ok
+test unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text ... ok
+test unicode_snippet_preserves_whole_string_contextual_sigma_matching ... ok
+test zero_limit_and_empty_query_return_no_matches ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/background_wakes_production_contract.rs (source/host/target/debug/deps/background_wakes_production_contract-a2cf806eb417a189)
+
+running 48 tests
+test channel_failure_close_during_a_gate_revokes_all_phases_and_late_tickets_without_reopening ... ok
+test channel_failure_entered_and_retained_heads_refuse_all_replay_and_phase_confusion ... ok
+test channel_failure_idle_handoff_closed_owner_does_not_claim_late_work ... ok
+test channel_failure_idle_handoff_enqueue_wins_retains_current_worker_and_claims_batch_once ... ok
+test channel_failure_idle_handoff_idle_wins_admits_one_successor_and_claims_batch_once ... ok
+test channel_failure_idle_handoff_preserves_other_agents_and_wake_families ... ok
+test channel_failure_idle_handoff_treats_stored_empty_batch_as_idle ... ok
+test channel_failure_launch_error_and_delayed_callbacks_cannot_clear_a_successor ... ok
+test channel_failure_live_enqueue_before_idle_uses_current_drain_and_claims_ordered_head_once ... ok
+test channel_failure_live_head_preserves_filtered_order_ahead_of_tail_until_definite_finish ... ok
+test channel_failure_live_idle_before_enqueue_admits_one_successor_without_late_release ... ok
+test channel_failure_live_take_requires_revival_and_releases_stored_empty_input ... ok
+test channel_failure_queue_is_agent_scoped_and_revival_fenced ... ok
+test channel_failure_readiness_on_either_side_of_pause_retries_latest_filtered_head_once ... ok
+test channel_failure_retained_head_does_not_block_other_agents_or_wake_families ... ok
+test channel_failure_targeted_readiness_preserves_other_tickets_paused_heads_and_raw_tails ... ok
+test channel_failure_wiring_oracle_rejects_cleanup_after_idle_return ... ok
+test channel_failure_wiring_oracle_rejects_raw_take_and_bypassed_token_admission ... ok
+test channel_failure_wiring_oracle_requires_captured_generation_and_shipping_observer ... ok
+test channel_failure_wiring_oracle_requires_checked_completion_before_finish ... ok
+test channel_outbound_projection_matches_frozen_text_attachment_and_widget_fences ... ok
+test delivery_failure_humanization_and_hidden_revival_prompt_match_frozen_contract ... ok
+test host_channel_delivery_defaults_fail_closed_and_allows_one_explicit_provider_port ... ok
+test inbound_append_bound_redrive_precedes_raw_tail_and_rejects_delayed_original_worker ... ok
+test inbound_append_committed_head_grants_one_handoff_permission_and_one_finish_before_next_batch ... ok
+test inbound_append_displayed_dm_redrive_keeps_empty_preparation_and_grants_zero_row_commit_once ... ok
+test inbound_append_enqueue_before_idle_retains_current_worker_and_claims_ordered_head_once ... ok
+test inbound_append_idle_before_enqueue_admits_one_successor_with_ordered_head ... ok
+test inbound_append_not_written_retry_keeps_original_preparation_ahead_of_tail_and_fences_old_worker ... ok
+test inbound_append_old_worker_cannot_update_or_clear_replacement_owner_with_same_agent_and_payload ... ok
+test inbound_append_pause_and_binding_without_entries_survive_later_wake ... ok
+test inbound_append_redrive_refuses_missing_preparation_or_binding_and_retains_original_head ... ok
+test inbound_append_requires_revival_and_releases_stored_empty_input_without_a_claim ... ok
+test inbound_append_unknown_agent_does_not_block_other_agents_or_change_other_wake_families ... ok
+test inbound_append_unknown_is_sticky_with_no_pending_input_later_arrivals_and_late_commit_ack ... ok
+test inbound_close_permanently_revokes_all_states_and_late_tickets_without_reopening ... ok
+test inbound_idle_handoff_enqueue_wins_retains_current_worker_and_claims_batch_once ... ok
+test inbound_idle_handoff_idle_wins_admits_one_successor_and_claims_batch_once ... ok
+test inbound_idle_handoff_preserves_other_agents_and_wake_families ... ok
+test inbound_idle_handoff_treats_stored_empty_batch_as_idle ... ok
+test inbound_image_projection_preserves_all_frozen_image_payloads ... ok
+test inbound_image_wiring_oracle_accepts_slice_calls_and_rejects_missing_or_wrong_inputs ... ok
+test inbound_launch_failure_preserves_preparation_and_delayed_release_cannot_clear_successor ... ok
+test inbound_readiness_cannot_steal_committed_drain_or_generation_bound_displayed_redrive ... ok
+test inbound_readiness_on_either_side_of_pause_reacquires_the_same_head_once ... ok
+test inbound_readiness_rollback_retry_uses_the_latest_binding_and_prepared_entries ... ok
+test inbound_unknown_discards_active_readiness_and_blocks_signals_and_new_tail_only_for_its_agent ... ok
+test shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths ... FAILED
+
+failures:
+
+---- shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths stdout ----
+
+thread 'shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths' (6062) panicked at tests/background_wakes_production_contract.rs:2930:5:
+assertion failed: SHIPPING_HOST.contains("for cleanup_error in custody.rollback()")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths
+
+test result: FAILED. 47 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.90s
+
+error: test failed, to rerun pass `--test background_wakes_production_contract`
+     Running tests/channel_gateway_authorization_contract.rs (source/host/target/debug/deps/channel_gateway_authorization_contract-39cda244100e76e7)
+
+running 6 tests
+test channel_gateway_explicit_bad_or_revoked_credentials_never_regain_ambient_authority ... ok
+test channel_gateway_headers_and_unrelated_grants_cannot_authorize_credential_writes ... ok
+test channel_gateway_native_credentials_and_header_ceilings_preserve_compatibility ... ok
+test channel_gateway_registry_origin_and_memory_controls_remain_intact ... ok
+test channel_gateway_rejects_read_node_and_unknown_roles_before_owner ... ok
+test channel_gateway_write_and_admin_credentials_persist_through_reopen ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.56s
+
+     Running tests/cloud_agent_pending_wake_rearm_production_contract.rs (source/host/target/debug/deps/cloud_agent_pending_wake_rearm_production_contract-55be4d03afe9379a)
+
+running 4 tests
+test shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker ... ok
+test shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run ... ok
+test shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start ... ok
+test startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/connector_secret_store_contract.rs (source/host/target/debug/deps/connector_secret_store_contract-87406d7e9c7194c0)
+
+running 6 tests
+test connector_secret_store_matches_frozen_validation_merge_and_remove_contract ... ok
+test connector_secret_write_admission_merges_valid_objects_and_reopens ... ok
+test connector_secret_write_admission_preserves_invalid_images_and_redacts_errors ... ok
+test connector_secret_write_admission_rejects_read_denied_regular_file_before_replacement ... ok
+test production_session_connector_refusal_preserves_metadata_and_reopens ... ok
+test production_session_exposes_connector_credential_ownership_at_canonical_root ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/durable_recovery_stores_contract.rs (source/host/target/debug/deps/durable_recovery_stores_contract-79d0e11fd4dd90ff)
+
+running 21 tests
+test channel_delivery_failure_marker_round_trips_operation_identity ... ok
+test checked_ack_reads_fresh_complete_image_and_never_turns_corruption_into_absence ... ok
+test checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers ... ok
+test checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations ... ok
+test checked_pending_store_refuses_unreadable_images_and_preserves_the_target ... ok
+test checked_pending_store_validates_incoming_markers_without_mutating_known_state ... ok
+test checked_upgrade_batch_is_all_or_nothing_and_retains_newest_same_agent_marker ... ok
+test checked_upgrade_migration_is_whole_image_atomic_and_leaves_legacy_work_unbound ... ok
+test checked_upgrade_store_accepts_only_absence_explicit_empty_and_complete_legacy_or_v1_rows ... ok
+test checked_upgrade_store_refuses_corruption_without_replacing_or_clearing_evidence ... ok
+test checked_upgrade_v2_roundtrips_full_reference_and_exact_clear_rejects_reference_drift ... ok
+test matching_pending_wake_admission_compares_every_marker_field ... ok
+test matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots ... ok
+test pending_wake_parser_preserves_frozen_coercion_and_filters_invalid_rows ... ok
+test pending_wake_store_does_not_clear_or_overwrite_a_newer_marker ... ok
+test pending_wake_store_upserts_clears_and_prunes_atomically ... ok
+test production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent ... ok
+test recovery_watch_admission_replaces_only_the_exact_existing_marker ... ok
+test upgrade_resume_marker_rejects_incomplete_automation_identity ... ok
+test upgrade_resume_store_clears_only_the_observed_marker ... ok
+test upgrade_resume_store_coerces_upserts_and_deletes_file_when_empty ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/memory_gateway_authorization_contract.rs (source/host/target/debug/deps/memory_gateway_authorization_contract-88924c363a179376)
+
+running 7 tests
+test memory_gateway_empty_unrelated_and_session_only_grants_fail_closed ... ok
+test memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility ... ok
+test memory_gateway_preserves_projection_selectors_and_unrelated_routes ... ok
+test memory_gateway_read_scope_and_headers_cannot_grant_mutation ... ok
+test memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner ... ok
+test memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access ... ok
+test memory_gateway_write_only_and_admin_only_mutations_survive_reopen ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.40s
+
+     Running tests/memory_service_contract.rs (source/host/target/debug/deps/memory_service_contract-a2dac6454fb7f56c)
+
+running 19 tests
+test bound_synthesis_gate_rejects_a_noncanonical_store_path ... ok
+test durable_memory_content_requires_a_valid_fact_in_profile_or_log ... ok
+test exact_memory_recovery_preserves_synthesis_metadata ... ok
+test existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically ... ok
+test file_memory_store_append_directory_read_error_is_preserved ... ok
+test file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls ... ok
+test file_memory_store_append_read_errors_preserve_bytes_and_allow_repair ... ok
+test file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata ... ok
+test file_memory_store_round_trips_recall_dedupe_remove_and_clear ... ok
+test memory_fact_parser_matches_frozen_markdown_contract ... ok
+test memory_service_creates_real_agent_scoped_store ... ok
+test memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory ... ok
+test memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners ... ok
+test production_session_workers_can_share_host_memory_extension_owner ... ok
+test profile_mutation_file_snapshots_are_exact_and_allowlisted ... ok
+test project_memory_store_reads_membership_shards_and_applies_global_cap ... ok
+test project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering ... ok
+test synthesis_apply_fails_closed_until_an_owner_gate_is_bound ... ok
+test user_memory_store_aggregates_frozen_shards_and_recent_order ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/memory_synthesis_service_contract.rs (source/host/target/debug/deps/memory_synthesis_service_contract-5856268e97b8c1e5)
+
+running 10 tests
+test evidence_bounding_keeps_both_ends ... ok
+test frozen_production_scheduling_constants_are_enforced ... ok
+test frozen_synthesis_prompts_and_wire_payloads_are_preserved ... ok
+test one_snapshot_factory_survives_worker_timeout_and_retry ... ok
+test parser_rejects_unknown_evidence_and_clock_only_creation ... ok
+test proposal_and_verification_commit_through_synthesis_target ... ok
+test stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence ... ok
+test synthesis_deadline_cancels_verification_and_reports_terminal_failure ... ok
+test typed_identity_refusals_settle_without_retry_or_temporal_review ... ok
+test verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+
+     Running tests/memory_synthesis_store_contract.rs (source/host/target/debug/deps/memory_synthesis_store_contract-c064a716979a062d)
+
+running 6 tests
+test explicit_memories_are_protected_from_synthesis_updates_and_removals ... ok
+test stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation ... ok
+test synthesis_batch_preflights_later_append_before_earlier_remove ... ok
+test synthesis_create_read_errors_preserve_memory_and_metadata ... ok
+test synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review ... ok
+test synthesis_cross_kind_update_read_errors_preserve_source_and_metadata ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/palette_message_gateway_contract.rs (source/host/target/debug/deps/palette_message_gateway_contract-c45c66c0ec8cae66)
+
+running 1 test
+test palette_message_gateway_exports_persisted_rust_search_results ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/pending_wake_rearm_contract.rs (source/host/target/debug/deps/pending_wake_rearm_contract-d857519801e194cf)
+
+running 18 tests
+test channel_rearm_error_retains_complete_marker_across_reopen ... ok
+test channel_rearm_success_retains_complete_marker_across_reopen ... ok
+test checked_rearm_accepts_known_empty_state_without_creating_recovery_work ... ok
+test checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly ... ok
+test checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch ... ok
+test cloud_completion_after_armed_check_is_not_resurrected_by_rearm ... ok
+test cloud_completion_after_snapshot_before_first_armed_check_cannot_start_another_worker ... ok
+test cloud_completion_during_watch_registration_is_not_resurrected_as_failure ... ok
+test cloud_rearm_preserves_an_admitted_marker_on_success_and_failure ... ok
+test cloud_rearm_rejects_a_marker_replaced_after_the_durable_snapshot ... ok
+test cloud_wake_survives_repeated_rearm_and_store_reopen_until_settlement ... ok
+test enqueue_refuses_gone_agents_and_appends_for_live_agents ... ok
+test failed_cloud_rearm_preserves_the_observed_marker_for_retry ... ok
+test interrupted_recreate_shell_uses_resume_notice_and_group_session_clears_marker ... ok
+test persists_clears_and_disarms_with_reference_telemetry ... ok
+test rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind ... ok
+test recreate_carry_filters_before_persisting_and_reports_frozen_outcomes ... ok
+test recreate_carry_still_excludes_channel_delivery_markers ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/roster_search_contract.rs (source/host/target/debug/deps/roster_search_contract-3c0156f13db92423)
+
+running 8 tests
+test frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter ... ok
+test production_gateway_consumes_ready_content_search_for_indexed_messages_and_media ... ok
+test production_gateway_fallback_preserves_unicode_match_limits_and_recency ... ok
+test production_gateway_unicode_fallback_with_unavailable_index_queries_then_scans ... ok
+test production_gateway_unicode_fallback_with_unready_index_never_queries_it ... ok
+test production_gateway_unicode_fallback_without_index_preserves_storage_and_reopens ... ok
+test production_search_agents_scans_real_session_transcripts_and_gateway_dispatches_it ... ok
+test roster_snippet_preserves_ascii_and_utf8_byte_context_windows ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests/session_gateway_contract.rs (source/host/target/debug/deps/session_gateway_contract-9d9e1adb7c17f5d0)
+
+running 27 tests
+test accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript ... ok
+test accepted_send_prompt_uses_frozen_entry_ids_and_reply_fork_stamping ... ok
+test call_session_owner_fences_lifecycle_signaling_reconnect_and_restart ... ok
+test fresh_gateway_and_legacy_agent_messages_preserve_opaque_namespace_and_nonce_semantics ... ok
+test fresh_gateway_channel_and_legacy_agent_messages_share_the_physical_id_namespace ... ok
+test fresh_gateway_keeps_the_legacy_no_admission_path_without_inventing_a_selector ... ok
+test fresh_gateway_uses_visible_rows_for_nonce_thread_and_recovery_semantics ... ok
+test gateway_echoes_preserve_fractional_timestamps_through_durable_reopen ... ok
+test gateway_fresh_attachment_batch_rolls_back_when_the_message_insert_is_ignored ... ok
+test human_agent_handoff_checks_source_admission_before_destination_mutation ... ok
+test human_conversation_uses_session_transcript_owner_without_becoming_an_agent ... ok
+test malformed_session_gateway_requests_fail_closed_and_unknown_methods_fall_through ... ok
+test production_gateway_composes_channel_metadata_and_secrets ... ok
+test production_gateway_creates_a_real_session_record_for_the_shipping_new_chat_path ... ok
+test production_gateway_cuts_over_safe_agent_lifecycle_mutations_to_rust_session_owner ... ok
+test production_gateway_owns_conversation_outline_for_fresh_agents ... ok
+test production_gateway_owns_group_creation_membership_and_nested_group_rejection ... ok
+test production_gateway_reads_transcript_pages_and_counts_agents_without_compat_host ... ok
+test production_gateway_refuses_unreadable_channel_credentials_without_metadata_changes ... ok
+test session_key_send_prompt_rechecks_admission_at_transcript_write ... ok
+test shipping_call_discovery_materializes_incoming_call_into_canonical_human_scope ... ok
+test shipping_call_ice_credentials_remain_host_owned_and_device_scoped ... ok
+test shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner ... ok
+test shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript ... ok
+test shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload ... ok
+test shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity ... ok
+test shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.87s
+
+     Running tests/transcript_manager_contract.rs (source/host/target/debug/deps/transcript_manager_contract-d677758e65b50e79)
+
+running 14 tests
+test manager_dispose_closes_original_queue_before_cleanup_and_rejects_snapshotted_callback_and_ticket ... ok
+test manager_emits_active_session_automations_through_the_roster_surface ... ok
+test manager_is_the_single_production_composition_owner ... ok
+test manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle ... ok
+test manager_owns_box_handoff_state_and_handback_settlement ... ok
+test manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation ... ok
+test manager_owns_pending_wake_rearm_and_replays_durable_wakes ... ok
+test manager_refuses_failed_marker_handoff_and_preserves_existing_quiesce ... ok
+test manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy ... ok
+test manager_secret_write_refusal_is_redacted_and_does_not_resume_before_repair ... ok
+test memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts ... ok
+test memory_gateway_preserves_projection_order_and_hundred_record_limit ... ok
+test memory_gateway_rejects_path_selectors_before_external_memory_read ... ok
+test runner_registry_owns_turn_execution_and_manager_delegates_to_the_same_owner ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+     Running tests/turn_memory_contract.rs (source/host/target/debug/deps/turn_memory_contract-2e3a9a131f318f00)
+
+running 9 tests
+test completed_memorable_turns_extract_memory_and_roll_episode_summary ... ok
+test episode_append_read_failure_preserves_pending_turns_across_restart ... ok
+test episode_append_write_failure_preserves_interleaved_turns_and_recovers ... ok
+test episode_duplicate_append_acknowledges_existing_fact_before_clearing_pending ... ok
+test episode_record_refusal_preserves_archived_pending_until_restore ... ok
+test episode_successful_no_summary_reply_keeps_existing_settlement ... ok
+test episode_summary_failure_preserves_pending_turns_and_recovers ... ok
+test evidence_mode_clears_pending_episode_state_without_running_extraction ... ok
+test frozen_turn_memory_exchange_keeps_agent_messages_before_final_assistant_text ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+
+     Running tests/widget_responses_full_contract.rs (source/host/target/debug/deps/widget_responses_full_contract-5ebc49bf2b4c38d4)
+
+running 5 tests
+test auto_review_secret_and_reaction_delegate_to_existing_session_and_projection_owners ... ok
+test dismiss_on_move_on_blocks_stale_main_surface_response_and_secret_emits_channel_config_change ... ok
+test failed_generic_send_rolls_back_but_spend_guard_rejection_never_leaves_a_response_stamp ... ok
+test generic_widget_answer_and_dismissal_are_durable_and_project_updated_entries ... ok
+test secret_submission_refuses_unreadable_credentials_without_signalling_and_recovers_in_place ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+error: 1 target failed:
+    `--test background_wakes_production_contract`

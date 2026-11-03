@@ -1,0 +1,128 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subject": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "subject_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "run_id": 41582614116,
+  "attempt": 1,
+  "job_id": 125740667771,
+  "artifact_id": 13207615800,
+  "scope": "Full original69memberZIP and complete decoded joblog(gzip), complete report/API/assessment/bindings, plus uncompressed causal receipts and failurelogs. Exact11source bytes are available from immutableHfc Git blobs recorded in rootbinding; large duplicate source copies are omitted.",
+  "result": "Linux terminal failed; portable stale assertion and App fixture E0609 are TEST_FLAW. ActualAutomationApp was skipped. No newH or fullreceipt input approval.",
+  "files": [
+    {
+      "archive_path": "report.md",
+      "source": "media-fc-ci-app-report.md",
+      "bytes": 16069,
+      "sha256": "f8e321311ba954d7724083feabb72852286084f0dab6ea7f0733358a53838fc9",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "root-causal-input-binding.json",
+      "source": "media-fc-terminal-root-input-binding.json",
+      "bytes": 5848,
+      "sha256": "9ae1686e672310b3a8652bedb3213b73175e66c96bdb571b4f52aaf87fdc5006",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "api/root-artifact.json",
+      "source": "media-fc-terminal-root-artifact-api.json",
+      "bytes": 829,
+      "sha256": "23a22aa252ea374dece9a3559de010bf5a130db9cad0c4f5afa2eb441fb68b47",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "terminal-evidence-assessment.json",
+      "source": "media-fc-ci-app/terminal-evidence-assessment.json",
+      "bytes": 294110,
+      "sha256": "df4993fdce07c376347a729b3fe65fffa064da5b9f0cf727a84f3704330d5147",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "causal-input-bindings.json",
+      "source": "media-fc-ci-app/causal-input-bindings.json",
+      "bytes": 7991,
+      "sha256": "996f132988689bd2208b7289b6bf3b3340365ba3724cef5cd54ea7e0d598dbb7",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "observation.json",
+      "source": "media-fc-ci-app/observation.json",
+      "bytes": 485,
+      "sha256": "6f80a17b52c9bb91fa316e57a86a64cf4823cb2a49f3ccb285ab8ffb79ecfd8f",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "terminal-artifact-manifest.json",
+      "source": "media-fc-ci-app/terminal-artifact-manifest.json",
+      "bytes": 16662,
+      "sha256": "2e773e69ec83422d5926a595fdb16bd27afcae4f8737ceaeffd4e0af19c84adb",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "api/run.json",
+      "source": "media-fc-ci-app/api/run.json",
+      "bytes": 13268,
+      "sha256": "03c804f6dd3afceaa495ba674a9e370a70acc310e94c9da7aea2acc84845f975",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "api/jobs-attempt-1.json",
+      "source": "media-fc-ci-app/api/jobs-attempt-1.json",
+      "bytes": 20642,
+      "sha256": "1dd153fe5fda75774aa5e19775d4915c00999ec9bc777e9cfab918e3bd545e97",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "api/artifacts.json",
+      "source": "media-fc-ci-app/api/artifacts.json",
+      "bytes": 6352,
+      "sha256": "d73178c01af451b0910acb44da9861b379b85204cb68cae2cfd98de020cb4cc8",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "raw/channel-pending-recovery/integration.log",
+      "source": "media-fc-ci-app/linux-native-terminal-13207615800/channel-pending-recovery/integration.log",
+      "bytes": 50298,
+      "sha256": "b4c853603bc9676993ebca8c57e143bed45d1cc3683371cd7aba7e583156a8b7",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "raw/channel-pending-recovery/receipt.json",
+      "source": "media-fc-ci-app/linux-native-terminal-13207615800/channel-pending-recovery/receipt.json",
+      "bytes": 379370,
+      "sha256": "a4674fa34aef061e605ff6dda391b62923543c7bacdd56b4810c6de7aa5f3c14",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "raw/link-preview-native-gateway/app.log",
+      "source": "media-fc-ci-app/linux-native-terminal-13207615800/link-preview-native-gateway/app.log",
+      "bytes": 50299,
+      "sha256": "c265d5f46491b731b3335823853bcce900fd23b655f0b07bf03ac0b0701eedbc",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "raw/link-preview-native-gateway/receipt.json",
+      "source": "media-fc-ci-app/linux-native-terminal-13207615800/link-preview-native-gateway/receipt.json",
+      "bytes": 26167,
+      "sha256": "10acd50d74c9f0e1a162f74045e0fb45a09209fc2927e7f3808e90975ca67be2",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "linux-native-terminal-13207615800.zip",
+      "source": "media-fc-ci-app/linux-native-terminal-13207615800.zip",
+      "bytes": 493564,
+      "sha256": "67e6c96370531240a7d079a500b77860857f1bd144a6e62ab8d74d0ffa79b3c5",
+      "storage": "original bytes"
+    },
+    {
+      "archive_path": "job-125740667771.log.gz",
+      "source": "media-fc-ci-app/job-125740667771.log",
+      "bytes": 970509,
+      "sha256": "908088d2b63aeb09c3925cfc22862a1fa590ae146fb9c127ed672c30d54b8d20",
+      "storage": "lossless gzip; original connector decoded UTF-8 job log",
+      "uncompressed_bytes": 4989438,
+      "uncompressed_sha256": "bc2980e3a6f52dea60fe20f057ad3309d574e643e6c583b1c6ec9055266e7493"
+    }
+  ]
+}

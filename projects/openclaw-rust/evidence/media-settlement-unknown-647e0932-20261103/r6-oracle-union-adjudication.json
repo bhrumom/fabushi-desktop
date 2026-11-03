@@ -1,0 +1,13 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "decision": "ADOPT_PRESERVING_ASSERTION_UNION",
+  "incoming_commit": "9059d0c4493505851339ab228ec0d58a6023c904",
+  "incoming_oracle": "88a80214aa08a1d61b3bd290063069d5aa4d417e",
+  "prior_r5_oracle": "c0162f99b896c00d0cd100ba59ad700eb01ad802",
+  "proposed_oracle": "32a7218874c4b03e27a9872adf339186fab50f28",
+  "proposal_sha256": "d88e69128092c78915fbc17463e3bf98f325cb2e10f408cce58558be619204df",
+  "root_read": "Full integration report and both complete candidate diffs read. Incoming entire channel suffix and all ten no-op controls remain; incoming source-image helper, exact trait equality/rawcount/directtraitcases merge with R5 proven baseline, exact-one-site replacements, allmedia LFCRLF negatives and additional rawtrait fixtures. No assertion deleted or new production exception introduced.",
+  "decision_before_applying": true,
+  "review_boundary": "Implementation proposal accepted for freezing; fresh focused independent review and exact-H execution still required. Static63testdeclarations/8media cases are not executed counts."
+}

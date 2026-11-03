@@ -1,0 +1,1813 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "commit": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "tree": "efb2a28c92d2f24cd4f6bbbd84d86709c0b2f028",
+  "parent": "9059d0c4493505851339ab228ec0d58a6023c904",
+  "ref_observed": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "files": [
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/checkpoint-remote-readback.json",
+      "blob": "2ddb9c84955d6c113a7224f90dbccc5dfb8c6ad7",
+      "sha256": "8073126fad2be8b8d15727e9915e78e3211110451be27000ccb9335be35e572b",
+      "bytes": 9881,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/api/exact-commit.json",
+      "blob": "93d25414edaf52650943c08f29369854eadcd006",
+      "sha256": "017dfa64ff9c35536b59056149a32b7c68c532352d69ca97754fe32571998e9e",
+      "bytes": 2042,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/api/runtime-artifacts-03.json",
+      "blob": "d14e3682f8cf9a02bb6e7b676a62a5e1287d69e4",
+      "sha256": "c893732ab8690c5b842908f36704c329b256aa287de988014c183f547086d16f",
+      "bytes": 3957,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/api/runtime-jobs-03.json",
+      "blob": "ab67f1afb6d6c463172496afe8ffcb9796cc7776",
+      "sha256": "efea7b50ff6e86bf6103c74c9ea69538b55813abdeb04d2a267713d16e6d94f2",
+      "bytes": 19563,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/api/runtime-run-03.json",
+      "blob": "fa18b061d2f4b46a69dedfb0b4e28179afe3fafa",
+      "sha256": "cc04f7744783be54b49c30f83ec12ba7f6bd32484ecfc046cbb2c217be1c1f00",
+      "bytes": 13269,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/api/source-artifacts-01.json",
+      "blob": "178babb9e569de61d04b6cf79c24a03f34b3352a",
+      "sha256": "7c0ab81c6e1a84f833810866bd87508cc8a82ebcd11ae211ec9e802bfd6e263a",
+      "bytes": 809,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/api/source-jobs-01.json",
+      "blob": "b29d9892105203101df761bb6c110ebf9a02eb51",
+      "sha256": "621d4239e82bc8607e31824f7f3dd64f0ac4655f75963be1513fd361baa1fbfe",
+      "bytes": 6510,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/api/source-run-01.json",
+      "blob": "fef701af94d947f40970dd788f5a50cfbd4ced83",
+      "sha256": "6efa7de8e01682f8ad0d53742dab44a91feb9d92727d28f1cbd561fdbac65911",
+      "bytes": 13277,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/artifacts/linux-media-13206394654-manifest.json",
+      "blob": "b6bfc94940579ad12d44b6a0456c71ef7437b266",
+      "sha256": "8c750babd78f9439832560078961b44022866eb55bf7ed3f14db805dce3e89d6",
+      "bytes": 3319,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/artifacts/source-authority-13206770678-manifest.json",
+      "blob": "1c528412ce8f6786f31c605a044912ddc1f28d07",
+      "sha256": "f3bc654fcbb5a52e04ac34c8f0e38a55e5235f2fecc21db3c76b7348d5cff1ab",
+      "bytes": 1205,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/assessment.json",
+      "blob": "39206c7ad69e0f86cc8ab7067d011e339d1293fc",
+      "sha256": "2494f16498240c150de0a5df9446b554408da70a9eea969e0092ff9ae1090dc7",
+      "bytes": 4914,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/initial-report.md",
+      "blob": "a722e4b9a586ea7f674c49865139025dd3f54630",
+      "sha256": "73ea2bd88e5911715faa3ffec33f3ae7d75219f238ca457c2e755182695ce0bf",
+      "bytes": 14596,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/inputs/source-dependency-root-binding.json",
+      "blob": "e085eee5ae1f530cdfde538f0fab8e58575c5cbb",
+      "sha256": "72b7b018c255a1fb37ab4be8580ba1aece50f14df468350957bc6f9bb7a01b55",
+      "bytes": 3730,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/inputs/source-receipt-input-index.json",
+      "blob": "4ac1c80cdc5ed04159efe3279a1f520b7afc6280",
+      "sha256": "96fca0e925fc0d9910fc832e8b72cb1eceb57be346e2ab0cb7f4d4587e355a85",
+      "bytes": 14540,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/agent-management-consumers.log",
+      "blob": "dcc14270ad8773cbce7368be163b8dfed507cb3b",
+      "sha256": "649819ead1bf27898ae96653a2d009b68bf45731c334883a2f48ab86a75f3bf8",
+      "bytes": 27684,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/bounded-reader-box-consumer.log",
+      "blob": "fa62c2e01d158d903e9e8cb538c22e6966b2235d",
+      "sha256": "2de93273b872865db9f2296f1e2d4951f0a8b62f05b95badcdcbe44c2a5776ee",
+      "bytes": 27537,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/bounded-reader-channel-consumers.log",
+      "blob": "4e400932576514348940d766c1ea4ae15ce3854b",
+      "sha256": "933f180aa52f1873cd320a278784b9c6765474664abba2bf08f97ab36c10fc88",
+      "bytes": 27941,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/bounded-reader-image-consumer.log",
+      "blob": "f1ac49a090a8986dc9b72958589fdfd3e2331299",
+      "sha256": "6e2019e7300ad6b2c1be2062880ccc72fe10f6f35b0a129d9df79e585f142e56",
+      "bytes": 27425,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/bounded-reader-owner.log",
+      "blob": "829da202883856031cb7db0570f8ff1b4d822ee9",
+      "sha256": "48934683456737653050591b0845bc8aaf564e90122bbd1202112e5290ca76ce",
+      "bytes": 27944,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/bounded-reader-public.log",
+      "blob": "6c39906cf3f5b85aa375239b68e48b1989965ba9",
+      "sha256": "5f8cb552517315342fc999fbbf26f7d74f7dd3aa12e986155229b77026f21a47",
+      "bytes": 29905,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/cleanup-consumers.log",
+      "blob": "3f0bf4753fc5703e51a255ed8d9fccffb447a23c",
+      "sha256": "859b26348bd9f691a280225f62a256b27f4843157cf762165249df32761442b5",
+      "bytes": 28639,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/cleanup-owner.log",
+      "blob": "c727fa110bf7c1a3c7f1c5a8ad58d6c777cad7b9",
+      "sha256": "7f797e7246d9a58094530b8196b7c32085f40013d1b901f2095fb702e663fb65",
+      "bytes": 25578,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/explicit-html-consumers.log",
+      "blob": "dbf6445d984e198c593e6cf545acbdeee45d4d9b",
+      "sha256": "0dda6522a6f2b619d4f6834b6991ec60c8e5ccd24c6c274076ef47037a15861c",
+      "bytes": 29433,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/file-context-consumers.log",
+      "blob": "cbdf32c99d0ef13e4b5be02dbf0d1da3be7b0838",
+      "sha256": "6f068d90a0c6567cc02ee1ececb114b8c0790685af44dc68dbd0283d8665a788",
+      "bytes": 28105,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/file-url-admission.log",
+      "blob": "01f1acffaea40f7a7e7cf2a8ff06726d84439769",
+      "sha256": "e2069d0d9042182c5899102e8cf18470c146f28d74dffd325d26f44479985e61",
+      "bytes": 25410,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/host-read-format.log",
+      "blob": "b43be133492c2e90a7a3b5dfb5c4b330b1989dd0",
+      "sha256": "4e3976dc6a0c926a28e97dca98eba413bac223ef8e78244afc0f34b811b3d392",
+      "bytes": 27540,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/html-policy.log",
+      "blob": "3659973e41636bd09fb8fe5c05f2fe88790b30fe",
+      "sha256": "94600899674086f22e6acb53b4e3921539eb2106c1a4cda6cd6cc994b6b84276",
+      "bytes": 28200,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/image-probe-consumers.log",
+      "blob": "e9e2394c6c651e0a37ea39a33efa1cb6e7c2d5ca",
+      "sha256": "465e213c6d1856ab5bc754462bf2595d302c1f6bfe307e3e7b62a4ea063e8764",
+      "bytes": 28484,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/local-file-url-owner.log",
+      "blob": "70ed663de6802316eab2e5f408ee6d4f6beff5ff",
+      "sha256": "766a6cb6c31b4eb06543c4b881cc7a89a2791d653956e068bec5aae3b951d199",
+      "bytes": 28096,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/media-settlement-owner.log",
+      "blob": "1a7a8329d779a03ac9b28917e26d9a58f14ff8bd",
+      "sha256": "84fd7774a9434c2039cc87ebf046b4c196141907d13519d4b1d0eb208e09393e",
+      "bytes": 27140,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/outgoing-media-custody.log",
+      "blob": "317f7cb0950b309e21fc3f1850ce573dd56902c8",
+      "sha256": "d6bab81e2621eb1e88f935906d07c3f640d1a2a63e2e8d48ad436dcf8ccebac5",
+      "bytes": 25266,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/receipt.json",
+      "blob": "48019b0991393e6e282d73bc6cacb98655bfd4eb",
+      "sha256": "63638144c755c522b7f90b29cd697a292fef1c6bf61e067cad25c9b0ac6995d0",
+      "bytes": 120167,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/send-message-consumers.log",
+      "blob": "2f77d01b17bcdd9acd138ad176437616f962b491",
+      "sha256": "e0fa213edf35dbf4bb7b863afb0aa32fa70425aa40c423f3eba3b47e8cbc626a",
+      "bytes": 28957,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media/transaction-commit-owners.log",
+      "blob": "8a2786ee36f98ea74d85f3a6575869eb006885d5",
+      "sha256": "cb1c95773d2a99f893473b160fe8680779ac021a2bbfb7367ed4b4cd7ea54112",
+      "bytes": 29584,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/linux-media-binding.json",
+      "blob": "798237ca2e38b3805b9fa4e26e46634eb3ed7252",
+      "sha256": "890f37db1a6876462ad83f7ecb4d48481db010bd481711ee4937f699cff1ba95",
+      "bytes": 61178,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/logs/persist-inventory-job-125741350050.log",
+      "blob": "d9ba47b03e3cda9f03f26a5c70e05d30d2c60625",
+      "sha256": "38ac9c41a258584e674bd7f99ccf3384b5632916085b5c2cfc7d7a503d9c43f4",
+      "bytes": 21389,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/logs/source-authority-job-125740666138.log",
+      "blob": "cc8125f8d0a38c88d538237d887abe23a6b69ca6",
+      "sha256": "278f277797722bf9f631ab2d89bbf65f7b86ea80abfac1ee9417a3b963be809a",
+      "bytes": 31507,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/publication-index.json",
+      "blob": "56a43e43c9d8ad9de194edcf04e2b6a5afa60e43",
+      "sha256": "21bd1e06a15127ff5925ace7d5ba8815f7e43b96472fab543343c5fb8d923888",
+      "bytes": 21683,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/root-generated-input-binding.json",
+      "blob": "e161d55e8afc10d4779f60b6ca6ae737c8be24b9",
+      "sha256": "894c12aad413f3c8cd50e0d23d92e86c2fa758f5125ebf795d361469784eabca",
+      "bytes": 1923,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/root-linux-input-binding.json",
+      "blob": "21f2ab63d259fcd18a09a4f32acc4c9a054d72e0",
+      "sha256": "11b369cfa57a7cecc9513ab7ee631d3a977c0ba87b7215c1a1d0ab3431078fb7",
+      "bytes": 39773,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/root-windows-input-binding.json",
+      "blob": "04881c436b66955e77e890362a42fe3fd72438a9",
+      "sha256": "49c71aff03d3d08fa7176755c681f481ac0cba25b59b1d9e7bd65bab4667a317",
+      "bytes": 43434,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/source-artifact/authority-summary.json",
+      "blob": "c6bf8a6b7e16169cbc907c17d21095baa43344d2",
+      "sha256": "a6f8d9d5e72fa5092ef8b554d4763a869e6b330dcc3eb9f1a033dd54d30bfdd5",
+      "bytes": 607,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/source-artifact/dependency-root-inputs.tsv",
+      "blob": "8ce7667b1d1711d6e0f1ad0b55a66029ba096141",
+      "sha256": "dd26a8316202da93dbca27ab63cd046c365ac2db499de18af844e51f654806f4",
+      "bytes": 171,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/source-artifact/lfs-pointer-candidates.count",
+      "blob": "573541ac9702dd3969c9bc859d2b91ec1f7e6e56",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/source-artifact/lfs-pointer-candidates.txt",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/source-artifact/p0-structural-receipt.json",
+      "blob": "fa42baa9c88e338514d31b4a1498f1b34aa3b321",
+      "sha256": "7c2afdfc415378a964791a9d04fed97a5f89365ae78e6433ddaaeb2ca8e9bd5c",
+      "bytes": 5080,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/source-artifact/upstream-recursive-inventory.sha256",
+      "blob": "e28d23c16d7e3aae76894cfb285998e9125d32a6",
+      "sha256": "4acc8ff9da82505ebd5006c8038c46324893975b9a87ef517ee727b94bfc5823",
+      "bytes": 65,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-artifacts-api.json",
+      "blob": "490006a64317ee1325f245c6d6f27bc09984b9f4",
+      "sha256": "30da97f30fd8fab48ceb70e9a601f491894cc4978153e66e166a8094293087c7",
+      "bytes": 4756,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-assessment.json",
+      "blob": "feb8f6427850e70720bef7db1e189f07aaea5ad2",
+      "sha256": "7e8be1b675500e45710bea1d82bc37cff54e2fc6e25027f27396284ea2839435",
+      "bytes": 3002,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-completion-artifacts-api.json",
+      "blob": "490006a64317ee1325f245c6d6f27bc09984b9f4",
+      "sha256": "30da97f30fd8fab48ceb70e9a601f491894cc4978153e66e166a8094293087c7",
+      "bytes": 4756,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-completion-jobs-api.json",
+      "blob": "4d4a51d2c0f22ce6bf3fe0ccb82bdaf3c1c5203f",
+      "sha256": "5529a2c6cae6a433e9c6216a79de5fb83e11fd121481ad734356a4ae3e2e034d",
+      "bytes": 19888,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-job-direct-fetch-error.json",
+      "blob": "32140c20738faf20642c64af788f8c015bf42827",
+      "sha256": "052cc04929d69c7e00f9dd60aa2154fa1fdbe8f40e1738cbca1bb1af3d4dab89",
+      "bytes": 344,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-job-record.json",
+      "blob": "9beaa4dcbdf45e1fe735936b98d35ac4b6034d2e",
+      "sha256": "33ff294d130c91a10f11a0d7ee45e8b13f52e2b4088d84818fe4ff9c2e024238",
+      "bytes": 3709,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/agent-management-consumers.log",
+      "blob": "95070214d00a14857d545009bfd043690672243f",
+      "sha256": "bf9d6c27ffeb40d9fd5b29ba337f4673a615f3bc48f7d23630c07d2274901450",
+      "bytes": 28939,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/bounded-reader-box-consumer.log",
+      "blob": "cdd71128fc6705d41486db17dc31d0051aa784f8",
+      "sha256": "596e99ec2200a104eb3c57a3417eeb8c507a225b539dde0f1f8d50b1eec97e4e",
+      "bytes": 28792,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/bounded-reader-channel-consumers.log",
+      "blob": "0bfbe28a315f927aa711224c500d8601f811aab7",
+      "sha256": "c0eabe9c92f7c1469c863db8d4c77e8237492c937d840305ea411223ab8dde56",
+      "bytes": 29269,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/bounded-reader-image-consumer.log",
+      "blob": "7b34269847783133bd72696208d57ee950d614c2",
+      "sha256": "c080edacfdbe4acf06e1018398080011369828a04ef18b2ae16d6fdb64cc3045",
+      "bytes": 28693,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/bounded-reader-owner.log",
+      "blob": "47e3db121efc5b597633502e0182af41b16e4952",
+      "sha256": "a20d0c932c89e70bb8e3acd382a1d9f5d444ebef808bbe9418f04861f575ba49",
+      "bytes": 30237,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/bounded-reader-public.log",
+      "blob": "f31cda5357e1b53a2418fb0d21375bada081bc5c",
+      "sha256": "cfa59b6ccf002b871107d5b546c0b3f0a18cb41df34d7efef70f9d863eebdb1f",
+      "bytes": 31160,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/cleanup-consumers.log",
+      "blob": "b54b4d93bba7b8c7b809ceeae3d92ab32e60f9fc",
+      "sha256": "75d5be662d79e6cb02c720dc2138615d7d92ca8066ad6bcc09bfdcc8c34ffbba",
+      "bytes": 29801,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/cleanup-owner.log",
+      "blob": "f79897921937b26513ecae6ace689aabbaca4c52",
+      "sha256": "3f852bb876a42f5ad1cf05fd5acbfa3b7973609510cf6f8f4c2ab0f3982c0ae2",
+      "bytes": 29204,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/explicit-html-consumers.log",
+      "blob": "ed1b4bded51013c595ebd850badc837cf0b08602",
+      "sha256": "3034df0a347ae23691eed0f4abc60375d7d5c6560cca72b71ba3de2a8e7fed08",
+      "bytes": 30548,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/file-context-consumers.log",
+      "blob": "1ec0ede0679b89423cdeb1d06f3b7af463df536d",
+      "sha256": "df102a4ea70884034b8e0c7e885777b36acedf1d7d2c7dcccb178f526309c9e6",
+      "bytes": 29374,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/file-url-admission.log",
+      "blob": "edc57d41b336a1fddaa73dcbb9bd2ebaaf5d2f09",
+      "sha256": "058afe34b660991b882ab75727ac23e2b0f128ef33b50cce850f6a2688343980",
+      "bytes": 29042,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/host-read-format.log",
+      "blob": "c11d33b40e2bab78194252f05071fc7908069a4c",
+      "sha256": "480dcd41211396559955756e6cd2f4c1699e1ae412f57adef91310ac536e0337",
+      "bytes": 28795,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/html-policy.log",
+      "blob": "240eca34e28f0c6ad5536f68d893a070cb7b480c",
+      "sha256": "722ee15e378aa6539604bb30f41755392e642d7669b9ad1fe35f3c10572a01dc",
+      "bytes": 29247,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/image-probe-consumers.log",
+      "blob": "c78ace2e58b73bcdec22dc4bf3d6418b24c25ce9",
+      "sha256": "7bf4d06c4ae24d05221e0edc3456435c1ccf2046a0f1b401ec878612224f0263",
+      "bytes": 29739,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/local-file-url-owner.log",
+      "blob": "8cfe14aff395fc58f9b0dade6b0ca7dde0a6bcd8",
+      "sha256": "b53149b1f7062d0841845e05d0f1ac0dd8bfc887e312a334df9d2b9a3dd8033a",
+      "bytes": 29427,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/media-settlement-owner.log",
+      "blob": "38bd2dd880f6b895e03dfed8ead6133f75bdc3cf",
+      "sha256": "59f66a1f5520090a768de665dbc959119ae852346d30fc7144366efd5080a471",
+      "bytes": 30601,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/outgoing-media-custody.log",
+      "blob": "b2c9f05b7ef95cbcb0db951ec3b166464de6125c",
+      "sha256": "3b57637d5bc3afcd9d7d6851b796c6c688f5a11c96053bd8e09937a30afd265e",
+      "bytes": 28779,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/receipt.json",
+      "blob": "6eb21d8819e1ad33173d6a646e8fe338e090f6f5",
+      "sha256": "0cb5fff9310a3001208309099ee5d09989bcf0b51c87a5323695bb4d2a918a69",
+      "bytes": 121219,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/send-message-consumers.log",
+      "blob": "e0a35c8a2cd8d0ec3c88d871b0f5d2027dc050ce",
+      "sha256": "e653b3bdc59e9a28cff4d701173a8bbf02ee8f69e647a9105d374dc866098cd1",
+      "bytes": 30212,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media/transaction-commit-owners.log",
+      "blob": "d09f2ecd437bed8f98d232dec3b3b9a4036a2ec8",
+      "sha256": "18b59f18e7d6e59e9bc52e8873bd95776dd9a8ca56ef59393033cc86083525e1",
+      "bytes": 30839,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media-13206860961-manifest.json",
+      "blob": "c0d7e692933f2644df457c5228268485b5cb0eb4",
+      "sha256": "7194aeef97ae88082ad9aeabc4896651101847738717a8dc3d4ae09ccf487aa4",
+      "bytes": 4103,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-media-binding.json",
+      "blob": "0bcdf9f13551afb74421b626630d8697a1e654f6",
+      "sha256": "c50622bbd41775f6ab44fdc8d58962cb620fa4174cc9c5a6d3543cddc40980c2",
+      "bytes": 79997,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-report.md",
+      "blob": "ed927a4dadd5d11959b5e22f87c5748a799e8b11",
+      "sha256": "97b53c154df4efbafaed595416b502ac5c9311b5a76d603e9be3ab2524c4bf97",
+      "bytes": 9576,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-fc/windows-runtime-jobs-api.json",
+      "blob": "4d4a51d2c0f22ce6bf3fe0ccb82bdaf3c1c5203f",
+      "sha256": "5529a2c6cae6a433e9c6216a79de5fb83e11fd121481ad734356a4ae3e2e034d",
+      "bytes": 19888,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/README.md",
+      "blob": "53e145167291ccdc0ab31ac7b8f9963d5443516a",
+      "sha256": "2c50133b4cafe8a4e2a944971ab97538e1bcb9fd71e20e2c23e2a83cd1bfa850",
+      "bytes": 23439,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/accounting/native-receipt-accounting.json",
+      "blob": "e5767a4e41dae21e298b44b378de9b1584867a7f",
+      "sha256": "29d2627a35b315c820847020a51650354d6d30a21864dda09843d01dc9e0dc8f",
+      "bytes": 122036,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/agent-management-consumers.log",
+      "blob": "74e2b399d24a3468b22fc27fcdadfff94cf369d2",
+      "sha256": "2b5e3928fda7ec4eec17247b890a9cc14cb86f7ad745df14ee03fabc1052b992",
+      "bytes": 27684,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/bounded-reader-box-consumer.log",
+      "blob": "8a0d8a5ae49e02078b4a1ae3e345eab4f8ac24a0",
+      "sha256": "01e1cdac6cfa34e0ff02e5830928815ca63bc231bdb07161f22d8f1dba1ec7df",
+      "bytes": 27537,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/bounded-reader-channel-consumers.log",
+      "blob": "0908ca385d2724ca9e07d4a3074701198c92ae12",
+      "sha256": "cfa9bf892d3a37b9e04789367cc942b6bf899ec1705dc16322a65a7613aae15f",
+      "bytes": 27941,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/bounded-reader-image-consumer.log",
+      "blob": "06e7b4f9f98bb962bb41378e9b18000205c1c593",
+      "sha256": "923f04ea2975909514c7ce97ff66f3641cbfe150a90e0d8fe385a501c285fa98",
+      "bytes": 27425,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/bounded-reader-owner.log",
+      "blob": "2276fc0f5f7d5c6e2a42295906267d70dab984d1",
+      "sha256": "0149691bc3fb9562f32d9042a9933c4f78a843b3d051225379ea6c7ee535fd84",
+      "bytes": 27944,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/bounded-reader-public.log",
+      "blob": "196ce8fb092da983a9e2ed86843e039d4ec6a405",
+      "sha256": "4ca0d911ae0409c8f888f8ffe273483bd9e315629a39b24320095429040f6b41",
+      "bytes": 29905,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/cleanup-consumers.log",
+      "blob": "1f052032dc6648a075fc96be87b7613444184f7e",
+      "sha256": "0faea9e4b8ad247d68dad55efc84c439e4d28c18a36bacba887d7b8f43184556",
+      "bytes": 28639,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/cleanup-owner.log",
+      "blob": "1587af719a90b7f5f1dc8bcc44e8f47783b00e86",
+      "sha256": "af2ad85d829433118dbe8dfe263c79d96d00ffb8f6d13f1d21ad25f1919efb9b",
+      "bytes": 25578,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/explicit-html-consumers.log",
+      "blob": "2cae625cf0cc957b4f99a695c7b6e945e806bb23",
+      "sha256": "bfad9fb28468cbc9e5d51ba523e7998bfed253f9056350032f3ef6d89050d689",
+      "bytes": 29433,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/file-context-consumers.log",
+      "blob": "f979925d63e0568ab5dff3408288ea060315b6c5",
+      "sha256": "b2a4f2290ede92813bf8691f04370dc1d2bab6e1d4ae652e46c5f0c5ea50c741",
+      "bytes": 28105,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/file-url-admission.log",
+      "blob": "564de38c7b54a6230f7021050519b9769646284d",
+      "sha256": "bd6ab4e0580a037b1b82f749dfeccec08e78f3c9f5c2acf7de3546b344417bf9",
+      "bytes": 25410,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/host-read-format.log",
+      "blob": "0663421a93f34b4b0e5a66c9deb63d482bbf31a6",
+      "sha256": "fe856724bfb63d6e093a0f5b205ee02e3a56a1108b01fa099341c04d4f355794",
+      "bytes": 27540,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/html-policy.log",
+      "blob": "b8fffb254f5a543039950731ba614b1705b0d6e8",
+      "sha256": "62616319485eee4a056168f492ef2ae5b69ff3001796ff8fc87036a05b12be73",
+      "bytes": 28200,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/image-probe-consumers.log",
+      "blob": "e3bf6bd271daccc26bced6341c60162ce50737ed",
+      "sha256": "6271cef00e2a83ea6b892a7122edd5697a549b680029fc4d4504e31029ab0f06",
+      "bytes": 28484,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/local-file-url-owner.log",
+      "blob": "87629758881b728871fb053500205b04f26ec592",
+      "sha256": "8bf4dbf06663971876e17f26997a86bd22d3c19e8ed53db95b440fc33baa9b51",
+      "bytes": 28096,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/media-settlement-owner.log",
+      "blob": "4525632074634d8dd88721d6276e8aa90faf80f8",
+      "sha256": "26ab3027d0bd03ff450927df814349347f9fb104f0b8ec2677b4126aa838fad8",
+      "bytes": 30567,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/outgoing-media-custody.log",
+      "blob": "ff0cbfdabd3fd3a1dcb76fc328541c0394c9194e",
+      "sha256": "12fd5519dac296210ecc857ac42b461c5354c87921570426f54783ad61a6f19c",
+      "bytes": 25266,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/receipt.json",
+      "blob": "86708948c8a6d1e246408536e1ad11a5c582150a",
+      "sha256": "5fc8dfd24cf2635e253056c12d06c1f67f29e66f5cabe9e3003a1efc0bdfc6e2",
+      "bytes": 120067,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/send-message-consumers.log",
+      "blob": "34737d079568ee75c2228427ffaa5a30e7499916",
+      "sha256": "3894e838fd5f8259607b1ffa8681b92b3eba3b4c477e30da4cb94b3da82e7df5",
+      "bytes": 28957,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/linux-media-13205686727/transaction-commit-owners.log",
+      "blob": "8f66864af3f678b379f1918cc160b9ae991e5384",
+      "sha256": "921b7317adf72cfad5ddd22b541f1e366a4d8beddc48214b913f642fbaaf1bc5",
+      "bytes": 32185,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/agent-management-consumers.log",
+      "blob": "050ffa1e8b4da0cae76c77404ee1849174e7f36a",
+      "sha256": "5365349baab4fb0dda3d98fff01b093f13cfc11c2cd21934a4e0b84e4d392482",
+      "bytes": 28939,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/bounded-reader-box-consumer.log",
+      "blob": "5fefe6c1b4a30e01271abbf0054b58048f89b668",
+      "sha256": "81f6d966791416e180bc634234a94f5bcef1c2ab8542ae80ea098b4db46b9660",
+      "bytes": 28792,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/bounded-reader-channel-consumers.log",
+      "blob": "74410b65ad20befd24c94e5a5d0fe2d8718abae7",
+      "sha256": "3d80b1f13208637ade299057af60b78701cd12b8980e6956a92afb3aeb130af4",
+      "bytes": 29269,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/bounded-reader-image-consumer.log",
+      "blob": "915583fcf43450aec0e0250107d0857fb0e64ace",
+      "sha256": "cf9fdf198a4ffee726f1d9ced9ad76a888448caf7af906bf996815d917c5f24c",
+      "bytes": 28693,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/bounded-reader-owner.log",
+      "blob": "dc98ce46320807ca09bb0cbdaf3c0668f6de9437",
+      "sha256": "6e91286169ae1fa82ff1ad94658a9bf284198a17cf68c668a6eb0e2a3ec9949e",
+      "bytes": 30237,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/bounded-reader-public.log",
+      "blob": "ea92046e5396479f91f52d6402a70c95e1c70c16",
+      "sha256": "01cdb999a6d5cfdd8280b9f436b3f6d10ce59794d25d6d33d2014fcbf9cb866e",
+      "bytes": 31160,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/cleanup-consumers.log",
+      "blob": "63e57531975f0d2210b98a7dbd091a93f0f06e9b",
+      "sha256": "d6b05e0dd4362d1a86fee12e4826824b43d30f80738281b6d8becc4fa141a896",
+      "bytes": 29801,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/cleanup-owner.log",
+      "blob": "e0466fa1e7443e0204483b43b140c4d25dcc8217",
+      "sha256": "09bc60e6dc793624dc4fb09a6941ce5d41bc11973bf3bebb45ce711fc809cfac",
+      "bytes": 29204,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/explicit-html-consumers.log",
+      "blob": "1283239da81c6d46ebc395fd96c43566ea76fe01",
+      "sha256": "46daf4d74d0053ebb56057d6733a4a5c1be9a2d076ab3774552e4a44d3b6d04c",
+      "bytes": 30548,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/file-context-consumers.log",
+      "blob": "38f906bfd5f94966078a49be03b1064a9b164fae",
+      "sha256": "51d4fe86aa36e7a1c4768839578dbbab264bd47c565e7400c784b3f090bef222",
+      "bytes": 29374,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/file-url-admission.log",
+      "blob": "5ec08dd1663f4b7065aabe6fd0aa6b38deae1eb0",
+      "sha256": "18d615ab7a8cacfc14cf6aac2c39756f54988df5ee3b86e018db22b2bb5e21b8",
+      "bytes": 29042,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/host-read-format.log",
+      "blob": "7b70c8330ac4eba6eb12a4e1ce8df62735de757d",
+      "sha256": "38888694f152c64a1f67cdd3836f3868f6fc840cc7528a44828833a60623af89",
+      "bytes": 28795,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/html-policy.log",
+      "blob": "e7f96b8230bfbe32394de3b55a27b2fffd185d93",
+      "sha256": "1c2e0a2ebc33649f81f3467d5804465aff0050d1d0a73eda070f419699b6e0d2",
+      "bytes": 29247,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/image-probe-consumers.log",
+      "blob": "5ee1a7b7c3a167febea6b917d9ef04c49707879e",
+      "sha256": "6bf9b7bba7d7b25a29f29ce91e3e7494b40e91e9fb7f4dbab4ae56ad4eb9f9c6",
+      "bytes": 29739,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/local-file-url-owner.log",
+      "blob": "26ede16e9fad0f84877459ec01b0d0029f4b895d",
+      "sha256": "8860f20be403ab611542a4735133bff1d223f3e6390dcd93795f2e5e5557cbee",
+      "bytes": 29427,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/media-settlement-owner.log",
+      "blob": "6d18808a2620e0630692eef9fdb14e399bf875b3",
+      "sha256": "c73d70c1d9829a1b8404f8e888e048c4a5a997c63f4f0ead5221f6e4b3cffcb9",
+      "bytes": 34262,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/outgoing-media-custody.log",
+      "blob": "d96e9734cae7b75f4d0dd5c6a69ba52107345f4c",
+      "sha256": "b721149c77bc329b06c084ecfe2ad5fee214793f7ec3462e2e6de607ce22c623",
+      "bytes": 28779,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/receipt.json",
+      "blob": "9aaed756ac79e9048f7c48111cf9d40213c660a2",
+      "sha256": "c79d4e0d447831aae967a80be6d74b5c39b71c0daa64d18ac0595f151f563ce8",
+      "bytes": 121109,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/send-message-consumers.log",
+      "blob": "b08176a788d4682b947b4e9c54ba495833c589da",
+      "sha256": "c9cba2ad7f3adc4ab960a3efc7493920408a4a44e272984ba361dc594c980c06",
+      "bytes": 30212,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/artifacts/windows-media-13206046601/transaction-commit-owners.log",
+      "blob": "9a4533bdf3bc5898a104ad4ea6d44457fade0d42",
+      "sha256": "2e25b24f4252140b8d4c9f063b62b9d596b62d2ed833fc3b2afef896fa922bf3",
+      "bytes": 33774,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/logs/linux-job-log-125734079585.log",
+      "blob": "13b76a82a492f2ae8c8b80bb1433483e61403ef1",
+      "sha256": "4630d79b0ecbdbd01cf5f0ce4fd2f34a4696fed8e20dbff0501d529f125acf43",
+      "bytes": 1220138,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/logs/source-job-log-125734077461.log",
+      "blob": "9cf4fe0160c63468d3a0c63f925500334fcccfc2",
+      "sha256": "31f25cb8af36bfb77ebfbd4179ea5728774379f2cf70f7dddebf2e1f2fc9dd1c",
+      "bytes": 28920,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/logs/windows-job-log-125734079542-final.log",
+      "blob": "cccc43caa96370d61c0fe377e7f76878f7fc3fa1",
+      "sha256": "44dd336b57476e793afa35134517b0fe888fd0d976eb583ddb5f0991dc7d4abc",
+      "bytes": 1281835,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/metadata/initial-runtime-attempt1.json",
+      "blob": "3feee710cec81e1746ffe290b241376cbb8a0f28",
+      "sha256": "c02da6c9990073822a304c884b3379b51dacd81c809de7a9966aa690b93848d5",
+      "bytes": 13509,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/metadata/initial-source-artifacts.json",
+      "blob": "623f6273c3c8e3adf76506bcdd7341c56b70ecbe",
+      "sha256": "d3ad979d01443a9d7342e7fbe39064b41ebdb340029293f1b099bcfb6c493c42",
+      "bytes": 33,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/metadata/initial-source-attempt1.json",
+      "blob": "ee6b4baee3d92ddfed16d258ffe730afcba81f85",
+      "sha256": "05eb4afe3ba6117fdb3674e6834db0aaafcc4868a2c88b23958843b7bd0f2a7c",
+      "bytes": 13517,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/metadata/initial-source-jobs-attempt1.json",
+      "blob": "9371dc57f50fd3c44daf9482e2c33ad7f6cd585b",
+      "sha256": "116cdc99be12b576525158b953dac41ff94cb21184a4d3489db9821b2aeabba0",
+      "bytes": 4999,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/metadata/runtime-artifacts-refresh.json",
+      "blob": "9398ca81c2d5aa7d43aa1d84a2bfa0042cf7a6da",
+      "sha256": "25e4ed663317a972c6c325c27a5dfd8b79411a01e39a8b21d49e0c211cc0d123",
+      "bytes": 4756,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/metadata/runtime-jobs-attempt1-closing.json",
+      "blob": "8e805546f7fbb93ad3a1ef2daf0ad8dd33ff7809",
+      "sha256": "c717d706d760f7e51db15c585340d47674b486ec559eb8f2bb0bc1f1915f1e69",
+      "bytes": 20643,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/publication-index.json",
+      "blob": "9f5eb0426fa770715e12c3f5e7baaa27ed0b9ff3",
+      "sha256": "d2ba8c39e72ce544b2d281d4812fbbd536cf4fc9fe7425a7ce33da2bdd1894c7",
+      "bytes": 14931,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-h74/root-input-binding.json",
+      "blob": "52a95ae54c40fbf407a43d71343c54fb41901113",
+      "sha256": "d4c615a332b60ed7e3d7dae0481d4c7c98764b36f1134d900d8f38127f1aef9a",
+      "bytes": 69032,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/h74-commit-oracle-recovery.md",
+      "blob": "2b88dfd2e6e06444d72986ab44092eddb6d25332",
+      "sha256": "48973f635253bb809074f28fb396d1862cae96cac3ebfdff6a3b37dc67dee090",
+      "bytes": 13294,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/h74-commit-oracle-recovery.patch",
+      "blob": "e0db647aaac85a7ec5f5ba39267f0fe4bb376718",
+      "sha256": "2ac2fce3ae6dbb014fbfb29ade305c67ebb1f150452ebca6f242705248d95ad1",
+      "bytes": 23899,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/h74-index-context-identities.json",
+      "blob": "a302b56837cdd3237ffe2aca930973e235d05751",
+      "sha256": "c45f6560d78b95a678a3943a74e4769241a9fa1ef2263cbe20a3cb01fa060f12",
+      "bytes": 9589,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/h74-oracle-fix-decision-before-edit.json",
+      "blob": "3284f8dbc4f5dddf0e9b7339f2633a6c481e34ec",
+      "sha256": "76056b1be014eb90561076d960e57259a39e7dad1b4899d6eba2efcc1f588d5d",
+      "bytes": 2063,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/h74-recovery-decisions-before-edit.json",
+      "blob": "edf4efe23b9042b9d7e3778d5a017ca8901c89f2",
+      "sha256": "fc246df35e167b2508a33a67ffb13c7e71a4bc9655c840440dbddb60a9675bd8",
+      "bytes": 4224,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/integration-14-decision-before-edit.json",
+      "blob": "2c9ef6aa955b46de321a5da38a22584ab95d0bf1",
+      "sha256": "75ffdc9bc56e00d4582b137362e7a6e621e0144817cc01ba1b3342c6ed32e1b3",
+      "bytes": 1600,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/integration-37-decision-before-edit.json",
+      "blob": "69cc2ddc184018faffd0ec33edc8319a4a71402f",
+      "sha256": "d622427b7e939741e298c7ac03ad07d1277199908d99a4d0ccde7e55dfeb3645",
+      "bytes": 3059,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/integration-74-decision-before-edit.json",
+      "blob": "144af1cf7454d92f5d06500bc16fb8c75b129445",
+      "sha256": "28f1067bd54127ec02340eb97b75b49d7a3cff20b63d9182ec588d5d79cf84a1",
+      "bytes": 979,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/integration-905-decision-before-edit.json",
+      "blob": "a1ab3f3d78604f87c974e9312222629ae009e72a",
+      "sha256": "def08c413b216294e86dc28eb397c8b71146deaa75cdd6b310be06249f7d6994",
+      "bytes": 1777,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/integration-f41-decision-before-edit.json",
+      "blob": "029e0bbb06137af59755db2469136899140edb4e",
+      "sha256": "4aed8cdd3dd95465a0856031e9a08bf4f1a966f6b1c9d79a76cc673912dbaec8",
+      "bytes": 2524,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/integration-fc-decision-before-edit.json",
+      "blob": "ec2d6be810b4c9c4fe266af7e67428ff10279f76",
+      "sha256": "375f8c98916e04c9bd2d128786042a160d1046c136b3d285a18f5166aa365ac2",
+      "bytes": 3841,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r1-changed-paths.txt",
+      "blob": "6f9d0b6e870003be0108d0c1e817d868a36505f5",
+      "sha256": "621cfe284f4bec7ba9e5e5c7684096460a8a763b5cff4479717ae208fce1831e",
+      "bytes": 988,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r1-complete.patch",
+      "blob": "edd87ed366cbe02485d129ab5d2f1d717a5abcc4",
+      "sha256": "6c78d91836e62a3ae34a8ed8edea30a31660461bb72e7ffa37fbc8b8ab3e82db",
+      "bytes": 242266,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r1-general.md",
+      "blob": "7af47e5fc99849d3177c7d8ebd04eb60326fe680",
+      "sha256": "9a3b5c360cb7fa24a889c4f97e6843c765159621070fad7e518e64828614d1d4",
+      "bytes": 30320,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r1-manifest.json",
+      "blob": "7a4c5d0bf767ea4184dee5ffdd09dc5e54cb249f",
+      "sha256": "589a844c2c6316505a518855bffd9f452d7563ced06974d1f54e6b7328c13726",
+      "bytes": 11978,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r1-structure.md",
+      "blob": "24465a7f69ed0b4434fcae46ec756cee221f12ad",
+      "sha256": "484b5377293a0c601f8dbd5c7b3d34b43d27362c65e7beaebfd60103082599fe",
+      "bytes": 22239,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r2-changed-paths.txt",
+      "blob": "d3efb1aef85807e06afcaf28f8f1c64c46671300",
+      "sha256": "dc7e18db5322da60dd92183482a85eebbf1c3ddad31602a416ce4c17e7be73a6",
+      "bytes": 1028,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r2-complete.patch",
+      "blob": "653304ef51532ef2b7f683436a7bbc36ebd9cd14",
+      "sha256": "d813dbc3a88e2b685c9ee5bb50747d342edee75bb1cb0214ade9f61769ff4f22",
+      "bytes": 243191,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r2-fix.patch",
+      "blob": "be4069a233b4cd09e68f766da8da1f20135b6e97",
+      "sha256": "4d9d40a81134e67f5eaaf72e30ef150852bfafe6cde33beb475c30f9fcacf90a",
+      "bytes": 5808,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r2-general.md",
+      "blob": "1fe0e58d53445d6509aba0d3265be1d3db31da0c",
+      "sha256": "70e7d8416b6944c770528783540b2f4b661e86a251e89874188a0e09ab115ee5",
+      "bytes": 17511,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r2-manifest.json",
+      "blob": "4a478e6a6397802382d0d46a7402e286e18722de",
+      "sha256": "58f73d55ff011d786c43e6ef1b2c766512632803b24ae4d7291f68d4dcc0c3fa",
+      "bytes": 17300,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r2-structure.md",
+      "blob": "d66e355b649c4c28ae08e9c3d4eb803eb66e189a",
+      "sha256": "1b4822edeff2ab7731e3e5269b90f5fc92d86329da860feea10bd6aa6d998555",
+      "bytes": 15966,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r3-complete.patch",
+      "blob": "993d0d5a3722769787924829c2112c0ade86b130",
+      "sha256": "1e6a5270acaa94e98d4289169d0438d00f45ff48d6a8798b4b17ed08f5aa004e",
+      "bytes": 260487,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r3-general.md",
+      "blob": "cf6cfc5d8b872c3d426b8a796af3338fbad585c7",
+      "sha256": "c4895d98bec226cdb3f0f77c8e68eea7f3b90418cd65fc0f1f1347ec430d161b",
+      "bytes": 23768,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r3-integration.patch",
+      "blob": "9bd5dda9be94c07b9f13a52a8aa1454bfa19f73b",
+      "sha256": "1312852a835935efd010ef11a7355d5f4fc2bae121a1876b86f4ddf608309ceb",
+      "bytes": 21454,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r3-manifest.json",
+      "blob": "c09c892e17a3c9a6f328bfb108d4bd5f26edb16d",
+      "sha256": "8b122af3809facc3757a172923d597ed6d06651fa6067997e1947462f17a99d4",
+      "bytes": 16747,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r3-structure.md",
+      "blob": "db4c695fb4c43b52e543deb2a71943890b733c73",
+      "sha256": "f1e5d03ffcd75401c61fafd13aec1fc15dc3877d29476f10cd1a7f8e94b3b97e",
+      "bytes": 15331,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r4-complete.patch",
+      "blob": "8928c7b5dbeb87a778bc1e17e6d6f96fb27c296f",
+      "sha256": "323b420ddcd93e54dc457a1c82cb12e7a5dd1f4119daa73226a31b82c5f8b0bf",
+      "bytes": 268003,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r4-fix.patch",
+      "blob": "fbccb21d3948f0c6fb1741a2dee5105926a1f74a",
+      "sha256": "3b97ee14fc94d987537fdd055f5d55106f0e897e4f1c6766fedf2bda9622472c",
+      "bytes": 30611,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r4-general.md",
+      "blob": "52a1be9e17f93d0c6380016f16ff01cb1227a41b",
+      "sha256": "68fe761f277e82a2a0979c839fdd716e6ab96b163457efa05a13e0ee5b2bd641",
+      "bytes": 31568,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r4-manifest.json",
+      "blob": "e8366142839aa1198d1ab667a85837ae52cfe556",
+      "sha256": "13813cd7d955932ee3e256ea04ffde8f3ef02055f35931ef402acdfc24e23613",
+      "bytes": 12255,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r4-structure.md",
+      "blob": "764307ab3fa83e1db01748b10a0f7c3196e19d09",
+      "sha256": "7e45450d050e71571a83d8e5d3e45eeb8c634a521616cd65c71128f0dba3f5dc",
+      "bytes": 16849,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r5-fix.patch",
+      "blob": "443b935837390620a912beea9aeb01ce30b0385f",
+      "sha256": "c8834ebfa123a5adf3d6d9535e271cc7907dea3a95b4776fa6069a0226a1bad0",
+      "bytes": 15628,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r5-full.patch",
+      "blob": "544c46b29152b6ded1494b5cab7b4b55ea0a7e84",
+      "sha256": "4f8dd714c38ee73d7e720f360a6d4490f01cc09cb0e494b0ec1cb2a71b9972b3",
+      "bytes": 272534,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r5-general.md",
+      "blob": "676c953ddbec497dd03e707537721d2e5bf802e2",
+      "sha256": "5166154e6ca1bbca6176028c0b4b6582306cedd766cc19dea3526232eede036e",
+      "bytes": 17485,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r5-manifest.json",
+      "blob": "ac22332d65a471b496b51f7acd73ca8697c64b4d",
+      "sha256": "1a33405b8920f79a0f2967e0caa9aa00cfd8dcb0c0f25cb52cdd31a4bbe272f6",
+      "bytes": 14483,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r5-publication.patch",
+      "blob": "c825000f0f71c22f0fb9198a2210bc53dde41a32",
+      "sha256": "34d5daa754d98cd20ad36b2dab321757d89c8b92980bfe5041ed443e946576a0",
+      "bytes": 26758,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r5-structure.md",
+      "blob": "4906ad174b32da09e4003507864425648436e31b",
+      "sha256": "2f78cfaba2272d6d99dc85d53e0da143de7c848006bbb9aedaa0f0473bcf116e",
+      "bytes": 22245,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-r5-tree-proof.json",
+      "blob": "5f64b04d5b7e67351cb99871b46724a375becbe6",
+      "sha256": "2702341dd3f1225774b78a41ba6df61c643c2a0b7c5a6fd015c0faf5ad141ea8",
+      "bytes": 333,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/msu-r5-campaign-directness.md",
+      "blob": "7e0ca94eafacc3882c039d473c069d98a2f6324f",
+      "sha256": "75ce6f2ed93f57a151b101efd72ba93a994a218ad8c5547021aee4049f605ef9",
+      "bytes": 23241,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/fixed-dependency/LICENSE",
+      "blob": "88706eede2b53e494ba1c5b5ad28243393fbb378",
+      "sha256": "8d703995c48aeb3726ab83f111a10ee696835e096802ee0329ac50216ab9434e",
+      "bytes": 1137,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/fixed-dependency/secure-temp-dir.js",
+      "blob": "747abc457769627e8ba08745b8f2f36266432e58",
+      "sha256": "2f37e8e6b1bb31fcab349986d08f9a2da074b00500ac2e66ec7cc524dd83ff04",
+      "bytes": 10351,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/fixed-dependency/secure-temp-repair.js",
+      "blob": "c7a692512bc623f1d79a6c4a584ef67da8385bd8",
+      "sha256": "097934801db8ef99bb3062d55f5639953b347ee55b2db146751141dfffeedbac",
+      "bytes": 5052,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/fs-safe-archive-identity.json",
+      "blob": "2a8641e4e7c57818a9a3222cc286d19d5b379532",
+      "sha256": "57aeffdca872a9f9c75084196afc7e58d78207d495cdf0945d8251cf7d88e63b",
+      "bytes": 318,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/fs-safe-source-archive-identity.json",
+      "blob": "807ffd1b738d6eac6f60dababc79a0191c929c9e",
+      "sha256": "c30ce703309dcbc13e57d8f2a2bba687bfddc9226900c611dd52f8653be3ee3c",
+      "bytes": 1390,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/index.json",
+      "blob": "2cbcb7e5365ffbcfb62efd225abb80b4320d016f",
+      "sha256": "1c9c33d28b544232ebedf54d26c3173ba21dea23c828acda2f34c65c8cc8994c",
+      "bytes": 3532,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/origin-boundary-assessment.md",
+      "blob": "d9346d309c3093d94805cce8862c6f0a36c4dda6",
+      "sha256": "ee1c77480b2c2ba5de4417ce2b8a502863da0fb61e525a4e36ff9bbd01844e0c",
+      "bytes": 32611,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/prior-owner-assessment.md",
+      "blob": "5c7b708a10f172542d41f61e48fa0f54e1007743",
+      "sha256": "f6640ca0ea439cf7e756f9f9585130851d85adfc71d5dee0572dff803f752c39",
+      "bytes": 29625,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/semantic-read-index.json",
+      "blob": "d01501d5ef73b36632674f1ee03d3eec2ce05a36",
+      "sha256": "fe3d1c828d949e18898f7504c498dcc5414c9664b9a32717d24211f9746e27a4",
+      "bytes": 14838,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/next-html-origin/source-identities.json",
+      "blob": "0a03e4e08215097ddda6b7bf0e636d11567c4ce7",
+      "sha256": "aa81864f7d7fe8a708669ab10e6c695c0791866de0bd249c43da5a6324df4d0c",
+      "bytes": 26895,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/r2-integration-facts.json",
+      "blob": "a36d51a9ab9542bd1742034df7a6f996fc1593b1",
+      "sha256": "7dada2427c90da3c9a32b7b62bc15b6692c3ffc11a469343d43527283c5f8749",
+      "bytes": 6434,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/r5-bounded-campaign-decision.json",
+      "blob": "b6ba2c51a0ffd7de5cb47a838bc10b56993dda4a",
+      "sha256": "6c9abe9b52e3a338a72255bba165b2de06d5bb5692d35ed26cf4ef92209b7d01",
+      "bytes": 4761,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/r6-fix-decision-before-edit.json",
+      "blob": "202f0db2137f937b8b46d450c90b8e40e12bb78a",
+      "sha256": "54fa2b6f9427e15f13b366a884b91e2f230385562411f7530ecedb03e9b7e682",
+      "bytes": 2958,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/recovery-checkpoint-state.json",
+      "blob": "3c9a96e1ed01111862d819f360ef45eac6c1c7a1",
+      "sha256": "c05fb964e0520f494c4eac3d7819901b8fe303c5819f0fb53632f8ec25a36f60",
+      "bytes": 1624,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/review-decisions.json",
+      "blob": "27c7bac4bc7f755bccdfe942b39a0d30e4bc2ec7",
+      "sha256": "5fe5a1fae13754c6d986494ce99db016f05c9e53b45cde9ba0146bbdee1053e8",
+      "bytes": 10321,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/automation-app/receipt.json",
+      "blob": "f29fee78f951b091d56b553af22d3463938c7e02",
+      "sha256": "8dc4617e2eb5625bae2e6fc5b2f4f1ed03ffe883cda0bc15930421e115507f56",
+      "bytes": 40751,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/automation-app/shipping-check.stderr.log",
+      "blob": "0be7e620197d2ff6e8e1c18ff79a25863784ca4d",
+      "sha256": "0f26e720e6859bbd2fe4dc8ee95e113094ebb488d70e3950f0c8b945ed0c7231",
+      "bytes": 50559,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/automation-app/shipping-check.stdout.log",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/automation-app/test-build.stderr.log",
+      "blob": "e4d9ac46f37b39526bbc22bb28073f1e79036466",
+      "sha256": "f820b69a230316781cc6f05ca77bcea0263ff840fb35dbda10534aee25c61590",
+      "bytes": 8890,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/automation-app/test-build.stdout.log",
+      "blob": "0d27e5fd6c1bb21d6a6279e0f53ff879cc9038cc",
+      "sha256": "6cf48c5357cc6251ed60792e70b9d5fa1ab7439e38331ac2f70fd7847d57657c",
+      "bytes": 862225,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/link-preview-native-gateway/app.log",
+      "blob": "6e0cf8e78461e5df67b6a7057bb2d35cfe0ed553",
+      "sha256": "3f25586d29dea987e7c6c6f1b33e372d39f178a479aa2da8604b08db69ea7087",
+      "bytes": 43694,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/link-preview-native-gateway/coordinator.log",
+      "blob": "f3445149dc5340728de3826a32cc68e341512024",
+      "sha256": "4b0bed5cf8b5c6a04fde44d2e5f4c29f3d410f9894c70503a1cc6e6765caa3fd",
+      "bytes": 12771,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/link-preview-native-gateway/host.log",
+      "blob": "ba45e115d16ad5fd9eccb6e034dca68916dc79e4",
+      "sha256": "93eee4c99f9f76a5b0ff011fec2ccee10c4b74f306dbd916ebad983fb69178f4",
+      "bytes": 31892,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux/link-preview-native-gateway/receipt.json",
+      "blob": "64e18ebfedfc500d97f0ce139a5955272aeabc56",
+      "sha256": "640fe265fec818858aa605a7f7bd01d036be9d452f1c30b1a0503e9f70ee7331",
+      "bytes": 34005,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux-artifact-inventory.json",
+      "blob": "12567856166ef91ffa00828ffc9d457fea90ea5f",
+      "sha256": "4071afb29ed9aa3d52524de241e23c1aa2046657c3ce93f36d1b2323c833ea37",
+      "bytes": 14643,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/final-linux-job-metadata.json",
+      "blob": "f1c13a58349719af741b4631b5b18f0cbef898a0",
+      "sha256": "feaaf060c6ed9a0b0f766b57c1a7d20deefc73ea2cce18bccef12e1858980a7a",
+      "bytes": 24427,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/index.json",
+      "blob": "7e8e803f96765d0cff8f060e25a297ba193f7c70",
+      "sha256": "7460cc3890bbb7907b50240192be3980ebc03fd09c4302cf7260a235782d5365",
+      "bytes": 17546,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-and-linux-collection/collection-summary.json",
+      "blob": "33a473d9a17b902a67a3b6d65b7418654c63a0cc",
+      "sha256": "f84648ff29d5cb61a737fa5ea4f4fa63a0fa1f8119beea0b0b359419b5b68783",
+      "bytes": 4766,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-and-linux-collection/evidence-summary.md",
+      "blob": "9f03a5b768ff3af9160ded23617ac048c1bcff4d",
+      "sha256": "5c4ad812b7ff871eb7d4024bb6e8039671350a1124dbf7da9e9bf85b555ae033",
+      "bytes": 12690,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-and-linux-collection/installation-receipt-accounting.json",
+      "blob": "24bcefb4a4dc1bc9eb78325234921fe1cf8dd253",
+      "sha256": "334faf66e87d25199419ce9cc06a1cae512cdcb031fdb900ca57b0fefc09bcb2",
+      "bytes": 8617,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-restore/compiled.json",
+      "blob": "a9eddd5ecf2fa5c1aa1551b6ff4553f1f3390070",
+      "sha256": "f615c7e58e1022907383b67af99ffe684cec6a08fc3821661ff55b50cebe4c75",
+      "bytes": 1056,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-restore/compiler-artifacts.jsonl",
+      "blob": "9e7cb908c817f38f846ef421f479e6e7a9c44efc",
+      "sha256": "eacf949162ddb8a46b57aaef67132b1e8a5fadcb954892f827274060d4e039f1",
+      "bytes": 598292,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-restore/execution.json",
+      "blob": "e2f36b8e275b695a035001020c9966ef20369c89",
+      "sha256": "754a032ce6ab5adadb6c553926a47a13d902af36ea432541fd149c256be2a891",
+      "bytes": 3993,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-restore/linux_bind_mounted_descendant_file_restore_boundary.log",
+      "blob": "e15ea9dd8a393bd435df1278a45113d750229565",
+      "sha256": "6a4e7e28651c7c2b1c5866aceeccaa4a15c99c363f0d035d26552ed73e1c7bf4",
+      "bytes": 177,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-restore/linux_bind_mounted_descendant_symlink_restore_boundary.log",
+      "blob": "2995fa11800d1d6889ca6949dac18232663fd040",
+      "sha256": "440cf3d7e0e6eace8956a7f34d65489d87be9b68b0d67ae796d9df965585c3b7",
+      "bytes": 180,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-restore/ordinary.log",
+      "blob": "6566fe951533eae80247eff815184d71474d9a8a",
+      "sha256": "16919d27706549c326e4158ed832e8c669d8ccf8fccaf3f64cdf9a342d2aa43c",
+      "bytes": 2744,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/installation-restore/subject.json",
+      "blob": "92fe1212ee9f9901a662a1ee86f789884d438b15",
+      "sha256": "16108e56a963081039730e9b98cd5208e4e7530ad4ed65edae1b30b650aeb5bc",
+      "bytes": 477,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/agent-management-consumers.log",
+      "blob": "da884e0da4252deb5489d8ec4662de78c6c500dd",
+      "sha256": "346e1d5151f42113327114a60d982f47bdd098c236f46f84896fa4aeb2b8850e",
+      "bytes": 27684,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/bounded-reader-box-consumer.log",
+      "blob": "6e5e6e32c5f8b23bcf3ba184b5c0e69551c27f0a",
+      "sha256": "f3b0eb084eb79ebcff24006b5f21954c841d38701c73c6b4421c0c7d0ce6f364",
+      "bytes": 27537,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/bounded-reader-channel-consumers.log",
+      "blob": "d84371332727619163f4c84f4714e0d577a2f173",
+      "sha256": "524fa0e57e5c770fd0eac286de09d510f8530f428b60eef4e55cff652c9ce99b",
+      "bytes": 27941,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/bounded-reader-image-consumer.log",
+      "blob": "dde8acd947377a8dc7d4832f4fe99302ef948c90",
+      "sha256": "28da1e73a06aff75f9306dcd60ee86dd05f1add7411ce1b3c9b26746623ba292",
+      "bytes": 27425,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/bounded-reader-owner.log",
+      "blob": "aa7a3749e22bc79fa4d7782bd87e3a85e330e395",
+      "sha256": "a0789792114efb444eb76c217c1a5f0809f33e43d6f04358b3fef2b3affabb33",
+      "bytes": 27944,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/bounded-reader-public.log",
+      "blob": "cd9d639582a07968f93d4f34bdfb8aadf7278c06",
+      "sha256": "8cafe42d12f966675c7dbc2563b179becb9434d45e5e3f8e64a3834ec7adc001",
+      "bytes": 29905,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/cleanup-consumers.log",
+      "blob": "e5ddca63c37d53c0f0dc54674d59dd41c3b31a92",
+      "sha256": "f8727bc2381cb9325846aa03cd0bcf954cb8ad557c2ef5cde43f6f8b40e9f39d",
+      "bytes": 28640,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/cleanup-owner.log",
+      "blob": "4de4af4b60d336b216bde9a926d9f51ccfb67998",
+      "sha256": "0e963c2be469f26f5f3f0434092e855a0d056b624e7a738cd69e3a3bb7070e52",
+      "bytes": 26117,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/explicit-html-consumers.log",
+      "blob": "9afdfa875f1e7be34687f1363d148a04ca217a3e",
+      "sha256": "ed2a24e201536694e7e2f9616eac3cb7f8fd10136ee152bb1cf26264cc91aead",
+      "bytes": 29433,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/file-context-consumers.log",
+      "blob": "96ba619582b343b9fc380e8693ec48cba58ef0e9",
+      "sha256": "5ff165b801b8287ac36bf1f0117b08280ba812954b212f8d632446cdd7f3b3e5",
+      "bytes": 28105,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/file-url-admission.log",
+      "blob": "548ab42eeda6041c8ff232ed33081eb51635836b",
+      "sha256": "7d588a4b36ebadf4a43d3ebdd6484aecfb7bdeeedbf1b333e9e89fd1b2c9dc92",
+      "bytes": 25410,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/host-read-format.log",
+      "blob": "b16717ae9c8fb4d0cf8a4ce579b8cee0a5525b0a",
+      "sha256": "a61a6612b29c90cc1c41e8db2a2b4da4e03256c2a884ab09f7c57dba1e638721",
+      "bytes": 27540,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/html-policy.log",
+      "blob": "681c6c6fc0d57147728ee9a3d69e6f2c4a1f67b8",
+      "sha256": "32a717d1d79b4787b750c83b2e197e0ff4c7edf830cff8368073f7facc59a2c5",
+      "bytes": 28200,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/image-probe-consumers.log",
+      "blob": "267c75349a3786a6cae5c37a25642791a9e6e89b",
+      "sha256": "0d7f045c15daaa3a60c99efc3991bf6c9e6105a1a806f049b0815b2a6cb3363d",
+      "bytes": 28484,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/local-file-url-owner.log",
+      "blob": "4fcc8dda2a3956135a2c59c1a8a21e3bb0f72a8e",
+      "sha256": "aa21d4165bccc236027ed99e4c2334a35afff0fe9beb3b2fa5052517d7d07870",
+      "bytes": 28096,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/receipt.json",
+      "blob": "68389a307cc5caf8e7eba4f3dce47887d7dcf13b",
+      "sha256": "fdb6a05b44cc1cbf453ae7ad812684f25fe5d4326478ab0aeb7165870f20d3c7",
+      "bytes": 91458,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/linux-native/send-message-consumers.log",
+      "blob": "664184682e6135db7c8afef11b40c3012b2d2e24",
+      "sha256": "0a2cb286f3db6223e6c44ba643bf352b2ccc0a8e38b6b2269c34c9c7c5c4d3b7",
+      "bytes": 28794,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/media-admission-a2-app-failure-audit-data.json",
+      "blob": "6f9d98af7f4af7f0afe17fe41ad86feb3a15a565",
+      "sha256": "9c8db5f1fd5aa08029ae3799ca6c2df4f48101e0d4a151e79ec6942ee4741115",
+      "bytes": 56157,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/media-admission-a2-app-failure-audit.md",
+      "blob": "4205139c58b1d26de2719b62bca122cd26038f16",
+      "sha256": "3a7c6a42904f907ffa1a7c7249939176c734f72697604b3e4b72905f2edfeccd",
+      "bytes": 18012,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/renderer-job-125721250334-failure-classification.md",
+      "blob": "f32245fd5f9afba146fdab6b123e99141e226e1a",
+      "sha256": "89b86da43eebb887f7ca707861967b2e10e52ff948ea2031686381bf0fb2f356",
+      "bytes": 7990,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/renderer-job-125721250334.log",
+      "blob": "45944bbd8790094aac8a9f236b583c5db44bebcb",
+      "sha256": "dc67d69790921fac5ac797a448be41908640de366de1ade9f3c275ca8c0acbb7",
+      "bytes": 140527,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/renderer-mab-13204725638-receipt.json",
+      "blob": "3a89e600b7f14f7f4bbe563949cbf19c433f4ae2",
+      "sha256": "183a2af40ffe5da5d347eb03037ea7ef83efdb6478d122da7742166088c5213e",
+      "bytes": 20875,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/root-app-failure-classification.json",
+      "blob": "b1b688c0ccae57dd97565f8e6848bf4a41b1ad3b",
+      "sha256": "a0d9fafbbdd540bb2fc6f7f6e0957d98beb22ed15425f6b7addf2809acad5213",
+      "bytes": 15050,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/root-app-failure-pending-raw-receipt.json",
+      "blob": "946a4a2a078fab7d151ec0f413c2f25bbcfec7eb",
+      "sha256": "ba2a5dcc44bf00d855536997c8ccbee83975096da1ba71ab5a5c6307db58855b",
+      "bytes": 1352,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/root-app-source-binding.json",
+      "blob": "8b4394bf6759eb49a2a760b24000e900d30ac853",
+      "sha256": "477d1707e9ae4b36fb5b63ccd2814d3a5e8bee6d419053a61720f25b144c1d1d",
+      "bytes": 2838,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/root-exact-h-input-blobs.json",
+      "blob": "130b8ca3d91d41e06ca6c68b189e28d05d3384e3",
+      "sha256": "d72495ad20aa276851490c1a2302845e529cd1836345bb58c97674a543dc1d14",
+      "bytes": 4865,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/root-linux-native-raw-readback.json",
+      "blob": "075c69ca2a2643487f356abc5e3586e5af7d79f9",
+      "sha256": "4ab538c91dc462888f1e1233c6dccacd26a49c9fe2415ac9f64594f592d11891",
+      "bytes": 20554,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/root-renderer-incoming-disposition.json",
+      "blob": "4d80a9d56010861dfc5e17e67109af7cf0d52606",
+      "sha256": "1a5830cd6feffaff4c301650d9156973391c953657404045da9e0619d878eb4a",
+      "bytes": 2214,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/root-windows-raw-readback.json",
+      "blob": "5c6b533fe5be6f045fb556634b5a4e1f4a1d3507",
+      "sha256": "66c3d1b5f948fcc06b90d2c9c785f92aa4975a61f5c9a4f7f4cf4d2f9986e8cc",
+      "bytes": 25420,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/source-authority-job-125721248916.log",
+      "blob": "c77212bea9a4e1e0fb1b9ceda791a1b97a0f7293",
+      "sha256": "90b8967b824c2696d4a8a8d65ec8673b1c318d85ff2ca53a6bae4c9dc77584a9",
+      "bytes": 31524,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/source-authority-summary.json",
+      "blob": "525a5fcbe4d027fc6648ee6bd456de4958fafed0",
+      "sha256": "bfe38231d5870fc9ca3fadf41b0a0448abd85e19b4234327a669fdd667f3ccfb",
+      "bytes": 607,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/source-p0-structural-receipt.json",
+      "blob": "71036de97a166ae582d43ae7489ff3b9244dcb84",
+      "sha256": "265c06ddf829a28f5a12472d89ccf5c2faf193de1fd78f4b80b5df4ee14284c3",
+      "bytes": 5080,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/source-persist-job-125721834426.log",
+      "blob": "1e74994253cfb23aae6b1e02784606b74cf3332a",
+      "sha256": "365a2c70b888033efec0e1426ece67cc9408511f2b941ae70df7610ab15e05d7",
+      "bytes": 18141,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/agent-management-consumers.log",
+      "blob": "dfc5839932cb50d302ff311d4af3a853829c2acf",
+      "sha256": "1b6ead60df9831c515c90d0ea6c33c64283a24f313467ec586425db8eb031d6e",
+      "bytes": 28939,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/bounded-reader-box-consumer.log",
+      "blob": "9c43131dd6862ee3c712ce04895ccdb864f5abcd",
+      "sha256": "ce5a979ae50dbe8e18bd4117b5683a78a02341243f57ec5518c57ecebc627d20",
+      "bytes": 28792,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/bounded-reader-channel-consumers.log",
+      "blob": "78dc2b2ac36fa63a9fb595e7c0985a2b7a7550be",
+      "sha256": "cd9e42a10575f4889ece5c9d0056eba8d16ded0478665c647bf21b47ba47c4b5",
+      "bytes": 29269,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/bounded-reader-image-consumer.log",
+      "blob": "4c354f03138228a57354abcaadc0f6fda60d6cdc",
+      "sha256": "b77e15c6688357c6f1f7ae7d27c065cdffd5970e2a2a9bdc9cda00154ba12fac",
+      "bytes": 28693,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/bounded-reader-owner.log",
+      "blob": "6be6078163c836737eef929d3133134cfeb0201a",
+      "sha256": "2842f65c759f2303ec941be590d1295bfa4ffde56a2cdb0ee5638cc6d5495e6a",
+      "bytes": 30237,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/bounded-reader-public.log",
+      "blob": "bed3f28db14bab6fcf1195ae47ebcadcc91a9e44",
+      "sha256": "b4f8c738f16fc3c4db84ba30541eb081fb029534b1d59afc2564c7fce56b156c",
+      "bytes": 31160,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/cleanup-consumers.log",
+      "blob": "7a717e5e011259f805dbe1ee4d1c2124724c61c5",
+      "sha256": "d4a0cd3d76ab43a94374672dcdbcf33c9e66b5ab6ca8409674745fc6463e6d0b",
+      "bytes": 29802,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/cleanup-owner.log",
+      "blob": "061a3a92bf5346e99280e6eede3dc733f346cb56",
+      "sha256": "f914dfef255db4cbb8e9b1138c28cac37883de4809ef0a142d3c3e413cf60997",
+      "bytes": 29691,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/explicit-html-consumers.log",
+      "blob": "fdfbd5dbd59e6da34e6ddad51a6e212584fb603f",
+      "sha256": "11c0c2eda86ce4c9e5e370c6740527faa8317bacea8069bd3991c100ccb7bd09",
+      "bytes": 30548,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/file-context-consumers.log",
+      "blob": "5c93c09d870e923a1557076c5117eadcd481dd69",
+      "sha256": "2518e3668b1a3c44783679443dfaf65a7e1060ab245b53e09f0f577d9e210e84",
+      "bytes": 29374,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/file-url-admission.log",
+      "blob": "1971995b365aef167e6a348df24de1ffc8003826",
+      "sha256": "609d30187a0708105fb309d2679fcd6d4615eb03d13e1f338f634fd363905ea9",
+      "bytes": 29042,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/host-read-format.log",
+      "blob": "6c5031086f8022eaf53e7b18e2c24a612d6f5dae",
+      "sha256": "8cbc45e9e3fc2c84b5c9f059d506c10c8c004ba2b75a9a6016b39f7aeb683aba",
+      "bytes": 28795,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/html-policy.log",
+      "blob": "0987acd7c3ba9b87a0a851c83bc80d69414c2504",
+      "sha256": "3195f8198f5d35da3a826621959ec5c56d44407804813db91f7635253667eeaa",
+      "bytes": 29247,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/image-probe-consumers.log",
+      "blob": "e6dd8d8d664547b4f91d8211e0dcac91728b7e82",
+      "sha256": "d96433cb17a5d22cc77da8c0d1b10e8129d00e0587f8309d51390013d3e16093",
+      "bytes": 29739,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/local-file-url-owner.log",
+      "blob": "4d63d3a007d59ae9283fc8a957b071a220ba96a1",
+      "sha256": "fb9cea1198be7ef4ace294bb970f8bca635847dffd32fc0634e84f3570ff161f",
+      "bytes": 29427,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-command-logs/send-message-consumers.log",
+      "blob": "8550f9deed6242bf06d9a5bb8c17a5e41f7af903",
+      "sha256": "faea61809fb5da5768ef8bd13a1fdbbf329a3de9c05f1f9c318a83e3977d7c52",
+      "bytes": 30049,
+      "full_content_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-a2-647e0932-20261103/windows-receipt.json",
+      "blob": "dd12c269a3d8912ffb2f2cf23c94999543fd8d18",
+      "sha256": "efde2b7019f0d893d0c2762395f95bdef1420a8e856406798296a5c82f692676",
+      "bytes": 92048,
+      "full_content_match": true
+    }
+  ],
+  "failures": [],
+  "source_files_changed": 0,
+  "all_other_parent_leaves_preserved": true,
+  "verified": true
+}

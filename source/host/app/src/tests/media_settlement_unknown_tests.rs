@@ -802,7 +802,7 @@ fn generated_lost_ack_child(root: PathBuf) -> Value {
         persist_accepted_send_prompt_context(&sessions, &args, accepted)
             .map_err(|error| ProductionSendError::Internal(format!("{error:?}")))
     }).unwrap();
-    assert!(accepted.context.accepted_durably && !accepted.context.duplicate);
+    assert!(accepted.context.accepted_durably && !accepted.duplicate);
     let control = runtime.capture_routed_turn_start(&fixture.agent_id, STREAM).unwrap();
     let cancellation = registry.register_routed_provider_with_cancellation(
         &fixture.agent_id, STREAM, false, control.cancellation(),

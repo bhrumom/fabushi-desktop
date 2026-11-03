@@ -180,5 +180,36 @@
     "verdict": "CONVERGED_SOURCE_ONLY",
     "open_findings": [],
     "execution_limit": "Oracle c0162f99b896c00d0cd100ba59ad700eb01ad802 has not executed. Hfc results retain their original subject and input identities. App compiled feature observations, MSU8/LFA6/SGF3/cron5, macOS and final acceptance remain pending."
+  },
+  "round6_recovery": {
+    "candidate_tree": "4b94e525d6790d6f355ea6e2113db02cb5e5a46f",
+    "publication_parent": "4e80e161c6cc539f4c120d64f91421619a57def1",
+    "manifest_sha256": "893fd4fd0b5ef6787935956ea5156a6a0bcd9ed7dcda0f49ffe1f8d0f9cabe88",
+    "reports": [
+      {
+        "path": "media-settlement-r6-general.md",
+        "bytes": 23176,
+        "sha256": "4b4ea76abee9eaa07f50bb6c00c64a6ea2cabf1a373180a057153cc48410608b",
+        "lens": "general-security-lifetime",
+        "accepted_model": "GPT-6 Astra Pro configured",
+        "accepted_effort": "xhigh",
+        "verdict": "APPROVE_SOURCE_ONLY",
+        "root_read": "full"
+      },
+      {
+        "path": "media-settlement-r6-structure.md",
+        "bytes": 17303,
+        "sha256": "0607026e250d8cd2b024cc13f71f84128b0b39d37e2816a10cdfff046e355e86",
+        "lens": "structure-reuse-performance",
+        "accepted_model": "gpt-6.1-sol",
+        "accepted_effort": "xhigh",
+        "verdict": "APPROVE_SOURCE_ONLY",
+        "root_read": "full"
+      }
+    ],
+    "root_read": "Both complete terminal reports read. Five-path publication and eight-path focus delta converge with zero source findings. Pre-edit FIX decisions, merged incoming oracle controls, App wrapper assertion and bounded abort wiring repair accepted without weakening assertions. Incoming edcd is evidence-only and all22 source parent identities are unchanged.",
+    "verdict": "CONVERGED_SOURCE_ONLY",
+    "open_findings": [],
+    "execution_limit": "No R6 execution. H74/Hfc original failures and scoped positives preserved; current App build/features/cases and changed source oracles require the explicitly adopted bounded new-input Actions set."
   }
 }

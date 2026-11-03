@@ -11,6 +11,10 @@ owner; the separate `OCRM-RESP-MEDIA-STORE-READ-SCOPE-001` stays incomplete.
 Scoped source reads do not alter historical full-reading facts or global flags.
 The existing source-authority Actions workflow derives canonical inventory
 mapping/counts from these exact-U references; no local generator is run.
+New responsibility links must first be declared through the existing
+`inventory/index.json::pending_mapping_additions`, anchored to the unchanged
+canonical inventory digest. Actions consumes only the exact declared missing
+links; historical rows, reading facts and completion flags are not hand-edited.
 
 ## Authority, current problem and scope
 
@@ -148,8 +152,10 @@ separate applicable work; they are not waived by this batch.
   raw input receipts retain their original bytes and hashes. Require both LF and
   CRLF actual-owner positives, changed-branch and trait-owned unsafe negatives,
   and evidence that each destructive substitution really changes its input.
-  These repair the exact-H74 oracle failures without changing product behavior
-  or weakening the global prohibition.
+  Each media mutation starts from a proven actual-source baseline and binds
+  exactly one intended replacement site; every media mutation negative exercises
+  both line endings. These repair the exact-H74 oracle failures without changing
+  product behavior or weakening the global prohibition.
 - **MSU-07 / exact fault port:** the existing SandAgentDb exposes a hidden
   `MediaSettlementTestFault::{LoseCommitAcknowledgement, RefuseRollback}` and
   `arm_media_settlement_fault_for_test(session, revision, work, fault)` returning

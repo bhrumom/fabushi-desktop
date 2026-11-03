@@ -2847,6 +2847,228 @@ fn channel_failure_wiring_oracle_requires_captured_generation_and_shipping_obser
     }
 }
 
+// This deliberately bounded wiring check follows ordinary abort into the
+// shipping sink's guarded cleanup helper. It does not establish transaction,
+// filesystem or concurrency behavior; the real App/owner cases do that.
+fn shipping_abort_reports_guarded_media_cleanup(file: &syn::File) -> bool {
+    use syn::parse::Parser;
+
+    fn path(value: &syn::Path, names: &[&str]) -> bool {
+        value.leading_colon.is_none() && value.segments.len() == names.len()
+            && value.segments.iter().zip(names).all(|(segment, name)| {
+                segment.ident == *name && matches!(segment.arguments, syn::PathArguments::None)
+            })
+    }
+    fn named(value: &syn::Expr, names: &[&str]) -> bool {
+        matches!(value, syn::Expr::Path(value)
+            if value.attrs.is_empty() && value.qself.is_none() && path(&value.path, names))
+    }
+    fn binding(value: &syn::Pat, name: &str, mutable: bool) -> bool {
+        matches!(value, syn::Pat::Ident(value)
+            if value.attrs.is_empty() && value.ident == name && value.by_ref.is_none()
+                && value.subpat.is_none() && value.mutability.is_some() == mutable)
+    }
+    fn variant<'a>(value: &'a syn::Pat, name: &str) -> Option<&'a syn::Pat> {
+        match value {
+            syn::Pat::TupleStruct(value) if value.attrs.is_empty() && value.qself.is_none()
+                && path(&value.path, &[name]) && value.elems.len() == 1 => Some(&value.elems[0]),
+            _ => None,
+        }
+    }
+    fn field(value: &syn::Expr, base: &str, member: &str) -> bool {
+        matches!(value, syn::Expr::Field(value)
+            if value.attrs.is_empty() && named(&value.base, &[base])
+                && matches!(&value.member, syn::Member::Named(name) if name == member))
+    }
+    fn borrowed(value: &syn::Expr, name: &str, mutable: bool) -> bool {
+        matches!(value, syn::Expr::Reference(value)
+            if value.attrs.is_empty() && value.mutability.is_some() == mutable
+                && named(&value.expr, &[name]))
+    }
+    fn is_false(value: &syn::Expr) -> bool {
+        matches!(value, syn::Expr::Lit(value) if value.attrs.is_empty()
+            && matches!(&value.lit, syn::Lit::Bool(value) if !value.value))
+    }
+    fn method<'a>(value: &'a syn::Expr, name: &str) -> Option<&'a syn::ExprMethodCall> {
+        match value {
+            syn::Expr::MethodCall(value) if value.attrs.is_empty() && value.method == name
+                && value.turbofish.is_none() => Some(value),
+            _ => None,
+        }
+    }
+    fn field_call(value: &syn::Expr, base: &str, member: &str, name: &str) -> bool {
+        method(value, name).is_some_and(|call| {
+            call.args.is_empty() && field(&call.receiver, base, member)
+        })
+    }
+    fn bare_return(value: &syn::Expr) -> bool {
+        matches!(value, syn::Expr::Return(value) if value.attrs.is_empty() && value.expr.is_none())
+    }
+    fn returns(block: &syn::Block) -> bool {
+        matches!(block.stmts.as_slice(), [syn::Stmt::Expr(value, _)] if bare_return(value))
+    }
+    fn local_value<'a>(local: &'a syn::Local, name: &str) -> Option<&'a syn::Expr> {
+        if !local.attrs.is_empty() || !binding(&local.pat, name, false) { return None; }
+        let init = local.init.as_ref()?;
+        init.diverge.is_none().then_some(init.expr.as_ref())
+    }
+    fn or_return(local: &syn::Local) -> Option<&syn::Expr> {
+        if !local.attrs.is_empty() { return None; }
+        let init = local.init.as_ref()?;
+        let (_, diverge) = init.diverge.as_ref()?;
+        match diverge.as_ref() {
+            syn::Expr::Block(block) if block.attrs.is_empty() && block.label.is_none()
+                && returns(&block.block) => Some(init.expr.as_ref()),
+            _ => None,
+        }
+    }
+    fn log(value: &syn::Macro, message: &str) -> bool {
+        if !path(&value.path, &["eprintln"]) { return false; }
+        let Ok(args) = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated
+            .parse2(value.tokens.clone()) else { return false; };
+        args.len() == 3
+            && matches!(&args[0], syn::Expr::Lit(value) if value.attrs.is_empty()
+                && matches!(&value.lit, syn::Lit::Str(value) if value.value() == message))
+            && field(&args[1], "self", "agent_id") && named(&args[2], &["tool_call_id"])
+    }
+    fn signature(value: &syn::ImplItemFn, args: &[&str]) -> bool {
+        let sig = &value.sig;
+        value.attrs.is_empty() && value.defaultness.is_none()
+            && matches!(value.vis, syn::Visibility::Inherited)
+            && sig.constness.is_none() && sig.asyncness.is_none() && sig.unsafety.is_none()
+            && sig.abi.is_none() && sig.variadic.is_none() && sig.generics.params.is_empty()
+            && sig.generics.where_clause.is_none() && matches!(sig.output, syn::ReturnType::Default)
+            && sig.inputs.len() == args.len() + 1
+            && matches!(&sig.inputs[0], syn::FnArg::Receiver(receiver)
+                if receiver.attrs.is_empty() && receiver.reference.is_some()
+                    && receiver.mutability.is_none() && receiver.colon_token.is_none())
+            && sig.inputs.iter().skip(1).zip(args).all(|(argument, name)| {
+                matches!(argument, syn::FnArg::Typed(argument)
+                    if argument.attrs.is_empty() && binding(&argument.pat, name, false))
+            })
+    }
+    fn abort(value: &syn::ImplItemFn) -> bool {
+        let [syn::Stmt::Local(entry), syn::Stmt::Local(pending),
+            syn::Stmt::Expr(delegate, Some(_))] = value.block.stmts.as_slice() else { return false; };
+        let Some(lookup) = or_return(entry).and_then(|value| method(value, "pending_media_entry")) else { return false; };
+        let Some(syn::Expr::Call(lock)) = or_return(pending) else { return false; };
+        let Some(delegate) = method(delegate, "rollback_pending_media") else { return false; };
+        signature(value, &["tool_call_id"])
+            && variant(&entry.pat, "Ok").and_then(|value| variant(value, "Some"))
+                .is_some_and(|value| binding(value, "entry", false))
+            && named(&lookup.receiver, &["self"]) && lookup.args.len() == 2
+            && named(&lookup.args[0], &["tool_call_id"]) && is_false(&lookup.args[1])
+            && variant(&pending.pat, "Ok").is_some_and(|value| binding(value, "pending", true))
+            && lock.attrs.is_empty() && named(&lock.func, &["Self", "try_pending_media"])
+            && lock.args.len() == 1 && borrowed(&lock.args[0], "entry", false)
+            && named(&delegate.receiver, &["self"]) && delegate.args.len() == 3
+            && borrowed(&delegate.args[0], "pending", true)
+            && named(&delegate.args[1], &["tool_call_id"]) && is_false(&delegate.args[2])
+    }
+    fn phase(value: &syn::Pat, name: &str) -> bool {
+        matches!(value, syn::Pat::Path(value) if value.attrs.is_empty() && value.qself.is_none()
+            && path(&value.path, &["PendingOutgoingMediaPhase", name]))
+    }
+    fn rollback(value: &syn::ImplItemFn) -> bool {
+        let [syn::Stmt::Local(errors), syn::Stmt::Expr(syn::Expr::Assign(aborted), Some(_)),
+            syn::Stmt::Expr(clear, Some(_)), syn::Stmt::Expr(syn::Expr::Assign(owned), Some(_)),
+            syn::Stmt::Local(complete), syn::Stmt::Expr(syn::Expr::ForLoop(report), _),
+            syn::Stmt::Expr(syn::Expr::If(refuse), _), syn::Stmt::Expr(syn::Expr::If(release), _)] =
+            value.block.stmts.as_slice() else { return false; };
+        let Some(syn::Expr::Match(cleanup)) = local_value(errors, "errors") else { return false; };
+        let [collecting, confirmed, retain] = cleanup.arms.as_slice() else { return false; };
+        let syn::Expr::Block(confirmed_body) = confirmed.body.as_ref() else { return false; };
+        let [syn::Stmt::Expr(confirmed_call, None)] = confirmed_body.block.stmts.as_slice() else { return false; };
+        let Some(complete_call) = local_value(complete, "cleanup_complete").and_then(|value| method(value, "is_empty")) else { return false; };
+        let [syn::Stmt::Macro(report_log)] = report.body.stmts.as_slice() else { return false; };
+        let syn::Expr::Unary(failed) = refuse.cond.as_ref() else { return false; };
+        if !signature(value, &["pending", "tool_call_id", "confirmed_precommit_refusal"])
+            || !cleanup.attrs.is_empty() || !field(&cleanup.expr, "pending", "phase")
+            || cleanup.arms.iter().any(|arm| !arm.attrs.is_empty())
+            || !phase(&collecting.pat, "Collecting") || collecting.guard.is_some()
+            || !field_call(&collecting.body, "pending", "custody", "rollback")
+            || !phase(&confirmed.pat, "OwnerSettlementPending")
+            || !confirmed.guard.as_ref().is_some_and(|(_, value)| named(value, &["confirmed_precommit_refusal"]))
+            || !confirmed_body.attrs.is_empty() || confirmed_body.label.is_some()
+            || !field_call(confirmed_call, "pending", "custody", "rollback_after_confirmed_refusal")
+            || !matches!(&retain.pat, syn::Pat::Wild(value) if value.attrs.is_empty())
+            || retain.guard.is_some() || !bare_return(&retain.body)
+            || !aborted.attrs.is_empty() || !field(&aborted.left, "pending", "phase")
+            || !named(&aborted.right, &["PendingOutgoingMediaPhase", "Aborted"])
+            || !field_call(clear, "pending", "resolved_sources", "clear")
+            || !owned.attrs.is_empty() || !field(&owned.left, "pending", "has_owned_media")
+            || !is_false(&owned.right) || !named(&complete_call.receiver, &["errors"])
+            || !complete_call.args.is_empty() || !report.attrs.is_empty() || report.label.is_some()
+            || !binding(&report.pat, "error", false) || !named(&report.expr, &["errors"])
+            || !report_log.attrs.is_empty() || !log(&report_log.mac,
+                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}")
+            || !refuse.attrs.is_empty() || refuse.else_branch.is_some() || !failed.attrs.is_empty()
+            || !matches!(failed.op, syn::UnOp::Not(_)) || !named(&failed.expr, &["cleanup_complete"])
+            || !returns(&refuse.then_branch)
+        { return false; }
+
+        // This exact tail is after the failed-cleanup return, with the same
+        // entry's durable identity and checked release diagnostic.
+        let syn::Expr::Let(identity) = release.cond.as_ref() else { return false; };
+        let syn::Pat::Tuple(names) = identity.pat.as_ref() else { return false; };
+        let syn::Expr::Tuple(values) = identity.expr.as_ref() else { return false; };
+        let [syn::Stmt::Expr(syn::Expr::Match(settle), _)] = release.then_branch.stmts.as_slice() else { return false; };
+        let Some(call) = method(&settle.expr, "release_session_media_admission") else { return false; };
+        let [accepted, failed] = settle.arms.as_slice() else { return false; };
+        let syn::Expr::Assign(clear_work) = accepted.body.as_ref() else { return false; };
+        let syn::Expr::Macro(release_log) = failed.body.as_ref() else { return false; };
+        release.attrs.is_empty() && release.else_branch.is_none() && identity.attrs.is_empty()
+            && names.attrs.is_empty() && names.elems.len() == 2
+            && variant(&names.elems[0], "Some").is_some_and(|value| binding(value, "revision", false))
+            && variant(&names.elems[1], "Some").is_some_and(|value| binding(value, "work_id", false))
+            && values.attrs.is_empty() && values.elems.len() == 2
+            && field_call(&values.elems[0], "pending", "lifecycle_revision", "as_deref")
+            && field_call(&values.elems[1], "pending", "media_work_id", "as_deref")
+            && settle.attrs.is_empty() && field(&call.receiver, "self", "sessions") && call.args.len() == 3
+            && matches!(&call.args[0], syn::Expr::Reference(value) if value.attrs.is_empty()
+                && value.mutability.is_none() && field(&value.expr, "self", "agent_id"))
+            && named(&call.args[1], &["revision"]) && named(&call.args[2], &["work_id"])
+            && settle.arms.iter().all(|arm| arm.attrs.is_empty() && arm.guard.is_none())
+            && variant(&accepted.pat, "Ok").is_some_and(|value| matches!(value, syn::Pat::Wild(value) if value.attrs.is_empty()))
+            && clear_work.attrs.is_empty() && field(&clear_work.left, "pending", "media_work_id")
+            && named(&clear_work.right, &["None"])
+            && variant(&failed.pat, "Err").is_some_and(|value| binding(value, "error", false))
+            && release_log.attrs.is_empty() && log(&release_log.mac,
+                "mahayana-host outgoing_media_admission_release_failed agent={} tool_call={} error={error}")
+    }
+
+    if !channel_failure_unconditional(&file.attrs) { return false; }
+    let mut abort_owner = None;
+    let mut rollback_owner = None;
+    for item in &file.items {
+        let syn::Item::Impl(owner) = item else { continue; };
+        let syn::Type::Path(target) = owner.self_ty.as_ref() else { continue; };
+        if !target.path.segments.last().is_some_and(|part| part.ident == "ProductionSendMessageSink") { continue; }
+        let trait_sink = owner.trait_.as_ref().is_some_and(|(_, value, _)| {
+            value.segments.last().is_some_and(|part| part.ident == "SendMessageSink")
+        });
+        if owner.trait_.is_some() && !trait_sink { continue; }
+        let method_name = if trait_sink { "abort_attachment_custody" } else { "rollback_pending_media" };
+        let methods: Vec<_> = owner.items.iter().filter_map(|item| match item {
+            syn::ImplItem::Fn(value) if value.sig.ident == method_name => Some(value),
+            _ => None,
+        }).collect();
+        if !trait_sink && methods.is_empty() { continue; }
+        if !owner.attrs.is_empty() || target.qself.is_some()
+            || !path(&target.path, &["ProductionSendMessageSink"])
+            || owner.defaultness.is_some() || owner.unsafety.is_some()
+            || !owner.generics.params.is_empty() || owner.generics.where_clause.is_some()
+            || methods.len() != 1
+            || owner.trait_.as_ref().is_some_and(|(negative, value, _)| {
+                negative.is_some() || !path(value, &["SendMessageSink"])
+            })
+        { return false; }
+        let slot = if trait_sink { &mut abort_owner } else { &mut rollback_owner };
+        if slot.replace(methods[0]).is_some() { return false; }
+    }
+    abort_owner.is_some_and(abort) && rollback_owner.is_some_and(rollback)
+}
+
 #[test]
 fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths() {
     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
@@ -2927,12 +3149,134 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert!(persisted_entry < dispatch, "delivery dispatch must follow transcript persistence");
     assert!(SHIPPING_HOST.contains("deliveryOperationId"));
     assert!(SHIPPING_HOST.contains("delivery_operation_id: Option<String>"));
-    assert!(SHIPPING_HOST.contains(
-        "for cleanup_error in custody.rollback()"
-    ));
-    assert!(SHIPPING_HOST.contains(
-        "outgoing_media_cleanup_failed agent={} tool={} error={cleanup_error}"
-    ));
+    // Preserve the cleanup/error-publication responsibility through its
+    // actual shipping delegation, with controls inside this existing test.
+    let normalized_host = SHIPPING_HOST.replace("\r\n", "\n");
+    for (line_ending, source) in [
+        ("LF", normalized_host.clone()),
+        ("CRLF", normalized_host.replace('\n', "\r\n")),
+    ] {
+        let parsed = syn::parse_file(&source).expect("actual shipping source must parse");
+        assert!(shipping_abort_reports_guarded_media_cleanup(&parsed),
+            "actual shipping abort must preserve guarded cleanup and its diagnostics ({line_ending})");
+    }
+    for (control, before, after) in [
+        (
+            "skip delegation behind a dead branch",
+            "        self.rollback_pending_media(&mut pending, tool_call_id, false);\n    }\n\n    fn read_media_dimensions(",
+            "        if false { self.rollback_pending_media(&mut pending, tool_call_id, false); }\n    }\n\n    fn read_media_dimensions(",
+        ),
+        (
+            "ordinary abort cannot claim confirmed precommit refusal",
+            "        self.rollback_pending_media(&mut pending, tool_call_id, false);\n    }\n\n    fn read_media_dimensions(",
+            "        self.rollback_pending_media(&mut pending, tool_call_id, true);\n    }\n\n    fn read_media_dimensions(",
+        ),
+        (
+            "ordinary abort cannot create an entry",
+            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };",
+            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, true) else { return };",
+        ),
+        (
+            "ordinary abort must use the same entry's nonblocking lock",
+            "        let Ok(mut pending) = Self::try_pending_media(&entry) else { return };",
+            "        let Ok(mut pending) = entry.lock() else { return };",
+        ),
+        (
+            "pending rollback requires the same confirmed refusal",
+            "            PendingOutgoingMediaPhase::OwnerSettlementPending if confirmed_precommit_refusal => {",
+            "            PendingOutgoingMediaPhase::OwnerSettlementPending => {",
+        ),
+        (
+            "unknown and terminal phases must return without cleanup",
+            "            _ => return,\n        };\n        pending.phase = PendingOutgoingMediaPhase::Aborted;",
+            "            _ => pending.custody.rollback_after_confirmed_refusal(),\n        };\n        pending.phase = PendingOutgoingMediaPhase::Aborted;",
+        ),
+        (
+            "returned cleanup errors cannot be discarded",
+            r#"        for error in errors {
+            eprintln!(
+                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}",
+                self.agent_id, tool_call_id
+            );
+        }"#,
+            "        for error in errors { let _ = error; }",
+        ),
+        (
+            "cleanup diagnostics must publish the returned error",
+            "\"mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}\"",
+            "\"mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error=unavailable\"",
+        ),
+        (
+            "fence release cannot run before cleanup",
+            "        let errors = match pending.phase {",
+            r#"        let _ = self.sessions.release_session_media_admission(
+            &self.agent_id,
+            pending.lifecycle_revision.as_deref().unwrap_or_default(),
+            pending.media_work_id.as_deref().unwrap_or_default(),
+        );
+        let errors = match pending.phase {"#,
+        ),
+        (
+            "cleanup failure cannot fall through to fence release",
+            "        if !cleanup_complete {\n            return;\n        }",
+            "        if !cleanup_complete { let _ = cleanup_complete; }",
+        ),
+        (
+            "abort cannot remove and recreate the indexed identity",
+            "        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };",
+            r#"        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };
+        self.pending_media.lock().unwrap().remove(tool_call_id);
+        let _ = self.pending_media_entry(tool_call_id, true);"#,
+        ),
+        (
+            "the shipping file cannot be conditional",
+            "//! Grok-aligned Mahayana Host process entrypoint.",
+            "#![cfg(test)]\n//! Grok-aligned Mahayana Host process entrypoint.",
+        ),
+        (
+            "the shipping trait implementation cannot be conditional",
+            "impl SendMessageSink for ProductionSendMessageSink {",
+            "#[cfg(test)]\nimpl SendMessageSink for ProductionSendMessageSink {",
+        ),
+        (
+            "the cleanup helper cannot be conditional",
+            "    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
+            "    #[cfg(test)]\n    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
+        ),
+        (
+            "the shipping trait owner must be unique",
+            "impl SendMessageSink for ProductionSendMessageSink {",
+            r#"impl SendMessageSink for ProductionSendMessageSink {
+    fn abort_attachment_custody(&self, tool_call_id: &str) {
+        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };
+        let Ok(mut pending) = Self::try_pending_media(&entry) else { return };
+        self.rollback_pending_media(&mut pending, tool_call_id, false);
+    }
+}
+
+impl SendMessageSink for ProductionSendMessageSink {"#,
+        ),
+        (
+            "the inherent cleanup helper must be unique",
+            "    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
+            "    fn rollback_pending_media(&self) {}\n\n    fn rollback_pending_media(\n        &self,\n        pending: &mut PendingOutgoingMedia,",
+        ),
+    ] {
+        assert_ne!(before, after, "control must change its intended site: {control}");
+        assert_eq!(normalized_host.matches(before).count(), 1,
+            "control must bind one actual shipping site: {control}");
+        let mutated = normalized_host.replacen(before, after, 1);
+        assert_ne!(mutated, normalized_host, "control cannot be a no-op: {control}");
+        for (line_ending, source) in [
+            ("LF", mutated.clone()), ("CRLF", mutated.replace('\n', "\r\n")),
+        ] {
+            let parsed = syn::parse_file(&source).unwrap_or_else(|error| {
+                panic!("control must remain Rust syntax: {control} ({line_ending}): {error}");
+            });
+            assert!(!shipping_abort_reports_guarded_media_cleanup(&parsed),
+                "unsafe or ambiguous wiring must fail: {control} ({line_ending})");
+        }
+    }
 
     assert!(SHIPPING_HOST.contains("queue_channel_delivery_failure("));
     assert!(SHIPPING_HOST.contains("\"markedAtMs\": marked_at_ms"));

@@ -1,0 +1,86 @@
+# MSU R6 independent structure, reuse, performance and oracle review
+
+Terminal verdict: **no blocking source finding in the frozen R6 composition/fix delta**. This is a source-only review verdict. The candidate has not been compiled, parsed by an executable check, tested or accepted by this reviewer. Exact-candidate GitHub Actions remains required, including the actual App cases that did not run in the original failed App build.
+
+Task: `647e0932-bea4-4113-9a61-65ae3db58955`, task round 1, review round 6. Repository: `bhrumom/fabushi-desktop`; writer branch: `codex/openclaw-rust-fusion-chat-20261101-writer`.
+
+The assignment requests the policy-pinned `gpt-6.1-sol` structure/reuse/performance lens at `xhigh` because this review judges actual owner composition and source-oracle causality. This child has no independent runtime model/effort introspection surface; the parent launch record is the authority for the applied setting. Prompt wording is not represented as proof of an override. No additional worker or CLI was started to change settings.
+
+## Frozen identities and authority
+
+| Subject | Identity |
+| --- | --- |
+| Original frozen base D | commit `d70f86f33b5e3c67545954b270373e1548809f4b`, tree `4c4c9cfd3f5067fef57dca530042d149a8e2fc5c` |
+| Publication parent | commit `4e80e161c6cc539f4c120d64f91421619a57def1`, tree `efb2a28c92d2f24cd4f6bbbd84d86709c0b2f028` |
+| R6 candidate | tree `4b94e525d6790d6f355ea6e2113db02cb5e5a46f` |
+| Fixed OpenClaw U | commit `1440bb1771372334bea23d7642bb52deb7db1845`, tree `90c8aab39972da11cfad220361781d49e1bc6700` |
+| Complete manifest SHA-256 | `893fd4fd0b5ef6787935956ea5156a6a0bcd9ed7dcda0f49ffe1f8d0f9cabe88` |
+| Complete patch SHA-256 | `4b4acb024bf58910a71ac019d0ee50f61fd07186140b3a43779046d2a663dcae` |
+| R5→R6 focus patch SHA-256 | `dd598fdce68ca64f590fa2dd77324115e4164e2061580cd4e06e4e5c5129c9ef` |
+| Publication patch SHA-256 | `f73ad17effa380bfc1bd8ab3224d306284e47aa9f1467958b896a3ad6ded43d7` |
+| Master specification | `html-origin-boundary-inputs/current/docs/specs/openclaw-rust-equivalence-migration.md`, Git blob `69c9667af2328e20a1fba09ebf80c5aab4d5c336`; §17 OCRM-EXEC-02 read |
+| Exact adjacent send pipeline | `media-settlement-r6-context/source/host/src/extensions/transcript/send_pipeline.rs`, blob `12f58e2923cd909b9564b99e0a6393955a0945e0` |
+| Inventory manifest context | `media-settlement-r6-context/inventory-shard-manifest.json`, blob `911019b1c4c3b629a4425610bf941caf88a97e18`; canonical digest `d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a` |
+
+I independently computed the manifest/patch SHA-256 values and the master/context Git blob values with read-only hash operations. I also independently hashed all five publication leaves, obtaining the identities below. Candidate-tree/all-other-parent-leaf preservation is the frozen manifest/parent tree proof supplied by the review runner; I did not reconstruct a repository tree or claim an independent full-tree proof.
+
+| Publication leaf | Git blob |
+| --- | --- |
+| `projects/openclaw-rust/docs/specs/final-assistant-media-custody.md` | `e89c27654614752fd4700e6506735bee3bde25a8` |
+| `projects/openclaw-rust/docs/specs/media-settlement-unknown.md` | `8235f203e5ac0797f73cb2d9002b64eeb1f69110` |
+| `source/host/app/src/tests/media_settlement_unknown_tests.rs` | `fc1f056a318fee390e0c8e67cdda361d94f0c3a5` |
+| `source/host/tests/background_wakes_production_contract.rs` | `1c38f0bfde3e23cb0d227d1c4dfb4bd5b4d0b713` |
+| `source/host/tests/openclaw_sessions_and_config_contract.rs` | `32a7218874c4b03e27a9872adf339186fab50f28` |
+
+The runner subsequently reported remote `edcd0ed893f0a09b97cd3663d49287db0d7ec797` as an evidence-only child of the publication parent, adding 33 Device source-review artifacts with no source/spec/workflow/ledger change. That is a carrier update supplied by the runner, not a different reviewed source subject. This report stays bound to the original frozen R6 tree and five publication leaves.
+
+## Findings and source conclusions
+
+No P0/P1/P2 finding is raised. No preference-only cleanup is proposed as a gate. The following are the concrete checks supporting the bounded verdict.
+
+1. **The background cleanup supplement now follows the shipping owner, without becoming another production policy owner.** `source/host/tests/background_wakes_production_contract.rs:2850–3069` selects the one unconditional `SendMessageSink for ProductionSendMessageSink` abort method and the one matching inherent rollback helper. It checks the real lookup with `create=false`, the same entry's nonblocking lock, and the delegate with `confirmed_precommit_refusal=false`. The selected production implementation is `source/host/app/src/main.rs:795–896,1087–1093`.
+
+   The checked helper preserves collecting rollback, the guarded confirmed-refusal transition for pending custody, and the default return for unknown/terminal phases. It checks reporting of the actual returned errors, the failed-cleanup return before durable release, and release through that entry's revision/work identity. In the production owner, the map lock is released by `pending_media_entry` before the entry is taken; the entry remains held across Session settlement so same-ID reentry refuses rather than creating or blocking on another entry. The test remains explicitly a wiring supplement; actual file/SQL/concurrency behavior remains with the real App/DB fixtures.
+
+2. **The supplement's mutations have meaningful boundaries.** `background_wakes_production_contract.rs:3152–3278` derives LF and CRLF positives from the actual included shipping file. Each of the 16 controls has different before/after text, exactly one actual replacement site, a changed result, successful Rust-syntax admission when run, and rejection for both line endings. The controls cover skipped delegation, falsely claiming confirmed refusal, entry creation, a blocking lock, lost pending guard, unknown cleanup, discarded/misreported cleanup errors, early release, failed-cleanup fallthrough, identity removal/recreation, and conditional/duplicate owners. These are causal changes to the new helper's bounded claim. They are not substituted for the real App/owner tests.
+
+3. **The shared COMMIT union preserves the channel oracle and global source.** In `source/host/tests/openclaw_sessions_and_config_contract.rs:1693–1891`, only exact inherent media owners qualify. The proof pins the complete raw media COMMIT and ROLLBACK methods, the actual typed owner signature, the entry prefix, the synchronous write closure with three existing admission guards, and the returned settlement tail. Literal method deletion is reparsed to establish that one actual AST-owned method was removed. Only the proven sole `commands.commit(db)` expression is replaced in the oracle-local image. The rollback method and all unrelated source remain visible.
+
+   The downstream channel proof still uses its exact complete command method and returned transaction error tail, retains `channel_commit_call_count(...) == Some(1)` at `:2450`, and leaves the global `db.execute_batch("COMMIT")?;` prohibition at `:2490–2495`. It does not raise a shared call limit. Trait bodies, including the actual `Drop for SandAgentDb`, receive no inherent-owner exemption. Both direct and aliased trait-owned unsafe calls remain subject to the residual scan.
+
+4. **R6 keeps the stronger actual-baseline and mutation checks while retaining the incoming source-image controls.** `openclaw_sessions_and_config_contract.rs:1865–2234` normalizes CRLF only in the comparison image. The fixture establishes the actual composed baseline before mutations. `replace_media_commit_site` requires one site and a changed replacement. Media negatives run through both LF and CRLF images; harmless traits must survive completely in residual source; raw-COMMIT controls require exactly one residual forbidden statement. The reviewed R6 union retains the incoming source-image helper, explicit no-op checks, the channel-side safeguards, trait controls and raw-count assertions together with the R5 actual-source/both-ending coverage. Raw source receipts are not altered by the normalization helper.
+
+5. **The App field correction reads the actual wrapper without weakening admission assertions.** `source/host/app/src/tests/media_settlement_unknown_tests.rs:801–813` retains both `accepted.context.accepted_durably` and `!accepted.duplicate`, then binds the accepted user-message identity to the actual original turn. `production_runtime.rs:65–69` places `duplicate` on `RoutedSendAcceptance`; `send_pipeline.rs:48–65` places `accepted_durably` on `PersistedSendContext`. `production_runtime.rs:827–850,1022–1035` returns wrapper `duplicate=true` on coalesced/duplicate paths and `false` on dispatch. The change repairs the observed field access and keeps the nonduplicate durable-admission prerequisite.
+
+6. **Adjacent production settlement still uses existing owners and typed outcomes.** I deeply read `source/host/app/src/main.rs:705–1285`, including collection/cache reuse, per-entry reservation, sealing before history/DB entry, typed unknown classification, confirmed-refusal rollback, impossible post-success shape handling, and committing local custody before App channel/event/ACK/activity consumers. `attachment_paths.rs:21–104` remains the subordinate deletion authority. Session `production.rs:4063–4084` keeps the inner `AgentDbProjectionError` across its existing nested filesystem result; Runtime `production_runtime.rs:1795–1836` preserves that error through the sole media append consumer. The DB media owner at `agent_db.rs:4796–5104` retires uncertain connections before returning, distinguishes clean refusal from uncertain rollback/COMMIT, and performs transcript, receipt and fence-CAS writes together. The command helper at `:6243–6341` remains the existing real COMMIT/ROLLBACK seam with feature-gated fault support, not a second outcome classifier.
+
+   MAC's publication clarification matches these facts: DB listeners execute after confirmed COMMIT and before the App-local terminal transition; the held entry makes same-ID reentry refuse during that interval. App-local success consumers execute after `custody.commit()` and after the entry guard is dropped. The R6 wording does not claim DB listeners were reordered by this batch.
+
+7. **The evidence composition stays bounded.** The workflow, portable capture, ledger and RTM are byte-identical to their publication-parent blobs per the frozen manifest. Their incoming Device/Automation/Cron declarations were dispositioned as preserved parent composition, not reviewed as newly introduced implementations or reaccepted under this lens. The MSU capture additions retain separate support/native/App claims and expected named tests. The media responsibility retains `implementation=implementing`, `read=partial`, `verification=not-run`, `acceptance=pending`; all eight global completion flags remain false. The inventory declaration added to MSU describes the existing Actions-owned mapping mechanism; this review does not claim mapping execution, full inventory closure or new source-gate acceptance.
+
+## Dependency and practical-cost assessment
+
+`source/host/Cargo.toml` already pins `syn = "=2.0.119"` as a dev dependency with `default-features=false` and `features=["full","parsing"]`. The available historical dependency lock input lists 2.0.119 and its checksum, but I do not relabel that historical lock as an independently retrieved R6 lock. Repository precedent in the same contract files already uses `syn::File`, full AST nodes, `parse_file`, parse streams, cursor traversal, `Parser`, and token-string comparison. The added helper uses this full/parsing API family and clones a token stream, not syn AST nodes; it introduces no printing/visit/extra-traits/clone-impls dependency. No new Cargo dependency or feature is added by the R6 publication delta. Syn source was not available locally; the source/API review is not an executable compatibility claim.
+
+The new background supplement performs two actual-source image parses and 16 controls × two line endings, for 34 bounded full-file parses within one existing test. Its size is fixed by the included source, it has no I/O/network fixture or unbounded loop, and it adds no shipping runtime work. The shared media oracle continues to parse bounded actual-source images under the established contract approach. Actual run time and memory remain unmeasured. There is no evidence here justifying a performance blocker or a speculative rewrite of the oracle. I independently counted unchanged source test declarations: 48 background tests and 63 Session/config tests in both R5 and R6. The existing capture still declares 27 commit-filter names including eight media-oracle names; these are source expectations, not R6 executed test counts.
+
+The App fixture reuses the existing ChannelHostLane file-backed fixture, Responses server, owned-child lifecycle, canonical history observations, real Session/Transcript/DB owners and narrow command-edge lease. It adds no duplicate production authorization/settlement policy. Its timeout and subprocess mechanics remain test-only. The corrected wrapper field does not add test cost.
+
+## Original failures and remaining execution boundary
+
+I read only the original raw failure logs, without reviewer/implementer diagnosis reports:
+
+- `media-fc-ci-app/linux-native-terminal-13207615800/channel-pending-recovery/integration.log:816–830` records the shipping source contract failing on `SHIPPING_HOST.contains("for cleanup_error in custody.rollback()")`, with **47 passed, one failed** in that original background run. The current source delegates cleanup through `rollback_pending_media`; the R6 supplement binds that actual path and diagnostics. The original result remains a failure with its own identity.
+- `media-fc-ci-app/linux-native-terminal-13207615800/link-preview-native-gateway/app.log:1064–1100` records E0609 for `accepted.context.duplicate` because `PersistedSendContext` has no such field. This is consistent with the fixture/wrapper correction. That build did not execute the actual App MSU cases.
+
+These are source-consistent oracle/fixture repairs. They do not establish that the R6 code compiles or that any App/DB fault case passes. No exact-R6 Actions result was available to this review. Required pending evidence includes the actual source-oracle positives/negatives on the frozen subject, shipping feature-off Host artifact, App feature-on ordinary Host-library artifact, the eight actual App cases including generated Runner lost-ACK consumption, and the required native DB/custody/Tool controls with exact names, counts, exits, input hashes and logs. Wider real provider/channel/device/platform and final OCRM acceptance remain separate and incomplete.
+
+## Read depth and exclusions
+
+This review read root `media-settlement-authority/AGENTS.md`, the exact master §17, the complete current MSU-v1 and MAC-v1 specifications, and current authority/owner-navigation sections of the project source of truth/module map. It inspected the complete five-path publication delta and eight-path R5 focus delta, the complete 22-path manifest, and the complete-scope changed hunks with risk-based adjacent-source reading.
+
+Deep reads included App main `705–1285` and its shipping sink constructor `11718–11765`; all 1,035 lines of the MSU App fixture; DB fault types/leases and construction `878–1045`, the fault admission/claim and media owner `4718–5104`, command/authorizer `6243–6341`, and the complete private media test module `9079–9643`; custody implementation and changed tests; Session media facade and first-open cleanup vicinity; Runtime routed-send type/acceptance branches and media facade; the complete exact adjacent `send_pipeline.rs`; the Tool build-error/send consumers; the complete new background helper/control block and existing unconditional-owner helpers; the complete media COMMIT proof/control region and adjacent channel proof/control implementation. Existing ChannelHostLane/LFA and Tool-test changes were read as changed hunks with their exposed fixture contracts. Workflow/capture/ledger/RTM/inventory were reviewed at changed inputs, declared named-test consumers, bounded receipt/feature-observation contracts and relevant status rows, not every unrelated existing row or workflow body.
+
+I did not deeply read every unchanged line in the nearly 1 MB App main, every unrelated contract in the large test files, all ledger/RTM rows, historical source-of-truth chronology, every inventory shard, all fixed-U implementations, or third-party dependency internals. This is not a full upstream media parity, complete dependency-closure, fresh Device implementation or full-tree semantic review. No prior/current review report, implementer note, diagnosis, root adjudication or mutable implementation worktree was used. Source/hash/Git/text inspection only was performed: no local/htch Cargo, rustc, parser, test/list, schema, generator, lint, validator, capture, benchmark or acceptance execution.
+
+Only this report was written. Source, branch state, publication, dispatch and user permissions were not changed. Root review arbitration remains with the review runner.
