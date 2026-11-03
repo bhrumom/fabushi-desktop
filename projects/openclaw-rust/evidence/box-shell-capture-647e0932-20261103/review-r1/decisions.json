@@ -1,0 +1,84 @@
+{
+  "schema": "ocrm-review-fix-decision-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "review_round": 1,
+  "contract": "BXR-SHELL-CAPTURE-v1",
+  "original_base": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "subject": "152467880098cd87581ca279be4d2bc872a7620b",
+  "tree": "8fe5821505d342518628d56aa2920cc7b895284c",
+  "outcome": "REQUEST_CHANGES",
+  "decisions": [
+    {
+      "id": "SC-R1-REGISTRATION-IDENTITY",
+      "aliases": [
+        "GSC-R1-01",
+        "STRUCTURE-R1-001"
+      ],
+      "priority": "P2",
+      "classification": "MUST_FIX",
+      "decision": "FIX",
+      "anchors": [
+        "source/box-exec-daemon/src/server.rs:667-672",
+        "source/box-exec-daemon/src/server.rs:1125-1128",
+        "source/box-exec-daemon/src/server.rs:1795-1855",
+        "source/box-exec-daemon/src/server.rs:1889-1905",
+        "source/box-exec-daemon/src/server.rs:1941-1972"
+      ],
+      "failure": "CapturedChild can be reaped while its capture workers remain incomplete. A new Capture or Stream insert under the same reusable PID replaces the retained registration. Later stop may see no pending capture and report clean before the old workers have been observed. Arc identity on removal does not protect insertion.",
+      "rationale": "Two independent complete-scope reviews identify the same concrete existing-owner lifetime gap; root confirms reap, retained registration, unconditional PID insertion and registry-only stop completion. No execution or actual PID reuse is claimed.",
+      "repair": "Preserve all invocation identities inside the same foreground registry, with PID as process data. Use each identity at every capture/stream insertion/removal/handoff and truthful stop. No second registry or wire identity. Fallible identity exhaustion must refuse before spawn.",
+      "oracle": "Controlled reused numeric PID, retained older reaped/incomplete capture plus successor, exact-identity removal, no clean stop before all owned completion, then later clean stop."
+    }
+  ],
+  "non_blocking": [
+    {
+      "id": "STRUCTURE-R1-N01",
+      "priority": "P3",
+      "classification": "NON_BLOCKING",
+      "decision": "COMPROMISE",
+      "rationale": "Preserve the valid pre-aborted bounded-result control and narrow its claim; it does not prove TERM-ignore readiness or escalation for that abort. Separate timeout evidence remains required. No assertion removed and no independent fix round."
+    },
+    {
+      "id": "STRUCTURE-R1-N02",
+      "priority": "P3",
+      "classification": "NON_BLOCKING",
+      "decision": "DEFER",
+      "rationale": "Nonblocking pipe readers add active-call wakeups. No measured latency/power/soak regression; preserve bounded cancellation and measure in eventual performance acceptance, with no speculative refactor."
+    }
+  ],
+  "reviews": [
+    {
+      "reviewer": "/root/daemon_capture_r1_general",
+      "lens": "GENERAL/security/lifetime",
+      "model_requested": "gpt-6-astra",
+      "effort_requested": "xhigh",
+      "spawn_parameters_applied": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "hidden_runtime_attestation": false,
+      "outcome": "CHANGES_REQUESTED",
+      "report_blob": "6cfee1cbb113a9ede6338d565c7330cb4e3fa5c2",
+      "report_path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/general.md",
+      "scope": "Complete seven-path declared diff and actual adjacent producers/consumers/build/capture; high-risk functions deeply read; large unchanged source not claimed as full-file review."
+    },
+    {
+      "reviewer": "/root/daemon_capture_r1_structure",
+      "lens": "STRUCTURE/REUSE/PERF",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "xhigh",
+      "spawn_parameters_applied": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "hidden_runtime_attestation": false,
+      "outcome": "REQUEST_CHANGES",
+      "report": "Complete final report returned in task conversation; reviewer made no repository mutation.",
+      "scope": "All seven source blobs and complete changed hunks, deep registry/capture/stop and actual Host/ForeverBox/Runner chain; adjacent build/generator declarations by contract."
+    }
+  ],
+  "execution": "not-run",
+  "acceptance": "No runtime, ecosystem, platform package, provenance or OCRM acceptance. Original scope stays fixed; fresh complete-context focused review with proper prior-candidate delta after FIX."
+}

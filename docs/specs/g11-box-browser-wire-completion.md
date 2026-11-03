@@ -433,3 +433,34 @@ platform/device/service, raw capture cap, generated-HTML provenance or full
 OCRM acceptance. Those responsibilities and the existing eight global flags
 remain open. Record actual source review depth, failed results and execution
 subject separately from evidence carriers; no mock is real compatibility proof.
+
+### SC02-R2 — foreground registration outlives reusable process identity
+
+The frozen first candidate 152467880098cd87581ca279be4d2bc872a7620b retains a
+Capture after observing its direct child's reap, until its readers are joined.
+A numeric PID can be reused during that interval. Its unconditional map insert
+can therefore replace an older incomplete invocation, hiding owned workers from
+stop. Record this as FIX before changing the existing registry.
+
+Retain one existing foreground registry, keyed by an internal non-reusable
+invocation identity or an equivalent representation retaining every generation.
+PID is process data, not the lifetime identity. Every ordinary and streamed
+foreground registration/removal/handoff must carry its own identity; older
+completion cannot replace or erase a newer invocation. Stop must enumerate all
+retained captures and refuse clean completion while any required capture worker
+has not been observed. Keep signaling under the owned Child's unreaped-state
+check. If allocating identity can fail, refuse before spawn; never wrap or reuse
+a live or retired identity. Add no public protocol field, dependency or registry.
+
+A controlled registration seam may present a reused numeric PID while real
+owned children and capture state establish older reaped-but-incomplete custody.
+Require both invocations retained, generation-specific completion/removal,
+truthful bounded stop and later successful cleanup. This proves the internal
+identity invariant, not that OS PID wraparound occurred in an executed run.
+Retain all existing producer/consumer, stop/race/disconnect and wire assertions.
+
+The existing pre-aborted control proves bounded observed abort and its result
+shape; it does not establish that the child installed its TERM-ignore trap before
+the abort. Keep that narrower claim and the separate timeout/escalation control.
+Active nonblocking-reader wakeups remain an unmeasured performance/soak question.
+Neither nonblocking observation independently starts a fix round.
