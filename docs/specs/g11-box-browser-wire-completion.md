@@ -532,3 +532,8 @@ sentinels (including Unix symlinks) retain their exact original bytes and target
 creation refusal must not claim cleanup ownership. Preserve later normal success,
 existing handoff positives, single-effect and all earlier identity/custody controls.
 Do not use sleeps as the only proof of the collision or release order.
+
+After successful spool removal, retire that cleanup claim immediately. A later
+handoff/refusal/unwind must not remove a same-named file newly created by another
+legitimate invocation. Cover this causal reuse with a real setup/error boundary;
+this does not establish general hostile-directory replacement safety.

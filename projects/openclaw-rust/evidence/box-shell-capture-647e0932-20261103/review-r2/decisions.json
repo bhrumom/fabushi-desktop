@@ -24,6 +24,15 @@
       "failure": "A post-spawn setup/handoff refusal can classify a pre-existing spool or terminal path as request-owned and erase it during recovery.",
       "repair": "Push cleanup ownership only after exclusive creation; handoff must refuse an occupied terminal without mutation or deletion while retaining actual process/worker custody.",
       "oracle": "Occupied normal/symlink sentinels survive actual failed entry/handoff and later recovery; created request files are still cleaned only after their actual readers complete."
+    },
+    {
+      "id": "SC-R2-RETIRED-SPOOL-CLEANUP",
+      "decision": "FIX",
+      "priority": "P2",
+      "basis": "Implementation source inspection found successful spool removals before later fallible handoff/error boundaries while the removed path remains in cleanup_paths.",
+      "failure": "After a legitimate successor exclusively reuses a removed candidate, later predecessor error/Drop can remove that successor's file through its obsolete cleanup record.",
+      "repair": "Retire the cleanup claim after successful removal; preserve ownership if actual removal failed. Keep this in the existing resource owner.",
+      "oracle": "Real removed-candidate reuse before a later guarded error cannot mutate or remove the successor sentinel/spool."
     }
   ],
   "review_delivery": {
