@@ -16,12 +16,53 @@
       "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
       "finding": "Three compact function/struct literal lines were missed by the mechanical constructor edit. The shared RoutedToolDefinition now requires origin; send_to_agent_definition, create_agent_definition and update_agent_definition do not initialize it.",
       "fix": "Set origin: None on each existing built-in definition, preserving public fields and its existing execution owner. Retain the complete Host test-graph compile gate and independently review the final complete scope."
+    },
+    {
+      "id": "OD-CI-R2-001",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "beforeEdit": true,
+      "originallyRecordedAt": "2026-11-03T06:03:15.328124+00:00",
+      "subjectH": "72b6ed8b6e91a0ac7e0588fd9492a7d30c535079",
+      "run": 41587096196,
+      "attempt": 1,
+      "job": 125755041471,
+      "path": "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+      "preimageBlob": "b2c987bd59817ce00cacf3555ee64c8a804f2a42",
+      "appliedBeforeEnvironmentLossBlob": "19318f75ff5454a583801351ddbd6aa1a3ff067d",
+      "finding": "Actual generated McpRejected carries own isReadonly=false through native ports and shipping carrier; the literal expected value omitted it.",
+      "fix": "Add isReadonly:false to the exact expected object. Preserve strict deepEqual, every lifecycle/outcome assertion, generated constructor, serializer and all required cases.",
+      "originalLog": {
+        "run": 41587096196,
+        "job": 125755041471,
+        "bytes": 163167,
+        "sha256": "03ea66f0d6b0eb3cbcf026ea53822c9428d1dc8d2c3b07fcf91f8381960a3aa4"
+      },
+      "evidence": "Original full target177/176pass/1fail, zero cancelled/skipped/todo; 27named origin/executor positives each passed once; actual account target skipped.",
+      "reviews": "Fresh R2 security and structure terminal source reports accept the control fix, and independently identify the adjacent account fixture defect. No R2 runtime pass."
+    },
+    {
+      "id": "OD-CI-R3-001",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "beforeEdit": true,
+      "recordedAt": "2026-11-03 06:19:08 UTC",
+      "findings": [
+        "R2-SEC-01",
+        "SR-R2-01"
+      ],
+      "path": "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+      "preimageBlob": "3605572af9d62734a6cc79d1f801ddf2a158eeab",
+      "finding": "assertWireOriginRetired at906–907 compares native structured-cloned generated rejection to {reason} only. Actual generated constructor retains isReadonly=false. Called by departed-account/replay and same-account restart controls at922/932/962. Complete account target and both positive names are required by workflow. H72 skipped this target, so this is source-established, not an observed account Actions failure.",
+      "fix": "Add isReadonly:false to the independent literal expected rejected value. Keep deepEqual, no-manager-B/no-execution counters, serialized replay, same-account Attempt retention and fresh-source positives. No product serializer/schema or CI assertion weakening.",
+      "rationale": "Root directly read helper, complete three OD account scenarios, real MessagePort fixture, native adapter and generated constructor. Two fresh blind lenses independently traced the same production chain.",
+      "sourceReview": "R2 complete77 context plus focused delta finished; one synthesized finding, source-only. New fresh R3 review required after this fix."
     }
   ],
-  "execution": "not-run; GitHub Actions only",
+  "execution": "H72 initial Actions has renderer TEST_FLAW; source workflow complete; Host/App still pending. No local validation.",
   "unitVerified": false,
   "globalAcceptance": false,
-  "phase": "R1_SOURCE_CONVERGED; exact published-H executable evidence pending",
+  "phase": "Environment recovery: R2 focused control fix source-approved; R3 account oracle FIX recorded before edit",
   "frozenReviewBase": "4e80e161c6cc539f4c120d64f91421619a57def1",
   "frozenReviewTree": "474e8c79e8f01dbd1ba0da32fdef08ee51312c49",
   "sourceReviewMembers": 77,
@@ -97,5 +138,28 @@
     "full source/dependency/legal closure",
     "real provider/channel/plugin/node/device/UI/platform/package/upgrade/rollback/soak and independent ACCEPT"
   ],
-  "recordedAt": "2026-11-03T05:58:27.929381+00:00"
+  "recordedAt": "2026-11-03T05:58:27.929381+00:00",
+  "recovery": {
+    "environment": "explicitly unavailable; exec server disconnected and recovery timed out, not approval rejection",
+    "method": "Continue same verified repository/branch using GitHub API. Preserve foreign dirty paths by never importing unavailable worktree. Reconstruct only exact owned one-line changes from full API preimages.",
+    "currentBranch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "lastVerifiedHead": "72b6ed8b6e91a0ac7e0588fd9492a7d30c535079",
+    "originalR2Tree": "73d5fac02a8410a2214dc0e4f337314e2a41b92c",
+    "all8GlobalFlagsRemainFalse": true,
+    "history": "Earlier local review records/files remain historical and inaccessible; raw logs re-fetched from the same exact job match prior recorded digests.",
+    "recordedAt": "2026-11-03 06:19:08 UTC",
+    "incoming": {
+      "head": "05cf602dfdf51588f67edea6e05c4e4c0ecdf466",
+      "tree": "880d77fea03d92cb081c5b6aaf3ca14a928593a3",
+      "comparedBase": "72b6ed8b6e91a0ac7e0588fd9492a7d30c535079",
+      "commits": 2,
+      "paths": 39,
+      "overlap": [],
+      "description": "Existing media R6 source/native evidence carriers and G11 Box response spec; preserved whole incoming tree, no semantic acceptance inferred."
+    },
+    "abandonedCheckpoint": {
+      "sha": "aa0298cab549c0e59e22b6a8cabb0bd856f92acd",
+      "reason": "Lease preflight detected incoming05cf; update_ref never called."
+    }
+  }
 }
