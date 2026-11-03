@@ -228,15 +228,27 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
       setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Tab" && !event.shiftKey && event.target === triggerRef.current) {
+        // A popup portal can be remounted while the same message action is
+        // activated a second time. Capture at the document boundary so a
+        // parent toolbar's bubbling key handler cannot take away the first
+        // non-modal Tab after an Enter reopen.
+        const first = popoverRef.current?.querySelector<HTMLButtonElement>(".sand-emoji-cell");
+        if (first != null) {
+          event.preventDefault();
+          first.focus({ preventScroll: true });
+        }
+        return;
+      }
       if (event.key !== "Escape") return;
       event.preventDefault();
       setOpen(false, true);
     };
     document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keydown", onKeyDown, true);
     };
   }, [open]);
 
@@ -257,15 +269,6 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
           // Keep the real message action as the Tab/Escape return point.
           triggerRef.current?.focus({ preventScroll: true });
           setOpen(!open);
-        }}
-        onKeyDown={(event) => {
-          if (open && event.key === "Tab" && !event.shiftKey) {
-            const first = popoverRef.current?.querySelector<HTMLButtonElement>(".sand-emoji-cell");
-            if (first != null) {
-              event.preventDefault();
-              first.focus({ preventScroll: true });
-            }
-          }
         }}
         ref={triggerRef}
         type="button"
