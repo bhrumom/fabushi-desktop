@@ -980,14 +980,17 @@ mod cleanup {
     }
 
     fn protected(name: &OsStr) -> bool {
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "macos"))]
         {
+            // macOS can preserve a caller's spelling for a case-insensitive
+            // protected store. Keep its aliases out of destructive traversal,
+            // conservatively including case-sensitive macOS volumes.
             name.to_str().is_some_and(|name| {
                 name.eq_ignore_ascii_case(PLAYBACK_TRANSCODE_SUBDIR)
                     || name.eq_ignore_ascii_case(MANAGED_OUTGOING_SUBDIR)
             })
         }
-        #[cfg(not(windows))]
+        #[cfg(not(any(windows, target_os = "macos")))]
         {
             name == PLAYBACK_TRANSCODE_SUBDIR || name == MANAGED_OUTGOING_SUBDIR
         }

@@ -296,8 +296,29 @@ the actual admitted base. Its old `base/outside` fixture was still contained;
 repair only that fixture, preserve escape refusal and all other assertions,
 and retain the complete integration target and strict positive-name selection.
 
+MSL recovery review correction: protected root-store names must also cover
+ASCII case variants on macOS, as they already do on Windows. APFS preserves
+the creation spelling and is case-insensitive by default: a store created as
+`Outgoing` can be the same store later addressed as `outgoing`. Refuse these
+top-level variants before descent. This is deliberately conservative on a
+case-sensitive macOS volume; Linux retains its existing case-sensitive name
+policy. Ordinary nested lookalike directories remain eligible for cleanup.
+The real-filesystem control creates the variant spelling first, saves expired
+media through both variant and canonical names, and proves both retained
+alongside successful deletion/pruning in an independent ordinary branch and
+nested lookalike directories.
+
+APFS accepts only valid UTF-8 names for creation. Keep the invalid-byte-name
+control on non-Apple Unix, including the Linux Actions lane, and separately
+execute a valid Unicode-name cleanup plus FIFO-preservation control on every
+Unix lane, including macOS. This separates filesystem capabilities without a
+runtime skip or a swallowed setup error. The capture helper requires the
+exact applicable positive names on each platform. Primary platform contract:
+[Apple APFS filename compatibility][MSL-APFS-FILENAMES].
+
 [MSL-WINDOWS-FILE-ID]: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/98860416-1caf-4c80-a9ab-8d61e1ccf5a5
 [MSL-WINDOWS-FILE-ID-INFO]: https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-file_id_information
+[MSL-APFS-FILENAMES]: https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/APFS_Guide/FAQ/FAQ.html
 
 The affected Actions selection is the complete existing
 `openclaw_media_store_contract` integration target and the owner-private

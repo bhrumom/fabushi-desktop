@@ -161,6 +161,49 @@ fn test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors() {
     assert_eq!(fs::read(file).unwrap(), b"not a directory");
 }
 
+#[cfg(any(windows, target_os = "macos"))]
+#[test]
+fn test_ocrm_media_store_cleanup_protects_top_level_case_variants() {
+    let temp = TempTestDir::new("cleanup-protected-case");
+    let old = SystemTime::now() - Duration::from_secs(3_600);
+    let mut retained = Vec::new();
+    for (variant, canonical) in [("Outgoing", "outgoing"), ("Playback-Transcode", "playback-transcode")] {
+        // Seed the stored spelling before the canonical consumer opens it.
+        fs::create_dir_all(temp.path.join(variant)).unwrap();
+        let variant_file = save_aged_media(&temp.path, &format!("{variant}/deep/tree"), "variant.txt", old);
+        let canonical_file = save_aged_media(&temp.path, &format!("{canonical}/deep/tree"), "canonical.txt", old);
+        assert!(fs::read_dir(&temp.path).unwrap().any(|entry| entry.unwrap().file_name() == variant));
+        // On a case-insensitive volume both spellings must reach both saves.
+        // A case-sensitive volume instead exercises the conservative retention
+        // policy for two distinct top-level directories; neither is skipped.
+        let canonical_via_variant = temp.path.join(variant).join("deep/tree")
+            .join(canonical_file.file_name().unwrap());
+        if canonical_via_variant.exists() {
+            assert_eq!(fs::read(&canonical_via_variant).unwrap(), b"media retention fixture");
+            let variant_via_canonical = temp.path.join(canonical).join("deep/tree")
+                .join(variant_file.file_name().unwrap());
+            assert_eq!(fs::read(&variant_via_canonical).unwrap(), b"media retention fixture");
+        }
+        retained.extend([variant_file, canonical_file]);
+    }
+    let ordinary = save_aged_media(&temp.path, "ordinary/deep", "expired.txt", old);
+    let nested_outgoing = save_aged_media(&temp.path, "cache/Outgoing/deep", "expired.txt", old);
+    let nested_playback = save_aged_media(&temp.path, "cache/Playback-Transcode/deep", "expired.txt", old);
+    let options = CleanOldMediaOptions { recursive: Some(true), prune_empty_dirs: Some(true) };
+
+    clean_old_media(60_000, &options, Some(&temp.path)).unwrap();
+
+    for file in retained {
+        assert_eq!(fs::read(file).unwrap(), b"media retention fixture");
+    }
+    for file in [ordinary, nested_outgoing, nested_playback] {
+        assert!(!file.exists(), "ordinary nested lookalikes remain eligible");
+    }
+    assert!(!temp.path.join("ordinary").exists());
+    assert!(!temp.path.join("cache").exists());
+    assert!(temp.path.is_dir());
+}
+
 #[cfg(any(unix, windows))]
 #[test]
 fn test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets() {
@@ -204,17 +247,37 @@ fn test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets() {
     assert!(outside_file.exists());
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_vendor = "apple")))]
 #[test]
-fn test_ocrm_media_store_recursive_cleanup_preserves_raw_names_and_special_entries() {
-    use std::ffi::{CString, OsString};
-    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+fn test_ocrm_media_store_recursive_cleanup_preserves_raw_names() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
     let temp = TempTestDir::new("cleanup-raw-names");
     let raw_dir = temp.path.join(OsString::from_vec(b"raw-\xff".to_vec())).join("deep");
     fs::create_dir_all(&raw_dir).unwrap();
     let raw_file = raw_dir.join(OsString::from_vec(b"expired-\xfe.bin".to_vec()));
     fs::write(&raw_file, b"expired raw name").unwrap();
     set_media_modified(&raw_file, SystemTime::now() - Duration::from_secs(3_600));
+    let options = CleanOldMediaOptions { recursive: Some(true), prune_empty_dirs: Some(true) };
+
+    clean_old_media(60_000, &options, Some(&temp.path)).unwrap();
+
+    assert!(!raw_file.exists());
+    assert!(!raw_dir.parent().unwrap().exists());
+    assert!(temp.path.is_dir());
+}
+
+#[cfg(unix)]
+#[test]
+fn test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries() {
+    use std::ffi::CString;
+    use std::os::unix::ffi::OsStrExt;
+    let temp = TempTestDir::new("cleanup-unicode-special");
+    let unicode_dir = temp.path.join("unicode-é").join("deep");
+    fs::create_dir_all(&unicode_dir).unwrap();
+    let unicode_file = unicode_dir.join("expired-附件.bin");
+    fs::write(&unicode_file, b"expired Unicode name").unwrap();
+    set_media_modified(&unicode_file, SystemTime::now() - Duration::from_secs(3_600));
     let special_dir = temp.path.join("special/deep");
     fs::create_dir_all(&special_dir).unwrap();
     let fifo = special_dir.join("retained.fifo");
@@ -224,8 +287,8 @@ fn test_ocrm_media_store_recursive_cleanup_preserves_raw_names_and_special_entri
 
     clean_old_media(60_000, &options, Some(&temp.path)).unwrap();
 
-    assert!(!raw_file.exists());
-    assert!(!raw_dir.parent().unwrap().exists());
+    assert!(!unicode_file.exists());
+    assert!(!unicode_dir.parent().unwrap().exists());
     assert!(fs::symlink_metadata(&fifo).is_ok());
     assert!(special_dir.is_dir());
     assert!(temp.path.is_dir());

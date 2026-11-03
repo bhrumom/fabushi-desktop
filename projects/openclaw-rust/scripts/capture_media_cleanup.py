@@ -212,7 +212,11 @@ def main():
         if runner_os == "Windows":
             owner.append(OWNER_PREFIX + "cleanup_windows_identity_compares_full_file_id")
         else:
-            integration.append("test_ocrm_media_store_recursive_cleanup_preserves_raw_names_and_special_entries")
+            integration.append("test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries")
+        if runner_os == "Linux":
+            integration.append("test_ocrm_media_store_recursive_cleanup_preserves_raw_names")
+        if runner_os in {"macOS", "Windows"}:
+            integration.append("test_ocrm_media_store_cleanup_protects_top_level_case_variants")
         base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
         cases = [
             ("cleanup-owner", base + ["--lib", OWNER_PREFIX, "--", "--test-threads=1"], owner),
