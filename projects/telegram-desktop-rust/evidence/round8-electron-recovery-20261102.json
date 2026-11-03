@@ -2,7 +2,7 @@
   "format_version": 1,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 8,
-  "recorded_at": "2026-11-02T23:07:00Z",
+  "recorded_at": "2026-11-03 00:05:43 UTC",
   "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "repository": "bhrumom/fabushi-desktop",
   "intended_checkpoint": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
@@ -825,6 +825,33 @@
     "assertions_removed": false,
     "retries": 0,
     "execution": "Not-run at preparation. The containing commit must pass both existing Plugins cases and both complete Human process-reopen cases in Actions.",
-    "independent_review": "Root full-content comparison confirms exactly one added binding and two property replacements; existing real process disappearance checks and all test bodies remain unchanged. Independent core_recovery full-blob review confirmed the same exact three-line delta and no remaining post-close process() access."
+    "independent_review": "Root full-content comparison confirms exactly one added binding and two property replacements; existing real process disappearance checks and all test bodies remain unchanged. Independent core_recovery full-blob review confirmed the same exact three-line delta and no remaining post-close process() access.",
+    "publication": {
+      "commit": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+      "remote_readback_verified": true,
+      "run": 41548150741,
+      "job": 125628712102,
+      "status_at_last_observation": "queued",
+      "observation": "2026-11-03 00:00 UTC",
+      "actual_result": null
+    }
+  },
+  "human_transcript_feed_candidate": {
+    "spec_commit": "c4e6c6c2320d82c8e2bd205f10d357042e7bacd9",
+    "host_files": {
+      "source/host/src/transcript_mutation_events.rs": "cd518841b772c626f7287a1180882ed2d8a23b31",
+      "source/host/src/extensions/session/agent_db.rs": "7f9df1030a254bf21db4820fb500dceed8e80eca",
+      "source/host/src/extensions/transcript/extension.rs": "2d7f86577dacd278e03ed9a5816010e675c3455d",
+      "source/host/src/extensions/session/production.rs": "ade01bc58ca2684b6b6b4c7ce1c6ad1e8741e600",
+      "source/host/tests/session_gateway_contract.rs": "acfb2660f35e6f5757b7a2e0fe3dec387e4eff98"
+    },
+    "workflow_blob": "e8c1955c3cf2446da9262f09092c0fe16db3de10",
+    "effect": "Adds exact existing Host feed inputs to the Mac push path filter so containing-H actual Electron process-recovery verification executes when these production sources change.",
+    "cases_unchanged": {
+      "plugins": 2,
+      "human": 2,
+      "retries": 0
+    },
+    "execution": "Not-run at preparation; b6 queued run and historical H487 failures cannot qualify the new Host inputs."
   }
 }

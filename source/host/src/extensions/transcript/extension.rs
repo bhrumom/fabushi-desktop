@@ -21,6 +21,9 @@ use crate::extensions::turn_execution::turn_execution_service::TurnExecutionRegi
 use crate::host_event_bus::{
     HostEventFailureMode, HostEventSubscription, SandHostEventBus,
 };
+use crate::transcript_mutation_events::{
+    TRANSCRIPT_MUTATION_ORIGIN_KEY, TranscriptMutationSubscription, subscribe_transcript_mutations,
+};
 
 pub const TRANSCRIPT_EXTENSION_ID: &str = "transcript";
 pub const TRANSCRIPT_EXTENSION_DEPENDENCIES: &[&str] = &[
@@ -163,6 +166,8 @@ pub struct TranscriptExtension {
     events: Option<TranscriptExtensionEventBridge>,
     _profile_watch_subscriptions: Vec<HostEventSubscription>,
     _outline_stream_subscription: Option<HostEventSubscription>,
+    _human_transcript_subscription: Option<TranscriptMutationSubscription>,
+    human_transcript_alive: Arc<Mutex<bool>>,
 }
 
 impl TranscriptExtension {
@@ -189,6 +194,14 @@ impl TranscriptExtension {
 
 impl Drop for TranscriptExtension {
     fn drop(&mut self) {
+        // Wait for an admitted read/publication, then reject even callbacks
+        // already copied by the global registry before unsubscribe.
+        if let Ok(mut alive) = self.human_transcript_alive.lock() {
+            *alive = false;
+        }
+        if let Some(subscription) = self._human_transcript_subscription.take() {
+            subscription.unsubscribe();
+        }
         self._outline_stream_subscription.take();
         self._profile_watch_subscriptions.clear();
         self.profile_watch.take();
@@ -241,6 +254,12 @@ fn start_transcript_extension_with_event_bridge(
         (sink, Vec::new())
     };
 
+    let human_transcript_alive = Arc::new(Mutex::new(true));
+    let human_transcript_subscription = bind_human_transcript_updates(
+        Arc::clone(&sessions),
+        Arc::clone(&roster_emit),
+        Arc::clone(&human_transcript_alive),
+    );
     let (profile_watch, profile_watch_error) = match ProductionProfileWatch::start(
         sessions,
         Arc::clone(&roster_emit),
@@ -258,7 +277,41 @@ fn start_transcript_extension_with_event_bridge(
         events,
         _profile_watch_subscriptions: profile_watch_subscriptions,
         _outline_stream_subscription: None,
+        _human_transcript_subscription: Some(human_transcript_subscription),
+        human_transcript_alive,
     }
+}
+
+fn bind_human_transcript_updates(
+    sessions: Arc<ProductionSessionWorkers>,
+    roster: Arc<ProductionRosterEmit>,
+    alive: Arc<Mutex<bool>>,
+) -> TranscriptMutationSubscription {
+    subscribe_transcript_mutations(move |mutation| {
+        if mutation.get("kind").and_then(Value::as_str) != Some("entries-upserted") {
+            return;
+        }
+        let Ok(admitted) = alive.lock() else { return; };
+        if !*admitted {
+            return;
+        }
+        let Some(agent_id) = mutation.get("agentId").and_then(Value::as_str) else { return; };
+        let Some(origin) = mutation.get(TRANSCRIPT_MUTATION_ORIGIN_KEY).and_then(Value::as_str) else { return; };
+        let Some(entries) = mutation.get("entries").and_then(Value::as_array) else { return; };
+        let Some(entry_ids) = entries.iter()
+            .map(|entry| entry.get("id").and_then(Value::as_str).map(str::to_owned))
+            .collect::<Option<Vec<_>>>()
+        else { return; };
+        // The registry is process-wide. Only this Session's authorized Human
+        // owner can supply content; notification bodies are never forwarded.
+        let Ok(current) = sessions.read_human_transcript_mutation_entries(agent_id, origin, &entry_ids) else {
+            return;
+        };
+        for entry in current {
+            roster.publish_transcript_updated(agent_id, &entry);
+        }
+        drop(admitted);
+    })
 }
 
 pub fn bind_runner_outline_stream_events(

@@ -4,6 +4,12 @@ on:
   push:
     branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
+      - source/host/src/extensions/session/production.rs
+      - source/host/src/extensions/session/agent_db.rs
+      - source/host/src/extensions/session/native_messaging.rs
+      - source/host/src/transcript_mutation_events.rs
+      - source/host/src/extensions/transcript/extension.rs
+      - source/host/src/extensions/transcript/roster_emit.rs
       - frontend/src/production/ProductionRenderer.tsx
       - frontend/src/production/model.ts
       - frontend/src/production/transcript-projection.ts

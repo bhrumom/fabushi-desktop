@@ -4561,6 +4561,61 @@ impl ProductionSessionWorkers {
         Ok(matches)
     }
 
+    // Post-commit projection may run while the writer still owns the Human
+    // conversation mutation lane. Read only its already registered SQLite
+    // owner; a notification must never open/create a store or replay history.
+    pub(crate) fn read_human_transcript_mutation_entries(
+        &self,
+        conversation_id: &str,
+        origin_db_path: &str,
+        entry_ids: &[String],
+    ) -> Result<Vec<serde_json::Value>, String> {
+        if origin_db_path.is_empty() {
+            return Err("Human transcript mutation has no qualified origin".into());
+        }
+        let expected_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
+            .map_err(|error| error.to_string())?;
+        let key = Self::native_conversation_owner_key(conversation_id);
+        let owner = {
+            let owners = self.db_owners.lock()
+                .map_err(|_| "conversation db owner map poisoned".to_string())?;
+            owners.get(&key).cloned()
+        }.ok_or_else(|| "Human transcript mutation has no registered owner".to_string())?;
+        // Both paths originate in this Session, never in the notification.
+        let expected_origin =
+            crate::transcript_mutation_events::transcript_mutation_origin(&expected_path)
+                .ok_or_else(|| "Human transcript owner origin is unavailable".to_string())?;
+        if origin_db_path != expected_origin.as_str()
+            || crate::transcript_mutation_events::transcript_mutation_origin(owner.db_path())
+                .as_deref() != Some(expected_origin.as_str())
+        {
+            return Err("Human transcript mutation belongs to a different database".into());
+        }
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let mut seen = BTreeSet::new();
+        let mut current = Vec::new();
+        for entry_id in entry_ids {
+            if entry_id.is_empty() || entry_id.trim() != entry_id.as_str() {
+                return Err("Human transcript mutation has an invalid entry identity".into());
+            }
+            if !seen.insert(entry_id.as_str()) {
+                continue;
+            }
+            let Some(entry) = owner.get_transcript_entry_by_id(entry_id)
+                .map_err(|error| error.to_string())? else {
+                continue;
+            };
+            if entry.get("id").and_then(serde_json::Value::as_str) != Some(entry_id.as_str()) {
+                return Err("Human transcript entry conflicts with its persisted identity".into());
+            }
+            current.push(entry);
+        }
+        Ok(current)
+    }
+
     pub fn read_human_conversation_transcript(
         &self,
         conversation_id: &str,

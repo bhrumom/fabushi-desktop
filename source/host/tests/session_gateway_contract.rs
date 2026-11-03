@@ -13,6 +13,14 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::HumanTranscriptPageQuery;
 use mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeMessagingClient;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::extension::{
+    TranscriptExtension, start_transcript_extension,
+};
+use mahayana_host_runtime::host_event_bus::SandHostEventBus;
+use mahayana_host_runtime::transcript_mutation_events::{
+    TRANSCRIPT_MUTATION_ORIGIN_KEY, publish_transcript_mutation,
+    subscribe_transcript_mutations, transcript_mutation_origin,
+};
 use serde_json::json;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -3844,14 +3852,23 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
     let first = human_message_fixture_runtime(&root, &url);
     let id = first.create_human_conversation("2", "Peer").expect("conversation")["id"]
         .as_str().expect("id").to_string();
+    let (first_extension, first_feed) = start_human_transcript_feed(&root, &first);
     let rows = first.sync_human_conversation(&id).expect("bounded first sync");
     assert_eq!(rows.len(), 6400);
     assert_eq!(rows.iter().map(|row| row["remoteMessageId"].as_str().expect("remote identity").to_string())
         .collect::<Vec<_>>(), (1..=6400).map(|id| id.to_string()).collect::<Vec<_>>(),
         "every row appears exactly once in canonical order across all 32 pages");
+    let projected = human_transcript_feed_events(&first_feed);
+    assert_eq!(projected.len(), 6400, "the real production bridge projects every committed row once");
+    for (event, row) in projected.iter().zip(&rows) {
+        assert_eq!(event, &json!({
+            "channel":"transcript","payload":{"type":"updated","agentId":id,"entry":row},
+        }), "the 6400-row bridge uses each current indexed row in durable order");
+    }
     let owner = first.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("checkpoint"),
         Some(json!({"version":1,"afterId":6400,"complete":false})));
+    drop(first_extension);
     first.shutdown();
     drop(owner);
     drop(first);
@@ -3867,10 +3884,15 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[row]}})),
     ]);
     let resumed = human_message_fixture_runtime(&root, &resume_url);
+    let (resumed_extension, resumed_feed) = start_human_transcript_feed(&root, &resumed);
     let resumed_rows = resumed.sync_human_conversation(&id).expect("resumed cursor");
     assert_eq!(resumed_rows.len(), 6401);
     assert_eq!(&resumed_rows[..6400], rows.as_slice(), "restart preserves every previously covered row and its order");
     assert_eq!(resumed_rows[6400]["id"], "human-server-message:6401");
+    assert_eq!(human_transcript_feed_events(&resumed_feed), vec![json!({
+        "channel":"transcript","payload":{"type":"updated","agentId":id,"entry":resumed_rows[6400]},
+    })], "restart installs one observer and unchanged latest refresh adds no duplicate");
+    assert!(human_transcript_feed_events(&first_feed).is_empty(), "the stopped bridge cannot project resumed writes");
     let owner = resumed.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("complete checkpoint"),
         Some(json!({"version":1,"afterId":6401,"complete":true})));
@@ -3878,6 +3900,7 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
     assert_eq!(requests.len(), 2);
     assert!(requests[0].contains("&afterId=6400"), "resume must not replay first 6400");
     assert!(!requests[1].contains("&afterId="), "spare request refreshes known latest");
+    drop(resumed_extension);
     resumed.shutdown();
     drop(owner);
     drop(resumed);
@@ -9034,4 +9057,314 @@ fn shipping_human_roster_rejects_six_streaming_credential_rotations_before_effec
         reopened.shutdown(); drop(reopened);
         fs::remove_dir_all(root).expect("remove streaming roster fixture");
     }
+}
+
+
+// NMR-FEED-01: this is the shared extension constructor used by the production
+// bootstrap, with the same Host bus receiver that supplies Gateway SSE.
+fn start_human_transcript_feed(
+    root: &std::path::Path,
+    runtime: &Arc<ProductionSessionWorkers>,
+) -> (TranscriptExtension, std::sync::mpsc::Receiver<serde_json::Value>) {
+    let bus = SandHostEventBus::default();
+    let events = bus.subscribe();
+    let extension = start_transcript_extension(
+        root,
+        Arc::clone(runtime),
+        Arc::new(move |event| bus.publish(event)),
+    );
+    (extension, events)
+}
+
+fn human_transcript_feed_events(
+    events: &std::sync::mpsc::Receiver<serde_json::Value>,
+) -> Vec<serde_json::Value> {
+    events.try_iter()
+        .filter(|event| event.get("channel").and_then(serde_json::Value::as_str) == Some("transcript"))
+        .collect()
+}
+
+// Deliberately untrusted notifications are used only for negative/admission
+// cases. The positive integration oracle below comes from a real native sync.
+fn publish_human_transcript_feed_hint(
+    conversation_id: &str,
+    origin: Option<serde_json::Value>,
+    entries: serde_json::Value,
+) {
+    let mut mutation = json!({
+        "kind": "entries-upserted",
+        "agentId": conversation_id,
+        "entries": entries,
+    }).as_object().expect("mutation object").clone();
+    if let Some(origin) = origin {
+        mutation.insert(TRANSCRIPT_MUTATION_ORIGIN_KEY.into(), origin);
+    }
+    publish_transcript_mutation(&mutation);
+}
+
+#[test]
+fn shipping_human_committed_refresh_reaches_production_transcript_bus() {
+    let root = temp_root("human-production-transcript-feed");
+    let mut initial = fixture_remote_human_message(
+        51, 2, 1, "before refresh", Some("peer-request"), json!([]),
+    );
+    initial["reactions"] = json!([{"emoji":"👍","count":1,"reactedByMe":false}]);
+    let mut remote = initial.clone();
+    remote["text"] = json!("current native snapshot");
+    remote["readAt"] = json!("2026-10-05T03:00:00Z");
+    remote["reactions"] = json!([]);
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[initial]}})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[remote]}})),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let first = dispatch(&runtime, "syncHumanConversation", json!({"conversationId":conversation_id}));
+    assert_eq!(first.as_array().expect("initial rows").len(), 1);
+    assert_eq!(first[0]["content"], "before refresh");
+    let (extension, events) = start_human_transcript_feed(&root, &runtime);
+    assert!(human_transcript_feed_events(&events).is_empty());
+
+    // The real Session sync holds its conversation mutation lane while the
+    // post-commit bridge runs; a second acquisition here would deadlock.
+    let refreshed = dispatch(&runtime, "syncHumanConversation", json!({"conversationId":conversation_id}));
+    assert_eq!(refreshed.as_array().expect("refreshed rows").len(), 1);
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("owner");
+    let current = owner.get_transcript_entry_by_id("human-server-message:51")
+        .expect("read committed row").expect("committed row");
+    assert_eq!(current["content"], "current native snapshot");
+    assert_eq!(current["readAt"], "2026-10-05T03:00:00Z");
+    assert_eq!(current["reactions"], json!([]));
+    assert_eq!(current["remoteClientRequestId"], "peer-request");
+    assert!(current.get("clientNonce").is_none());
+    assert_eq!(refreshed[0], current);
+    assert_eq!(human_transcript_feed_events(&events), vec![json!({
+        "channel":"transcript",
+        "payload":{"type":"updated","agentId":conversation_id,"entry":current},
+    })], "the shipping bus receives the exact durable row without origin or before:null");
+
+    drop(extension);
+    runtime.shutdown();
+    let requests = server.join().expect("native refresh requests");
+    assert_eq!(requests.len(), 2);
+    assert!(requests.iter().all(|request| request.contains("&afterId=0")));
+    drop(owner);
+    drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids() {
+    let root = temp_root("human-feed-current-owner");
+    let (url, stop, server) = spawn_human_no_request_fixture();
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("owner");
+    let mut first = fixture_saved_human_message(51, "2", "initial durable peer body");
+    first["remoteClientRequestId"] = json!("peer-provenance");
+    let mut second = fixture_saved_human_message(52, "1", "durable local body");
+    second["clientNonce"] = json!("original-local-nonce");
+    second["readAt"] = json!("2026-10-05T03:00:00Z");
+    second["reactions"] = json!([{"emoji":"👍","by":"2"}]);
+    assert_eq!(owner.append_transcript_entries(&[first.clone(), second.clone()]).expect("seed rows"), 2);
+    let (extension, events) = start_human_transcript_feed(&root, &runtime);
+    let stale_first = first.clone();
+    first["content"] = json!("newer durable body");
+    first["readAt"] = json!("2026-10-05T04:00:00Z");
+    let current_first = owner.update_transcript_entry("human-server-message:51", &first)
+        .expect("commit newer row").expect("newer row");
+    assert_eq!(human_transcript_feed_events(&events), vec![json!({
+        "channel":"transcript",
+        "payload":{"type":"updated","agentId":conversation_id,"entry":current_first},
+    })]);
+
+    let origin = transcript_mutation_origin(owner.db_path()).expect("trusted owner origin");
+    publish_human_transcript_feed_hint(&conversation_id, Some(json!(origin)), json!([
+        {"id":"human-server-message:52","content":"forged body","authorId":"999",
+         "clientNonce":"forged-nonce","attachments":[{"path":"/must-not-be-read"}]},
+        stale_first,
+        {"id":"human-server-message:52","content":"duplicate forged body"},
+        {"id":"human-server-message:missing","content":"not persisted"},
+    ]));
+    assert_eq!(human_transcript_feed_events(&events), vec![
+        json!({"channel":"transcript","payload":{"type":"updated","agentId":conversation_id,"entry":second}}),
+        json!({"channel":"transcript","payload":{"type":"updated","agentId":conversation_id,"entry":current_first}}),
+    ], "requested order is retained, duplicate IDs collapse and notification bodies have no authority");
+    assert_eq!(owner.get_transcript_entries().expect("unchanged durable rows"), vec![first, second]);
+
+    drop(extension);
+    runtime.shutdown();
+    stop.send(()).expect("stop no-request fixture");
+    assert!(server.join().expect("no-request fixture").is_empty(), "projection performs no HTTP");
+    drop(owner);
+    drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins() {
+    let root = temp_root("human-feed-local-root");
+    let foreign_root = temp_root("human-feed-foreign-root");
+    let (url, stop, server) = spawn_human_no_request_fixture();
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let foreign = human_message_fixture_runtime(&foreign_root, &url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").expect("local conversation")["id"]
+        .as_str().expect("local conversation id").to_string();
+    let foreign_id = foreign.create_human_conversation("2", "Peer").expect("foreign conversation")["id"]
+        .as_str().expect("foreign conversation id").to_string();
+    assert_eq!(foreign_id, conversation_id, "the origin gate must distinguish identical conversation IDs");
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("local owner");
+    let foreign_owner = foreign.open_human_conversation_db_owner(&foreign_id).expect("foreign owner");
+    let mut local_row = fixture_saved_human_message(51, "2", "local durable content");
+    assert!(owner.append_transcript_entry(&local_row).expect("local seed"));
+    assert!(foreign_owner.append_transcript_entry(&fixture_saved_human_message(51, "2", "foreign seed"))
+        .expect("foreign seed"));
+    let local_origin = transcript_mutation_origin(owner.db_path()).expect("local origin");
+    let foreign_origin = transcript_mutation_origin(foreign_owner.db_path()).expect("foreign origin");
+    assert_ne!(local_origin, foreign_origin);
+    let (extension, events) = start_human_transcript_feed(&root, &runtime);
+
+    foreign_owner.update_transcript_entry(
+        "human-server-message:51",
+        &fixture_saved_human_message(51, "2", "foreign body must never be projected"),
+    ).expect("foreign commit").expect("foreign row");
+    assert!(human_transcript_feed_events(&events).is_empty(), "same-ID foreign root emits no event");
+
+    let agent = runtime.materialize_new_session(None, "user", None).expect("ordinary Agent");
+    runtime.append_agent_transcript_entries(&agent.id, &[local_row.clone()]).expect("Agent write");
+    let agent_owner = runtime.open_agent_db_owner(&agent.id).expect("Agent owner");
+    let agent_origin = transcript_mutation_origin(agent_owner.db_path()).expect("Agent origin");
+    assert!(human_transcript_feed_events(&events).is_empty(), "ordinary Agent writes keep their existing owner");
+    for origin in [
+        None, Some(serde_json::Value::Null), Some(json!(7)), Some(json!([])),
+        Some(json!("")), Some(json!("../untrusted-notification-path")),
+        Some(json!(foreign_origin)), Some(json!(agent_origin)),
+    ] {
+        publish_human_transcript_feed_hint(&conversation_id, origin, json!([local_row.clone()]));
+        assert!(human_transcript_feed_events(&events).is_empty(), "unqualified or different origin must not project");
+    }
+    let absent_id = foreign.create_human_conversation("3", "Another peer").expect("foreign-only conversation")["id"]
+        .as_str().expect("foreign-only id").to_string();
+    let absent_path = mahayana_host_runtime::extensions::session::session_paths::get_native_conversation_db_path(
+        &root.join("agents"), &absent_id,
+    ).expect("expected local path");
+    assert!(!absent_path.exists());
+    let absent_owner = foreign.open_human_conversation_db_owner(&absent_id).expect("foreign-only owner");
+    assert!(absent_owner.append_transcript_entry(&fixture_saved_human_message(61, "3", "foreign-only row"))
+        .expect("foreign-only commit"));
+    assert!(human_transcript_feed_events(&events).is_empty());
+    assert!(!absent_path.exists(), "projection never creates a local conversation for a notification");
+
+    assert!(owner.set_metadata("participantIds", json!(["3","4"])).expect("remove local permission"));
+    local_row["content"] = json!("committed while local account is not a participant");
+    owner.update_transcript_entry("human-server-message:51", &local_row).expect("unauthorized-owner write")
+        .expect("persisted row");
+    assert!(human_transcript_feed_events(&events).is_empty(), "origin alone cannot grant participant authority");
+    assert!(owner.set_metadata("participantIds", json!(["1","2"])).expect("restore test permission"));
+    local_row["content"] = json!("authorized recovery");
+    let recovered = owner.update_transcript_entry("human-server-message:51", &local_row)
+        .expect("authorized commit").expect("authorized row");
+    assert_eq!(human_transcript_feed_events(&events), vec![json!({
+        "channel":"transcript","payload":{"type":"updated","agentId":conversation_id,"entry":recovered},
+    })], "rejected notifications do not disable later authorized projection");
+
+    drop(extension);
+    runtime.shutdown();
+    foreign.shutdown();
+
+    // A qualified hint must not lazily open an existing on-disk database or
+    // register an owner in a fresh Session. Only a normal owner entry may do so.
+    let cold = human_message_fixture_runtime(&root, &url);
+    let (cold_extension, cold_events) = start_human_transcript_feed(&root, &cold);
+    for _ in 0..2 {
+        publish_human_transcript_feed_hint(&conversation_id, Some(json!(local_origin)), json!([local_row.clone()]));
+        assert!(human_transcript_feed_events(&cold_events).is_empty(), "notification cannot open/register a cold owner");
+    }
+    let loaded = cold.open_human_conversation_db_owner(&conversation_id).expect("explicit normal owner load");
+    publish_human_transcript_feed_hint(&conversation_id, Some(json!(local_origin)), json!([local_row.clone()]));
+    assert_eq!(human_transcript_feed_events(&cold_events), vec![json!({
+        "channel":"transcript","payload":{"type":"updated","agentId":conversation_id,"entry":recovered},
+    })], "normal owner admission enables projection without altering durable content");
+    drop(cold_extension);
+    cold.shutdown();
+    drop((loaded, cold));
+
+    stop.send(()).expect("stop no-request fixture");
+    assert!(server.join().expect("no-request fixture").is_empty(), "origin/participant admission performs no HTTP");
+    drop((owner, foreign_owner, absent_owner, agent_owner, runtime, foreign));
+    let _ = fs::remove_dir_all(root);
+    let _ = fs::remove_dir_all(foreign_root);
+}
+
+#[test]
+fn shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement() {
+    let root = temp_root("human-feed-copied-dispatch");
+    let (url, stop, server) = spawn_human_no_request_fixture();
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("owner");
+    assert!(owner.append_transcript_entry(&fixture_saved_human_message(51, "2", "seed"))
+        .expect("seed row"));
+    let blocked_origin = transcript_mutation_origin(owner.db_path()).expect("trusted origin");
+    let blocked_conversation = conversation_id.clone();
+    let (paused, entered) = std::sync::mpsc::channel();
+    let (release, released) = std::sync::mpsc::channel();
+    let released = std::sync::Mutex::new(released);
+    let block_once = std::sync::atomic::AtomicBool::new(true);
+    // Registration order is the registry's BTreeMap order. Pause after its
+    // listener snapshot already includes the old extension, before admission.
+    let blocker = subscribe_transcript_mutations(move |mutation| {
+        let is_target = mutation.get("kind").and_then(serde_json::Value::as_str) == Some("entries-upserted")
+            && mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(blocked_conversation.as_str())
+            && mutation.get(TRANSCRIPT_MUTATION_ORIGIN_KEY).and_then(serde_json::Value::as_str) == Some(blocked_origin.as_str())
+            && mutation.get("entries").and_then(serde_json::Value::as_array)
+                .is_some_and(|entries| entries.iter().any(|entry| entry.get("id")
+                    .and_then(serde_json::Value::as_str) == Some("human-server-message:51")));
+        if is_target && block_once.swap(false, std::sync::atomic::Ordering::AcqRel) {
+            paused.send(()).expect("report copied dispatch");
+            released.lock().expect("release receiver").recv_timeout(std::time::Duration::from_secs(15))
+                .expect("copied dispatch must be explicitly released");
+        }
+    });
+    let (extension, old_events) = start_human_transcript_feed(&root, &runtime);
+    let manager = extension.manager();
+    let writer = Arc::clone(&owner);
+    let write = thread::spawn(move || {
+        writer.update_transcript_entry(
+            "human-server-message:51", &fixture_saved_human_message(51, "2", "committed before disposal"),
+        ).expect("paused durable update").expect("paused row")
+    });
+    entered.recv_timeout(std::time::Duration::from_secs(15)).expect("global snapshot copied before disposal");
+    drop(extension);
+    assert!(manager.is_disposed());
+    let (replacement, new_events) = start_human_transcript_feed(&root, &runtime);
+    release.send(()).expect("release old copied callback");
+    let committed = write.join().expect("paused writer");
+    blocker.unsubscribe();
+    assert_eq!(owner.get_transcript_entry_by_id("human-server-message:51").expect("read committed row"), Some(committed));
+    assert!(human_transcript_feed_events(&old_events).is_empty(), "copied old callback cannot publish after disposal");
+    assert!(human_transcript_feed_events(&new_events).is_empty(), "old dispatch cannot be attributed to the replacement");
+
+    let current = owner.update_transcript_entry(
+        "human-server-message:51", &fixture_saved_human_message(51, "2", "replacement current row"),
+    ).expect("replacement commit").expect("replacement row");
+    assert_eq!(human_transcript_feed_events(&new_events), vec![json!({
+        "channel":"transcript","payload":{"type":"updated","agentId":conversation_id,"entry":current},
+    })], "replacement installs exactly one projection observer");
+    assert!(human_transcript_feed_events(&old_events).is_empty());
+    drop(replacement);
+    owner.update_transcript_entry(
+        "human-server-message:51", &fixture_saved_human_message(51, "2", "after both extensions stopped"),
+    ).expect("post-disposal commit").expect("post-disposal row");
+    assert!(human_transcript_feed_events(&old_events).is_empty());
+    assert!(human_transcript_feed_events(&new_events).is_empty());
+
+    runtime.shutdown();
+    stop.send(()).expect("stop no-request fixture");
+    assert!(server.join().expect("no-request fixture").is_empty(), "relay lifecycle performs no HTTP");
+    drop((owner, runtime, manager));
+    let _ = fs::remove_dir_all(root);
 }

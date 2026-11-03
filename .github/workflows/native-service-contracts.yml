@@ -4,6 +4,9 @@ on:
     branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
       - 'source/host/src/extensions/session/**'
+      - 'source/host/src/transcript_mutation_events.rs'
+      - 'source/host/src/extensions/transcript/extension.rs'
+      - 'source/host/src/extensions/transcript/roster_emit.rs'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
       - 'source/host/tests/session_gateway_contract.rs'
       - 'source/host/src/gateway_server.rs'
@@ -292,7 +295,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 72 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 76 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history ... ok' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens ... ok' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api ... ok' artifacts/native-message/session-gateway.log
@@ -302,7 +305,11 @@ jobs:
             shipping_human_retry_reopens_attachment_reply_and_coalesces_same_nonce_without_reupload \
             shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation \
             shipping_human_retry_preserves_forward_source_policy_and_refuses_generic_ownership_bypass \
-            shipping_human_retry_fences_account_and_issuer_changes_and_restores_durable_failure; do
+            shipping_human_retry_fences_account_and_issuer_changes_and_restores_durable_failure \
+            shipping_human_committed_refresh_reaches_production_transcript_bus \
+            shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids \
+            shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins \
+            shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement; do
             grep -Fx "test $case_name ... ok" artifacts/native-message/session-gateway.log
           done
       - name: Human resource upload size and bounded-read contracts

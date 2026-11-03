@@ -301,6 +301,16 @@ function receive(endpoint: Endpoint, frame: { requestId: string; method: string;
     case 'getListenerIntegrations': pending.value = { integrations: [] }; break;
     case 'getAgentChannels': pending.value = { manifests: [], connections: [] }; break;
     case 'getSkillPublishTargets': pending.value = { teams: [] }; break;
+    case 'getPluginSyncStatus':
+      if (frame.args == null || typeof frame.args !== 'object'
+        || Array.isArray(frame.args) || Object.keys(frame.args).length !== 0) {
+        unhandledRequests.push(request);
+        reply(pending, { code: 'FIXTURE_INVALID_PLUGIN_SYNC_STATUS', message: 'getPluginSyncStatus requires an empty argument object' });
+        return;
+      }
+      // Match the existing MCP owner when no plugin skills are configured.
+      pending.value = { authBlocked: [] };
+      break;
     case 'listHumanConversations': case 'syncHumanConversations':
       pending.value = clone(humans()); break;
     case 'syncHumanConversation': pending.value = clone(transcript); break;

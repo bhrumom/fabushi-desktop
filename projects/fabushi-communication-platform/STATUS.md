@@ -385,8 +385,13 @@ Human first-lifetime business, video/trace and real shutdown checks. Both Human
 cases then failed in the fixture's post-close app.process() evidence access;
 no second-process recovery passed. The fixture now captures the same
 ChildProcess before close and retains all original process-exit and reopen
-assertions. Its containing-H Mac run is required. Author22 was still running
-in run41546866976 at23:46:30 UTC; exact808 and487 shipping remained queued.
+assertions. The repair is committed at exactb6eaa5020c0d886e40e8477673d30673bd732be8;
+its Mac run41548150741/job125628712102 was queued at00:00 UTC, without
+execution evidence. Exact487 UI finished193 pass/1 fail: the 22nd author case
+failed the strict unknown-RPC oracle for getPluginSyncStatus after all three
+business milestones passed. Its fixture now implements the existing empty-args
+Host reply {authBlocked:[]}; no case or oracle is removed. The changed fixture
+requires its containing-H Actions result. Exact808 and487 shipping were queued.
 
 The shared authority trace check and actual canonical NMR checkout test
 passed at exact487 in run41546866900: Node161, Python37 and zero schema errors.
@@ -403,6 +408,23 @@ browser11 was 10 pass/1 fail and dependent groups skipped; Electron H608f0d49
 compiled native inputs but failed Renderer TS2698 before browser execution.
 Current batch fixes retain those failed records. The two existing round8
 evidence receipts record full source/file/run identities and subsequent results.
+
+The next bounded NMR-FEED-01 batch repairs a source-proven production gap:
+the shared TranscriptExtension did not subscribe to committed Human upserts.
+The existing AgentDb writer now supplies an internal trusted database origin;
+the existing Session reads only current indexed rows from an already registered
+Human owner after origin and participant checks. The shared extension emits
+the existing transcript/updated event and explicitly closes/unsubscribes its
+lifetime before teardown. Notification content cannot supply row data or open
+or create a database, and the internal path never enters Gateway payloads.
+Four new real Host/SQLite/HTTP cases bring authored Human coverage to76 and
+reconciliation to120. The original6400/32-page/restart case now exercises the
+real projection while retaining all request budgets, ordering and checkpoints.
+These changes require containing-H Actions; they do not establish remote
+revision/tombstone discovery, arbitrary-old mutation sweep, reaction409 recovery
+or deployed afterId=0. The canonical ledger transport run41549360973 produced
+blob25cf6dbdea41d48dc57df1f252d256772750362a with57 actual paths/64 symbols;
+all183 other rows, source reviews and acceptance counters are preserved.
 
 Canonical inventory remains 16,381 recursive entries/184 responsibility rows,
 unknown/unread null and two unmapped responsibilities at the observed input.

@@ -12,7 +12,9 @@ use crate::storage::store_db::{
     bump_db_write_generation, live_db_handle_count, register_live_db_handle,
     release_live_db_handle,
 };
-use crate::transcript_mutation_events::publish_transcript_mutation;
+use crate::transcript_mutation_events::{
+    TRANSCRIPT_MUTATION_ORIGIN_KEY, publish_transcript_mutation, transcript_mutation_origin,
+};
 
 use super::agent_db_recovery::{
     AgentDbRecoveryError, DbRecoveryOptions, open_configured_db,
@@ -3352,6 +3354,9 @@ fn publish_entries_upserted(db_path: &Path, entries: Vec<serde_json::Value>) {
         serde_json::Value::String(agent_id_for_db_path(db_path)),
     );
     mutation.insert("entries".into(), serde_json::Value::Array(entries));
+    if let Some(origin) = transcript_mutation_origin(db_path) {
+        mutation.insert(TRANSCRIPT_MUTATION_ORIGIN_KEY.into(), serde_json::Value::String(origin));
+    }
     publish_transcript_mutation(&mutation);
 }
 
