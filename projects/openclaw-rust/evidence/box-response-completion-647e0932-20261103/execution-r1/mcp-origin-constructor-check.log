@@ -1,0 +1,1277 @@
+    Checking libc v0.2.191
+    Checking cfg-if v1.0.5
+    Checking bitflags v2.13.2
+    Checking pin-project-lite v0.2.17
+    Checking linux-raw-sys v0.12.1
+    Checking log v0.4.34
+    Checking getrandom v0.2.17
+    Checking futures-core v0.3.34
+    Checking typenum v1.20.1
+    Checking rustix v1.1.5
+    Checking smallvec v1.16.3
+    Checking memchr v2.8.3
+    Checking zeroize v1.9.1
+    Checking generic-array v0.14.7
+    Checking futures-io v0.3.34
+    Checking zerofrom v0.1.8
+    Checking serde_core v1.0.229
+    Checking bytes v1.12.1
+    Checking stable_deref_trait v1.2.1
+    Checking subtle v2.6.1
+    Checking yoke v0.8.3
+    Checking rand_core v0.6.4
+    Checking crypto-common v0.1.7
+    Checking slab v0.4.12
+    Checking once_cell v1.21.4
+    Checking zerovec v0.11.8
+    Checking serde v1.0.229
+    Checking parking v2.2.1
+    Checking itoa v1.0.18
+    Checking libloading v0.8.9
+    Checking memoffset v0.9.1
+    Checking dlib v0.5.3
+    Checking fastrand v2.5.0
+    Checking wayland-sys v0.31.11
+    Checking tinystr v0.8.4
+    Checking rustls-pki-types v1.15.1
+    Checking writeable v0.6.4
+    Checking rand_core v0.10.1
+    Checking litemap v0.8.3
+    Checking scoped-tls v1.0.1
+    Checking downcast-rs v1.2.1
+    Checking simd-adler32 v0.3.10
+    Checking wayland-backend v0.3.17
+    Checking icu_locale_core v2.3.0
+    Checking crossbeam-utils v0.8.23
+    Checking zerotrie v0.2.5
+    Checking potential_utf v0.1.6
+    Checking mio v1.2.4
+    Checking futures-sink v0.3.34
+    Checking utf8_iter v1.0.4
+    Checking unicode-ident v1.0.27
+    Checking proc-macro2 v1.0.107
+    Checking icu_collections v2.3.0
+    Checking icu_provider v2.3.1
+    Checking concurrent-queue v2.5.0
+    Checking getrandom v0.4.3
+    Checking http v1.5.0
+    Checking event-listener v5.4.2
+    Checking block-buffer v0.10.4
+    Checking socket2 v0.6.5
+    Checking atomic-waker v1.1.2
+    Checking percent-encoding v2.3.2
+    Checking adler2 v2.0.1
+    Checking untrusted v0.9.0
+    Checking cpufeatures v0.2.17
+    Checking tokio v1.53.3
+    Checking ring v0.17.14
+    Checking digest v0.10.7
+    Checking event-listener-strategy v0.5.4
+    Checking num-traits v0.2.19
+    Checking icu_properties_data v2.3.0
+    Checking crc32fast v1.5.2
+    Checking icu_normalizer_data v2.3.0
+    Checking futures-channel v0.3.34
+    Checking futures-lite v2.6.1
+    Checking tracing-core v0.1.36
+    Checking linux-raw-sys v0.9.4
+    Checking futures-task v0.3.34
+    Checking drm-sys v0.8.1
+    Checking futures-util v0.3.34
+    Checking bytemuck v1.25.2
+    Checking tracing v0.1.44
+    Checking icu_normalizer v2.3.0
+    Checking icu_properties v2.3.0
+    Checking wayland-client v0.31.15
+    Checking miniz_oxide v0.9.1
+    Checking quote v1.0.47
+    Checking cpufeatures v0.3.1
+    Checking zlib-rs v0.6.8
+    Checking wayland-protocols v0.32.13
+    Checking flate2 v1.1.10
+    Checking syn v3.0.9
+    Checking idna_adapter v1.2.2
+    Checking httparse v1.10.1
+    Checking drm-ffi v0.9.1
+    Checking drm-fourcc v2.2.0
+    Checking rustls-webpki v0.103.15
+    Checking form_urlencoded v1.2.2
+    Checking http-body v1.1.0
+    Checking polling v3.11.0
+    Checking hybrid-array v0.4.15
+    Checking errno v0.3.14
+    Checking winnow v1.0.4
+    Checking linux-raw-sys v0.4.15
+    Checking async-task v4.7.1
+    Checking rustix v0.38.44
+    Checking zvariant_utils v4.2.0
+    Checking thiserror v2.0.21
+    Checking signal-hook-registry v1.4.8
+    Checking async-io v2.6.0
+    Checking rustls v0.23.46
+    Checking idna v1.1.0
+    Checking zmij v1.0.23
+    Checking chacha20 v0.10.2
+    Checking libspa-sys v0.10.1
+    Checking async-channel v2.5.0
+    Checking miniz_oxide v0.8.9
+    Checking enumflags2 v0.7.12
+    Checking fdeflate v0.3.7
+    Checking webpki-roots v1.0.9
+    Checking zcheapstr v1.1.0
+    Checking nom v8.0.0
+    Checking memmap2 v0.9.11
+    Checking pxfm v0.1.30
+    Checking tower-service v0.3.3
+    Checking try-lock v0.2.5
+    Checking endi v1.1.1
+    Checking base64 v0.22.1
+    Checking zvariant v5.15.1
+    Checking want v0.3.2
+    Checking moxcms v0.8.1
+    Checking png v0.18.1
+    Checking rand v0.10.3
+    Checking serde_json v1.0.154
+    Checking url v2.5.8
+    Checking drm v0.14.1
+    Checking async-signal v0.2.14
+    Checking gbm-sys v0.4.0
+    Checking crypto-common v0.2.2
+    Checking block-buffer v0.12.1
+    Checking wayland-protocols-wlr v0.3.12
+    Checking async-lock v3.4.2
+    Checking piper v0.2.5
+    Checking wayland-server v0.31.14
+    Checking inout v0.1.4
+    Checking const-oid v0.10.2
+    Checking cookie-factory v0.3.3
+    Checking byteorder-lite v0.1.0
+    Checking foldhash v0.2.0
+    Checking gbm v0.18.0
+    Checking hashbrown v0.16.1
+    Checking image v0.25.10
+    Checking libspa v0.10.1
+    Checking digest v0.11.3
+    Checking curve25519-dalek v4.1.3
+    Checking cipher v0.4.4
+    Checking blocking v1.7.0
+    Checking async-process v2.5.0
+    Checking gl v0.14.0
+    Checking pipewire-sys v0.10.1
+    Checking khronos-egl v6.0.0
+    Checking zbus_names v4.3.5
+    Checking hyper v1.12.0
+    Checking async-executor v1.14.0
+    Checking drm v0.15.0
+    Checking async-broadcast v0.7.2
+    Checking uuid v1.28.0
+    Checking universal-hash v0.5.1
+    Checking gethostname v1.1.0
+    Checking sync_wrapper v1.0.2
+    Checking ordered-stream v0.2.0
+    Checking hex v0.4.3
+    Checking scopeguard v1.2.0
+    Checking ipnet v2.12.2
+    Checking tower-layer v0.3.3
+    Checking base64 v0.23.1
+    Checking iana-time-zone v0.1.65
+    Checking siphasher v1.0.4
+    Checking x11rb-protocol v0.13.2
+    Checking opaque-debug v0.3.1
+    Checking xkeysym v0.2.1
+    Checking xkbcommon v0.9.0
+    Checking poly1305 v0.8.0
+    Checking phf_shared v0.12.1
+    Checking hyper-util v0.1.21
+    Checking chrono v0.4.45
+    Checking tower v0.5.3
+    Checking zbus v5.19.0
+    Checking x11rb v0.13.2
+    Checking libwayshot-xcap v0.3.3
+    Checking libsqlite3-sys v0.37.0
+    Checking pipewire v0.10.1
+    Checking xcb v1.7.1
+    Checking chacha20 v0.9.1
+    Checking sha1 v0.11.0
+    Checking hashlink v0.11.1
+    Checking inotify-sys v0.1.8
+    Checking zstd-sys v2.1.2+zstd.1.5.7
+    Checking webpki-roots v0.26.11
+    Checking tokio-rustls v0.26.6
+    Checking wayland-protocols-misc v0.3.12
+    Checking sha2 v0.10.9
+    Checking hmac v0.12.1
+    Checking tempfile v3.27.0
+    Checking prost v0.13.5
+    Checking aead v0.5.2
+    Checking aho-corasick v1.1.5
+    Checking equivalent v1.0.3
+    Checking fallible-iterator v0.3.0
+    Checking time-core v0.1.9
+    Checking hashbrown v0.17.1
+    Checking unicase v2.10.0
+    Checking signature v2.2.0
+    Checking fallible-streaming-iterator v0.1.9
+    Checking data-encoding v2.11.1
+    Checking regex-syntax v0.8.11
+    Checking mime v0.3.17
+    Checking same-file v1.0.6
+    Checking base64 v0.21.7
+    Checking bumpalo v3.20.3
+    Checking ryu v1.0.23
+    Checking deranged v0.5.9
+    Checking powerfmt v0.2.1
+    Checking num-conv v0.2.2
+    Checking regex-automata v0.4.18
+    Checking time v0.3.55
+    Checking serde_urlencoded v0.7.1
+    Checking zopfli v0.8.4
+    Checking pbjson v0.7.0
+    Checking walkdir v2.5.0
+    Checking mime_guess v2.0.5
+    Checking tungstenite v0.30.0
+    Checking indexmap v2.14.2
+    Checking rusqlite v0.39.0
+    Checking ed25519 v2.2.3
+    Checking thiserror v1.0.69
+    Checking xcap v0.9.8
+    Checking chacha20poly1305 v0.10.1
+    Checking enigo v0.6.1
+    Checking hkdf v0.12.4
+    Checking hyper-rustls v0.27.10
+    Checking zstd-safe v7.3.0
+    Checking inotify v0.11.5
+    Checking tower-http v0.6.11
+    Checking phf v0.12.1
+    Checking x25519-dalek v2.0.1
+    Checking mahayana-host-protocol v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-host-protocol)
+    Checking http-body-util v0.1.5
+    Checking futures-executor v0.3.34
+    Checking tokio-util v0.7.20
+    Checking xattr v1.6.1
+    Checking filetime v0.2.29
+    Checking notify-types v2.1.0
+    Checking core_detect v1.0.0
+    Checking simdutf8 v0.1.5
+    Checking tinyvec v1.13.3
+    Checking typed-path v0.12.3
+    Checking zip v9.0.3
+    Checking unicode-normalization v0.1.26
+    Checking encoding_rs v0.8.42
+    Checking notify v8.2.0
+    Checking tar v0.4.46
+    Checking reqwest v0.12.28
+    Checking mahayana-computer v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer)
+warning: unused import: `mahayana_host_protocol::ComputerAccessibilityNode`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:14:5
+   |
+14 | use mahayana_host_protocol::ComputerAccessibilityNode;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `mahayana_host_protocol::ComputerSemanticAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:18:5
+   |
+18 | use mahayana_host_protocol::ComputerSemanticAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `mahayana_host_protocol::ComputerWindowAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:21:5
+   |
+21 | use mahayana_host_protocol::ComputerWindowAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `mahayana-computer` (lib) generated 3 warnings (run `cargo fix --lib -p mahayana-computer` to apply 3 suggestions)
+    Checking futures v0.3.34
+    Checking fabushi-messaging-core v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/native/mahayana-messaging)
+    Checking chrono-tz v0.10.4
+    Checking zstd v0.13.3
+    Checking pbjson-types v0.7.0
+    Checking ed25519-dalek v2.2.0
+    Checking regex v1.13.1
+    Checking yasna v0.5.2
+    Checking getrandom v0.3.4
+    Checking prost-types v0.13.5
+    Checking pem v3.0.6
+    Checking sha1 v0.10.7
+    Checking rustls-pemfile v2.2.0
+    Checking fs2 v0.4.3
+    Checking yansi v1.0.1
+    Checking qrcode v0.14.1
+    Checking diff v0.1.13
+    Checking rcgen v0.13.2
+    Checking pretty_assertions v1.4.1
+    Checking syn v2.0.119
+    Checking mahayana-host-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/host)
+warning: unused import: `AgentActivity`
+  --> src/extensions/transcript/production_runtime.rs:15:44
+   |
+15 | use crate::sand_activity::{ActivityUpdate, AgentActivity};
+   |                                            ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `DateTime`
+ --> src/extensions/transcript/automation_run_path.rs:5:14
+  |
+5 | use chrono::{DateTime, Local, TimeZone, Utc};
+  |              ^^^^^^^^
+
+warning: unused import: `ConversationStructureRefs`
+  --> src/extensions/session/session_conversation_state.rs:34:5
+   |
+34 |     ConversationStructureRefs, OutlineItem as RecoveryOutlineItem,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> src/extensions/box_store_sync/sand_box_store_v2_client.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `SandBoxStoreCompletedPart`
+  --> src/extensions/box_store_sync/sand_box_store_v2_client.rs:12:5
+   |
+12 |     SandBoxStoreCompletedPart, SandBoxStoreListPage, SandBoxStoreMultipartCompletion,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `json`
+  --> src/extensions/box_store_sync/production.rs:16:18
+   |
+16 | use serde_json::{json, Map, Value};
+   |                  ^^^^
+
+warning: unused imports: `BOX_STORE_BLOBS_PREFIX` and `BOX_STORE_MANIFEST_VERSION`
+  --> src/extensions/box_store_sync/production.rs:38:46
+   |
+38 |     BoxStoreManifest, BoxStoreManifestEntry, BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH,
+   |                                              ^^^^^^^^^^^^^^^^^^^^^^
+39 |     BOX_STORE_MANIFEST_VERSION, SAND_MANIFEST_V2_ENV,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES`
+  --> src/extensions/box_store_sync/production.rs:56:40
+   |
+56 |     plan_periodic_cycle, BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `WorkspaceIgnore`
+  --> src/extensions/box_store_sync/production.rs:86:28
+   |
+86 |     load_workspace_ignore, WorkspaceIgnore, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS,
+   |                            ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fmt`
+ --> src/extensions/box_lifecycle/production.rs:1:5
+  |
+1 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `run_codex_direct_responses_with_cancel`
+  --> src/extensions/inference/provider_session.rs:35:45
+   |
+35 |     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `DiskPressureReport`
+  --> src/extensions/forever_box/disk_pressure.rs:17:44
+   |
+17 |     DiskPressureLevel, DiskPressureLogger, DiskPressureReport, DiskPressureReporter,
+   |                                            ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `regex::Regex`
+  --> src/extensions/attachments/input_files.rs:13:5
+   |
+13 | use regex::Regex;
+   |     ^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/attachments/load_options.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `SaveMediaSourceError`
+  --> src/extensions/attachments/media_fetch.rs:22:5
+   |
+22 |     SaveMediaSourceError, SaveMediaSourceErrorCode,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `PathBuf` and `Path`
+ --> src/extensions/attachments/media_generation_service.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^  ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/extensions/attachments/media_probe.rs:1:5
+  |
+1 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fs::File`
+ --> src/extensions/attachments/media_probe.rs:2:5
+  |
+2 | use std::fs::File;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Read`
+ --> src/extensions/attachments/media_probe.rs:3:5
+  |
+3 | use std::io::Read;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::path::Path`
+ --> src/extensions/attachments/media_probe.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::sync::LazyLock`
+ --> src/extensions/attachments/media_probe.rs:5:5
+  |
+5 | use std::sync::LazyLock;
+  |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::time::Instant`
+ --> src/extensions/attachments/media_probe.rs:6:5
+  |
+6 | use std::time::Instant;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SeekFrom` and `Seek`
+ --> src/extensions/attachments/media_store.rs:3:27
+  |
+3 | use std::io::{self, Read, Seek, SeekFrom, Write};
+  |                           ^^^^  ^^^^^^^^
+
+warning: unused import: `Component`
+ --> src/extensions/attachments/media_store.rs:4:17
+  |
+4 | use std::path::{Component, Path, PathBuf};
+  |                 ^^^^^^^^^
+
+warning: unused imports: `Value` and `json`
+  --> src/extensions/attachments/media_store.rs:10:18
+   |
+10 | use serde_json::{Value, json};
+   |                  ^^^^^  ^^^^
+
+warning: unused import: `format_media_size`
+  --> src/extensions/attachments/media_store.rs:15:70
+   |
+15 |     MEDIA_FILE_MODE, SaveMediaSourceError, SaveMediaSourceErrorCode, format_media_size,
+   |                                                                      ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/attachments/media_understanding_service.rs:1:33
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `std::collections::HashSet`
+ --> src/extensions/attachments/parse_output.rs:8:5
+  |
+8 | use std::collections::HashSet;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+  --> src/extensions/attachments/remote_workspace_file.rs:10:17
+   |
+10 | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+
+warning: unused import: `Sha256`
+  --> src/extensions/attachments/staged_inputs.rs:13:20
+   |
+13 | use sha2::{Digest, Sha256};
+   |                    ^^^^^^
+
+warning: unused import: `ImageMetadata`
+  --> src/extensions/attachments/web_media.rs:20:35
+   |
+20 |     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
+   |                                   ^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/content_search/search_index_writer.rs:3:17
+  |
+3 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/plugin_sdk/api_baseline.rs:2:33
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `PathBuf`
+ --> src/extensions/plugin_sdk/api_baseline.rs:3:23
+  |
+3 | use std::path::{Path, PathBuf};
+  |                       ^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/plugin_sdk/archive_blob.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `json`
+ --> src/extensions/plugin_sdk/channel_entry.rs:2:18
+  |
+2 | use serde_json::{json, Value};
+  |                  ^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/extensions/plugin_sdk/channel_entry.rs:3:5
+  |
+3 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Engine as _` and `engine::general_purpose::STANDARD`
+ --> src/extensions/plugins/clawhub.rs:1:14
+  |
+1 | use base64::{engine::general_purpose::STANDARD, Engine as _};
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^
+
+warning: unused import: `Sha256`
+ --> src/extensions/plugins/clawhub.rs:3:20
+  |
+3 | use sha2::{Digest, Sha256};
+  |                    ^^^^^^
+
+warning: unused import: `HashMap`
+ --> src/extensions/plugins/commands.rs:2:24
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: unused import: `Arc`
+ --> src/extensions/plugins/commands.rs:4:17
+  |
+4 | use std::sync::{Arc, Condvar, Mutex};
+  |                 ^^^
+
+warning: unused import: `Arc`
+ --> src/extensions/plugins/computer_use.rs:3:17
+  |
+3 | use std::sync::{Arc, Mutex};
+  |                 ^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/plugins/config.rs:3:33
+  |
+3 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `Map`
+ --> src/runner/tools/sand_multitask_todo_tool.rs:5:18
+  |
+5 | use serde_json::{Map, Value, json};
+  |                  ^^^
+
+warning: unused import: `std::fmt`
+ --> src/box/box_transfer.rs:3:5
+  |
+3 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `Arc`
+ --> src/workflows/workflow_library.rs:5:17
+  |
+5 | use std::sync::{Arc, OnceLock};
+  |                 ^^^
+
+warning: unused import: `HashMap`
+ --> src/agents/agent_roster.rs:1:24
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: unused import: `ProductionAgentStoreWorkerBackend`
+ --> src/transcript_mirror/production_provider.rs:6:5
+  |
+6 |     ProductionAgentStoreWorkerBackend, TranscriptMirrorOffloadPool, WorkerBlobStore,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/device_pairing_owner.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: cannot test inner items
+   --> src/transcript_mirror/conversation_state_binary.rs:518:5
+    |
+518 |     #[test]
+    |     ^^^^^^^
+    |
+    = note: `#[warn(unnameable_test_items)]` on by default
+
+warning: cannot test inner items
+   --> src/transcript_mirror/conversation_state_binary.rs:536:5
+    |
+536 |     #[test]
+    |     ^^^^^^^
+
+warning: unused import: `Digest`
+  --> src/extensions/attachments/staged_inputs.rs:13:12
+   |
+13 | use sha2::{Digest, Sha256};
+   |            ^^^^^^
+
+warning: unused import: `Digest`
+ --> src/extensions/plugins/clawhub.rs:3:12
+  |
+3 | use sha2::{Digest, Sha256};
+  |            ^^^^^^
+
+warning: unused import: `PermissionsExt`
+  --> src/extensions/snapshot/git_backup_manager.rs:14:54
+   |
+14 | use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
+   |                                                      ^^^^^^^^^^^^^^
+
+warning: unused variable: `session_key`
+   --> src/extensions/transcript/agent_to_agent_messaging.rs:302:44
+    |
+302 |         let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
+    |                                            ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_session_key`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+    --> src/extensions/transcript/production_runtime.rs:1592:13
+     |
+1592 |         let mut result = if suppress_stale_turn {
+     |             ----^^^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_echo_entry_id` is never read
+    --> src/extensions/transcript/production_runtime.rs:1396:59
+     |
+1396 |         let mut persisted_echo_entry_id: Option<String> = None;
+     |                                                           ^^^^ this value is reassigned later and never used
+...
+1438 |                             persisted_echo_entry_id =
+     |                             ----------------------- `persisted_echo_entry_id` is overwritten here before the previous value is read
+     |
+     = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_send_context` is never read
+    --> src/extensions/transcript/production_runtime.rs:1397:42
+     |
+1397 |         let mut persisted_send_context = PersistedSendContext::default();
+     |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+1437 |                             persisted_send_context = persisted.into();
+     |                             ---------------------- `persisted_send_context` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:2069:13
+     |
+2069 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:2694:13
+     |
+2694 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:5155:13
+     |
+5155 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/box_store_sync/box_copy_in.rs:948:25
+    |
+948 |                     let mut event = build_copy_in_watchdog_event(
+    |                         ----^^^^^
+    |                         |
+    |                         help: remove this `mut`
+
+warning: value assigned to `manifest_committed` is never read
+    --> src/extensions/box_store_sync/production.rs:1555:17
+     |
+1555 |                 manifest_committed = false;
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+  --> src/extensions/cloud_workers/store.rs:60:13
+   |
+60 |         let mut file = File::open(path).map_err(CloudWorkerStoreError::Read)?;
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+warning: value assigned to `held` is never read
+   --> src/extensions/telemetry/structured_log_telemetry.rs:312:29
+    |
+312 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `held` is never read
+   --> src/extensions/telemetry/structured_log_telemetry.rs:329:29
+    |
+329 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: unused variable: `current_ref`
+   --> src/extensions/inference/model_picker_service.rs:374:9
+    |
+374 |     let current_ref = format!("{}/{}", params.current_provider, params.current_model);
+    |         ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_current_ref`
+
+warning: value assigned to `should_sync` is never read
+   --> src/extensions/wallpaper/wallpaper_service.rs:149:9
+    |
+149 |           should_sync = false;
+    |           ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+185 | /         should_sync = wait_for_next(
+186 | |             &inner,
+187 | |             &receiver,
+188 | |             Duration::from_millis(remaining_ms),
+189 | |         );
+    | |_________- `should_sync` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_probe.rs:268:9
+    |
+268 |     let mut audio_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_probe.rs:279:9
+    |
+279 |     let mut video_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_store.rs:614:9
+    |
+614 |     let mut file = options.open(path)?;
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `ttl`
+  --> src/extensions/plugin_sdk/channel_runtime.rs:98:36
+   |
+98 |     pub fn claim(&self, key: &str, ttl: Duration) -> ReplayClaimResult {
+   |                                    ^^^ help: if this is intentional, prefix it with an underscore: `_ttl`
+
+warning: unused variable: `v`
+    --> src/extensions/plugins/capability_catalog.rs:2298:17
+     |
+2298 |         for (k, v) in configured_channels {
+     |                 ^ help: if this is intentional, prefix it with an underscore: `_v`
+
+warning: variable does not need to be mutable
+   --> src/extensions/snapshot/git_backup_manager.rs:764:9
+    |
+764 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/snapshot/git_backup_manager.rs:877:9
+    |
+877 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/runner/tools/send_message_schema.rs:221:21
+    |
+221 |                 let mut path = prefix.clone();
+    |                     ----^^^^
+    |                     |
+    |                     help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/runner/tools/communicate_tool.rs:126:9
+    |
+126 |     let mut payload = executing_payload(tool_name, activity);
+    |         ----^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `stderr`
+   --> src/box/box_windows.rs:173:53
+    |
+173 |         ShellExecutionOutcome::Success { exit_code, stderr }
+    |                                                     ^^^^^^ help: try ignoring the field: `stderr: _`
+
+warning: method `sync_baseline` is never used
+    --> src/extensions/transcript/automation_runtime.rs:1260:8
+     |
+ 494 | impl AutomationRuntime {
+     | ---------------------- method in this implementation
+...
+1260 |     fn sync_baseline(&self, agent_id: &str, definitions: &[AutomationRecord]) {
+     |        ^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `assert_agent_transcript_write_admission` is never used
+    --> src/extensions/session/production.rs:2500:8
+     |
+ 269 | impl ProductionSessionWorkers {
+     | ----------------------------- method in this implementation
+...
+2500 |     fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_download_owner` is never used
+   --> src/extensions/box_store_sync/box_copy_in.rs:550:4
+    |
+550 | fn apply_download_owner(path: &Path, owner: Option<(u32, u32)>) -> Result<(), String> {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `openclaw_portable_backup_enabled` is never used
+   --> src/extensions/box_store_sync/production.rs:105:4
+    |
+105 | fn openclaw_portable_backup_enabled() -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `load_manifest` is never used
+    --> src/extensions/box_store_sync/production.rs:1723:4
+     |
+1723 | fn load_manifest(store: &dyn BoxObjectStore) -> Result<Option<BoxStoreManifest>, String> {
+     |    ^^^^^^^^^^^^^
+
+warning: function `write_manifest_if_unchanged` is never used
+    --> src/extensions/box_store_sync/production.rs:1727:4
+     |
+1727 | fn write_manifest_if_unchanged(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `write_manifest` is never used
+    --> src/extensions/box_store_sync/production.rs:1754:4
+     |
+1754 | fn write_manifest(
+     |    ^^^^^^^^^^^^^^
+
+warning: function `sync_store_db_snapshots` is never used
+    --> src/extensions/box_store_sync/production.rs:2257:4
+     |
+2257 | fn sync_store_db_snapshots(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `sync_store_db_snapshots_with_options` is never used
+    --> src/extensions/box_store_sync/production.rs:2277:4
+     |
+2277 | fn sync_store_db_snapshots_with_options(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_excluded` is never used
+    --> src/extensions/box_store_sync/production.rs:2783:4
+     |
+2783 | fn is_excluded(rel_path: &str, excludes: &[&str]) -> bool {
+     |    ^^^^^^^^^^^
+
+warning: constant `MAX_ENV_NAME_CHARS` is never used
+ --> src/extensions/cloud_workers/auxiliary.rs:6:7
+  |
+6 | const MAX_ENV_NAME_CHARS: usize = 128;
+  |       ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_ARCHIVE_MEMBER_CHARS` is never used
+ --> src/extensions/cloud_workers/artifact_admission.rs:8:7
+  |
+8 | const MAX_ARCHIVE_MEMBER_CHARS: usize = 4096;
+  |       ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_archive_member_path` is never used
+   --> src/extensions/cloud_workers/artifact_admission.rs:204:8
+    |
+204 | pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifactAdmissionError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_windows_drive_path` is never used
+   --> src/extensions/cloud_workers/artifact_admission.rs:224:4
+    |
+224 | fn is_windows_drive_path(path: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `windows_instance_name` and `windows_previous_profile_interval` are never read
+   --> src/extensions/telemetry/pressure_cpu_profiler.rs:320:5
+    |
+316 | struct ProductionCpuProfilerState {
+    |        -------------------------- fields in this struct
+...
+320 |     windows_instance_name: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+321 |     windows_previous_profile_interval: Option<u64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps` is never used
+    --> src/extensions/inference/provider_session.rs:1750:4
+     |
+1750 | fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text` is never used
+    --> src/extensions/inference/provider_session.rs:2742:4
+     |
+2742 | fn run_openrouter_provider_text(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text_with_lifecycle` is never used
+    --> src/extensions/inference/provider_session.rs:2756:4
+     |
+2756 | fn run_openrouter_provider_text_with_lifecycle(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `revocation_reason` is never read
+   --> src/extensions/mcp/installable_package/policy.rs:418:5
+    |
+409 | struct TrustKey {
+    |        -------- field in this struct
+...
+418 |     revocation_reason: String,
+    |     ^^^^^^^^^^^^^^^^^
+    |
+    = note: `TrustKey` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: method `as_str` is never used
+  --> src/extensions/node_host/secret_materializer.rs:35:19
+   |
+20 | impl NodeHostSecretInputRef {
+   | --------------------------- method in this implementation
+...
+35 |     pub(crate) fn as_str(&self) -> &str {
+   |                   ^^^^^^
+
+warning: associated function `new` is never used
+  --> src/extensions/node_host/secret_materializer.rs:68:19
+   |
+65 | impl NodeHostCloudflareAccessCredentials {
+   | ---------------------------------------- associated function in this implementation
+...
+68 |     pub(crate) fn new(
+   |                   ^^^
+
+warning: function `sysconf_pages` is never used
+   --> src/host_system_info.rs:119:4
+    |
+119 | fn sysconf_pages(name: libc::c_int, label: &str) -> Result<u64, String> {
+    |    ^^^^^^^^^^^^^
+
+warning: function `hex_nibble` is never used
+   --> src/agent_isolation/conversation_blob_store.rs:392:4
+    |
+392 | fn hex_nibble(value: u8) -> Option<u8> {
+    |    ^^^^^^^^^^
+
+warning: variant `Enum` is never constructed
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-6d7e1a4dbbebd760/out/agent_tool_json_schema.rs:5:47
+  |
+5 | enum AgentToolJsonMapValueKind { Scalar(u64), Enum(&'static [(i64, &'static str)]), Message(&'static str) }
+  |      -------------------------                ^^^^
+  |      |
+  |      variant in this enum
+  |
+  = note: `AgentToolJsonMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `optional` is never read
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-6d7e1a4dbbebd760/out/agent_tool_json_schema.rs:9:123
+  |
+9 | struct AgentToolJsonFieldDescriptor { number: u64, json_name: &'static str, kind: AgentToolJsonFieldKind, repeated: bool, optional: b...
+  |        ---------------------------- field in this struct                                                                  ^^^^^^^^
+  |
+  = note: `AgentToolJsonFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variant `Enum` is never constructed
+ --> src/cloud_agents/cloud_agent_trace_format.rs:8:5
+  |
+6 | enum CloudAgentProtoMapValueKind {
+  |      --------------------------- variant in this enum
+7 |     Scalar(u64),
+8 |     Enum,
+  |     ^^^^
+  |
+  = note: `CloudAgentProtoMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `proto_name` is never read
+  --> src/cloud_agents/cloud_agent_trace_format.rs:26:5
+   |
+24 | struct CloudAgentProtoFieldDescriptor {
+   |        ------------------------------ field in this struct
+25 |     number: u64,
+26 |     proto_name: &'static str,
+   |     ^^^^^^^^^^
+   |
+   = note: `CloudAgentProtoFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `db_path` is never read
+  --> src/device_pairing_owner.rs:17:5
+   |
+15 | pub struct DevicePairingOwner {
+   |            ------------------ field in this struct
+16 |     conn: Mutex<Connection>,
+17 |     db_path: Option<PathBuf>,
+   |     ^^^^^^^
+
+warning: `mahayana-host-runtime` (lib) generated 105 warnings (run `cargo fix --lib -p mahayana-host-runtime` to apply 68 suggestions)
+warning: unused import: `Path`
+ --> tests/openclaw_media_understanding_contract.rs:3:17
+  |
+3 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "openclaw_media_understanding_contract") generated 1 warning (run `cargo fix --test "openclaw_media_understanding_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `AutomationScheduleSummary`
+  --> tests/openclaw_plugins_automations_contract.rs:18:5
+   |
+18 |     AutomationScheduleSummary, compile_cron_matcher, compute_next_run_at, parse_every_interval_ms,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `InstalledSkill`
+  --> tests/openclaw_plugins_automations_contract.rs:23:85
+   |
+23 |     CURRENT_USER_RPC_TIMEOUT_MS, EFFECTIVE_PLUGINS_RPC_TIMEOUT_MS, InstalledPlugin, InstalledSkill,
+   |                                                                                     ^^^^^^^^^^^^^^
+
+warning: `mahayana-host-runtime` (test "openclaw_plugins_automations_contract") generated 2 warnings (run `cargo fix --test "openclaw_plugins_automations_contract" -p mahayana-host-runtime` to apply 2 suggestions)
+warning: function `recovery_fields_decode_token_details_and_turn_timing` is never used
+   --> src/transcript_mirror/conversation_state_binary.rs:519:8
+    |
+519 |     fn recovery_fields_decode_token_details_and_turn_timing() {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `stale_token_details_can_be_removed_without_reencoding_other_fields` is never used
+   --> src/transcript_mirror/conversation_state_binary.rs:537:8
+    |
+537 |     fn stale_token_details_can_be_removed_without_reencoding_other_fields() {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `mahayana-host-runtime` (lib test) generated 94 warnings (90 duplicates)
+warning: unused import: `TurnExecutionRegistry`
+  --> tests/extensions_turn_execution_contract.rs:13:51
+   |
+13 |     turn_execution_extension, TurnExecutionError, TurnExecutionRegistry, TurnExecutor,
+   |                                                   ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "extensions_turn_execution_contract") generated 1 warning (run `cargo fix --test "extensions_turn_execution_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `MouseButtonInput`
+  --> tests/openclaw_sessions_computer_contract.rs:24:25
+   |
+24 |     ComputerActionName, MouseButtonInput, SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS,
+   |                         ^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `last_viewed_ms` is never read
+   --> tests/openclaw_sessions_computer_contract.rs:151:30
+    |
+151 |     let mut last_viewed_ms = 1_000_000u64;
+    |                              ^^^^^^^^^^^^ this value is reassigned later and never used
+...
+159 |     last_viewed_ms = view_timestamp;
+    |     ------------------------------- `last_viewed_ms` is overwritten here before the previous value is read
+    |
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "openclaw_sessions_computer_contract") generated 2 warnings (run `cargo fix --test "openclaw_sessions_computer_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `PollingHandle`
+ --> tests/mcp_production_contract.rs:7:57
+  |
+7 | use mahayana_host_runtime::extensions::mcp::extension::{PollingHandle, PollingPort};
+  |                                                         ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "mcp_production_contract") generated 1 warning
+warning: unused import: `std::collections::BTreeMap`
+ --> tests/action_audit_service_contract.rs:1:5
+  |
+1 | use std::collections::BTreeMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "action_audit_service_contract") generated 1 warning (run `cargo fix --test "action_audit_service_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `Value`
+  --> tests/sand_auto_review_specialized_contract.rs:44:18
+   |
+44 | use serde_json::{Value, json};
+   |                  ^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "sand_auto_review_specialized_contract") generated 1 warning (run `cargo fix --test "sand_auto_review_specialized_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `resolve_sand_agent_dir`
+    --> tests/settings_service_contract.rs:1226:37
+     |
+1226 |         assert_valid_sand_agent_id, resolve_sand_agent_dir,
+     |                                     ^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `write_manifest_with_retry`
+  --> tests/box_store_manifest_frozen_parity_contract.rs:15:31
+   |
+15 |     serialize_manifest_bytes, write_manifest_with_retry,
+   |                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "box_store_manifest_frozen_parity_contract") generated 1 warning (run `cargo fix --test "box_store_manifest_frozen_parity_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: `mahayana-host-runtime` (test "settings_service_contract") generated 1 warning (run `cargo fix --test "settings_service_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `AgentActivity`
+ --> tests/run_lifecycle_activity_production_contract.rs:8:60
+  |
+8 | use mahayana_host_runtime::sand_activity::{ActivityUpdate, AgentActivity};
+  |                                                            ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "run_lifecycle_activity_production_contract") generated 1 warning (run `cargo fix --test "run_lifecycle_activity_production_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `Trigger`
+ --> tests/automations_cloud_sync_contract.rs:6:88
+  |
+6 |     Automation, AutomationWithOwner, CreateAutomationRequest, ListAutomationsResponse, Trigger,
+  |                                                                                        ^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "automations_cloud_sync_contract") generated 1 warning (run `cargo fix --test "automations_cloud_sync_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused imports: `SystemTime` and `UNIX_EPOCH`
+  --> tests/xuser_service_contract.rs:15:17
+   |
+15 | use std::time::{SystemTime, UNIX_EPOCH};
+   |                 ^^^^^^^^^^  ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "xuser_service_contract") generated 1 warning (run `cargo fix --test "xuser_service_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `LeaseGeneration`
+ --> tests/cloud_workers_extension_contract.rs:8:61
+  |
+8 |     CloudWorkerRuntimeIdentity, CloudWorkerMutationOutcome, LeaseGeneration, LeaseId,
+  |                                                             ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "cloud_workers_extension_contract") generated 1 warning (run `cargo fix --test "cloud_workers_extension_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `resolve_inbound_media_reference`
+ --> tests/openclaw_media_reference_contract.rs:7:39
+  |
+7 |     read_outbound_media_file_bounded, resolve_inbound_media_reference,
+  |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `MediaFact`, `has_staged_media_facts`, `is_meaningful_media_fact`, `is_video_media_fact`, `resolve_media_fact_kind`, `resolve_media_facts`, and `strip_legacy_media_context_fields`
+  --> tests/openclaw_media_reference_contract.rs:19:5
+   |
+19 |     has_staged_media_facts, is_image_media_fact, is_meaningful_media_fact,
+   |     ^^^^^^^^^^^^^^^^^^^^^^                       ^^^^^^^^^^^^^^^^^^^^^^^^
+20 |     is_video_media_fact, project_media_facts, read_persisted_media_facts,
+   |     ^^^^^^^^^^^^^^^^^^^
+21 |     resolve_media_fact_kind, resolve_media_facts, strip_legacy_media_context_fields,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+22 |     MediaFact,
+   |     ^^^^^^^^^
+
+warning: `mahayana-host-runtime` (test "openclaw_media_reference_contract") generated 2 warnings (run `cargo fix --test "openclaw_media_reference_contract" -p mahayana-host-runtime` to apply 2 suggestions)
+warning: unused import: `PathBuf`
+ --> tests/box_foundation_contract.rs:4:23
+  |
+4 | use std::path::{Path, PathBuf};
+  |                       ^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "box_foundation_contract") generated 1 warning (run `cargo fix --test "box_foundation_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused boxed `FnOnce` trait object that must be used
+   --> tests/inference_extension_composition_contract.rs:301:5
+    |
+301 |     runtime.on_model_experiment_applied(Arc::new(move || *counter.lock().unwrap() += 1));
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: closures are lazy and do nothing unless called
+    = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "inference_extension_composition_contract") generated 1 warning
+warning: unused import: `encode_connect_envelope`
+ --> tests/cursor_inference_transport_contract.rs:7:5
+  |
+7 |     encode_connect_envelope, encode_cursor_inference_request,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "cursor_inference_transport_contract") generated 1 warning (run `cargo fix --test "cursor_inference_transport_contract" -p mahayana-host-runtime` to apply 1 suggestion)
+warning: unused import: `UnregisteredChannelDeliveryPort`
+  --> tests/openclaw_channel_delivery_contract.rs:29:26
+   |
+29 |     HostChannelDelivery, UnregisteredChannelDeliveryPort,
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> tests/openclaw_channel_delivery_contract.rs:779:9
+    |
+779 |     let mut acl = ChannelAclGate {
+    |         ----^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variant `Failed` is never constructed
+   --> tests/openclaw_channel_delivery_contract.rs:627:5
+    |
+622 | enum DeliveryStatus {
+    |      -------------- variant in this enum
+...
+627 |     Failed,
+    |     ^^^^^^
+    |
+    = note: `DeliveryStatus` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-host-runtime` (test "openclaw_channel_delivery_contract") generated 3 warnings (run `cargo fix --test "openclaw_channel_delivery_contract" -p mahayana-host-runtime` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized] target(s) in 2m 00s

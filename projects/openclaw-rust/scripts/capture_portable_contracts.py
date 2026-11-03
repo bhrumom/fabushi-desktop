@@ -1127,7 +1127,10 @@ cases = [
         "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
         "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
         "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
-        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay"
+        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay",
+        "production_exec_service_preserves_http_status_reason_and_header_octets",
+        "production_exec_service_rejects_invalid_status_and_header_framing_before_result",
+        "production_exec_service_rejects_non_200_streaming_status_without_replay"
 ]),
     ("box-response-runner-bridge", base + ["--test","runner_box_tool_composition_contract","--","--test-threads=1"], [
         "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",

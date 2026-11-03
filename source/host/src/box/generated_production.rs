@@ -1616,15 +1616,27 @@ fn is_http_token(byte: u8) -> bool {
             | b'-' | b'.' | b'^' | b'_' | 0x60 | b'|' | b'~')
 }
 
-fn parse_http_header_line(line: &str) -> Result<(&str, &str), ProductionBoxTransportError> {
-    let (name, value) = line.split_once(':')
+fn parse_http_header_line(
+    line: &[u8],
+) -> Result<(&[u8], &[u8]), ProductionBoxTransportError> {
+    let colon = line.iter().position(|byte| *byte == b':')
         .ok_or_else(|| invalid_exec_response("returned a malformed HTTP header"))?;
-    if name.is_empty() || !name.bytes().all(is_http_token)
-        || value.bytes().any(|byte| (byte < b' ' && byte != b'\t') || byte == 0x7f)
+    let name = &line[..colon];
+    let mut value = &line[colon + 1..];
+    if name.is_empty() || !name.iter().all(|byte| is_http_token(*byte))
+        || value.iter().any(|byte| (*byte < b' ' && *byte != b'\t') || *byte == 0x7f)
     {
         return Err(invalid_exec_response("returned a malformed HTTP header"));
     }
-    Ok((name, value.trim_matches(|character| character == ' ' || character == '\t')))
+    // Ordinary field values are octets, including obs-text. Only framing
+    // consumers below interpret their values; trim HTTP OWS without UTF-8.
+    while value.first().is_some_and(|byte| matches!(*byte, b' ' | b'\t')) {
+        value = &value[1..];
+    }
+    while value.last().is_some_and(|byte| matches!(*byte, b' ' | b'\t')) {
+        value = &value[..value.len() - 1];
+    }
+    Ok((name, value))
 }
 
 fn read_http_line<'a>(
@@ -1773,28 +1785,37 @@ fn decode_exec_http_response(
         .ok_or_else(|| invalid_exec_response("returned incomplete HTTP headers"))?;
     let body_start = header_end.checked_add(4)
         .ok_or_else(|| invalid_exec_response("HTTP header length overflow"))?;
-    let header_text = std::str::from_utf8(&response[..header_end])
-        .map_err(|_| invalid_exec_response("returned non-UTF-8 HTTP headers"))?;
-    let mut lines = header_text.split("\r\n");
-    let status_line = lines.next().unwrap_or_default();
-    let mut status_parts = status_line.splitn(3, ' ');
+    let headers = &response[..body_start];
+    let mut cursor = 0;
+    let status_line = read_http_line(headers, &mut cursor)?;
+    let mut status_parts = status_line.splitn(3, |byte| *byte == b' ');
     let version = status_parts.next().unwrap_or_default();
     let status_text = status_parts.next().unwrap_or_default();
-    if !matches!(version, "HTTP/1.1" | "HTTP/1.0")
-        || status_text.len() != 3 || !status_text.bytes().all(|byte| byte.is_ascii_digit())
-        || status_line.bytes().any(|byte| byte < b' ' || byte == 0x7f)
+    // The second SP is mandatory even when the optional reason is empty.
+    let reason = status_parts.next()
+        .ok_or_else(|| invalid_exec_response("returned an invalid HTTP status line"))?;
+    if (version != b"HTTP/1.1" && version != b"HTTP/1.0")
+        || status_text.len() != 3 || !status_text.iter().all(|byte| byte.is_ascii_digit())
+        || reason.iter().any(|byte| (*byte < b' ' && *byte != b'\t') || *byte == 0x7f)
     {
         return Err(invalid_exec_response("returned an invalid HTTP status line"));
     }
-    let status = status_text.parse::<u16>()
-        .map_err(|_| invalid_exec_response("returned an invalid HTTP status"))?;
+    let status = status_text.iter().fold(0u16, |value, byte| {
+        value * 10 + u16::from(*byte - b'0')
+    });
     let mut content_length = None;
     let mut chunked = false;
-    for line in lines {
+    loop {
+        let line = read_http_line(headers, &mut cursor)?;
+        if line.is_empty() {
+            break;
+        }
         let (name, value) = parse_http_header_line(line)?;
-        if name.eq_ignore_ascii_case("content-length") {
+        if name.eq_ignore_ascii_case(b"content-length") {
             // HTTP allows a repeated identical length. Conflicting values and
             // transfer-encoding plus length are rejected before body decoding.
+            let value = std::str::from_utf8(value)
+                .map_err(|_| invalid_exec_response("returned an invalid Content-Length"))?;
             for value in value.split(',') {
                 let value = value.trim_matches(|character| character == ' ' || character == '\t');
                 if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
@@ -1807,8 +1828,11 @@ fn decode_exec_http_response(
                 }
                 content_length = Some(length);
             }
-        } else if name.eq_ignore_ascii_case("transfer-encoding") {
-            if chunked || !value.eq_ignore_ascii_case("chunked") {
+        } else if name.eq_ignore_ascii_case(b"transfer-encoding") {
+            if version == b"HTTP/1.0" {
+                return Err(invalid_exec_response("returned Transfer-Encoding in an HTTP/1.0 response"));
+            }
+            if chunked || !value.eq_ignore_ascii_case(b"chunked") {
                 return Err(invalid_exec_response("returned unsupported or ambiguous Transfer-Encoding"));
             }
             chunked = true;
@@ -1826,7 +1850,7 @@ fn decode_exec_http_response(
     } else {
         raw_body.to_vec()
     };
-    if !(200..300).contains(&status) {
+    if status != 200 {
         let body = String::from_utf8_lossy(&response_body).chars().take(512).collect();
         return Err(ProductionBoxTransportError::HttpStatus { status, body });
     }

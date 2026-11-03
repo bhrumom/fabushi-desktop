@@ -1,0 +1,34 @@
+{
+  "schema": "ocrm-root-review-decisions-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 6,
+  "subject": "18b6ae51a5a091196e2e4747b21e044f30d6f072",
+  "tree": "afe86288092af3ea7591375812fb414fe0f4bf9b",
+  "original_base": "b35408891546694606ed0750c60af0302669aac9",
+  "findings": [
+    {
+      "id": "BXR-COUNTED-ACCEPT-MODE-002",
+      "reviewer": "/root/bxr_r6_security",
+      "severity": "P2",
+      "blocking": true,
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "path": "source/host/tests/box_generated_production_contract.rs",
+      "symbols": [
+        "production_exec_service_never_replays_a_request_after_lost_completion",
+        "with_counted_complete_exec_reply",
+        "read_request"
+      ],
+      "scenario": "Both counted fixtures accept from nonblocking listeners and read_request immediately expects blocking reads. On Darwin an accepted stream inherits the nonblocking mode, so a connection accepted before the client's first or complete write returns WouldBlock and panics before the intended protocol/consumer assertion. The macos-15 whole-Host validation path includes these tests.",
+      "rationale": "Root re-read both accept branches, the complete shared request reader, the R6 HTTP helper and the existing macOS whole-Host workflow step. This is a concrete retained-scope oracle defect; it is not an observed Actions failure or a production socket defect. The earlier R5 P3 decision only normalized the newly added HTTP helper; this finding identifies two additional original-scope callers and does not reverse that decision.",
+      "change": "Normalize TcpStream to blocking at the start of the existing read_request helper, before its five-second read timeout and first read. Remove the now-redundant HTTP helper-only normalization. Retain every required test, bounded reads, complete response/control data, request-count and one-wrapper assertions.",
+      "scope": "Same original nineteen-path scope, one test file fix delta; no new production path or runtime owner.",
+      "platform_contract": "https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/accept.2.html",
+      "review_boundary": "Fresh blind focused R7 review of delta and all affected reader/caller contexts with complete original scope retained; exact-H Actions still required."
+    }
+  ],
+  "general_terminal": "One P2 fixture finding; no other finding in focused lock/capture or retained custody boundaries.",
+  "structure_terminal": "Pending; this records the accepted general finding before the edit.",
+  "all_global_flags_remain_false": true
+}

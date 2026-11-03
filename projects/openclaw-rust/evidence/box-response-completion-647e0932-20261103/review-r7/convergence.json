@@ -1,0 +1,86 @@
+{
+  "schema": "ocrm-source-review-convergence-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "BXR-v1.3/BXR-HTTP-v1/BXR-LOCK-v1",
+  "reviewRound": 7,
+  "originalBase": "b35408891546694606ed0750c60af0302669aac9",
+  "reviewCommit": "6b50b2ab25983350a1dc6970007deb20b0384993",
+  "reviewTree": "03418383ca41504587099f4f88005582fcb2e56c",
+  "manifestBlob": "06fce34e8b02da161f761b2293bd381a40ecc312",
+  "verdict": "SOURCE APPROVED; exact integration execution pending",
+  "reviews": [
+    {
+      "agent": "/root/bxr_r7_general",
+      "lens": "general/correctness/lifetime/security",
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "interfaceApplied": true,
+      "hiddenRuntimeAttestation": false,
+      "terminal": "NO FINDINGS",
+      "fullTerminalResultReadByRoot": true,
+      "depth": "Deep edited reader, all eleven direct callers/counting fixtures and relevant affected product/custody context; generated lock and source/evidence declarations reviewed at their contracts."
+    },
+    {
+      "agent": "/root/bxr_r7_structure",
+      "lens": "reuse/structure/performance",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "xhigh",
+      "interfaceApplied": true,
+      "hiddenRuntimeAttestation": false,
+      "terminal": "NO_FINDINGS",
+      "fullTerminalResultReadByRoot": true,
+      "depth": "Deep edited reader/all eleven callers and socket/capture consumers; remaining original nineteen-path scope retained as ownership/diff/contract context, not a new full deep read of every original function."
+    }
+  ],
+  "retainedRounds": [
+    {
+      "round": 5,
+      "subject": "d237b9e160c2c200fb72676d785b301fbe88c48f",
+      "manifestBlob": "173a26f03e0e9ce48aabcd0fab7328c5033e935e",
+      "general": "APPROVE / no findings",
+      "structure": "APPROVE with P3 non-blocking accepted-stream fixture normalization; incorporated in independently necessary R6 lock-input round",
+      "decisionBlob": "4816dc5078ebcedf17479e9ca871f8d7339b2206"
+    },
+    {
+      "round": 6,
+      "subject": "18b6ae51a5a091196e2e4747b21e044f30d6f072",
+      "manifestBlob": "b5d37abae238c26466e646caa65bf9037e056750",
+      "general": "P2 two retained counted fixtures miss accepted-stream normalization",
+      "structure": "APPROVED / no findings",
+      "preEditDecisionBlob": "b8be8295fbc8ddfec67868a4e9b46dee6af72637",
+      "decision": "FIX; central read_request normalization covers all eleven callers, retains timeouts and assertions"
+    }
+  ],
+  "sourceChanges": {
+    "codec": "18ada294465dd3f7defa6772fa05858ecb2fbea8",
+    "test": "6229f45116b8db70c9c061ecd76b6edfcb6044d5",
+    "capture": "7df804754b8fc9cb5578c792657d7c477b1b2e72",
+    "sourceContract": "5fa65e8137a39207e7acdc07ed761041a4d1d5f0",
+    "producerLock": "114bb8122dd6eefd7ca569b7391ec72d1fecc561"
+  },
+  "integration": {
+    "base": "550909022eba44eb9326d760f8c33d613b40a7bb",
+    "baseTree": "1b38ddab6958a2d091193e5834160fc296d91919",
+    "sourceU": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "sharedFiles": "Preserve existing workflow355aff835d1d18f3e3d68e704591bf71f75d16ce and all incoming MCP/native/local-exec work; ledger/RTM only append historical BXR execution evidence references.",
+    "incomingMcpPaths": "Five unrelated MCP Skills/Session/workflow-store paths from9864d1 to550909 are preserved. Separate source integration assessment identified lock/read-oracle and refresh-availability questions; this source checkpoint does not approve them."
+  },
+  "execution": {
+    "candidate": "not-run",
+    "checkpointSkipCiReason": "Save the converged Box source and historical H14e evidence while a concrete incoming shared Host contract is assessed/repaired; freeze the combined candidate before one affected Actions campaign. No gate removal, acceptance upgrade or retry-to-green.",
+    "requiredDirectCases": 8,
+    "requiredPositiveNames": 77,
+    "codecNames": 44,
+    "downstreamCustodyNames": 14,
+    "requiredProducer": "tracked exact lock, actual --locked build, actual daemon Shell/text/binary roundtrip, same input/lock/binary before and after",
+    "historicalEvidenceSubject": "14e637798b7c76c8530f9a3710051461f793924f",
+    "historicalEvidence": "execution-r1/assessment.json is only the old74-name scope; it cannot accept these later changes."
+  },
+  "limits": [
+    "No local or htch execution.",
+    "No external provider/device/platform/package acceptance.",
+    "No new owner, replay, successful unknown settlement or generated-origin grant.",
+    "Fixed-U recursive security/legal closure and all project completion predicates remain open."
+  ]
+}

@@ -261,6 +261,9 @@ fn raw_resource_element(field_number: u32, protobuf_result: &[u8]) -> Vec<u8> {
 }
 
 fn read_request(stream: &mut TcpStream) -> Vec<u8> {
+    // Accepted sockets can inherit a listener's nonblocking mode on macOS.
+    // Every caller needs a complete request with the bounded read below.
+    stream.set_nonblocking(false).expect("blocking request stream");
     stream
         .set_read_timeout(Some(Duration::from_secs(5)))
         .expect("read timeout");
@@ -1721,7 +1724,11 @@ fn production_exec_service_rejects_incomplete_or_ambiguous_http_framing() {
     let mut cases = vec![
         ("truncated HTTP headers", b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\n".to_vec()),
         ("invalid status", b"HTTP/1.1 bad OK\r\n\r\n".to_vec()),
-        ("non-UTF-8 headers", b"HTTP/1.1 200 OK\r\nX-Test: \xff\r\n\r\n".to_vec()),
+        ("non-ASCII Content-Length with complete Connect body", {
+            let mut response = b"HTTP/1.1 200 OK\r\nContent-Length: \xff\r\n\r\n".to_vec();
+            response.extend_from_slice(&body);
+            response
+        }),
         ("short declared length", http_response(&format!("Content-Length: {}\r\n", body.len() - 1), &body)),
         ("long declared length", http_response(&format!("Content-Length: {}\r\n", body.len() + 1), &body)),
         ("conflicting lengths", http_response(&format!("Content-Length: {}\r\nContent-Length: 0\r\n", body.len()), &body)),
@@ -2726,6 +2733,177 @@ fn forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch
                 "{mode}, {scenario}: preserve the specific typed-field cause: {error:?}");
             assert_eq!(pending.load(Ordering::SeqCst), 0,
                 "{mode}, {scenario}: malformed refusal cannot register background work");
+        }
+    }
+}
+
+
+// Header admission and status tests must carry an otherwise valid response.
+// Keep accepting until the accessor returns so an unexpected replay is counted.
+fn bxr_shell_with_counted_http_response(
+    reply: impl Fn(&[u8]) -> Vec<u8> + Send + 'static,
+) -> Result<ProductionShellResult, ProductionBoxExecError> {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind HTTP contract peer");
+    listener.set_nonblocking(true).expect("nonblocking HTTP contract peer");
+    let port = listener.local_addr().expect("HTTP contract peer address").port();
+    let finished = Arc::new(AtomicBool::new(false));
+    let requests = Arc::new(AtomicUsize::new(0));
+    let server_finished = Arc::clone(&finished);
+    let server_requests = Arc::clone(&requests);
+    let server = thread::spawn(move || {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            assert!(Instant::now() < deadline, "HTTP contract peer timed out");
+            match listener.accept() {
+                Ok((mut stream, _)) => {
+                    stream.set_write_timeout(Some(Duration::from_secs(5)))
+                        .expect("HTTP contract write timeout");
+                    let identity = exec_request_identity(&read_request(&mut stream));
+                    let ordinal = server_requests.fetch_add(1, Ordering::SeqCst);
+                    assert_eq!(identity.id, ordinal as u64, "actual sequential request identity");
+                    assert!(identity.exec_id.is_empty(), "actual empty execution identity");
+                    let element = echo_response_identity(
+                        &shell_success_element_with_output("http-stdout", "http-stderr"),
+                        &identity,
+                    );
+                    let body = complete_connect_body(&[element], identity.id);
+                    stream.write_all(&reply(&body)).expect("write HTTP contract response");
+                    stream.flush().expect("flush HTTP contract response");
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    if server_finished.load(Ordering::SeqCst) {
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(1));
+                }
+                Err(error) => panic!("HTTP contract peer failed: {error}"),
+            }
+        }
+    });
+    let environment = ProductionBoxEnvironment::new("127.0.0.1", port, "secret");
+    let result = environment.remote_resource_accessor()
+        .execute_shell_result(&(), bxr_shell_args());
+    finished.store(true, Ordering::SeqCst);
+    server.join().expect("HTTP contract peer");
+    assert_eq!(requests.load(Ordering::SeqCst), 1,
+        "an HTTP admission/status result must not replay the dispatched request");
+    result
+}
+
+#[test]
+fn production_exec_service_preserves_http_status_reason_and_header_octets() {
+    for (scenario, prefix, declared_length) in [
+        ("empty reason with mandatory SP", b"HTTP/1.1 200 \r\n".as_slice(), true),
+        ("SP reason", b"HTTP/1.1 200  \r\n".as_slice(), true),
+        ("HTAB in reason", b"HTTP/1.1 200 \tOK\t \r\n".as_slice(), true),
+        ("obs-text in reason", b"HTTP/1.1 200 \x80\xff OK\r\n".as_slice(), true),
+        ("opaque header obs-text and HTAB",
+            b"HTTP/1.1 200 OK\r\nX-Opaque: \xff\x80\tvalue\t \r\n".as_slice(), true),
+        ("HTTP/1.0 Content-Length", b"HTTP/1.0 200 OK\r\n".as_slice(), true),
+        ("HTTP/1.0 close-delimited", b"HTTP/1.0 200 OK\r\n".as_slice(), false),
+    ] {
+        let result = bxr_shell_with_counted_http_response(move |body| {
+            let mut response = prefix.to_vec();
+            response.extend_from_slice(format!(
+                "Content-Type: {CONNECT_STREAM_CONTENT_TYPE}\r\nConnection: close\r\n"
+            ).as_bytes());
+            if declared_length {
+                response.extend_from_slice(format!("Content-Length: {}\r\n", body.len()).as_bytes());
+            }
+            response.extend_from_slice(b"\r\n");
+            response.extend_from_slice(body);
+            response
+        }).expect(scenario);
+        assert_eq!(result, ProductionShellResult::Success {
+            exit_code: 0, stdout: "http-stdout".into(), stderr: "http-stderr".into(),
+        }, "{scenario}: legal HTTP octets must preserve the complete operation result");
+    }
+}
+
+#[test]
+fn production_exec_service_rejects_invalid_status_and_header_framing_before_result() {
+    for (scenario, prefix, chunked) in [
+        ("missing status/reason SP", b"HTTP/1.1 200\r\n".as_slice(), false),
+        ("bare CR in reason", b"HTTP/1.1 200 OK\rX\r\n".as_slice(), false),
+        ("bare LF in reason", b"HTTP/1.1 200 OK\nX\r\n".as_slice(), false),
+        ("NUL in reason", b"HTTP/1.1 200 OK\0\r\n".as_slice(), false),
+        ("DEL in reason", b"HTTP/1.1 200 OK\x7f\r\n".as_slice(), false),
+        ("other control in reason", b"HTTP/1.1 200 OK\x0b\r\n".as_slice(), false),
+        ("space in header name", b"HTTP/1.1 200 OK\r\nBad Name: value\r\n".as_slice(), false),
+        ("non-ASCII header name", b"HTTP/1.1 200 OK\r\nX-\xff: value\r\n".as_slice(), false),
+        ("empty header name", b"HTTP/1.1 200 OK\r\n: value\r\n".as_slice(), false),
+        ("missing header colon", b"HTTP/1.1 200 OK\r\nX-Test value\r\n".as_slice(), false),
+        ("whitespace before header colon",
+            b"HTTP/1.1 200 OK\r\nX-Test : value\r\n".as_slice(), false),
+        ("obsolete folded header", b"HTTP/1.1 200 OK\r\n X-Test: value\r\n".as_slice(), false),
+        ("bare CR in header value", b"HTTP/1.1 200 OK\r\nX-Test: one\rtwo\r\n".as_slice(), false),
+        ("bare LF in header value", b"HTTP/1.1 200 OK\r\nX-Test: one\ntwo\r\n".as_slice(), false),
+        ("NUL in header value", b"HTTP/1.1 200 OK\r\nX-Test: one\0two\r\n".as_slice(), false),
+        ("DEL in header value", b"HTTP/1.1 200 OK\r\nX-Test: one\x7ftwo\r\n".as_slice(), false),
+        ("other control in header value",
+            b"HTTP/1.1 200 OK\r\nX-Test: one\x0btwo\r\n".as_slice(), false),
+        ("non-ASCII Content-Length",
+            b"HTTP/1.1 200 OK\r\nContent-Length: \xff\r\n".as_slice(), false),
+        ("non-ASCII Transfer-Encoding",
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: \xff\r\n".as_slice(), false),
+        ("HTTP/1.0 Transfer-Encoding",
+            b"HTTP/1.0 200 OK\r\nTransfer-Encoding: chunked\r\n".as_slice(), true),
+    ] {
+        let error = bxr_shell_with_counted_http_response(move |body| {
+            let mut response = prefix.to_vec();
+            response.extend_from_slice(format!(
+                "Content-Type: {CONNECT_STREAM_CONTENT_TYPE}\r\nConnection: close\r\n\r\n"
+            ).as_bytes());
+            if chunked {
+                response.extend_from_slice(format!("{:X}\r\n", body.len()).as_bytes());
+                response.extend_from_slice(body);
+                response.extend_from_slice(b"\r\n0\r\n\r\n");
+            } else {
+                response.extend_from_slice(body);
+            }
+            response
+        }).expect_err(scenario);
+        assert!(error.outcome_unknown(), "{scenario}: {error:?}");
+        match error {
+            ProductionBoxExecError::Remote(BoxRemoteExecError::Transport(
+                ProductionBoxTransportError::ExecutionOutcomeUnknown(cause),
+            )) => assert!(
+                matches!(*cause, ProductionBoxTransportError::InvalidHttpResponse(_)),
+                "{scenario}: require one uncertainty wrapper around the framing cause: {cause:?}"
+            ),
+            other => panic!("{scenario}: expected post-write framing uncertainty, got {other:?}"),
+        }
+    }
+}
+
+#[test]
+fn production_exec_service_rejects_non_200_streaming_status_without_replay() {
+    let expected_body = String::from_utf8_lossy(&complete_connect_body(&[
+        shell_success_element_with_output("http-stdout", "http-stderr"),
+    ], 0)).into_owned();
+    for status in [201u16, 202, 204, 206, 299, 301, 400, 401, 429, 500, 503] {
+        let error = bxr_shell_with_counted_http_response(move |body| {
+            let mut response = format!(
+                "HTTP/1.1 {status} Status Contract\r\nContent-Type: {CONNECT_STREAM_CONTENT_TYPE}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len(),
+            ).into_bytes();
+            response.extend_from_slice(body);
+            response
+        }).expect_err("only HTTP 200 may complete an Exec streaming response");
+        assert!(error.outcome_unknown(), "status {status}: {error:?}");
+        match error {
+            ProductionBoxExecError::Remote(BoxRemoteExecError::Transport(
+                ProductionBoxTransportError::ExecutionOutcomeUnknown(cause),
+            )) => match *cause {
+                ProductionBoxTransportError::HttpStatus { status: actual, body } => {
+                    assert_eq!(actual, status, "preserve the original HTTP status");
+                    assert_eq!(body, expected_body, "status {status}: retain the response detail");
+                }
+                other => panic!(
+                    "status {status}: require one uncertainty wrapper around HttpStatus, got {other:?}"
+                ),
+            },
+            other => panic!("status {status}: expected post-write HTTP status uncertainty, got {other:?}"),
         }
     }
 }

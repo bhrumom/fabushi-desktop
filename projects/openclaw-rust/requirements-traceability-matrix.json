@@ -1417,7 +1417,8 @@
         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
         "docs/specs/g11-box-browser-wire-completion.md",
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/scripts/capture_portable_contracts.py"
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -2969,7 +2970,8 @@
         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
         "docs/specs/g11-box-browser-wire-completion.md",
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/scripts/capture_portable_contracts.py"
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",

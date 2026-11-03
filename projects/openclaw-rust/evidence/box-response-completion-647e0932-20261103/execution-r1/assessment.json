@@ -1,0 +1,1779 @@
+{
+  "schema": "ocrm-scoped-execution-assessment-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "BXR-v1.3",
+  "assessment": "APPROVED selected Linux controlled/actual-owned-producer execution only",
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "14e637798b7c76c8530f9a3710051461f793924f",
+    "tree": "adf36943502425c4a18e9dd04b359efdb5ef6c8f"
+  },
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "campaign": {
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "run": 41597864483,
+    "attempt": 1,
+    "job": 125789361548,
+    "job_name": "sqlite-native-path",
+    "conclusion": "success",
+    "completed_at": "2026-11-03T08:21:29Z",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41597864483/job/125789361548",
+    "platform": "Ubuntu24.04 x86_64",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "command_cwd": "repository root",
+    "inherited_environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    }
+  },
+  "source_authority": {
+    "assessment": "source-assessment.json",
+    "source_run": 41597864548,
+    "source_job": 125789360123,
+    "scope": "Fixed-U tracked identity and G02 structural evidence only; not recursive semantic/legal closure."
+  },
+  "proof_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
+  "direct_cases": [
+    {
+      "case": "box-response-manager",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "box_remote_accessor_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "child_environment_overrides": {
+        "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+      },
+      "observed_raw_passed_test_names": [
+        "box_remote_accessor_builds_authenticated_binary_http11_transport",
+        "box_remote_accessor_classifies_ping_failures_and_latency_like_grok",
+        "box_remote_exec_manager_allocates_ids_filters_control_and_surfaces_remote_throw",
+        "box_remote_exec_manager_default_throw_id_is_only_request_zero",
+        "box_remote_exec_manager_foreign_throw_cannot_become_remote_error",
+        "box_remote_exec_manager_preserves_ordered_data_and_heartbeat_before_close",
+        "box_remote_exec_manager_preserves_transport_loss_without_replay_or_id_reuse",
+        "box_remote_exec_manager_requires_matching_data_and_control_identity",
+        "box_remote_exec_manager_requires_one_final_stream_close",
+        "box_remote_resource_accessor_composes_transport_client_and_manager"
+      ],
+      "execution_error": null,
+      "required_positive_names": [
+        "box_remote_accessor_builds_authenticated_binary_http11_transport",
+        "box_remote_accessor_classifies_ping_failures_and_latency_like_grok",
+        "box_remote_exec_manager_allocates_ids_filters_control_and_surfaces_remote_throw",
+        "box_remote_resource_accessor_composes_transport_client_and_manager",
+        "box_remote_exec_manager_preserves_ordered_data_and_heartbeat_before_close",
+        "box_remote_exec_manager_requires_matching_data_and_control_identity",
+        "box_remote_exec_manager_requires_one_final_stream_close",
+        "box_remote_exec_manager_default_throw_id_is_only_request_zero",
+        "box_remote_exec_manager_foreign_throw_cannot_become_remote_error",
+        "box_remote_exec_manager_preserves_transport_loss_without_replay_or_id_reuse"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "observed_passed_test_names": [
+        "box_remote_accessor_builds_authenticated_binary_http11_transport",
+        "box_remote_accessor_classifies_ping_failures_and_latency_like_grok",
+        "box_remote_exec_manager_allocates_ids_filters_control_and_surfaces_remote_throw",
+        "box_remote_exec_manager_default_throw_id_is_only_request_zero",
+        "box_remote_exec_manager_foreign_throw_cannot_become_remote_error",
+        "box_remote_exec_manager_preserves_ordered_data_and_heartbeat_before_close",
+        "box_remote_exec_manager_preserves_transport_loss_without_replay_or_id_reuse",
+        "box_remote_exec_manager_requires_matching_data_and_control_identity",
+        "box_remote_exec_manager_requires_one_final_stream_close",
+        "box_remote_resource_accessor_composes_transport_client_and_manager"
+      ],
+      "summaries_passed_failed_ignored": [
+        [
+          10,
+          0,
+          0
+        ]
+      ],
+      "complete_summaries": [
+        [
+          10,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "oracle_accepted": true,
+      "log": "box-response-manager.log",
+      "log_sha256": "8da5e42a55bcf6c00269dd649e233c942b022b8f6ba85dc79b21819ef22c81d6"
+    },
+    {
+      "case": "box-response-codec",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "box_generated_production_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "child_environment_overrides": {
+        "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+      },
+      "observed_raw_passed_test_names": [
+        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
+        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay",
+        "forever_box_runner_resource_port_background_spawn_registers_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_keeps_no_monitor_as_pre_dispatch_refusal",
+        "forever_box_runner_resource_port_positive_block_backgrounds_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_preserves_unknown_missing_terminal_and_invalid_background_id",
+        "forever_box_runner_resource_port_preserves_unknown_shell_read_write_and_background_outcomes",
+        "forever_box_runner_resource_port_reuses_authenticated_shipping_exec_service_for_turn",
+        "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata",
+        "forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch",
+        "production_exec_service_accepts_default_identity_and_nonzero_sequential_echo",
+        "production_exec_service_accepts_valid_chunk_extensions_trailers_and_length_or_close_delimiting",
+        "production_exec_service_all_one_shot_accessors_require_one_expected_result",
+        "production_exec_service_background_shell_spawn_uses_frozen_field_16_and_real_shell_id",
+        "production_exec_service_computer_use_has_remote_and_no_monitor_paths",
+        "production_exec_service_decodes_metadata_on_both_sides_of_exec_and_shell_payloads",
+        "production_exec_service_distinguishes_pre_write_refusal_and_local_guards_from_unknown",
+        "production_exec_service_does_not_accept_omitted_zero_identity_for_a_nonzero_request",
+        "production_exec_service_never_replays_a_request_after_lost_completion",
+        "production_exec_service_preserves_binary_read_bytes_with_complete_identity_and_framing",
+        "production_exec_service_preserves_ordered_shell_stream_and_rejects_mixed_operations",
+        "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
+        "production_exec_service_preserves_shell_stdout_for_internal_consumers",
+        "production_exec_service_preserves_valid_repeated_typed_fields_and_last_values",
+        "production_exec_service_reads_through_protected_shipping_accessor",
+        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results",
+        "production_exec_service_rejects_foreign_data_exec_id_heartbeat_close_and_throw",
+        "production_exec_service_rejects_incomplete_or_ambiguous_http_framing",
+        "production_exec_service_rejects_invalid_control_identity_and_multiple_control_cases",
+        "production_exec_service_rejects_malformed_identity_metadata_and_ambiguous_oneofs",
+        "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
+        "production_exec_service_rejects_out_of_range_direct_client_id_before_connect",
+        "production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once",
+        "production_exec_service_rejects_shadowed_uint32_overflow_once",
+        "production_exec_service_requires_exactly_one_close_after_data",
+        "production_exec_service_requires_one_legal_final_connect_end",
+        "production_exec_service_retains_matching_throw_and_connect_error_details",
+        "production_exec_service_shell_stream_uses_frozen_field_14_and_real_backgrounded_wire",
+        "production_exec_service_streams_shell_and_write_through_shipping_accessor",
+        "production_exec_service_wraps_post_write_status_and_eof_once_with_original_cause",
+        "production_loopback_factory_gates_exec_accessor_on_authenticated_readiness"
+      ],
+      "execution_error": null,
+      "required_positive_names": [
+        "production_exec_service_background_shell_spawn_uses_frozen_field_16_and_real_shell_id",
+        "production_exec_service_preserves_shell_stdout_for_internal_consumers",
+        "production_exec_service_streams_shell_and_write_through_shipping_accessor",
+        "production_loopback_factory_gates_exec_accessor_on_authenticated_readiness",
+        "production_exec_service_reads_through_protected_shipping_accessor",
+        "production_exec_service_computer_use_has_remote_and_no_monitor_paths",
+        "production_exec_service_shell_stream_uses_frozen_field_14_and_real_backgrounded_wire",
+        "forever_box_runner_resource_port_background_spawn_registers_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_positive_block_backgrounds_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_reuses_authenticated_shipping_exec_service_for_turn",
+        "production_exec_service_accepts_default_identity_and_nonzero_sequential_echo",
+        "production_exec_service_decodes_metadata_on_both_sides_of_exec_and_shell_payloads",
+        "production_exec_service_preserves_binary_read_bytes_with_complete_identity_and_framing",
+        "production_exec_service_accepts_valid_chunk_extensions_trailers_and_length_or_close_delimiting",
+        "production_exec_service_retains_matching_throw_and_connect_error_details",
+        "production_exec_service_rejects_malformed_identity_metadata_and_ambiguous_oneofs",
+        "production_exec_service_rejects_foreign_data_exec_id_heartbeat_close_and_throw",
+        "production_exec_service_does_not_accept_omitted_zero_identity_for_a_nonzero_request",
+        "production_exec_service_requires_exactly_one_close_after_data",
+        "production_exec_service_requires_one_legal_final_connect_end",
+        "production_exec_service_rejects_incomplete_or_ambiguous_http_framing",
+        "production_exec_service_all_one_shot_accessors_require_one_expected_result",
+        "production_exec_service_preserves_ordered_shell_stream_and_rejects_mixed_operations",
+        "production_exec_service_distinguishes_pre_write_refusal_and_local_guards_from_unknown",
+        "production_exec_service_rejects_out_of_range_direct_client_id_before_connect",
+        "production_exec_service_wraps_post_write_status_and_eof_once_with_original_cause",
+        "production_exec_service_never_replays_a_request_after_lost_completion",
+        "forever_box_runner_resource_port_preserves_unknown_shell_read_write_and_background_outcomes",
+        "forever_box_runner_resource_port_preserves_unknown_missing_terminal_and_invalid_background_id",
+        "forever_box_runner_resource_port_keeps_no_monitor_as_pre_dispatch_refusal",
+        "production_exec_service_rejects_invalid_control_identity_and_multiple_control_cases",
+        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results",
+        "production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once",
+        "production_exec_service_rejects_shadowed_uint32_overflow_once",
+        "production_exec_service_preserves_valid_repeated_typed_fields_and_last_values",
+        "forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch",
+        "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata",
+        "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
+        "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
+        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
+        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "observed_passed_test_names": [
+        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
+        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay",
+        "forever_box_runner_resource_port_background_spawn_registers_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_keeps_no_monitor_as_pre_dispatch_refusal",
+        "forever_box_runner_resource_port_positive_block_backgrounds_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_preserves_unknown_missing_terminal_and_invalid_background_id",
+        "forever_box_runner_resource_port_preserves_unknown_shell_read_write_and_background_outcomes",
+        "forever_box_runner_resource_port_reuses_authenticated_shipping_exec_service_for_turn",
+        "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata",
+        "forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch",
+        "production_exec_service_accepts_default_identity_and_nonzero_sequential_echo",
+        "production_exec_service_accepts_valid_chunk_extensions_trailers_and_length_or_close_delimiting",
+        "production_exec_service_all_one_shot_accessors_require_one_expected_result",
+        "production_exec_service_background_shell_spawn_uses_frozen_field_16_and_real_shell_id",
+        "production_exec_service_computer_use_has_remote_and_no_monitor_paths",
+        "production_exec_service_decodes_metadata_on_both_sides_of_exec_and_shell_payloads",
+        "production_exec_service_distinguishes_pre_write_refusal_and_local_guards_from_unknown",
+        "production_exec_service_does_not_accept_omitted_zero_identity_for_a_nonzero_request",
+        "production_exec_service_never_replays_a_request_after_lost_completion",
+        "production_exec_service_preserves_binary_read_bytes_with_complete_identity_and_framing",
+        "production_exec_service_preserves_ordered_shell_stream_and_rejects_mixed_operations",
+        "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
+        "production_exec_service_preserves_shell_stdout_for_internal_consumers",
+        "production_exec_service_preserves_valid_repeated_typed_fields_and_last_values",
+        "production_exec_service_reads_through_protected_shipping_accessor",
+        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results",
+        "production_exec_service_rejects_foreign_data_exec_id_heartbeat_close_and_throw",
+        "production_exec_service_rejects_incomplete_or_ambiguous_http_framing",
+        "production_exec_service_rejects_invalid_control_identity_and_multiple_control_cases",
+        "production_exec_service_rejects_malformed_identity_metadata_and_ambiguous_oneofs",
+        "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
+        "production_exec_service_rejects_out_of_range_direct_client_id_before_connect",
+        "production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once",
+        "production_exec_service_rejects_shadowed_uint32_overflow_once",
+        "production_exec_service_requires_exactly_one_close_after_data",
+        "production_exec_service_requires_one_legal_final_connect_end",
+        "production_exec_service_retains_matching_throw_and_connect_error_details",
+        "production_exec_service_shell_stream_uses_frozen_field_14_and_real_backgrounded_wire",
+        "production_exec_service_streams_shell_and_write_through_shipping_accessor",
+        "production_exec_service_wraps_post_write_status_and_eof_once_with_original_cause",
+        "production_loopback_factory_gates_exec_accessor_on_authenticated_readiness"
+      ],
+      "summaries_passed_failed_ignored": [
+        [
+          41,
+          0,
+          0
+        ]
+      ],
+      "complete_summaries": [
+        [
+          41,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "oracle_accepted": true,
+      "log": "box-response-codec.log",
+      "log_sha256": "25f08ac6a47e151b990d42b53801c573ad5dd30d6ca867811b4979028e55e29e"
+    },
+    {
+      "case": "box-response-runner-bridge",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "runner_box_tool_composition_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "child_environment_overrides": {
+        "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+      },
+      "observed_raw_passed_test_names": [
+        "runner_box_bridge_keeps_known_mcp_spill_refusal_inline_without_replay",
+        "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",
+        "runner_box_bridge_preserves_explicit_background_and_positive_block_until_semantics",
+        "runner_box_bridge_preserves_known_box_refusals",
+        "runner_box_bridge_preserves_unknown_box_execution_outcomes",
+        "runner_box_bridge_preserves_unknown_mcp_spill_write_without_replay",
+        "runner_box_bridge_preserves_upstream_dispatch_and_fails_closed_on_name_collision",
+        "runner_box_bridge_validates_model_arguments_before_host_resource_execution",
+        "runner_box_shell_review_fences_side_effect_before_resource_execution"
+      ],
+      "execution_error": null,
+      "required_positive_names": [
+        "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",
+        "runner_box_bridge_preserves_explicit_background_and_positive_block_until_semantics",
+        "runner_box_bridge_preserves_upstream_dispatch_and_fails_closed_on_name_collision",
+        "runner_box_bridge_validates_model_arguments_before_host_resource_execution",
+        "runner_box_shell_review_fences_side_effect_before_resource_execution",
+        "runner_box_bridge_preserves_unknown_box_execution_outcomes",
+        "runner_box_bridge_preserves_known_box_refusals",
+        "runner_box_bridge_preserves_unknown_mcp_spill_write_without_replay",
+        "runner_box_bridge_keeps_known_mcp_spill_refusal_inline_without_replay"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "observed_passed_test_names": [
+        "runner_box_bridge_keeps_known_mcp_spill_refusal_inline_without_replay",
+        "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",
+        "runner_box_bridge_preserves_explicit_background_and_positive_block_until_semantics",
+        "runner_box_bridge_preserves_known_box_refusals",
+        "runner_box_bridge_preserves_unknown_box_execution_outcomes",
+        "runner_box_bridge_preserves_unknown_mcp_spill_write_without_replay",
+        "runner_box_bridge_preserves_upstream_dispatch_and_fails_closed_on_name_collision",
+        "runner_box_bridge_validates_model_arguments_before_host_resource_execution",
+        "runner_box_shell_review_fences_side_effect_before_resource_execution"
+      ],
+      "summaries_passed_failed_ignored": [
+        [
+          9,
+          0,
+          0
+        ]
+      ],
+      "complete_summaries": [
+        [
+          9,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "oracle_accepted": true,
+      "log": "box-response-runner-bridge.log",
+      "log_sha256": "289f71e3f1a6ccb60988adf27aca44d75acf7bccdb764cc902bfd4efda6bb56f"
+    },
+    {
+      "case": "box-response-spill",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "large_output_spill_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "child_environment_overrides": {
+        "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+      },
+      "observed_raw_passed_test_names": [
+        "large_mcp_text_is_materialized_into_agent_box_once",
+        "small_error_and_failed_write_results_stay_inline",
+        "spill_policy_matches_frozen_threshold_disable_and_cap_contracts",
+        "unknown_spill_write_is_not_published_as_inline_success_or_retried"
+      ],
+      "execution_error": null,
+      "required_positive_names": [
+        "large_mcp_text_is_materialized_into_agent_box_once",
+        "small_error_and_failed_write_results_stay_inline",
+        "spill_policy_matches_frozen_threshold_disable_and_cap_contracts",
+        "unknown_spill_write_is_not_published_as_inline_success_or_retried"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "observed_passed_test_names": [
+        "large_mcp_text_is_materialized_into_agent_box_once",
+        "small_error_and_failed_write_results_stay_inline",
+        "spill_policy_matches_frozen_threshold_disable_and_cap_contracts",
+        "unknown_spill_write_is_not_published_as_inline_success_or_retried"
+      ],
+      "summaries_passed_failed_ignored": [
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "complete_summaries": [
+        [
+          4,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "oracle_accepted": true,
+      "log": "box-response-spill.log",
+      "log_sha256": "d0b85a810c51c077192b86ef83ac6e12838f7cebf8ff3f9e7415110e1d1c8864"
+    },
+    {
+      "case": "box-response-prompt-glue",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "runner_prompt_glue_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "child_environment_overrides": {
+        "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+      },
+      "observed_raw_passed_test_names": [
+        "glue_applies_single_large_output_spill_policy",
+        "glue_preserves_unknown_spill_and_disabled_policy_without_replay",
+        "glue_reuses_file_transfer_owner_and_prompt_collector_projection",
+        "live_owner_reads_mutable_prompt_inputs_at_phase_time",
+        "shipping_host_routes_mutable_prompt_surfaces_through_runner_owner"
+      ],
+      "execution_error": null,
+      "required_positive_names": [
+        "glue_reuses_file_transfer_owner_and_prompt_collector_projection",
+        "glue_applies_single_large_output_spill_policy",
+        "live_owner_reads_mutable_prompt_inputs_at_phase_time",
+        "shipping_host_routes_mutable_prompt_surfaces_through_runner_owner",
+        "glue_preserves_unknown_spill_and_disabled_policy_without_replay"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "observed_passed_test_names": [
+        "glue_applies_single_large_output_spill_policy",
+        "glue_preserves_unknown_spill_and_disabled_policy_without_replay",
+        "glue_reuses_file_transfer_owner_and_prompt_collector_projection",
+        "live_owner_reads_mutable_prompt_inputs_at_phase_time",
+        "shipping_host_routes_mutable_prompt_surfaces_through_runner_owner"
+      ],
+      "summaries_passed_failed_ignored": [
+        [
+          5,
+          0,
+          0
+        ]
+      ],
+      "complete_summaries": [
+        [
+          5,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "oracle_accepted": true,
+      "log": "box-response-prompt-glue.log",
+      "log_sha256": "669195d174964f8e0feef587fe5afde14057ce6c424e390779a385eec5c06774"
+    },
+    {
+      "case": "box-response-manager-exhaustion",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "child_environment_overrides": {
+        "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+      },
+      "observed_raw_passed_test_names": [
+        "r#box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
+      ],
+      "execution_error": null,
+      "required_positive_names": [
+        "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "observed_passed_test_names": [
+        "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
+      ],
+      "summaries_passed_failed_ignored": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "complete_summaries": [
+        [
+          1,
+          0,
+          0,
+          0,
+          733
+        ]
+      ],
+      "oracle_accepted": true,
+      "log": "box-response-manager-exhaustion.log",
+      "log_sha256": "4aa48495d36a2bd332c172397e260e1398c7667cf0e49c359982baa4a7293e80"
+    },
+    {
+      "case": "box-response-forever-box",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::forever_box::runner_tools::tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "child_environment_overrides": {
+        "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+      },
+      "observed_raw_passed_test_names": [
+        "extensions::forever_box::runner_tools::tests::computer_use_preserves_unknown_outcomes_from_incomplete_wire_completion",
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_failure_diagnostics",
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_stdout_for_navigation_probes"
+      ],
+      "execution_error": null,
+      "required_positive_names": [
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_stdout_for_navigation_probes",
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_failure_diagnostics",
+        "extensions::forever_box::runner_tools::tests::computer_use_preserves_unknown_outcomes_from_incomplete_wire_completion"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "observed_passed_test_names": [
+        "extensions::forever_box::runner_tools::tests::computer_use_preserves_unknown_outcomes_from_incomplete_wire_completion",
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_failure_diagnostics",
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_stdout_for_navigation_probes"
+      ],
+      "summaries_passed_failed_ignored": [
+        [
+          3,
+          0,
+          0
+        ]
+      ],
+      "complete_summaries": [
+        [
+          3,
+          0,
+          0,
+          0,
+          731
+        ]
+      ],
+      "oracle_accepted": true,
+      "log": "box-response-forever-box.log",
+      "log_sha256": "2227746967a612b45afdc274a37281fb75a9033daa11dc2ce605783e0b75ee68"
+    },
+    {
+      "case": "box-response-real-daemon",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "box_exec_daemon_process_contract",
+        "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion",
+        "--",
+        "--exact",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "child_environment_overrides": {
+        "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0",
+        "FABUSHI_BOX_EXEC_DAEMON_TEST_BIN": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/target/debug/box-exec-daemon"
+      },
+      "observed_raw_passed_test_names": [
+        "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+      ],
+      "execution_error": null,
+      "required_positive_names": [
+        "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "observed_passed_test_names": [
+        "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+      ],
+      "summaries_passed_failed_ignored": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "complete_summaries": [
+        [
+          1,
+          0,
+          0,
+          0,
+          3
+        ]
+      ],
+      "oracle_accepted": true,
+      "log": "box-response-real-daemon.log",
+      "log_sha256": "de4077c0595e8f3194d9b6bad9796d0ed5b9ef759971404daa456d8a84314bd4"
+    }
+  ],
+  "expected_direct_cases": 8,
+  "expected_required_positive_names": 74,
+  "newer_77_name_candidate_not_covered": true,
+  "reused_custody_case": {
+    "case": "codex-model-regressions",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--no-fail-fast",
+      "--test",
+      "settings_service_contract",
+      "--test",
+      "inference_extension_composition_contract",
+      "--test",
+      "inference_codex_direct_contract",
+      "--test",
+      "inference_provider_session_contract",
+      "--test",
+      "fabushi_model_identity_production_contract",
+      "--test",
+      "runner_effect_custody_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "child_environment_overrides": {},
+    "observed_raw_passed_test_names": [
+      "accepted_checkpoint_retry_accepts_same_context_token_rotation",
+      "accepted_checkpoint_retry_refuses_a_changed_fabushi_account",
+      "admitted_turn_summary_retains_fabushi_model_and_request_binding",
+      "direct_runner_retry_accepts_same_context_token_rotation",
+      "direct_runner_retry_refuses_a_changed_fabushi_account",
+      "persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization",
+      "same_runner_nudges_and_turn_memory_accept_same_context_token_rotation",
+      "same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account",
+      "checkpoint_model_identity_is_durable_and_cross_model_resume_fails_before_request",
+      "codex_direct_does_not_execute_mixed_or_undeclared_dsml_text",
+      "codex_direct_normalizes_strict_dsml_send_message_into_the_declared_tool",
+      "codex_direct_rejects_a_stream_without_terminal_completion",
+      "codex_direct_resumes_a_legacy_checkpoint_without_model_identity",
+      "codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint",
+      "codex_direct_stops_on_runner_cancellation_before_processing_more_stream_events",
+      "codex_direct_streams_text_executes_tools_and_continues_the_same_turn",
+      "bound_defaults_are_isolated_from_cursor_and_do_not_change_route_authority",
+      "cursor_route_is_authorized_through_the_same_shipping_runner_boundary",
+      "fabushi_default_consumer_rejects_invalid_source_instead_of_using_fallback",
+      "fabushi_model_resolution_preserves_priority_identity_and_reopened_defaults",
+      "fabushi_model_resolution_rejects_malformed_pairs_and_present_raw_overrides",
+      "fabushi_summarization_consults_the_default_and_keeps_cancellation_first",
+      "inference_extension_readiness_and_experiment_notifications_match_frozen_boundary",
+      "production_experiments_apply_reentrant_settings_notifications_in_commit_order",
+      "production_extras_share_auth_and_forward_request_identity_to_web_services",
+      "production_inference_settings_owns_live_route_and_usage_persistence",
+      "summarization_session_matches_frozen_model_and_labeling_fence",
+      "fabushi_checkpoint_requires_normalized_identity_and_exact_selected_model",
+      "fabushi_dispatch_preserves_cancellation_and_provider_tag_priority",
+      "fabushi_environment_fallback_checkpoint_pin_and_auth_order_are_isolated",
+      "fabushi_request_model_preserves_explicit_identity_and_rejects_invalid_selection",
+      "openrouter_partial_tool_callback_reports_real_accumulated_state_and_model_call_identity",
+      "openrouter_reports_server_usage_without_estimating_tokens",
+      "openrouter_resumes_only_from_an_accepted_tool_boundary_checkpoint",
+      "provider_session_honors_runner_cancellation_before_provider_setup",
+      "provider_session_reads_router_settings_and_streams_sse_events",
+      "a_lost_tool_worker_cannot_turn_error_json_into_an_accepted_checkpoint",
+      "definitive_relay_results_remain_checkpoint_eligible_and_preserve_returned_data",
+      "downstream_unknown_outcomes_block_responses_checkpoint_and_replay_after_local_return",
+      "prepublication_refusal_and_list_failure_add_no_unknown_effect_custody",
+      "production_fabushi_executor_refuses_replay_after_tool_expiry",
+      "production_generated_runner_preserves_terminal_tool_custody",
+      "real_mcp_effect_prevents_provider_retry_after_attempt_expiry",
+      "real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects",
+      "real_mcp_response_loss_refuses_more_effects_on_the_same_attempt",
+      "responses_checkpoint_io_failure_expiry_and_new_effect_cannot_accept_stale_coverage",
+      "responses_effects_after_checkpoint_without_checkpoint_and_between_calls_do_not_replay",
+      "responses_pre_effect_retry_and_safe_checkpoint_retry_keep_model_and_completed_tool",
+      "timed_out_tool_keeps_worker_receipt_and_late_result_stays_unknown_across_attempts",
+      "user_cancellation_between_tools_and_during_checkpoint_io_wins_without_retry",
+      "auto_review_instructions_default_normalize_persist_and_notify",
+      "canonical_provider_bound_models_round_trip_through_both_settings_writers",
+      "checked_agent_default_model_reads_are_nonmutating_and_preserve_selection_fields",
+      "checked_agent_default_model_rejects_malformed_present_bound_and_legacy_values",
+      "concurrent_specialized_commits_wait_for_the_active_notification_batch",
+      "conditional_readonly_rejection_preserves_bytes_and_observers",
+      "conditional_settings_reply_keeps_its_commit_when_a_listener_commits_again",
+      "conditional_unreadable_source_rejects_candidate_and_leaves_no_commit_event",
+      "frozen_mcp_settings_normalize_migrate_delete_and_account_scope",
+      "frozen_notification_and_default_auto_review_persistence_are_normalized",
+      "host_settings_projects_secret_audit_findings_without_secret_values",
+      "host_settings_switch_scope_before_applying_same_update_and_normalizes_invalid_permission",
+      "host_settings_updates_skill_entries_without_overwriting_redacted_secrets",
+      "invalid_sources_are_not_replaced_by_getter_normalization_or_settings_writers",
+      "legacy_unbound_writes_and_computer_models_keep_their_compatibility_contract",
+      "listener_panic_drains_remaining_batches_and_releases_the_drainer",
+      "malformed_bound_model_updates_preserve_bytes_and_all_observers",
+      "normalization_and_specialized_writers_preserve_each_others_commits",
+      "permission_ceiling_feature_override_and_inference_usage_match_frozen_contract",
+      "provider_bound_model_account_clearing_and_same_update_replacement_keep_their_order",
+      "public_settings_owner_contract::a_marker_in_the_original_cannot_survive_restoration_as_a_credential",
+      "public_settings_owner_contract::actual_agent_array_reordering_keeps_identity_and_refuses_secret_borrowing",
+      "public_settings_owner_contract::corrupt_or_nonregular_keys_fail_before_public_read_normalization_and_writes",
+      "public_settings_owner_contract::credential_urls_in_secret_ref_identity_require_explicit_repair",
+      "public_settings_owner_contract::explicit_replacements_and_skill_empty_string_removal_keep_owner_semantics",
+      "public_settings_owner_contract::invalid_public_sources_remain_invalid_until_explicit_fixture_repair",
+      "public_settings_owner_contract::key_creation_io_failure_cannot_create_settings_or_notify",
+      "public_settings_owner_contract::legacy_duplicate_missing_and_environment_ids_keep_only_bounded_positional_fallback",
+      "public_settings_owner_contract::masked_save_reopens_with_original_agent_skill_and_environment_values",
+      "public_settings_owner_contract::masked_secret_refs_require_the_same_explicit_source_and_provider",
+      "public_settings_owner_contract::masked_skill_save_preserves_latest_imported_bytes_after_stale_snapshot",
+      "public_settings_owner_contract::opaque_revisions_are_installation_local_durable_and_domain_separated",
+      "public_settings_owner_contract::persistence_io_failure_after_valid_read_and_key_leaves_bytes_and_observers_unchanged",
+      "public_settings_owner_contract::public_cas_refuses_both_internal_digests_and_trusted_sha_cas_stays_separate",
+      "public_settings_owner_contract::public_readonly_guard_prevents_normalization_writes_and_all_update_observers",
+      "public_settings_owner_contract::public_receipt_a_stays_a_when_a_listener_commits_b_and_notifications_remain_fifo",
+      "public_settings_owner_contract::public_writes_preserve_include_ownership_and_specialized_writer_compatibility",
+      "public_settings_owner_contract::secret_only_change_invalidates_cas_and_legacy_masked_write_restores_current_secret",
+      "public_settings_owner_contract::simultaneous_writers_with_one_public_token_produce_exactly_one_commit",
+      "public_settings_owner_contract::unreadable_settings_directory_keeps_null_public_raw_revision_and_no_commit",
+      "public_settings_owner_contract::wrong_missing_container_and_nonobject_markers_never_write_or_notify",
+      "stale_account_snapshot_cannot_restore_cleared_models_and_restart_reads_the_commit",
+      "test_ocrm_config_o01_path_mutation",
+      "test_ocrm_config_o02_immutable_mode_guard",
+      "test_ocrm_config_o03_single_writer_lock",
+      "test_ocrm_config_o04_io_atomic_snapshot",
+      "test_ocrm_config_o05_schema_normalization",
+      "test_ocrm_config_o06_agent_workspace_dirs",
+      "test_ocrm_roster_include_write_guard_is_server_owned_and_fail_closed",
+      "timezone_settings_validate_persist_preserve_unknown_fields_and_notify_effective_changes"
+    ],
+    "execution_error": null,
+    "required_positive_names": [
+      "bound_defaults_are_isolated_from_cursor_and_do_not_change_route_authority",
+      "checkpoint_model_identity_is_durable_and_cross_model_resume_fails_before_request",
+      "codex_direct_resumes_a_legacy_checkpoint_without_model_identity",
+      "fabushi_checkpoint_requires_normalized_identity_and_exact_selected_model",
+      "persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization",
+      "accepted_checkpoint_retry_refuses_a_changed_fabushi_account",
+      "accepted_checkpoint_retry_accepts_same_context_token_rotation",
+      "admitted_turn_summary_retains_fabushi_model_and_request_binding",
+      "responses_effects_after_checkpoint_without_checkpoint_and_between_calls_do_not_replay",
+      "responses_checkpoint_io_failure_expiry_and_new_effect_cannot_accept_stale_coverage",
+      "responses_pre_effect_retry_and_safe_checkpoint_retry_keep_model_and_completed_tool",
+      "downstream_unknown_outcomes_block_responses_checkpoint_and_replay_after_local_return",
+      "definitive_relay_results_remain_checkpoint_eligible_and_preserve_returned_data",
+      "prepublication_refusal_and_list_failure_add_no_unknown_effect_custody",
+      "timed_out_tool_keeps_worker_receipt_and_late_result_stays_unknown_across_attempts",
+      "a_lost_tool_worker_cannot_turn_error_json_into_an_accepted_checkpoint",
+      "user_cancellation_between_tools_and_during_checkpoint_io_wins_without_retry",
+      "real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects",
+      "real_mcp_response_loss_refuses_more_effects_on_the_same_attempt",
+      "real_mcp_effect_prevents_provider_retry_after_attempt_expiry",
+      "production_fabushi_executor_refuses_replay_after_tool_expiry",
+      "production_generated_runner_preserves_terminal_tool_custody"
+    ],
+    "missing_or_nonunique_positive_results": [],
+    "observed_passed_test_names": [
+      "accepted_checkpoint_retry_accepts_same_context_token_rotation",
+      "accepted_checkpoint_retry_refuses_a_changed_fabushi_account",
+      "admitted_turn_summary_retains_fabushi_model_and_request_binding",
+      "direct_runner_retry_accepts_same_context_token_rotation",
+      "direct_runner_retry_refuses_a_changed_fabushi_account",
+      "persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization",
+      "same_runner_nudges_and_turn_memory_accept_same_context_token_rotation",
+      "same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account",
+      "checkpoint_model_identity_is_durable_and_cross_model_resume_fails_before_request",
+      "codex_direct_does_not_execute_mixed_or_undeclared_dsml_text",
+      "codex_direct_normalizes_strict_dsml_send_message_into_the_declared_tool",
+      "codex_direct_rejects_a_stream_without_terminal_completion",
+      "codex_direct_resumes_a_legacy_checkpoint_without_model_identity",
+      "codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint",
+      "codex_direct_stops_on_runner_cancellation_before_processing_more_stream_events",
+      "codex_direct_streams_text_executes_tools_and_continues_the_same_turn",
+      "bound_defaults_are_isolated_from_cursor_and_do_not_change_route_authority",
+      "cursor_route_is_authorized_through_the_same_shipping_runner_boundary",
+      "fabushi_default_consumer_rejects_invalid_source_instead_of_using_fallback",
+      "fabushi_model_resolution_preserves_priority_identity_and_reopened_defaults",
+      "fabushi_model_resolution_rejects_malformed_pairs_and_present_raw_overrides",
+      "fabushi_summarization_consults_the_default_and_keeps_cancellation_first",
+      "inference_extension_readiness_and_experiment_notifications_match_frozen_boundary",
+      "production_experiments_apply_reentrant_settings_notifications_in_commit_order",
+      "production_extras_share_auth_and_forward_request_identity_to_web_services",
+      "production_inference_settings_owns_live_route_and_usage_persistence",
+      "summarization_session_matches_frozen_model_and_labeling_fence",
+      "fabushi_checkpoint_requires_normalized_identity_and_exact_selected_model",
+      "fabushi_dispatch_preserves_cancellation_and_provider_tag_priority",
+      "fabushi_environment_fallback_checkpoint_pin_and_auth_order_are_isolated",
+      "fabushi_request_model_preserves_explicit_identity_and_rejects_invalid_selection",
+      "openrouter_partial_tool_callback_reports_real_accumulated_state_and_model_call_identity",
+      "openrouter_reports_server_usage_without_estimating_tokens",
+      "openrouter_resumes_only_from_an_accepted_tool_boundary_checkpoint",
+      "provider_session_honors_runner_cancellation_before_provider_setup",
+      "provider_session_reads_router_settings_and_streams_sse_events",
+      "a_lost_tool_worker_cannot_turn_error_json_into_an_accepted_checkpoint",
+      "definitive_relay_results_remain_checkpoint_eligible_and_preserve_returned_data",
+      "downstream_unknown_outcomes_block_responses_checkpoint_and_replay_after_local_return",
+      "prepublication_refusal_and_list_failure_add_no_unknown_effect_custody",
+      "production_fabushi_executor_refuses_replay_after_tool_expiry",
+      "production_generated_runner_preserves_terminal_tool_custody",
+      "real_mcp_effect_prevents_provider_retry_after_attempt_expiry",
+      "real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects",
+      "real_mcp_response_loss_refuses_more_effects_on_the_same_attempt",
+      "responses_checkpoint_io_failure_expiry_and_new_effect_cannot_accept_stale_coverage",
+      "responses_effects_after_checkpoint_without_checkpoint_and_between_calls_do_not_replay",
+      "responses_pre_effect_retry_and_safe_checkpoint_retry_keep_model_and_completed_tool",
+      "timed_out_tool_keeps_worker_receipt_and_late_result_stays_unknown_across_attempts",
+      "user_cancellation_between_tools_and_during_checkpoint_io_wins_without_retry",
+      "auto_review_instructions_default_normalize_persist_and_notify",
+      "canonical_provider_bound_models_round_trip_through_both_settings_writers",
+      "checked_agent_default_model_reads_are_nonmutating_and_preserve_selection_fields",
+      "checked_agent_default_model_rejects_malformed_present_bound_and_legacy_values",
+      "concurrent_specialized_commits_wait_for_the_active_notification_batch",
+      "conditional_readonly_rejection_preserves_bytes_and_observers",
+      "conditional_settings_reply_keeps_its_commit_when_a_listener_commits_again",
+      "conditional_unreadable_source_rejects_candidate_and_leaves_no_commit_event",
+      "frozen_mcp_settings_normalize_migrate_delete_and_account_scope",
+      "frozen_notification_and_default_auto_review_persistence_are_normalized",
+      "host_settings_projects_secret_audit_findings_without_secret_values",
+      "host_settings_switch_scope_before_applying_same_update_and_normalizes_invalid_permission",
+      "host_settings_updates_skill_entries_without_overwriting_redacted_secrets",
+      "invalid_sources_are_not_replaced_by_getter_normalization_or_settings_writers",
+      "legacy_unbound_writes_and_computer_models_keep_their_compatibility_contract",
+      "listener_panic_drains_remaining_batches_and_releases_the_drainer",
+      "malformed_bound_model_updates_preserve_bytes_and_all_observers",
+      "normalization_and_specialized_writers_preserve_each_others_commits",
+      "permission_ceiling_feature_override_and_inference_usage_match_frozen_contract",
+      "provider_bound_model_account_clearing_and_same_update_replacement_keep_their_order",
+      "public_settings_owner_contract::a_marker_in_the_original_cannot_survive_restoration_as_a_credential",
+      "public_settings_owner_contract::actual_agent_array_reordering_keeps_identity_and_refuses_secret_borrowing",
+      "public_settings_owner_contract::corrupt_or_nonregular_keys_fail_before_public_read_normalization_and_writes",
+      "public_settings_owner_contract::credential_urls_in_secret_ref_identity_require_explicit_repair",
+      "public_settings_owner_contract::explicit_replacements_and_skill_empty_string_removal_keep_owner_semantics",
+      "public_settings_owner_contract::invalid_public_sources_remain_invalid_until_explicit_fixture_repair",
+      "public_settings_owner_contract::key_creation_io_failure_cannot_create_settings_or_notify",
+      "public_settings_owner_contract::legacy_duplicate_missing_and_environment_ids_keep_only_bounded_positional_fallback",
+      "public_settings_owner_contract::masked_save_reopens_with_original_agent_skill_and_environment_values",
+      "public_settings_owner_contract::masked_secret_refs_require_the_same_explicit_source_and_provider",
+      "public_settings_owner_contract::masked_skill_save_preserves_latest_imported_bytes_after_stale_snapshot",
+      "public_settings_owner_contract::opaque_revisions_are_installation_local_durable_and_domain_separated",
+      "public_settings_owner_contract::persistence_io_failure_after_valid_read_and_key_leaves_bytes_and_observers_unchanged",
+      "public_settings_owner_contract::public_cas_refuses_both_internal_digests_and_trusted_sha_cas_stays_separate",
+      "public_settings_owner_contract::public_readonly_guard_prevents_normalization_writes_and_all_update_observers",
+      "public_settings_owner_contract::public_receipt_a_stays_a_when_a_listener_commits_b_and_notifications_remain_fifo",
+      "public_settings_owner_contract::public_writes_preserve_include_ownership_and_specialized_writer_compatibility",
+      "public_settings_owner_contract::secret_only_change_invalidates_cas_and_legacy_masked_write_restores_current_secret",
+      "public_settings_owner_contract::simultaneous_writers_with_one_public_token_produce_exactly_one_commit",
+      "public_settings_owner_contract::unreadable_settings_directory_keeps_null_public_raw_revision_and_no_commit",
+      "public_settings_owner_contract::wrong_missing_container_and_nonobject_markers_never_write_or_notify",
+      "stale_account_snapshot_cannot_restore_cleared_models_and_restart_reads_the_commit",
+      "test_ocrm_config_o01_path_mutation",
+      "test_ocrm_config_o02_immutable_mode_guard",
+      "test_ocrm_config_o03_single_writer_lock",
+      "test_ocrm_config_o04_io_atomic_snapshot",
+      "test_ocrm_config_o05_schema_normalization",
+      "test_ocrm_config_o06_agent_workspace_dirs",
+      "test_ocrm_roster_include_write_guard_is_server_owned_and_fail_closed",
+      "timezone_settings_validate_persist_preserve_unknown_fields_and_notify_effective_changes"
+    ],
+    "summaries_passed_failed_ignored": [
+      [
+        8,
+        0,
+        0
+      ],
+      [
+        8,
+        0,
+        0
+      ],
+      [
+        11,
+        0,
+        0
+      ],
+      [
+        9,
+        0,
+        0
+      ],
+      [
+        14,
+        0,
+        0
+      ],
+      [
+        50,
+        0,
+        0
+      ]
+    ],
+    "complete_summaries": null,
+    "oracle_accepted": true,
+    "log": "codex-model-regressions.log",
+    "log_sha256": "6e4e1b40c8d726520935e69d7b247ae3d0d71f5f44ee29e06018edccad2a65cf"
+  },
+  "required_downstream_custody_names": [
+    "responses_effects_after_checkpoint_without_checkpoint_and_between_calls_do_not_replay",
+    "responses_checkpoint_io_failure_expiry_and_new_effect_cannot_accept_stale_coverage",
+    "responses_pre_effect_retry_and_safe_checkpoint_retry_keep_model_and_completed_tool",
+    "downstream_unknown_outcomes_block_responses_checkpoint_and_replay_after_local_return",
+    "definitive_relay_results_remain_checkpoint_eligible_and_preserve_returned_data",
+    "prepublication_refusal_and_list_failure_add_no_unknown_effect_custody",
+    "timed_out_tool_keeps_worker_receipt_and_late_result_stays_unknown_across_attempts",
+    "a_lost_tool_worker_cannot_turn_error_json_into_an_accepted_checkpoint",
+    "user_cancellation_between_tools_and_during_checkpoint_io_wins_without_retry",
+    "real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects",
+    "real_mcp_response_loss_refuses_more_effects_on_the_same_attempt",
+    "real_mcp_effect_prevents_provider_retry_after_attempt_expiry",
+    "production_fabushi_executor_refuses_replay_after_tool_expiry",
+    "production_generated_runner_preserves_terminal_tool_custody"
+  ],
+  "source_bindings": {
+    "count": 43,
+    "before": {
+      ".github/workflows/rust-desktop-runtime.yml": {
+        "git_blob": "722919391a64e55f13fae68bb41fc549c70eaf23",
+        "sha256": "2e59b001601c7c560265099ac747a9340af6a8a314f6e5002ae60f06bb8e32bb",
+        "bytes": 462956,
+        "matches_head_bytes": true
+      },
+      "docs/specs/g11-box-browser-wire-completion.md": {
+        "git_blob": "3c9e819e46efc79392c4079dabf4c3a27c2f443d",
+        "sha256": "eb34a3e6569013a2dc49db6b33ef55742b35bcbd8d84b8abeb8604008674a5d7",
+        "bytes": 20749,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+        "git_blob": "9e06fcd7d173479f26a02d342d83b311a84d5b56",
+        "sha256": "44a28a83e008f5bc34d16c551fe1bec2eb2a561dad2353739b46cc7c6ac97b12",
+        "bytes": 131711,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/upstream.lock.json": {
+        "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+        "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+        "bytes": 3495,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/Cargo.toml": {
+        "git_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+        "sha256": "7511a97ad45e71f7931285804ef77e36cd7f2b3c39b2973798ce2adde1814a01",
+        "bytes": 458,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/cli.rs": {
+        "git_blob": "553d7bd05bef899d3c9ff7cf1c9a2b9a1ace68b5",
+        "sha256": "00ab87723de1c7daebf1b1a20ce1a2ad45df0b9c2e51295d278745c8c31d84ca",
+        "bytes": 231,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/lib.rs": {
+        "git_blob": "441d1bd8c692c8db3548154f7bccbb1fa4f60082",
+        "sha256": "7c52990d66938b9e11e5d640ba33b8e417d46041a6fb5ba9a6617c705bb3c52a",
+        "bytes": 77,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/main.rs": {
+        "git_blob": "eca0d794be7f61fd3906b41697fa2b2767677846",
+        "sha256": "246eb6ce5bf582737ade37f537b31b1c3ae45826ccf522ecc1328bd6dc568fd5",
+        "bytes": 3195,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/server.rs": {
+        "git_blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+        "sha256": "55b742a4f825f1db94aa9eb25fd64665fe760069dccbea2b29cfd6e7712f84ce",
+        "bytes": 111209,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/workspace_write.rs": {
+        "git_blob": "e91358cb84271251a8d271ef92a200f02be41c90",
+        "sha256": "8892e66260dee0e7dcf10aa1067d5b7bd2b6ce29c51430bf8e3177627c1ae223",
+        "bytes": 3073,
+        "matches_head_bytes": true
+      },
+      "source/host/Cargo.lock": {
+        "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+        "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "bytes": 119989,
+        "matches_head_bytes": true
+      },
+      "source/host/Cargo.toml": {
+        "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+        "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+        "bytes": 1899,
+        "matches_head_bytes": true
+      },
+      "source/host/build.rs": {
+        "git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+        "sha256": "567fcd892c384c06b14f2494df146475d4cf8ada3db243b5468c31d5ae89f750",
+        "bytes": 69763,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/box_file_transfer.rs": {
+        "git_blob": "eeb9f73515de672ba6236272650743962c5d6035",
+        "sha256": "a5b6d69691949ebc8034e136f10ebb292b8f09d7396e7a68b6f154516eead15a",
+        "bytes": 8973,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/box_remote_accessor.rs": {
+        "git_blob": "e6470d1769972f73c90835c368f2164c7055c7e0",
+        "sha256": "caf4f7d23066b763a38c395bd99ef109661ebc15d6b02f6fbf73f4b472f954d2",
+        "bytes": 17075,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/box_shell_command.rs": {
+        "git_blob": "916051fc944fd26805aec0d9d1027a92425a0276",
+        "sha256": "497155f0efa08216d50215eb8b734de4f51c1b4f242e7c6e6324f2830a3e543b",
+        "bytes": 1469,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/exec_daemon_process.rs": {
+        "git_blob": "66e218e389db0352bde7f1917aa0c14ef8a8c78c",
+        "sha256": "75fafffc15e86f03d79d10861c265b155a0193c88cd64c2e14b0c0d8a5c377ef",
+        "bytes": 12818,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/generated_production.rs": {
+        "git_blob": "c091fcb66c5001c914368324c6bb7d1d036ab5b9",
+        "sha256": "d4ec3b4b055c8a9e0e09ba5d6604c411d5615ff06987e891e405ab649fcaa98b",
+        "bytes": 79070,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/mod.rs": {
+        "git_blob": "3582bef8527009b4a77b56030a5a72a53aaac99d",
+        "sha256": "b862b113a83cb9735d1404680719faa91e8dd475401419d43e5fc24a6ff22fe2",
+        "bytes": 440,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/protected_path_guard.rs": {
+        "git_blob": "8b6603db82177734007f969b25e8c3592d8a3527",
+        "sha256": "c10750f3e7a6e8866e9a7459dd6dc83bc81c1e79f8bdb34a6e8859ca77bb63ae",
+        "bytes": 2763,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/forever_box/runner_tools.rs": {
+        "git_blob": "0051f2ae387a036f5cfe78afb9b329b3efe47e48",
+        "sha256": "c7d370cab11ffd53044c36b52388878fd5ba503ede09a6586bfa70bbca4da2e7",
+        "bytes": 53082,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/inference/provider_session.rs": {
+        "git_blob": "5cba4171ca0ea2806c1f5b715ca366581196c841",
+        "sha256": "e1efcc11e46796f33576aac961d9015a1cd4772e1c2df7b07a79aba66dd10f10",
+        "bytes": 171004,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/box_tool_access.rs": {
+        "git_blob": "35f217614fd832b3a482394cd70638f67d865efc",
+        "sha256": "f282bef7e73a375e85f119b6847c873f3f80cb91d42a1468a70e5bc7e4446f00",
+        "bytes": 12361,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/large_output_spill.rs": {
+        "git_blob": "ebdea4323cbcb77216a1d9648717c274ed5e7a10",
+        "sha256": "d285683d62127d485723188508414500563585276b252aea745531888c501c7d",
+        "bytes": 3495,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/remote_box_resources.rs": {
+        "git_blob": "fdcde82da1714113fd19442ec85cd826e3244232",
+        "sha256": "11da3533ec709af13c2b81724180b7b0eb2b81839c53d987ed2e39fbfadf4d4d",
+        "bytes": 10033,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/runner_prompt_glue.rs": {
+        "git_blob": "e099d06120c6593d6d08f644abc03e753c027cbc",
+        "sha256": "0fa0cc80191c2a38fb67fbdeebd2b2500e87601a510bd5173fd58f0888c619b2",
+        "bytes": 8607,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/sand_action_audit.rs": {
+        "git_blob": "ad4986cc8f6cfdf93029730503d31f6fb03241c2",
+        "sha256": "0f0f39d816b19fd068a7be5a5c93f643f7cec71ef7d687e34ff9e0598bb32ccc",
+        "bytes": 8022,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/tools/mcp_meta_tools.rs": {
+        "git_blob": "aed2d181ba495ad529f4eb083a42a76b6c460439",
+        "sha256": "1bba4246148ca399eac1d4d99008e38c8a986ab486d182e993a0455b231c0859",
+        "bytes": 20290,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/box_exec_daemon_process_contract.rs": {
+        "git_blob": "f3df2cc147226266c6e12b297888f61934102365",
+        "sha256": "47b48abf3346d24747aeb3c4cdc9c0e5c5ad268d2f8dfd4e2c575fcab0d18936",
+        "bytes": 8559,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/box_generated_production_contract.rs": {
+        "git_blob": "c30f95dee6ffe531c4d62ecdd6e1dde8b1642054",
+        "sha256": "01f6d490c10289715e90672742b47b64a5918f1ec9216c1e5b4685028dce90d9",
+        "bytes": 114169,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/box_remote_accessor_contract.rs": {
+        "git_blob": "81d182554769cd99c012c9d2cb5800c93cc5429f",
+        "sha256": "5571faf2109878d8483169a90904222d861a971c6c1d2f9922e6c220b41d201b",
+        "bytes": 13406,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/large_output_spill_contract.rs": {
+        "git_blob": "af895ac7fb8b170278c6fa07f46aef1ae50bc690",
+        "sha256": "4b0f0863577292214b5103507675f9421832600d3389ec2ee67a4de335d973f8",
+        "bytes": 6356,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/runner_box_tool_composition_contract.rs": {
+        "git_blob": "8a805357be0fbed1192b7094d630b7cf493705db",
+        "sha256": "7ea812205f62978b514ff2bba57eb81fdb120a9bd2849fc606dd23276d7f41da",
+        "bytes": 16681,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/runner_effect_custody_contract.rs": {
+        "git_blob": "f0d9e2b2d6e1b94d0338bcf3ad7a8ab071c325db",
+        "sha256": "b134936f9a52e023cfc87cf2d4573b1d5f72781b78fc6613c4a79ff456a27e77",
+        "bytes": 81490,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/runner_prompt_glue_contract.rs": {
+        "git_blob": "f80d1451906b1eac2fced34a1e0e60b7489e8d6e",
+        "sha256": "c020bb649d71ba96bc21d0e94f089be575a296c92b56ad28ac7837febb5e3d40",
+        "bytes": 13585,
+        "matches_head_bytes": true
+      },
+      "source/packages/agent-exec/shell-stream.ts": {
+        "git_blob": "caa262f63fadbbbdf5c54aace5a401579a66eef7",
+        "sha256": "7978e7eaa2d4e8548ece1fd75d99f0077deb70911c45609bfbe412d2425dbbf7",
+        "bytes": 987,
+        "matches_head_bytes": true
+      },
+      "source/packages/agent/tools/core/shell/create-shell-tool.ts": {
+        "git_blob": "f7e875e6e08ac6df9afc0bf904b2a814510b981f",
+        "sha256": "b74e220c58f932c6a4532b08284f4e2a40f609ee5cba58e794d1fe101fa63357",
+        "bytes": 41714,
+        "matches_head_bytes": true
+      },
+      "source/packages/local-exec/background-shell.ts": {
+        "git_blob": "b7468894536d7e432e34bd52820dfc93956552a5",
+        "sha256": "342073bf27735ca30421352c007bd558218a8118871e411c9834ced6e8ce7128",
+        "bytes": 12379,
+        "matches_head_bytes": true
+      },
+      "source/packages/local-exec/shell-stream.ts": {
+        "git_blob": "31e5cd6dce48f7643d6c1a35be82ffbc72c8ed99",
+        "sha256": "b2b2a3144a31409a96cee3e800008ae9e8293a0954ac6c199457cd07f4da08e2",
+        "bytes": 13085,
+        "matches_head_bytes": true
+      },
+      "source/packages/proto/generated/agent/v1/background_shell_exec_pb.ts": {
+        "git_blob": "71a9c516dd1ca89b2e389a85115407ad06b3bac2",
+        "sha256": "e781727dcc084252ebd293fbeba9fbc52ca2aca94955ab14f461f4f4430986c5",
+        "bytes": 20164,
+        "matches_head_bytes": true
+      },
+      "source/packages/proto/generated/agent/v1/exec_pb.ts": {
+        "git_blob": "b3d569d1ad5f923444d472a08efb8bad58c5941f",
+        "sha256": "5e877f46ca5870db8454e38293a94e3d3c875b6f247de86f13721ab1c2a33d94",
+        "bytes": 43982,
+        "matches_head_bytes": true
+      },
+      "source/packages/proto/generated/agent/v1/exec_service_pb.ts": {
+        "git_blob": "da743f25c6a21ec38d1fdeb83dd5fc7f96c12b6f",
+        "sha256": "75a685f5a00ccd1b22e3f051ae019c1d8aaee355b15b51b47c51352d713ae90f",
+        "bytes": 2789,
+        "matches_head_bytes": true
+      },
+      "source/packages/proto/generated/agent/v1/shell_exec_pb.ts": {
+        "git_blob": "43079a2f5df12a5f570589ce312fd7fcfb71bd1f",
+        "sha256": "3448053be8fc9dff0b414697627a9f212434ba822db129ecfedd33392476097c",
+        "bytes": 73188,
+        "matches_head_bytes": true
+      }
+    },
+    "after": {
+      ".github/workflows/rust-desktop-runtime.yml": {
+        "git_blob": "722919391a64e55f13fae68bb41fc549c70eaf23",
+        "sha256": "2e59b001601c7c560265099ac747a9340af6a8a314f6e5002ae60f06bb8e32bb",
+        "bytes": 462956,
+        "matches_head_bytes": true
+      },
+      "docs/specs/g11-box-browser-wire-completion.md": {
+        "git_blob": "3c9e819e46efc79392c4079dabf4c3a27c2f443d",
+        "sha256": "eb34a3e6569013a2dc49db6b33ef55742b35bcbd8d84b8abeb8604008674a5d7",
+        "bytes": 20749,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+        "git_blob": "9e06fcd7d173479f26a02d342d83b311a84d5b56",
+        "sha256": "44a28a83e008f5bc34d16c551fe1bec2eb2a561dad2353739b46cc7c6ac97b12",
+        "bytes": 131711,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/upstream.lock.json": {
+        "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+        "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+        "bytes": 3495,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/Cargo.toml": {
+        "git_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+        "sha256": "7511a97ad45e71f7931285804ef77e36cd7f2b3c39b2973798ce2adde1814a01",
+        "bytes": 458,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/cli.rs": {
+        "git_blob": "553d7bd05bef899d3c9ff7cf1c9a2b9a1ace68b5",
+        "sha256": "00ab87723de1c7daebf1b1a20ce1a2ad45df0b9c2e51295d278745c8c31d84ca",
+        "bytes": 231,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/lib.rs": {
+        "git_blob": "441d1bd8c692c8db3548154f7bccbb1fa4f60082",
+        "sha256": "7c52990d66938b9e11e5d640ba33b8e417d46041a6fb5ba9a6617c705bb3c52a",
+        "bytes": 77,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/main.rs": {
+        "git_blob": "eca0d794be7f61fd3906b41697fa2b2767677846",
+        "sha256": "246eb6ce5bf582737ade37f537b31b1c3ae45826ccf522ecc1328bd6dc568fd5",
+        "bytes": 3195,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/server.rs": {
+        "git_blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+        "sha256": "55b742a4f825f1db94aa9eb25fd64665fe760069dccbea2b29cfd6e7712f84ce",
+        "bytes": 111209,
+        "matches_head_bytes": true
+      },
+      "source/box-exec-daemon/src/workspace_write.rs": {
+        "git_blob": "e91358cb84271251a8d271ef92a200f02be41c90",
+        "sha256": "8892e66260dee0e7dcf10aa1067d5b7bd2b6ce29c51430bf8e3177627c1ae223",
+        "bytes": 3073,
+        "matches_head_bytes": true
+      },
+      "source/host/Cargo.lock": {
+        "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+        "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "bytes": 119989,
+        "matches_head_bytes": true
+      },
+      "source/host/Cargo.toml": {
+        "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+        "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+        "bytes": 1899,
+        "matches_head_bytes": true
+      },
+      "source/host/build.rs": {
+        "git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+        "sha256": "567fcd892c384c06b14f2494df146475d4cf8ada3db243b5468c31d5ae89f750",
+        "bytes": 69763,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/box_file_transfer.rs": {
+        "git_blob": "eeb9f73515de672ba6236272650743962c5d6035",
+        "sha256": "a5b6d69691949ebc8034e136f10ebb292b8f09d7396e7a68b6f154516eead15a",
+        "bytes": 8973,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/box_remote_accessor.rs": {
+        "git_blob": "e6470d1769972f73c90835c368f2164c7055c7e0",
+        "sha256": "caf4f7d23066b763a38c395bd99ef109661ebc15d6b02f6fbf73f4b472f954d2",
+        "bytes": 17075,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/box_shell_command.rs": {
+        "git_blob": "916051fc944fd26805aec0d9d1027a92425a0276",
+        "sha256": "497155f0efa08216d50215eb8b734de4f51c1b4f242e7c6e6324f2830a3e543b",
+        "bytes": 1469,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/exec_daemon_process.rs": {
+        "git_blob": "66e218e389db0352bde7f1917aa0c14ef8a8c78c",
+        "sha256": "75fafffc15e86f03d79d10861c265b155a0193c88cd64c2e14b0c0d8a5c377ef",
+        "bytes": 12818,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/generated_production.rs": {
+        "git_blob": "c091fcb66c5001c914368324c6bb7d1d036ab5b9",
+        "sha256": "d4ec3b4b055c8a9e0e09ba5d6604c411d5615ff06987e891e405ab649fcaa98b",
+        "bytes": 79070,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/mod.rs": {
+        "git_blob": "3582bef8527009b4a77b56030a5a72a53aaac99d",
+        "sha256": "b862b113a83cb9735d1404680719faa91e8dd475401419d43e5fc24a6ff22fe2",
+        "bytes": 440,
+        "matches_head_bytes": true
+      },
+      "source/host/src/box/protected_path_guard.rs": {
+        "git_blob": "8b6603db82177734007f969b25e8c3592d8a3527",
+        "sha256": "c10750f3e7a6e8866e9a7459dd6dc83bc81c1e79f8bdb34a6e8859ca77bb63ae",
+        "bytes": 2763,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/forever_box/runner_tools.rs": {
+        "git_blob": "0051f2ae387a036f5cfe78afb9b329b3efe47e48",
+        "sha256": "c7d370cab11ffd53044c36b52388878fd5ba503ede09a6586bfa70bbca4da2e7",
+        "bytes": 53082,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/inference/provider_session.rs": {
+        "git_blob": "5cba4171ca0ea2806c1f5b715ca366581196c841",
+        "sha256": "e1efcc11e46796f33576aac961d9015a1cd4772e1c2df7b07a79aba66dd10f10",
+        "bytes": 171004,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/box_tool_access.rs": {
+        "git_blob": "35f217614fd832b3a482394cd70638f67d865efc",
+        "sha256": "f282bef7e73a375e85f119b6847c873f3f80cb91d42a1468a70e5bc7e4446f00",
+        "bytes": 12361,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/large_output_spill.rs": {
+        "git_blob": "ebdea4323cbcb77216a1d9648717c274ed5e7a10",
+        "sha256": "d285683d62127d485723188508414500563585276b252aea745531888c501c7d",
+        "bytes": 3495,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/remote_box_resources.rs": {
+        "git_blob": "fdcde82da1714113fd19442ec85cd826e3244232",
+        "sha256": "11da3533ec709af13c2b81724180b7b0eb2b81839c53d987ed2e39fbfadf4d4d",
+        "bytes": 10033,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/runner_prompt_glue.rs": {
+        "git_blob": "e099d06120c6593d6d08f644abc03e753c027cbc",
+        "sha256": "0fa0cc80191c2a38fb67fbdeebd2b2500e87601a510bd5173fd58f0888c619b2",
+        "bytes": 8607,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/sand_action_audit.rs": {
+        "git_blob": "ad4986cc8f6cfdf93029730503d31f6fb03241c2",
+        "sha256": "0f0f39d816b19fd068a7be5a5c93f643f7cec71ef7d687e34ff9e0598bb32ccc",
+        "bytes": 8022,
+        "matches_head_bytes": true
+      },
+      "source/host/src/runner/tools/mcp_meta_tools.rs": {
+        "git_blob": "aed2d181ba495ad529f4eb083a42a76b6c460439",
+        "sha256": "1bba4246148ca399eac1d4d99008e38c8a986ab486d182e993a0455b231c0859",
+        "bytes": 20290,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/box_exec_daemon_process_contract.rs": {
+        "git_blob": "f3df2cc147226266c6e12b297888f61934102365",
+        "sha256": "47b48abf3346d24747aeb3c4cdc9c0e5c5ad268d2f8dfd4e2c575fcab0d18936",
+        "bytes": 8559,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/box_generated_production_contract.rs": {
+        "git_blob": "c30f95dee6ffe531c4d62ecdd6e1dde8b1642054",
+        "sha256": "01f6d490c10289715e90672742b47b64a5918f1ec9216c1e5b4685028dce90d9",
+        "bytes": 114169,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/box_remote_accessor_contract.rs": {
+        "git_blob": "81d182554769cd99c012c9d2cb5800c93cc5429f",
+        "sha256": "5571faf2109878d8483169a90904222d861a971c6c1d2f9922e6c220b41d201b",
+        "bytes": 13406,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/large_output_spill_contract.rs": {
+        "git_blob": "af895ac7fb8b170278c6fa07f46aef1ae50bc690",
+        "sha256": "4b0f0863577292214b5103507675f9421832600d3389ec2ee67a4de335d973f8",
+        "bytes": 6356,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/runner_box_tool_composition_contract.rs": {
+        "git_blob": "8a805357be0fbed1192b7094d630b7cf493705db",
+        "sha256": "7ea812205f62978b514ff2bba57eb81fdb120a9bd2849fc606dd23276d7f41da",
+        "bytes": 16681,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/runner_effect_custody_contract.rs": {
+        "git_blob": "f0d9e2b2d6e1b94d0338bcf3ad7a8ab071c325db",
+        "sha256": "b134936f9a52e023cfc87cf2d4573b1d5f72781b78fc6613c4a79ff456a27e77",
+        "bytes": 81490,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/runner_prompt_glue_contract.rs": {
+        "git_blob": "f80d1451906b1eac2fced34a1e0e60b7489e8d6e",
+        "sha256": "c020bb649d71ba96bc21d0e94f089be575a296c92b56ad28ac7837febb5e3d40",
+        "bytes": 13585,
+        "matches_head_bytes": true
+      },
+      "source/packages/agent-exec/shell-stream.ts": {
+        "git_blob": "caa262f63fadbbbdf5c54aace5a401579a66eef7",
+        "sha256": "7978e7eaa2d4e8548ece1fd75d99f0077deb70911c45609bfbe412d2425dbbf7",
+        "bytes": 987,
+        "matches_head_bytes": true
+      },
+      "source/packages/agent/tools/core/shell/create-shell-tool.ts": {
+        "git_blob": "f7e875e6e08ac6df9afc0bf904b2a814510b981f",
+        "sha256": "b74e220c58f932c6a4532b08284f4e2a40f609ee5cba58e794d1fe101fa63357",
+        "bytes": 41714,
+        "matches_head_bytes": true
+      },
+      "source/packages/local-exec/background-shell.ts": {
+        "git_blob": "b7468894536d7e432e34bd52820dfc93956552a5",
+        "sha256": "342073bf27735ca30421352c007bd558218a8118871e411c9834ced6e8ce7128",
+        "bytes": 12379,
+        "matches_head_bytes": true
+      },
+      "source/packages/local-exec/shell-stream.ts": {
+        "git_blob": "31e5cd6dce48f7643d6c1a35be82ffbc72c8ed99",
+        "sha256": "b2b2a3144a31409a96cee3e800008ae9e8293a0954ac6c199457cd07f4da08e2",
+        "bytes": 13085,
+        "matches_head_bytes": true
+      },
+      "source/packages/proto/generated/agent/v1/background_shell_exec_pb.ts": {
+        "git_blob": "71a9c516dd1ca89b2e389a85115407ad06b3bac2",
+        "sha256": "e781727dcc084252ebd293fbeba9fbc52ca2aca94955ab14f461f4f4430986c5",
+        "bytes": 20164,
+        "matches_head_bytes": true
+      },
+      "source/packages/proto/generated/agent/v1/exec_pb.ts": {
+        "git_blob": "b3d569d1ad5f923444d472a08efb8bad58c5941f",
+        "sha256": "5e877f46ca5870db8454e38293a94e3d3c875b6f247de86f13721ab1c2a33d94",
+        "bytes": 43982,
+        "matches_head_bytes": true
+      },
+      "source/packages/proto/generated/agent/v1/exec_service_pb.ts": {
+        "git_blob": "da743f25c6a21ec38d1fdeb83dd5fc7f96c12b6f",
+        "sha256": "75a685f5a00ccd1b22e3f051ae019c1d8aaee355b15b51b47c51352d713ae90f",
+        "bytes": 2789,
+        "matches_head_bytes": true
+      },
+      "source/packages/proto/generated/agent/v1/shell_exec_pb.ts": {
+        "git_blob": "43079a2f5df12a5f570589ce312fd7fcfb71bd1f",
+        "sha256": "3448053be8fc9dff0b414697627a9f212434ba822db129ecfedd33392476097c",
+        "bytes": 73188,
+        "matches_head_bytes": true
+      }
+    },
+    "unchanged": true
+  },
+  "compile": {
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--tests"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "log": "mcp-origin-constructor-check.log",
+    "result": "compiled",
+    "execution_error": null,
+    "log_sha256": "6a22439d228772a9aec25be8e3db03384f7b552148e6c805e71d7a05e206b4d6"
+  },
+  "actual_daemon_build": {
+    "command": [
+      "cargo",
+      "build",
+      "--manifest-path",
+      "source/box-exec-daemon/Cargo.toml",
+      "--bin",
+      "box-exec-daemon",
+      "--target-dir",
+      "source/box-exec-daemon/target"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "log": "box-response-daemon-build.log",
+    "execution_error": null,
+    "result": "compiled-and-bound",
+    "lock_was_exact_h_source_input": false,
+    "binary": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/target/debug/box-exec-daemon",
+    "binary_sha256_before_cases": "396ab6000a7c2b0194a5bba96f5f57a591d88f075f138e698268b3043c55650d",
+    "log_sha256": "4c5a70eafc005b83f9c21fb6bf8b7816d282270adae2d49e7dccb6798df644f3",
+    "resolved_lock": {
+      "path": "box-response-daemon-resolved.Cargo.lock",
+      "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+      "bytes": 15520,
+      "role": "build-generated output; dependency closure not yet source-frozen",
+      "retained_file": "box-response-daemon-resolved.Cargo.lock",
+      "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+      "output_carrier": "fa1daa79d11f7b3f64b108fed3815eb8633d3642"
+    },
+    "binary_bytes": 2367968,
+    "binary_sha256_after_cases": "396ab6000a7c2b0194a5bba96f5f57a591d88f075f138e698268b3043c55650d",
+    "lock_sha256_after_cases": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431"
+  },
+  "actual_daemon_assertions": [
+    "Same real authenticated owned daemon and production accessor for Shell plus subsequent nonzero requests.",
+    "Shell exit0, exact stdout bxr-real-daemon and empty stderr.",
+    "Binary Write creates exact workspace file [0,255,66,88,82,10,128]; Binary Read returns identical Data.",
+    "Text Write/Read returns Content readable; owned daemon closed and dedicated temporary directory removed."
+  ],
+  "producer_unchanged": true,
+  "oracle_controls": [
+    {
+      "case": "exact-owner-positive",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "case": "raw-keyword-owner-positive",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "case": "crlf-positive",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "case": "missing-positive",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "duplicate-positive",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "duplicate-raw-alias",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "foreign-owner",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "unexpected-positive",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "ignored-positive",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "ignored-summary",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "zero-tests",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "duplicate-summary",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "command-refusal",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "capture-refusal",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "unexpected-measured",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "case": "filtered-whole-target",
+      "expected": false,
+      "actual": false
+    }
+  ],
+  "evidence_carriers": {
+    "artifacts": [
+      {
+        "id": 13215311612,
+        "name": "ocrm-sqlite-native-path-14e637798b7c76c8530f9a3710051461f793924f-41597864483-1",
+        "bytes": 4816541,
+        "digest": "sha256:b221ae1d82ecd244be38ba0b9336d87903004f606e28cacec7ab7d53a0e53e3d",
+        "expired": false,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13215311612/zip"
+      },
+      {
+        "id": 13213854100,
+        "name": "ocrm-linux-before-automation-14e637798b7c76c8530f9a3710051461f793924f-41597864483-1",
+        "bytes": 562872,
+        "digest": "sha256:d597d803f4668c096c6bc18a4c84feaf0ba8d8e1adef0f5aecf92dd3bab4efaa",
+        "expired": false,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13213854100/zip"
+      }
+    ],
+    "archive_zip_inspected": false,
+    "terminal_job_log": {
+      "bytes": 6927498,
+      "sha256": "3396561d1ee7a48bf9d556b01070e31fcff9029347966124b7997b037495384c",
+      "retrieval": "GitHub job logs API decoded UTF-8, timestamps and four segment BOMs retained for this identity",
+      "raw_full_job_archive": "Retained by Actions; selected command logs are separately reconstructed, hash-matched and archived below."
+    },
+    "printed_receipt": {
+      "path": "portable-printed-receipt.json",
+      "bytes": 593238,
+      "sha256": "108f42e3dfe8ab5e413ba4054b2cbd8d9c662a23fcdde8c88a6f1a4aaef0b2fa",
+      "method": "Complete JSON reconstructed from timestamped console; equal to terminal printed bytes; not claimed as original ZIP extraction",
+      "raw_console_start1": 70882,
+      "raw_console_end1": 80051,
+      "blob": "06f36d6ed431b1c70823ade6eb364d043936aa16"
+    },
+    "selected_command_logs": [
+      {
+        "name": "codex-model-regressions.log",
+        "start1": 29829,
+        "end1": 30735,
+        "addedTrailingNewline": true,
+        "bytes": 38675,
+        "sha256": "6e4e1b40c8d726520935e69d7b247ae3d0d71f5f44ee29e06018edccad2a65cf",
+        "receiptHashMatched": true,
+        "blob": "5ebb963a26cd121b67c1d0d6996a92f50997e369"
+      },
+      {
+        "name": "box-response-manager.log",
+        "start1": 64876,
+        "end1": 65643,
+        "addedTrailingNewline": true,
+        "bytes": 28255,
+        "sha256": "8da5e42a55bcf6c00269dd649e233c942b022b8f6ba85dc79b21819ef22c81d6",
+        "receiptHashMatched": true,
+        "blob": "f8f54a2f2e16ea23c2730c31ba39a45e9b885557"
+      },
+      {
+        "name": "box-response-codec.log",
+        "start1": 65645,
+        "end1": 66443,
+        "addedTrailingNewline": true,
+        "bytes": 31219,
+        "sha256": "25f08ac6a47e151b990d42b53801c573ad5dd30d6ca867811b4979028e55e29e",
+        "receiptHashMatched": true,
+        "blob": "ef089e8fddceb17e7b375f2e04cf62f5889582f8"
+      },
+      {
+        "name": "box-response-runner-bridge.log",
+        "start1": 66445,
+        "end1": 67211,
+        "addedTrailingNewline": true,
+        "bytes": 28191,
+        "sha256": "289f71e3f1a6ccb60988adf27aca44d75acf7bccdb764cc902bfd4efda6bb56f",
+        "receiptHashMatched": true,
+        "blob": "2ee9524511177083c59ea80e334fb5657ddcc134"
+      },
+      {
+        "name": "box-response-spill.log",
+        "start1": 67213,
+        "end1": 67974,
+        "addedTrailingNewline": true,
+        "bytes": 27729,
+        "sha256": "d0b85a810c51c077192b86ef83ac6e12838f7cebf8ff3f9e7415110e1d1c8864",
+        "receiptHashMatched": true,
+        "blob": "84e660e26bf51b1eda5baff33c6ebbec5fbfdfa2"
+      },
+      {
+        "name": "box-response-prompt-glue.log",
+        "start1": 67976,
+        "end1": 68738,
+        "addedTrailingNewline": true,
+        "bytes": 27804,
+        "sha256": "669195d174964f8e0feef587fe5afde14057ce6c424e390779a385eec5c06774",
+        "receiptHashMatched": true,
+        "blob": "42e08a235601b9b6bbf109b42dcf215069446041"
+      },
+      {
+        "name": "box-response-manager-exhaustion.log",
+        "start1": 68740,
+        "end1": 69428,
+        "addedTrailingNewline": true,
+        "bytes": 24955,
+        "sha256": "4aa48495d36a2bd332c172397e260e1398c7667cf0e49c359982baa4a7293e80",
+        "receiptHashMatched": true,
+        "blob": "e37f2cf8c066097762972b48a303c7824f7b3b8a"
+      },
+      {
+        "name": "box-response-forever-box.log",
+        "start1": 69430,
+        "end1": 70120,
+        "addedTrailingNewline": true,
+        "bytes": 25175,
+        "sha256": "2227746967a612b45afdc274a37281fb75a9033daa11dc2ce605783e0b75ee68",
+        "receiptHashMatched": true,
+        "blob": "b5b6181f2c82d01ddf353169f25be28d5793a6e6"
+      },
+      {
+        "name": "box-response-real-daemon.log",
+        "start1": 70122,
+        "end1": 70880,
+        "addedTrailingNewline": true,
+        "bytes": 27543,
+        "sha256": "de4077c0595e8f3194d9b6bad9796d0ed5b9ef759971404daa456d8a84314bd4",
+        "receiptHashMatched": true,
+        "blob": "0e19b3d4408411f452b34c74c3bb7d41b0475de6"
+      },
+      {
+        "name": "mcp-origin-constructor-check.log",
+        "start1": 22969,
+        "end1": 24246,
+        "addedTrailingNewline": false,
+        "bytes": 48882,
+        "sha256": "6a22439d228772a9aec25be8e3db03384f7b552148e6c805e71d7a05e206b4d6",
+        "receiptHashMatched": true,
+        "blob": "638b5b0e84334f2f1375ba86ec3f9100c5b6a978"
+      },
+      {
+        "name": "box-response-daemon-build.log",
+        "start1": 24248,
+        "end1": 24292,
+        "addedTrailingNewline": false,
+        "bytes": 1498,
+        "sha256": "4c5a70eafc005b83f9c21fb6bf8b7816d282270adae2d49e7dccb6798df644f3",
+        "receiptHashMatched": true,
+        "blob": "06e2a7d4a7df815ba2faa72596877773d7c8cb9e"
+      }
+    ],
+    "reconstruction": "Raw 1-based inclusive console line ranges before timestamp removal; strip only optional segment BOM plus leading GitHub timestamp; preserve all remaining bytes and empty lines. Each reconstructed command log SHA256 equals its original-file hash in the printed capture receipt."
+  },
+  "evaluation": {
+    "root_independently_read_terminal_log": true,
+    "independent_assessor": "/root/bxr_14e_evidence",
+    "assessor_full_terminal_result_read": true,
+    "assessor_source_scope": "Actual case bodies and existing request/custody consumers plus exact commands/names/summary/exit/hash/source/binary records.",
+    "failures_found": [],
+    "no_rerun": true
+  },
+  "acceptance_limits": [
+    "macOS rust-host job125789361590 remains queued; no macOS acceptance.",
+    "This H has untracked generated daemon lock and build command without --locked; later source-lock candidate must prove its own locked build.",
+    "Later HTTP correction and fixture changes require exact-new-H execution.",
+    "Real external Box/provider, monitor/device, cancellation-to-socket, raw capture, generated-origin and persisted provenance remain unaccepted.",
+    "Complete recursive source/security/legal accounting, all OCRM G01-G12/AC01-AC24, App/package/platform/soak/upgrade/rollback and independent ACCEPT remain open."
+  ],
+  "completion_flags_changed": false
+}

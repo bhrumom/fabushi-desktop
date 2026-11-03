@@ -1,0 +1,239 @@
+{
+  "schema_version": "review-snapshot-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 6,
+  "base": "b35408891546694606ed0750c60af0302669aac9",
+  "baseTree": "158826d8a7483ad0c7182052419a48c5fb4cc210",
+  "startingHead": "b35408891546694606ed0750c60af0302669aac9",
+  "reviewCommit": "18b6ae51a5a091196e2e4747b21e044f30d6f072",
+  "reviewTree": "afe86288092af3ea7591375812fb414fe0f4bf9b",
+  "priorCommit": "d237b9e160c2c200fb72676d785b301fbe88c48f",
+  "deltaCarrier": "5fa52114cacc67d6150a7ee1eeade3b750bfb7b6",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "complete": {
+    "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/compare/b35408891546694606ed0750c60af0302669aac9...18b6ae51a5a091196e2e4747b21e044f30d6f072",
+    "bytes": 321912,
+    "sha256": "3f6af14ee3d8f74e15a25f6029d0b86834593399d6574d4fc0e4e74d9a445161",
+    "paths": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "status": "modified",
+        "blob": "722919391a64e55f13fae68bb41fc549c70eaf23",
+        "additions": 4,
+        "deletions": 2,
+        "complete": true
+      },
+      {
+        "path": "docs/specs/g11-box-browser-wire-completion.md",
+        "status": "modified",
+        "blob": "6cc8b03c7badabbbc693f59dbd796ba2508599e0",
+        "additions": 98,
+        "deletions": 2,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+        "status": "added",
+        "blob": "5fa65e8137a39207e7acdc07ed761041a4d1d5f0",
+        "additions": 473,
+        "deletions": 0,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "status": "modified",
+        "blob": "aee0e4e69975891112b993a43c57e3dbec42e344",
+        "additions": 21,
+        "deletions": 5,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "status": "modified",
+        "blob": "635a1d2fa49fec8d34b89636f6c03d004a608e82",
+        "additions": 22,
+        "deletions": 4,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "status": "modified",
+        "blob": "7df804754b8fc9cb5578c792657d7c477b1b2e72",
+        "additions": 327,
+        "deletions": 6,
+        "complete": true
+      },
+      {
+        "path": "source/box-exec-daemon/Cargo.lock",
+        "status": "added",
+        "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+        "additions": 596,
+        "deletions": 0,
+        "complete": true
+      },
+      {
+        "path": "source/host/src/box/box_remote_accessor.rs",
+        "status": "modified",
+        "blob": "e6470d1769972f73c90835c368f2164c7055c7e0",
+        "additions": 126,
+        "deletions": 7,
+        "complete": true
+      },
+      {
+        "path": "source/host/src/box/generated_production.rs",
+        "status": "modified",
+        "blob": "18ada294465dd3f7defa6772fa05858ecb2fbea8",
+        "additions": 859,
+        "deletions": 542,
+        "complete": true
+      },
+      {
+        "path": "source/host/src/extensions/forever_box/runner_tools.rs",
+        "status": "modified",
+        "blob": "0051f2ae387a036f5cfe78afb9b329b3efe47e48",
+        "additions": 256,
+        "deletions": 27,
+        "complete": true
+      },
+      {
+        "path": "source/host/src/runner/box_tool_access.rs",
+        "status": "modified",
+        "blob": "35f217614fd832b3a482394cd70638f67d865efc",
+        "additions": 3,
+        "deletions": 3,
+        "complete": true
+      },
+      {
+        "path": "source/host/src/runner/large_output_spill.rs",
+        "status": "modified",
+        "blob": "ebdea4323cbcb77216a1d9648717c274ed5e7a10",
+        "additions": 18,
+        "deletions": 17,
+        "complete": true
+      },
+      {
+        "path": "source/host/src/runner/runner_prompt_glue.rs",
+        "status": "modified",
+        "blob": "e099d06120c6593d6d08f644abc03e753c027cbc",
+        "additions": 4,
+        "deletions": 4,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+        "status": "modified",
+        "blob": "f3df2cc147226266c6e12b297888f61934102365",
+        "additions": 105,
+        "deletions": 0,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/box_generated_production_contract.rs",
+        "status": "modified",
+        "blob": "cd05530ac26cc3b3bb218a30029e6d0ab2fee793",
+        "additions": 1824,
+        "deletions": 15,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/box_remote_accessor_contract.rs",
+        "status": "modified",
+        "blob": "81d182554769cd99c012c9d2cb5800c93cc5429f",
+        "additions": 189,
+        "deletions": 3,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/large_output_spill_contract.rs",
+        "status": "modified",
+        "blob": "af895ac7fb8b170278c6fa07f46aef1ae50bc690",
+        "additions": 53,
+        "deletions": 5,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/runner_box_tool_composition_contract.rs",
+        "status": "modified",
+        "blob": "8a805357be0fbed1192b7094d630b7cf493705db",
+        "additions": 196,
+        "deletions": 0,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/runner_prompt_glue_contract.rs",
+        "status": "modified",
+        "blob": "f80d1451906b1eac2fced34a1e0e60b7489e8d6e",
+        "additions": 31,
+        "deletions": 3,
+        "complete": true
+      }
+    ]
+  },
+  "focused": {
+    "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/compare/d237b9e160c2c200fb72676d785b301fbe88c48f...5fa52114cacc67d6150a7ee1eeade3b750bfb7b6",
+    "bytes": 24058,
+    "sha256": "cca92a4f38ee2a231e99efccd07b2fbc4606ac86b7e1c05431eeb098621dd49c",
+    "paths": [
+      {
+        "path": "docs/specs/g11-box-browser-wire-completion.md",
+        "status": "modified",
+        "blob": "6cc8b03c7badabbbc693f59dbd796ba2508599e0",
+        "additions": 25,
+        "deletions": 0,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+        "status": "modified",
+        "blob": "5fa65e8137a39207e7acdc07ed761041a4d1d5f0",
+        "additions": 25,
+        "deletions": 2,
+        "complete": true
+      },
+      {
+        "path": "source/box-exec-daemon/Cargo.lock",
+        "status": "added",
+        "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+        "additions": 596,
+        "deletions": 0,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/box_generated_production_contract.rs",
+        "status": "modified",
+        "blob": "cd05530ac26cc3b3bb218a30029e6d0ab2fee793",
+        "additions": 1,
+        "deletions": 0,
+        "complete": true
+      }
+    ]
+  },
+  "scope": "Retain all original eighteen BXR paths and add the necessary exact producer Cargo.lock input. Focus four-path delta: observed lock/configuration/capture contract, specification/accounting, and accepted-socket fixture normalization. No production parser/manager/consumer changes since R5.",
+  "preimplementation": {
+    "specCommit": "7722759802847348346c538e7eaf3b25058f40f1",
+    "specBlob": "6cc8b03c7badabbbc693f59dbd796ba2508599e0",
+    "originalManifestBlob": "477f8705412d38ed775bcd2f17058689b1ef0c0e"
+  },
+  "producerInput": {
+    "path": "source/box-exec-daemon/Cargo.lock",
+    "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+    "bytes": 15520,
+    "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+    "observedSubject": "14e637798b7c76c8530f9a3710051461f793924f",
+    "run": 41597864483,
+    "attempt": 1,
+    "job": 125789361548,
+    "outputCarrier": "fa1daa79d11f7b3f64b108fed3815eb8633d3642",
+    "outputPath": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/box-response-daemon-resolved.Cargo.lock",
+    "note": "Exact generated bytes copied, not regenerated. Existing capture dynamically source-binds tracked lock, selects --locked and requires same post-case lock/binary. No archive/legal closure claim."
+  },
+  "reviewInstructions": "Fresh blind source review; do not read prior reports or decisions. Full original scope and proper parent delta remain available. Inspect the lock's provenance/configuration/actual consumer; classify generated/dependency review honestly. Inspect fixture socket lifetime/read bounds and retained oracles. No local/htch execution or mutations.",
+  "integration": "Preserve all incoming MCP/shared workflow/ledger/RTM and independent local-exec work. Only currently needed production/test/capture/contract paths enter final branch composition; snapshot common-file context is not an overwrite instruction.",
+  "execution": {
+    "exactCandidateActions": "not-run",
+    "localOrHtch": false,
+    "globalAcceptance": false
+  }
+}

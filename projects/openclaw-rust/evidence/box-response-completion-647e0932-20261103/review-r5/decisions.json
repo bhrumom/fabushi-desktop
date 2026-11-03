@@ -1,0 +1,28 @@
+{
+  "schema": "ocrm-root-review-decisions-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 5,
+  "subject": "d237b9e160c2c200fb72676d785b301fbe88c48f",
+  "tree": "af13f01121e79c3d5d6ee1ab3409cc657a7de1e7",
+  "findings": [
+    {
+      "id": "BXR-HTTP-TEST-PORTABILITY-001",
+      "reviewer": "/root/bxr_http_r5_structure",
+      "severity": "P3",
+      "blocking": false,
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "path": "source/host/tests/box_generated_production_contract.rs",
+      "symbol": "bxr_shell_with_counted_http_response",
+      "scenario": "The fixture polls a nonblocking listener then uses read_request, which expects blocking accepted-stream reads. Platforms that inherit listener mode can yield WouldBlock before request bytes arrive; the selected Linux lane does not establish a failure here.",
+      "rationale": "Normalize the accepted stream to blocking as the same-tree daemon and ComputerUse fixture already do. This preserves every behavioral assertion and makes the actual-request oracle independent of platform accept inheritance. Include this small correction in the separately required producer-lock input extension; it does not initiate a round by itself.",
+      "change": "Call set_nonblocking(false) on each accepted stream before timeout/read_request setup.",
+      "evidence_kind": "source-based portability finding; no executed failure claimed",
+      "next_review": "Fresh R6 delta plus affected fixture and existing producer/capture contracts; original eighteen BXR paths retained and one necessary lock path added."
+    }
+  ],
+  "general_terminal": "NO FINDINGS / APPROVE",
+  "structure_terminal_assessment": "APPROVE with one P3 non-blocking fixture portability finding",
+  "source_verdict_not_runtime_acceptance": true
+}

@@ -157,7 +157,10 @@
         "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
         "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
         "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
-        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay"
+        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay",
+        "production_exec_service_preserves_http_status_reason_and_header_octets",
+        "production_exec_service_rejects_invalid_status_and_header_framing_before_result",
+        "production_exec_service_rejects_non_200_streaming_status_without_replay"
       ],
       "command": [
         "cargo",
@@ -320,6 +323,7 @@
     "docs/specs/g11-box-browser-wire-completion.md",
     "projects/openclaw-rust/scripts/capture_portable_contracts.py",
     "projects/openclaw-rust/upstream.lock.json",
+    "source/box-exec-daemon/Cargo.lock",
     "source/box-exec-daemon/Cargo.toml",
     "source/box-exec-daemon/src/cli.rs",
     "source/box-exec-daemon/src/lib.rs",
@@ -360,7 +364,7 @@
     "source/packages/proto/generated/agent/v1/exec_service_pb.ts",
     "source/packages/proto/generated/agent/v1/shell_exec_pb.ts"
   ],
-  "producer_dependency_limit": "Existing daemon crate has no tracked Cargo.lock at this base. The same-H build records full generated lock output and binary identity; it never uses a stale binary after build failure. Persist/review the actual generated resolution before claiming reproducible producer dependency closure. Host remains --locked.",
+  "producer_dependency_limit": "The original BXR baseline had no tracked daemon lock. Preserve its actual H14e generated output as historical evidence and bind those exact bytes as the candidate source/box-exec-daemon/Cargo.lock. Existing capture selects --locked only when that lock is tracked in exact H, binds it before build, and requires unchanged lock/binary after cases. No new dependency declarations or resolution are selected. Registry archive, legal and platform closure remain open; the next exact-H locked build and producer controls are still required.",
   "recovery": "Unknown outcomes preserve existing effect custody and do not replay. Fresh connection/accessor lifetime creates a fresh request sequence; no process/device cancellation or external outcome reconciliation is added.",
   "navigation_observation": "Existing ComputerUse finally navigation probe remains curl -sf --max-time 2 against loopback /json/list in sand_action_audit.rs; it is an independent read observation, not a retry of the original operation.",
   "verification": {
@@ -383,7 +387,7 @@
   "open_work": [
     "Private raw-byte capture and EOF/read-error/cap/attempt-to-socket cancellation contract",
     "Generated-origin producer grant and existing Session durable provenance/consumer wiring",
-    "Daemon generated lock source freezing and dependency/legal accounting",
+    "Daemon registry archive, legal and platform accounting for the exact captured resolution",
     "Real external Box/provider/device/platform acceptance",
     "Full fixed-U source closure, OCRM G01-G12/AC01-AC24, shipping artifacts and independent ACCEPT"
   ],
@@ -397,6 +401,47 @@
     "sandbox_refusal": "Use frozen STRING policy field3 on background field5 and timed field9, preserve valid known refusal without watcher/replay, reject malformed occurrences, and retain all conflicting-terminal controls. Do not invent a foreground ShellResult variant.",
     "consumer_oracle_decision_blob": "6e2c060d1e8a8cd0ccc985265184e86d8912fd1a",
     "consumer_oracle": "The same frozen raw malformed-policy cases now pass through the actual registered Runner→ForeverBox→TCP chain for background, block-zero and timed modes, retaining exact ToolOutcomeUnknown causes, one Exec and zero watches. The actual consumer positive also includes valid repeated-last policy strings."
+  },
+  "http_correction": {
+    "contract": "BXR-HTTP-v1",
+    "starting_subject": "14e637798b7c76c8530f9a3710051461f793924f",
+    "spec_before_implementation": "2bd0cce4dcaa868468f7a8724c59398164093a7c",
+    "spec_blob": "aa3cfe774bffef385df9dfcc0ad584436b864746",
+    "decision_blob": "f9805d051551391b034db7be010a42d19c70b86c",
+    "implementation_owner": "source/host/src/box/generated_production.rs",
+    "required_names": [
+      "production_exec_service_preserves_http_status_reason_and_header_octets",
+      "production_exec_service_rejects_invalid_status_and_header_framing_before_result",
+      "production_exec_service_rejects_non_200_streaming_status_without_replay"
+    ],
+    "codec_required_cases": 44,
+    "direct_required_names": 77,
+    "known_prior_cases_retained": 41,
+    "contract_summary": "Byte-oriented status/header grammar preserves legal obs-text, HTAB and empty reasons with the mandatory SP; ASCII framing refuses HTTP/1.0 Transfer-Encoding; only status 200 can complete Exec streaming. Post-write failures retain one unknown wrapper and the original typed cause without replay.",
+    "oracle_correction": "Replace the incomplete ordinary-header UTF-8 negative with a malformed Content-Length response carrying a complete matching Connect body. New controls each count actual requests and carry complete matching data/close/end.",
+    "verification": "source candidate only; fresh focused review and exact-published-H Actions remain pending"
+  },
+  "producer_dependency_freeze": {
+    "contract": "BXR-LOCK-v1",
+    "path": "source/box-exec-daemon/Cargo.lock",
+    "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+    "bytes": 15520,
+    "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+    "original_output_subject": "14e637798b7c76c8530f9a3710051461f793924f",
+    "original_run": 41597864483,
+    "original_attempt": 1,
+    "original_job": 125789361548,
+    "output_carrier": "fa1daa79d11f7b3f64b108fed3815eb8633d3642",
+    "output_path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/box-response-daemon-resolved.Cargo.lock",
+    "preimplementation_spec_commit": "7722759802847348346c538e7eaf3b25058f40f1",
+    "preimplementation_spec_blob": "6cc8b03c7badabbbc693f59dbd796ba2508599e0",
+    "manifest_unchanged_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+    "package_records": 68,
+    "registry_records": 67,
+    "checksummed_registry_records": 67,
+    "read_depth": "Generated lock identity/graph and existing manifest/build/capture contract; no claimed full crate-source or legal closure.",
+    "production_wiring": "Use the existing tracked-lock branch of capture_portable_contracts.py; it binds the source bytes, builds with --locked and refuses a stale executable after build failure.",
+    "acceptance": "Pending fresh focused source review and exact-H locked-build/real-daemon/unchanged-input proof."
   },
   "adjacent_shell_semantic_inputs": [
     {
