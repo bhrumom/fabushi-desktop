@@ -366,6 +366,7 @@ jobs:
               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
               "source/host/src/gateway_config.rs",
               "source/host/src/host_event_bus.rs",
               "source/host/src/extensions/local_exec/local_exec_bridge.rs",
@@ -462,6 +463,7 @@ jobs:
               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
               "source/host/src/device_pairing_owner.rs",
               "source/host/src/extensions/node_host/runtime_state.rs",
               "source/host/src/extensions/node_host/session_registry.rs",
@@ -1230,6 +1232,8 @@ jobs:
               tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization \
               tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects \
               tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls \
+              tests::config_secret_boundary_tests::fresh_bearer_http_config_mutation_requires_current_approval \
+              tests::config_secret_boundary_tests::fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners \
               tests::original_turn_recovery_tests::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work \
               tests::original_turn_recovery_tests::original_turn_completed_marker_retains_fresh_pending_corrupt_ack_and_live_work \
               tests::original_turn_recovery_tests::original_turn_marker_retains_unbound_missing_and_foreign_original_references \
@@ -2449,6 +2453,9 @@ jobs:
               "retained_authorization_replacement_leaves_other_roles_and_devices_current",
               "retained_authorization_reopen_requires_fresh_owner_issued_provenance",
               "revocation_and_retained_authorization_propagate_storage_read_failure",
+              "fresh_authorization_requires_approved_role_and_entire_canonical_grant",
+              "fresh_authorization_rejects_corrupt_decisive_storage_without_writes",
+              "fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary",
           ]
           revocation_http_required = [
               "paired_revoke_self_operator_only_delivers_final_reply_and_reports_bound_context_once",
@@ -2662,7 +2669,8 @@ jobs:
               and all(case["oracle_accepted"] for case in wiring_cases))
           rotation_receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
-          rotation_receipt.update({"contract": "DPA-v1/DVR-v1/DRT-v1/DTR-v1", "executions": rotation_cases,
+          rotation_receipt.update({"contract": "DPA-v1/DVR-v1/DRT-v1/DTR-v1/OCRM-DEVICE-FRESH-AUTHORIZATION-v1", "executions": rotation_cases,
+              "fresh_bearer_admission_scope": "Existing pairing owner reuses the same current-credential validator before issuing a fresh sealed proof. Approved role and complete canonical live grant are required; typed currentness refusal is absent authentication, decisive corruption remains a fixed internal error, and every outcome preserves exact persisted state. Retained/management proof checks and valid repair/reopen controls remain mandatory. Actual TCP config.set to the App Settings helper and mutation-sensitive shipping source bindings have separate App evidence; no full App construction, handshake, issuer-generation or physical-device acceptance is claimed.",
               "shipping_wiring_regressions": wiring_cases,
               "existing_node_binding_positive": node_binding_control,
               "existing_node_binding_command": node_binding_command,
@@ -3004,6 +3012,9 @@ jobs:
               "media_http_error_scope": "Actual AttachmentsService buffer/save dispatch stops failed-response diagnostics at the bounded prefix without awaiting EOF, preserves remote status, formats Unicode safely, redacts the existing bot-token pattern and leaves the store unchanged. Controlled HTTP fixtures and supplied-byte cases do not establish outer Host HTTP registration, general SSRF, redirect/proxy, idle-timeout, redaction, chat-wiring or real provider parity.",
               "media_input_policy_scope": "Actual AttachmentsService file RPCs reject malformed explicit resolved policy before decoding or URL processing, preserve omitted/null defaults and valid restrictive limits, and shared file/image source handling rejects '=' and '==' without arithmetic panic or underflow-generated size errors. Longer malformed input retains upstream size-before-validation precedence. This does not establish URL allowlist/redirect/cancellation parity, real PDF or HEIC behavior, accepted-turn multimodal composition, or real service acceptance.",
               "config_public_secret_contract": "OCRM-CONFIG-PUBLIC-SECRET-v1",
+              "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
+              "fresh_bearer_admission_app_tests": ["tests::config_secret_boundary_tests::fresh_bearer_http_config_mutation_requires_current_approval", "tests::config_secret_boundary_tests::fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners"],
+              "fresh_bearer_admission_scope": "Actual file-backed DevicePairingOwner, TCP Gateway ingress and App dispatch_public_settings_command/Settings consumer decide fresh role/grant/corruption refusal before dispatch or state mutation and retain ordinary native/read/writer/reopen controls. Separate mutation-sensitive source bindings and App compilation bind the shipping owner/authentication/configuration chain. The fixture does not construct the complete UnifiedGatewayApi or establish packaged/remote-device acceptance.",
               "config_revision_input_contract": "CS05-INPUT-v1",
               "config_revision_input_app_tests": ["tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects", "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls"],
               "config_revision_input_result": "passed",
@@ -4016,6 +4027,7 @@ jobs:
               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
               "source/host/src/device_pairing_owner.rs",
               "source/host/src/extensions/node_host/runtime_state.rs",
               "source/host/src/extensions/node_host/session_registry.rs",
@@ -4093,6 +4105,8 @@ jobs:
           })
           receipt = {
               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1/DVR-v1/DRT-v1/DTR-v1",
+              "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
+              "fresh_bearer_admission_scope": "Actual file-backed pairing owner and TCP Gateway execute ordinary config.set through the real App Settings helper, with zero dispatch/commit/state effects on fresh role/grant or decisive-storage refusal and valid native/read/writer/reopen controls. Shipping UnifiedGatewayApi auth/configuration/shared-owner composition has separate mutation-sensitive source bindings plus this affected App compilation; the test does not instantiate the complete App or claim remote/device/package acceptance.",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
               "model_contract": "CMI-v1/CWB-v1",
               "local_media_file_url_contract": "LFA-v1",
@@ -4221,6 +4235,8 @@ jobs:
                   "public_key_refusal_precedes_all_four_routes_and_read_normalization",
                   "public_config_set_rejects_malformed_base_hash_before_owner_effects",
                   "public_config_set_revision_input_preserves_newer_commit_and_legacy_controls",
+                  "fresh_bearer_http_config_mutation_requires_current_approval",
+                  "fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners",
               ]]
               required += ["tests::channel_failure_readiness_tests::" + name for name in [
                   "channel_failure_settings_commit_rearms_paused_head_with_exact_marker",

@@ -92,6 +92,7 @@ inputs = [
     "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
     "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
     "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+    "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
     "source/host/src/gateway_config.rs",
     "source/host/src/host_event_bus.rs",
     "source/host/src/extensions/local_exec/local_exec_bridge.rs",
@@ -451,6 +452,9 @@ revocation_owner_required = [
     "retained_authorization_replacement_leaves_other_roles_and_devices_current",
     "retained_authorization_reopen_requires_fresh_owner_issued_provenance",
     "revocation_and_retained_authorization_propagate_storage_read_failure",
+    "fresh_authorization_requires_approved_role_and_entire_canonical_grant",
+    "fresh_authorization_rejects_corrupt_decisive_storage_without_writes",
+    "fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary",
 ]
 revocation_http_required = [
     "paired_revoke_self_operator_only_delivers_final_reply_and_reports_bound_context_once",
@@ -1047,6 +1051,8 @@ for label, output, cargo_exit, capture_exit, expected in [
     assert actual == expected, f"CRA result oracle control failed: {label}"
 
 receipt = {
+    "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
+    "fresh_bearer_admission_scope": "Actual existing pairing owner refuses a fresh proof when the approved role or whole canonical live grant is no longer current, preserves fixed decisive-storage errors and exact durable state, and admits repaired valid state after reopen. Retained proof checks keep their existing issuer and late-admission semantics. Actual HTTP config.set through the App Settings helper and shipping source bindings are separately required in the App receipt; these owner controls do not establish full App construction, remote handshake, last-use writes, issuer-generation or physical-device acceptance.",
     "media_settlement_support_scope": "MSU-v1 support only: actual Tool construction-error classification and the independently bounded media COMMIT adapter/consumer proof, composed with all retained channel/admission/raw-COMMIT controls. Real file-backed media DB faults and local cleanup states are required by the separate native-media receipt; eight private App/Session/Runner cases and ordinary shipping feature-off compilation are required by the separate Linux App receipt. No runtime or full acceptance is inferred from source-oracle positives.",
     "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
     "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DRT-v1", "DTR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1", "MSI-v1", "OCRM-CANONICAL-PRIOR-ROOT-IDENTITY-v1"],

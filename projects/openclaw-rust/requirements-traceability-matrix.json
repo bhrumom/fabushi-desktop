@@ -175,6 +175,7 @@
         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
         "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
+        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
         "projects/openclaw-rust/docs/specs/cron-job-identity.md",
         "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
         "source/host/app/src/tests/cron_job_identity_tests.rs"
@@ -734,7 +735,10 @@
         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+        "source/host/tests/device_pairing_revocation_authority_contract.rs",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R10",
@@ -886,7 +890,9 @@
         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
         "source/host/src/extensions/memory/production_identity_tests.rs",
-        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -2254,6 +2260,8 @@
         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
         "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
+        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs",
         "projects/openclaw-rust/docs/specs/cron-job-identity.md",
         "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
         "source/host/app/src/tests/cron_job_identity_tests.rs"

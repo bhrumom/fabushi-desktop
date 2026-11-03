@@ -139,6 +139,17 @@ separate applicable work; they are not waived by this batch.
   New negative controls must reject an extra/aliased media caller, ambiguous
   or conditionally excluded helper/owner, altered COMMIT/rollback/retirement
   classification, discarded handling and a hidden raw-COMMIT owner elsewhere.
+  Distinguish inherent owner implementations from the actual `Drop` trait
+  implementation when selecting and parsing the one media owner. Trait bodies
+  remain in the global unsafe-call/raw-COMMIT scan and can never receive the
+  bounded inherent-method exception. Keep duplicate/foreign/conditional inherent
+  owner and trait-only owner refusals. For source comparison only, normalize
+  CRLF checkout newlines to LF before literal substitutions and token comparison;
+  raw input receipts retain their original bytes and hashes. Require both LF and
+  CRLF actual-owner positives, changed-branch and trait-owned unsafe negatives,
+  and evidence that each destructive substitution really changes its input.
+  These repair the exact-H74 oracle failures without changing product behavior
+  or weakening the global prohibition.
 - **MSU-07 / exact fault port:** the existing SandAgentDb exposes a hidden
   `MediaSettlementTestFault::{LoseCommitAcknowledgement, RefuseRollback}` and
   `arm_media_settlement_fault_for_test(session, revision, work, fault)` returning
@@ -165,6 +176,15 @@ separate applicable work; they are not waived by this batch.
   successful settlement/replay, known refusal and fault-slot isolation/lease
   lifetime. Inspect committed rows, receipt/fence, owner usability and
   publication effects through the real owner and separate file-backed reader.
+  The owner getter includes the hidden settlement receipt; only the Session
+  presentation projection filters it. The lost-ACK reopen and exact-other-owner
+  controls must therefore compare the complete ordered send-plus-receipt image,
+  using the fixture's independently specified receipt identity, session,
+  lifecycle, work, media paths and transcript IDs. Preserve the complete raw-row
+  equality and every retirement, no-publication, fence, retained-file and repeated
+  reopen check. This repairs the two test expectations observed at exact H
+  `74f11d3d31c6245ac5886dc0181460b2d4349744` in Runtime `41580539491`
+  attempt 1; it changes no product projection or settlement behavior.
 - **MSU-10 / actual App controls:** use existing file-backed App fixtures and
   real production sinks/Session/Runtime. Required cases are actual COMMIT/lost
   ACK; receipt refusal after a proven inserted send with actual ROLLBACK

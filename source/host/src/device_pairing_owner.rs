@@ -74,9 +74,10 @@ fn token_entry_is_active(entry: &Value) -> bool {
 fn normalized_authority_strings(value: &Value) -> Option<Vec<String>> {
     let values = value.as_array()?;
     let mut normalized = Vec::new();
+    let mut seen = BTreeSet::new();
     for value in values {
         let value = value.as_str()?.trim();
-        if !value.is_empty() && !normalized.iter().any(|known| known == value) {
+        if !value.is_empty() && seen.insert(value) {
             normalized.push(value.to_owned());
         }
     }
@@ -657,7 +658,7 @@ impl DevicePairingOwner {
                         canonical_scope_strings(values.iter().filter_map(Value::as_str))
                     })
                     .unwrap_or_default();
-                return Ok(Some(DeviceTokenAuthorization {
+                let authorization = DeviceTokenAuthorization {
                     proof: DeviceTokenProof {
                         issuer: Arc::clone(&self.token_proof_issuer),
                         device_id: device_id.clone(),
@@ -668,7 +669,14 @@ impl DevicePairingOwner {
                     device_id,
                     role: role.to_string(),
                     scopes,
-                }));
+                };
+                // Fresh admission and retained use share one decisive grant
+                // check under this same lock; no unapproved proof may escape.
+                return match self.validate_current_device_authorization_in(&conn, &authorization) {
+                    Ok(()) => Ok(Some(authorization)),
+                    Err(GatewayCommandError::Unauthorized(_)) => Ok(None),
+                    Err(error) => Err(error),
+                };
             }
         }
         Ok(None)
@@ -1553,7 +1561,15 @@ impl DevicePairingOwner {
         authorization: &DeviceTokenAuthorization,
     ) -> Result<(), GatewayCommandError> {
         let conn = self.conn.lock().map_err(|_| invalid_stored_authority())?;
-        let caller = self.current_pairing_record(&conn, authorization)?;
+        self.validate_current_device_authorization_in(&conn, authorization)
+    }
+
+    fn validate_current_device_authorization_in(
+        &self,
+        conn: &Connection,
+        authorization: &DeviceTokenAuthorization,
+    ) -> Result<(), GatewayCommandError> {
+        let caller = self.current_pairing_record(conn, authorization)?;
         let proof = &authorization.proof;
         let tokens = caller.token_entries()?;
         let live_scopes = tokens.get(&proof.role)
@@ -1561,10 +1577,20 @@ impl DevicePairingOwner {
             .and_then(normalized_scope_strings)
             .ok_or_else(invalid_stored_authority)?;
         let approved = caller.approved_baseline()?;
-        if !live_scopes.iter().all(|scope| role_scope_allows(&proof.role, scope, &approved))
+        // Fresh and retained admission share this lock. Index each canonical
+        // grant once instead of scanning a complete vector for every scope.
+        // Keep the vectors for projections and the existing implication policy.
+        let live_members: BTreeSet<&str> = live_scopes.iter().map(String::as_str).collect();
+        let approved_members: BTreeSet<&str> = approved.iter().map(String::as_str).collect();
+        let live_allows = |scope: &str| {
+            role_scope_policy_allows(&proof.role, scope, |grant| live_members.contains(grant))
+        };
+        let approved_allows = |scope: &str| {
+            role_scope_policy_allows(&proof.role, scope, |grant| approved_members.contains(grant))
+        };
+        if !live_scopes.iter().all(|scope| approved_allows(scope))
             || !proof.admitted_scopes.iter().all(|scope| {
-                role_scope_allows(&proof.role, scope, &live_scopes)
-                    && role_scope_allows(&proof.role, scope, &approved)
+                live_allows(scope) && approved_allows(scope)
             })
         {
             return Err(GatewayCommandError::Unauthorized(

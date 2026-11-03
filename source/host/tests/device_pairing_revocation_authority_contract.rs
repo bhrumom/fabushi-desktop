@@ -1,4 +1,4 @@
-//! DVR-v1 owner contracts: production authentication/mutations, real SQLite files,
+//! DVR-v1 / DFA-v1 owner contracts: production authentication/mutations, real SQLite files,
 //! and independent complete-row observations. No HTTP or device acceptance claim.
 //! Spec: projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md.
 //! Fixed U: 1440bb1771372334bea23d7642bb52deb7db1845.
@@ -818,8 +818,9 @@ fn paired_revocation_live_grants_bound_sealed_management_admission() {
     fixture.baseline(CALLER, &["operator.write"]);
     fixture.deny(&proof, json!({"deviceId": CALLER}), None, 401);
     fixture.stale(&proof, 401);
-    let fresh = fixture.proof(CALLER, "operator");
-    fixture.stale(&fresh, 401);
+    let before = fixture.observe();
+    assert!(fixture.owner().authenticate_device_token(&before.token(CALLER, "operator")).unwrap().is_none());
+    assert!(fixture.observe() == before, "fresh refusal preserves the narrowed state");
 }
 
 #[test]
@@ -1121,11 +1122,226 @@ fn retained_authorization_uses_fixed_role_implications_and_complete_live_grant()
     ];
     for (role, baseline, live, allowed) in cases {
         let fixture = Fixture::seeded("retained-implication", &[*role], baseline);
-        fixture.grant(CALLER, role, live);
-        let proof = fixture.proof(CALLER, role);
-        if *allowed { fixture.current(&proof); }
-        else { fixture.stale(&proof, 401); }
+        if *allowed {
+            fixture.grant(CALLER, role, live);
+            let proof = fixture.proof(CALLER, role);
+            fixture.current(&proof);
+        } else {
+            // A genuine empty grant fits even a cross-role baseline. The later
+            // refusal must be caused by the complete invalid live grant.
+            fixture.grant(CALLER, role, &[]);
+            let proof = fixture.proof(CALLER, role);
+            fixture.grant(CALLER, role, live);
+            fixture.stale(&proof, 401);
+            let before = fixture.observe();
+            assert!(fixture.owner().authenticate_device_token(&before.token(CALLER, role)).unwrap().is_none());
+            assert!(fixture.observe() == before);
+        }
     }
+}
+
+#[test]
+fn fresh_authorization_requires_approved_role_and_entire_canonical_grant() {
+    let cases: &[(&str, &[&str], &[&str], bool)] = &[
+        ("operator", &["operator.read"], &["operator.write"], false),
+        ("operator", &["operator.write"], &["operator.read", "operator.approvals"], false),
+        ("operator", &["operator.write"], &["operator.read", "operator.sessions.write"], true),
+        ("operator", &["operator.admin"], &["operator.future.permission"], true),
+        ("operator", &[], &[], true),
+        ("node", &["node.invoke"], &["node.invoke"], true),
+        ("observer", &["observer.read"], &["observer.read"], true),
+        ("node", &["other.read"], &["other.read"], false),
+        ("operator", &["operator.write"], &["\u{feff}operator.write\u{feff}", "operator.write"], true),
+        ("operator", &["operator.write"], &["operator.write\u{85}"], false),
+        ("operator", &["operator.write\u{85}"], &["operator.write\u{85}"], true),
+    ];
+    for (role, baseline, live, admitted) in cases {
+        let fixture = Fixture::seeded("fresh-grant", &[*role], baseline);
+        fixture.grant(CALLER, role, &[]);
+        let prior = fixture.proof(CALLER, role);
+        fixture.grant(CALLER, role, live);
+        let before = fixture.observe();
+        let result = fixture.owner().authenticate_device_token(&before.token(CALLER, role)).unwrap();
+        assert_eq!(result.is_some(), *admitted, "literal fresh grant case");
+        if let Some(proof) = result {
+            assert_eq!(proof.role, *role);
+            assert_eq!(proof.device_id, CALLER);
+            fixture.assert_secret_free(&format!("{proof:?}"));
+            fixture.current(&proof);
+            if live.first().is_some_and(|scope| scope.starts_with('\u{feff}')) {
+                assert_eq!(proof.scopes, ["operator.write"]);
+            }
+        } else {
+            fixture.stale(&prior, 401);
+        }
+        fixture.current(&fixture.proof(BYSTANDER, "node"));
+        assert!(fixture.observe() == before, "all fresh outcomes preserve complete raw state");
+    }
+
+    // A valid literal grant can be large without granting a wildcard or admin.
+    // Inject only the explicit approved/grant fields; the production owner
+    // still issues and validates every proof, including after durable reopen.
+    let mut fixture = Fixture::seeded("fresh-large-grant", &["node"], &["node.invoke"]);
+    let scopes: Vec<String> = (0..20_000).map(|index| format!("node.s{index:05}")).collect();
+    let scope_refs: Vec<&str> = scopes.iter().map(String::as_str).collect();
+    fixture.baseline(CALLER, &scope_refs);
+    fixture.grant(CALLER, "node", &scope_refs);
+    let mut roles: Vec<String> = (0..20_000).map(|index| format!("observer{index:05}")).collect();
+    roles.extend([" node ".into(), "node".into(), "\t".into()]);
+    fixture.write_column(CALLER, "roles_json", &SqlValue::Text(json!(roles).to_string()));
+    let before = fixture.observe();
+    let bearer = before.token(CALLER, "node");
+    let proof = fixture.authenticate(&bearer);
+    assert_eq!(proof.scopes, scopes, "retain the entire canonical literal grant");
+    fixture.current(&proof);
+    fixture.current(&fixture.proof(BYSTANDER, "node"));
+    assert!(fixture.observe() == before);
+
+    let mut malformed_roles = json!(roles);
+    malformed_roles.as_array_mut().unwrap().push(json!(7));
+    fixture.write_column(CALLER, "roles_json", &SqlValue::Text(malformed_roles.to_string()));
+    let malformed = fixture.observe();
+    let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &malformed);
+    assert_eq!(error.to_string(), "stored pairing authority is invalid");
+    fixture.stale(&proof, 500);
+    fixture.current(&fixture.proof(BYSTANDER, "node"));
+    assert!(fixture.observe() == malformed, "a matching role cannot hide malformed trailing authority");
+    fixture.write_column(CALLER, "roles_json", &SqlValue::Text(json!(roles).to_string()));
+    assert!(fixture.observe() == before, "role repair restores exact bytes and valid admission");
+    fixture.current(&fixture.authenticate(&bearer));
+
+    let mut overgrant = scope_refs.clone();
+    overgrant.push("node.zz-unapproved-tail");
+    fixture.grant(CALLER, "node", &overgrant);
+    let withdrawn = fixture.observe();
+    assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
+    fixture.stale(&proof, 401);
+    fixture.current(&fixture.proof(BYSTANDER, "node"));
+    assert!(fixture.observe() == withdrawn, "a single tail scope refuses the whole grant without writes");
+
+    fixture.grant(CALLER, "node", &scope_refs);
+    assert!(fixture.observe() == before, "repair restores the exact original state");
+    fixture.reopen();
+    let reopened = fixture.authenticate(&bearer);
+    assert_eq!(reopened.scopes, scopes);
+    fixture.current(&reopened);
+    fixture.current(&fixture.proof(BYSTANDER, "node"));
+    assert!(fixture.observe() == before, "large-grant authentication remains read-only after reopen");
+
+    for mismatch in ["withdraw-role", "entry-role", "map-key"] {
+        let fixture = Fixture::seeded("fresh-role", &["operator", "node"], &["operator.write", "node.invoke"]);
+        let before = fixture.observe();
+        let bearer = before.token(CALLER, "operator");
+        let prior = fixture.authenticate(&bearer);
+        match mismatch {
+            "withdraw-role" => fixture.write_column(CALLER, "roles_json", &SqlValue::Text("[\"node\"]".into())),
+            "entry-role" => fixture.edit_entries(CALLER, |entries| entries["operator"]["role"] = json!("observer")),
+            "map-key" => fixture.edit_entries(CALLER, |entries| {
+                let entry = entries.as_object_mut().unwrap().remove("operator").unwrap();
+                entries["other"] = entry;
+            }),
+            _ => unreachable!(),
+        }
+        let withdrawn = fixture.observe();
+        assert_eq!(text(withdrawn.device(CALLER), "role"), "operator", "primary label cannot restore approval");
+        assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
+        fixture.stale(&prior, 401);
+        fixture.current(&fixture.proof(CALLER, "node"));
+        fixture.current(&fixture.proof(BYSTANDER, "node"));
+        assert!(fixture.observe() == withdrawn);
+    }
+}
+
+#[test]
+fn fresh_authorization_rejects_corrupt_decisive_storage_without_writes() {
+    for field in ["roles_json", "approved_scopes_json"] {
+        for raw in ["DVR-private-malformed-authority", "null", "{}", "[\"operator.write\",7]"] {
+            let fixture = Fixture::seeded("fresh-shape", &["operator"], &["operator.write"]);
+            let bearer = fixture.observe().token(CALLER, "operator");
+            fixture.write_column(CALLER, field, &SqlValue::Text(raw.into()));
+            let before = fixture.observe();
+            let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &before);
+            assert_eq!(error.to_string(), "stored pairing authority is invalid");
+            assert!(fixture.observe() == before);
+        }
+        let fixture = Fixture::seeded("fresh-sql-type", &["operator"], &["operator.write"]);
+        let bearer = fixture.observe().token(CALLER, "operator");
+        fixture.write_column(CALLER, field, &SqlValue::Blob(vec![0xff, 0, 0x33]));
+        let before = fixture.observe();
+        let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &before);
+        assert_eq!(error.to_string(), "stored pairing authority is invalid");
+        assert!(fixture.observe() == before);
+    }
+    for scopes in [None, Some(Value::Null), Some(json!("operator.write")), Some(json!(["operator.write", 7]))] {
+        let fixture = Fixture::seeded("fresh-token-shape", &["operator"], &["operator.write"]);
+        let bearer = fixture.observe().token(CALLER, "operator");
+        fixture.edit_entries(CALLER, |entries| match scopes {
+            Some(value) => { entries["operator"]["scopes"] = value; }
+            None => { entries["operator"].as_object_mut().unwrap().remove("scopes"); }
+        });
+        let before = fixture.observe();
+        let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &before);
+        assert_eq!(error.to_string(), "stored pairing authority is invalid");
+        assert!(fixture.observe() == before);
+    }
+
+    let fixture = Fixture::seeded("fresh-baseline-choice", &["operator"], &["operator.write"]);
+    let bearer = fixture.observe().token(CALLER, "operator");
+    fixture.write_column(CALLER, "approved_scopes_json", &SqlValue::Null);
+    let fallback = fixture.observe();
+    fixture.current(&fixture.authenticate(&bearer));
+    assert!(fixture.observe() == fallback, "SQL NULL approval uses valid legacy scope baseline");
+    fixture.write_column(CALLER, "scopes_json", &SqlValue::Null);
+    let absent = fixture.observe();
+    let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &absent);
+    assert_eq!(error.to_string(), "stored pairing authority is invalid");
+    assert!(fixture.observe() == absent, "missing both baselines must not repair storage");
+    fixture.baseline(CALLER, &["operator.write"]);
+    fixture.write_column(CALLER, "scopes_json", &SqlValue::Blob(vec![0xff, 0, 0x44]));
+    let decisive = fixture.observe();
+    fixture.current(&fixture.authenticate(&bearer));
+    assert!(fixture.observe() == decisive, "valid present approval ignores malformed unused fallback");
+    fixture.write_column(CALLER, "roles_json", &SqlValue::Null);
+    let missing_roles = fixture.observe();
+    let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &missing_roles);
+    assert_eq!(error.to_string(), "stored pairing authority is invalid");
+    assert!(fixture.observe() == missing_roles);
+}
+
+#[test]
+fn fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary() {
+    let mut fixture = Fixture::seeded("fresh-reopen", &["operator", "node"], &["operator.write", "node.invoke"]);
+    let initial = fixture.observe();
+    let bearer = initial.token(CALLER, "operator");
+    let old = fixture.authenticate(&bearer);
+    fixture.baseline(CALLER, &["operator.read", "node.invoke"]);
+    let withdrawn = fixture.observe();
+    assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
+    fixture.stale(&old, 401);
+    assert!(fixture.observe() == withdrawn);
+    fixture.reopen();
+    assert!(fixture.observe() == withdrawn);
+    assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
+    assert!(fixture.observe() == withdrawn, "persisted overgrant still refuses after reopen");
+    fixture.baseline(CALLER, &["operator.write", "node.invoke"]);
+    assert!(fixture.observe() == initial, "explicit repair changes only the injected approval");
+    let repaired = fixture.authenticate(&bearer);
+    assert_eq!(repaired.device_id, old.device_id);
+    assert_eq!(repaired.role, old.role);
+    assert_eq!(repaired.scopes, old.scopes);
+    fixture.current(&repaired);
+    fixture.stale(&old, 401);
+    fixture.reopen();
+    let reopened = fixture.observe();
+    assert!(reopened == initial);
+    fixture.current(&fixture.authenticate(&bearer));
+    fixture.stale(&repaired, 401);
+    assert!(fixture.owner().authenticate_device_token("dfa-unknown-bearer").unwrap().is_none());
+    fixture.edit_entries(CALLER, |entries| entries["operator"]["revokedAtMs"] = json!(1));
+    let retired = fixture.observe();
+    assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
+    fixture.current(&fixture.proof(CALLER, "node"));
+    assert!(fixture.observe() == retired);
 }
 
 #[test]

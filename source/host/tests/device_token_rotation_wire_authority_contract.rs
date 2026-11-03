@@ -836,9 +836,11 @@ fn wire_rotation_two_current_admin_owners_serialize_replacements_without_lost_up
     for primary_only in [false, true] {
     let f = Fixture::seeded("admin-race", &["operator"], &["operator.admin"]);
     if primary_only {
+        let prior = f.proof(TARGET, "operator");
         f.write_column(TARGET, "roles_json", &SqlValue::Text("[\" node \",\"\",\"node\"]".into()));
         f.write_column(TARGET, "role", &SqlValue::Text(" operator ".into()));
-        f.stale(&f.proof(TARGET, "operator"), 401);
+        f.stale(&prior, 401);
+        assert!(f.owner().authenticate_device_token(&f.observe().token(TARGET, "operator")).unwrap().is_none());
     }
     let writer = f.writer();
     writer.execute_batch(
@@ -1742,9 +1744,9 @@ fn wire_rotation_unselected_primary_never_revives_and_existing_role_bytes_surviv
 fn wire_rotation_primary_materialization_rolls_back_with_target_revision_and_commit_faults() {
     for fault in ["zero-target", "target-error", "zero-revision", "revision-error", "revision-missing", "revision-overflow", "commit"] {
         let mut f = Fixture::seeded(fault, &["operator"], &["operator.admin"]);
+        let old_node = f.proof(TARGET, "node");
         f.write_column(TARGET, "roles_json", &SqlValue::Text("[ \"operator\" ]".into()));
         f.write_column(TARGET, "role", &SqlValue::Text("node".into()));
-        let old_node = f.proof(TARGET, "node");
         f.stale(&old_node, 401);
         let healthy = f.observe();
         let writer = f.writer();
@@ -1776,7 +1778,8 @@ fn wire_rotation_primary_materialization_rolls_back_with_target_revision_and_com
         f.stale(&old_node, 401);
         f.reopen();
         assert!(f.observe() == before);
-        f.stale(&f.proof(TARGET, "node"), 401);
+        assert!(f.owner().authenticate_device_token(&f.observe().token(TARGET, "node")).unwrap().is_none());
+        assert!(f.observe() == before, "fresh refusal after reopen preserves failed-rotation state");
         let writer = f.writer();
         if matches!(fault, "revision-missing" | "revision-overflow") {
             let counter = healthy.counter();

@@ -6,6 +6,18 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
+use std::collections::BTreeMap;
+use std::io::{Read, Write};
+use std::net::{SocketAddr, TcpStream};
+use std::sync::mpsc::{self, Receiver, SyncSender};
+use std::time::{Duration, Instant};
+use mahayana_host_runtime::device_pairing_owner::{DevicePairingOwner, DeviceTokenAuthorization};
+use mahayana_host_runtime::gateway_config::GatewayServerConfig;
+use mahayana_host_runtime::gateway_server::{
+    GatewayApi, GatewayCommandReport, GatewayEventHub, GatewayServer, GatewayServerDeps,
+    start_gateway_server,
+};
+use rusqlite::{Connection, OpenFlags, params, types::Value as SqlValue};
 
 const AGENT_SECRET: &str = "synthetic-agent-credential-for-contract";
 const SKILL_SECRET: &str = "synthetic-skill-credential-for-contract";
@@ -463,5 +475,386 @@ fn public_key_refusal_precedes_all_four_routes_and_read_normalization() {
         assert_eq!(error.to_string(), "configuration revision key is unavailable");
         assert!(fixture.bytes() == original, "refusal must preserve settings bytes");
         assert!(fs::read(&key_path).unwrap().as_slice() == b"invalid-synthetic-key");
+    }
+}
+
+// DFA-v1: actual owner + TCP ingress + shipping Settings helper. The separate
+// source-binding test below establishes wiring, not full UnifiedGatewayApi startup.
+const DFA_NATIVE_SECRET: &str = "dfa-private-native-secret";
+const DFA_WAIT: Duration = Duration::from_secs(15);
+type DfaRow = BTreeMap<String, SqlValue>;
+
+#[derive(PartialEq)]
+struct DfaPairingState { paired: Vec<DfaRow>, pending: Vec<DfaRow>, machine: Vec<DfaRow> }
+
+fn dfa_rows(conn: &Connection, sql: &str) -> Vec<DfaRow> {
+    let mut statement = conn.prepare(sql).unwrap();
+    let names: Vec<_> = statement.column_names().into_iter().map(str::to_owned).collect();
+    statement.query_map([], |row| {
+        names.iter().enumerate().map(|(index, name)| {
+            Ok((name.clone(), row.get::<_, SqlValue>(index)?))
+        }).collect::<rusqlite::Result<DfaRow>>()
+    }).unwrap().collect::<rusqlite::Result<Vec<_>>>().unwrap()
+}
+
+#[derive(Default)]
+struct DfaCounts {
+    lookups: AtomicUsize, accepted: AtomicUsize, bound: AtomicUsize,
+    dispatches: AtomicUsize, commits: AtomicUsize, completed: AtomicUsize, errors: AtomicUsize,
+}
+
+impl DfaCounts {
+    fn read(&self) -> [usize; 7] {
+        [&self.lookups, &self.accepted, &self.bound, &self.dispatches, &self.commits, &self.completed, &self.errors]
+            .map(|counter| counter.load(Ordering::SeqCst))
+    }
+}
+
+struct DfaGatewayApi {
+    owner: Option<DevicePairingOwner>,
+    settings: Arc<SettingsService>,
+    counts: Arc<DfaCounts>,
+    closed: SyncSender<()>,
+}
+
+impl GatewayApi for DfaGatewayApi {
+    fn authenticate_device_token(&self, token: &str) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
+        self.counts.lookups.fetch_add(1, Ordering::SeqCst);
+        let result = self.owner.as_ref().unwrap().authenticate_device_token(token)?;
+        if result.is_some() { self.counts.accepted.fetch_add(1, Ordering::SeqCst); }
+        Ok(result)
+    }
+
+    fn authorize_device_token_request(&self, _authorization: &DeviceTokenAuthorization, _method: &str, _args: &Value) -> Result<(), GatewayCommandError> {
+        self.counts.bound.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
+        self.counts.dispatches.fetch_add(1, Ordering::SeqCst);
+        dispatch_public_settings_command(&self.settings, method, &args, |_, _| {
+            self.counts.commits.fetch_add(1, Ordering::SeqCst);
+        })
+    }
+
+    fn on_command_complete(&self, _report: GatewayCommandReport) {
+        self.counts.completed.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn on_command_error(&self, _report: GatewayCommandReport) {
+        self.counts.errors.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+impl Drop for DfaGatewayApi {
+    fn drop(&mut self) { drop(self.owner.take()); let _ = self.closed.try_send(()); }
+}
+
+struct DfaHttpFixture {
+    settings: Option<Fixture>,
+    api: Option<Arc<DfaGatewayApi>>,
+    server: Option<GatewayServer>,
+    closed: Option<Receiver<()>>,
+    counts: Arc<DfaCounts>,
+    configured: bool,
+    shutdown_failed: bool,
+}
+
+impl DfaHttpFixture {
+    fn new(configured: bool) -> Self {
+        let settings = Fixture::new();
+        settings.call("config.get", &json!({})).unwrap();
+        let mut fixture = Self { settings: Some(settings), api: None, server: None, closed: None,
+            counts: Arc::new(DfaCounts::default()), configured, shutdown_failed: false };
+        fixture.open();
+        for (device, roles, scopes) in [
+            ("dfa-writer", vec!["operator", "node"], vec!["operator.write", "node.invoke"]),
+            ("dfa-reader", vec!["operator"], vec!["operator.read"]),
+            ("dfa-other", vec!["operator"], vec!["operator.write"]),
+        ] {
+            let request = fixture.owner().handle_pair_request(&json!({
+                "deviceId":device, "publicKey":format!("{device}-public-key"),
+                "role":roles[0], "roles":roles, "scopes":scopes,
+            })).unwrap();
+            fixture.owner().handle_pair_approve(&json!({"requestId":request["requestId"]})).unwrap();
+        }
+        fixture.owner().handle_pair_request(&json!({
+            "deviceId":"dfa-pending", "publicKey":"pending-public-key", "role":"operator", "scopes":["operator.read"],
+        })).unwrap();
+        let conn = fixture.writer();
+        conn.execute("UPDATE device_pairing_paired SET node_surface_json = ?1, pending_node_surface_json = ?2 WHERE device_id = 'dfa-writer'",
+            params!["{\"generation\":7}", "{\"generation\":8}"]).unwrap();
+        conn.close().unwrap();
+        fixture
+    }
+
+    fn settings(&self) -> &Fixture { self.settings.as_ref().unwrap() }
+    fn db(&self) -> PathBuf { self.settings().root.join("dfa-pairing.db") }
+    fn owner(&self) -> &DevicePairingOwner { self.api.as_ref().unwrap().owner.as_ref().unwrap() }
+    fn writer(&self) -> Connection { Connection::open_with_flags(self.db(), OpenFlags::SQLITE_OPEN_READ_WRITE).unwrap() }
+
+    fn open(&mut self) {
+        let (closed, receiver) = mpsc::sync_channel(1);
+        let api = Arc::new(DfaGatewayApi {
+            owner: Some(DevicePairingOwner::new(self.db()).unwrap()), settings: Arc::clone(&self.settings().owner),
+            counts: Arc::clone(&self.counts), closed,
+        });
+        self.server = Some(start_gateway_server(GatewayServerDeps {
+            api: api.clone(), events: GatewayEventHub::default(), local_exec: None, webauthn: None,
+            config: GatewayServerConfig { host:"127.0.0.1".into(), port:None,
+                auth_token:self.configured.then(|| DFA_NATIVE_SECRET.into()), tls:None }, started_at:1,
+        }).unwrap());
+        self.api = Some(api);
+        self.closed = Some(receiver);
+    }
+
+    fn stop(&mut self) -> bool {
+        if let Some(server) = self.server.take() { server.close(); }
+        drop(self.api.take());
+        if let Some(receiver) = self.closed.take() {
+            self.shutdown_failed |= receiver.recv_timeout(DFA_WAIT).is_err();
+        }
+        !self.shutdown_failed
+    }
+
+    fn reopen(&mut self) {
+        assert!(self.stop(), "all HTTP handlers and their pairing connection close before reopen");
+        self.open();
+    }
+
+    fn observe(&self) -> DfaPairingState {
+        let conn = Connection::open_with_flags(self.db(), OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        conn.execute_batch("BEGIN DEFERRED").unwrap();
+        let state = DfaPairingState {
+            paired: dfa_rows(&conn, "SELECT * FROM device_pairing_paired ORDER BY device_id"),
+            pending: dfa_rows(&conn, "SELECT * FROM device_pairing_pending ORDER BY request_id"),
+            machine: dfa_rows(&conn, "SELECT *, typeof(value_json) AS value_type, typeof(updated_at_ms) AS timestamp_type FROM config_machine_state ORDER BY state_key"),
+        };
+        conn.execute_batch("COMMIT").unwrap();
+        conn.close().unwrap();
+        state
+    }
+
+    fn token(&self, device: &str, role: &str) -> String {
+        let conn = self.writer();
+        let raw: String = conn.query_row("SELECT tokens_json FROM device_pairing_paired WHERE device_id = ?1", [device], |row| row.get(0)).unwrap();
+        conn.close().unwrap();
+        serde_json::from_str::<Value>(&raw).unwrap()[role]["token"].as_str().unwrap().to_owned()
+    }
+
+    fn post(&self, bearer: Option<&str>, header: &str, zone: &str) -> (u16, Value, String) {
+        let address = SocketAddr::from(([127,0,0,1], self.server.as_ref().unwrap().port()));
+        let mut stream = TcpStream::connect_timeout(&address, DFA_WAIT).unwrap();
+        stream.set_write_timeout(Some(DFA_WAIT)).unwrap();
+        let auth = bearer.map(|token| format!("Authorization: Bearer {token}\r\n")).unwrap_or_default();
+        let body = json!({"config":{"userTimeZone":zone}}).to_string();
+        write!(stream, "POST /api/config.set HTTP/1.1\r\nHost: 127.0.0.1\r\n{auth}{header}Content-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+        stream.flush().unwrap();
+        let deadline = Instant::now() + DFA_WAIT;
+        let mut bytes = Vec::new();
+        loop {
+            let remaining = deadline.checked_duration_since(Instant::now()).filter(|remaining| !remaining.is_zero()).expect("bounded HTTP response");
+            stream.set_read_timeout(Some(remaining)).unwrap();
+            let mut buffer = [0_u8; 4096];
+            let count = stream.read(&mut buffer).unwrap();
+            if count == 0 { break; }
+            bytes.extend_from_slice(&buffer[..count]);
+            assert!(bytes.len() <= 1024 * 1024, "bounded response size");
+        }
+        let raw = String::from_utf8(bytes).unwrap();
+        let status = raw.lines().next().unwrap().split_whitespace().nth(1).unwrap().parse().unwrap();
+        let body = serde_json::from_str(raw.split_once("\r\n\r\n").unwrap().1).unwrap();
+        (status, body, raw)
+    }
+
+    fn refused(&self, bearer: &str, status: u16, admitted: bool) {
+        let state = self.observe();
+        let bytes = self.settings().bytes();
+        let entries = self.settings().entries();
+        let mut expected = self.counts.read();
+        expected[0] += 1;
+        expected[1] += usize::from(admitted);
+        let (actual, body, raw) = self.post(Some(bearer), "X-Sand-Scope: operator.admin\r\n", "Asia/Tokyo");
+        assert_eq!(actual, status, "fresh HTTP refusal status, response omitted");
+        assert!(body["error"].as_str().is_some_and(|error| !error.is_empty()));
+        if status == 500 { assert_eq!(body["error"], "stored pairing authority is invalid"); }
+        for secret in [bearer, DFA_NATIVE_SECRET, AGENT_SECRET, SKILL_SECRET, ENV_SECRET] {
+            assert!(!raw.contains(secret), "HTTP response discloses private material");
+        }
+        assert!(!raw.contains("dfa-private-malformed"));
+        assert_eq!(self.counts.read(), expected, "ingress refusal cannot dispatch, commit or report a command");
+        assert!(self.observe() == state, "HTTP refusal preserves every pairing/pending/revision row");
+        assert!(self.settings().bytes() == bytes, "HTTP refusal preserves actual Settings bytes");
+        assert_eq!(self.settings().entries(), entries, "HTTP refusal creates no Settings sidecar");
+    }
+
+    fn committed(&self, bearer: Option<&str>, paired: bool, zone: &str) {
+        let state = self.observe();
+        let bytes = self.settings().bytes();
+        let mut expected = self.counts.read();
+        if paired { expected[0] += 1; expected[1] += 1; expected[2] += 1; }
+        expected[3] += 1; expected[4] += 1; expected[5] += 1;
+        let (status, body, raw) = self.post(bearer, "", zone);
+        assert_eq!(status, 200, "healthy request reaches actual Settings consumer");
+        assert_eq!(body["settings"]["userTimeZone"], zone);
+        assert_public(&body, &[AGENT_SECRET, SKILL_SECRET, ENV_SECRET, DFA_NATIVE_SECRET]);
+        if let Some(token) = bearer { assert!(!raw.contains(token)); }
+        assert_eq!(self.counts.read(), expected);
+        assert!(self.observe() == state, "positive authentication does not record last-use or alter pairing");
+        assert!(self.settings().bytes() != bytes, "positive writes the real Settings file");
+        let reopened = SettingsService::new(self.settings().owner.get_settings_path().to_path_buf());
+        assert_eq!(reopened.get_host_settings()["userTimeZone"], zone, "commit survives a new Settings owner");
+    }
+}
+
+impl Drop for DfaHttpFixture {
+    fn drop(&mut self) {
+        if !self.stop() {
+            // Never remove a fixture whose connection teardown was not acknowledged.
+            std::mem::forget(self.settings.take());
+            assert!(std::thread::panicking(), "bounded HTTP adapter teardown failed");
+        }
+    }
+}
+
+#[test]
+fn fresh_bearer_http_config_mutation_requires_current_approval() {
+    for configured in [false, true] {
+        let mut fixture = DfaHttpFixture::new(configured);
+        let bearer = fixture.token("dfa-writer", "operator");
+        let node = fixture.token("dfa-writer", "node");
+        let reader = fixture.token("dfa-reader", "operator");
+        let other = fixture.token("dfa-other", "operator");
+        let initial = fixture.observe();
+        let row = initial.paired.iter().find(|row| row.get("device_id") == Some(&SqlValue::Text("dfa-writer".into()))).unwrap();
+        let original_tokens = match row.get("tokens_json").unwrap() { SqlValue::Text(raw) => raw.clone(), _ => panic!("fixture tokens text") };
+        for corruption in ["overgrant", "partial-overgrant", "role", "malformed"] {
+            let conn = fixture.writer();
+            conn.execute("UPDATE device_pairing_paired SET roles_json = ?1, approved_scopes_json = ?2, tokens_json = ?3 WHERE device_id = 'dfa-writer'",
+                params![row.get("roles_json").unwrap(), row.get("approved_scopes_json").unwrap(), &original_tokens]).unwrap();
+            match corruption {
+                "overgrant" => { conn.execute("UPDATE device_pairing_paired SET approved_scopes_json = '[\"operator.read\",\"node.invoke\"]' WHERE device_id = 'dfa-writer'", []).unwrap(); }
+                "partial-overgrant" => {
+                    let mut tokens: Value = serde_json::from_str(&original_tokens).unwrap();
+                    tokens["operator"]["scopes"] = json!(["operator.write", "operator.approvals"]);
+                    conn.execute("UPDATE device_pairing_paired SET tokens_json = ?1 WHERE device_id = 'dfa-writer'", [tokens.to_string()]).unwrap();
+                }
+                "role" => { conn.execute("UPDATE device_pairing_paired SET roles_json = '[\"node\"]' WHERE device_id = 'dfa-writer'", []).unwrap(); }
+                "malformed" => { conn.execute("UPDATE device_pairing_paired SET approved_scopes_json = 'dfa-private-malformed' WHERE device_id = 'dfa-writer'", []).unwrap(); }
+                _ => unreachable!(),
+            }
+            conn.close().unwrap();
+            fixture.refused(&bearer, if corruption == "malformed" { 500 } else { 401 }, false);
+            if corruption == "overgrant" {
+                let durable = fixture.observe();
+                fixture.reopen();
+                assert!(fixture.observe() == durable);
+                fixture.refused(&bearer, 401, false);
+            }
+            if corruption != "malformed" {
+                let before = fixture.observe();
+                assert!(fixture.owner().authenticate_device_token(&node).unwrap().is_some(), "unselected node remains valid");
+                assert!(fixture.observe() == before);
+            }
+        }
+        let conn = fixture.writer();
+        conn.execute("UPDATE device_pairing_paired SET roles_json = ?1, approved_scopes_json = NULL, tokens_json = ?2 WHERE device_id = 'dfa-writer'",
+            params![row.get("roles_json").unwrap(), original_tokens]).unwrap();
+        conn.close().unwrap();
+        fixture.committed(Some(&bearer), true, "Asia/Tokyo");
+        fixture.refused(&reader, 403, true);
+        fixture.refused("dfa-unknown-explicit-bearer", 401, false);
+        fixture.committed(Some(&other), true, "Europe/London");
+        let native = configured.then_some(DFA_NATIVE_SECRET);
+        fixture.committed(native, false, "America/New_York");
+
+        // The same ordinary HTTP request must retain complete large-grant
+        // admission, including one invalid tail entry, without a timing oracle.
+        let mut scopes: Vec<String> = (0..20_000).map(|index| format!("operator.s{index:05}")).collect();
+        scopes.push("operator.write".into());
+        let current = fixture.observe();
+        let writer = current.paired.iter().find(|row| row.get("device_id") == Some(&SqlValue::Text("dfa-writer".into()))).unwrap();
+        let raw = match writer.get("tokens_json").unwrap() { SqlValue::Text(raw) => raw, _ => panic!("fixture tokens text") };
+        let mut tokens: Value = serde_json::from_str(raw).unwrap();
+        tokens["operator"]["scopes"] = json!(scopes);
+        let mut approved = scopes.clone();
+        approved.push("node.invoke".into());
+        let mut roles: Vec<String> = (0..20_000).map(|index| format!("observer{index:05}")).collect();
+        roles.extend([" operator ".into(), "operator".into(), "node".into(), "\t".into()]);
+        let conn = fixture.writer();
+        assert_eq!(conn.execute("UPDATE device_pairing_paired SET approved_scopes_json = ?1, tokens_json = ?2, roles_json = ?3 WHERE device_id = 'dfa-writer'",
+            params![json!(approved).to_string(), tokens.to_string(), json!(roles).to_string()]).unwrap(), 1);
+        conn.close().unwrap();
+        fixture.committed(Some(&bearer), true, "Asia/Tokyo");
+
+        let mut malformed_roles = json!(roles);
+        malformed_roles.as_array_mut().unwrap().push(json!(7));
+        let conn = fixture.writer();
+        assert_eq!(conn.execute("UPDATE device_pairing_paired SET roles_json = ?1 WHERE device_id = 'dfa-writer'", [malformed_roles.to_string()]).unwrap(), 1);
+        conn.close().unwrap();
+        fixture.refused(&bearer, 500, false);
+        let conn = fixture.writer();
+        assert_eq!(conn.execute("UPDATE device_pairing_paired SET roles_json = ?1 WHERE device_id = 'dfa-writer'", [json!(roles).to_string()]).unwrap(), 1);
+        conn.close().unwrap();
+
+        tokens["operator"]["scopes"].as_array_mut().unwrap().push(json!("operator.zz-unapproved-tail"));
+        let conn = fixture.writer();
+        assert_eq!(conn.execute("UPDATE device_pairing_paired SET tokens_json = ?1 WHERE device_id = 'dfa-writer'", [tokens.to_string()]).unwrap(), 1);
+        conn.close().unwrap();
+        fixture.refused(&bearer, 401, false);
+        fixture.committed(Some(&other), true, "Europe/London");
+
+        tokens["operator"]["scopes"] = json!(scopes);
+        let conn = fixture.writer();
+        assert_eq!(conn.execute("UPDATE device_pairing_paired SET tokens_json = ?1 WHERE device_id = 'dfa-writer'", [tokens.to_string()]).unwrap(), 1);
+        conn.close().unwrap();
+        let repaired = fixture.observe();
+        fixture.reopen();
+        assert!(fixture.observe() == repaired);
+        fixture.committed(Some(&bearer), true, "Asia/Tokyo");
+    }
+}
+
+fn fresh_bearer_shipping_bindings(source: &str) -> bool {
+    let body = |start: &str, end: &str| source.split_once(start).and_then(|(_, rest)| rest.split_once(end).map(|(body, _)| body));
+    let Some(api) = body("impl GatewayApi for UnifiedGatewayApi {", "    fn rotate_paired_device_token(\n") else { return false; };
+    let Some(dispatch) = body("    fn call_openclaw_gateway_command(\n", "    fn call_public_settings_command(\n") else { return false; };
+    let Some(settings) = body("    fn call_public_settings_command(\n", "    fn call_openclaw_config_get(\n") else { return false; };
+    let Some(config) = body("    fn call_openclaw_config_set(\n", "    fn call_openclaw_system_info(\n") else { return false; };
+    let Some(consumer) = body("fn dispatch_public_settings_command(\n", "struct UnifiedGatewayApi {") else { return false; };
+    let Some(composition) = body("    let gateway_api = Arc::new(UnifiedGatewayApi {", "    let channel_inbound_gateway =") else { return false; };
+    api.contains("self.device_pairing.authenticate_device_token(token)")
+        && !api.contains("Ok(Some(") && !api.contains("Ok(None)")
+        && dispatch.contains("\"config.set\" => self.call_openclaw_config_set(&args)")
+        && settings.contains("dispatch_public_settings_command(&self.settings, method, args,")
+        && config.contains("self.call_public_settings_command(\"config.set\", args)")
+        && consumer.contains("settings.set_public_host_settings_if_current(base_hash, target.clone())")
+        && source.contains("return self.call_openclaw_gateway_command(method, args);")
+        && source.contains("let device_pairing = match DevicePairingOwner::new(&device_pairing_db_path)")
+        && composition.contains("            device_pairing,\n")
+        && composition.contains("\n            settings: Arc::clone(&settings_extension),")
+        && source.contains("api: gateway_api.clone(),")
+}
+
+#[test]
+fn fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners() {
+    // Read against imported main.rs blob 7ec9bd8a22fd595f63cb3f4b632673e298294dfa.
+    // This is mutation-sensitive source evidence, separate from the TCP test.
+    let source = include_str!("../main.rs").split_once("\n#[cfg(test)]\nmod tests {").unwrap().0;
+    assert!(fresh_bearer_shipping_bindings(source));
+    for (from, to) in [
+        ("self.device_pairing.authenticate_device_token(token)", "Ok(None)"),
+        ("\"config.set\" => self.call_openclaw_config_set(&args)", "\"config.set\" => discarded_config(&args)"),
+        ("dispatch_public_settings_command(&self.settings, method, args,", "discarded_settings_command(&self.settings, method, args,"),
+        ("self.call_public_settings_command(\"config.set\", args)", "discarded_config_set(args)"),
+        ("settings.set_public_host_settings_if_current(base_hash, target.clone())", "discarded_settings_commit()"),
+        ("return self.call_openclaw_gateway_command(method, args);", "return discarded_gateway_command(method, args);"),
+        ("let device_pairing = match DevicePairingOwner::new(&device_pairing_db_path)", "let device_pairing = match unrelated_owner()"),
+        ("            device_pairing,\n", "            device_pairing: unrelated_owner,\n"),
+        ("\n            settings: Arc::clone(&settings_extension),", "\n            settings: Arc::clone(&unrelated_settings),"),
+        ("api: gateway_api.clone(),", "api: unrelated_api.clone(),"),
+    ] {
+        assert!(source.contains(from), "negative binding control must edit real shipping source");
+        assert!(!fresh_bearer_shipping_bindings(&source.replacen(from, to, 1)), "dead or changed owner binding must fail");
     }
 }

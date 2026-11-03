@@ -329,6 +329,19 @@ fn assert_rotation(
     expected_scopes: &[&str],
     in_band: bool,
 ) -> String {
+    assert_rotation_with_refused_unselected(fixture, before, receipt, target, role, expected_scopes, in_band, None)
+}
+
+fn assert_rotation_with_refused_unselected(
+    fixture: &Fixture,
+    before: &StoredState,
+    receipt: &Value,
+    target: &str,
+    role: &str,
+    expected_scopes: &[&str],
+    in_band: bool,
+    refused_unselected: Option<(&str, &str)>,
+) -> String {
     let after = fixture.observe();
     let expected_revision = revision(before).checked_add(1).expect("successful fixture has counter headroom");
     assert_eq!(receipt["revision"].as_u64(), Some(expected_revision));
@@ -383,6 +396,7 @@ fn assert_rotation(
     }
     fixture.issued_tokens.borrow_mut().push(new_bearer.clone());
     assert_authorized(fixture, &new_bearer, target, role, expected_scopes);
+    let mut refused_count = 0;
     for prior in &before.paired {
         let device = text(prior, "device_id");
         let entries = tokens(before, device);
@@ -392,9 +406,16 @@ fn assert_rotation(
             }
             let scopes: Vec<_> = entry["scopes"].as_array().expect("unchanged scope array").iter()
                 .map(|value| value.as_str().expect("unchanged string scope")).collect();
-            assert_authorized(fixture, entry["token"].as_str().expect("unchanged bearer"), device, entry_role, &scopes);
+            let bearer = entry["token"].as_str().expect("unchanged bearer");
+            if refused_unselected == Some((device, entry_role.as_str())) {
+                assert_invalid(fixture, bearer);
+                refused_count += 1;
+            } else {
+                assert_authorized(fixture, bearer, device, entry_role, &scopes);
+            }
         }
     }
+    assert_eq!(refused_count, usize::from(refused_unselected.is_some()), "pin the exact unselected invalid credential");
     new_bearer
 }
 
@@ -595,13 +616,17 @@ fn paired_rotation_desired_scopes_preserve_narrow_tokens_and_explicit_empty() {
     fixture.write_column(TARGET, "scopes_json", &SqlValue::Text(json!(["operator.admin", "node.invoke"]).to_string()));
     fixture.write_column(TARGET, "approved_scopes_json", &SqlValue::Text(json!(["operator.read", "node.invoke"]).to_string()));
     fixture.refuse(&proof, json!({"deviceId": TARGET, "scopes": ["operator.write"]}), None, 403);
+    let node = fixture.authorize_token(&fixture.token(TARGET, "node"));
     fixture.write_column(TARGET, "approved_scopes_json", &SqlValue::Text("[]".to_owned()));
     fixture.refuse(&proof, json!({"deviceId": TARGET, "scopes": ["operator.read"]}), None, 403);
     let before = fixture.observe();
     let receipt = fixture.owner().rotate_token_for_authenticated_device(
         &json!({"deviceId": TARGET, "scopes": []}), &proof, None,
     ).expect("explicit empty desired scopes remain bounded by an explicitly empty approval");
-    assert_rotation(&fixture, &before, &receipt, TARGET, "operator", &[], false);
+    assert_rotation_with_refused_unselected(&fixture, &before, &receipt, TARGET, "operator", &[], false, Some((TARGET, "node")));
+    let after = fixture.observe();
+    assert_eq!(fixture.owner().validate_current_device_authorization(&node).unwrap_err().status(), 401);
+    assert!(fixture.observe() == after, "unselected retired proof validation preserves the committed rotation");
 }
 
 #[test]
@@ -643,9 +668,10 @@ fn paired_rotation_live_credentials_and_approval_narrow_prior_proofs() {
     let durable = fixture.observe();
     fixture.reopen();
     assert_eq!(fixture.observe(), durable);
-    // Authentication is provenance, not a promise that the grant is still admissible.
-    let fresh = fixture.authorize_token(&bearer);
-    fixture.refuse(&fresh, json!({"deviceId": CALLER, "scopes": ["operator.write"]}), None, 401);
+    // Fresh admission must refuse this persisted unapproved grant after reopen.
+    let after_reopen = fixture.observe();
+    assert_invalid(&fixture, &bearer);
+    assert_eq!(fixture.observe(), after_reopen, "fresh refusal does not repair narrowed approval");
 
     // Live amplification cannot retroactively enlarge what authentication sealed.
     let fixture = Fixture::seeded("sealed-grant", &["operator.write"], &["operator.write"]);

@@ -1278,9 +1278,7 @@ fn token_rotate_wire_http_primary_only_successors_materialize_roles_atomically_a
         assert_eq!(fixture.owner().validate_current_device_authorization(&fresh).unwrap_err().status(), 401, "primary label cannot resurrect role-array withdrawal");
         fixture.reopen();
         assert_eq!(fixture.observe(), withdrawn);
-        if let Some(proof) = fixture.owner().authenticate_device_token(&successor).expect("withdrawn lookup") {
-            assert_eq!(fixture.owner().validate_current_device_authorization(&proof).unwrap_err().status(), 401);
-        }
+        assert!(fixture.owner().authenticate_device_token(&successor).expect("withdrawn lookup").is_none());
         assert_eq!(fixture.observe(), withdrawn);
         before.secrets().assert_reports_redacted(&fixture.observed);
         withdrawn.secrets().assert_reports_redacted(&fixture.observed);
