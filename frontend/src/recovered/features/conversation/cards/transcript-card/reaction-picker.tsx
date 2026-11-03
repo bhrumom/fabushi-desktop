@@ -171,7 +171,6 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
     const popover = popoverRef.current;
     if (trigger == null || popover == null) return;
     const viewport = trigger.closest<HTMLElement>(".sand-virtual-transcript");
-    let focused = false;
     const position = () => {
       const triggerBox = trigger.getBoundingClientRect();
       const viewportBox = viewport?.getBoundingClientRect();
@@ -196,19 +195,23 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
       popover.style.left = String(Math.max(leftEdge, Math.min(rightEdge - width, triggerBox.right - width))) + "px";
       popover.style.top = String(Math.max(topEdge, Math.min(bottomEdge - height, preferredTop))) + "px";
       popover.style.visibility = "visible";
-      // Layout effects run before passive effects; focus only after the
-      // portaled picker is positioned and visible, avoiding a hidden focus
-      // candidate on initial render. Do not scroll the canonical transcript.
-      if (!focused) {
-        focused = true;
-        popover.querySelector<HTMLButtonElement>(".sand-emoji-cell")?.focus({ preventScroll: true });
-      }
+      // Geometry and keyboard ownership are independent: pointer-click
+      // default focus can settle after this layout effect, so a synchronous
+      // focus here is immediately stolen back by the triggering button.
     };
     let frame = 0;
     const schedule = () => {
       if (frame === 0) frame = window.requestAnimationFrame(() => { frame = 0; position(); });
     };
     position();
+    // Take initial focus after the activating click has finished its default
+    // focus action. Only once per opening; scroll/resize and message updates
+    // must not take focus back from keyboard navigation.
+    const firstFocusFrame = window.requestAnimationFrame(() => {
+      if (popover.isConnected && trigger.isConnected) {
+        popover.querySelector<HTMLButtonElement>(".sand-emoji-cell")?.focus({ preventScroll: true });
+      }
+    });
     window.addEventListener("resize", schedule);
     document.addEventListener("scroll", schedule, true);
     const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
@@ -223,6 +226,7 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
       if (frame !== 0) window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(firstFocusFrame);
     };
   }, [open]);
 
@@ -259,6 +263,15 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
         aria-label="Add reaction"
         className="sand-message-hover-actions__button"
         onClick={() => setOpen(!open)}
+        onKeyDown={(event) => {
+          if (open && event.key === "Tab" && !event.shiftKey) {
+            const first = popoverRef.current?.querySelector<HTMLButtonElement>(".sand-emoji-cell");
+            if (first != null) {
+              event.preventDefault();
+              first.focus({ preventScroll: true });
+            }
+          }
+        }}
         ref={triggerRef}
         type="button"
       >
@@ -274,11 +287,22 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
             const buttons = Array.from(popoverRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []);
             if (buttons.length === 0) return;
             if (event.shiftKey && document.activeElement === buttons[0]) {
+              // Non-modal picker: backwards from the first emoji returns to
+              // the action that opened it, not a wrap to the last emoji.
               event.preventDefault();
-              buttons[buttons.length - 1]?.focus();
+              triggerRef.current?.focus({ preventScroll: true });
             } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
-              event.preventDefault();
-              buttons[0]?.focus();
+              // Forward traversal leaves the picker for the next message
+              // toolbar action. Never trap keyboard users in the portal.
+              const trigger = triggerRef.current;
+              const toolbar = trigger?.closest('[role="toolbar"]');
+              const actions = Array.from(toolbar?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+              const next = actions[actions.indexOf(trigger as HTMLButtonElement) + 1];
+              if (next != null) {
+                event.preventDefault();
+                setOpen(false);
+                next.focus({ preventScroll: true });
+              }
             }
           }}
           ref={popoverRef}

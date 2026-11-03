@@ -331,10 +331,24 @@ test('NMR-26 old-row reaction commands settle the page cache and cannot overwrit
   expect(bounds.top).toBeGreaterThanOrEqual(bounds.minTop - 1);
   expect(bounds.bottom).toBeLessThanOrEqual(bounds.maxBottom + 1);
   const firstEmoji = popover.getByRole('button', { name: 'React with 👍', exact: true });
+  const trigger = messageRow(page, 'm5').getByRole('button', { name: 'Add reaction', exact: true });
+  const nextAction = messageRow(page, 'm5').getByRole('button', { name: 'Reply to your message' });
   await expect(firstEmoji).toBeFocused();
+  // Non-modal portal traversal: backward Tab returns to the real trigger,
+  // forward Tab re-enters the first emoji, never cycles around the picker.
   await page.keyboard.press('Shift+Tab');
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(firstEmoji).toBeFocused();
+  for (let index = 0; index < 6; index += 1) await page.keyboard.press('Tab');
   await expect(popover.getByRole('button', { name: 'More emoji' })).toBeFocused();
   await page.keyboard.press('Tab');
+  await expect(nextAction).toBeFocused();
+  await expect(popover).toHaveCount(0);
+  // Reopen with the actual keyboard command and verify Escape restoration.
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(popover).toBeVisible();
   await expect(firstEmoji).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(popover).toHaveCount(0);
