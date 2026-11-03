@@ -176,3 +176,62 @@ overlong and wrong-order prefix negatives with retained rows and no resource or
 message dispatch, incomplete-prefix history settlement refusal, and the existing
 forward snapshot/permission regressions.
 No storage migration is required; old complete receipt arrays remain compatible.
+
+History and acknowledgement admission must apply the same persisted receipt
+qualification as explicit retry before resource materialization or settlement,
+including required metadata and alignment with the original attachment order.
+A complete-length but malformed receipt list cannot be repaired by a matching
+remote resource ID. HRR-AC-05 includes malformed complete-list history negatives
+with no resource/message dispatch or coverage advance, preserved original intent,
+and a retained visible recovery error after restart. Ordinary sync may record
+the failed suffix replay before refusing an incomplete history echo; the oracle
+preserves that failure state as well as every original intent field.
+
+### HRR-05 correlated Coordinator reply failure
+
+A reply from the current Coordinator port with a matching pending request ID
+must settle that request exactly once. A missing/non-object outcome, unknown
+status or malformed failure envelope rejects with a protocol error through the
+existing failure projection; it cannot orphan the Promise or permanently occupy
+the Human retry lane. Uncorrelated and retired-port replies retain their existing
+fences. HRR-AC-03 covers malformed correlated envelopes, a subsequent successful
+same-intent retry, concurrent unrelated calls and duplicate/late replies. This
+does not cancel or replace any Host-admitted durable intent.
+
+### HRR-09 concurrent historical forward settlement and source revocation
+
+The existing Human Session forward batch/journal, source ownership, account/issuer
+and source-read policy remain authoritative even if an in-flight forward POST is
+accepted remotely while its HTTP response is delayed. The historical inbound
+sync/echo materializer is another settlement entrance: before consuming an
+outgoing pending `human-message:<nonce>` owned by a forward batch, validate its
+unaltered original source context/request/target, journal, original attachment
+intent, current account/issuer and source access/protected-content policy.
+Repeat source authorization before materializing remote resources and before
+any durable canonical identity settlement; continue using the destination's
+existing mutation lane, without holding source or destination locks across
+network waits. Corrupt/missing source provenance fails closed, retaining the
+original forward journal, local nonce and snapshot rather than silently adopting
+a generic send. Unrelated history and a settled canonical message retain their
+normal reception/read behavior; one application's source denial does not grant
+permission to another consumer or erase stored data.
+
+HRR-AC-06: An actual loopback HTTP/Session/SQLite test holds a forward message
+POST, revokes its original source through the existing protected-content policy,
+then concurrently serves a valid same-nonce history echo. The history must not
+settle the local pending nonce or advance coverage; release of the POST must
+produce a durable source denial with unchanged original intent and no duplicate
+message. After source restoration and process restart, retry must use the same
+journal and nonce, eventually yield one canonical local message and preserve the
+previously accepted response's ambiguous transport semantics. Positive controls
+keep independent incoming history working during the held POST. This security
+behavior is in stage-A scoped Actions validation; live service, signed-platform,
+security/soak/upgrade/rollback, Bot regression and independent ACCEPT remain open.
+
+The shared full-metadata persisted attachment receipt validator must also guard
+history settlement, rejecting equal-count/equal-ID echoes with changed name,
+size, content type or creation timestamp. The historical partial-prefix test
+preserves the legitimate new `lastDispatchError` written by a failed suffix
+replay without allowing a partial echo to erase immutable intent. Existing
+Host/HTTP/SQLite, Coordinator and actual Renderer checks remain required, and
+no original upstream lock or ledger acceptance status is promoted by this batch.

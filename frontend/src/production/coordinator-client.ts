@@ -129,18 +129,25 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       return;
     }
     if (value.kind === "lifecycle" && value.phase === "shutdown") return disconnect(expectedPort, "coordinator requested shutdown");
-    if (value.kind === "reply" && typeof value.requestId === "string" && isRecord(value.outcome)) {
+    if (value.kind === "reply" && typeof value.requestId === "string") {
       const waiting = pending.get(value.requestId);
       if (waiting == null) return;
       pending.delete(value.requestId);
-      if (value.outcome.status === "ok") {
+      if (isRecord(value.outcome) && value.outcome.status === "ok") {
         try { waiting.resolve(validateReply(waiting.method, value.outcome.value)); }
         catch (error) { waiting.reject(error); }
-      } else if (value.outcome.status === "failed" && isRecord(value.outcome.failure)) {
+      } else if (isRecord(value.outcome) && value.outcome.status === "failed" && isRecord(value.outcome.failure)) {
         waiting.reject(new CoordinatorCallError(
           typeof value.outcome.failure.code === "string" ? value.outcome.failure.code : "failed",
           typeof value.outcome.failure.message === "string" ? value.outcome.failure.message : "Coordinator request failed",
           typeof value.outcome.failure.transportKind === "string" ? value.outcome.failure.transportKind : undefined
+        ));
+      } else {
+        // The reply belongs to this call even when its envelope is damaged.
+        // Reject it once so a Human retry cannot retain an orphaned UI lane;
+        // unrelated calls and already admitted Host work keep their ownership.
+        waiting.reject(new CoordinatorCallError(
+          "protocol-error", `${waiting.method} returned a malformed Coordinator reply outcome`
         ));
       }
       return;

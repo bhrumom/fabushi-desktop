@@ -681,3 +681,33 @@ The task receipt `projects/telegram-desktop-rust/evidence/taskbfafe567-round1-hu
 records actual containing-H results. Earlier HRR-01–07 implementation and scoped
 results remain distinct from full retry, source, deployed service, signed package,
 Bot/quality and independent acceptance; the original prerequisite rows are history.
+
+### Human Retry receipt and Coordinator recovery (taskbfafe567 round1, base a9e4)
+
+| Requirement / regression | Current production invariant | Authored evidence and execution boundary |
+| --- | --- | --- |
+| HRR-01 / HRR-02 / HRR-03 / HRR-04 / HRR-07 / HRR-AC-01 / HRR-AC-02 / HRR-AC-04 retained dependencies | Authenticated two-field command, unique persisted local identity, original nonce/reply/resource reuse, retained forward authorization and canonical participant-pair admission remain prerequisites of the same Retry/Session chain. | Existing `coordinator.contract.test.ts` Human retry request/settlement cases; `human_retry_raw_duplicate_and_foreign_author_refuse_without_replacing_durable_state`; `shipping_human_canonical_pair_admission_preserves_retry_and_refuses_network_until_restored`; forward source-change during upload/message wait controls; partial-prefix restart positive. All retained in containing-H Actions; no independent acceptance inferred. |
+| HRR-08 / HRR-AC-05 / HRR08-HISTORY-01 | Existing Session dispatch and history/ack share strict stored receipt qualification; matching resource IDs cannot qualify malformed metadata or erase original pending intent. | `shipping_human_malformed_complete_upload_history_receipts_preserve_intent_and_coverage`: four same-resource-ID/mismatched-metadata negatives, real HTTP/SQLite and attempted pending replay plus one history GET; no resource materialization, no coverage advance, durable intent and error retained on restart; all previous prefix/forward controls retained. Human79 required at containing H. |
+| HRR-05 / HRR-06 / HRR-AC-03 / HRR05-PORT-01 | Current Coordinator port + pending request ID settle once; malformed envelopes reject through existing UI failure flow, retaining Host work, other requests and original durable identities. | Actual client/broker suite18 includes11 malformed-envelope variants, same-intent recovery, valid failures, concurrent calls and stale-port/duplicate controls. Actual Renderer25 includes visible Resend recovery, unchanged draft/reply/resources, exact two-field retry and canonical single-row settlement. |
+| HRR08-CI-01 / oracle repair | Ordinary sync may persist a failed suffix replay before refusing an incomplete history echo. Preserve original fields and positively require the durable error before exact restart comparison. | a9e4 run41594411242/job125778291945:77passed/1 TEST_FLAW. Existing named history-prefix case retains incomplete refusal, no canonical ID, exactly one GET/no other I/O and no coverage progress. No production behavior is changed solely to satisfy the old oracle. |
+
+The canonical taskbfafe567 receipt retains exact runs/artifacts and reviewed scope.
+These cases are authored until containing-H execution; full source, real service,
+signed platform/quality/Bot/upgrade/rollback and independent ACCEPT remain open.
+
+### Human Retry: historical forward-source authorization after revoked POST (taskbfafe567 round1)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+This stage-A production delta extends the existing `FBCP-NMR-001` /
+`MSG-SEND-SETTLEMENT` Session owner. It is authored, not yet exact-H executed
+or independently ACCEPTed; prior review verdicts cover only their frozen scope.
+
+| Requirement / invariant | Real shipping entry and authority | Authored negative and positive control / evidence state |
+| --- | --- | --- |
+| HRR-09 / HRR-AC-06 / HRR09-HISTORY-POLICY-01 | Existing `sync_human_conversation_history` → `validate_remote_human_message` → `reauthorize_human_history_forward_settlement` → `materialize_remote_human_message_with_snapshot` → SandAgentDb canonical entry. During held forward POST, history echo must recheck original source and batch/account/issuer against same pending nonce; no second truth or generic resend. | `shipping_human_forward_revoked_source_during_post_rejects_concurrent_history_settlement`: real forward POST barrier + source protected-content revocation + concurrent matching history, retained intent on denial, late POST blocked and exact-nonce restore-after-restart control. New containing-H Host test/Actions required; full live acceptance pending. |
+| HRR-08 / HRR-AC-05 / HRR08-HISTORY-01 | Both explicit resend and historical admission call `qualified_pending_human_upload_receipts`, reject unqualified metadata, preserve original ordered resources and pending error across cold reopen. | Four receipt same-ID metadata-mismatch variants + original incomplete-prefix test; original test expects legitimate suffix retry error without permitting historical settlement. Exact-H Host check required; historic 77/78 is not a pass. |
+| HRR-05 / HRR-06 / HRR-AC-03 | Existing Coordinator malformed correlated reply rejection and existing Renderer Retry remain the original UI/transport owners. | Existing Coordinator18 and actual Renderer25 authored regressions remain selected. New H compilation, execution and independent reviewer verdict not yet established. |
+
+Full source/legal/service, supported signed packages, visual/a11y/security,
+performance/soak, upgrade/rollback, retained Bot regression and independent
+ACCEPT remain open; a successful scoped check does not close the migration.

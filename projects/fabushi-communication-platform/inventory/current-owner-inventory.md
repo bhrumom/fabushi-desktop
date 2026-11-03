@@ -3,7 +3,7 @@
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Status: evidence snapshot; P0 not yet passed
-Current bounded refresh: Human Retry / partial upload recovery, inspected base `cae1537f44e5e6401cc7bbd770b73565a8028b63`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. Earlier captures remain historical.
+Current bounded refresh: Human Retry / receipt and Coordinator failure recovery, inspected base `a9e4ac159c18f820768dda75aa4f4576d1a1a552`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. Earlier captures remain historical.
 Project: FBCP-001 Revision 2
 Captured: 2026-10-03
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
@@ -13,6 +13,18 @@ PR state at capture: open, draft, base `main`, head `refactor/grok-018-architect
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
 
 ## Method
+
+### 2026-11-03 receipt qualification and correlated reply recovery
+
+Current base `a9e4ac159c18f820768dda75aa4f4576d1a1a552` retains the entry/owner
+chain below. `ProductionSessionWorkers::read_human_dispatch_attachment_prefix`
+now qualifies the existing durable receipt array for both append and history/ack
+admission before resource materialization; no additional state is introduced.
+`createCoordinatorClient::handleMessage` owns request completion and now rejects
+malformed correlated envelopes through its existing error path. Retry UI remains
+`ProductionRenderer.resendFailedSend`, preserving the Host intent and newer draft.
+Real Host/HTTP/SQLite and actual-client/Renderer cases are authored; execution and
+independent acceptance remain separate in the canonical taskbfafe567 receipt.
 
 ### 2026-11-03 Human retry and partial upload recovery
 

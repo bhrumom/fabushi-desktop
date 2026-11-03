@@ -6,6 +6,25 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
+## Human Retry receipt and reply-envelope recovery — taskbfafe567 round1
+
+Inspected base `a9e4ac159c18f820768dda75aa4f4576d1a1a552`; live main and fixed U
+remain as recorded below. The prior prefix-recovery commit is already remote.
+Its exact native run41594411242/job125778291945 passed77 Human cases and failed
+one whole-row oracle: ordinary suffix replay legitimately adds a durable failure.
+That oracle now requires unchanged original intent, a visible failure, no unsafe
+I/O/coverage advance and exact restart preservation.
+
+The existing Session owner now applies the same strict receipt qualification to
+both retry and history/ack admission, closing malformed complete-list settlement.
+The existing Coordinator client rejects damaged correlated reply envelopes once,
+so Resend can recover with the original nonce while preserving the newer draft.
+Authored focused gates are Human79, actual Coordinator18 and actual Renderer25;
+containing-H Actions remain required. Prior Renderer24/Transcript10 and Rust
+renderer successes retain their original a9e4 identity. No source-review or final
+acceptance state is promoted; the canonical task receipt carries the review and
+run identities. Full source/service/signed-platform/quality/Bot/ACCEPT remain open.
+
 ## Human Retry partial upload recovery — taskbfafe567 round1 continuation
 
 Inspected base `cae1537f44e5e6401cc7bbd770b73565a8028b63`; live main
@@ -305,3 +324,9 @@ CAS. Six source reviews/two complete at936 are scoped historical counts; later
 source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
+
+
+### taskbfafe567 round1 — HRR-09 history/source revocation concurrency (2026-11-03)
+
+Fixed U `f985723b552b30fe1c17d377d57f44e61a15a8c4`; stage-A branch base `a9e4ac159c18f820768dda75aa4f4576d1a1a552`.
+Actual existing Human Session/Transcript send + history settlement owner receives a shared exact metadata receipt validator and source-owned forward journal/permission reauthorization before history resource materialization and settlement. Authored new real HTTP/SQLite negatives: forged equal-ID receipt metadata and held POST + revoked source + same-nonce history echo; prior incomplete-prefix test oracle is corrected to retain a legitimate failed-suffix dispatch error. Existing Coordinator/Renderer tests are retained (Coordinator18, actual Renderer25); scoped Human gate now selects80. These changes require new containing-H GitHub Actions and independent review; this paragraph is not execution evidence or shipping acceptance. No extra identity/message store, source baseline, or service is claimed. Complete source/legal, backend service, signed supported platforms, UI/a11y/visual/temporal/security/performance/soak, recovery/upgrade/rollback, Bot regression and independent ACCEPT remain open.

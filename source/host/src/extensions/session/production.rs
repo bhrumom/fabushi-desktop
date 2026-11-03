@@ -2024,6 +2024,106 @@ impl ProductionSessionWorkers {
         }))
     }
 
+    // One validator serves both ordinary retry and history settlement. A receipt
+    // is a qualified, ordered prefix of the original local attachment intent.
+    fn qualified_pending_human_upload_receipts(
+        original: &[serde_json::Value],
+        stored: Option<&serde_json::Value>,
+    ) -> Result<Vec<FabushiRemoteHumanAttachment>, String> {
+        let receipts: Vec<FabushiRemoteHumanAttachment> = match stored {
+            None => Vec::new(),
+            Some(value) => serde_json::from_value(value.clone())
+                .map_err(|error| format!("persisted Human dispatch attachments are invalid: {error}"))?,
+        };
+        if receipts.len() > original.len()
+            || receipts.iter().zip(original.iter()).any(|(remote, local)| {
+                local.get("name").and_then(serde_json::Value::as_str) != Some(remote.name.as_str())
+                    || remote.resource_id.is_empty()
+                    || remote.resource_id.trim() != remote.resource_id
+                    || remote.resource_id.len() > 128
+                    || remote.resource_id.contains('/')
+                    || remote.resource_id.contains('\\')
+                    || remote.size == 0
+                    || remote.size > 25 * 1024 * 1024
+                    || remote.content_type.trim().is_empty()
+                    || chrono::DateTime::parse_from_rfc3339(&remote.created_at).is_err()
+            })
+        {
+            return Err("persisted Human dispatch attachment prefix conflicts with its original intent".into());
+        }
+        Ok(receipts)
+    }
+
+    // A history echo is not an alternate forward-settlement authority. The
+    // source journal, current permission, account/issuer and exact target remain
+    // authoritative even when the original forward POST has not returned.
+    fn reauthorize_human_history_forward_settlement(
+        &self,
+        conversation_id: &str,
+        remote: &FabushiRemoteHumanMessage,
+        existing: &[serde_json::Value],
+    ) -> Result<(), String> {
+        let local_id = self.local_human_id()?;
+        if fabushi_identity_text(&remote.sender_user_id)? != local_id {
+            return Ok(());
+        }
+        let Some(nonce) = remote.client_request_id.as_deref() else {
+            return Ok(());
+        };
+        let Some(pending) = existing.iter().find(|entry| {
+            entry.get("authorId").and_then(serde_json::Value::as_str) == Some(local_id)
+                && entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce)
+                && entry.get("id").and_then(serde_json::Value::as_str)
+                    == Some(format!("human-message:{nonce}").as_str())
+                && matches!(entry.get("delivery").and_then(serde_json::Value::as_str),
+                    Some("pending" | "dispatching"))
+        }) else {
+            return Ok(());
+        };
+        let marked = pending.get("forwardBatchOwned").and_then(serde_json::Value::as_bool) == Some(true);
+        let context = pending.get("forwardContext");
+        if !marked && context.is_none() && !nonce.starts_with("human-forward-") {
+            return Ok(());
+        }
+        if !self.pending_human_forward_is_batch_owned(conversation_id, pending)? {
+            if marked || context.is_some() {
+                return Err("remote Human forward acknowledgement lost its durable source owner".into());
+            }
+            return Ok(());
+        }
+        let context = context.filter(|value|
+            value.get("batchVersion").and_then(serde_json::Value::as_u64) == Some(1))
+            .ok_or_else(|| "remote Human forward acknowledgement lost its source context".to_string())?;
+        let source_id = context.get("sourceConversationId").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "remote Human forward acknowledgement lost its source conversation".to_string())?;
+        let source_entry = context.get("sourceEntryId").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "remote Human forward acknowledgement lost its source entry".to_string())?;
+        let request = context.get("requestId").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "remote Human forward acknowledgement lost its durable request".to_string())?;
+        let scope = self.human_forward_scope()?;
+        let source_owner = self.open_retained_human_conversation_db_owner(source_id)?;
+        let empty = Vec::new();
+        let attachments = pending.get("attachments").and_then(serde_json::Value::as_array)
+            .unwrap_or(&empty);
+        if !load_forward_batches(&source_owner, source_id)?.iter().any(|batch| {
+            batch.account_id == scope.0 && batch.issuer == scope.1
+                && batch.request_id == request && batch.source_entry_id == source_entry
+                && batch.context == *context
+                && pending.get("content").and_then(serde_json::Value::as_str) == Some(batch.text.as_str())
+                && batch.attachments.as_slice() == attachments.as_slice()
+                && batch.destinations.iter().any(|target|
+                    target.conversation_id == conversation_id && target.client_nonce == nonce)
+        }) {
+            return Err("remote Human forward acknowledgement no longer matches its durable source batch".into());
+        }
+        self.authorize_forward_source(source_id, source_entry)
+            .map_err(|error| error.to_string())?;
+        if self.human_forward_scope()? != scope {
+            return Err("Fabushi native messaging credential changed Human account or issuer".into());
+        }
+        Ok(())
+    }
+
     fn validate_remote_human_reactions(
         reactions: &[FabushiRemoteHumanReaction],
     ) -> Result<(), String> {
@@ -2149,25 +2249,34 @@ impl ProductionSessionWorkers {
                 return Err("remote Human acknowledgement changed the dispatched reply".into());
             }
 
-            // A history echo is not authority to discard an unsent suffix.
-            // Only a *complete* original attachment receipt set may settle
-            // the local pending nonce; canonical rows already have their final
-            // attachment list and no pending receipt field.
+            // A history echo cannot settle an unqualified or partial prefix.
+            // Reuse the exact retry validator, then match the immutable resource
+            // metadata as well as IDs: a forged same-ID echo is not a receipt.
             if current.get("id").and_then(serde_json::Value::as_str)
                 .is_some_and(|id| id.starts_with("human-message:"))
             {
-                let original_count = match current.get("attachments") {
-                    None | Some(serde_json::Value::Null) => 0,
-                    Some(serde_json::Value::Array(items)) => items.len(),
+                let empty = Vec::new();
+                let original = match current.get("attachments") {
+                    None | Some(serde_json::Value::Null) => &empty,
+                    Some(serde_json::Value::Array(items)) => items,
                     _ => return Err("pending Human attachment intent is not an array".into()),
                 };
-                let confirmed_count = match current.get("remoteDispatchAttachments") {
-                    None => 0,
-                    Some(serde_json::Value::Array(items)) => items.len(),
-                    _ => return Err("pending Human upload receipts are not an array".into()),
-                };
-                if confirmed_count != original_count {
+                let receipts = Self::qualified_pending_human_upload_receipts(
+                    original, current.get("remoteDispatchAttachments"),
+                )?;
+                if receipts.len() != original.len() {
                     return Err("remote Human acknowledgement cannot settle incomplete attachment uploads".into());
+                }
+                if receipts.len() != remote.attachments.len()
+                    || receipts.iter().zip(remote.attachments.iter()).any(|(local, echoed)|
+                        local.resource_id != echoed.resource_id
+                            || local.name != echoed.name
+                            || local.size != echoed.size
+                            || local.content_type != echoed.content_type
+                            || local.created_at != echoed.created_at
+                    )
+                {
+                    return Err("remote Human acknowledgement changed dispatched resource metadata".into());
                 }
             }
             let previously_dispatched = current.get("remoteDispatchAttachments")
@@ -2224,7 +2333,11 @@ impl ProductionSessionWorkers {
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
         let metadata = Self::read_human_conversation_metadata(owner, conversation_id)?;
-        if let Some(reauthorize) = forward_admission { reauthorize()?; }
+        let reauthorize = || -> Result<(), String> {
+            if let Some(reauthorize) = forward_admission { reauthorize()?; }
+            self.reauthorize_human_history_forward_settlement(conversation_id, remote, existing)
+        };
+        reauthorize()?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
@@ -2297,13 +2410,13 @@ impl ProductionSessionWorkers {
                 .attachments
                 .iter()
                 .map(|attachment| self.materialize_remote_human_attachment(
-                    owner, conversation_id, attachment, forward_admission,
+                    owner, conversation_id, attachment, Some(&reauthorize),
                 ))
                 .collect::<Result<Vec<_>, _>>()?;
             object.insert("attachments".into(), serde_json::Value::Array(attachments));
         }
         Self::read_human_conversation_metadata(owner, conversation_id)?;
-        if let Some(reauthorize) = forward_admission { reauthorize()?; }
+        reauthorize()?;
         let peer_human_id = if sender_id == local_human_id {
             recipient_id.as_str()
         } else {
@@ -2679,7 +2792,8 @@ impl ProductionSessionWorkers {
                     return Err("Fabushi Human history afterId did not advance monotonically".into());
                 }
                 last = id;
-                match self.validate_remote_human_message(remote, &local_human_id, &peer, &snapshot) {
+                match self.validate_remote_human_message(remote, &local_human_id, &peer, &snapshot)
+                    .and_then(|_| self.reauthorize_human_history_forward_settlement(conversation_id, remote, &snapshot)) {
                     Ok(()) => accepted.push(remote.clone()),
                     Err(error) => { rejected.get_or_insert(error); }
                 }
@@ -2710,6 +2824,7 @@ impl ProductionSessionWorkers {
                 let remote_id = fabushi_message_identity_text(&remote.id)?;
                 if !known.contains(remote_id.as_str()) { continue; }
                 self.validate_remote_human_message(&remote, &local_human_id, &peer, &snapshot)?;
+                self.reauthorize_human_history_forward_settlement(conversation_id, &remote, &snapshot)?;
                 let settled = self.materialize_remote_human_message_with_snapshot(&owner, conversation_id, &remote, &snapshot, None)?;
                 Self::update_human_replay_snapshot(&mut snapshot, settled);
             }
@@ -3977,33 +4092,9 @@ impl ProductionSessionWorkers {
                 // This is a confirmed *ordered prefix*, not an all-or-nothing cache.
                 // A damaged receipt must never cause a silent reupload or substitute a
                 // different resource identity for the original durable intent.
-                let mut uploaded: Vec<FabushiRemoteHumanAttachment> = match pending_entry
-                    .get("remoteDispatchAttachments")
-                {
-                    None => Vec::new(),
-                    Some(value) => {
-                        let receipts: Vec<FabushiRemoteHumanAttachment> =
-                            serde_json::from_value(value.clone())
-                                .map_err(|error| format!("persisted Human dispatch attachments are invalid: {error}"))?;
-                        if receipts.len() > normalized_attachments.len()
-                            || receipts.iter().zip(normalized_attachments.iter()).any(|(remote, local)| {
-                                local.get("name").and_then(serde_json::Value::as_str) != Some(remote.name.as_str())
-                                    || remote.resource_id.is_empty()
-                                    || remote.resource_id.trim() != remote.resource_id
-                                    || remote.resource_id.len() > 128
-                                    || remote.resource_id.contains('/')
-                                    || remote.resource_id.contains('\\')
-                                    || remote.size == 0
-                                    || remote.size > 25 * 1024 * 1024
-                                    || remote.content_type.trim().is_empty()
-                                    || chrono::DateTime::parse_from_rfc3339(&remote.created_at).is_err()
-                            })
-                        {
-                            return Err("persisted Human dispatch attachment prefix conflicts with its original intent".into());
-                        }
-                        receipts
-                    }
-                };
+                let mut uploaded = Self::qualified_pending_human_upload_receipts(
+                    &normalized_attachments, pending_entry.get("remoteDispatchAttachments"),
+                )?;
                 if uploaded.len() < normalized_attachments.len() {
                     let mut forward_bytes = if let Some(context) = forward_context.filter(|context|
                         context.get("batchVersion").and_then(serde_json::Value::as_u64) == Some(1)

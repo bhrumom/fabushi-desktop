@@ -11,7 +11,8 @@ import {
 
 // NMR-50d: exercise the production client and broker. Only the transferred
 // transport is controlled; no mock client may admit a request before ready.
-// These 13 cases distinguish local admission from already posted Host work.
+// These cases distinguish local admission from already posted Host work,
+// including malformed correlated reply recovery without retiring other calls.
 interface RequestFrame {
   readonly kind: "request";
   readonly requestId: string;
@@ -511,4 +512,141 @@ test("Human retry rejects payload changes before posting and malformed Host sett
   await nextTurn();
   port.succeed(port.requests[1]!, settledHumanRetry());
   assert.deepEqual(await again, settledHumanRetry());
+});
+
+test("Human retry rejects malformed correlated envelopes once and preserves concurrent calls and same-intent recovery", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  port.ready();
+  await h.client.ready;
+  const args = { conversationId: "human:local:peer", clientNonce: "original" };
+  const malformed: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
+    ["missing outcome", {}],
+    ["null outcome", { outcome: null }],
+    ["array outcome", { outcome: [] }],
+    ["primitive outcome", { outcome: "failed" }],
+    ["missing status", { outcome: {} }],
+    ["unknown status", { outcome: { status: "intermediate" } }],
+    ["non-string status", { outcome: { status: null } }],
+    ["missing failure", { outcome: { status: "failed" } }],
+    ["null failure", { outcome: { status: "failed", failure: null } }],
+    ["array failure", { outcome: { status: "failed", failure: [] } }],
+    ["primitive failure", { outcome: { status: "failed", failure: "unavailable" } }],
+  ];
+  for (const [label, fields] of malformed) {
+    const offset = port.requests.length;
+    const original = observed(h.client.call("retryHumanMessage", args));
+    let originalRejections = 0;
+    void original.then(() => {}, () => { originalRejections += 1; });
+    const rejected = assert.rejects(original, (error: unknown) => {
+      assert.ok(error instanceof CoordinatorCallError, label);
+      assert.equal(error.code, "protocol-error", label);
+      assert.equal(error.transportKind, undefined, label);
+      assert.match(error.message, /retryHumanMessage returned a malformed Coordinator reply outcome/, label);
+      return true;
+    });
+    const unrelated = observed(h.client.call("listAgents"));
+    let unrelatedSettled = false;
+    void unrelated.then(() => { unrelatedSettled = true; }, () => { unrelatedSettled = true; });
+    await nextTurn();
+    assert.equal(port.requests.length, offset + 2, label);
+    const originalRequest = port.requests[offset]!;
+    const unrelatedRequest = port.requests[offset + 1]!;
+    assert.equal(originalRequest.method, "retryHumanMessage", label);
+    assert.equal(unrelatedRequest.method, "listAgents", label);
+    port.receive({ kind: "reply", requestId: originalRequest.requestId, ...fields });
+    await rejected;
+    assert.equal(originalRejections, 1, label);
+    assert.equal(unrelatedSettled, false, label);
+
+    const retry = observed(h.client.call("retryHumanMessage", args));
+    let retrySettled = false;
+    void retry.then(() => { retrySettled = true; }, () => { retrySettled = true; });
+    await nextTurn();
+    assert.equal(port.requests.length, offset + 3, label);
+    const retryRequest = port.requests[offset + 2]!;
+    assert.deepEqual(retryRequest.args, args, "retry preserves the original durable identities");
+    assert.notEqual(retryRequest.requestId, originalRequest.requestId, label);
+    port.receive({ kind: "reply", requestId: originalRequest.requestId, ...fields });
+    port.succeed(originalRequest, settledHumanRetry());
+    await nextTurn();
+    assert.equal(originalRejections, 1, label);
+    assert.equal(unrelatedSettled, false, "duplicate old reply cannot consume another call");
+    assert.equal(retrySettled, false, "late old success cannot settle the new request");
+    const agents = [{ agentId: "unrelated-agent" }];
+    port.succeed(unrelatedRequest, agents);
+    assert.deepEqual(await unrelated, agents, label);
+    assert.equal(retrySettled, false, label);
+    port.succeed(retryRequest, settledHumanRetry());
+    assert.deepEqual(await retry, settledHumanRetry(), label);
+    assert.equal(h.portRequests, 1, "a correlated failure does not retire unrelated port work");
+  }
+});
+
+test("Coordinator correlated failures preserve valid fields and existing fallback messages", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  port.ready();
+  await h.client.ready;
+  const failures = [
+    { failure: {}, code: "failed", message: "failed: Coordinator request failed", transportKind: undefined },
+    {
+      failure: { code: "forward.retryable", message: "confirmation unavailable", transportKind: "http" },
+      code: "forward.retryable", message: "forward.retryable: confirmation unavailable", transportKind: "http",
+    },
+    {
+      failure: { code: 7, message: null, transportKind: [] },
+      code: "failed", message: "failed: Coordinator request failed", transportKind: undefined,
+    },
+  ];
+  for (const expected of failures) {
+    const result = observed(h.client.call("retryHumanMessage", {
+      conversationId: "human:local:peer", clientNonce: "original",
+    }));
+    const rejected = assert.rejects(result, (error: unknown) => {
+      assert.ok(error instanceof CoordinatorCallError);
+      assert.equal(error.code, expected.code);
+      assert.equal(error.message, expected.message);
+      assert.equal(error.transportKind, expected.transportKind);
+      return true;
+    });
+    await nextTurn();
+    const request = port.requests.at(-1)!;
+    port.receive({
+      kind: "reply", requestId: request.requestId,
+      outcome: { status: "failed", failure: expected.failure },
+    });
+    await rejected;
+    assert.equal(h.portRequests, 1);
+  }
+});
+
+test("Malformed replies with unknown identities or from a retired port cannot settle current Human retry work", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const retired = h.providePort();
+  retired.ready();
+  await h.client.ready;
+  const args = { conversationId: "human:local:peer", clientNonce: "original" };
+  const original = observed(h.client.call("retryHumanMessage", args));
+  const replaced = assert.rejects(original, /coordinator session replaced/);
+  await nextTurn();
+  onlyRequest(retired);
+  const current = h.providePort();
+  await replaced;
+  const retry = observed(h.client.call("retryHumanMessage", args));
+  let retrySettled = false;
+  void retry.then(() => { retrySettled = true; }, () => { retrySettled = true; });
+  current.ready();
+  await nextTurn();
+  const request = onlyRequest(current);
+  retired.receive({ kind: "reply", requestId: request.requestId, outcome: { status: "failed" } });
+  retired.succeed(request, settledHumanRetry());
+  current.receive({ kind: "reply", requestId: "not-a-pending-request", outcome: null });
+  current.receive({ kind: "reply", outcome: { status: "failed" } });
+  current.receive({ kind: "reply", requestId: null, outcome: [] });
+  await nextTurn();
+  assert.equal(retrySettled, false, "only this request on its current port may settle it");
+  assert.equal(current.requests.length, 1);
+  current.succeed(request, settledHumanRetry());
+  assert.deepEqual(await retry, settledHumanRetry());
 });

@@ -173,6 +173,46 @@
         "artifact_id": 13202018049,
         "artifact_digest": "sha256:5885886290e8dcd26014ca6767e7e9a4f367cf10b5a19f190a7cee94f8a7be70"
       }
+    },
+    {
+      "id": "HRR08-CI-01",
+      "base": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+      "scope": "source/host/tests/session_gateway_contract.rs::shipping_human_partial_upload_history_echo_cannot_settle_incomplete_attachments",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "rationale": "Exact-H run41594411242 job125778291945 reports77 Human passes/1failure. Ordinary sync correctly records missing-suffix replay error before rejecting the incomplete history echo. Preserve all original fields, pending identity, no remote identity, one history GET/no other I/O, positive durable failure projection and exact restart preservation; replace the unsound full-row pre-replay equality only.",
+      "evidence_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41594411242/job/125778291945"
+    },
+    {
+      "id": "HRR08-HISTORY-01",
+      "base": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+      "scope": "source/host/src/extensions/session/production.rs::validate_remote_human_message",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "rationale": "History validates complete receipt counts and resource IDs but skips the strict persisted prefix metadata checks used by dispatch. A complete resourceId-only or wrong-name/zero-size/invalid-date receipt can therefore settle through history after retry refuses it. Share the existing private receipt qualification and add real Host/HTTP/SQLite negatives preserving intent and history coverage."
+    },
+    {
+      "id": "HRR05-PORT-01",
+      "base": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+      "scope": "frontend/src/production/coordinator-client.ts::handleMessage",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "rationale": "Current correlated failed replies without an object failure, and unknown statuses, delete pending before resolving/rejecting. Missing/non-object outcomes are silently ignored. Reject malformed correlated envelopes exactly once via existing failure path; preserve current-port/ID fencing, other calls and original Host intent."
+    },
+    {
+      "id": "HRR05-UI-ORACLE-01",
+      "scope": "desktop/e2e/native-message-projection.spec.ts malformed correlated reply notice",
+      "review_tree": "deb4c75a826a486157c04dd61044486146c6e2e8",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "rationale": "Independent static review and root caller tracing agree: CoordinatorCallError prefixes protocol-error: and ProductionRenderer exposes error.message verbatim. Preserve that production failure contract and correct only the exact UI notice expectation. The fixture still sends the real malformed correlated envelope and all recovery/draft/identity assertions remain required. No executable failure or pass is inferred."
+    },
+    {
+      "id": "HRR-TRACE-01",
+      "scope": "canonical FBCP-NMR-001 symbol and requirement traceability",
+      "classification": "IMPLEMENTATION_METADATA_DEFECT",
+      "decision": "FIX",
+      "rationale": "Manual reading of the existing candidate validator requires literal source symbols and individually present requirement IDs in RTM/dossier. Replace the invented qualified spelling createCoordinatorClient.handleMessage with the actual createCoordinatorClient and handleMessage symbols and map the retained HRR-01/02/03/04/07 + AC01/02/04 dependencies explicitly. Keep the validator and all gates unchanged; new ledger validation remains Actions-only."
     }
   ],
   "prerequisite_followup": {
@@ -276,5 +316,125 @@
       "shipping_human_partial_forward_upload_prefix_keeps_snapshot_and_source_admission"
     ],
     "required_human_case_count": 78
+  },
+  "recovery_followup_20261103": {
+    "base": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "requirements": [
+      "HRR-05",
+      "HRR-06",
+      "HRR-08",
+      "HRR-AC-03",
+      "HRR-AC-05",
+      "HRR-09",
+      "HRR-AC-06"
+    ],
+    "frozen_scope": [
+      "source/host/src/extensions/session/production.rs",
+      "source/host/tests/session_gateway_contract.rs",
+      "frontend/src/production/coordinator-client.ts",
+      "frontend/src/production/coordinator-client.contract.test.ts",
+      "docs/specs/fbcp-human-message-retry.md",
+      ".github/workflows/native-service-contracts.yml",
+      "projects/grok-fabu-parity/architecture-semantic-adaptations.json",
+      "projects/telegram-desktop-rust/parity-ledger.json",
+      "projects/telegram-desktop-rust/evidence/taskbfafe567-round1-human-retry.json",
+      "projects/fabushi-communication-platform/inventory/current-owner-inventory.md",
+      "projects/fabushi-communication-platform/owner-resolution-matrix.md",
+      "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+      "projects/telegram-desktop-rust/STATUS.md",
+      "projects/fabushi-communication-platform/STATUS.md",
+      "desktop/e2e/native-message-projection.spec.ts",
+      "desktop/e2e/fixtures/native-message-projection.tsx"
+    ],
+    "workspace": "Isolated detached exact-base worktree. All prior worktree uncommitted changes preserved. Prior HRR-08 blobs already reached remote a9e4; no replay of stale patches.",
+    "parallel_scope": "Host worker changed production.rs only; Coordinator worker changed coordinator-client.ts and its contract tests only; UI worker changed the existing native-message-projection spec/fixture only. Root integrates Host tests, spec, workflows, semantic-adaptation hash, owner inventory, ledger, RTM and publication. Configured model/effort inherited with no override during implementation.",
+    "execution": "not-run at authoring; no local or htch executable verification; exact containing-H Actions required",
+    "independent_acceptance": false,
+    "complete": false,
+    "scope_qualification": "Complete scope frozen only after all authored code/test/traceability changes; initial read-only findings were discovery, not final acceptance.",
+    "authored_counts": {
+      "shipping_human": 80,
+      "coordinator_port": 18,
+      "actual_renderer": 25,
+      "retained_transcript": 10
+    },
+    "behavior": "One strict stored receipt qualifier protects retry/history admission; correlated malformed Coordinator replies release the existing failed Retry projection for same-intent recovery. No new message/store/transport owner, data migration or source rebaseline. Concurrent held forward POST + source revocation now rechecked at history pre-admission, before materializing attached resources and before durable settlement; matching history cannot silently consume denied original forward.",
+    "source_review_contract": "Current schema/source validator/actual accepted entrypoint support FMEP-SOURCE-01. Candidate external/generated/LFS/legal closure remains false; new ledger traceability edits require containing-H candidate gate.",
+    "prior_exact_execution": {
+      "head": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+      "native_run": 41594411242,
+      "host_job": 125778291945,
+      "host_result": "77 passed/1 TEST_FLAW",
+      "host_artifact": 13211174198,
+      "host_artifact_digest": "sha256:91ed6238460e1bb10118a2abab4fb970bef722921aa62000f31c8c892a1cb55a",
+      "ui_job": 125778291546,
+      "ui_result": "24 actual Renderer + 10 Transcript passed",
+      "rust_run": 41594411190,
+      "rust_renderer_job": 125778291645,
+      "rust_renderer_result": "success; other Rust jobs skipped; not shipping acceptance"
+    },
+    "source_review": {
+      "round1": {
+        "base": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+        "commit": "7d0efd915258f15b39bdcb2b1ef5d9659f5f5a0a",
+        "tree": "deb4c75a826a486157c04dd61044486146c6e2e8",
+        "scope": "all16 declared paths and adjacent consumers",
+        "reviewers": [
+          "frozen_general_review",
+          "frozen_security_review",
+          "frozen_ui_review"
+        ],
+        "verdict": "MUST_FIX_FOUND: all independently identified the missing protocol-error prefix in the new exact UI oracle; no other scoped must-fix",
+        "decision": "HRR05-UI-ORACLE-01 FIX applied; root also corrected literal symbol and retained-requirement traceability under HRR-TRACE-01",
+        "execution": "read-only source review; xhigh spawn effort requested; configured model inherited; no executable acceptance"
+      },
+      "round2": {
+        "base": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+        "commit": "527b5236913e89c6d14c4deba38327d913026466",
+        "tree": "be320d6ebd77735b7d3fb66d10b77e27c7550a75",
+        "reviewer": "frozen_fix_review",
+        "scope": "focused round-one fix delta with the full16-path scope and adjacent callers, schema, actual validator and workflow declarations",
+        "verdict": "NO_MUST_FIX_FOUND",
+        "resolved": [
+          "HRR05-UI-ORACLE-01",
+          "HRR-TRACE-01"
+        ],
+        "execution": "read-only source review; xhigh explicitly configured; model inherited; no executable verification or release ACCEPT",
+        "publication_delta": "Only this source-review receipt is appended after the frozen source review; reviewed production, tests, workflow, schema and traceability are unchanged."
+      },
+      "independent_acceptance": false,
+      "round3": {
+        "base": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+        "scope": "new HRR-09 code/test and metadata history/oracle changes following earlier frozen review",
+        "verdict": "pending independent code review and GitHub Actions; previous NO_MUST_FIX_FOUND did not cover these additions",
+        "independent_acceptance": false
+      }
+    },
+    "test_oracle_repair": "Original partial-prefix history test now checks immutable id/content/reply/attachments and accepts real durable lastDispatchError after a failed suffix recovery; exact persisted row is checked after restart instead of comparing against its pre-attempt bytes.",
+    "added_production": {
+      "entry": "source/host/src/extensions/session/production.rs",
+      "symbols": [
+        "qualified_pending_human_upload_receipts",
+        "reauthorize_human_history_forward_settlement",
+        "validate_remote_human_message",
+        "materialize_remote_human_message_with_snapshot",
+        "sync_human_conversation_history"
+      ],
+      "session_blob": "42c6cc1d73cdc71650f8590b8a1746e7a97684f5",
+      "host_test_blob": "838806d0e38596fd558533d3541979fe6b83bec3",
+      "exact_base": "a9e4ac159c18f820768dda75aa4f4576d1a1a552",
+      "new_cases": [
+        "shipping_human_malformed_complete_upload_history_receipts_preserve_intent_and_coverage",
+        "shipping_human_forward_revoked_source_during_post_rejects_concurrent_history_settlement"
+      ],
+      "negative_oracles": [
+        "same resource ID but mutated receipt metadata is rejected; no coverage advance/restart intent unchanged",
+        "held forward POST, source revoked, same-nonce history echo denied before canonical settlement; late POST denied; original batch/nonce remains and recovers after source restored"
+      ],
+      "workflow": "native-service-contracts.yml selects 80 Human, 18 Coordinator, 25 actual Chromium Renderer",
+      "execution": "not run on new containing H; previous a9 runs are historical only"
+    }
   }
 }

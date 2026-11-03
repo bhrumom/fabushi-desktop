@@ -9341,13 +9341,26 @@ fn shipping_human_partial_upload_history_echo_cannot_settle_incomplete_attachmen
     let error = runtime.sync_human_conversation(&id)
         .expect_err("partial history echo must not consume an incomplete local outbox");
     assert!(error.contains("incomplete attachment"), "{error}");
-    assert_eq!(owner.get_transcript_entries().unwrap(), vec![pending.clone()]);
+    // Ordinary sync first tries the unsent suffix. Its missing input is a
+    // legitimate durable dispatch error, not mutation of the original intent.
+    let retained = owner.get_transcript_entries().unwrap();
+    assert_eq!(retained.len(), 1);
+    for key in ["id", "kind", "role", "authorKind", "authorId", "content",
+        "clientNonce", "timestampMs", "attachments", "remoteDispatchAttachments"] {
+        assert_eq!(retained[0][key], pending[key], "preserve original {key}");
+    }
+    assert_eq!(retained[0]["delivery"], "pending");
+    assert!(retained[0]["lastDispatchError"].as_str().is_some_and(|message|
+        !message.is_empty()), "failed suffix replay must retain its durable error");
+    assert!(retained[0].get("remoteMessageId").is_none());
+    assert!(owner.get_metadata("humanHistoryCoverage").unwrap().is_none(),
+        "the rejected history echo cannot advance coverage");
     runtime.shutdown(); drop(owner); drop(runtime);
     let requests = server.join().unwrap();
     assert_eq!(requests.len(), 1);
     assert!(requests[0].starts_with("GET /api/social/messages?"));
     let reopened = human_message_fixture_runtime(&root, &url);
-    assert_eq!(reopened.read_human_conversation_transcript(&id).unwrap(), vec![pending]);
+    assert_eq!(reopened.read_human_conversation_transcript(&id).unwrap(), retained);
     reopened.shutdown(); drop(reopened);
     fs::remove_dir_all(root).unwrap();
 }
@@ -9405,5 +9418,198 @@ fn shipping_human_partial_forward_upload_prefix_keeps_snapshot_and_source_admiss
     }
     runtime.shutdown(); drop(target_owner); drop(source_owner); drop(runtime);
     server.finish();
+    fs::remove_dir_all(root).unwrap();
+}
+
+// HRR-08/09: a remote history echo with the right resource IDs but changed
+// resource metadata is not a qualified acknowledgement of a pending nonce.
+#[test]
+fn shipping_human_malformed_complete_upload_history_receipts_preserve_intent_and_coverage() {
+    let receipt = json!({
+        "resourceId":"same-resource","name":"original.bin",
+        "contentType":"application/octet-stream","size":4,
+        "createdAt":"2026-10-05T01:00:00Z"
+    });
+    let mut changed_name = receipt.clone();
+    changed_name["name"] = json!("different.bin");
+    let mut changed_size = receipt.clone();
+    changed_size["size"] = json!(5);
+    let mut changed_type = receipt.clone();
+    changed_type["contentType"] = json!("application/x-untrusted");
+    let mut changed_date = receipt.clone();
+    changed_date["createdAt"] = json!("2026-10-05T01:00:01Z");
+    for (case, echoed_receipt) in [
+        ("name", changed_name), ("size", changed_size),
+        ("type", changed_type), ("date", changed_date),
+    ] {
+        let root = temp_root(&format!("human-history-receipt-metadata-{case}"));
+        let echo = fixture_remote_human_message(88, 1, 2, "original intention",
+            Some("history-qualified-nonce"), json!([echoed_receipt]));
+        let mut server = HumanSyncHttpFixture::start(move |request| {
+            if request.starts_with("POST /api/social/messages ") {
+                HumanSyncHttpReply::Json(503, json!({"success":false,"error":"fixture dispatch refused"}))
+            } else if request.starts_with("GET /api/social/messages?") {
+                HumanSyncHttpReply::Json(200, human_sync_history(request, vec![echo.clone()]))
+            } else {
+                HumanSyncHttpReply::Json(503, json!({"success":false,"error":"unexpected resource request"}))
+            }
+        });
+        let runtime = human_message_fixture_runtime(&root, &server.url);
+        let id = runtime.create_human_conversation("2", "Peer").unwrap()["id"]
+            .as_str().unwrap().to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        let pending = json!({
+            "id":"human-message:history-qualified-nonce","kind":"message","role":"user",
+            "authorKind":"human","authorId":"1","content":"original intention",
+            "clientNonce":"history-qualified-nonce","delivery":"pending","timestampMs":2000.0,
+            "attachments":[{"path":root.join("missing-original.bin").to_string_lossy(),"name":"original.bin"}],
+            "remoteDispatchAttachments":[receipt]
+        });
+        assert!(owner.append_transcript_entry(&pending).unwrap());
+        let error = runtime.sync_human_conversation(&id)
+            .expect_err("same-ID but changed metadata must not settle the durable pending row");
+        assert!(error.contains("dispatched resource metadata"),
+            "{case}: must reject qualified history metadata, not a network/fixture error: {error}");
+        let retained = owner.get_transcript_entries().unwrap();
+        assert_eq!(retained.len(), 1, "{case}");
+        for key in ["id","content","clientNonce","attachments","remoteDispatchAttachments"] {
+            assert_eq!(retained[0][key], pending[key], "{case}: preserve original {key}");
+        }
+        assert!(retained[0].get("remoteMessageId").is_none(), "{case}");
+        assert_eq!(retained[0]["delivery"], "pending", "{case}");
+        assert!(owner.get_metadata("humanHistoryCoverage").unwrap().is_none(),
+            "{case}: rejection may not advance the history cursor");
+        runtime.shutdown(); drop(owner); drop(runtime);
+        let reopened = human_message_fixture_runtime(&root, &server.url);
+        let after_restart = reopened.open_human_conversation_db_owner(&id).unwrap()
+            .get_transcript_entries().unwrap();
+        assert_eq!(after_restart[0]["remoteDispatchAttachments"], pending["remoteDispatchAttachments"]);
+        assert_eq!(after_restart[0]["clientNonce"], pending["clientNonce"]);
+        assert!(after_restart[0].get("remoteMessageId").is_none());
+        reopened.shutdown(); drop(reopened);
+        let requests = server.finish();
+        assert_eq!(requests.iter().filter(|request|
+            request.starts_with("GET /api/social/messages?")).count(), 1, "{case}");
+        assert!(!requests.iter().any(|request|
+            request.starts_with("GET /api/social/message-resources/")
+                || request.starts_with("POST /api/social/message-resources ")),
+            "{case}: untrusted echo cannot materialize or upload a resource");
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+// HRR-09: source revocation during a held forward POST must defeat *both*
+// the late POST settlement and a concurrent history echo of the same nonce.
+#[test]
+fn shipping_human_forward_revoked_source_during_post_rejects_concurrent_history_settlement() {
+    let root = temp_root("human-forward-revoked-history-race");
+    let accepted = Arc::new(std::sync::Mutex::new(None::<serde_json::Value>));
+    let service_accepted = Arc::clone(&accepted);
+    let (started, observed_post) = std::sync::mpsc::channel();
+    let (release_post, post_release) = std::sync::mpsc::channel();
+    let mut first_post = Some((started, post_release));
+    let mut server = HumanSyncHttpFixture::start(move |request| {
+        if request.starts_with("POST /api/social/messages ") {
+            let message = human_sync_forward_ack(request, 90);
+            *service_accepted.lock().expect("first server-accepted forward") = Some(message.clone());
+            let body = json!({"success":true,"message":message});
+            if let Some((started, release)) = first_post.take() {
+                HumanSyncHttpReply::Held { status:201, body, started, release, stream_body:false }
+            } else {
+                HumanSyncHttpReply::Json(201, body)
+            }
+        } else if request.starts_with("GET /api/social/messages?") {
+            let messages = service_accepted.lock().unwrap().clone().into_iter().collect();
+            HumanSyncHttpReply::Json(200, human_sync_history(request, messages))
+        } else {
+            HumanSyncHttpReply::Json(503, json!({"success":false,"error":"unexpected forward IO"}))
+        }
+    });
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let args = seed_human_sync_forward(&runtime, 2501, 2502, "revoked-history-race");
+    let source = args["sourceConversationId"].as_str().unwrap().to_string();
+    let target = args["destinationConversationIds"][0].as_str().unwrap().to_string();
+    let source_owner = runtime.open_human_conversation_db_owner(&source).unwrap();
+    let source_entry_id = args["sourceEntryId"].as_str().unwrap();
+    let original_source = source_owner.get_transcript_entry_by_id(source_entry_id).unwrap().unwrap();
+    let forward = {
+        let runtime = Arc::clone(&runtime);
+        let args = args.clone();
+        thread::spawn(move || forward_gateway_result(&runtime, &args))
+    };
+    let waited = observed_post.recv_timeout(std::time::Duration::from_secs(10));
+    if let Err(error) = waited {
+        let _ = release_post.send(());
+        let result = forward.join();
+        panic!("forward did not reach the held POST: {error}; {result:?}");
+    }
+    let target_owner = runtime.open_human_conversation_db_owner(&target).unwrap();
+    let pending = target_owner.get_transcript_entries().unwrap();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["delivery"], "dispatching");
+    let original_batch = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    let mut protected_source = original_source.clone();
+    protected_source["protectedContent"] = json!(true);
+    source_owner.update_transcript_entry(source_entry_id, &protected_source).unwrap().unwrap();
+
+    let (result_sender, result_receiver) = std::sync::mpsc::channel();
+    let syncing = {
+        let runtime = Arc::clone(&runtime);
+        let id = target.clone();
+        thread::spawn(move || {
+            let result = runtime.sync_human_conversation(&id);
+            let _ = result_sender.send(result.clone());
+            result
+        })
+    };
+    let observed_sync = result_receiver.recv_timeout(std::time::Duration::from_secs(10));
+    let after_sync = target_owner.get_transcript_entries().unwrap();
+    let retained_batch = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    // Always unblock the owned POST before joins and behavioral assertions.
+    let released = release_post.send(());
+    let final_sync = syncing.join().expect("sync worker exits when HTTP is released");
+    let forward_result = forward.join().expect("forward worker").expect("retained forward result");
+    assert!(released.is_ok());
+    assert!(matches!(&observed_sync, Ok(Err(error)) if error.contains("protected")),
+        "concurrent history must reject the revoked source before POST returns: {observed_sync:?}");
+    assert!(final_sync.unwrap_err().contains("protected"));
+    assert_eq!(retained_batch, original_batch, "active forward journal is not rewritten by history");
+    assert_eq!(after_sync.len(), 1);
+    assert_eq!(after_sync[0]["id"], pending[0]["id"]);
+    assert_eq!(after_sync[0]["clientNonce"], pending[0]["clientNonce"]);
+    assert_eq!(after_sync[0]["forwardContext"], pending[0]["forwardContext"]);
+    assert_eq!(after_sync[0]["delivery"], "dispatching");
+    assert!(after_sync[0].get("remoteMessageId").is_none(),
+        "revoked history must not settle the pending outbox");
+    assert_eq!(forward_result["destinations"][0]["status"], "failed");
+    assert!(forward_result["destinations"][0]["error"].as_str().unwrap().contains("protected"));
+    let retained_after_post = target_owner.get_transcript_entries().unwrap();
+    assert_eq!(retained_after_post.len(), 1);
+    assert!(retained_after_post[0].get("remoteMessageId").is_none());
+    assert_eq!(retained_after_post[0]["clientNonce"], pending[0]["clientNonce"]);
+    assert_eq!(retained_after_post[0]["delivery"], "pending");
+    let nonce = pending[0]["clientNonce"].as_str().unwrap().to_string();
+    runtime.shutdown(); drop(target_owner); drop(runtime);
+
+    // Permission restoration must recover the same journal/nonce after restart.
+    source_owner.update_transcript_entry(source_entry_id, &original_source).unwrap().unwrap();
+    drop(source_owner);
+    let restarted = human_message_fixture_runtime(&root, &server.url);
+    let settled = dispatch(&restarted, "retryHumanMessage",
+        json!({"conversationId":target,"clientNonce":nonce}));
+    assert_eq!(settled["id"], "human-server-message:90");
+    assert_eq!(settled["clientNonce"], nonce);
+    assert_eq!(settled["delivery"], "sent");
+    assert_eq!(settled["forwardContext"], pending[0]["forwardContext"]);
+    let rows = restarted.read_human_conversation_transcript(&target).unwrap();
+    assert_eq!(rows.len(), 1, "recovery may not duplicate the forward");
+    assert_eq!(rows[0]["id"], settled["id"]);
+    restarted.shutdown(); drop(restarted);
+    let requests = server.finish();
+    assert_eq!(requests.iter().filter(|request|
+        request.starts_with("POST /api/social/messages ")).count(), 2,
+        "one held ambiguous POST and one same-nonce authorized retry");
+    assert_eq!(requests.iter().filter(|request|
+        request.starts_with("GET /api/social/messages?")).count(), 1);
     fs::remove_dir_all(root).unwrap();
 }

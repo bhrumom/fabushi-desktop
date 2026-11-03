@@ -505,6 +505,76 @@ async function beginHumanRetry(page: Page, nonce: string) {
   return failed;
 }
 
+test('HRR-05 malformed correlated Coordinator failure releases Human Resend without replacing its durable intent or newer draft', async ({ page }, info) => {
+  const nonce = 'retry-malformed-coordinator-envelope';
+  const failed = await beginHumanRetry(page, nonce);
+  const draft = 'Newer draft while the original Host retry is pending';
+  await page.locator('[contenteditable="true"]').fill(draft);
+
+  // This enters the real Coordinator client's transferred-port listener. The
+  // correlated failed envelope deliberately omits its required failure object.
+  await page.evaluate(() => window.nativeMessageFixture.replyHumanRetryOutcome(0, { status: 'failed' }));
+  await expect(page.getByText('Human retry unavailable: protocol-error: retryHumanMessage returned a malformed Coordinator reply outcome', { exact: true })).toBeVisible();
+  await expect(failed).toHaveAttribute('data-failed', 'true');
+  await expect(failed).toContainText('Original pending Human text');
+  await expect(failed).toContainText('original.txt');
+  await expect(failed.locator('[data-reply-target-id="human-server-message:7"]')).toBeVisible();
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(page.locator('[contenteditable="true"]')).toHaveText(draft);
+  await expect(messageRow(page, 'human-server-message:901')).toHaveCount(0);
+  await milestone(page, info, 'malformed-coordinator-retry-visible-failure');
+
+  await failed.getByRole('button', { name: 'Resend', exact: true }).dblclick();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+  const attempts = await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'retryHumanMessage'));
+  expect(attempts).toHaveLength(2);
+  expect(attempts.map((request) => request.args)).toEqual([
+    { conversationId: 'human:a', clientNonce: nonce },
+    { conversationId: 'human:a', clientNonce: nonce },
+  ]);
+  expect(attempts[1].requestId).not.toBe(attempts[0].requestId);
+
+  // A late success for the consumed malformed reply must not consume the
+  // replacement attempt, settle its row or replace the newer composer draft.
+  await page.evaluate(() => window.nativeMessageFixture.replyHumanRetry(0, { content: 'Late original reply must stay ignored' }));
+  await flushRenderer(page);
+  await expect(messageRow(page, 'human-server-message:901')).toHaveCount(0);
+  await expect(failed).toContainText('Original pending Human text');
+  await expect(page.locator('[contenteditable="true"]')).toHaveText(draft);
+
+  await page.evaluate(() => window.nativeMessageFixture.settleHumanRetry(1));
+  const canonical = messageRow(page, 'human-server-message:901');
+  await expect(canonical).toHaveCount(1);
+  await expect(canonical).toContainText('Original pending Human text');
+  await expect(canonical).toContainText('original.txt');
+  await expect(canonical.locator('[data-reply-target-id="human-server-message:7"]')).toBeVisible();
+  await expect(failed).toHaveCount(0);
+  await expect(canonical.getByRole('button', { name: 'Resend', exact: true })).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText(draft);
+
+  await page.evaluate(() => {
+    window.nativeMessageFixture.replyHumanRetry(0, { content: 'Duplicate original reply must not overwrite settlement' });
+    window.nativeMessageFixture.replyHumanRetryOutcome(0, { status: 'failed' });
+  });
+  await flushRenderer(page);
+  await expect.poll(() => domIds(page)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'human-server-message:901']);
+  await expect(canonical).toContainText('Original pending Human text');
+  await expect(page.getByText(/Late original reply|Duplicate original reply/)).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText(draft);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage'))).toEqual([]);
+  expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toEqual([]);
+  const persisted = await page.evaluate((originalNonce) => {
+    const stored = JSON.parse(sessionStorage.getItem('native-message-fixture-canonical-rows') ?? '[]') as Array<[string, Array<Record<string, unknown>>]>;
+    return stored.find(([id]) => id === 'human:a')?.[1].filter((entry) => entry.clientNonce === originalNonce);
+  }, nonce);
+  expect(persisted).toEqual([expect.objectContaining({
+    id: 'human-server-message:901', remoteMessageId: '901', delivery: 'sent',
+    clientNonce: nonce, content: 'Original pending Human text', replyToId: 'human-server-message:7',
+    attachments: [{ path: '/committed/original.txt', name: 'original.txt', resourceId: 'resource-1' }],
+  })]);
+  await milestone(page, info, 'malformed-coordinator-retry-same-intent-recovered');
+});
+
 for (const outcome of ['success', 'failure'] as const) {
   test(`HRR-06 conversation A-B-A ignores a previous retry ${outcome} and preserves the current draft`, async ({ page }, info) => {
     const nonce = `retry-selection-${outcome}`;

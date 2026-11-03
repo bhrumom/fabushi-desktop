@@ -237,6 +237,11 @@ const fixture = {
     sendFrame({ kind: 'reply', requestId: pending.request.requestId,
       outcome: { status: 'failed', failure: { code: 'fixture-retry', message: 'temporary retry refusal' } } });
   },
+  replyHumanRetryOutcome(index: number, outcome: unknown) {
+    const pending = humanRetries[index];
+    if (pending == null) throw new Error('No Human retry for the supplied reply outcome');
+    sendFrame({ kind: 'reply', requestId: pending.request.requestId, outcome });
+  },
   replyHumanRetry(index: number, patch: Record<string, unknown> = {}) {
     const pending = humanRetries[index];
     if (pending == null) throw new Error('No Human retry reply');
