@@ -12,7 +12,8 @@
     "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
     "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
     "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
-    "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+    "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+    "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-range-correction.json"
   ],
   "entries": [
     {
@@ -884,7 +885,7 @@
         },
         {
           "start_line": 1389,
-          "end_line": 1416
+          "end_line": 1415
         }
       ],
       "language_kind": "typescript",
