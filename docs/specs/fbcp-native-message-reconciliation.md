@@ -1958,6 +1958,14 @@ effect can run while the cursor is unprobed and never run again when the initial
 page becomes ready, because `hasOlder` stays true. This is an existing owner
 activation defect; changing the tests to require an extra scroll would not close it.
 
+The actual-root transcript fixture must obtain its roster through the existing
+Coordinator `syncHumanConversations` / `listHumanConversations` request and use
+the Host-persisted pair `[localAccountId, peerId]`. The existing
+`projectHumanConversation` contract rejects any `participantIds` value that is
+not exactly two distinct nonempty strings. A peer-only one-element fixture can
+therefore return successfully from Coordinator while every row is filtered out,
+leaving the UI at "No chats yet" with no unexpected-RPC diagnostic.
+
 **UI-NMR-CURSOR-ACTIVATION-001:** Reevaluate the existing near-top loading rule
 after committed transcript rows change, including a delayed initial tail and a
 conversation switch whose old and new cursors both report more history. Keep the
@@ -1965,6 +1973,14 @@ same viewport, cursor, pending-anchor, failure-pause and single-flight owners.
 An in-flight read must not be duplicated by row commits; a failed read must remain
 paused through further commits until explicit Retry. Preserve the original
 eleven Renderer scenarios and eight Transcript scenarios and add one actual-root
-activation case without synthetic scroll as its trigger. All execution remains
-exact-H GitHub Actions; no local run, weaker oracle, source completion or final
-UI/accessibility acceptance is implied.
+activation case without synthetic scroll as its trigger.
+
+**UI-NMR-RESELECT-ACTIVE-PAGE-001:** Reselecting the already-active loaded Human
+conversation while its older-page request is in flight must preserve that exact
+request and continuation. It must not cancel and issue a duplicate page request;
+the original result still commits to the same conversation without changing row
+order or viewport ownership. The actual ProductionRenderer/Coordinator browser
+test records the request count and committed rows.
+
+All execution remains exact-H GitHub Actions; no local run, weaker oracle, source
+completion or final UI/accessibility acceptance is implied.

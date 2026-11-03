@@ -32,13 +32,23 @@ function forbidden(name: string): never {
   unexpected.push(`desktop:${name}`);
   throw new Error(`Unexpected desktop operation: ${name}`);
 }
-// Match the Host's persisted participantIds contract: exactly two distinct
-// string identities, with the currently authenticated local account first.
+// Match and enforce the Host's persisted participantIds contract: exactly two
+// distinct nonempty string identities, with the authenticated local account first.
 function humanConversationsForAccount(accountId: string) {
-  return [
+  const conversations = [
     { kind: "human", id: "human:alpha", title: "Alpha", participantIds: [accountId, "peer-alpha"], updatedAt: 2 },
     { kind: "human", id: "human:beta", title: "Beta", participantIds: [accountId, "peer-beta"], updatedAt: 1 },
   ];
+  const validRoster = accountId.trim().length > 0 && conversations.every(({ participantIds }) =>
+    participantIds.length === 2
+    && participantIds[0] === accountId
+    && participantIds.every((id) => typeof id === "string" && id.trim().length > 0)
+    && new Set(participantIds).size === 2
+  );
+  if (!validRoster) {
+    throw new Error("Human roster fixture violates the Host participantIds contract");
+  }
+  return conversations;
 }
 const controlled = new Set(["getHumanConversationTranscriptTail", "getHumanConversationTranscript", "searchHumanMessages"]);
 const fixedReplies: Record<string, unknown> = {
