@@ -213,6 +213,8 @@ Before historical acquisition, the collector must prove from the push event and
 read-only GitHub commit/compare APIs that the complete before/after range is one
 commit changing only this authority workflow. Mixed product paths, multiple
 commits, absent/truncated identity or an unresolved comparison refuse collection.
+The DJC profile also refuses every legacy marker that suppresses persistence,
+even when the same commit otherwise qualifies as a workflow-only carrier.
 The marker grants no exemption from normal source-authority or persistence jobs;
 those existing owners retain their normal gates and permissions on every push.
 This avoids a marker-based route around product source authority. The collector

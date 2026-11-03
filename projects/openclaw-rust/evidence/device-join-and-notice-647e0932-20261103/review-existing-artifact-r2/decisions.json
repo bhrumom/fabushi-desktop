@@ -1,0 +1,64 @@
+{
+  "schema": "ocrm-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 2,
+  "review": "DJC-existing-artifact-collector",
+  "base": "511bcebf08738c59ec0313a425a591a327d9cd20",
+  "candidate": "26d780942774521d0c90230e5cd95f90ca94ba52",
+  "candidate_tree": "ddc438b9298b0b1eb21459cda7d03eb6941efaf2",
+  "packet": "cd0857b218f08e7ff49cc6f4b90b2e9634493be1",
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "agent": "/root/djc_collector_r2_general",
+      "model": "configured parent model",
+      "requested_effort": "xhigh",
+      "verdict": "supplemental-static-approval",
+      "blocking_findings": [],
+      "blind_gate_counted": false,
+      "limitation": "Spec-publication commit metadata incidentally exposed a short prior-review-context message. No report/decision file was read; preserve truthful provenance and require a fresh blind GENERAL reviewer for the next immutable candidate."
+    },
+    {
+      "lens": "STRUCTURE",
+      "agent": "/root/djc_collector_r2_structure",
+      "model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "verdict": "changes-required",
+      "blind_gate_counted": true,
+      "blocking_findings": [
+        "DJC-COLLECTOR-LEGACY-MARKER-002"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "DJC-COLLECTOR-LEGACY-MARKER-002",
+      "state": "open",
+      "first_seen_candidate": "26d780942774521d0c90230e5cd95f90ca94ba52",
+      "severity": "P2",
+      "decision": "FIX",
+      "path": ".github/workflows/ocrm-p0-authority.yml",
+      "symbols": [
+        "persist-verified-inventory.if",
+        "validate_carrier_push",
+        "carrier-admission receipt"
+      ],
+      "trigger": "A one-commit sole-workflow push carries both the DJC collection marker and any of the three legacy persistence-suppression markers.",
+      "failure": "DJC admission accepts the push while normal persistence is skipped by its preserved legacy rule; the collector nevertheless states normal_persistence_exempted=false.",
+      "fix": "Reject all three conflicting legacy markers in the DJC-only carrier validator. Exercise each combination with matching event/API commit messages so the negative reaches the intended marker condition. Preserve the normal jobs and old 563 profile unchanged.",
+      "rationale": "This is a new concrete marker-combination scenario. It does not reverse the prior decision to retain original source-authority/persistence rules and a separately admitted read-only collector.",
+      "closure": "Fresh blind focused GENERAL/STRUCTURE review of complete current scope and fix delta, followed by actual collector control/readback execution."
+    }
+  ],
+  "prior_decisions": [
+    {
+      "id": "DJC-COLLECTOR-CARRIER-001",
+      "decision": "FIX",
+      "preserved": true,
+      "state": "source repair retained; no marker-based authority exemption added back"
+    }
+  ],
+  "product_execution": false,
+  "archive_readback": false,
+  "global_acceptance": false
+}
