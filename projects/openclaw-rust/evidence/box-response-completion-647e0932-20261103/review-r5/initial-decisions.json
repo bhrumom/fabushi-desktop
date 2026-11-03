@@ -1,0 +1,44 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 5,
+  "base_commit": "14e637798b7c76c8530f9a3710051461f793924f",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "shared_contract": "BXR-v1.3 plus BXR-HTTP-v1",
+  "pre_fix_source_blob": "c091fcb66c5001c914368324c6bb7d1d036ab5b9",
+  "pre_fix_test_blob": "c30f95dee6ffe531c4d62ecdd6e1dde8b1642054",
+  "findings": [
+    {
+      "id": "BXR-HTTP-001",
+      "decision": "FIX",
+      "severity": "P2",
+      "basis": "Exact current code and protocol contracts; no executed-failure claim.",
+      "path": "source/host/src/box/generated_production.rs",
+      "symbol": "decode_exec_http_response / parse_http_header_line",
+      "reason": "Whole-header UTF-8 interpretation and blanket status control rejection exclude valid opaque octets and reason HTAB; mandatory separator and HTTP/1.0 transfer framing are not checked.",
+      "repair": "Use byte field grammar and exact status separation, retaining valid existing complete responses and rejecting faulty framing without replay."
+    },
+    {
+      "id": "BXR-HTTP-002",
+      "decision": "FIX",
+      "severity": "P2",
+      "basis": "Connect streaming response status contract and actual broad 2xx success branch.",
+      "path": "source/host/src/box/generated_production.rs",
+      "symbol": "decode_exec_http_response",
+      "reason": "Other 2xx statuses can currently be treated as a complete successful Exec stream.",
+      "repair": "Require status200 for streaming success; preserve the existing typed HttpStatus cause and entered-outcome wrapper for other statuses."
+    },
+    {
+      "id": "BXR-HTTP-ORACLE-001",
+      "decision": "FIX",
+      "severity": "P2",
+      "classification": "TEST_FLAW",
+      "path": "source/host/tests/box_generated_production_contract.rs",
+      "reason": "The non-UTF-8-header negative omits a valid response body and therefore cannot identify the header admission decision.",
+      "repair": "Use valid framed bodies for octet positives and actual malformed framing-field negatives. Retain all other valid assertions and add exact required cases."
+    }
+  ],
+  "retained_evidence": "The received 14e batch and its R1-R4 source identities remain historical. Only these HTTP decisions and dependent oracles require new source review/execution; old duplicate authoring candidates were stopped and will not overwrite 14e.",
+  "validation": "GitHub Actions only; current14e runtime41597864483 remains in progress. This decision does not mark a test or unit verified.",
+  "publication_limits": "Unrelated denied Official R2 dossier and H862 report payloads are excluded."
+}

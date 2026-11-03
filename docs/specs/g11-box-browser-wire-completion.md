@@ -307,3 +307,33 @@ does not invent a saved full-report hash. Raw stdout fidelity, reader EOF/error,
 output caps, attempt-to-socket cancellation, private generated-origin grants and
 Session persistence remain explicit later work. Generated field contracts are
 not claimed as original generator-input or full upstream closure evidence.
+
+### BXR-HTTP-v1 — HTTP octet and streaming-status correction
+
+Exact starting subject: 14e637798b7c76c8530f9a3710051461f793924f.
+This corrects BW10/BXR04 in the existing reader and retains BXR-v1.3's complete
+identity, typed-field, sandbox, terminal, spill and custody contracts.
+
+Parse HTTP headers as octets separated by CRLF. Header names remain ASCII tokens;
+opaque values and the optional reason phrase may include valid obs-text bytes.
+Keep HTAB legal in values/reasons, require the status-code/reason separating SP
+even for an empty reason, and refuse bare CR/LF, NUL, DEL and other invalid controls.
+Interpret only Content-Length and Transfer-Encoding as ASCII framing values.
+An HTTP/1.0 response with Transfer-Encoding is faulty framing. The existing
+HTTP/1.0 Content-Length and close-delimited compatibility remains available.
+An Exec streaming response succeeds only with HTTP status 200 and the existing
+complete Connect/RPC termination; other status codes retain a typed HttpStatus
+cause inside the single post-write unknown-outcome wrapper. Never replay.
+
+Use complete valid Connect data/close/end bodies when testing header admission,
+so missing payload cannot mask the header decision. Preserve all 41 existing
+codec/consumer cases. Replace the old incomplete non-UTF-8-header negative with
+an actual malformed framing-field negative, and add legal opaque-header/reason,
+empty reason, invalid status separator/control, HTTP-version/transfer and non-200
+streaming-status controls. Require typed outcomes and one actual request.
+Reuse the existing portable capture and its full required-name/exit oracle.
+Changes require fresh focused source review and exact-H Actions; no local runs.
+
+Primary protocol contracts: RFC 9112 sections 2.2, 4, 5 and 6.1
+(https://www.rfc-editor.org/rfc/rfc9112.html), and Connect Streaming-Response
+(https://connectrpc.com/docs/protocol/#streaming-response).
