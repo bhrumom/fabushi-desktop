@@ -1,0 +1,68 @@
+{
+  "schema": "ocrm-source-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BGC-v1",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "original_base": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+  "reviewed_candidate": "095eeca73b16852f798c5294a4c474da25b8a976",
+  "reviewed_tree": "c51d2eec82b3699e2a9b21bb8f43fcdbbf3c1858",
+  "packet": "e26f1423e6bd8e95c8ddc4af5f9f2cc2c6f62ee7",
+  "scope_blob": "60830f63896f54eef340d44028c4c8a5d271f49b",
+  "complete_diff_blob": "71c08603c37558157ed59167801dbbb984abb6ff",
+  "fix_diff_blob": "3bbcde8adbd2fb333b099feeb9247ecfd45c73f0",
+  "arbitration_commit": "24f427d37650512e09e28a3dd95945679cbff725",
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "agent": "/root/bgc_r2_general",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "verdict": "APPROVED"
+    },
+    {
+      "lens": "STRUCTURE",
+      "agent": "/root/bgc_r2_structure",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "verdict": "APPROVED"
+    }
+  ],
+  "review_carrier": "Completed conversation reports; no full report uploaded or blob identity asserted.",
+  "coverage": "Fresh blind focused review of the complete fix delta, changed test and adjacent producer, reader, admission, unwind and cleanup contracts; original nine-path scope retained as context. Not a fresh full semantic reread of all original paths.",
+  "conclusion": {
+    "source_review": "converged",
+    "resolved": "GENERAL-R1-01: readiness excludes actual command frontmatter and requires captured output before controlled unwind; effect, reap, reader, terminal and no-resignal assertions remain.",
+    "metadata": "Historical generic runner labels are preserved in the original packet. Actual planned matrix is ubuntu-24.04 and macos-15."
+  },
+  "integration": {
+    "observed_head": "53210485a6fa6322b55db4ddd35281e84d0f70fa",
+    "concurrent_commit": "10d7c42c47b85ca6c8d1fcedb2825981a6f4fd53",
+    "preserved": [
+      "Independent LocalExec capture implementation and review evidence",
+      "Two existing LocalExec ledger evidence references",
+      "LocalExec workflow selection and diagnostic/output separation"
+    ],
+    "affected_shared_paths": [
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/parity-ledger.json"
+    ],
+    "execution_blocker": "The shared workflow at c417dda9677b8da0a6c016e00e3565cc8e3f1aed exceeds the documented workflow size limit; 10d7 produced no jobs. Existing h10d7-workflow-admission.json records the authorized exact-body extraction. BGC execution waits for the corrected workflow and affected integration check; no unchanged retry."
+  },
+  "execution": {
+    "state": "not-run-for-BGC",
+    "subject": null,
+    "planned_groups": 15,
+    "planned_exact_names": 121,
+    "matrix": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "prior_crf_subject": "1e96b24d41fe79b572ced22fd0a7fb0945ea5b03",
+    "prior_crf_covers_bgc": false
+  },
+  "acceptance": {
+    "full_unit_verified": false,
+    "global_flags_promoted": false,
+    "full_migration_accepted": false
+  }
+}
