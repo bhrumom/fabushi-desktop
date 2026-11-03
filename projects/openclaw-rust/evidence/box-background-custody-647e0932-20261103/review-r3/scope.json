@@ -1,0 +1,342 @@
+{
+  "schema": "ocrm-immutable-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BGC-v1",
+  "round": 3,
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_id": 1375312893,
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "original_base": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+  "starting_head": "e93728bd720075aff0d53efac5cc66c164ec8f19",
+  "candidate": {
+    "commit": "e93728bd720075aff0d53efac5cc66c164ec8f19",
+    "tree": "44f42b6725396d90b3af1ae3b1e2f28a3fa3d670",
+    "parent": "3a572381230ad1068d4fd5556e455d2d81085d81"
+  },
+  "authority": {
+    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "spec_path": "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+    "spec_blob": "2872f428079705bf2aef12bef9b09adcac18e458",
+    "workflow_correction": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h10d7-workflow-admission.json"
+  },
+  "scope": {
+    "mode": "explicit-complete-original-scope-plus-required-helper",
+    "path_count": 10,
+    "original_nine_paths_retained": true,
+    "extension_reason": "The shared workflow exceeded the service size limit. Exact-body extraction creates one necessary helper; no original path or hunk is excluded. The body is identical to the original authorized 50,320-byte input.",
+    "uncommitted_included": false,
+    "staging": "GitHub immutable blob/tree API; no working index or executable validation",
+    "carrier": {
+      "commit": "5ef54592c018210f5903afffa0a7fb72ae5ef41c",
+      "tree": "84cffb58f4535661668635f58036806376dd01f4",
+      "role": "review-only; never execution or shipping subject"
+    },
+    "complete_diff": {
+      "path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/review-r3/complete.diff",
+      "blob": "262eb984bd2cf9792c6958d5a26c48dec2009810",
+      "bytes": 348744,
+      "sha256": "7a923452ee098c2d2be88c1109b54560acff2909b706331d432ff7fbe8845bcb"
+    },
+    "fix_delta": {
+      "from_candidate": "095eeca73b16852f798c5294a4c474da25b8a976",
+      "from_scope_tree": "3fe82582503160d24868d9d5584d69c63b4ef091",
+      "path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/review-r3/fix.diff",
+      "blob": "61d77038a4d34a772ffb42bb023db0bf08044c59",
+      "bytes": 128946,
+      "sha256": "2aff036541c3911ef3eff050b879cf4e08a57ac99fe783dcfbcb8e2da97fe9e0",
+      "paths": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        "projects/openclaw-rust/parity-ledger.json",
+        "projects/openclaw-rust/scripts/record_configuration_evidence.py"
+      ]
+    },
+    "integrity": {
+      "github_compare_file_count": 10,
+      "added": 2,
+      "modified": 8,
+      "deleted": 0,
+      "renamed": 0,
+      "binary": 0,
+      "all_modes": "100644",
+      "source_and_diff_readback": true
+    },
+    "inherited_changes": "The full scope and delta retain LocalExec workflow selector/diagnostic capture integration and two additional original LocalExec ledger evidence references from 10d7. Their product source is outside the BGC execution selection and is not claimed verified here."
+  },
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "9574d29d4e494d0f3a30b6ffcad275e222b07275",
+      "candidate_blob": "bc0f5de312135db7a531779478b37dc7c4ab8f7e",
+      "base_content": {
+        "bytes": 507847,
+        "sha256": "53542f425f158785ab923a88e1d2f14099ab05869817a20f3632b4c39e7a04b4"
+      },
+      "candidate_content": {
+        "bytes": 462342,
+        "sha256": "64e3e72497af491fb627beccc950a622229bdc2aeec3024be38b0914126c4a55"
+      },
+      "diff": {
+        "bytes": 79687,
+        "sha256": "6b575d2146b1c2e25382419e159a4bce3a5b84392bc104aeb621ef68d7b6580c"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+      "status": "A",
+      "mode": "100644",
+      "base_blob": null,
+      "candidate_blob": "f603601dd6a9a6b439a6d71e434b48be5c1e10eb",
+      "base_content": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "candidate_content": {
+        "bytes": 11515,
+        "sha256": "5bf61959bfd8d801b8a030f4d3e4e3e74a59f8018097bf44431e8dabc71e67f2"
+      },
+      "diff": {
+        "bytes": 12138,
+        "sha256": "9271f010f910f91a7d635ff89f3f21112aa017e2d0e543152ac7d706f4a57612"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "b634f9f80b670dfa6342492dcc73a7e1b11fdee4",
+      "candidate_blob": "d0c3081bba725956e5eb261150c6c57513dedaea",
+      "base_content": {
+        "bytes": 1475603,
+        "sha256": "ce1e9b1b907f395458bd9f0ed46c308bf0ebb8598d271b7636edb0b8522a6e44"
+      },
+      "candidate_content": {
+        "bytes": 1487764,
+        "sha256": "f2949d1fe52afa2276845da50a683536151703b9666a9697f30e4062cf489449"
+      },
+      "diff": {
+        "bytes": 22378,
+        "sha256": "ab6004e6464a93773b14e9db445f4b966cce318dca499116c03e65e7e82625e3"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "625672c7e2a78de347023b2e0c162e6e123b78a1",
+      "candidate_blob": "4a415a830fccdfec7b7ae73fa16133929c84652f",
+      "base_content": {
+        "bytes": 170828,
+        "sha256": "ddcdda9d3dea0a06ad7d04046a5a829a9f8881b0586cd5c3dded41690dfbf07c"
+      },
+      "candidate_content": {
+        "bytes": 174692,
+        "sha256": "1300b5434880a1f8a67d99e87ac9c47a34cb5bfa361b86d6bf676108a6e6cedc"
+      },
+      "diff": {
+        "bytes": 15061,
+        "sha256": "f5a307bdffd7da0a89b010940d2a42d450c97c1548fa884a48de830bd0b060ed"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "6895c24549a81f5c0b346170975fe850e383d956",
+      "candidate_blob": "7e74b03b08cba4a6cf70d1d33160ac85e3ff4c1e",
+      "base_content": {
+        "bytes": 169705,
+        "sha256": "24d7a60f5f035b96835b96c9d8c4e439437e6a9269aa1d9c8e630450aa6a474b"
+      },
+      "candidate_content": {
+        "bytes": 178170,
+        "sha256": "d3468c5cfdea0801bafa470ce0a098f15d688429dcfc1cf98a0844ed2f9d8b8e"
+      },
+      "diff": {
+        "bytes": 30252,
+        "sha256": "809aa5b1531d6c1c28febc3409031fb50dec917afed53f63850de7086d4f2d2c"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/record_configuration_evidence.py",
+      "status": "A",
+      "mode": "100644",
+      "base_blob": null,
+      "candidate_blob": "aa9984a83b002747d26960b85b3ef7ba83b70d98",
+      "base_content": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "candidate_content": {
+        "bytes": 50320,
+        "sha256": "f519d76272e49fe852207253ca1b86fac99fde3287872a99d186790e4bed7825"
+      },
+      "diff": {
+        "bytes": 50890,
+        "sha256": "a504d96f9ce2ed72224b3e45b8c01cff08d9b628d14a43c6eab63bcc5fef0bbc"
+      }
+    },
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "9e3e46179bbc25bf323bc886e9e33d1506792306",
+      "candidate_blob": "bcd29696e2b4f20f0d2e158353fa5673d62b5802",
+      "base_content": {
+        "bytes": 214698,
+        "sha256": "3d0110a2079ef4aebe69311be3348669824485c9d3b0b2bd5f5a7c6e27fa4c60"
+      },
+      "candidate_content": {
+        "bytes": 283288,
+        "sha256": "4235ff789c2b6291963a5a3313f5d5b5e31a4b698d23b7c20a76e636dd33c72a"
+      },
+      "diff": {
+        "bytes": 107046,
+        "sha256": "834f89282d814119d75609f3b75725f8309248374a9739868aa246a8bf06c2bf"
+      }
+    },
+    {
+      "path": "source/host/src/runner/background_work.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "ff23459450b9ddad39e53c775be32245e0fa7b35",
+      "candidate_blob": "275261c1676f2eac5acdb8378280c5d8f0e69e07",
+      "base_content": {
+        "bytes": 32435,
+        "sha256": "0a1747f846da72d7335398bca45171053f54e711194ab43c917444fb9626753c"
+      },
+      "candidate_content": {
+        "bytes": 32641,
+        "sha256": "60248fb7e30d011ad27db38190f5207b9f3c375c3f8b22df46a8d7b95b82e8bb"
+      },
+      "diff": {
+        "bytes": 1487,
+        "sha256": "3d9c53d232a6d1ffeb690578bba00e5d5204d2e9014446008e46f8efc4b16cc4"
+      }
+    },
+    {
+      "path": "source/host/tests/background_work_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "50670c53ce79a8575a153435b9770e0220be826d",
+      "candidate_blob": "fc2d1724e2978450bd3a40fc584afa8d50587403",
+      "base_content": {
+        "bytes": 24712,
+        "sha256": "e8796e896b22ae555f5ced34c5e28de82dc412fcd4ce3a59e634ba22073fe5fc"
+      },
+      "candidate_content": {
+        "bytes": 28591,
+        "sha256": "a3262b1303b6d9474a002b5b481fefe5e86a716b53f42e4baa7f6ee81bd9483d"
+      },
+      "diff": {
+        "bytes": 4561,
+        "sha256": "dffb228ec169f4ec5abdb0935d388c4266c817cb885444431bd3824e22f9dc7b"
+      }
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "23941b650376d23c07c67064f49c083bf7db8689",
+      "candidate_blob": "a9da224c6c05e89d67eb3efe8a6233a7a486b013",
+      "base_content": {
+        "bytes": 30102,
+        "sha256": "63d61589359bf66f3e82e3b8d794f4c7bcf56a903a4bf81dad43af7e29aad121"
+      },
+      "candidate_content": {
+        "bytes": 51682,
+        "sha256": "a99990d937a6c08a9842f1e06528c2f2e36bd1de0ab6106ddc4df17b295aa143"
+      },
+      "diff": {
+        "bytes": 25244,
+        "sha256": "1daf32396070c66bd18fdc8596397805f7249463ab6247fb54eab5252c48a8a2"
+      }
+    }
+  ],
+  "extraction": {
+    "old_workflow_blob": "c417dda9677b8da0a6c016e00e3565cc8e3f1aed",
+    "new_workflow_blob": "bc0f5de312135db7a531779478b37dc7c4ab8f7e",
+    "new_workflow": {
+      "bytes": 462342,
+      "sha256": "64e3e72497af491fb627beccc950a622229bdc2aeec3024be38b0914126c4a55"
+    },
+    "original_deindented_body": {
+      "bytes": 50320,
+      "sha256": "f519d76272e49fe852207253ca1b86fac99fde3287872a99d186790e4bed7825"
+    },
+    "helper_blob": "aa9984a83b002747d26960b85b3ef7ba83b70d98",
+    "caller_contract": "Same configuration step gate, shell preamble, cwd/env and evidence body/output. Call site binds helper bytes to exact H and runs py_compile before execution. Custody binding also binds and syntax-checks it in Actions; no body execution claim for that scoped job."
+  },
+  "reviews": {
+    "general": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "state": "pending"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "state": "pending"
+    },
+    "fresh_blind": true,
+    "kind": "focused-shared-workflow-integration",
+    "max_rounds": 10,
+    "reason": "Exact-body relocation and changed shared selectors/source binding require independent examination of the full delta and actual callers; unchanged original BGC scope remains available as context."
+  },
+  "validation": {
+    "execution_subject": null,
+    "state": "not-run-for-BGC",
+    "selected_scope": "background-custody",
+    "groups": 15,
+    "exact_named_cases": 121,
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "shipping_compile": "locked mahayana-app-host",
+    "unit": [
+      "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion",
+      "server::tests::background_custody_pre_spawn_refusals_preserve_files_and_nonreusable_ids",
+      "server::tests::background_custody_setup_and_controller_refusals_retain_child_and_readers",
+      "server::tests::background_custody_stop_during_setup_retains_the_entered_request",
+      "server::tests::background_custody_stop_and_hard_timeout_force_only_the_owned_unreaped_child",
+      "server::tests::background_custody_reaped_child_keeps_readers_until_explicit_eof",
+      "server::tests::background_custody_controller_loss_recovers_through_the_same_entry",
+      "server::tests::background_custody_full_pipe_input_does_not_block_registry_or_stop",
+      "server::tests::background_custody_observed_read_wait_and_worker_failures_never_fabricate_exit",
+      "server::tests::background_custody_failed_writer_and_footer_publication_remain_pending",
+      "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+      "server::tests::background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup"
+    ],
+    "consumer": [
+      "foreground_capture::box_background_custody_faults_reach_real_runner_without_replay_or_watch",
+      "foreground_capture::box_background_custody_pre_spawn_refusal_is_known_without_effect_or_watch",
+      "foreground_capture::box_background_custody_ordinary_terminal_waits_for_release_and_settles_once",
+      "foreground_capture::box_background_custody_timed_handoff_terminal_waits_for_release_and_settles_once"
+    ],
+    "footer": [
+      "shell_terminal_footer_and_poll_interval_follow_frozen_rules",
+      "shell_terminal_footer_handles_canonical_producer_endings_and_actual_poll",
+      "shell_terminal_footer_preserves_last_footer_and_incomplete_snapshot_refusal"
+    ],
+    "retained_shell": [
+      "server::tests::shell_environment_and_background_stdin_match_daemon_contract",
+      "server::tests::shell_stream_emits_stdout_before_child_finishes",
+      "server::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry"
+    ],
+    "prior_crf_h": "1e96b24d41fe79b572ced22fd0a7fb0945ea5b03",
+    "prior_crf_covers_bgc": false,
+    "platform_authority": ".github/workflows/rust-desktop-runtime.yml matrix; round-one generic labels retained only as historical metadata"
+  },
+  "acceptance": {
+    "source_review": "pending-integration",
+    "full_unit_verified": false,
+    "global_flags_promoted": false
+  }
+}
