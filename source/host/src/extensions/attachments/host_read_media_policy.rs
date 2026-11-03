@@ -6,7 +6,6 @@
 use std::collections::HashSet;
 use std::path::Path;
 use std::sync::LazyLock;
-use regex::Regex;
 use sha2::{Digest, Sha256};
 
 use crate::media_mime::{
@@ -54,10 +53,6 @@ static HOST_READ_DECLARED_TEXT_MIMES: LazyLock<HashSet<&'static str>> = LazyLock
     }
     s.insert("text/html");
     s
-});
-
-static HTML_SHAPE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)^(?:<!doctype\s+html|<html)|</(?:html|body)>").expect("valid regex")
 });
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -145,15 +140,71 @@ pub fn get_validated_host_read_text(buffer: Option<&[u8]>) -> Option<String> {
     }
 }
 
-/// Checks if text looks like an HTML document header or structure.
+// ECMAScript WhiteSpace and LineTerminator, used by both trimStart and \s.
+// Rust's Unicode whitespace differs: it includes U+0085 and excludes U+FEFF.
+fn is_ecmascript_whitespace(c: char) -> bool {
+    matches!(
+        c,
+        '\u{0009}'..='\u{000d}'
+            | '\u{0020}'
+            | '\u{00a0}'
+            | '\u{1680}'
+            | '\u{2000}'..='\u{200a}'
+            | '\u{2028}'
+            | '\u{2029}'
+            | '\u{202f}'
+            | '\u{205f}'
+            | '\u{3000}'
+            | '\u{feff}'
+    )
+}
+
+/// Checks the first 8192 UTF-16 code units after ECMAScript leading whitespace.
 pub fn has_html_document_shape(text: &str) -> bool {
-    let trimmed = text.trim_start();
-    let sample = if trimmed.len() > 8192 {
-        &trimmed[..8192]
+    let trimmed = text.trim_start_matches(is_ecmascript_whitespace);
+    let mut code_units = 0;
+    let mut end = 0;
+    for (offset, c) in trimmed.char_indices() {
+        code_units += c.len_utf16();
+        if code_units > 8192 {
+            // A sliced surrogate half cannot form any of the tokens below.
+            break;
+        }
+        end = offset + c.len_utf8();
+        if code_units == 8192 {
+            break;
+        }
+    }
+    let sample = &trimmed[..end];
+
+    // An ASCII prefix match also proves that the following slice is a UTF-8 boundary.
+    let header_tail = if sample.as_bytes().get(..5).is_some_and(|s| s.eq_ignore_ascii_case(b"<html")) {
+        Some(&sample[5..])
+    } else if sample.as_bytes().get(..9).is_some_and(|s| s.eq_ignore_ascii_case(b"<!doctype")) {
+        let after_doctype = &sample[9..];
+        let html = after_doctype.trim_start_matches(is_ecmascript_whitespace);
+        if html.len() < after_doctype.len()
+            && html.as_bytes().get(..4).is_some_and(|s| s.eq_ignore_ascii_case(b"html"))
+        {
+            Some(&html[4..])
+        } else {
+            None
+        }
     } else {
-        trimmed
+        None
     };
-    HTML_SHAPE_REGEX.is_match(sample)
+    if header_tail.is_some_and(|tail| {
+        tail.chars().next().map_or(true, |c| {
+            // /iu \b also folds long s and the Kelvin sign into ASCII word characters.
+            !c.is_ascii_alphanumeric() && !matches!(c, '_' | '\u{017f}' | '\u{212a}')
+        })
+    }) {
+        return true;
+    }
+
+    sample.as_bytes().windows(7).any(|s| {
+        s.eq_ignore_ascii_case(b"</html>") || s.eq_ignore_ascii_case(b"</body>")
+    })
 }
 
 fn get_file_extension(path: Option<&Path>) -> Option<String> {
@@ -370,8 +421,13 @@ pub fn filter_stale_provenance_rows(rows: &[GeneratedHtmlProvenanceRow]) -> Vec<
         let path = Path::new(&row.realpath);
         let meta = match std::fs::symlink_metadata(path) {
             Ok(m) => m,
-            Err(_) => {
-                stale.push(row.clone());
+            Err(err) => {
+                if matches!(
+                    err.kind(),
+                    std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory
+                ) {
+                    stale.push(row.clone());
+                }
                 continue;
             }
         };

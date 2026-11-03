@@ -9,7 +9,10 @@ use mahayana_host_runtime::extensions::attachments::image_ops::{
     build_image_resize_side_grid, convert_bmp_to_png, is_animated_webp_buffer,
     is_still_png_buffer, normalize_anthropic_inline_image, prepare_attachment,
     read_image_metadata_from_header, read_image_probe_from_header, AttachmentInput,
-    ImageMetadata, IMAGE_REDUCE_QUALITY_STEPS, WITHIN_BYTES_QUALITY_STEPS,
+    ImageMetadata, ImageProbe, IMAGE_REDUCE_QUALITY_STEPS, WITHIN_BYTES_QUALITY_STEPS,
+};
+use mahayana_host_runtime::extensions::attachments::web_media::{
+    load_web_media, WebMediaError, WebMediaOptions,
 };
 
 struct TempTestDir {
@@ -306,4 +309,251 @@ fn test_ocrm_image_ops_gateway_dispatch() {
         .expect("dispatch handled")
         .expect("success");
     assert_eq!(res_norm["mimeType"], "image/png");
+}
+
+// Header-only probe fixture through the color-type byte; no full chunk, CRC, or pixel data.
+fn png_probe_header(width: u32, height: u32, color_type: u8) -> Vec<u8> {
+    let mut header = Vec::new();
+    header.extend_from_slice(b"\x89PNG\r\n\x1a\n");
+    header.extend_from_slice(&13u32.to_be_bytes());
+    header.extend_from_slice(b"IHDR");
+    header.extend_from_slice(&width.to_be_bytes());
+    header.extend_from_slice(&height.to_be_bytes());
+    header.extend_from_slice(&[8, color_type]);
+    header
+}
+
+#[test]
+fn test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type() {
+    let header = png_probe_header(640, 480, 6);
+    assert_eq!(header.len(), 26);
+
+    // Direct calls include the former 24- and 25-byte panic cases.
+    for len in 0..=25 {
+        let prefix = &header[..len];
+        assert_eq!(read_image_probe_from_header(prefix), None, "prefix length {len}");
+        assert_eq!(read_image_metadata_from_header(prefix), None, "prefix length {len}");
+    }
+}
+
+#[test]
+fn test_ocrm_image_ops_png_probe_preserves_required_header_metadata() {
+    for (color_type, has_alpha) in [(0, false), (2, false), (3, false), (4, true), (6, true)] {
+        for extra_bytes in [0, 3, 7] {
+            let mut header = png_probe_header(640, 480, color_type);
+            header.resize(26 + extra_bytes, 0);
+            assert_eq!(
+                read_image_probe_from_header(&header),
+                Some(ImageProbe {
+                    width: 640,
+                    height: 480,
+                    format: "png".to_string(),
+                    has_alpha,
+                    orientation: None,
+                    bytes: 26 + extra_bytes,
+                }),
+                "color type {color_type}, extra bytes {extra_bytes}"
+            );
+            assert_eq!(
+                read_image_metadata_from_header(&header),
+                Some(ImageMetadata { width: 640, height: 480 })
+            );
+        }
+    }
+}
+
+#[test]
+fn test_ocrm_image_ops_png_probe_rejects_zero_dimensions() {
+    for (width, height) in [(0, 480), (640, 0), (0, 0)] {
+        let header = png_probe_header(width, height, 6);
+        assert_eq!(read_image_probe_from_header(&header), None);
+        assert_eq!(read_image_metadata_from_header(&header), None);
+    }
+}
+
+#[test]
+fn test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry() {
+    use base64::Engine as _;
+    let header = png_probe_header(640, 480, 6);
+
+    for len in [24, 25] {
+        for mime in ["image/png", "application/octet-stream"] {
+            let mut input = AttachmentInput {
+                base64: base64::engine::general_purpose::STANDARD.encode(&header[..len]),
+                label: "header.png".to_string(),
+                mime: mime.to_string(),
+                image_storage: None,
+            };
+            let prepared = prepare_attachment(&input).expect("short PNG header remains an attachment");
+            assert_eq!(prepared.size_bytes, len);
+            assert_eq!(prepared.mime, "image/png");
+            assert_eq!(prepared.buffer.as_deref(), Some(&header[..len]));
+            assert_eq!(prepared.width, None);
+            assert_eq!(prepared.height, None);
+
+            input.base64 = base64::engine::general_purpose::STANDARD.encode(&header);
+            let prepared = prepare_attachment(&input).expect("sufficient header provides metadata");
+            assert_eq!(prepared.size_bytes, 26);
+            assert_eq!(prepared.mime, "image/png");
+            assert_eq!(prepared.buffer.as_deref(), Some(header.as_slice()));
+            assert_eq!(prepared.width, Some(640));
+            assert_eq!(prepared.height, Some(480));
+        }
+    }
+}
+
+#[test]
+fn test_ocrm_image_ops_png_prefix_file_loader_and_retry() {
+    let temp = TempTestDir::new("png-probe-retry");
+    let path = temp.path.join("header.png");
+    let header = png_probe_header(640, 480, 6);
+
+    for optimize_images in [false, true] {
+        let options = WebMediaOptions {
+            max_bytes: Some(26),
+            local_roots: Some(vec![temp.path.clone()]),
+            optimize_images,
+            ..Default::default()
+        };
+        for len in [24, 25] {
+            fs::write(&path, &header[..len]).expect("write short PNG header");
+            let loaded = load_web_media(&path.to_string_lossy(), &options)
+                .expect("bounded file loader accepts short header bytes");
+            assert_eq!(loaded.buffer.as_slice(), &header[..len]);
+            assert_eq!(loaded.content_type, None);
+            assert_eq!(loaded.kind.as_deref(), Some("image"));
+            assert_eq!(loaded.file_name.as_deref(), Some("header.png"));
+            assert_eq!(loaded.trusted_generated_html_source, None);
+            assert_eq!(read_image_metadata_from_header(&loaded.buffer), None);
+
+            fs::write(&path, &header).expect("replace the same file with a sufficient header");
+            let loaded = load_web_media(&path.to_string_lossy(), &options)
+                .expect("bounded file loader retries with fresh header bytes");
+            assert_eq!(loaded.buffer, header);
+            assert_eq!(loaded.content_type.as_deref(), Some("image/png"));
+            assert_eq!(loaded.kind.as_deref(), Some("image"));
+            assert_eq!(loaded.file_name.as_deref(), Some("header.png"));
+            assert_eq!(loaded.trusted_generated_html_source, None);
+            assert_eq!(
+                read_image_metadata_from_header(&loaded.buffer),
+                Some(ImageMetadata { width: 640, height: 480 })
+            );
+        }
+    }
+}
+
+#[test]
+fn test_ocrm_image_ops_png_file_loader_preserves_read_boundaries() {
+    let temp = TempTestDir::new("png-probe-boundaries");
+    let allowed_dir = temp.path.join("allowed");
+    let forbidden_dir = temp.path.join("forbidden");
+    fs::create_dir_all(&allowed_dir).expect("create allowed root");
+    fs::create_dir_all(&forbidden_dir).expect("create forbidden root");
+    let path = allowed_dir.join("header.png");
+    let forbidden_path = forbidden_dir.join("header.png");
+    let header = png_probe_header(640, 480, 2);
+    fs::write(&path, &header).expect("write header at exact byte cap");
+    fs::write(&forbidden_path, &header).expect("write header outside allowed root");
+    let options = WebMediaOptions {
+        max_bytes: Some(26),
+        local_roots: Some(vec![allowed_dir.clone()]),
+        ..Default::default()
+    };
+
+    let loaded = load_web_media(&path.to_string_lossy(), &options).expect("exact byte cap is accepted");
+    assert_eq!(loaded.buffer, header);
+    assert_eq!(loaded.content_type.as_deref(), Some("image/png"));
+
+    let mut oversized = header.clone();
+    oversized.push(0);
+    fs::write(&path, &oversized).expect("write one byte above cap");
+    assert!(matches!(
+        load_web_media(&path.to_string_lossy(), &options),
+        Err(WebMediaError::TooLarge(_))
+    ));
+    fs::write(&path, &header).expect("restore file to byte cap");
+    let loaded = load_web_media(&path.to_string_lossy(), &options).expect("retry after size rejection");
+    assert_eq!(loaded.buffer, header);
+    assert_eq!(loaded.content_type.as_deref(), Some("image/png"));
+
+    assert!(matches!(
+        load_web_media(&forbidden_path.to_string_lossy(), &options),
+        Err(WebMediaError::LocalAccess { code, .. }) if code == "path-not-allowed"
+    ));
+    assert!(matches!(
+        load_web_media(&allowed_dir.to_string_lossy(), &options),
+        Err(WebMediaError::LocalAccess { code, .. }) if code == "not-found"
+    ));
+}
+
+#[test]
+fn test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry() {
+    use base64::Engine as _;
+    let temp = TempTestDir::new("png-probe-gateway");
+    let service = test_attachments_service(&temp.path);
+    let path = temp.path.join("header.png");
+    let header = png_probe_header(640, 480, 6);
+    let load_args = json!({ "url": path.to_string_lossy(), "maxBytes": 26 });
+
+    for len in [24, 25] {
+        fs::write(&path, &header[..len]).expect("write short header for service load");
+        let loaded = service
+            .dispatch_gateway("loadWebMedia", &load_args)
+            .expect("loadWebMedia handled")
+            .expect("short header loaded without metadata");
+        assert_eq!(loaded, json!({
+            "buffer": &header[..len], "kind": "image", "fileName": "header.png"
+        }));
+        let loaded_bytes: Vec<u8> = serde_json::from_value(loaded["buffer"].clone())
+            .expect("service returns byte buffer");
+        let base64 = base64::engine::general_purpose::STANDARD.encode(&loaded_bytes);
+        let metadata = service
+            .dispatch_gateway("readImageMetadata", &json!({ "base64": &base64 }))
+            .expect("readImageMetadata handled")
+            .expect("short header metadata is optional");
+        assert_eq!(metadata, json!(null));
+        let prepared = service
+            .dispatch_gateway("prepareAttachment", &json!({
+                "base64": &base64, "label": "header.png", "mime": "image/png"
+            }))
+            .expect("prepareAttachment handled")
+            .expect("short header attachment prepared");
+        assert_eq!(prepared, json!({
+            "sizeBytes": len, "mime": "image/png", "buffer": &header[..len]
+        }));
+
+        fs::write(&path, &header).expect("replace the same service file with sufficient header");
+        let loaded = service
+            .dispatch_gateway("loadWebMedia", &load_args)
+            .expect("loadWebMedia retry handled")
+            .expect("service reloads fresh file bytes");
+        assert_eq!(loaded, json!({
+            "buffer": &header, "contentType": "image/png", "kind": "image", "fileName": "header.png"
+        }));
+        let loaded_bytes: Vec<u8> = serde_json::from_value(loaded["buffer"].clone())
+            .expect("service returns fresh byte buffer");
+        let base64 = base64::engine::general_purpose::STANDARD.encode(&loaded_bytes);
+        let metadata = service
+            .dispatch_gateway("readImageMetadata", &json!({ "base64": &base64 }))
+            .expect("readImageMetadata retry handled")
+            .expect("fresh header metadata read");
+        assert_eq!(metadata, json!({ "width": 640, "height": 480 }));
+        let prepared = service
+            .dispatch_gateway("prepareAttachment", &json!({
+                "base64": &base64, "label": "header.png", "mime": "image/png"
+            }))
+            .expect("prepareAttachment retry handled")
+            .expect("fresh header attachment prepared");
+        assert_eq!(prepared, json!({
+            "sizeBytes": 26, "mime": "image/png", "buffer": &header, "width": 640, "height": 480
+        }));
+    }
+
+    let error = service
+        .dispatch_gateway("loadWebMedia", &json!({
+            "url": path.to_string_lossy(), "maxBytes": 25
+        }))
+        .expect("loadWebMedia byte limit handled")
+        .expect_err("service keeps the bounded file read limit");
+    assert!(error.starts_with("Media exceeds "), "unexpected error: {error}");
 }

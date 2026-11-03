@@ -2013,6 +2013,7 @@ impl AttachmentsService {
                 let opts = crate::extensions::attachments::web_media::WebMediaOptions {
                     max_bytes,
                     optimize_images: optimize,
+                    html_publication: args.get("htmlPublication").and_then(Value::as_str).map(str::to_owned),
                     ..Default::default()
                 };
                 let res = crate::extensions::attachments::web_media::load_web_media(url, &opts)

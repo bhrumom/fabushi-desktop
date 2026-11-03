@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture the existing media owner's affected contracts in GitHub Actions only."""
+"""Capture existing media lifecycle, HTML and image probe contracts in Actions only."""
 
 import hashlib
 import json
@@ -38,6 +38,59 @@ INTEGRATION_NAMES = [
     "test_ocrm_device_pairing_qr_wiring",
     "test_ocrm_media_store_remote_fixture_scope_and_filename_support",
 ]
+HTML_POLICY_NAMES = [
+    "test_html_provenance_marker_validation",
+    "test_html_provenance_filter_stale_rows",
+    "test_html_provenance_host_read_admission",
+    "test_html_shape_ecmascript_whitespace",
+    "test_html_shape_header_word_boundaries",
+    "test_html_shape_utf16_window_boundaries",
+    "test_html_policy_public_assertion_trust_mime_and_byte_identity",
+    "test_html_policy_public_assertion_unicode_and_malformed_shape",
+    "test_html_provenance_stale_snapshot_order_and_missing_kinds",
+]
+HTML_POLICY_UNIX_NAMES = [
+    "test_html_provenance_stale_link_kinds_and_recovery",
+    "test_html_provenance_permission_denied_retained_and_recovered",
+    "test_html_provenance_symlink_loop_retained_and_recovered",
+]
+WEB_MEDIA_NAMES = [
+    "test_ocrm_anthropic_inline_content_blocks_normalization",
+    "test_ocrm_web_media_animated_webp_preservation",
+    "test_ocrm_web_media_file_url_and_traversal_guards",
+    "test_ocrm_web_media_local_loading_and_roots_boundary",
+    "web_media_local_reads_are_bounded_before_buffer_acceptance",
+    "test_ocrm_remote_workspace_file_transfer",
+    "test_ocrm_web_media_gateway_service_dispatch",
+    "test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+    "test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+    "test_ocrm_web_media_explicit_html_utf16_shape_window",
+    "test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+    "test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+    "test_ocrm_web_media_html_publication_requires_exact_mode",
+    "test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+    "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+    "test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+    "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+]
+IMAGE_OPS_NAMES = [
+    "test_ocrm_image_ops_build_resize_side_grid",
+    "test_ocrm_image_ops_quality_steps_ladder",
+    "test_ocrm_image_ops_animated_webp_detection",
+    "test_ocrm_image_ops_still_png_and_apng_detection",
+    "test_ocrm_image_ops_display_metadata_orientation_swap",
+    "test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
+    "test_ocrm_image_ops_prepare_attachment",
+    "test_ocrm_image_ops_normalize_anthropic_inline_image",
+    "test_ocrm_image_ops_gateway_dispatch",
+    "test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type",
+    "test_ocrm_image_ops_png_probe_preserves_required_header_metadata",
+    "test_ocrm_image_ops_png_probe_rejects_zero_dimensions",
+    "test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry",
+    "test_ocrm_image_ops_png_prefix_file_loader_and_retry",
+    "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+    "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry",
+]
 INPUTS = [
     ".github/workflows/rust-desktop-runtime.yml",
     "projects/openclaw-rust/scripts/capture_media_cleanup.py",
@@ -55,6 +108,17 @@ INPUTS = [
     "source/host/src/device_pairing_owner.rs",
     "source/host/app/src/main.rs",
     "source/host/tests/openclaw_media_store_contract.rs",
+    "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+    "source/host/src/extensions/attachments/host_read_media_policy.rs",
+    "source/host/src/extensions/attachments/web_media.rs",
+    "source/host/src/extensions/attachments/media_reference.rs",
+    "source/host/tests/openclaw_html_provenance_contract.rs",
+    "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+    "source/host/tests/openclaw_web_media_contract.rs",
+    "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+    "source/host/src/extensions/attachments/image_ops.rs",
+    "source/host/src/media_mime.rs",
+    "source/host/tests/openclaw_image_ops_contract.rs",
 ]
 
 
@@ -176,8 +240,9 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This executable verification is GitHub Actions-only.")
     ROOT.mkdir(parents=True, exist_ok=False)
-    receipt = {"contract": "MSL-RECURSIVE-01", "result": "failed-or-incomplete",
-               "executions": [], "scope": "Existing Rust cleanup owner, real files and Attachments service; not packaged/full media or filesystem acceptance."}
+    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1"],
+               "result": "failed-or-incomplete", "executions": [],
+               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, and PNG header bounds through existing metadata/attachment/file consumers. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
     save(receipt)
     try:
         head = output(["git", "rev-parse", "HEAD"])
@@ -209,10 +274,12 @@ def main():
             raise ValueError("Result oracle qualification failed")
         owner = [OWNER_PREFIX + name for name in OWNER_NAMES]
         integration = INTEGRATION_NAMES.copy()
+        html_policy = HTML_POLICY_NAMES.copy()
         if runner_os == "Windows":
             owner.append(OWNER_PREFIX + "cleanup_windows_identity_compares_full_file_id")
         else:
             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries")
+            html_policy.extend(HTML_POLICY_UNIX_NAMES)
         if runner_os == "Linux":
             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_raw_names")
         if runner_os in {"macOS", "Windows"}:
@@ -221,6 +288,10 @@ def main():
         cases = [
             ("cleanup-owner", base + ["--lib", OWNER_PREFIX, "--", "--test-threads=1"], owner),
             ("cleanup-consumers", base + ["--test", "openclaw_media_store_contract", "--", "--test-threads=1"], integration),
+            ("html-policy", base + ["--test", "openclaw_html_provenance_contract", "--", "--test-threads=1"], html_policy),
+            ("host-read-format", base + ["--test", "openclaw_channel_and_local_roots_contract", "test_ocrm_host_read_media_policy_format_admission", "--", "--exact", "--test-threads=1"], ["test_ocrm_host_read_media_policy_format_admission"]),
+            ("explicit-html-consumers", base + ["--test", "openclaw_web_media_contract", "--", "--test-threads=1"], WEB_MEDIA_NAMES),
+            ("image-probe-consumers", base + ["--test", "openclaw_image_ops_contract", "--", "--test-threads=1"], IMAGE_OPS_NAMES),
         ]
         receipt["planned_commands"] = [{"case": label, "command": command, "required_positive_names": names}
                                        for label, command, names in cases]

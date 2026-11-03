@@ -267,7 +267,8 @@ pub fn read_image_probe_from_header(buffer: &[u8]) -> Option<ImageProbe> {
 
     // 2. PNG
     const PNG_SIG: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
-    if buffer.len() >= 24 && &buffer[0..8] == PNG_SIG && &buffer[12..16] == b"IHDR" {
+    // The color-type byte at offset 25 is required for the alpha hint.
+    if buffer.len() >= 26 && &buffer[0..8] == PNG_SIG && &buffer[12..16] == b"IHDR" {
         let width = u32::from_be_bytes(buffer[16..20].try_into().ok()?);
         let height = u32::from_be_bytes(buffer[20..24].try_into().ok()?);
         let color_type = buffer[25];

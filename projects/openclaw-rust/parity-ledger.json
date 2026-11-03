@@ -12252,7 +12252,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Enforce host read media format admission policy. Requires buffer-verified media/document types (images, audio, video, PDF, Office documents, archives). Validates plain text documents with printable ratio > 0.95 and single-byte text shape. Rejects UTF-16 to prevent binary bypass. Restricts HTML files to trusted generated provenance (temp-root or outbound with expected SHA256/size) or explicit publication, rejecting unverified declared HTML with HOST_READ_DECLARED_TEXT_ERROR.",
+      "behavior": "Enforce host read media format admission policy. Requires buffer-verified media/document types (images, audio, video, PDF, Office documents, archives). Validates plain text documents with printable ratio > 0.95 and single-byte text shape. Rejects UTF-16 to prevent binary bypass. Restricts HTML files to trusted generated provenance (temp-root or outbound with expected SHA256/size) or explicit publication, rejecting unverified declared HTML with HOST_READ_DECLARED_TEXT_ERROR. HHP-v2 makes HTML shape inspection total for valid UTF-8, preserving the fixed source 8192 UTF-16 code-unit window, ECMAScript leading whitespace and header word boundary. The existing direct Attachments loadWebMedia service now invokes this owner for opt-in explicit local HTML bytes. Generated-origin and complete host-read capability consumers remain blocked.",
       "blocker_ids": [
         "BL-MEDIA-HOST-READ-POLICY-CONSUMERS-001"
       ],
@@ -12264,7 +12264,12 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
-        "projects/openclaw-rust/dossiers/channel-inbound-local-roots-scoped.md"
+        "projects/openclaw-rust/dossiers/channel-inbound-local-roots-scoped.md",
+        "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+        "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+        "source/host/tests/openclaw_html_provenance_contract.rs",
+        "source/host/tests/openclaw_web_media_contract.rs",
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
       ],
       "existing_owner_candidates": [
         {
@@ -12274,7 +12279,7 @@
       ],
       "id": "OCRM-RESP-MEDIA-HOST-READ-POLICY-001",
       "integration": {
-        "consumer": "Pending host media reading operations",
+        "consumer": "web_media::load_web_media invokes the actual policy for explicit .html/.htm requests and returns through AttachmentsService::dispatch_gateway; complete host-read capability, generated-origin and chat consumers remain pending",
         "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
         "owner": "source/host/src/extensions/attachments/host_read_media_policy.rs",
         "producer": "AttachmentsService::dispatch_gateway"
@@ -12283,7 +12288,9 @@
         "Declared HTML without provenance or publication fails with HOST_READ_DECLARED_TEXT_ERROR",
         "Plain text documents require printable ratio > 0.95 and valid single-byte ASCII/Latin-1 shape",
         "UTF-16 decoding is omitted to prevent arbitrary binary byte pair bypass via BOM",
-        "Buffer-verified media/document types are strictly enforced"
+        "Buffer-verified media/document types are strictly enforced",
+        "HTML shape inspection never slices through a Unicode scalar; no recognized tag beyond the first 8192 UTF-16 code units after ECMAScript leading whitespace can satisfy the shape gate",
+        "Explicit publication is a content request only: it grants no new filesystem authority and produces no generated-origin trust; only exact mode and HTML extension select the additional gate"
       ],
       "migration_rollback": "Deny host media read fail-closed",
       "oracle_ids": [
@@ -12339,7 +12346,22 @@
         "symbol": "assert_host_read_media_allowed, text_printable_ratio, has_single_byte_text_shape, decode_host_read_text, is_allowed_host_read_html"
       },
       "tests": [
-        "source/host/tests/openclaw_channel_and_local_roots_contract.rs::test_ocrm_host_read_media_policy_format_admission"
+        "source/host/tests/openclaw_channel_and_local_roots_contract.rs::test_ocrm_host_read_media_policy_format_admission",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_shape_ecmascript_whitespace",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_shape_header_word_boundaries",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_shape_utf16_window_boundaries",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_policy_public_assertion_trust_mime_and_byte_identity",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_policy_public_assertion_unicode_and_malformed_shape",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_utf16_shape_window",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_html_publication_requires_exact_mode",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes"
       ],
       "typed_contracts": [
         "assert_host_read_media_allowed(params: &AssertHostReadParams) -> Result<(), HostReadMediaTypeError>",
@@ -12539,7 +12561,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Build descending deduplicated image resize side grids, maintain reduce/within-budget quality steps ladder, detect animated WebP via VP8X RFC 9649 animation bit, verify still PNG via chunk scan (up to 512 chunks rejecting acTL before IDAT), extract image metadata swapping axes for EXIF orientations 5-8, and normalize Anthropic inline images converting BMP to PNG.",
+      "behavior": "Build descending deduplicated image resize side grids, maintain reduce/within-budget quality steps ladder, detect animated WebP via VP8X RFC 9649 animation bit, verify still PNG via chunk scan (up to 512 chunks rejecting acTL before IDAT), extract image metadata swapping axes for EXIF orientations 5-8, and normalize Anthropic inline images converting BMP to PNG. IPB-v1 removes the existing PNG short-header panic in this owner: buffers missing color-type byte 25 provide no metadata; sufficient-header semantics remain unchanged. Actual attachment preparation, bounded file loading and direct Attachments dispatch consume the same probe; complete image/codec and chat/UI compatibility remain required.",
       "blocker_ids": [
         "BL-MEDIA-IMAGE-OPS-CONSUMERS-001"
       ],
@@ -12550,7 +12572,10 @@
         "source/host/src/extensions/attachments/media_qr_png.rs"
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_image_ops_contract.rs"
+        "source/host/tests/openclaw_image_ops_contract.rs",
+        "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+        "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
       ],
       "existing_owner_candidates": [
         {
@@ -12575,7 +12600,7 @@
       ],
       "id": "OCRM-RESP-MEDIA-IMAGE-OPS-001",
       "integration": {
-        "consumer": "Pending chat image resize and preview UI consumers (currently only gateway dispatch)",
+        "consumer": "Existing prepare_attachment and web_media::load_web_media consume the header probe; actual Attachments dispatch loadWebMedia/readImageMetadata/prepareAttachment exercise returned file bytes. Chat image resize, preview UI and full image policy consumers remain pending.",
         "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
         "owner": "source/host/src/extensions/attachments/image_ops.rs",
         "producer": "AttachmentsService::dispatch_gateway"
@@ -12584,7 +12609,9 @@
         "EXIF orientations 5..8 swap display width and height without decoding image pixels",
         "VP8X animation bit 0x02 accurately flags animated WebP before single-frame transcode",
         "PNG chunk scan rejects acTL before IDAT to prevent APNG animation stripping",
-        "Resize side grid produces descending deduplicated positive values"
+        "Resize side grid produces descending deduplicated positive values",
+        "PNG byte 25 is read only after length >= 26; missing required header bytes return None without a panic and do not grant image-validity or generated-source trust",
+        "Current bool alpha and partial-header result differ from Rastermill 0.4.0 nullable alpha; the exact distributed contract difference remains open for full compatibility"
       ],
       "migration_rollback": "Fallback to raw attachment bytes",
       "oracle_ids": [
@@ -12597,7 +12624,7 @@
         "Correct display metadata returned, animated images preserved or flagged, inline images normalized"
       ],
       "preconditions": [
-        "Valid image header bytes or dimensions within budget"
+        "Input byte slice or dimensions are supplied within the existing caller budgets; header probes must also handle arbitrary truncated or unrecognized bytes"
       ],
       "required_evidence_dimensions": [
         "unit",
@@ -12614,7 +12641,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Low; header inspection without full decode prevents memory exhaustion and preserves animation",
+      "risk": "High; untrusted byte indexing is reached by actual media file and attachment consumers. IPB-v1 repairs totality at the PNG color-byte boundary without accepting full decoding, image validity or upstream optional-alpha schema parity.",
       "selected_owner": "source/host/src/extensions/attachments/image_ops.rs",
       "source_refs": [],
       "status": {
@@ -12639,7 +12666,14 @@
         "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
         "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_prepare_attachment",
         "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_normalize_anthropic_inline_image",
-        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_gateway_dispatch"
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_gateway_dispatch",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_png_probe_preserves_required_header_metadata",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_png_probe_rejects_zero_dimensions",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_png_prefix_file_loader_and_retry",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry"
       ],
       "typed_contracts": [
         "build_image_resize_side_grid(max_side: u32, side_start: u32) -> Vec<u32>",
@@ -15857,7 +15891,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:).",
+      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:). HHP-v2 connects only the existing direct service local explicit HTML contract: exact opt-in on .html/.htm validates actual bounded bytes, returns text/html and document with unchanged bytes, and leaves generated trust absent. The broad remote, image-optimization, chat and permission-scope responsibilities remain applicable and are not accepted by this slice.",
       "blocker_ids": [
         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001"
       ],
@@ -15866,11 +15900,15 @@
       ],
       "dependencies": [
         "source/host/src/extensions/attachments/image_ops.rs",
-        "source/host/src/extensions/attachments/media_store.rs"
+        "source/host/src/extensions/attachments/media_store.rs",
+        "source/host/src/extensions/attachments/host_read_media_policy.rs"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_web_media_contract.rs",
-        "projects/openclaw-rust/dossiers/web-media-remote-workspace-scoped.md"
+        "projects/openclaw-rust/dossiers/web-media-remote-workspace-scoped.md",
+        "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+        "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
       ],
       "existing_owner_candidates": [
         {
@@ -15895,7 +15933,7 @@
       ],
       "id": "OCRM-RESP-MEDIA-WEB-PIPELINE-001",
       "integration": {
-        "consumer": "Pending inbound/outbound chat media attachment consumers",
+        "consumer": "The actual generic Host dispatch returns loadWebMedia result/errors through AttachmentsService::dispatch_gateway; inbound/outbound chat, ordinary registered Gateway, frontend and Runner consumers remain pending",
         "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
         "owner": "source/host/src/extensions/attachments/web_media.rs",
         "producer": "AttachmentsService::dispatch_gateway"
@@ -15904,7 +15942,10 @@
         "Windows network UNC paths (//server/share or \\\\server\\share) strictly rejected",
         "Local file loading respects local_roots boundary directory",
         "Animated WebP (VP8X bit 1) preserved as animated format without single-frame degradation",
-        "Percent-encoded file URLs properly decoded"
+        "Percent-encoded file URLs properly decoded",
+        "Exact explicit mode plus an HTML extension invokes the existing byte/shape policy after roots and bounded read, before image optimization; refusal has no ordinary fallback",
+        "Success preserves loaded bytes and filename, returns text/html/document and no generated trust; explicit mode grants no roots, sandbox or host-read authority",
+        "Omitted, unknown and non-HTML modes preserve existing loading behavior; MIME signature coverage beyond the existing detector remains an explicit full-equivalence gap"
       ],
       "migration_rollback": "Reject remote URL and unverified paths fail-closed",
       "oracle_ids": [
@@ -15934,7 +15975,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Medium; critical SSRF security boundary and path traversal protection for user-submitted media URIs",
+      "risk": "High: local file admission, bounded actual-byte inspection, Unicode-safe content policy and MIME conflicts. HHP-v2 adds only an explicit content check; existing opened-handle/read-scope, all-format MIME, frontend/Runner, remote loading and full acceptance remain open.",
       "selected_owner": "source/host/src/extensions/attachments/web_media.rs",
       "source_refs": [],
       "status": {
@@ -15954,7 +15995,17 @@
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_animated_webp_preservation",
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_and_traversal_guards",
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_local_loading_and_roots_boundary",
-        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_gateway_service_dispatch"
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_gateway_service_dispatch",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_utf16_shape_window",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_html_publication_requires_exact_mode",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes"
       ],
       "typed_contracts": [
         "load_web_media(uri_or_path: &str, options: &WebMediaOptions) -> Result<WebMediaResult, String>",
@@ -19380,7 +19431,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning.",
+      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning. HHP-v2 corrects the existing read-only stale-row selector: confirmed missing or invalid entries are selected, while permission/transient/other uninspectable failures retain the full row. Durable origin publication, persistence and production consumers remain required under the existing wiring blocker.",
       "blocker_ids": [
         "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001"
       ],
@@ -19392,7 +19443,10 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_html_provenance_contract.rs",
-        "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md"
+        "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md",
+        "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+        "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
       ],
       "existing_owner_candidates": [
         {
@@ -19402,7 +19456,7 @@
       ],
       "id": "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
       "integration": {
-        "consumer": "No production generated-HTML provenance consumer identified; host-read provenance helpers have no non-test callers",
+        "consumer": "No production generated-marker reader or stale-row mutation consumer identified. Explicit HTML loading calls the existing content policy with no generated trust and does not close this provenance wiring blocker",
         "entrypoint": "source/host/src/extensions/attachments/host_read_media_policy.rs::is_allowed_host_read_html",
         "owner": "source/host/src/extensions/attachments/host_read_media_policy.rs",
         "producer": "No production generated-HTML provenance producer identified; provenance inputs are supplied only by contract fixtures"
@@ -19410,15 +19464,17 @@
       "invariants": [
         "Trusted generated HTML markers strictly enforce kind=trusted-generated-html and version=1",
         "Host read media admission validates exact SHA256 and byte size against recorded provenance",
-        "Pruning filters rows referencing missing files, symbolic links, or hardlinks (nlink != 1)"
+        "Pruning filters rows referencing missing files, symbolic links, or hardlinks (nlink != 1)",
+        "NotFound and NotADirectory establish missing-path selection; all other inspection errors retain the original provenance snapshot and confer no read authority"
       ],
-      "migration_rollback": "Allow host read text fallback without strict outbound HTML provenance verification",
+      "migration_rollback": "Retain uninspectable marker snapshots and fail closed at independent read/trust admission; never enable an HTML text fallback to bypass provenance. HHP-v2 adds no schema or persisted-state migration.",
       "oracle_ids": [
         "OCRM-HTML-PROVENANCE-O01"
       ],
       "owner_decision": "Incorporate outbound HTML provenance types and validation into host_read_media_policy module",
       "postconditions": [
-        "Validated HTML provenance marker returned or stale rows identified for cleanup"
+        "Validated HTML provenance marker returned or stale rows identified for cleanup",
+        "The current selector returns complete original row snapshots in input order without any database write, filesystem deletion or trust grant"
       ],
       "preconditions": [
         "HTML document path and provenance metadata available for registration or validation"
@@ -19437,7 +19493,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Low; validates HTML document origin to prevent unauthorized local read escalations",
+      "risk": "High; generated-origin trust and stale-row selection affect read authorization and durable marker custody; unavailable inspection cannot establish absence, and missing producer/database/consumer wiring remains blocked",
       "selected_owner": "source/host/src/extensions/attachments/host_read_media_policy.rs",
       "source_refs": [
         {
@@ -19491,7 +19547,13 @@
         "symbol": "validate_provenance_row, filter_stale_provenance_rows"
       },
       "tests": [
-        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_marker_validation"
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_marker_validation",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_filter_stale_rows",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_host_read_admission",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_stale_snapshot_order_and_missing_kinds",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_stale_link_kinds_and_recovery",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_permission_denied_retained_and_recovered",
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_symlink_loop_retained_and_recovered"
       ],
       "typed_contracts": [
         "validate_provenance_row",

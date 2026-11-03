@@ -10,13 +10,14 @@ use mahayana_host_runtime::extensions::attachments::attachments_service::{
     AttachmentsBox, AttachmentsService,
 };
 use mahayana_host_runtime::extensions::attachments::generate_image_service::GenerateImageAuth;
+use mahayana_host_runtime::extensions::attachments::host_read_media_policy::HOST_READ_DECLARED_TEXT_ERROR;
 use mahayana_host_runtime::extensions::attachments::remote_workspace_file::{
     read_bounded_remote_workspace_file, RemoteWorkspaceFileError, RemoteWorkspaceFileParams,
 };
 use mahayana_host_runtime::extensions::attachments::web_media::{
     assert_no_windows_network_path, file_url_to_path, load_web_media,
     optimize_image_buffer_for_web_media, strip_legacy_media_directive_prefix,
-    WebMediaOptions,
+    WebMediaError, WebMediaOptions,
 };
 
 const WEB_MEDIA_SOURCE: &str = include_str!("../src/extensions/attachments/web_media.rs");
@@ -320,4 +321,383 @@ fn test_ocrm_web_media_gateway_service_dispatch() {
         .expect("result ok");
 
     assert_eq!(blocks_res, json!([{ "type": "text", "text": "ping" }]));
+}
+
+fn assert_explicit_html_loads(
+    service: &AttachmentsService,
+    url: &str,
+    bytes: &[u8],
+    file_name: &str,
+) {
+    let options = WebMediaOptions {
+        max_bytes: Some(bytes.len()),
+        optimize_images: true,
+        html_publication: Some("explicit".to_string()),
+        ..Default::default()
+    };
+    let expected = json!({
+        "buffer": bytes,
+        "contentType": "text/html",
+        "kind": "document",
+        "fileName": file_name,
+    });
+    let loaded = load_web_media(url, &options).expect("explicit HTML loader result");
+    assert_eq!(serde_json::to_value(loaded).unwrap(), expected);
+
+    let dispatched = service
+        .dispatch_gateway(
+            "loadWebMedia",
+            &json!({
+                "url": url,
+                "maxBytes": bytes.len(),
+                "htmlPublication": "explicit",
+            }),
+        )
+        .expect("loadWebMedia is handled")
+        .expect("explicit HTML service result");
+    // Exact object equality also requires generated trust to stay absent.
+    assert_eq!(dispatched, expected);
+}
+
+fn assert_explicit_html_rejected(service: &AttachmentsService, url: &str) {
+    let options = WebMediaOptions {
+        optimize_images: true,
+        html_publication: Some("explicit".to_string()),
+        ..Default::default()
+    };
+    let policy_message = format!("HostReadMediaTypeError: {HOST_READ_DECLARED_TEXT_ERROR}");
+    let error = load_web_media(url, &options).expect_err("invalid explicit HTML must fail");
+    match error {
+        WebMediaError::LocalAccess { code, message } => {
+            assert_eq!(code, "invalid-html-publication");
+            assert_eq!(message, policy_message);
+        }
+        other => panic!("Expected an HTML policy refusal, got: {other:?}"),
+    }
+
+    let error = service
+        .dispatch_gateway(
+            "loadWebMedia",
+            &json!({ "url": url, "htmlPublication": "explicit" }),
+        )
+        .expect("loadWebMedia is handled")
+        .expect_err("service must preserve the HTML policy refusal");
+    assert_eq!(
+        error,
+        format!("Local media access error [invalid-html-publication]: {policy_message}")
+    );
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes() {
+    let temp = TempTestDir::new("explicit-html-success");
+    let service = test_attachments_service(&temp.path);
+    let cases = [
+        ("report.html", "report.html", "<!doctype html><html><body>report</body></html>"),
+        ("report café.HTM", "report café.HTM", "<HTML lang=\"en\"><body>café</body></HTML>"),
+        (
+            "report---123e4567-e89b-42d3-a456-426614174000.HTML",
+            "report.HTML",
+            "\u{feff}\u{00a0}<!DOCTYPE\u{00a0}HtMl><p>original bytes</p>",
+        ),
+    ];
+    for (stored_name, original_name, html) in cases {
+        let path = temp.path.join(stored_name);
+        fs::write(&path, html.as_bytes()).expect("write HTML fixture");
+        assert_explicit_html_loads(&service, &path.to_string_lossy(), html.as_bytes(), original_name);
+
+        let file_url = url::Url::from_file_path(&path).expect("owned file URL");
+        let uppercase_file_url = format!(
+            "FILE:{}",
+            file_url.as_str().strip_prefix("file:").expect("file scheme")
+        );
+        assert_explicit_html_loads(&service, &uppercase_file_url, html.as_bytes(), original_name);
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_html_unicode_byte_boundary() {
+    let temp = TempTestDir::new("explicit-html-byte-boundary");
+    let service = test_attachments_service(&temp.path);
+    for (label, scalar) in [("two-byte", "é"), ("three-byte", "界"), ("four-byte", "😀")] {
+        let html = format!("<html>{}{scalar}</html>", "x".repeat(8191 - "<html>".len()));
+        assert!(!html.is_char_boundary(8192), "fixture must cross byte 8192");
+        let file_name = format!("{label}.html");
+        let path = temp.path.join(&file_name);
+        fs::write(&path, html.as_bytes()).expect("write Unicode HTML fixture");
+        assert_explicit_html_loads(&service, &path.to_string_lossy(), html.as_bytes(), &file_name);
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_html_utf16_shape_window() {
+    let temp = TempTestDir::new("explicit-html-utf16-window");
+    let service = test_attachments_service(&temp.path);
+    // No opening HTML header: only a complete closing token inside the window admits these.
+    let cases = [
+        ("bmp-at-limit", format!("\u{feff}\u{00a0}{}</html>", "界".repeat(8185)), true),
+        ("bmp-after-limit", format!("{}</html>", "界".repeat(8186)), false),
+        ("pair-at-limit", format!("{}x</body>", "😀".repeat(4092)), true),
+        ("pair-after-limit", format!("{}</body>", "😀".repeat(4093)), false),
+        ("split-pair-at-limit", format!("{}😀</html>", "x".repeat(8191)), false),
+    ];
+    for (label, html, allowed) in cases {
+        let file_name = format!("{label}.htm");
+        let path = temp.path.join(&file_name);
+        fs::write(&path, html.as_bytes()).expect("write UTF-16 window fixture");
+        if allowed {
+            assert_explicit_html_loads(&service, &path.to_string_lossy(), html.as_bytes(), &file_name);
+        } else {
+            assert_explicit_html_rejected(&service, &path.to_string_lossy());
+        }
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext() {
+    let temp = TempTestDir::new("explicit-html-invalid");
+    let service = test_attachments_service(&temp.path);
+    let mut invalid_utf8 = b"<html>".to_vec();
+    invalid_utf8.extend_from_slice(&[0xff; 64]);
+    invalid_utf8.extend_from_slice(b"</html>");
+    let mut nul_text = b"<html>".to_vec();
+    nul_text.extend_from_slice(&[0; 64]);
+    nul_text.extend_from_slice(b"</html>");
+    let cases = [
+        ("empty", Vec::new()),
+        ("ordinary-text", b"a,b,c\nthis is not an HTML document\n".to_vec()),
+        ("header-word", b"<htmlish><p>no closing document token</p>".to_vec()),
+        ("header-underscore", b"<html_><p>no closing document token</p>".to_vec()),
+        ("doctype-digit", b"<!doctype html5><p>no closing document token</p>".to_vec()),
+        ("doctype-no-space", b"<!doctypehtml><p>no closing document token</p>".to_vec()),
+        ("header-long-s", "<htmlſ><p>no closing document token</p>".as_bytes().to_vec()),
+        ("header-kelvin", "<htmlK><p>no closing document token</p>".as_bytes().to_vec()),
+        ("non-ecmascript-space", "\u{0085}<html><p>this leading character is not ECMAScript whitespace</p>".as_bytes().to_vec()),
+        ("invalid-utf8", invalid_utf8),
+        ("nul-text", nul_text),
+    ];
+    for (label, bytes) in cases {
+        let path = temp.path.join(format!("{label}.html"));
+        fs::write(&path, bytes).expect("write invalid HTML fixture");
+        assert_explicit_html_rejected(&service, &path.to_string_lossy());
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts() {
+    let temp = TempTestDir::new("explicit-html-signatures");
+    let service = test_attachments_service(&temp.path);
+    let signatures: [(&str, &[u8]); 3] = [
+        ("png", b"\x89PNG\r\n\x1a\n"),
+        ("pdf", b"%PDF-1.7\n"),
+        ("zip", b"PK\x03\x04"),
+    ];
+    for (label, signature) in signatures {
+        let mut bytes = signature.to_vec();
+        // PDF is printable; ZIP's two control bytes are below the text threshold.
+        // Both otherwise satisfy the closing-tag alternative, so byte sniffing matters.
+        bytes.extend_from_slice("x".repeat(256).as_bytes());
+        bytes.extend_from_slice(b"</body>");
+        let path = temp.path.join(format!("{label}.HTML"));
+        fs::write(&path, bytes).expect("write conflicting signature fixture");
+        assert_explicit_html_rejected(&service, &path.to_string_lossy());
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_html_publication_requires_exact_mode() {
+    let temp = TempTestDir::new("explicit-html-mode");
+    let service = test_attachments_service(&temp.path);
+    let path = temp.path.join("ordinary.html");
+    let bytes = b"plain text retains the ordinary loader behavior";
+    fs::write(&path, bytes).expect("write ordinary loader fixture");
+    let expected = json!({ "buffer": bytes.as_slice(), "kind": "image", "fileName": "ordinary.html" });
+    for publication in [None, Some(""), Some("EXPLICIT"), Some(" explicit"), Some("explicit "), Some("generated")] {
+        let options = WebMediaOptions {
+            optimize_images: true,
+            html_publication: publication.map(str::to_string),
+            ..Default::default()
+        };
+        let loaded = load_web_media(&path.to_string_lossy(), &options).expect("ordinary mode remains unchanged");
+        assert_eq!(serde_json::to_value(loaded).unwrap(), expected);
+        let mut args = json!({ "url": path.to_string_lossy() });
+        if let Some(mode) = publication {
+            args["htmlPublication"] = json!(mode);
+        }
+        let dispatched = service.dispatch_gateway("loadWebMedia", &args)
+            .expect("loadWebMedia is handled")
+            .expect("non-explicit service mode remains unchanged");
+        assert_eq!(dispatched, expected);
+    }
+    for publication in [json!(null), json!(false), json!(true), json!(17), json!({ "mode": "explicit" }), json!(["explicit"])] {
+        let dispatched = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": path.to_string_lossy(),
+            "htmlPublication": publication,
+        }))
+        .expect("loadWebMedia is handled")
+        .expect("non-string publication does not opt in");
+        assert_eq!(dispatched, expected);
+    }
+    assert_explicit_html_rejected(&service, &path.to_string_lossy());
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_mode_preserves_non_html_loading() {
+    let temp = TempTestDir::new("explicit-non-html");
+    let service = test_attachments_service(&temp.path);
+    let png = vec![
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+        0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00,
+        0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, 0x54, 0x08,
+        0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x18, 0xDD, 0x8D,
+        0xB0, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+    ];
+    let cases = [
+        ("bytes.txt", vec![0, 0xff, 1, 2], None),
+        ("markup.bin", b"<html><body>ordinary bytes</body></html>".to_vec(), None),
+        ("dot.png", png, Some("image/png")),
+    ];
+    for (file_name, bytes, content_type) in cases {
+        let path = temp.path.join(file_name);
+        fs::write(&path, &bytes).expect("write non-HTML fixture");
+        for optimize_images in [false, true] {
+            let options = WebMediaOptions {
+                optimize_images,
+                html_publication: Some("explicit".to_string()),
+                ..Default::default()
+            };
+            let mut expected = json!({ "buffer": bytes, "kind": "image", "fileName": file_name });
+            if let Some(mime) = content_type {
+                expected["contentType"] = json!(mime);
+            }
+            let loaded = load_web_media(&path.to_string_lossy(), &options).expect("non-HTML loader remains unchanged");
+            assert_eq!(serde_json::to_value(loaded).unwrap(), expected);
+            let dispatched = service.dispatch_gateway("loadWebMedia", &json!({
+                "url": path.to_string_lossy(),
+                "htmlPublication": "explicit",
+                "optimizeImages": optimize_images,
+            }))
+            .expect("loadWebMedia is handled")
+            .expect("non-HTML service load remains unchanged");
+            assert_eq!(dispatched, expected);
+        }
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary() {
+    let temp = TempTestDir::new("explicit-html-cap");
+    let service = test_attachments_service(&temp.path);
+    let valid = b"<html><body>bounded actual bytes</body></html>";
+    let valid_path = temp.path.join("valid.html");
+    fs::write(&valid_path, valid).expect("write valid HTML");
+    assert_explicit_html_loads(&service, &valid_path.to_string_lossy(), valid, "valid.html");
+
+    for (file_name, bytes) in [("valid.html", valid.as_slice()), ("invalid.html", b"not HTML but still bounded".as_slice())] {
+        let path = temp.path.join(file_name);
+        fs::write(&path, bytes).expect("write cap fixture");
+        let options = WebMediaOptions {
+            max_bytes: Some(bytes.len() - 1),
+            optimize_images: true,
+            html_publication: Some("explicit".to_string()),
+            ..Default::default()
+        };
+        let error = load_web_media(&path.to_string_lossy(), &options).expect_err("byte cap must precede HTML admission");
+        assert!(matches!(&error, WebMediaError::TooLarge(_)), "wrong cap error: {error:?}");
+        let service_error = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": path.to_string_lossy(),
+            "maxBytes": bytes.len() - 1,
+            "htmlPublication": "explicit",
+        }))
+        .expect("loadWebMedia is handled")
+        .expect_err("service must preserve the existing byte cap");
+        assert_eq!(service_error, error.to_string());
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_html_keeps_local_access_guards() {
+    let temp = TempTestDir::new("explicit-html-access");
+    let service = test_attachments_service(&temp.path);
+    let allowed = temp.path.join("allowed");
+    let forbidden = temp.path.join("forbidden");
+    fs::create_dir_all(&allowed).expect("allowed root");
+    fs::create_dir_all(&forbidden).expect("outside allowed root");
+    let bytes = b"<html><body>root-constrained HTML</body></html>";
+    let allowed_path = allowed.join("report.html");
+    let forbidden_path = forbidden.join("report.html");
+    fs::write(&allowed_path, bytes).expect("write allowed HTML");
+    fs::write(&forbidden_path, bytes).expect("write forbidden HTML");
+    let options = WebMediaOptions {
+        local_roots: Some(vec![allowed.clone()]),
+        workspace_dir: Some(allowed.clone()),
+        html_publication: Some("explicit".to_string()),
+        ..Default::default()
+    };
+    let loaded = load_web_media("report.html", &options).expect("resolved workspace HTML inside root");
+    assert_eq!(loaded.buffer, bytes);
+    assert_eq!(loaded.content_type.as_deref(), Some("text/html"));
+    assert_eq!(loaded.kind.as_deref(), Some("document"));
+    assert!(loaded.trusted_generated_html_source.is_none());
+    for source in [forbidden_path.to_string_lossy().to_string(), "../forbidden/report.html".to_string()] {
+        match load_web_media(&source, &options).expect_err("explicit mode cannot bypass roots") {
+            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "path-not-allowed"),
+            other => panic!("Expected path-not-allowed, got: {other:?}"),
+        }
+    }
+
+    let missing = allowed.join("missing.html");
+    let directory = allowed.join("directory.html");
+    fs::create_dir(&directory).expect("directory is not a file");
+    let options = WebMediaOptions {
+        html_publication: Some("explicit".to_string()),
+        ..Default::default()
+    };
+    let cases = [
+        (missing.to_string_lossy().to_string(), "not-found"),
+        (directory.to_string_lossy().to_string(), "not-found"),
+        (r"\\attacker\share\report.html".to_string(), "network-path-not-allowed"),
+        ("//attacker/share/report.html".to_string(), "network-path-not-allowed"),
+        ("file://attacker/share/report.html".to_string(), "invalid-file-url"),
+        ("file:///safe/folder%2Freport.html".to_string(), "invalid-file-url"),
+    ];
+    for (source, expected_code) in cases {
+        match load_web_media(&source, &options).expect_err("existing access guard must still refuse") {
+            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, expected_code),
+            other => panic!("Expected local access error, got: {other:?}"),
+        }
+        let error = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": source,
+            "htmlPublication": "explicit",
+            "hostReadCapability": true,
+            "sandboxValidated": true,
+            "localRoots": [temp.path.to_string_lossy()],
+            "trustedGeneratedHtmlSource": true,
+        }))
+        .expect("loadWebMedia is handled")
+        .expect_err("caller fields cannot bypass an existing access guard");
+        assert!(error.starts_with(&format!("Local media access error [{expected_code}]:")));
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes() {
+    let temp = TempTestDir::new("explicit-html-retry");
+    let service = test_attachments_service(&temp.path);
+    let path = temp.path.join("retry.html");
+    fs::write(&path, b"not an HTML document").expect("write initial invalid bytes");
+    assert_explicit_html_rejected(&service, &path.to_string_lossy());
+
+    let first = b"<html><body>first report</body></html>";
+    let second = b"<html><body>other report</body></html>";
+    assert_eq!(first.len(), second.len());
+    for bytes in [first, second] {
+        fs::remove_file(&path).expect("replace prior file");
+        fs::write(&path, bytes).expect("write fresh HTML bytes");
+        assert_explicit_html_loads(&service, &path.to_string_lossy(), bytes, "retry.html");
+        assert_eq!(fs::read(&path).unwrap(), bytes, "loading must preserve the file");
+        fs::write(&path, vec![b'x'; bytes.len()]).expect("same-length invalid replacement");
+        assert_explicit_html_rejected(&service, &path.to_string_lossy());
+    }
+    assert_eq!(fs::read_dir(&temp.path).unwrap().count(), 1, "no staged file or provenance sidecar");
 }

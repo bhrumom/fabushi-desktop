@@ -11,13 +11,16 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+use crate::extensions::attachments::host_read_media_policy::{
+    assert_host_read_media_allowed, AssertHostReadParams,
+};
 use crate::extensions::attachments::image_ops::{
     build_image_resize_side_grid, is_animated_webp_buffer, read_image_metadata_from_header,
     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
 };
 use crate::extensions::attachments::media_file_context::ImageOptimizationLimitError;
 use crate::extensions::attachments::media_reference::read_outbound_media_file_bounded;
-use crate::extensions::attachments::media_store::extract_original_filename;
+use crate::extensions::attachments::media_store::{detect_mime_from_buffer, extract_original_filename};
 use crate::extensions::attachments::media_store_shared::format_media_size;
 
 pub const IMAGE_OPTIMIZE_HEADROOM_FACTOR: usize = 4;
@@ -370,13 +373,43 @@ pub fn load_web_media(
         }
     })?;
 
-    let probe = read_image_probe_from_header(&buffer);
-    let content_type = probe.as_ref().map(|p| format!("image/{}", p.format));
-
     let file_name = file_path
         .file_name()
         .and_then(|s| s.to_str())
         .map(|s| extract_original_filename(s));
+
+    let explicit_html_publication = options.html_publication.as_deref() == Some("explicit")
+        && file_path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("html") || ext.eq_ignore_ascii_case("htm"));
+    if explicit_html_publication {
+        // Inspect the captured bytes without letting the filename supply a MIME hint.
+        let sniffed_content_type = detect_mime_from_buffer(&buffer, None);
+        assert_host_read_media_allowed(&AssertHostReadParams {
+            sniffed_content_type: sniffed_content_type.as_deref(),
+            content_type: Some("text/html"),
+            file_path: Some(&file_path),
+            kind: Some("document"),
+            buffer: Some(&buffer),
+            trusted_generated_html_path: None,
+            explicit_html_publication: true,
+        })
+        .map_err(|error| WebMediaError::LocalAccess {
+            code: "invalid-html-publication".to_string(),
+            message: error.to_string(),
+        })?;
+        return Ok(WebMediaResult {
+            buffer,
+            content_type: Some("text/html".to_string()),
+            kind: Some("document".to_string()),
+            file_name,
+            trusted_generated_html_source: None,
+        });
+    }
+
+    let probe = read_image_probe_from_header(&buffer);
+    let content_type = probe.as_ref().map(|p| format!("image/{}", p.format));
 
     if options.optimize_images && content_type.is_some() {
         optimize_image_buffer_for_web_media(
