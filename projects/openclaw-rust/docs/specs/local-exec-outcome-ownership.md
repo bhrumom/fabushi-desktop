@@ -241,8 +241,20 @@ for this daemon. Do not replace the executor with a partial file-only or test ow
 
 Root integration owns package.json/lock, build and checker scripts, workflow,
 capture and OCRM evidence/ledger references. Isolated workers may modify only
-declared daemon source/test paths after this authority is delivered. No public
-protobuf/schema or Host journal change is included.
+declared paths after this authority is delivered. The existing Electron native
+launch boundary must bind the same staged Host executable used by the Coordinator
+carrier, through one pure platform path resolver with the current packaged and
+development conventions. The actual emitted-entry byte-transfer oracle must
+obtain that binding through this production boundary, with no inherited Host
+path repairing the fixture. This remains thin platform composition under the
+Rust supervisor. The existing shell parser loader must admit a selected stage's
+LDB domain and actual runtime identity before requiring native packages; wrong
+domain/runtime must fail before provider registration, independently of ABI load
+failure. Preserve packaged Electron root selection and terminal load errors.
+Bind each native build's exact owned work root before the build begins and retain
+its failed contents through the existing Actions artifact, without broad searches,
+foreign cleanup or deleting unsettled child files. These clarify LDB-01/04/08/09;
+no public protobuf/schema, Host journal or additional product owner is included.
 
 The build implementation may add a narrow helper and contracts under
 `desktop/scripts/`, the emitted-entry contract under `source/local-exec-daemon/`,

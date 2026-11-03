@@ -1,0 +1,101 @@
+{
+  "schema": "ocrm-source-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "batch": "LDB-v1",
+  "round": 1,
+  "fixed_U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "original_base": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e",
+  "subject": "a8dd0c688973899ac069cc5c429b441c1168fd25",
+  "tree": "7ee6aa62dd952deac1d200fe288f7562a10b8325",
+  "review_carrier": "b2b33f0977847d3a1ce3d15dcd54926bc6a6e2e9",
+  "reviews": [
+    {
+      "agent": "/root/ldb_r1_general",
+      "lens": "general",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "xhigh",
+      "verdict": "CHANGES_REQUESTED",
+      "complete_scope_paths": 33,
+      "source_only": true
+    },
+    {
+      "agent": "/root/ldb_r1_structure",
+      "lens": "structure",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "verdict": "CHANGES_REQUESTED",
+      "complete_scope_paths": 33,
+      "source_only": true
+    }
+  ],
+  "model_attestation": "Invocation settings were accepted by the exposed tool; effective backend settings are not independently introspectable.",
+  "findings": [
+    {
+      "id": "LDB-R1-HOST-BINDING",
+      "severity": "P1",
+      "decision": "FIX",
+      "reporters": [
+        "general"
+      ],
+      "affected": [
+        "source/electron-main/local-exec/local-exec-native.ts",
+        "source/electron-main/coordinator/rust-coordinator-carrier.ts",
+        "source/local-exec-daemon/startup.contract.test.ts"
+      ],
+      "failure": "A clean installed Electron main environment has no MAHAYANA_APP_HOST_BIN. Coordinator spawn_daemon supplies only ELECTRON_RUN_AS_NODE and SAND_PACKAGED; native launch forwards it. The carrier adds Host path only to its Coordinator child. The actual native file helper requires the missing variable, whereas the new fixture injects it.",
+      "rationale": "LDB-01/08 requires the selected ordinary production path to transfer bytes. The controlled fixture currently hides a missing production composition edge.",
+      "resolution": "Bind the staged Host path through the existing native launch using one shared pure resolver for current packaged/development conventions. Exercise this actual boundary without inherited or fixture-supplied MAHAYANA_APP_HOST_BIN; retain independent byte/discovery/closure checks.",
+      "state": "accepted-before-fix"
+    },
+    {
+      "id": "LDB-R1-RUNTIME-DOMAIN",
+      "severity": "P2",
+      "decision": "FIX",
+      "reporters": [
+        "general",
+        "structure"
+      ],
+      "affected": [
+        "source/packages/shell-exec/shell-parser.ts",
+        "source/local-exec-daemon/startup.contract.test.ts",
+        "projects/openclaw-rust/scripts/capture_local_exec_identity.py"
+      ],
+      "failure": "A qualified loadable Node stage relabeled as Electron is still required by the real parser loader, which does not inspect its manifest; the existing wrong-domain check exercises only a synthetic build verifier. The actual startup suite tests only missing-root refusal.",
+      "rationale": "LDB-04/08 explicitly requires wrong-domain startup refusal before registration, independent of incidental native ABI mismatch.",
+      "resolution": "Validate declared domain and actual runtime identity at the existing selected stage consumer before native require, preserve runtime roots/terminal native errors, add actual emitted-entry domain/runtime negative controls and exact required names in the capture.",
+      "state": "accepted-before-fix"
+    },
+    {
+      "id": "LDB-R1-FAILED-BUILD-EVIDENCE",
+      "severity": "P2",
+      "decision": "FIX",
+      "reporters": [
+        "structure"
+      ],
+      "affected": [
+        "desktop/scripts/build-local-exec-dependencies.mjs",
+        "desktop/scripts/build-electron-runtime.mjs",
+        "projects/openclaw-rust/scripts/capture_local_exec_identity.py"
+      ],
+      "failure": "The helper retains desktop/dist/.ldb-<domain>-* on failure, but capture exits before retain_selected_products and workflow uploads only its existing fixture/evidence roots. Failed native/header/prior-stage bytes disappear with the job.",
+      "rationale": "LDB-09 requires durable failure preservation for causal assessment, not an ephemeral path in a log.",
+      "resolution": "Bind an exact owned per-invocation native work root before the build. Preserve only that root into the existing Actions evidence artifact on failure, retain safe owned-child semantics, and add a causal retention control. Do not broadly search or delete build directories.",
+      "state": "accepted-before-fix"
+    }
+  ],
+  "preserved": [
+    "21 ONP required assertions",
+    "6 LXO protocol positives",
+    "7 Rust LPI lifecycle/wire tests",
+    "4 actual LPI consumer tests",
+    "All original negative and independent file-delivery assertions",
+    "Fixed dependency/source/legal identities",
+    "Historical H6d8 outcomes stay on H6d8",
+    "All eight OCRM flags and all final G/AC gates unchanged"
+  ],
+  "review_limits": [
+    "Dependency/legal coverage was actual-use, configuration, patch, identity and contract review, not whole upstream repository/npm archive reading.",
+    "No executable verification performed; no source verdict establishes exact-H runtime acceptance."
+  ],
+  "next": "Implement the three accepted owner-preserving repairs, freeze complete original scope plus proper R1-to-R2 delta, obtain fresh blind focused review, then publish and execute affected checks only in Actions."
+}
