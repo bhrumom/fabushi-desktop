@@ -373,7 +373,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 })
             })
         }),
-        "retryHumanMessage" => {
+        "retryHumanMessage" => (|| -> Result<Value, SessionGatewayError> {
             let object = args.as_object().ok_or_else(|| SessionGatewayError::bad("retryHumanMessage requires an object"))?;
             if object.len() != 2 || !object.contains_key("conversationId") || !object.contains_key("clientNonce") {
                 return Err(SessionGatewayError::bad("retryHumanMessage accepts only conversationId and clientNonce"));
@@ -386,7 +386,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             }
             session.retry_human_message(conversation_id, client_nonce)
                 .map_err(SessionGatewayError::internal)
-        },
+        })(),
         "sendHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
             let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
             if let Some(requested) = optional_string(args, "senderId")? {
