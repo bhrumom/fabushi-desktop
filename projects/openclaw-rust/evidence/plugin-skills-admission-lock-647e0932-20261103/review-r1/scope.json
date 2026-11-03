@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "reviewRound": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "fixedUpstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "originalBase": {
+    "commit": "9864d1c02e7e67881d644800963abc807b3abaab",
+    "tree": "268db009331dca388e8662d95e2ce494936ee5ad"
+  },
+  "sourceSubject": {
+    "commit": "ac615165744da1b8462a35b07221800c06aad1fb",
+    "tree": "61ef27820a6ba5dc696a276cd58b30e153a25b57",
+    "parent": "909e2f72a3c8f2ee14c1e986a5c8867416d01afb"
+  },
+  "diffCarrier": {
+    "commit": "6efa4f63ec4060e11180fa32595f0d68e1ebb51b",
+    "tree": "d83642aca56686f5ef01cd9d0b36497565d7e1ea",
+    "parent": "9864d1c02e7e67881d644800963abc807b3abaab",
+    "purpose": "Text-only review comparison. The declared scope blobs are identical to sourceSubject; unrelated intervening paths are deliberately excluded from this synthetic comparison. This carrier is not an executable or shipping subject."
+  },
+  "fullDiff": {
+    "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/full.diff",
+    "bytes": 143532,
+    "sha256": "b58d24756fd4f310b8a2cecb2be57ffc0fd2487ee164aa1929129073e8209155",
+    "patchCompleteness": "For every declared text path, GitHub API patch addition/deletion counts equal its file statistics; exact new blob identity matches sourceSubject."
+  },
+  "scope": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "blob": "72d89cb1bff022ca28ad16985450bf21cb58a82f",
+      "status": "modified",
+      "additions": 51,
+      "deletions": 0
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+      "blob": "19ea28aefe8f64b62a433e06e30c65a80917c3b0",
+      "status": "added",
+      "additions": 118,
+      "deletions": 0
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "7f64df2733279150ee9285d2237898033c35329f",
+      "status": "modified",
+      "additions": 55,
+      "deletions": 18
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "5ddcb6dadee256edfd26678a7708455383465965",
+      "status": "modified",
+      "additions": 43,
+      "deletions": 15
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "395231acc9ef1a41e716cc7ff11589dea70c0d6e",
+      "status": "modified",
+      "additions": 113,
+      "deletions": 8
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "blob": "8f382cda84834415f2fd02c3bc6dcffb9bc37417",
+      "status": "modified",
+      "additions": 308,
+      "deletions": 93
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+      "blob": "88043d9a9d02064eec052a306e65b8e42ff400d4",
+      "status": "modified",
+      "additions": 342,
+      "deletions": 0
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+      "blob": "0cbada753423020706cd8c9660be2b227be867e1",
+      "status": "modified",
+      "additions": 114,
+      "deletions": 0
+    },
+    {
+      "path": "source/host/src/extensions/mcp/skill_publish.rs",
+      "blob": "ae2d1e8dc6a7ed3bf132f19d4347a3d214ac41ce",
+      "status": "modified",
+      "additions": 34,
+      "deletions": 8
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "blob": "4c88b00b2dfe563ba957bd0669f177a422a330a7",
+      "status": "modified",
+      "additions": 19,
+      "deletions": 1
+    },
+    {
+      "path": "source/host/src/workflows/workflow_store.rs",
+      "blob": "a7ada5f4c2b704d7599671694700e1f352ad03e1",
+      "status": "modified",
+      "additions": 10,
+      "deletions": 4
+    },
+    {
+      "path": "source/host/tests/mcp_service_contract.rs",
+      "blob": "e70044f6f765ba18a7a6cfa5588065ce53a26f76",
+      "status": "modified",
+      "additions": 311,
+      "deletions": 3
+    }
+  ],
+  "reviewContract": {
+    "primary": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+    "sourceResponsibility": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+    "instructions": "Review the complete declared baseline diff and the actual affected functions, consumers, state/lifetime/permission/recovery contracts and relevant tests at sourceSubject. Record exact paths, source identities and honest review depth. Shared capture/ledger/RTM contain preserved Box and LocalExec increments in addition to this Plugin Skills batch. Do not infer acceptance of unrelated production paths from their presence.",
+    "evidenceBoundary": "Source review only. No local or htch-runtime execution. Exact-H GitHub Actions execution is pending. Existing evidence applies only to its own subject.",
+    "independence": "Fresh blind reviewers receive source, spec, tests and this scope, with no prior findings, decisions, author conclusions or review reports."
+  },
+  "execution": {
+    "status": "not-run",
+    "requiredPlatformCoverage": "Existing affected GitHub Actions Linux/macOS/Windows jobs and source checks; availability depends on the workflow and actual runners. No platform result is claimed here."
+  },
+  "globalAcceptance": {
+    "status": "incomplete",
+    "flagsPromoted": false
+  }
+}
