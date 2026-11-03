@@ -1,0 +1,42 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 3,
+  "base": "8be2d1db6485ef5e04c63831ec7a2145eb4776b6",
+  "fixedUpstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6"
+  },
+  "implementationHead": "f913cec2d25f29000277396d340a7b51315b7d11",
+  "changes": [
+    {
+      "path": "source/shared/rpc/coordinator.ts",
+      "blob": "666713b934a5d9565de55a74da222e1137efb07e",
+      "change": "Added retryHumanMessage to the shared coordinator method table."
+    },
+    {
+      "path": "source/host/src/extensions/session/gateway.rs",
+      "blob": "00ec16ded1d97ac709189872b2d6c2a7b197f4b0",
+      "change": "Added exact two-field identity-only retry gateway validation."
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "blob": "3c994e08b801e57ce3db496d78ac5f24f0bbf586",
+      "change": "Added Session retry lookup, authenticated local-Human identity and participant checks, duplicate/foreign/forward fail-closed checks, settled canonical replay, and re-entry to existing append/settlement owner using persisted intent fields."
+    }
+  ],
+  "verification": {
+    "remoteBranchHead": "f913cec2d25f29000277396d340a7b51315b7d11",
+    "remoteFilesReadBack": true,
+    "pr189DescriptionUpdated": true,
+    "exactHeadPullRequestWorkflowRuns": [],
+    "actionsPassed": false,
+    "compileOrBehaviorTestsExecuted": false
+  },
+  "remaining": [
+    "ProductionRenderer fresh-nonce resend replacement, identity generation fencing and persisted lastDispatchError restart projection",
+    "Coordinator contract/dispatcher coverage and Host SQLite/HTTP and real ProductionRenderer negative tests",
+    "Compile and exact-H GitHub Actions execution",
+    "Full fixed-U inventory/ledger/RTM source closure and independent ACCEPT including real service, signed platform packages, UI/a11y, timing, security, performance/soak, upgrade/rollback and Bot regression"
+  ]
+}
