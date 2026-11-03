@@ -5,6 +5,23 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
+## Human Retry partial upload recovery — taskbfafe567 round1 continuation
+
+Inspected base `cae1537f44e5e6401cc7bbd770b73565a8028b63`; live main
+`5528062177e3865eef60a073a066cca144f9e3e8`; fixed Telegram U remains
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`. Existing Retry/Session/Transcript
+owners now persist qualified upload prefixes before later resource I/O and retry
+only the remaining suffix. Partial history echoes cannot settle missing
+attachments. Real HTTP/SQLite restart, corruption and source-preservation cases
+are authored; containing-H Actions and independent source review are pending.
+The cold-store failure at base run41591226893/job125768179597 is a test-oracle
+side effect, repaired without weakening byte assertions or changing product data.
+Actual results and review/publication identities are recorded in
+`projects/telegram-desktop-rust/evidence/taskbfafe567-round1-human-retry.json`.
+Source6 reviews/2 complete, unknown/unread null and acceptance false are unchanged.
+Full service, supported signed packages, complete quality/Bot/upgrade/rollback
+and independent ACCEPT remain open; this is not full migration completion.
+
 ## Round31 — canonical reply identity recovery
 
 Production H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40` uses the existing

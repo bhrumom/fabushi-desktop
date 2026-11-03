@@ -2149,6 +2149,27 @@ impl ProductionSessionWorkers {
                 return Err("remote Human acknowledgement changed the dispatched reply".into());
             }
 
+            // A history echo is not authority to discard an unsent suffix.
+            // Only a *complete* original attachment receipt set may settle
+            // the local pending nonce; canonical rows already have their final
+            // attachment list and no pending receipt field.
+            if current.get("id").and_then(serde_json::Value::as_str)
+                .is_some_and(|id| id.starts_with("human-message:"))
+            {
+                let original_count = match current.get("attachments") {
+                    None | Some(serde_json::Value::Null) => 0,
+                    Some(serde_json::Value::Array(items)) => items.len(),
+                    _ => return Err("pending Human attachment intent is not an array".into()),
+                };
+                let confirmed_count = match current.get("remoteDispatchAttachments") {
+                    None => 0,
+                    Some(serde_json::Value::Array(items)) => items.len(),
+                    _ => return Err("pending Human upload receipts are not an array".into()),
+                };
+                if confirmed_count != original_count {
+                    return Err("remote Human acknowledgement cannot settle incomplete attachment uploads".into());
+                }
+            }
             let previously_dispatched = current.get("remoteDispatchAttachments")
                 .or_else(|| current.get("attachments"));
             let mut expected_resources = Vec::new();
@@ -3953,21 +3974,37 @@ impl ProductionSessionWorkers {
                     })
                     .transpose()?;
 
-                let mut uploaded = pending_entry
+                // This is a confirmed *ordered prefix*, not an all-or-nothing cache.
+                // A damaged receipt must never cause a silent reupload or substitute a
+                // different resource identity for the original durable intent.
+                let mut uploaded: Vec<FabushiRemoteHumanAttachment> = match pending_entry
                     .get("remoteDispatchAttachments")
-                    .cloned()
-                    .map(serde_json::from_value::<Vec<FabushiRemoteHumanAttachment>>)
-                    .transpose()
-                    .map_err(|error| format!("persisted Human dispatch attachments are invalid: {error}"))?
-                    .filter(|values| {
-                        values.len() == normalized_attachments.len()
-                            && values.iter().zip(normalized_attachments.iter()).all(|(remote, local)| {
-                                local.get("name").and_then(serde_json::Value::as_str) == Some(remote.name.as_str())
+                {
+                    None => Vec::new(),
+                    Some(value) => {
+                        let receipts: Vec<FabushiRemoteHumanAttachment> =
+                            serde_json::from_value(value.clone())
+                                .map_err(|error| format!("persisted Human dispatch attachments are invalid: {error}"))?;
+                        if receipts.len() > normalized_attachments.len()
+                            || receipts.iter().zip(normalized_attachments.iter()).any(|(remote, local)| {
+                                local.get("name").and_then(serde_json::Value::as_str) != Some(remote.name.as_str())
+                                    || remote.resource_id.is_empty()
+                                    || remote.resource_id.trim() != remote.resource_id
+                                    || remote.resource_id.len() > 128
+                                    || remote.resource_id.contains('/')
+                                    || remote.resource_id.contains('\\')
+                                    || remote.size == 0
+                                    || remote.size > 25 * 1024 * 1024
+                                    || remote.content_type.trim().is_empty()
+                                    || chrono::DateTime::parse_from_rfc3339(&remote.created_at).is_err()
                             })
-                    })
-                    .unwrap_or_default();
-                if uploaded.is_empty() && !normalized_attachments.is_empty() {
-                    uploaded = Vec::with_capacity(normalized_attachments.len());
+                        {
+                            return Err("persisted Human dispatch attachment prefix conflicts with its original intent".into());
+                        }
+                        receipts
+                    }
+                };
+                if uploaded.len() < normalized_attachments.len() {
                     let mut forward_bytes = if let Some(context) = forward_context.filter(|context|
                         context.get("batchVersion").and_then(serde_json::Value::as_u64) == Some(1)
                     ) {
@@ -3982,21 +4019,19 @@ impl ProductionSessionWorkers {
                         if normalized_attachments.len() > 6 {
                             return Err("Human forward exceeds the six-attachment backend limit".into());
                         }
-                        // Validate the complete target before any resource
-                        // POST, then consume those exact buffers. This is
-                        // bounded by six files of at most 32 MiB each and
-                        // cannot reopen a changed path after preflight.
+                        // Verify the complete original pinned snapshot, including
+                        // the already uploaded prefix, before any new resource IO.
                         let mut verified = Vec::with_capacity(normalized_attachments.len());
                         for (index, attachment) in normalized_attachments.iter().enumerate() {
                             verified.push(read_forward_attachment_bytes(
                                 &source_owner, account, issuer, request_id, index, attachment,
                             )?);
                         }
-                        Some(verified.into_iter())
+                        Some(verified.into_iter().skip(uploaded.len()))
                     } else {
                         None
                     };
-                    for attachment in &normalized_attachments {
+                    for attachment in normalized_attachments.iter().skip(uploaded.len()) {
                         Self::read_human_conversation_metadata(&owner, conversation_id)?;
                         reauthorize_forward()?;
                         let path = attachment.get("path").and_then(serde_json::Value::as_str)
@@ -4006,17 +4041,36 @@ impl ProductionSessionWorkers {
                         let resource = if let Some(buffers) = forward_bytes.as_mut() {
                             let bytes = buffers.next().ok_or_else(||
                                 "Human forward attachment preflight omitted a buffer".to_string())?;
-                            // Use the verified buffer itself. Reopening its
-                            // path in the uploader would reintroduce the race.
                             client.upload_direct_message_resource_bytes_for_user(bytes, name, sender_id)?
                         } else {
                             client.upload_direct_message_resource_for_user(std::path::Path::new(path), name, sender_id)?
                         };
-                        // An accepted upload grants no authority for the next
-                        // resource or message if its original source changed.
+                        // A successful HTTP response is not yet a qualified receipt.
+                        if resource.name != name
+                            || resource.resource_id.is_empty()
+                            || resource.resource_id.trim() != resource.resource_id
+                            || resource.resource_id.len() > 128
+                            || resource.resource_id.contains('/')
+                            || resource.resource_id.contains('\\')
+                            || resource.size == 0
+                            || resource.size > 25 * 1024 * 1024
+                            || resource.content_type.trim().is_empty()
+                            || chrono::DateTime::parse_from_rfc3339(&resource.created_at).is_err()
+                        {
+                            return Err("Fabushi Human attachment service returned invalid resource identity or metadata".into());
+                        }
+                        // Accepted resources grant no permission for later IO.
                         Self::read_human_conversation_metadata(&owner, conversation_id)?;
                         reauthorize_forward()?;
                         uploaded.push(resource);
+                        pending_entry.as_object_mut().expect("durable Human message object").insert(
+                            "remoteDispatchAttachments".into(),
+                            serde_json::to_value(&uploaded)
+                                .map_err(|error| format!("Human dispatch attachment receipt could not be encoded: {error}"))?,
+                        );
+                        owner.update_transcript_entry(&local_entry_id, &pending_entry)
+                            .map_err(|error| error.to_string())?
+                            .ok_or_else(|| "Human pending send disappeared while recording an attachment receipt".to_string())?;
                     }
                 }
                 Self::read_human_conversation_metadata(&owner, conversation_id)?;

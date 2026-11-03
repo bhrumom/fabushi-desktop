@@ -527,11 +527,16 @@ fn canonical_pair_admission_preserves_rebound_state_across_cached_fresh_and_rest
             assert_canonical_pair_consumers_refuse(&reopened, &id);
             assert_eq!(directory_file_bytes(path.parent().unwrap()), cold_bytes,
                 "cold pair refusal must precede writable open: {label}");
-            assert_eq!(stored_rows(&path), saved, "reopen refusal preserves every row: {label}");
             assert_eq!(fs::read(&sibling).unwrap(), b"original resource bytes");
             reopened.shutdown();
             drop(reopened);
         }
+        // The independent ordinary SQLite read-only row oracle can itself
+        // materialize a -shm beside a still-WAL-mode store. Check the *full*
+        // byte inventory across both cold constructors before that observer,
+        // then read all rows only after the last constructor has been dropped.
+        assert_eq!(directory_file_bytes(path.parent().unwrap()), cold_bytes);
+        assert_eq!(stored_rows(&path), saved, "reopen refusal preserves every row: {label}");
 
         let injector = Connection::open(&path).unwrap();
         write_metadata_json(&injector, &original);

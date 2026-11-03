@@ -209,5 +209,72 @@
     ],
     "accepted": false,
     "complete": false
+  },
+  "partial_upload_continuation_20261103": {
+    "base": "cae1537f44e5e6401cc7bbd770b73565a8028b63",
+    "base_tree": "6121664cb63d349619e52ed14db5a4b481a29708",
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "branch": "checkpoint/tdrp-human-retry-bfafe567-r1",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "entrypoint": "ProductionRenderer.resendFailedSend -> Coordinator retryHumanMessage -> Session gateway -> ProductionSessionWorkers::retry_human_message -> append_human_message_with_context -> same SandAgentDb pending row / Native resource+message HTTP -> canonical settlement and transcript projection",
+    "behavior": "HRR-08 / HRR-AC-05: each qualified successful upload is durably recorded as an ordered prefix before the next upload; retry resumes the suffix, preserving nonce, reply, text and order. Invalid prefixes fail closed; partial history echoes cannot settle an incomplete intent. Forward snapshots and permission checks remain mandatory.",
+    "scope": [
+      "source/host/src/extensions/session/production.rs",
+      "source/host/tests/session_gateway_contract.rs",
+      "source/host/src/extensions/session/human_creation_tests.rs",
+      ".github/workflows/native-service-contracts.yml",
+      "docs/specs/fbcp-human-message-retry.md",
+      "projects/telegram-desktop-rust/parity-ledger.json",
+      "projects/fabushi-communication-platform/inventory/current-owner-inventory.md",
+      "projects/fabushi-communication-platform/owner-resolution-matrix.md",
+      "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+      "projects/telegram-desktop-rust/STATUS.md",
+      "projects/fabushi-communication-platform/STATUS.md"
+    ],
+    "oracle_correction": {
+      "classification": "TEST_FLAW",
+      "prior_head": "cae1537f44e5e6401cc7bbd770b73565a8028b63",
+      "run": 41591226893,
+      "job": 125768179597,
+      "artifact_id": 13209928933,
+      "artifact_digest": "sha256:3933403cf5b12475a9f70c58e3792a376fa53e91a4cb86d629a5eccba4be27b6",
+      "failure": "cold admission test13 pass/1 failure: the independent ordinary read-only SQLite row query created a 32768-byte -shm after the first cold iteration, attributed to the next Session constructor; store.db and retained resource bytes were unchanged.",
+      "fix": "Keep normal active-WAL row oracle; use a separately qualified cold immutable read only after zero live handles and absent/empty WAL/journal. Preserve all refusal assertions and bracket oracle/shutdown with complete directory-byte checks.",
+      "retained_positive": "Transcript3, Human74, raw retry1, upload bounds3 passed at prior H. Subsequent storage/sharebox/journal/Agent/credential/gateway/Coordinator checks did not execute and require new-H qualification.",
+      "product_progress": false
+    },
+    "source_accounting": {
+      "root_identities": 6895,
+      "recursive_identities": 16381,
+      "responsibility_rows": 184,
+      "source_reviews": 6,
+      "complete_source_reviews": 2,
+      "unknown": null,
+      "unread": null,
+      "accepted": false,
+      "change": "No source identity, reading, closure or acceptance promotion; existing FMEP-SOURCE-01 schema/validator already supports this candidate."
+    },
+    "request_to_evidence": {
+      "fixed_source_complete_accounting": "U/lock/inventory/ledger agree; recursive Git enumeration exists. External/generated/LFS/legal and semantic review closure remain open.",
+      "risk_based_review": "Product state, permissions, service waits, persistence and ingress consumers inspected deeply; source reviews are not fabricated or auto-promoted.",
+      "current_owner_authority": "Current Retry/Session/Transcript/Native chain retained; FeatureHost MessagingService rejection and legacy data readers unchanged; six authority layers recorded in existing owner inventory.",
+      "coherent_behavior_batch": "HRR-08 includes existing UI/command entry, durable per-resource state, service calls, history admission, failure/restart and real Host/HTTP/SQLite tests.",
+      "existing_capabilities_and_data": "No owner, endpoint, schema migration, user-data deletion or legacy registration change. Existing Human/Agent/credential/forwarding/shipping gates retained.",
+      "parallel_path_contract": "xhigh explicitly applied to workers for state/security/evidence diagnosis. Prefix worker owns production.rs + gateway integration tests; oracle worker owns human_creation_tests.rs; root alone owns spec/workflow/ledger/RTM/composition and publication.",
+      "actions_only": "No local/htch build, lint, generator, schema check, test or acceptance. Coherent containing-H Actions pending at authoring.",
+      "failure_classification_and_reuse": "Prior TEST_FLAW and valid source/UI evidence retained with original H; no repeated failed run or gate weakening. New affected production requires containing-H evidence.",
+      "canonical_traceability": "Existing FBCP-NMR-001, MSG-SEND-SETTLEMENT, current-owner inventory and RTM extended; historical target/run tuples remain historical.",
+      "final_acceptance": "Full source/service/signed platforms/UI/a11y/temporal/security/performance/soak/upgrade/rollback/Bot and independent ACCEPT remain open."
+    },
+    "validation": "not-run at authoring; independent frozen-scope review and exact containing-H Actions required",
+    "independent_acceptance": false,
+    "complete": false,
+    "authored_cases": [
+      "shipping_human_partial_upload_prefix_recovers_suffix_after_restart_without_reupload",
+      "shipping_human_invalid_upload_prefix_refuses_retry_without_io_or_replacing_intent",
+      "shipping_human_partial_upload_history_echo_cannot_settle_incomplete_attachments",
+      "shipping_human_partial_forward_upload_prefix_keeps_snapshot_and_source_admission"
+    ],
+    "required_human_case_count": 78
   }
 }

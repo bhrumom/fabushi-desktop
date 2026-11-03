@@ -3,7 +3,7 @@
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Status: evidence snapshot; P0 not yet passed
-Current bounded refresh: round 28, inspected base `65253740c033508ab08a4b500449a5b56727e940`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older captures below are historical.
+Current bounded refresh: Human Retry / partial upload recovery, inspected base `cae1537f44e5e6401cc7bbd770b73565a8028b63`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. Earlier captures remain historical.
 Project: FBCP-001 Revision 2
 Captured: 2026-10-03
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
@@ -13,6 +13,23 @@ PR state at capture: open, draft, base `main`, head `refactor/grok-018-architect
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
 
 ## Method
+
+### 2026-11-03 Human retry and partial upload recovery
+
+At inspected base `cae1537f44e5e6401cc7bbd770b73565a8028b63`, the actual Retry action is
+`ProductionRenderer.resendFailedSend` → existing Coordinator `retryHumanMessage`
+→ Session gateway → `ProductionSessionWorkers::retry_human_message` → existing
+append/upload/settlement lane. `SandAgentDb` owns the original nonce, text, reply,
+attachment list, errors and confirmed `remoteDispatchAttachments` prefix. Native
+HTTP owns remote resource/message IDs; the existing Transcript event/projection
+shows progress and settlement. HRR-08 persists qualified prefix receipts before
+later uploads and resumes the suffix after failure/restart. Incomplete-prefix
+history echoes cannot discard remaining attachments. Identity, permissions,
+forward snapshots and source reauthorization retain their existing authorities.
+No schema, service endpoint, resource store or composition root is added. New
+behavior is authored pending containing-H Actions; the existing taskbfafe567
+receipt records exact execution. Full source/service/platform/quality/ACCEPT
+remain open. This is the current bounded inventory; older aliases are historical.
 
 ### 2026-11-03 Forward journal recovery and storage admission (round 28)
 

@@ -9150,3 +9150,260 @@ fn shipping_human_forward_source_pair_change_during_message_or_download_wait_pre
         assert_forward_source_pair_response_wait(label, boundary);
     }
 }
+
+
+// HRR-08: recover only the unacknowledged suffix of a multi-resource Human send.
+// These are actual Session/SQLite and loopback HTTP flows, not serializer tests.
+#[test]
+fn shipping_human_partial_upload_prefix_recovers_suffix_after_restart_without_reupload() {
+    let root = temp_root("human-partial-upload-restart");
+    fs::create_dir_all(&root).unwrap();
+    let first_path = root.join("first.bin");
+    let second_path = root.join("second.bin");
+    fs::write(&first_path, [1_u8, 2, 3, 4]).unwrap();
+    fs::write(&second_path, [5_u8, 6, 7, 8]).unwrap();
+    let first_resource = json!({
+        "resourceId":"prefix-resource-one","name":"first.bin",
+        "contentType":"application/octet-stream","size":4,
+        "createdAt":"2026-10-05T01:00:00Z"
+    });
+    let second_resource = json!({
+        "resourceId":"suffix-resource-two","name":"second.bin",
+        "contentType":"application/octet-stream","size":4,
+        "createdAt":"2026-10-05T01:00:01Z"
+    });
+    let mut response = fixture_remote_human_message(81, 1, 2, "recover both files",
+        Some("partial-ordinary-nonce"), json!([first_resource, second_resource]));
+    response["replyToMessageId"] = json!(70);
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(201, json!({"success":true,"resource":first_resource})),
+        HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"second upload unavailable"})),
+        HumanMessageFixtureReply::Json(201, json!({"success":true,"resource":second_resource})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"message":response})),
+        HumanMessageFixtureReply::Bytes(200, vec![1, 2, 3, 4]),
+        HumanMessageFixtureReply::Bytes(200, vec![5, 6, 7, 8]),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").unwrap()["id"]
+        .as_str().unwrap().to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).unwrap();
+    let parent = json!({
+        "id":"human-server-message:70","kind":"message","role":"user",
+        "authorKind":"human","authorId":"1","content":"original parent",
+        "clientNonce":"already-sent-parent","remoteMessageId":"70",
+        "delivery":"sent","timestampMs":1000.0
+    });
+    assert!(owner.append_transcript_entry(&parent).unwrap());
+    let attachments = vec![
+        json!({"path":first_path.to_string_lossy(),"name":"first.bin"}),
+        json!({"path":second_path.to_string_lossy(),"name":"second.bin"}),
+    ];
+    let original_error = runtime.append_human_message(&conversation_id, "recover both files",
+        "partial-ordinary-nonce", Some(2000.0), Some("human-server-message:70"), &attachments)
+        .expect_err("second upload must leave a retryable pending message");
+    assert!(!original_error.is_empty());
+    let pending = owner.get_human_retry_entries("partial-ordinary-nonce").unwrap();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["id"], "human-message:partial-ordinary-nonce");
+    assert_eq!(pending[0]["delivery"], "pending");
+    assert_eq!(pending[0]["replyToId"], "human-server-message:70");
+    assert_eq!(pending[0]["attachments"], json!(attachments));
+    assert_eq!(pending[0]["remoteDispatchAttachments"], json!([first_resource]));
+    assert!(pending[0]["lastDispatchError"].as_str().unwrap().contains("upload"));
+    runtime.shutdown(); drop(owner); drop(runtime);
+
+    // Confirmed bytes may disappear from the local source after a successful
+    // response; retry cannot depend on reopening or retransmitting them.
+    fs::remove_file(&first_path).unwrap();
+    let restarted = human_message_fixture_runtime(&root, &url);
+    let settled = dispatch(&restarted, "retryHumanMessage", json!({
+        "conversationId":conversation_id,"clientNonce":"partial-ordinary-nonce"
+    }));
+    assert_eq!(settled["id"], "human-server-message:81");
+    assert_eq!(settled["delivery"], "sent");
+    assert_eq!(settled["clientNonce"], "partial-ordinary-nonce");
+    assert_eq!(settled["replyToId"], "human-server-message:70");
+    assert_eq!(settled["remoteReplyToMessageId"], "70");
+    assert_eq!(settled["attachments"][0]["resourceId"], "prefix-resource-one");
+    assert_eq!(settled["attachments"][1]["resourceId"], "suffix-resource-two");
+    assert!(settled.get("remoteDispatchAttachments").is_none());
+    assert_eq!(dispatch(&restarted, "retryHumanMessage", json!({
+        "conversationId":conversation_id,"clientNonce":"partial-ordinary-nonce"
+    })), settled, "canonical retry cannot send another HTTP request");
+    let rows = restarted.read_human_conversation_transcript(&conversation_id).unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows.iter().filter(|row| row["clientNonce"] == "partial-ordinary-nonce").count(), 1);
+    restarted.shutdown(); drop(restarted);
+    let requests = server.join().unwrap();
+    let uploads = requests.iter().filter(|request|
+        request.starts_with("POST /api/social/message-resources ")).collect::<Vec<_>>();
+    assert_eq!(uploads.len(), 3, "one original success, one failure and only the suffix on restart");
+    assert_eq!(forward_multipart_file(uploads[0].as_bytes()).0, "first.bin");
+    assert_eq!(forward_multipart_file(uploads[1].as_bytes()).0, "second.bin");
+    assert_eq!(forward_multipart_file(uploads[2].as_bytes()).0, "second.bin");
+    let messages = requests.iter().filter(|request|
+        request.starts_with("POST /api/social/messages ")).collect::<Vec<_>>();
+    assert_eq!(messages.len(), 1);
+    let body = fixture_request_json(messages[0]);
+    assert_eq!(body["clientRequestId"], "partial-ordinary-nonce");
+    assert_eq!(body["replyToMessageId"], "70");
+    assert_eq!(body["attachments"], json!([
+        {"resourceId":"prefix-resource-one"},{"resourceId":"suffix-resource-two"}
+    ]));
+    assert_eq!(requests.iter().filter(|request|
+        request.starts_with("GET /api/social/message-resources/")).count(), 2);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn shipping_human_invalid_upload_prefix_refuses_retry_without_io_or_replacing_intent() {
+    let valid = json!({
+        "resourceId":"valid-first-resource","name":"first.bin",
+        "contentType":"application/octet-stream","size":4,
+        "createdAt":"2026-10-05T01:00:00Z"
+    });
+    let mut wrong_order = valid.clone();
+    wrong_order["name"] = json!("second.bin");
+    let mut empty_id = valid.clone();
+    empty_id["resourceId"] = json!("");
+    let mut zero_size = valid.clone();
+    zero_size["size"] = json!(0);
+    for (case, damaged) in [
+        ("object", valid.clone()),
+        ("overlong", json!([valid.clone(),valid.clone(),valid.clone()])),
+        ("wrong-order", json!([wrong_order])),
+        ("empty-resource-id", json!([empty_id])),
+        ("zero-size", json!([zero_size])),
+    ] {
+        let root = temp_root(&format!("human-invalid-prefix-{case}"));
+        let (url, server) = spawn_human_message_fixture(Vec::new());
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").unwrap()["id"]
+            .as_str().unwrap().to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        let original = json!({
+            "id":"human-message:invalid-prefix","kind":"message","role":"user",
+            "authorKind":"human","authorId":"1","content":"original pending payload",
+            "clientNonce":"invalid-prefix","delivery":"pending","timestampMs":2000.0,
+            "attachments":[
+                {"path":root.join("first.bin").to_string_lossy(),"name":"first.bin"},
+                {"path":root.join("second.bin").to_string_lossy(),"name":"second.bin"}
+            ],
+            "remoteDispatchAttachments":damaged
+        });
+        assert!(owner.append_transcript_entry(&original).unwrap());
+        let error = dispatch_production_session_gateway_call(&runtime, "retryHumanMessage",
+            &json!({"conversationId":id,"clientNonce":"invalid-prefix"}))
+            .unwrap().expect_err("a damaged stored prefix must fail closed");
+        assert!(format!("{error:?}").contains("persisted Human dispatch attachment"),
+            "{case}: prefix-validation refusal required, not a network error: {error:?}");
+        let rows = owner.get_transcript_entries().unwrap();
+        assert_eq!(rows.len(), 1);
+        for key in ["id", "authorId", "clientNonce", "content", "attachments", "remoteDispatchAttachments"] {
+            assert_eq!(rows[0][key], original[key], "{case}: persisted {key} must be retained");
+        }
+        assert_eq!(rows[0]["delivery"], "pending", "{case}");
+        assert!(rows[0].get("remoteMessageId").is_none(), "{case}");
+        runtime.shutdown(); drop(owner); drop(runtime);
+        assert!(server.join().unwrap().is_empty(), "{case}: invalid prefix must cause zero HTTP");
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn shipping_human_partial_upload_history_echo_cannot_settle_incomplete_attachments() {
+    let root = temp_root("human-prefix-history-refusal");
+    let first = json!({
+        "resourceId":"history-prefix","name":"first.bin",
+        "contentType":"application/octet-stream","size":4,
+        "createdAt":"2026-10-05T01:00:00Z"
+    });
+    let echo = fixture_remote_human_message(88, 1, 2, "never drop the suffix",
+        Some("partial-echo-nonce"), json!([first]));
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[echo]}}))
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").unwrap()["id"]
+        .as_str().unwrap().to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+    let pending = json!({
+        "id":"human-message:partial-echo-nonce","kind":"message","role":"user",
+        "authorKind":"human","authorId":"1","content":"never drop the suffix",
+        "clientNonce":"partial-echo-nonce","delivery":"pending","timestampMs":2000.0,
+        "attachments":[
+            {"path":root.join("first.bin").to_string_lossy(),"name":"first.bin"},
+            {"path":root.join("second.bin").to_string_lossy(),"name":"second.bin"}
+        ],
+        "remoteDispatchAttachments":[first]
+    });
+    assert!(owner.append_transcript_entry(&pending).unwrap());
+    let error = runtime.sync_human_conversation(&id)
+        .expect_err("partial history echo must not consume an incomplete local outbox");
+    assert!(error.contains("incomplete attachment"), "{error}");
+    assert_eq!(owner.get_transcript_entries().unwrap(), vec![pending.clone()]);
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let requests = server.join().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].starts_with("GET /api/social/messages?"));
+    let reopened = human_message_fixture_runtime(&root, &url);
+    assert_eq!(reopened.read_human_conversation_transcript(&id).unwrap(), vec![pending]);
+    reopened.shutdown(); drop(reopened);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn shipping_human_partial_forward_upload_prefix_keeps_snapshot_and_source_admission() {
+    let root = temp_root("human-partial-forward-source-refusal");
+    let files = forward_attachment_files(&root, 2);
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_attachment_process(&root, &server.url, &files);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let source_entry = args["sourceEntryId"].as_str().unwrap();
+    let target = args["destinationConversationIds"][0].as_str().unwrap();
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post();
+    child.terminate(); server.release_first_post(); drop(child);
+
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let target_owner = runtime.open_human_conversation_db_owner(target).unwrap();
+    let mut pending = target_owner.get_transcript_entries().unwrap().remove(0);
+    assert_eq!(pending["delivery"], "dispatching");
+    assert_eq!(pending["forwardBatchOwned"], true);
+    assert_eq!(pending["remoteDispatchAttachments"].as_array().unwrap().len(), 2);
+    let first_receipt = pending["remoteDispatchAttachments"][0].clone();
+    pending["remoteDispatchAttachments"] = json!([first_receipt]);
+    let pending_id = pending["id"].as_str().unwrap();
+    target_owner.update_transcript_entry(pending_id, &pending).unwrap().unwrap();
+    let original_source = source_owner.get_transcript_entry_by_id(source_entry).unwrap().unwrap();
+    let mut protected = original_source.clone();
+    protected["protectedContent"] = json!(true);
+    source_owner.update_transcript_entry(source_entry, &protected).unwrap().unwrap();
+    let before = (
+        server.post_count(), server.resource_post_count(), server.history_count(),
+    );
+    let nonce = pending["clientNonce"].as_str().unwrap();
+    let error = dispatch_production_session_gateway_call(&runtime, "retryHumanMessage",
+        &json!({"conversationId":target,"clientNonce":nonce}))
+        .unwrap().expect_err("revoked source must stop a partial-prefix forward");
+    assert!(format!("{error:?}").contains("protected"), "{error:?}");
+    assert_eq!((server.post_count(), server.resource_post_count(), server.history_count()), before,
+        "source admission fails before later resource/message requests");
+    let retained = target_owner.get_transcript_entry_by_id(pending_id).unwrap().unwrap();
+    assert_eq!(retained["clientNonce"], pending["clientNonce"]);
+    assert_eq!(retained["forwardContext"], pending["forwardContext"]);
+    assert_eq!(retained["remoteDispatchAttachments"], pending["remoteDispatchAttachments"]);
+    assert_eq!(retained["attachments"], pending["attachments"]);
+    assert_eq!(source_owner.get_transcript_entry_by_id(source_entry).unwrap().unwrap(), protected);
+    let journal = read_forward_metadata_from_disk(&root, source);
+    for (snapshot, original) in journal["humanForwardBatches"][0]["attachments"]
+        .as_array().unwrap().iter().zip(files.iter())
+    {
+        assert_eq!(fs::read(snapshot["path"].as_str().unwrap()).unwrap(), original.2,
+            "revocation must not replace or delete an immutable forward snapshot");
+    }
+    runtime.shutdown(); drop(target_owner); drop(source_owner); drop(runtime);
+    server.finish();
+    fs::remove_dir_all(root).unwrap();
+}

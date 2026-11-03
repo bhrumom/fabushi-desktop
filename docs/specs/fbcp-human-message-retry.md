@@ -144,3 +144,35 @@ An explicit local pre-admission retry may coexist with a newer composer draft or
 For a source-owned forward, the original source identity and policy as well as the destination identity remain required after each resource or message response wait, before later network work or successful settlement. Reauthorize the original source context under its account/issuer without introducing a lock held across HTTP. If permission is lost, preserve the batch, target nonce and pinned bytes, record the existing durable denial, and permit the same request to recover after source restoration and restart. HRR-AC-04 includes source mutation during upload and message-response waits; these are distinct from destination mutation tests.
 
 Local pre-admission retry receipts must satisfy the existing raw canonical Human settlement parser before display projection supplies defaults, and must correlate the captured author and original nonce. Missing or malformed canonical ID, remote identity, role or delivery cannot consume the failed row or newer draft. An eventual valid ordinary transcript event may still settle the already admitted Host work.
+
+### HRR-08 partial attachment upload recovery
+
+The existing `remoteDispatchAttachments` field is an ordered, confirmed prefix of
+the immutable pending attachment list, including the already supported complete
+list. After the native client qualifies each successful resource response and
+the current destination/source authority is rechecked, persist that prefix on
+the same pending row before the next upload. A later upload failure or process
+restart must retain the original nonce, content, reply, attachment order and
+confirmed resource IDs. Retry uploads only the remaining suffix and does not
+reopen or reupload confirmed ordinary attachments. The existing forward owner
+still validates its complete pinned snapshot before any new resource I/O.
+
+Malformed, overlong or mismatched stored prefixes fail closed without new upload
+or message I/O; they must not be treated as an empty list. All existing account,
+issuer, permission, credential, settlement and release-before-message-POST
+boundaries remain in force. Receipt persistence is durable recovery state, not
+message settlement or permission to dispatch after revocation. History replay
+and acknowledgement admission may settle the original intent only after all
+original attachments have qualified receipts; an echo containing only the
+confirmed prefix cannot discard the unsent suffix. A resource
+accepted remotely without a qualified response remains an explicit ambiguity;
+this change does not invent resource-service idempotency or an unseen receipt.
+
+HRR-AC-05: Real Host/HTTP/SQLite cases must fail a later upload after one receipt
+is persisted, restart the actual Session, remove or change the already uploaded
+ordinary source path, then prove suffix-only upload, original nonce/reply/order,
+one canonical message and no HTTP on a settled retry. Include malformed,
+overlong and wrong-order prefix negatives with retained rows and no resource or
+message dispatch, incomplete-prefix history settlement refusal, and the existing
+forward snapshot/permission regressions.
+No storage migration is required; old complete receipt arrays remain compatible.

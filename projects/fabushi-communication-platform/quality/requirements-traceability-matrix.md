@@ -664,3 +664,20 @@ Exact run/job/artifact identities and independently reviewed blobs remain in the
 existing `task20bf-round1-forward-intent-ui.json` receipt. Fixed U, unique inventory,
 source review counters, final service/package/Bot/quality and independent ACCEPT
 are unchanged; no partial suite or authored case is promoted to full acceptance.
+
+
+### Human Retry confirmed upload-prefix recovery (taskbfafe567 round1)
+
+Source base `cae1537f44e5e6401cc7bbd770b73565a8028b63`; fixed U unchanged.
+Governing contract: `docs/specs/fbcp-human-message-retry.md`. Existing
+`FBCP-NMR-001` / `MSG-SEND-SETTLEMENT` remains the sole responsibility/owner.
+
+| Requirement / oracle | Actual production chain and invariant | Authored cases / execution boundary |
+| --- | --- | --- |
+| HRR-08 / HRR-AC-05 | Existing Retry → authenticated Coordinator/Session → append/upload lane → same SandAgentDb pending row. Qualified resource receipts are durable ordered prefixes; restart uploads only the remaining suffix. Full receipt cardinality/order is required before history/ack settlement. | `shipping_human_partial_upload_prefix_recovers_suffix_after_restart_without_reupload`; `shipping_human_invalid_upload_prefix_refuses_retry_without_io_or_replacing_intent`; `shipping_human_partial_upload_history_echo_cannot_settle_incomplete_attachments`; `shipping_human_partial_forward_upload_prefix_keeps_snapshot_and_source_admission`. Real HTTP/SQLite, missing/changed confirmed file, original nonce/reply, corruption/no-I/O, pinned forward/source permission and canonical retry controls; all78 Human cases required, authored, new containing-H Actions required. |
+| HRR-AC-04 oracle qualification | Refused cached/cold/restarted consumers preserve every stored row and file byte. A test-owned cold snapshot cannot create SQLite sidecars and contaminate the next constructor assertion. | Existing14 creation cases retained. Base run41591226893/job125768179597 had13 pass/1 TEST_FLAW; original74 Human cases passed before it. Corrected oracle separately proves no live owner/no retained WAL or journal and checks its own byte effects. No product behavior credit or current-H pass is inferred. |
+
+The task receipt `projects/telegram-desktop-rust/evidence/taskbfafe567-round1-human-retry.json`
+records actual containing-H results. Earlier HRR-01–07 implementation and scoped
+results remain distinct from full retry, source, deployed service, signed package,
+Bot/quality and independent acceptance; the original prerequisite rows are history.
