@@ -11,6 +11,24 @@ use serde_json::{Value, json};
 
 const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
 
+fn node_shell_timeout_is_forwarded(invoke: &str) -> bool {
+    let Some((_, call)) = invoke.split_once(".execute_shell_with_timeout(") else {
+        return false;
+    };
+    let Some((arguments, _)) = call.split_once("\n            );") else {
+        return false;
+    };
+    arguments.contains(concat!(
+        "&scope,\n",
+        "                shell_command,\n",
+        "                working_directory,\n",
+        "                tool_call_id,\n",
+        "                args.get(\"timeoutMs\")\n",
+        "                    .and_then(serde_json::Value::as_u64)\n",
+        "                    .map(std::time::Duration::from_millis),",
+    ))
+}
+
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -563,6 +581,9 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(execution.contains(".map(std::time::Duration::from_millis)"));
     assert!(invoke.contains(
         "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)"));
+    assert!(invoke.contains(".execute_shell_with_timeout("));
+    assert!(invoke.contains(".sandbox(self.local_tool_permission.clone())"));
+    assert!(node_shell_timeout_is_forwarded(invoke));
     assert!(invoke.contains("NodeInvokeRequest"));
     assert!(invoke.contains("NodeInvokeResult::failure"));
     assert!(invoke.contains("NodeHostInvocationRuntime::start"));
@@ -582,6 +603,33 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(SHIPPING_HOST_MAIN.contains("\"deviceFamily\": \"remote\""));
     assert!(!invoke.contains("\"stdout\": \"ok\""));
     assert!(!invoke.contains("\"exitCode\": 0"));
+}
+
+#[test]
+fn test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout() {
+    let invoke = SHIPPING_HOST_MAIN
+        .split_once("fn call_openclaw_node_invoke(")
+        .expect("shipping node.invoke owner exists")
+        .1
+        .split_once("\n}\n\nfn post_agent_message_to_group(")
+        .expect("shipping node.invoke function boundary exists")
+        .0;
+    assert!(node_shell_timeout_is_forwarded(invoke));
+    let old_call = invoke.replace(".execute_shell_with_timeout(", ".execute_shell(");
+    assert!(!node_shell_timeout_is_forwarded(&old_call));
+    let timeout_argument = concat!(
+        "args.get(\"timeoutMs\")\n",
+        "                    .and_then(serde_json::Value::as_u64)\n",
+        "                    .map(std::time::Duration::from_millis)",
+    );
+    let dropped_timeout = invoke.replace(timeout_argument, "None");
+    assert_ne!(dropped_timeout, invoke);
+    assert!(dropped_timeout.contains(
+        "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)"
+    ), "request-envelope timeout alone must not satisfy the LocalExec forwarding oracle");
+    assert!(!node_shell_timeout_is_forwarded(&dropped_timeout));
+    let wrong_units = invoke.replace("Duration::from_millis", "Duration::from_secs");
+    assert!(!node_shell_timeout_is_forwarded(&wrong_units));
 }
 
 #[test]

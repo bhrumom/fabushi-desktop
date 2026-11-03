@@ -15,6 +15,72 @@ use mahayana_host_runtime::host_diagnostics::{pin_host_diagnostics_reporter, rep
 use mahayana_host_runtime::sha256::sha256_hex;
 use serde_json::{Value, json};
 
+fn shipping_contract_section<'a>(source: &'a str, start: &str, end: &str) -> &'a str {
+    source
+        .split_once(start)
+        .expect("shipping contract start boundary exists")
+        .1
+        .split_once(end)
+        .expect("shipping contract end boundary exists")
+        .0
+}
+
+const REVIEW_RELEASE_CALL: &str = ".release_provider_review_continuation(";
+const ADMISSION_RELEASE_CALL: &str = ".release_session_work_admission(";
+const CANCELLED_CONTINUATION_GUARD: &str = concat!(
+    "if result.get(\"accepted\").and_then(serde_json::Value::as_bool) == Some(false)\n",
+    "                    && result.get(\"cancelled\").and_then(serde_json::Value::as_bool) == Some(true)\n",
+    "                    && result.get(\"streamId\").and_then(serde_json::Value::as_str) == Some(next_run_id)\n",
+    "                {\n",
+);
+
+fn provider_review_release_order(branch: &str) -> bool {
+    matches!(
+        (branch.find(REVIEW_RELEASE_CALL), branch.find(ADMISSION_RELEASE_CALL)),
+        (Some(review), Some(admission)) if review < admission
+    )
+}
+
+fn provider_review_cleanup_branches(continuation: &str) -> [&str; 3] {
+    // The earlier acknowledgment-claim Err is not the transcript-send Err.
+    let send_failure = shipping_contract_section(
+        continuation,
+        "if let Err(error) = self\n            .transcript_runtime\n            .accept_routed_send",
+        "        match self.call_with_context(",
+    );
+    let runner = continuation
+        .split_once("        match self.call_with_context(")
+        .expect("provider-review Runner dispatch exists")
+        .1;
+    let (runner_success, runner_failure) = runner
+        .split_once("\n            Err(error) => {")
+        .expect("provider-review Runner Err arm exists");
+    [send_failure, runner_failure, runner_success]
+}
+
+fn cancelled_continuation_releases_in_order(runner_success: &str) -> bool {
+    let Some((_, cleanup)) = runner_success.split_once(CANCELLED_CONTINUATION_GUARD) else {
+        return false;
+    };
+    let Some((cleanup, _)) = cleanup.split_once("\n                }\n") else {
+        return false;
+    };
+    provider_review_release_order(cleanup)
+}
+
+fn chat_abort_route_is_wired(entry: &str, helper: &str) -> bool {
+    entry.contains(
+        "request_openclaw_chat_abort(args, &self.runner_registry, &self.transcript_runtime)",
+    ) && [
+        "resolve_gateway_session_route(args, session_key)?",
+        "reject_agent_wide_session_route(&route, \"chat.abort\")?",
+        "let agent_id = route.agent_id.as_str()",
+        "routed_cancellation_streams(runner_registry, transcript_runtime, agent_id)",
+        ".filter(|active_id| requested_run_id.is_none_or(|run_id| active_id == run_id))",
+        "cancel_routed_stream_request(runner_registry, transcript_runtime, run_id, Some(agent_id), \"rpc\")",
+    ].iter().all(|required| helper.contains(*required))
+}
+
 fn temp_path(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -484,13 +550,11 @@ fn test_sessions_patch_requires_authenticated_identity_revision_and_terminal_sta
 #[test]
 fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path() {
     let shipping_source = include_str!("../app/src/main.rs");
-    let continuation = shipping_source
-        .split("fn call_openclaw_sessions_provider_review_continue(")
-        .nth(1)
-        .expect("shipping provider-review continuation owner exists")
-        .split("fn delete_generated_subagent(")
-        .next()
-        .expect("provider-review continuation function boundary exists");
+    let continuation = shipping_contract_section(
+        shipping_source,
+        "fn call_openclaw_sessions_provider_review_continue(",
+        "fn delete_generated_subagent(",
+    );
     assert!(continuation.contains("context.authenticated"));
     assert!(continuation.contains("canonical main sessions"));
     assert!(continuation.contains("expected_session_id != route.agent_id.as_str()"));
@@ -537,7 +601,63 @@ fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path
     assert!(runner_cancelled.contains(
         "result.get(\"streamId\").and_then(serde_json::Value::as_str) == Some(next_run_id)"));
     assert_release_order(runner_cancelled);
+    let [send_failure, runner_failure, runner_success] =
+        provider_review_cleanup_branches(continuation);
+    assert!(
+        provider_review_release_order(send_failure),
+        "transcript-send Err must release provider review before its admitted-work marker"
+    );
+    assert!(send_failure.contains("return Err(map_production_send_error(error))"));
+    assert!(
+        provider_review_release_order(runner_failure),
+        "Runner Err must release provider review before its admitted-work marker"
+    );
+    assert!(runner_failure.contains("\n                Err(error)\n"));
+    assert!(
+        cancelled_continuation_releases_in_order(runner_success),
+        "only an unaccepted cancelled result for this stream releases review before admission"
+    );
+    assert!(runner_success.contains("\n                Ok(result)\n"));
     assert!(!continuation.contains("serde_json::from_value::<ProviderReviewAcknowledgment"));
+}
+
+#[test]
+fn test_provider_review_cleanup_oracle_rejects_missing_reordered_and_unbound_releases() {
+    let continuation = shipping_contract_section(
+        include_str!("../app/src/main.rs"),
+        "fn call_openclaw_sessions_provider_review_continue(",
+        "fn delete_generated_subagent(",
+    );
+    let [send_failure, runner_failure, runner_success] =
+        provider_review_cleanup_branches(continuation);
+    let cases: [(&str, &str, fn(&str) -> bool); 3] = [
+        ("transcript send Err", send_failure, provider_review_release_order),
+        ("Runner Err", runner_failure, provider_review_release_order),
+        ("cancelled Runner Ok", runner_success, cancelled_continuation_releases_in_order),
+    ];
+    for (name, branch, accepts) in cases {
+        assert!(accepts(branch), "positive control: {name}");
+        for missing in [REVIEW_RELEASE_CALL, ADMISSION_RELEASE_CALL] {
+            let mutated = branch.replace(missing, ".missing_release(");
+            assert_ne!(mutated, branch, "mutation must touch {name}");
+            assert!(!accepts(&mutated), "missing {missing}: {name}");
+        }
+        let reversed = branch
+            .replace(REVIEW_RELEASE_CALL, ".review_release_placeholder(")
+            .replace(ADMISSION_RELEASE_CALL, REVIEW_RELEASE_CALL)
+            .replace(".review_release_placeholder(", ADMISSION_RELEASE_CALL);
+        assert!(!accepts(&reversed), "reversed releases: {name}");
+    }
+    assert!(cancelled_continuation_releases_in_order(runner_success));
+    for (from, to) in [
+        ("== Some(false)", "== Some(true)"),
+        ("== Some(true)", "== Some(false)"),
+        ("== Some(next_run_id)", "!= Some(next_run_id)"),
+    ] {
+        let mutated = runner_success.replace(from, to);
+        assert_ne!(mutated, runner_success, "cancelled-result mutation must touch its guard");
+        assert!(!cancelled_continuation_releases_in_order(&mutated));
+    }
 }
 
 #[test]
@@ -2185,6 +2305,7 @@ fn test_ocrm_session_o01_session_key_routing() {
         .0;
     assert!(chat_abort_owner.contains("resolve_gateway_session_route(args, session_key)?"));
     assert!(chat_abort_owner.contains("reject_agent_wide_session_route(&route, \"chat.abort\")?"));
+    assert!(chat_abort_route_is_wired(chat_abort, chat_abort_owner));
     let chat_send = shipping_source
         .split("fn call_openclaw_chat_send(")
         .nth(1)
@@ -2221,6 +2342,36 @@ fn test_ocrm_session_o01_session_key_routing() {
         .next()
         .expect("shipping provider-review continuation function boundary exists");
     assert!(provider_review_continue.contains("session_key.eq_ignore_ascii_case(&canonical_key)"));
+}
+
+#[test]
+fn test_chat_abort_routing_oracle_rejects_missing_delegate_route_and_run_filters() {
+    let source = include_str!("../app/src/main.rs");
+    let entry = shipping_contract_section(
+        source,
+        "fn call_openclaw_chat_abort(",
+        "fn call_openclaw_cron_list(",
+    );
+    let helper = shipping_contract_section(
+        source,
+        "fn request_openclaw_chat_abort(",
+        "fn request_agent_cancellation(",
+    );
+    assert!(chat_abort_route_is_wired(entry, helper));
+    let unwired = entry.replace("request_openclaw_chat_abort(", "disconnected_abort(");
+    assert!(!chat_abort_route_is_wired(&unwired, helper));
+    for missing in [
+        "resolve_gateway_session_route(args, session_key)?",
+        "reject_agent_wide_session_route(&route, \"chat.abort\")?",
+        "let agent_id = route.agent_id.as_str()",
+        "routed_cancellation_streams(runner_registry, transcript_runtime, agent_id)",
+        ".filter(|active_id| requested_run_id.is_none_or(|run_id| active_id == run_id))",
+        "Some(agent_id)",
+    ] {
+        let mutated = helper.replace(missing, "removed_routing_requirement");
+        assert_ne!(mutated, helper, "mutation must remove {missing}");
+        assert!(!chat_abort_route_is_wired(entry, &mutated), "missing {missing}");
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -2687,6 +2687,132 @@ fn validate_internal_send_route(args: &serde_json::Value) -> Result<(), Producti
     })
 }
 
+fn project_openclaw_node_list(
+    device_pairing: &DevicePairingOwner,
+    node_host_runtime: &NodeHostRuntimeState,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    let pair_list = device_pairing.handle_pair_list(&serde_json::json!({}))?;
+
+    // The session registry retains disconnected snapshots so generation
+    // fencing and invocation cleanup can reconcile late callbacks. Those
+    // historical rows are not live transport evidence and must not mask
+    // the authoritative paired-device projection below.
+    let live_nodes = node_host_runtime
+        .list()
+        .into_iter()
+        .filter(|node| node.connected)
+        .collect::<Vec<_>>();
+    let mut nodes = live_nodes
+        .iter()
+        .map(|node| {
+            serde_json::json!({
+                "nodeId": node.node_id,
+                "displayName": node.display_name,
+                "platform": node.platform,
+                "deviceFamily": node.device_family,
+                "commands": node.commands,
+                "connected": node.connected,
+                "paired": node.paired,
+                "active": node.active,
+                "gatewayLocal": node.gateway_local,
+                "generation": node.generation,
+                "capabilities": node.capabilities
+            })
+        })
+        .collect::<Vec<_>>();
+    let live_node_ids = live_nodes
+        .iter()
+        .map(|node| node.node_id.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    let active_node_id = live_nodes
+        .iter()
+        .find(|node| node.active)
+        .map(|node| node.node_id.clone());
+
+    if let Some(paired) = pair_list.get("paired").and_then(serde_json::Value::as_array) {
+        for p in paired {
+            if let Some(dev_id) = p.get("deviceId").and_then(serde_json::Value::as_str) {
+                if live_node_ids.contains(dev_id) {
+                    continue;
+                }
+                nodes.push(serde_json::json!({
+                    "nodeId": dev_id,
+                    "displayName": p.get("displayName").and_then(serde_json::Value::as_str).unwrap_or(dev_id),
+                    "platform": p.get("platform").and_then(serde_json::Value::as_str).unwrap_or("unknown"),
+                    "deviceFamily": "remote",
+                    "commands": [],
+                    "connected": false,
+                    "paired": true,
+                    "active": false,
+                    "gatewayLocal": false,
+                    "capabilities": []
+                }));
+            }
+        }
+    }
+
+    Ok(serde_json::json!({
+        "ts": started_at_ms(),
+        "activeNodeId": active_node_id,
+        "nodes": nodes
+    }))
+}
+
+fn project_openclaw_node_status(
+    device_pairing: &DevicePairingOwner,
+    node_host_runtime: &NodeHostRuntimeState,
+    args: &serde_json::Value,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    let node_id = args.get("nodeId")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| GatewayCommandError::BadRequest("node.status requires nodeId".into()))?;
+
+    if let Some(node) = node_host_runtime.get(node_id) {
+        // A retained disconnected remote snapshot is historical transport
+        // state; resolve the durable pairing projection below instead of
+        // reporting stale session metadata. The local node remains owned
+        // by this runtime even if it is temporarily disconnected.
+        if node.connected || node.gateway_local {
+            return Ok(serde_json::json!({
+                "ts": started_at_ms(),
+                "nodeId": node.node_id,
+                "displayName": node.display_name,
+                "platform": node.platform,
+                "deviceFamily": node.device_family,
+                "commands": node.commands,
+                "capabilities": node.capabilities,
+                "connected": node.connected,
+                "paired": node.paired,
+                "active": node.active,
+                "gatewayLocal": node.gateway_local,
+                "generation": node.generation
+            }));
+        }
+    }
+
+    let status = device_pairing.handle_pair_status(&serde_json::json!({ "deviceId": node_id }))?;
+    if status.get("status").and_then(serde_json::Value::as_str) == Some("approved") {
+        let device = status.get("device");
+        Ok(serde_json::json!({
+            "ts": started_at_ms(),
+            "nodeId": node_id,
+            "displayName": device.and_then(|d| d.get("displayName")).and_then(serde_json::Value::as_str).unwrap_or(node_id),
+            "platform": device.and_then(|d| d.get("platform")).and_then(serde_json::Value::as_str).unwrap_or("unknown"),
+            "deviceFamily": device.and_then(|d| d.get("deviceFamily")).and_then(serde_json::Value::as_str).unwrap_or("remote"),
+            "commands": [],
+            "capabilities": [],
+            "connected": false,
+            "paired": true,
+            "active": false,
+            "gatewayLocal": false
+        }))
+    } else {
+        Err(GatewayCommandError::BadRequest(format!("unknown nodeId: {node_id}")))
+    }
+}
+
 impl UnifiedGatewayApi {
 
     fn rearm_channel_delivery_failure(
@@ -5184,126 +5310,14 @@ impl UnifiedGatewayApi {
         &self,
         _args: &serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let pair_list = self.device_pairing.handle_pair_list(&serde_json::json!({}))?;
-
-        // The session registry retains disconnected snapshots so generation
-        // fencing and invocation cleanup can reconcile late callbacks. Those
-        // historical rows are not live transport evidence and must not mask
-        // the authoritative paired-device projection below.
-        let live_nodes = self
-            .node_host_runtime
-            .list()
-            .into_iter()
-            .filter(|node| node.connected)
-            .collect::<Vec<_>>();
-        let mut nodes = live_nodes
-            .iter()
-            .map(|node| {
-                serde_json::json!({
-                    "nodeId": node.node_id,
-                    "displayName": node.display_name,
-                    "platform": node.platform,
-                    "deviceFamily": node.device_family,
-                    "commands": node.commands,
-                    "connected": node.connected,
-                    "paired": node.paired,
-                    "active": node.active,
-                    "gatewayLocal": node.gateway_local,
-                    "generation": node.generation,
-                    "capabilities": node.capabilities
-                })
-            })
-            .collect::<Vec<_>>();
-        let live_node_ids = live_nodes
-            .iter()
-            .map(|node| node.node_id.as_str())
-            .collect::<std::collections::HashSet<_>>();
-        let active_node_id = live_nodes
-            .iter()
-            .find(|node| node.active)
-            .map(|node| node.node_id.clone());
-
-        if let Some(paired) = pair_list.get("paired").and_then(serde_json::Value::as_array) {
-            for p in paired {
-                if let Some(dev_id) = p.get("deviceId").and_then(serde_json::Value::as_str) {
-                    if live_node_ids.contains(dev_id) {
-                        continue;
-                    }
-                    nodes.push(serde_json::json!({
-                        "nodeId": dev_id,
-                        "displayName": p.get("displayName").and_then(serde_json::Value::as_str).unwrap_or(dev_id),
-                        "platform": p.get("platform").and_then(serde_json::Value::as_str).unwrap_or("unknown"),
-                        "deviceFamily": "remote",
-                        "commands": [],
-                        "connected": false,
-                        "paired": true,
-                        "active": false,
-                        "gatewayLocal": false,
-                        "capabilities": []
-                    }));
-                }
-            }
-        }
-
-        Ok(serde_json::json!({
-            "ts": started_at_ms(),
-            "activeNodeId": active_node_id,
-            "nodes": nodes
-        }))
+        project_openclaw_node_list(self.device_pairing.as_ref(), self.node_host_runtime.as_ref())
     }
 
     fn call_openclaw_node_status(
         &self,
         args: &serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let node_id = args.get("nodeId")
-            .and_then(serde_json::Value::as_str)
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .ok_or_else(|| GatewayCommandError::BadRequest("node.status requires nodeId".into()))?;
-
-        if let Some(node) = self.node_host_runtime.get(node_id) {
-            // A retained disconnected remote snapshot is historical transport
-            // state; resolve the durable pairing projection below instead of
-            // reporting stale session metadata. The local node remains owned
-            // by this runtime even if it is temporarily disconnected.
-            if node.connected || node.gateway_local {
-                return Ok(serde_json::json!({
-                    "ts": started_at_ms(),
-                    "nodeId": node.node_id,
-                    "displayName": node.display_name,
-                    "platform": node.platform,
-                    "deviceFamily": node.device_family,
-                    "commands": node.commands,
-                    "capabilities": node.capabilities,
-                    "connected": node.connected,
-                    "paired": node.paired,
-                    "active": node.active,
-                    "gatewayLocal": node.gateway_local,
-                    "generation": node.generation
-                }));
-            }
-        }
-
-        let status = self.device_pairing.handle_pair_status(&serde_json::json!({ "deviceId": node_id }))?;
-        if status.get("status").and_then(serde_json::Value::as_str) == Some("approved") {
-            let device = status.get("device");
-            Ok(serde_json::json!({
-                "ts": started_at_ms(),
-                "nodeId": node_id,
-                "displayName": device.and_then(|d| d.get("displayName")).and_then(serde_json::Value::as_str).unwrap_or(node_id),
-                "platform": device.and_then(|d| d.get("platform")).and_then(serde_json::Value::as_str).unwrap_or("unknown"),
-                "deviceFamily": device.and_then(|d| d.get("deviceFamily")).and_then(serde_json::Value::as_str).unwrap_or("remote"),
-                "commands": [],
-                "capabilities": [],
-                "connected": false,
-                "paired": true,
-                "active": false,
-                "gatewayLocal": false
-            }))
-        } else {
-            Err(GatewayCommandError::BadRequest(format!("unknown nodeId: {node_id}")))
-        }
+        project_openclaw_node_status(self.device_pairing.as_ref(), self.node_host_runtime.as_ref(), args)
     }
 
     fn call_openclaw_node_invoke(
@@ -13258,6 +13272,28 @@ impl GatewayApi for UnifiedGatewayApi {
         )
     }
 
+    fn revoke_paired_device(
+        &self,
+        args: serde_json::Value,
+        authorization: &mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization,
+        scope_ceiling: Option<&str>,
+        _context: &GatewayCommandContext,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        self.transcript_runtime
+            .session_runtime()
+            .note_desktop_contact(started_at_ms() as f64);
+        self.device_pairing.revoke_pairing_for_authenticated_device(
+            &args, authorization, scope_ceiling,
+        )
+    }
+
+    fn validate_paired_device_authorization(
+        &self,
+        authorization: &mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization,
+    ) -> Result<(), GatewayCommandError> {
+        self.device_pairing.validate_current_device_authorization(authorization)
+    }
+
     fn authorize_device_token_request(
         &self,
         authorization: &mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization,
@@ -17836,6 +17872,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    #[path = "device_pairing_revocation_tests.rs"]
+    mod device_pairing_revocation_tests;
     #[path = "original_turn_recovery_tests.rs"]
     mod original_turn_recovery_tests;
     #[path = "channel_host_lane_tests.rs"]

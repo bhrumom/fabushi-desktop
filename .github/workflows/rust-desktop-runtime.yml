@@ -339,6 +339,20 @@ jobs:
               "source/host/tests/device_pairing_rotation_authority_contract.rs",
               "source/host/tests/device_pairing_rotation_gateway_contract.rs",
               "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
+              "source/host/tests/device_pairing_revocation_authority_contract.rs",
+              "source/host/tests/device_pairing_revocation_gateway_contract.rs",
+              "source/host/tests/device_pairing_retained_stream_contract.rs",
+              "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+              "source/host/src/gateway_config.rs",
+              "source/host/src/host_event_bus.rs",
+              "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+              "source/host/src/extensions/local_exec/production.rs",
+              "source/host/src/extensions/local_exec/extension.rs",
+              "source/host/src/extensions/webauthn_proxy/webauthn_proxy_bridge.rs",
+              "source/host/src/extensions/webauthn_proxy/extension.rs",
+              "source/host/src/extensions/node_host/runtime_state.rs",
+              "source/host/src/extensions/node_host/session_registry.rs",
+              "source/host/app/src/tests/device_pairing_revocation_tests.rs",
               "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
               "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
               "source/host/tests/gateway_join_admission_contract.rs",
@@ -419,6 +433,11 @@ jobs:
               "source/host/app/src/tests/channel_failure_handoff_tests.rs",
               "source/host/app/src/tests/channel_failure_readiness_tests.rs",
               "source/host/app/src/tests/routed_preentry_cancellation_tests.rs",
+              "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+              "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+              "source/host/src/device_pairing_owner.rs",
+              "source/host/src/extensions/node_host/runtime_state.rs",
+              "source/host/src/extensions/node_host/session_registry.rs",
               "source/host/app/src/tests/channel_host_lane_tests.rs",
               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
               "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
@@ -455,6 +474,7 @@ jobs:
               "source/host/tests/turn_toolset_contract.rs",
               "source/host/tests/runner_routed_provider_contract.rs",
               "source/host/tests/openclaw_chat_cron_node_contract.rs",
+              "source/host/tests/openclaw_sessions_and_config_contract.rs",
               "source/host/tests/turn_telemetry_production_wiring_contract.rs",
               "source/host/tests/group_member_runner_deletion_production_contract.rs",
               "source/host/tests/openclaw_channel_delivery_contract.rs",
@@ -1033,6 +1053,9 @@ jobs:
               tests::original_turn_recovery_tests::original_turn_marker_requalifies_actual_saved_custody_before_acknowledgment \
               tests::original_turn_recovery_tests::original_turn_ack_gate_retains_due_timer_attempt_and_bytes_until_marker_releases \
               tests::original_turn_recovery_tests::original_turn_checked_marker_migration_calls_no_consumer_for_invalid_whole_image \
+              tests::device_pairing_revocation_tests::revocation_shipping_node_projection_removes_stored_remote_and_preserves_local_after_reopen \
+              tests::device_pairing_revocation_tests::revocation_shipping_projection_ignores_disconnected_history_and_preserves_denied_pairing \
+              tests::device_pairing_revocation_tests::revocation_shipping_hooks_and_node_consumers_use_the_same_existing_owners \
               tests::routed_preentry_cancellation_tests::routed_preentry_public_cancellation_stops_actual_start_before_model_and_preserves_input \
               tests::routed_preentry_cancellation_tests::routed_preentry_cancel_after_model_capture_refuses_permission_and_allows_next_turn \
               tests::routed_preentry_cancellation_tests::routed_preentry_late_registration_shares_cancellation_and_retains_custody_until_guard \
@@ -1528,6 +1551,9 @@ jobs:
           run_recovery_check device-pairing-contract cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_contract -- --test-threads=1 || recovery_status=1
           run_recovery_check device-pairing-rotation-authority cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_rotation_authority_contract -- --test-threads=1 || recovery_status=1
           run_recovery_check device-pairing-rotation-gateway cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_rotation_gateway_contract -- --test-threads=1 || recovery_status=1
+          run_recovery_check device-pairing-revocation-authority cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_revocation_authority_contract -- --test-threads=1 || recovery_status=1
+          run_recovery_check device-pairing-revocation-gateway cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_revocation_gateway_contract -- --test-threads=1 || recovery_status=1
+          run_recovery_check device-pairing-retained-stream cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_retained_stream_contract -- --test-threads=1 || recovery_status=1
           if run_recovery_check library-build cargo test --locked --manifest-path source/host/Cargo.toml --lib --no-run; then
             for recovery_filter in \
               host_lock::physical_guard_tests \
@@ -2091,10 +2117,67 @@ jobs:
               "paired_http_rechecks_retirement_after_authentication_with_live_and_unrelated_controls",
               "paired_http_two_admitted_self_rotations_commit_exactly_one_replacement",
           ]
+          revocation_owner_required = [
+              "paired_revocation_operator_self_commits_and_preserves_repairs_on_reopen",
+              "paired_revocation_admin_only_grant_removes_mixed_and_corrupt_targets",
+              "native_revocation_labels_keep_whole_row_semantics_and_surviving_repair",
+              "paired_revocation_cross_device_denial_precedes_target_inspection",
+              "paired_revocation_self_checks_primary_approved_and_every_token_role",
+              "paired_revocation_decisive_role_corruption_is_internal_and_atomic",
+              "paired_revocation_management_requires_current_operator_write",
+              "paired_revocation_header_and_body_fields_cannot_supply_authority",
+              "paired_revocation_proofs_bind_issuer_and_ignore_public_projection",
+              "paired_revocation_exact_credential_retirement_precedes_role_policy",
+              "paired_revocation_bad_requests_and_authorized_absence_preserve_state",
+              "paired_revocation_corrupt_caller_and_baseline_fallback_fail_closed",
+              "paired_revocation_live_grants_bound_sealed_management_admission",
+              "revocation_revision_corruption_rolls_back_and_recovers_after_reopen",
+              "paired_revocation_final_revision_increment_is_durable",
+              "revocation_checks_delete_count_and_redacts_transaction_failures",
+              "revocation_immediate_transaction_precedes_policy_and_absence_decisions",
+              "revocation_commit_failure_rolls_back_before_reopen_and_explicit_recovery",
+              "paired_revocation_concurrent_self_removal_commits_exactly_once",
+              "retained_authorization_supports_current_roles_without_durable_writes",
+              "retained_authorization_narrowing_retires_original_grant_without_replacement",
+              "retained_authorization_expansion_does_not_promote_sealed_admission",
+              "retained_authorization_uses_fixed_role_implications_and_complete_live_grant",
+              "retained_authorization_replacement_leaves_other_roles_and_devices_current",
+              "retained_authorization_reopen_requires_fresh_owner_issued_provenance",
+              "revocation_and_retained_authorization_propagate_storage_read_failure",
+          ]
+          revocation_http_required = [
+              "paired_revoke_self_operator_only_delivers_final_reply_and_reports_bound_context_once",
+              "paired_revoke_write_rejects_cross_device_and_mixed_self_despite_body_or_header_forgery",
+              "paired_revoke_admin_implication_ceilings_and_storage_error_reporting_use_real_owner",
+              "paired_revoke_read_node_empty_and_unrelated_grants_cannot_gain_management_authority",
+              "paired_revoke_failed_credentials_listener_spoofing_and_public_native_controls_are_distinct",
+              "paired_revoke_default_hook_refuses_without_generic_dispatch_and_native_still_works",
+              "paired_revoke_rechecks_after_authentication_with_unchanged_and_unrelated_controls",
+              "paired_revoke_two_authenticated_self_requests_commit_one_removal_and_one_stale_result",
+          ]
+          retained_stream_required = [
+              "retained_initial_admission_refuses_before_headers_subscription_or_provider_registration",
+              "retained_default_hook_refuses_paired_streams_and_preserves_native_streams",
+              "retained_bridges_recheck_after_registration_before_headers_and_drop_the_provider_once",
+              "retained_bridges_recheck_initial_retry_after_the_header_admission_has_succeeded",
+              "retained_events_revoke_before_queued_admission_closes_with_unchanged_and_unrelated_controls",
+              "retained_event_admitted_before_commit_may_finish_but_the_next_frame_is_refused",
+              "retained_quiet_events_retire_on_the_real_fifteen_second_heartbeat_with_native_control",
+              "retained_role_replacement_closes_only_that_role_and_keeps_node_other_device_and_fresh_token_live",
+              "retained_approval_narrowing_live_grant_narrowing_corruption_and_storage_failure_close_without_writes",
+              "retained_filtered_flood_checks_currentness_before_channel_and_both_internal_mcp_filters",
+              "retained_streams_preserve_native_channel_slim_gzip_and_paired_internal_mcp_exclusion",
+              "retained_reconnects_refuse_removed_malformed_credentials_and_wildcard_ambient_authority",
+              "retained_bridge_requests_drop_each_owned_provider_once_and_keep_native_provider_live",
+              "retained_bridge_responses_admit_after_decode_before_effect_and_keep_native_and_prior_admission_controls",
+          ]
           rotation_cases = []
           for label, required in [
               ("device-pairing-rotation-authority", rotation_owner_required),
               ("device-pairing-rotation-gateway", rotation_http_required),
+              ("device-pairing-revocation-authority", revocation_owner_required),
+              ("device-pairing-revocation-gateway", revocation_http_required),
+              ("device-pairing-retained-stream", retained_stream_required),
           ]:
               path = root / (label + ".log")
               raw = path.read_bytes() if path.is_file() else b""
@@ -2106,13 +2189,43 @@ jobs:
               missing = [name for name in required if names.count(name) != 1]
               counts = [tuple(map(int, count)) for count in re.findall(
                   r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
+              complete_counts = [tuple(map(int, count)) for count in re.findall(
+                  r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
               rotation_cases.append({"case": label, "command": command,
                   "command_exit_records": evidence["command_exit_records"],
                   "capture_exit_records": evidence["capture_exit_records"], "required_tests": required,
                   "observed_passed_test_names": names, "missing_or_nonunique_positive_results": missing,
                   "summaries_passed_failed_ignored": counts, "log_sha256": hashlib.sha256(raw).hexdigest(),
+                  "complete_summaries": complete_counts,
                   "oracle_accepted": bool(command) and evidence["accepted"]
-                      and not missing and counts == [(len(required), 0, 0)]})
+                      and not missing and counts == [(len(required), 0, 0)]
+                      and complete_counts == [(len(required), 0, 0, 0, 0)]})
+          wiring_cases = []
+          for label, required in [
+              ("settings-inference", [
+                  "test_ocrm_session_o01_session_key_routing",
+                  "test_provider_review_continuation_uses_owner_capability_and_existing_run_path",
+                  "test_provider_review_cleanup_oracle_rejects_missing_reordered_and_unbound_releases",
+                  "test_chat_abort_routing_oracle_rejects_missing_delegate_route_and_run_filters",
+              ]),
+              ("integration-contracts", [
+                  "test_ocrm_node_o06_shipping_routes_to_unique_native_owners",
+                  "test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout",
+              ]),
+          ]:
+              path = root / (label + ".log")
+              raw = path.read_bytes() if path.is_file() else b""
+              command_path = root / (label + ".command.txt")
+              command = command_path.read_text().strip() if command_path.is_file() else ""
+              evidence = read_command_evidence(root, label)
+              names = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
+              missing = [name for name in required if names.count(name) != 1]
+              wiring_cases.append({"case": label, "command": command,
+                  "command_exit_records": evidence["command_exit_records"],
+                  "capture_exit_records": evidence["capture_exit_records"], "required_tests": required,
+                  "observed_passed_test_names": names, "missing_or_nonunique_positive_results": missing,
+                  "log_sha256": hashlib.sha256(raw).hexdigest(),
+                  "oracle_accepted": bool(command) and evidence["accepted"] and not missing})
           node_binding_command = (root / "integration-contracts.command.txt").read_text().strip()
           node_binding_control = (passed.count("gateway_binds_node_token_to_the_addressed_node_before_dispatch") == 1
               and bool(node_binding_command) and integration_evidence["accepted"])
@@ -2120,16 +2233,18 @@ jobs:
               and tree == subject["subject_tree"]
               and str(subject["run_id"]) == os.environ["GITHUB_RUN_ID"]
               and str(subject["run_attempt"]) == os.environ["GITHUB_RUN_ATTEMPT"]
-              and node_binding_control and all(case["oracle_accepted"] for case in rotation_cases))
+              and node_binding_control and all(case["oracle_accepted"] for case in rotation_cases)
+              and all(case["oracle_accepted"] for case in wiring_cases))
           rotation_receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
-          rotation_receipt.update({"contract": "DPA-v1", "executions": rotation_cases,
+          rotation_receipt.update({"contract": "DPA-v1/DVR-v1", "executions": rotation_cases,
+              "shipping_wiring_regressions": wiring_cases,
               "existing_node_binding_positive": node_binding_control,
               "existing_node_binding_command": node_binding_command,
               "existing_node_binding_command_exit_records": integration_evidence["command_exit_records"],
               "existing_node_binding_capture_exit_records": integration_evidence["capture_exit_records"],
               "result": "passed" if rotation_accepted else "failed",
-              "scope": "Actual file-backed pairing owner and real HTTP server through thin owner delegates: sealed credential identity, current grants, scope ceilings, identity-derived secret delivery, no ambient fallback, atomic revision rollback, credential retirement and concurrent self rotation, plus native and reopen controls. Shipping App override is compiled and source-reviewed; these HTTP adapters do not run that full App or establish other pairing management isolation, websocket/device compatibility or release acceptance."})
+              "scope": "Actual file-backed pairing owner and real HTTP server through thin owner delegates: sealed credential identity, current grants, scope ceilings, identity-derived secret delivery, no ambient fallback, atomic revision rollback, credential retirement and concurrent self rotation, plus native and reopen controls. DVR-v1 adds bound whole-row revocation, operator-only self/admin policy, checked immediate transaction and rollback, original-credential retained SSE and real local-exec/WebAuthn registration retirement, exact frame-admission races and the actual 15-second quiet wake. Shipping App hooks and existing node projections have separate actual App helper cases; these HTTP adapters do not run the full App, remote workers, real devices or release acceptance."})
           (root / "device-pairing-rotation.receipt.json").write_text(json.dumps(rotation_receipt, indent=2) + "\n")
           print(json.dumps(rotation_receipt, indent=2))
           raise SystemExit(0 if accepted and append_accepted and pairing_accepted and rotation_accepted else 1)
@@ -3214,6 +3329,20 @@ jobs:
               "source/host/tests/device_pairing_rotation_authority_contract.rs",
               "source/host/tests/device_pairing_rotation_gateway_contract.rs",
               "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
+              "source/host/tests/device_pairing_revocation_authority_contract.rs",
+              "source/host/tests/device_pairing_revocation_gateway_contract.rs",
+              "source/host/tests/device_pairing_retained_stream_contract.rs",
+              "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+              "source/host/src/gateway_config.rs",
+              "source/host/src/host_event_bus.rs",
+              "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+              "source/host/src/extensions/local_exec/production.rs",
+              "source/host/src/extensions/local_exec/extension.rs",
+              "source/host/src/extensions/webauthn_proxy/webauthn_proxy_bridge.rs",
+              "source/host/src/extensions/webauthn_proxy/extension.rs",
+              "source/host/src/extensions/node_host/runtime_state.rs",
+              "source/host/src/extensions/node_host/session_registry.rs",
+              "source/host/app/src/tests/device_pairing_revocation_tests.rs",
               "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
               "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
               "source/host/tests/gateway_join_admission_contract.rs",
@@ -3414,6 +3543,10 @@ jobs:
           sse_filter = "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
           claim_integration = base + ["--no-fail-fast", "--test", "openclaw_sessions_and_config_contract", "--test", "agent_to_agent_messaging_contract"]
           required_claim_integration = [
+              "test_ocrm_session_o01_session_key_routing",
+              "test_provider_review_continuation_uses_owner_capability_and_existing_run_path",
+              "test_provider_review_cleanup_oracle_rejects_missing_reordered_and_unbound_releases",
+              "test_chat_abort_routing_oracle_rejects_missing_delegate_route_and_run_filters",
               "test_ocrm_session_o03_conversation_turn_correlation",
               "session_turn_claim_settlement::released_claim_cannot_settle_successor",
               "session_turn_claim_settlement::cancelled_claim_cannot_settle_reused_turn",
@@ -3473,6 +3606,60 @@ jobs:
               "paired_http_default_bound_hook_refuses_without_legacy_native_dispatch",
               "paired_http_rechecks_retirement_after_authentication_with_live_and_unrelated_controls",
               "paired_http_two_admitted_self_rotations_commit_exactly_one_replacement",
+          ]
+          revocation_owner_required = [
+              "paired_revocation_operator_self_commits_and_preserves_repairs_on_reopen",
+              "paired_revocation_admin_only_grant_removes_mixed_and_corrupt_targets",
+              "native_revocation_labels_keep_whole_row_semantics_and_surviving_repair",
+              "paired_revocation_cross_device_denial_precedes_target_inspection",
+              "paired_revocation_self_checks_primary_approved_and_every_token_role",
+              "paired_revocation_decisive_role_corruption_is_internal_and_atomic",
+              "paired_revocation_management_requires_current_operator_write",
+              "paired_revocation_header_and_body_fields_cannot_supply_authority",
+              "paired_revocation_proofs_bind_issuer_and_ignore_public_projection",
+              "paired_revocation_exact_credential_retirement_precedes_role_policy",
+              "paired_revocation_bad_requests_and_authorized_absence_preserve_state",
+              "paired_revocation_corrupt_caller_and_baseline_fallback_fail_closed",
+              "paired_revocation_live_grants_bound_sealed_management_admission",
+              "revocation_revision_corruption_rolls_back_and_recovers_after_reopen",
+              "paired_revocation_final_revision_increment_is_durable",
+              "revocation_checks_delete_count_and_redacts_transaction_failures",
+              "revocation_immediate_transaction_precedes_policy_and_absence_decisions",
+              "revocation_commit_failure_rolls_back_before_reopen_and_explicit_recovery",
+              "paired_revocation_concurrent_self_removal_commits_exactly_once",
+              "retained_authorization_supports_current_roles_without_durable_writes",
+              "retained_authorization_narrowing_retires_original_grant_without_replacement",
+              "retained_authorization_expansion_does_not_promote_sealed_admission",
+              "retained_authorization_uses_fixed_role_implications_and_complete_live_grant",
+              "retained_authorization_replacement_leaves_other_roles_and_devices_current",
+              "retained_authorization_reopen_requires_fresh_owner_issued_provenance",
+              "revocation_and_retained_authorization_propagate_storage_read_failure",
+          ]
+          revocation_http_required = [
+              "paired_revoke_self_operator_only_delivers_final_reply_and_reports_bound_context_once",
+              "paired_revoke_write_rejects_cross_device_and_mixed_self_despite_body_or_header_forgery",
+              "paired_revoke_admin_implication_ceilings_and_storage_error_reporting_use_real_owner",
+              "paired_revoke_read_node_empty_and_unrelated_grants_cannot_gain_management_authority",
+              "paired_revoke_failed_credentials_listener_spoofing_and_public_native_controls_are_distinct",
+              "paired_revoke_default_hook_refuses_without_generic_dispatch_and_native_still_works",
+              "paired_revoke_rechecks_after_authentication_with_unchanged_and_unrelated_controls",
+              "paired_revoke_two_authenticated_self_requests_commit_one_removal_and_one_stale_result",
+          ]
+          retained_stream_required = [
+              "retained_initial_admission_refuses_before_headers_subscription_or_provider_registration",
+              "retained_default_hook_refuses_paired_streams_and_preserves_native_streams",
+              "retained_bridges_recheck_after_registration_before_headers_and_drop_the_provider_once",
+              "retained_bridges_recheck_initial_retry_after_the_header_admission_has_succeeded",
+              "retained_events_revoke_before_queued_admission_closes_with_unchanged_and_unrelated_controls",
+              "retained_event_admitted_before_commit_may_finish_but_the_next_frame_is_refused",
+              "retained_quiet_events_retire_on_the_real_fifteen_second_heartbeat_with_native_control",
+              "retained_role_replacement_closes_only_that_role_and_keeps_node_other_device_and_fresh_token_live",
+              "retained_approval_narrowing_live_grant_narrowing_corruption_and_storage_failure_close_without_writes",
+              "retained_filtered_flood_checks_currentness_before_channel_and_both_internal_mcp_filters",
+              "retained_streams_preserve_native_channel_slim_gzip_and_paired_internal_mcp_exclusion",
+              "retained_reconnects_refuse_removed_malformed_credentials_and_wildcard_ambient_authority",
+              "retained_bridge_requests_drop_each_owned_provider_once_and_keep_native_provider_live",
+              "retained_bridge_responses_admit_after_decode_before_effect_and_keep_native_and_prior_admission_controls",
           ]
           cases = [
               ("integration", integration + ["--", "--test-threads=1"], required_integration),
@@ -3570,6 +3757,9 @@ jobs:
               ("device-pairing", base + ["--test", "device_pairing_contract", "--", "--test-threads=1"], pairing_required),
               ("device-pairing-rotation-authority", base + ["--test", "device_pairing_rotation_authority_contract", "--", "--test-threads=1"], rotation_owner_required),
               ("device-pairing-rotation-gateway", base + ["--test", "device_pairing_rotation_gateway_contract", "--", "--test-threads=1"], rotation_http_required),
+              ("device-pairing-revocation-authority", base + ["--test", "device_pairing_revocation_authority_contract", "--", "--test-threads=1"], revocation_owner_required),
+              ("device-pairing-revocation-gateway", base + ["--test", "device_pairing_revocation_gateway_contract", "--", "--test-threads=1"], revocation_http_required),
+              ("device-pairing-retained-stream", base + ["--test", "device_pairing_retained_stream_contract", "--", "--test-threads=1"], retained_stream_required),
               ("received-catalog-preparation", base + ["--test", "runner_production_bridge_contract", "--", "--test-threads=1"], [
                   "production_runner_catalog_refusal_stops_before_execution_and_ordinary_failure_continues_preparation",
               ]),
@@ -3598,6 +3788,8 @@ jobs:
                   "received_catalog::claude_process::production_claude_catalog_refusal_retains_completed_success_and_server_error_without_replay",
               ]),
               ("preentry-cancellation-wiring", base + ["--no-fail-fast", "--test", "openclaw_chat_cron_node_contract", "--test", "turn_telemetry_production_wiring_contract", "--test", "group_member_runner_deletion_production_contract", "--", "--test-threads=1"], [
+                  "test_ocrm_node_o06_shipping_routes_to_unique_native_owners",
+                  "test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout",
                   "test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation",
                   "shipping_host_wires_frozen_turn_telemetry_sources",
                   "group_member_registry_is_independent_and_preemption_state_is_consumable",
@@ -3697,7 +3889,7 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1"],
               "generated_history_scope": "Actual generated Runner retains ordered known successful tool observations and the accepted user through the existing canonical root/Journal transaction after provider failure or cancellation. Owned fresh processes observe history without provider/tool replay or completion/marker authority. Real provider-store refusal retains unaccepted effect custody; unknown/no-effect/root-drift controls, original typed error preservation, prior-completion invalidation and ordinary success remain required. Controlled Responses do not prove real provider compatibility, unknown/pending history, complete typed replay/UI, original-turn restart or packaged-platform acceptance.",
               "plugin_uninstall_recovery_scope": "Durable pre-dispatch tickets and exact settlements in the existing MCP/Skills owner, pending and confirmed refusal in actual Session/prompt consumers, strict image/marker recovery, cache-before-release barriers, and same-root Host handoff. Owned producer process exits and fresh consumer processes use controlled backend I/O. Pending outcomes are never replayed or cleared by ordinary sync. Account/backend incarnation, remote receipt/quiescence reconciliation, real ecosystem, hardware power-loss and packaged-platform acceptance remain open.",
               "checkpoint_publication_scope": "Actual provider checkpoint writer: private owned staging, exact payload preservation, no-clobber final publication, directory-entry barriers including retry after a failed creation barrier, and retained visible payload after a controlled final barrier failure. Actual shell adapter retains a completed file effect as uncheckpointed after real store refusal and explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance.",
@@ -3711,7 +3903,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DVR-v1 adds complete owner26, HTTP8 and retained-stream14 targets for bound atomic whole-row removal, caller policy and redaction, exact proof retirement on every existing stream wake, real bridge provider cleanup and response admission, real quiet-heartbeat and native/MCP controls. Original source-review/authority and actual App helper results remain separate; physical teardown, APNs and upstream remove/token-revoke aliases remain open. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
@@ -3734,6 +3926,11 @@ jobs:
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
               if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
+              complete_counts = None
+              if label in ("device-pairing-revocation-authority", "device-pairing-revocation-gateway", "device-pairing-retained-stream"):
+                  complete_counts = [tuple(map(int, count)) for count in re.findall(
+                      r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
+                  accepted = accepted and counts == [(len(required), 0, 0)] and complete_counts == [(len(required), 0, 0, 0, 0)]
               if label == "session-owner-namespace":
                   accepted = (accepted and len(counts) == 3
                       and all(count[2] == 0 for count in counts)
@@ -3742,7 +3939,7 @@ jobs:
                   "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,
                   "execution_error": execution_error, "required_positive_names": required,
                   "missing_or_nonunique_positive_results": missing, "observed_passed_test_names": passed,
-                  "summaries_passed_failed_ignored": counts, "oracle_accepted": accepted,
+                  "summaries_passed_failed_ignored": counts, "complete_summaries": complete_counts, "oracle_accepted": accepted,
                   "log": log_path.name, "log_sha256": hashlib.sha256(raw).hexdigest(),
               })
               (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -4040,6 +4237,11 @@ jobs:
               "source/host/app/src/tests/channel_failure_handoff_tests.rs",
               "source/host/app/src/tests/channel_failure_readiness_tests.rs",
               "source/host/app/src/tests/routed_preentry_cancellation_tests.rs",
+              "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+              "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+              "source/host/src/device_pairing_owner.rs",
+              "source/host/src/extensions/node_host/runtime_state.rs",
+              "source/host/src/extensions/node_host/session_registry.rs",
               "source/host/app/src/tests/channel_host_lane_tests.rs",
               "source/host/src/extensions/transcript/background_wakes.rs",
               "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
@@ -4082,7 +4284,7 @@ jobs:
               "source/host/tests/production_turn_run_shell_adapter_contract.rs",
           ]
           receipt = {
-              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1",
+              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1/DVR-v1",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
               "model_contract": "CMI-v1",
               "subject_commit": head,
@@ -4225,6 +4427,11 @@ jobs:
                   "tests::received_mcp_catalog_rejects_whole_malformed_response_before_dispatch",
                   "tests::received_mcp_catalog_preserves_accepted_wire_values_and_order",
               ]
+              required += ["tests::device_pairing_revocation_tests::" + name for name in [
+                  "revocation_shipping_node_projection_removes_stored_remote_and_preserves_local_after_reopen",
+                  "revocation_shipping_projection_ignores_disconnected_history_and_preserves_denied_pairing",
+                  "revocation_shipping_hooks_and_node_consumers_use_the_same_existing_owners",
+              ]]
               required += ["tests::codex_model_admission_tests::" + name for name in [
                   "cmi_shipping_admission_freezes_saved_model_and_keeps_native_recovery_isolated",
                   "cmi_shipping_refusal_releases_lease_without_permission_or_settings_effects",

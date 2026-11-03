@@ -112,14 +112,14 @@ struct RotationRecord {
     tokens: String,
 }
 
-struct PairedRotationAuthority<'a> {
+struct PairedOperatorAuthority<'a> {
     proof: &'a DeviceTokenProof,
     live_scopes: Vec<String>,
     approved_scopes: Vec<String>,
     header_ceiling: Option<Vec<String>>,
 }
 
-impl PairedRotationAuthority<'_> {
+impl PairedOperatorAuthority<'_> {
     fn allows(&self, scope: &str) -> bool {
         role_scope_allows("operator", scope, &self.proof.admitted_scopes)
             && role_scope_allows("operator", scope, &self.live_scopes)
@@ -1013,53 +1013,116 @@ impl DevicePairingOwner {
         }))
     }
 
+    /// Native callers retain whole-row removal, including the optional receipt label.
     pub fn handle_pair_revoke(&self, args: &Value) -> Result<Value, GatewayCommandError> {
-        let device_id = args
-            .get("deviceId")
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .ok_or_else(|| {
-                GatewayCommandError::BadRequest("device.pair.revoke requires deviceId".into())
-            })?;
+        self.revoke_pairing(args, None)
+    }
 
-        let role = args.get("role").and_then(Value::as_str);
+    pub fn revoke_pairing_for_authenticated_device(
+        &self,
+        args: &Value,
+        authorization: &DeviceTokenAuthorization,
+        scope_ceiling: Option<&str>,
+    ) -> Result<Value, GatewayCommandError> {
+        self.revoke_pairing(args, Some((authorization, scope_ceiling)))
+    }
 
-        let mut conn = self.conn.lock().unwrap();
-
-        let count: i64 = conn
-            .query_row(
-                "SELECT COUNT(1) FROM device_pairing_paired WHERE device_id = ?1",
-                params![device_id],
-                |row| row.get(0),
-            )
-            .unwrap_or(0);
-
-        if count == 0 {
+    fn revoke_pairing(
+        &self,
+        args: &Value,
+        paired: Option<(&DeviceTokenAuthorization, Option<&str>)>,
+    ) -> Result<Value, GatewayCommandError> {
+        let device_id = args.get("deviceId").and_then(Value::as_str)
+            .map(str::trim).filter(|id| !id.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "device.pair.revoke requires deviceId".into(),
+            ))?;
+        let role = if paired.is_some() {
+            args.get("role").map(|value| {
+                value.as_str().map(str::trim).filter(|role| !role.is_empty())
+                    .ok_or_else(|| GatewayCommandError::BadRequest(
+                        "device.pair.revoke requires a nonempty role".into(),
+                    ))
+            }).transpose()?
+        } else {
+            args.get("role").and_then(Value::as_str)
+        };
+        let mut conn = self.conn.lock().map_err(|_| invalid_stored_authority())?;
+        // Fence independent SQLite connections before any decisive authority or
+        // target read. Failed admission and failed commit roll the entire change back.
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| GatewayCommandError::Internal(
+                "failed to begin pairing revocation transaction".into(),
+            ))?;
+        if let Some((authorization, ceiling)) = paired {
+            let caller = self.admit_paired_operator(
+                &tx, authorization, ceiling, "pairing revocation",
+            )?;
+            if !caller.allows("operator.admin") {
+                if caller.proof.device_id != device_id {
+                    return Err(GatewayCommandError::Forbidden(
+                        "pairing revocation target requires operator admin authority".into(),
+                    ));
+                }
+                // A role receipt label never narrows the whole-row effect. All
+                // decisive role fields, including revoked token entries, matter.
+                let (primary, roles, tokens): (String, String, String) = tx.query_row(
+                    "SELECT role, roles_json, tokens_json FROM device_pairing_paired
+                     WHERE device_id = ?1",
+                    params![device_id],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                ).map_err(|_| invalid_stored_authority())?;
+                let primary = primary.trim();
+                if primary.is_empty() {
+                    return Err(invalid_stored_authority());
+                }
+                let roles = parse_string_set(&roles).ok_or_else(invalid_stored_authority)?;
+                let entries: Value = serde_json::from_str(&tokens)
+                    .map_err(|_| invalid_stored_authority())?;
+                let entries = entries.as_object().ok_or_else(invalid_stored_authority)?;
+                let mut operator_only = primary == "operator"
+                    && roles.iter().all(|role| role == "operator");
+                for entry in entries.values() {
+                    let role = entry.get("role").and_then(Value::as_str)
+                        .map(str::trim).filter(|role| !role.is_empty())
+                        .ok_or_else(invalid_stored_authority)?;
+                    operator_only &= role == "operator";
+                }
+                if !operator_only {
+                    return Err(GatewayCommandError::Forbidden(
+                        "mixed-role pairing revocation requires operator admin authority".into(),
+                    ));
+                }
+            }
+        }
+        let exists: bool = tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM device_pairing_paired WHERE device_id = ?1)",
+            params![device_id], |row| row.get(0),
+        ).map_err(|_| GatewayCommandError::Internal(
+            "failed to read pairing revocation target".into(),
+        ))?;
+        if !exists {
             return Err(GatewayCommandError::BadRequest(format!(
-                "unknown deviceId: {device_id}"
+                "unknown deviceId: {device_id}",
             )));
         }
-
-        let tx = conn.transaction().map_err(|e| {
-            GatewayCommandError::Internal(format!("Failed to begin pairing revoke transaction: {e}"))
-        })?;
-
-        tx.execute(
+        let deleted = tx.execute(
             "DELETE FROM device_pairing_paired WHERE device_id = ?1",
             params![device_id],
-        )
-        .map_err(|e| {
-            GatewayCommandError::Internal(format!("Failed to delete paired device: {e}"))
-        })?;
-
-        let new_rev = bump_revision(&tx).map_err(|e| {
-            GatewayCommandError::Internal(format!("Failed to bump pairing revision: {e}"))
-        })?;
-        tx.commit().map_err(|e| {
-            GatewayCommandError::Internal(format!("Failed to commit pairing revoke transaction: {e}"))
-        })?;
-
+        ).map_err(|_| GatewayCommandError::Internal(
+            "failed to delete paired device".into(),
+        ))?;
+        if deleted != 1 {
+            return Err(GatewayCommandError::Internal(
+                "pairing revocation target changed before commit".into(),
+            ));
+        }
+        let new_rev = bump_revision(&tx).map_err(|_| GatewayCommandError::Internal(
+            "failed to bump pairing revision".into(),
+        ))?;
+        tx.commit().map_err(|_| GatewayCommandError::Internal(
+            "failed to commit pairing revocation transaction".into(),
+        ))?;
         Ok(json!({
             "deviceId": device_id,
             "role": role.unwrap_or("all"),
@@ -1068,15 +1131,41 @@ impl DevicePairingOwner {
         }))
     }
 
-    /// Admit the credential accepted by HTTP against the same transaction that
-    /// will mutate the target. Never substitute a successor token or trust the
-    /// authorization's public projection as retained permission truth.
-    fn admit_paired_rotation<'a>(
+    /// Retained connections keep their originally admitted proof. Reading its
+    /// current row neither refreshes the proof nor records user activity.
+    pub fn validate_current_device_authorization(
+        &self,
+        authorization: &DeviceTokenAuthorization,
+    ) -> Result<(), GatewayCommandError> {
+        let conn = self.conn.lock().map_err(|_| invalid_stored_authority())?;
+        let caller = self.current_pairing_record(&conn, authorization)?;
+        let proof = &authorization.proof;
+        let tokens = caller.token_entries()?;
+        let live_scopes = tokens.get(&proof.role)
+            .and_then(|entry| entry.get("scopes"))
+            .and_then(normalized_authority_strings)
+            .ok_or_else(invalid_stored_authority)?;
+        let approved = caller.approved_baseline()?;
+        if !live_scopes.iter().all(|scope| role_scope_allows(&proof.role, scope, &approved))
+            || !proof.admitted_scopes.iter().all(|scope| {
+                role_scope_allows(&proof.role, scope, &live_scopes)
+                    && role_scope_allows(&proof.role, scope, &approved)
+            })
+        {
+            return Err(GatewayCommandError::Unauthorized(
+                "paired credential is no longer current".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Shared exact-credential check. Caller policy and retained-grant policy
+    /// remain at their existing operation boundaries; no successor is substituted.
+    fn current_pairing_record(
         &self,
         conn: &Connection,
-        authorization: &'a DeviceTokenAuthorization,
-        scope_ceiling: Option<&str>,
-    ) -> Result<PairedRotationAuthority<'a>, GatewayCommandError> {
+        authorization: &DeviceTokenAuthorization,
+    ) -> Result<RotationRecord, GatewayCommandError> {
         let stale = || GatewayCommandError::Unauthorized(
             "paired credential is no longer current".into(),
         );
@@ -1085,8 +1174,7 @@ impl DevicePairingOwner {
             return Err(stale());
         }
         let caller = rotation_record(conn, &proof.device_id)?.ok_or_else(stale)?;
-        let roles = caller.approved_roles()?;
-        if !roles.iter().any(|role| role == &proof.role) {
+        if !caller.approved_roles()?.iter().any(|role| role == &proof.role) {
             return Err(stale());
         }
         let tokens = caller.token_entries()?;
@@ -1099,32 +1187,53 @@ impl DevicePairingOwner {
         {
             return Err(stale());
         }
-        if proof.role != "operator" {
-            return Err(GatewayCommandError::Forbidden(
-                "token rotation requires an operator credential".into(),
-            ));
-        }
+        Ok(caller)
+    }
+
+    /// Admit the credential accepted by HTTP against the same transaction that
+    /// will mutate the target. Never substitute a successor token or trust the
+    /// authorization's public projection as retained permission truth.
+    fn admit_paired_operator<'a>(
+        &self,
+        conn: &Connection,
+        authorization: &'a DeviceTokenAuthorization,
+        scope_ceiling: Option<&str>,
+        operation: &str,
+    ) -> Result<PairedOperatorAuthority<'a>, GatewayCommandError> {
+        let caller = self.current_pairing_record(conn, authorization)?;
+        let proof = &authorization.proof;
+        let tokens = caller.token_entries()?;
+        let entry = tokens.get(&proof.role).ok_or_else(invalid_stored_authority)?;
         let live_scopes = entry.get("scopes").and_then(normalized_authority_strings)
             .ok_or_else(invalid_stored_authority)?;
         let approved_scopes = caller.approved_baseline()?;
         if !live_scopes.iter().all(|scope| {
-            role_scope_allows("operator", scope, &approved_scopes)
+            role_scope_allows(&proof.role, scope, &approved_scopes)
         }) {
-            return Err(stale());
+            return Err(GatewayCommandError::Unauthorized(
+                "paired credential is no longer current".into(),
+            ));
+        }
+        // Credential retirement/corruption precedes management policy for every
+        // sealed role. A current nonoperator still cannot manage pairings/tokens.
+        if proof.role != "operator" {
+            return Err(GatewayCommandError::Forbidden(
+                format!("{operation} requires an operator credential"),
+            ));
         }
         let header_ceiling = scope_ceiling.map(|scope| vec![scope.trim().to_owned()]);
         // Blank headers are explicit empty ceilings, never "no restriction".
         if header_ceiling.as_ref().is_some_and(|ceiling| ceiling[0].is_empty()) {
             return Err(GatewayCommandError::Forbidden(
-                "token rotation scope ceiling is empty".into(),
+                format!("{operation} scope ceiling is empty"),
             ));
         }
-        let authority = PairedRotationAuthority {
+        let authority = PairedOperatorAuthority {
             proof, live_scopes, approved_scopes, header_ceiling,
         };
         if !authority.allows("operator.write") {
             return Err(GatewayCommandError::Forbidden(
-                "token rotation requires operator write authority".into(),
+                format!("{operation} requires operator write authority"),
             ));
         }
         Ok(authority)
@@ -1183,7 +1292,7 @@ impl DevicePairingOwner {
                 "Failed to begin token rotation transaction: {error}",
             )))?;
         let authority = paired.map(|(authorization, ceiling)| {
-            self.admit_paired_rotation(&tx, authorization, ceiling)
+            self.admit_paired_operator(&tx, authorization, ceiling, "token rotation")
         }).transpose()?;
         if let Some(caller) = authority.as_ref() {
             if (caller.proof.device_id != device_id || role != "operator")

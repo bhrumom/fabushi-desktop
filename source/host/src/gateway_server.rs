@@ -194,6 +194,31 @@ pub trait GatewayApi: Send + Sync + 'static {
         ))
     }
 
+    /// Removal must carry the sealed credential to the existing durable owner.
+    /// An adapter without this hook must never use generic native dispatch.
+    fn revoke_paired_device(
+        &self,
+        _args: Value,
+        _authorization: &DeviceTokenAuthorization,
+        _scope_ceiling: Option<&str>,
+        _context: &GatewayCommandContext,
+    ) -> Result<Value, GatewayCommandError> {
+        Err(GatewayCommandError::Forbidden(
+            "paired device revocation is not supported by this gateway adapter".into(),
+        ))
+    }
+
+    /// Retained paired connections may only keep the credential admitted at
+    /// ingress. The owner decides currentness; Gateway owns no permission state.
+    fn validate_paired_device_authorization(
+        &self,
+        _authorization: &DeviceTokenAuthorization,
+    ) -> Result<(), GatewayCommandError> {
+        Err(GatewayCommandError::Forbidden(
+            "paired connection validation is not supported by this gateway adapter".into(),
+        ))
+    }
+
     fn call_with_context(
         &self,
         method: &str,
@@ -1308,6 +1333,24 @@ fn write_sse_headers(stream: &mut GatewayStream, gzip: bool) -> io::Result<()> {
     stream.flush()
 }
 
+#[derive(Clone, Copy)]
+struct PairedRequestAdmission<'a> {
+    api: &'a dyn GatewayApi,
+    authorization: &'a DeviceTokenAuthorization,
+}
+
+impl PairedRequestAdmission<'_> {
+    fn check(self) -> Result<(), GatewayCommandError> {
+        self.api.validate_paired_device_authorization(self.authorization)
+    }
+}
+
+fn check_paired_admission(
+    admission: Option<PairedRequestAdmission<'_>>,
+) -> Result<(), GatewayCommandError> {
+    admission.map_or(Ok(()), PairedRequestAdmission::check)
+}
+
 fn serve_event_body<W: Write>(
     sink: &mut W,
     receiver: Receiver<Value>,
@@ -1315,12 +1358,22 @@ fn serve_event_body<W: Write>(
     channels: Option<Vec<String>>,
     slim_avatars: bool,
     allow_internal_mcp_control: bool,
+    admission: Option<PairedRequestAdmission<'_>>,
 ) -> io::Result<()> {
+    if stop.load(Ordering::Acquire) || check_paired_admission(admission).is_err() {
+        return Ok(());
+    }
     sink.write_all(b"retry: 1000\n\n")?;
     sink.flush()?;
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
-        match receiver.recv_timeout(heartbeat) {
+        let received = receiver.recv_timeout(heartbeat);
+        // Admission, not write completion, is the frame boundary. Every wake
+        // checks before filtering, so an excluded-event flood cannot retain access.
+        if stop.load(Ordering::Acquire) || check_paired_admission(admission).is_err() {
+            break;
+        }
+        match received {
             Ok(event) => {
                 // Paired devices may watch ordinary Gateway events, but both
                 // MCP relay request channels belong to the native control plane.
@@ -1364,17 +1417,24 @@ fn serve_events(
     slim_avatars: bool,
     gzip: bool,
     allow_internal_mcp_control: bool,
+    admission: Option<PairedRequestAdmission<'_>>,
 ) -> io::Result<()> {
-    let receiver = deps.events.subscribe();
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+    if let Err(error) = check_paired_admission(admission) {
+        return respond_error(stream, error.status(), error.to_string());
+    }
+    let receiver = deps.events.subscribe();
+    if let Err(error) = check_paired_admission(admission) {
+        return respond_error(stream, error.status(), error.to_string());
+    }
     write_sse_headers(stream, gzip)?;
     if gzip {
         let mut encoder = GzEncoder::new(stream, Compression::default());
-        let result = serve_event_body(&mut encoder, receiver, stop, channels, slim_avatars, allow_internal_mcp_control);
+        let result = serve_event_body(&mut encoder, receiver, stop, channels, slim_avatars, allow_internal_mcp_control, admission);
         let _ = encoder.try_finish();
         result
     } else {
-        serve_event_body(stream, receiver, stop, channels, slim_avatars, allow_internal_mcp_control)
+        serve_event_body(stream, receiver, stop, channels, slim_avatars, allow_internal_mcp_control, admission)
     }
 }
 
@@ -1490,12 +1550,20 @@ fn serve_bridge_body<W: Write>(
     sink: &mut W,
     subscription: GatewayBridgeSubscription,
     stop: &AtomicBool,
+    admission: Option<PairedRequestAdmission<'_>>,
 ) -> io::Result<()> {
+    if stop.load(Ordering::Acquire) || check_paired_admission(admission).is_err() {
+        return Ok(());
+    }
     sink.write_all(b"retry: 1000\n\n")?;
     sink.flush()?;
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
-        match subscription.recv_timeout(heartbeat) {
+        let received = subscription.recv_timeout(heartbeat);
+        if stop.load(Ordering::Acquire) || check_paired_admission(admission).is_err() {
+            break;
+        }
+        match received {
             Ok(frame) => {
                 let encoded = serde_json::to_string(&frame)
                     .map_err(|error| io::Error::other(format!("serialize gateway bridge frame: {error}")))?;
@@ -1517,17 +1585,24 @@ fn serve_bridge_requests(
     bridge: &GatewayBridgeHub,
     stop: &AtomicBool,
     gzip: bool,
+    admission: Option<PairedRequestAdmission<'_>>,
 ) -> io::Result<()> {
-    let receiver = bridge.subscribe_requests();
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+    if let Err(error) = check_paired_admission(admission) {
+        return respond_error(stream, error.status(), error.to_string());
+    }
+    let receiver = bridge.subscribe_requests();
+    if let Err(error) = check_paired_admission(admission) {
+        return respond_error(stream, error.status(), error.to_string());
+    }
     write_sse_headers(stream, gzip)?;
     if gzip {
         let mut encoder = GzEncoder::new(stream, Compression::default());
-        let result = serve_bridge_body(&mut encoder, receiver, stop);
+        let result = serve_bridge_body(&mut encoder, receiver, stop, admission);
         let _ = encoder.try_finish();
         result
     } else {
-        serve_bridge_body(stream, receiver, stop)
+        serve_bridge_body(stream, receiver, stop, admission)
     }
 }
 
@@ -1535,6 +1610,7 @@ fn submit_bridge_responses(
     stream: &mut GatewayStream,
     bridge: &GatewayBridgeHub,
     body: &[u8],
+    admission: Option<PairedRequestAdmission<'_>>,
 ) -> io::Result<()> {
     let batch = if body.is_empty() {
         json!({})
@@ -1546,6 +1622,9 @@ fn submit_bridge_responses(
             }
         }
     };
+    if let Err(error) = check_paired_admission(admission) {
+        return respond_error(stream, error.status(), error.to_string());
+    }
     bridge.submit_responses(batch);
     respond_json(stream, 200, json!({ "ok": true }))
 }
@@ -1639,12 +1718,13 @@ fn handle_connection(
     }
 
     let allows_unauthenticated = command && matches!(method, "device.pair.request" | "device.pair.status");
-    let mut authenticated = false;
+    // Credential absence is a native mode only on the actual loopback listener.
+    // An explicit malformed, unknown or retired bearer never becomes absence.
+    let mut authenticated = deps.config.auth_token.is_none()
+        && !request.headers.contains_key("authorization")
+        && is_loopback_host(&deps.config.host);
     let mut device_authorization = None;
 
-    if deps.config.auth_token.is_none() {
-        authenticated = true;
-    }
     if let Some(token) = bearer_token(&request) {
         if deps
             .config
@@ -1695,27 +1775,7 @@ fn handle_connection(
     }
 
     let requested_role = request.headers.get("x-sand-role").map(String::as_str);
-    if method == "device.pair.rotateToken"
-        && device_authorization.is_none()
-        && deps.config.auth_token.is_none()
-        && (request.headers.contains_key("authorization")
-            || !is_loopback_host(&deps.config.host))
-    {
-        // Absence on the native loopback listener is an explicit mode. A bad
-        // or retired credential is not absence, even with a spoofed Host.
-        return respond_error(&mut stream, 401, "unauthorized");
-    }
     if let Some((access, family)) = NativeGatewayAccess::for_method(method) {
-        // Native data operations use the pairing grant, or the gateway's
-        // authority. An explicit failed credential must not regain ambient
-        // access on a listener without a configured token.
-        if device_authorization.is_none()
-            && deps.config.auth_token.is_none()
-            && (request.headers.contains_key("authorization")
-                || !is_loopback_host(&deps.config.host))
-        {
-            return respond_error(&mut stream, 401, "unauthorized");
-        }
         if requested_role.is_some_and(|role| role != "operator")
             || device_authorization
                 .as_ref()
@@ -1743,8 +1803,8 @@ fn handle_connection(
         }
     }
     // Reuse Box's native authority for both MCP receipt routes and their SSE
-    // requests. Common authentication above already checks a configured secret;
-    // without one, retain the existing trusted-loopback bearer behavior.
+    // requests. Common authentication admits the configured secret or explicit
+    // credential-absent native loopback mode, never an unknown bearer.
     // Recognized device credentials never gain this authority through headers.
     let native_mcp_control = device_authorization.is_none()
         && requested_role.is_none_or(|role| role == "operator")
@@ -1796,7 +1856,7 @@ fn handle_connection(
             && is_mutating_openclaw_command(method)
             // The bound owner below applies the current role/approval and
             // operator implications atomically, including admin-only grants.
-            && method != "device.pair.rotateToken"
+            && !matches!(method, "device.pair.rotateToken" | "device.pair.revoke")
             && !authorization
                 .scopes
                 .iter()
@@ -1831,27 +1891,30 @@ fn handle_connection(
             );
         }
     }
+    let paired_admission = device_authorization.as_ref().map(|authorization| {
+        PairedRequestAdmission { api: deps.api.as_ref(), authorization }
+    });
     if local_requests {
         return match deps.local_exec.as_ref() {
-            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop, sse_gzip_enabled(&request)),
+            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop, sse_gzip_enabled(&request), paired_admission),
             None => respond_error(&mut stream, 404, "local-exec channel not enabled"),
         };
     }
     if local_responses {
         return match deps.local_exec.as_ref() {
-            Some(bridge) => submit_bridge_responses(&mut stream, bridge, &request.body),
+            Some(bridge) => submit_bridge_responses(&mut stream, bridge, &request.body, paired_admission),
             None => respond_error(&mut stream, 404, "local-exec channel not enabled"),
         };
     }
     if webauthn_requests {
         return match deps.webauthn.as_ref() {
-            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop, sse_gzip_enabled(&request)),
+            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop, sse_gzip_enabled(&request), paired_admission),
             None => respond_error(&mut stream, 404, "webauthn channel not enabled"),
         };
     }
     if webauthn_responses {
         return match deps.webauthn.as_ref() {
-            Some(bridge) => submit_bridge_responses(&mut stream, bridge, &request.body),
+            Some(bridge) => submit_bridge_responses(&mut stream, bridge, &request.body, paired_admission),
             None => respond_error(&mut stream, 404, "webauthn channel not enabled"),
         };
     }
@@ -1871,6 +1934,7 @@ fn handle_connection(
             slim_avatars,
             sse_gzip_enabled(&request),
             native_mcp_control,
+            paired_admission,
         );
     }
     if prepare {
@@ -1898,6 +1962,14 @@ fn handle_connection(
     let result = match device_authorization.as_ref() {
         Some(authorization) if method == "device.pair.rotateToken" => {
             deps.api.rotate_paired_device_token(
+                args,
+                authorization,
+                request.headers.get("x-sand-scope").map(String::as_str),
+                &command_context,
+            )
+        }
+        Some(authorization) if method == "device.pair.revoke" => {
+            deps.api.revoke_paired_device(
                 args,
                 authorization,
                 request.headers.get("x-sand-scope").map(String::as_str),
@@ -2365,7 +2437,7 @@ mod tests {
             let mut rendered = Vec::new();
             serve_event_body(
                 &mut rendered, receiver, &AtomicBool::new(false),
-                None, false, allow_internal,
+                None, false, allow_internal, None,
             ).expect("event stream body");
             let body = String::from_utf8(rendered).expect("UTF-8 events");
             assert!(body.contains("public-status"), "{body}");

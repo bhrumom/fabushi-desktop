@@ -1881,6 +1881,13 @@ impl GatewayApi for McpControlApi {
         self.pairing_owner.authenticate_device_token(token)
     }
 
+    fn validate_paired_device_authorization(
+        &self,
+        authorization: &DeviceTokenAuthorization,
+    ) -> Result<(), GatewayCommandError> {
+        self.pairing_owner.validate_current_device_authorization(authorization)
+    }
+
     fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
         self.calls
             .lock()
@@ -2178,11 +2185,15 @@ fn assert_mcp_receipts_refused(
 fn internal_mcp_receipts_preserve_real_waiters_until_native_completion() {
     for (configured_token, native_bearer) in [
         (None, None),
-        (None, Some("unrecognized-local-bearer")),
         (Some("native-mcp-receipt-secret"), Some("native-mcp-receipt-secret")),
     ] {
         let gateway = McpControlGateway::new(configured_token);
         let pending = PendingMcpControlRequests::start(&gateway);
+        // An explicit failed credential is never credential-absent native mode.
+        assert_mcp_receipts_refused(
+            &gateway, &pending, Some("unrecognized-local-bearer"), "",
+            "HTTP/1.1 401 Unauthorized", Some("unauthorized"),
+        );
         for (token, _) in &gateway.devices {
             for headers in ["", "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n"] {
                 assert_mcp_receipts_refused(
@@ -2298,7 +2309,6 @@ fn internal_mcp_events_are_native_only_before_channel_slim_and_gzip_projection()
     );
     for (configured_token, native_bearer) in [
         (None, None),
-        (None, Some("unrecognized-local-bearer")),
         (Some("native-mcp-event-secret"), Some("native-mcp-event-secret")),
     ] {
         for (target, slim, gzip) in [
@@ -2308,6 +2318,21 @@ fn internal_mcp_events_are_native_only_before_channel_slim_and_gzip_projection()
             (selected.as_str(), true, true),
         ] {
             let gateway = McpControlGateway::new(configured_token);
+            let before = gateway.events.subscriber_count();
+            let headers = format!(
+                "{}{}",
+                if slim { "x-sand-slim-avatars: 1\r\n" } else { "" },
+                if gzip { "Accept-Encoding: gzip\r\n" } else { "" },
+            );
+            let refused = request(gateway.server.port(), &format!(
+                "GET {target} HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer unrecognized-local-bearer\r\n{headers}Connection: close\r\n\r\n",
+            ));
+            assert!(refused.starts_with("HTTP/1.1 401 Unauthorized"), "{refused}");
+            assert_eq!(json_body(&refused)["error"], "unauthorized");
+            assert!(!refused.contains("retry:") && !refused.contains("data:"), "{refused}");
+            assert_eq!(gateway.events.subscriber_count(), before,
+                "an invalid bearer must be refused before subscribing");
+            assert!(gateway.api.recorded_calls().is_empty());
             let mut streams = vec![(
                 "native".to_string(),
                 true,
