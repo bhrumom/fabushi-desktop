@@ -1,0 +1,1081 @@
+warning: unused import: `mahayana_host_protocol::ComputerAccessibilityNode`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:14:5
+   |
+14 | use mahayana_host_protocol::ComputerAccessibilityNode;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `mahayana_host_protocol::ComputerSemanticAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:18:5
+   |
+18 | use mahayana_host_protocol::ComputerSemanticAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `mahayana_host_protocol::ComputerWindowAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:21:5
+   |
+21 | use mahayana_host_protocol::ComputerWindowAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `mahayana-computer` (lib) generated 3 warnings (run `cargo fix --lib -p mahayana-computer` to apply 3 suggestions)
+warning: unused import: `AgentActivity`
+  --> src/extensions/transcript/production_runtime.rs:15:44
+   |
+15 | use crate::sand_activity::{ActivityUpdate, AgentActivity};
+   |                                            ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `DateTime`
+ --> src/extensions/transcript/automation_run_path.rs:5:14
+  |
+5 | use chrono::{DateTime, Local, TimeZone, Utc};
+  |              ^^^^^^^^
+
+warning: unused import: `ConversationStructureRefs`
+  --> src/extensions/session/session_conversation_state.rs:34:5
+   |
+34 |     ConversationStructureRefs, OutlineItem as RecoveryOutlineItem,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> src/extensions/box_store_sync/sand_box_store_v2_client.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `json`
+  --> src/extensions/box_store_sync/production.rs:16:18
+   |
+16 | use serde_json::{json, Map, Value};
+   |                  ^^^^
+
+warning: unused import: `BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES`
+  --> src/extensions/box_store_sync/production.rs:56:40
+   |
+56 |     plan_periodic_cycle, BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fmt`
+ --> src/extensions/box_lifecycle/production.rs:1:5
+  |
+1 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `run_codex_direct_responses_with_cancel`
+  --> src/extensions/inference/provider_session.rs:35:45
+   |
+35 |     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `DiskPressureReport`
+  --> src/extensions/forever_box/disk_pressure.rs:17:44
+   |
+17 |     DiskPressureLevel, DiskPressureLogger, DiskPressureReport, DiskPressureReporter,
+   |                                            ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `regex::Regex`
+  --> src/extensions/attachments/input_files.rs:13:5
+   |
+13 | use regex::Regex;
+   |     ^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/attachments/load_options.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `SaveMediaSourceError`
+  --> src/extensions/attachments/media_fetch.rs:22:5
+   |
+22 |     SaveMediaSourceError, SaveMediaSourceErrorCode,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `PathBuf` and `Path`
+ --> src/extensions/attachments/media_generation_service.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^  ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/extensions/attachments/media_probe.rs:1:5
+  |
+1 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fs::File`
+ --> src/extensions/attachments/media_probe.rs:2:5
+  |
+2 | use std::fs::File;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Read`
+ --> src/extensions/attachments/media_probe.rs:3:5
+  |
+3 | use std::io::Read;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::path::Path`
+ --> src/extensions/attachments/media_probe.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::sync::LazyLock`
+ --> src/extensions/attachments/media_probe.rs:5:5
+  |
+5 | use std::sync::LazyLock;
+  |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::time::Instant`
+ --> src/extensions/attachments/media_probe.rs:6:5
+  |
+6 | use std::time::Instant;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SeekFrom` and `Seek`
+ --> src/extensions/attachments/media_store.rs:3:27
+  |
+3 | use std::io::{self, Read, Seek, SeekFrom, Write};
+  |                           ^^^^  ^^^^^^^^
+
+warning: unused import: `Component`
+ --> src/extensions/attachments/media_store.rs:4:17
+  |
+4 | use std::path::{Component, Path, PathBuf};
+  |                 ^^^^^^^^^
+
+warning: unused imports: `Value` and `json`
+  --> src/extensions/attachments/media_store.rs:10:18
+   |
+10 | use serde_json::{Value, json};
+   |                  ^^^^^  ^^^^
+
+warning: unused import: `format_media_size`
+  --> src/extensions/attachments/media_store.rs:15:70
+   |
+15 |     MEDIA_FILE_MODE, SaveMediaSourceError, SaveMediaSourceErrorCode, format_media_size,
+   |                                                                      ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/attachments/media_understanding_service.rs:1:33
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `std::collections::HashSet`
+ --> src/extensions/attachments/parse_output.rs:8:5
+  |
+8 | use std::collections::HashSet;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+  --> src/extensions/attachments/remote_workspace_file.rs:10:17
+   |
+10 | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+
+warning: unused import: `ImageMetadata`
+  --> src/extensions/attachments/web_media.rs:20:35
+   |
+20 |     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
+   |                                   ^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/content_search/search_index_writer.rs:3:17
+  |
+3 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/plugin_sdk/api_baseline.rs:2:33
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `PathBuf`
+ --> src/extensions/plugin_sdk/api_baseline.rs:3:23
+  |
+3 | use std::path::{Path, PathBuf};
+  |                       ^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/plugin_sdk/archive_blob.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `json`
+ --> src/extensions/plugin_sdk/channel_entry.rs:2:18
+  |
+2 | use serde_json::{json, Value};
+  |                  ^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/extensions/plugin_sdk/channel_entry.rs:3:5
+  |
+3 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Engine as _` and `engine::general_purpose::STANDARD`
+ --> src/extensions/plugins/clawhub.rs:1:14
+  |
+1 | use base64::{engine::general_purpose::STANDARD, Engine as _};
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^
+
+warning: unused import: `Sha256`
+ --> src/extensions/plugins/clawhub.rs:3:20
+  |
+3 | use sha2::{Digest, Sha256};
+  |                    ^^^^^^
+
+warning: unused import: `HashMap`
+ --> src/extensions/plugins/commands.rs:2:24
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: unused import: `Arc`
+ --> src/extensions/plugins/commands.rs:4:17
+  |
+4 | use std::sync::{Arc, Condvar, Mutex};
+  |                 ^^^
+
+warning: unused import: `Arc`
+ --> src/extensions/plugins/computer_use.rs:3:17
+  |
+3 | use std::sync::{Arc, Mutex};
+  |                 ^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/plugins/config.rs:3:33
+  |
+3 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `Map`
+ --> src/runner/tools/sand_multitask_todo_tool.rs:5:18
+  |
+5 | use serde_json::{Map, Value, json};
+  |                  ^^^
+
+warning: unused import: `std::fmt`
+ --> src/box/box_transfer.rs:3:5
+  |
+3 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `Arc`
+ --> src/workflows/workflow_library.rs:5:17
+  |
+5 | use std::sync::{Arc, OnceLock};
+  |                 ^^^
+
+warning: unused import: `HashMap`
+ --> src/agents/agent_roster.rs:1:24
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: cannot test inner items
+   --> src/transcript_mirror/conversation_state_binary.rs:518:5
+    |
+518 |     #[test]
+    |     ^^^^^^^
+    |
+    = note: `#[warn(unnameable_test_items)]` on by default
+
+warning: cannot test inner items
+   --> src/transcript_mirror/conversation_state_binary.rs:536:5
+    |
+536 |     #[test]
+    |     ^^^^^^^
+
+warning: unused import: `ProductionAgentStoreWorkerBackend`
+ --> src/transcript_mirror/production_provider.rs:6:5
+  |
+6 |     ProductionAgentStoreWorkerBackend, TranscriptMirrorOffloadPool, WorkerBlobStore,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/device_pairing_owner.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `Digest`
+ --> src/extensions/plugins/clawhub.rs:3:12
+  |
+3 | use sha2::{Digest, Sha256};
+  |            ^^^^^^
+
+warning: unused import: `PermissionsExt`
+  --> src/extensions/snapshot/git_backup_manager.rs:14:54
+   |
+14 | use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
+   |                                                      ^^^^^^^^^^^^^^
+
+warning: unused variable: `session_key`
+   --> src/extensions/transcript/agent_to_agent_messaging.rs:302:44
+    |
+302 |         let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
+    |                                            ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_session_key`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+    --> src/extensions/transcript/production_runtime.rs:1592:13
+     |
+1592 |         let mut result = if suppress_stale_turn {
+     |             ----^^^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_echo_entry_id` is never read
+    --> src/extensions/transcript/production_runtime.rs:1396:59
+     |
+1396 |         let mut persisted_echo_entry_id: Option<String> = None;
+     |                                                           ^^^^ this value is reassigned later and never used
+...
+1438 |                             persisted_echo_entry_id =
+     |                             ----------------------- `persisted_echo_entry_id` is overwritten here before the previous value is read
+     |
+     = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_send_context` is never read
+    --> src/extensions/transcript/production_runtime.rs:1397:42
+     |
+1397 |         let mut persisted_send_context = PersistedSendContext::default();
+     |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+1437 |                             persisted_send_context = persisted.into();
+     |                             ---------------------- `persisted_send_context` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:2069:13
+     |
+2069 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:2694:13
+     |
+2694 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:5155:13
+     |
+5155 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/box_store_sync/box_copy_in.rs:948:25
+    |
+948 |                     let mut event = build_copy_in_watchdog_event(
+    |                         ----^^^^^
+    |                         |
+    |                         help: remove this `mut`
+
+warning: value assigned to `manifest_committed` is never read
+    --> src/extensions/box_store_sync/production.rs:1555:17
+     |
+1555 |                 manifest_committed = false;
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+  --> src/extensions/cloud_workers/store.rs:60:13
+   |
+60 |         let mut file = File::open(path).map_err(CloudWorkerStoreError::Read)?;
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+warning: value assigned to `held` is never read
+   --> src/extensions/telemetry/structured_log_telemetry.rs:312:29
+    |
+312 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `held` is never read
+   --> src/extensions/telemetry/structured_log_telemetry.rs:329:29
+    |
+329 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: unused variable: `current_ref`
+   --> src/extensions/inference/model_picker_service.rs:374:9
+    |
+374 |     let current_ref = format!("{}/{}", params.current_provider, params.current_model);
+    |         ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_current_ref`
+
+warning: value assigned to `should_sync` is never read
+   --> src/extensions/wallpaper/wallpaper_service.rs:149:9
+    |
+149 |           should_sync = false;
+    |           ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+185 | /         should_sync = wait_for_next(
+186 | |             &inner,
+187 | |             &receiver,
+188 | |             Duration::from_millis(remaining_ms),
+189 | |         );
+    | |_________- `should_sync` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_probe.rs:268:9
+    |
+268 |     let mut audio_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_probe.rs:279:9
+    |
+279 |     let mut video_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_store.rs:614:9
+    |
+614 |     let mut file = options.open(path)?;
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `ttl`
+  --> src/extensions/plugin_sdk/channel_runtime.rs:98:36
+   |
+98 |     pub fn claim(&self, key: &str, ttl: Duration) -> ReplayClaimResult {
+   |                                    ^^^ help: if this is intentional, prefix it with an underscore: `_ttl`
+
+warning: unused variable: `v`
+    --> src/extensions/plugins/capability_catalog.rs:2298:17
+     |
+2298 |         for (k, v) in configured_channels {
+     |                 ^ help: if this is intentional, prefix it with an underscore: `_v`
+
+warning: variable does not need to be mutable
+   --> src/extensions/snapshot/git_backup_manager.rs:764:9
+    |
+764 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/snapshot/git_backup_manager.rs:877:9
+    |
+877 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/runner/tools/send_message_schema.rs:221:21
+    |
+221 |                 let mut path = prefix.clone();
+    |                     ----^^^^
+    |                     |
+    |                     help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/runner/tools/communicate_tool.rs:126:9
+    |
+126 |     let mut payload = executing_payload(tool_name, activity);
+    |         ----^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `stderr`
+   --> src/box/box_windows.rs:173:53
+    |
+173 |         ShellExecutionOutcome::Success { exit_code, stderr }
+    |                                                     ^^^^^^ help: try ignoring the field: `stderr: _`
+
+warning: method `sync_baseline` is never used
+    --> src/extensions/transcript/automation_runtime.rs:1260:8
+     |
+ 494 | impl AutomationRuntime {
+     | ---------------------- method in this implementation
+...
+1260 |     fn sync_baseline(&self, agent_id: &str, definitions: &[AutomationRecord]) {
+     |        ^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `assert_agent_transcript_write_admission` is never used
+    --> src/extensions/session/production.rs:2510:8
+     |
+ 279 | impl ProductionSessionWorkers {
+     | ----------------------------- method in this implementation
+...
+2510 |     fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_download_owner` is never used
+   --> src/extensions/box_store_sync/box_copy_in.rs:550:4
+    |
+550 | fn apply_download_owner(path: &Path, owner: Option<(u32, u32)>) -> Result<(), String> {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_excluded` is never used
+    --> src/extensions/box_store_sync/production.rs:2783:4
+     |
+2783 | fn is_excluded(rel_path: &str, excludes: &[&str]) -> bool {
+     |    ^^^^^^^^^^^
+
+warning: constant `MAX_ENV_NAME_CHARS` is never used
+ --> src/extensions/cloud_workers/auxiliary.rs:6:7
+  |
+6 | const MAX_ENV_NAME_CHARS: usize = 128;
+  |       ^^^^^^^^^^^^^^^^^^
+
+warning: fields `windows_instance_name` and `windows_previous_profile_interval` are never read
+   --> src/extensions/telemetry/pressure_cpu_profiler.rs:320:5
+    |
+316 | struct ProductionCpuProfilerState {
+    |        -------------------------- fields in this struct
+...
+320 |     windows_instance_name: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+321 |     windows_previous_profile_interval: Option<u64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps` is never used
+    --> src/extensions/inference/provider_session.rs:1750:4
+     |
+1750 | fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text` is never used
+    --> src/extensions/inference/provider_session.rs:2742:4
+     |
+2742 | fn run_openrouter_provider_text(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text_with_lifecycle` is never used
+    --> src/extensions/inference/provider_session.rs:2756:4
+     |
+2756 | fn run_openrouter_provider_text_with_lifecycle(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `persist_uninstall_transition` and `persist_auth_transition` are never used
+   --> src/extensions/mcp/plugin_skills.rs:690:8
+    |
+532 | impl SandPluginSkillsService {
+    | ---------------------------- methods in this implementation
+...
+690 |     fn persist_uninstall_transition(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+730 |     fn persist_auth_transition(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `revocation_reason` is never read
+   --> src/extensions/mcp/installable_package/policy.rs:418:5
+    |
+409 | struct TrustKey {
+    |        -------- field in this struct
+...
+418 |     revocation_reason: String,
+    |     ^^^^^^^^^^^^^^^^^
+    |
+    = note: `TrustKey` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: method `as_str` is never used
+  --> src/extensions/node_host/secret_materializer.rs:35:19
+   |
+20 | impl NodeHostSecretInputRef {
+   | --------------------------- method in this implementation
+...
+35 |     pub(crate) fn as_str(&self) -> &str {
+   |                   ^^^^^^
+
+warning: function `sysconf_pages` is never used
+   --> src/host_system_info.rs:119:4
+    |
+119 | fn sysconf_pages(name: libc::c_int, label: &str) -> Result<u64, String> {
+    |    ^^^^^^^^^^^^^
+
+warning: function `hex_nibble` is never used
+   --> src/agent_isolation/conversation_blob_store.rs:392:4
+    |
+392 | fn hex_nibble(value: u8) -> Option<u8> {
+    |    ^^^^^^^^^^
+
+warning: function `recovery_fields_decode_token_details_and_turn_timing` is never used
+   --> src/transcript_mirror/conversation_state_binary.rs:519:8
+    |
+519 |     fn recovery_fields_decode_token_details_and_turn_timing() {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `stale_token_details_can_be_removed_without_reencoding_other_fields` is never used
+   --> src/transcript_mirror/conversation_state_binary.rs:537:8
+    |
+537 |     fn stale_token_details_can_be_removed_without_reencoding_other_fields() {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variant `Enum` is never constructed
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-6d7e1a4dbbebd760/out/agent_tool_json_schema.rs:5:47
+  |
+5 | enum AgentToolJsonMapValueKind { Scalar(u64), Enum(&'static [(i64, &'static str)]), Message(&'static str) }
+  |      -------------------------                ^^^^
+  |      |
+  |      variant in this enum
+  |
+  = note: `AgentToolJsonMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `optional` is never read
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-6d7e1a4dbbebd760/out/agent_tool_json_schema.rs:9:123
+  |
+9 | struct AgentToolJsonFieldDescriptor { number: u64, json_name: &'static str, kind: AgentToolJsonFieldKind, repeated: bool, optional: b...
+  |        ---------------------------- field in this struct                                                                  ^^^^^^^^
+  |
+  = note: `AgentToolJsonFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variant `Enum` is never constructed
+ --> src/cloud_agents/cloud_agent_trace_format.rs:8:5
+  |
+6 | enum CloudAgentProtoMapValueKind {
+  |      --------------------------- variant in this enum
+7 |     Scalar(u64),
+8 |     Enum,
+  |     ^^^^
+  |
+  = note: `CloudAgentProtoMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `proto_name` is never read
+  --> src/cloud_agents/cloud_agent_trace_format.rs:26:5
+   |
+24 | struct CloudAgentProtoFieldDescriptor {
+   |        ------------------------------ field in this struct
+25 |     number: u64,
+26 |     proto_name: &'static str,
+   |     ^^^^^^^^^^
+   |
+   = note: `CloudAgentProtoFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `db_path` is never read
+  --> src/device_pairing_owner.rs:17:5
+   |
+15 | pub struct DevicePairingOwner {
+   |            ------------------ field in this struct
+16 |     conn: Mutex<Connection>,
+17 |     db_path: Option<PathBuf>,
+   |     ^^^^^^^
+
+warning: `mahayana-host-runtime` (lib test) generated 95 warnings (run `cargo fix --lib -p mahayana-host-runtime --tests` to apply 64 suggestions)
+    Finished `test` profile [unoptimized] target(s) in 0.18s
+     Running unittests src/lib.rs (source/host/target/debug/deps/mahayana_host_runtime-13815aca64cdc4f6)
+
+running 92 tests
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_clean_dispose_does_no_io_but_fresh_construction_cannot_assume_the_outcome ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_exact_identity_zero_skill_release_keeps_current_denial_and_changes_once ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_foreign_or_unreadable_outcome_image_is_not_a_known_failed_write ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_inherited_unknown_survives_offline_and_invalid_outcomes_without_replay ... ok
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_known_loader_errors_and_invalid_aggregates_preserve_offline_availability ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_live_negative_precedes_outcome_journal_while_fresh_reader_sees_unknown ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_negative_journal_failure_distinguishes_expected_and_candidate_recovery ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_old_loader_guard_and_repeated_dispose_cannot_alter_successor_token ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_panicking_coalesced_followup_retains_unknown_and_all_waiters_settle ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_positive_journal_failure_follows_cache_barriers_and_preserves_actual_visibility ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_reservation_failure_never_calls_loader_or_changes_cache ... FAILED
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_reporter_panic_after_settled_publication_does_not_recreate_unknown ... ok
+test extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_recovery_uses_only_fresh_records_while_clean_partial_keeps_fallback ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::active_failure_does_not_cancel_a_pending_success_or_borrow_its_result ... ok
+test extensions::mcp::plugin_skills::sync_tests::ambiguous_legacy_denials_never_supply_service_current_or_fallback ... ok
+test extensions::mcp::plugin_skills::sync_tests::canonical_denial_survives_listing_and_materialization_failures_until_fresh_success ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::completed_coalesced_return_rechecks_live_refusal_after_releasing_service_state ... ok
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_after_commit_skips_old_prune_and_filters_return_but_keeps_commit_report ... ok
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_equal_identity_restoration_reports_changed_once_including_zero_skills ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_fences_an_old_load_and_queued_pass_captures_when_it_really_loads ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_fences_owned_staging_even_when_the_same_id_was_already_observed ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_is_not_released_by_missing_or_malformed_commit_readback ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_orders_after_an_entered_prune_without_holding_reader_or_state_locks ... ok
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_refuses_a_proven_warm_workflow_body_cache_hit ... ok
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_refuses_only_the_exact_id_in_retained_and_new_workflow_stores ... ok
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_same_root_successor_keeps_fact_and_rejects_retired_observations ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_survives_fresh_publication_failures_and_unresolved_fallback_until_fresh_success ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::current_denial_wins_over_success_and_absent_denial_retires_without_hiding_other_plugins ... ok
+test extensions::mcp::plugin_skills::sync_tests::different_root_retirement_does_not_let_new_root_success_clear_an_old_reader ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::disposal_after_staging_prevents_rename_pruning_and_success_and_wakes_queued_sync ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::disposal_wakes_queued_callers_without_loading_or_overwriting_retained_cache ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::followup_failure_reaches_every_waiter_without_replacing_active_success ... ok
+test extensions::mcp::plugin_skills::sync_tests::invalid_cache_is_read_only_and_never_supplies_fallback ... ok
+test extensions::mcp::plugin_skills::sync_tests::invalid_generated_records_fail_before_publication_without_changing_cache_or_pruning ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::legacy_cache_without_denials_keeps_eligible_fallback_during_canonical_refresh ... ok
+test extensions::mcp::plugin_skills::sync_tests::live_refusal_restoration_reports_changed_once_after_stage_or_rename_failure ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::live_refusal_survives_invalid_stage_failed_release_and_partial_until_valid_fresh_success ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::malformed_aggregate_never_imports_its_otherwise_valid_refusal_or_unknown_identity ... ok
+test extensions::mcp::plugin_skills::sync_tests::malformed_authoritative_loaded_snapshots_preserve_cache_and_materialized_files ... ok
+test extensions::mcp::plugin_skills::sync_tests::missing_or_malformed_readback_never_releases_a_live_refusal ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::new_refusal_is_live_before_rename_and_failed_publication_preserves_old_allowed_bytes ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::old_cleanup_holds_only_publication_and_finishes_before_successor_materialization ... ok
+test extensions::mcp::plugin_skills::sync_tests::ordinary_dispose_after_commit_keeps_valid_pruning_and_reporting ... ok
+test extensions::mcp::plugin_skills::sync_tests::overlapping_callers_wait_for_one_followup_and_last_trigger_wins ... ok
+test extensions::mcp::plugin_skills::sync_tests::panicking_followup_settles_shared_waiters_and_releases_future_sync ... ok
+test extensions::mcp::plugin_skills::sync_tests::partial_materialization_preserves_files_and_complete_or_empty_listing_may_prune ... ok
+test extensions::mcp::plugin_skills::sync_tests::pending_uninstall_reports_only_admitted_changes_at_publication ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::pending_uninstall_same_root_successor_rejects_every_retired_settlement ... ok
+test extensions::mcp::plugin_skills::sync_tests::pending_uninstall_survives_fresh_sync_without_release_or_prune ... ok
+test extensions::mcp::plugin_skills::sync_tests::poisoned_admission_fails_closed_for_retained_and_successor_readers_without_resetting_truth ... ok
+test extensions::mcp::plugin_skills::sync_tests::publication_failure_preserves_prior_cache_and_files_without_success ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::real_poll_shutdown_fences_an_active_load_before_join_finishes ... ok
+test extensions::mcp::plugin_skills::sync_tests::real_poll_shutdown_retires_a_queued_sync_before_joining_its_thread ... ok
+test extensions::mcp::plugin_skills::sync_tests::requests_during_a_followup_have_their_own_next_pass ... ok
+test extensions::mcp::plugin_skills::sync_tests::same_root_successor_fences_staged_predecessor_rename_and_positive_release ... ok
+test extensions::mcp::plugin_skills::sync_tests::same_root_successor_keeps_reader_and_fences_late_imports_and_old_runtime_dispose ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::same_thread_recursive_sync_fails_explicitly_instead_of_waiting_on_itself ... ok
+test extensions::mcp::plugin_skills::sync_tests::service_current_and_disposed_sync_share_canonical_admission_with_raw_diagnostics ... ok
+test extensions::mcp::plugin_skills::sync_tests::staging_failure_preserves_existing_path_and_materialized_files_without_success ... ok
+test extensions::mcp::plugin_skills::sync_tests::successful_reporter_can_reenter_and_dispose_after_publication ... ok
+test extensions::mcp::plugin_skills::sync_tests::successful_zero_skill_materialization_replaces_old_records_and_clears_denial ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::successor_claim_before_old_cleanup_preserves_new_directory_and_old_report ... ok
+test extensions::mcp::plugin_skills::sync_tests::uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_fault_requires_a_fresh_owner_after_repair ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_loads_exact_pending_and_confirmed_facts_without_invoking_the_loader ... ok
+test extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_preserves_a_valid_unmarked_image_until_an_explicit_transition ... ok
+test extensions::mcp::plugin_skills::sync_tests::uninstall_release_failure_after_valid_cache_publication_keeps_denial_and_files ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::uninstall_reservation_fences_an_old_load_or_staged_pass_but_not_its_queued_fresh_load ... FAILED
+test extensions::mcp::plugin_skills::sync_tests::uninstall_settlement_requires_the_exact_current_ticket_without_advancing_observation_on_refusal ... ok
+test extensions::mcp::plugin_skills::sync_tests::uninstall_terminal_settlements_fence_loads_started_before_the_reply ... ok
+test extensions::mcp::plugin_skills::sync_tests::zero_skill_success_retains_actual_install_path_until_authoritative_empty ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::absent_legacy_load_has_no_filesystem_side_effects ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::auth_identity_metadata_and_uninstall_custody_remain_distinct_and_sorted ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::canonical_plugin_and_operation_identity_is_required_on_read_and_write ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::dangling_and_regular_file_symlinks_are_not_missing_or_authoritative_images ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::exact_byte_drift_and_marker_loss_prevent_replacement ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::failed_auth_write_accepts_only_exact_expected_or_its_visible_candidate ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_and_empty_terminal_state_round_trip ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_creates_the_missing_directory_chain ... FAILED
+test extensions::mcp::plugin_skills::uninstall_state::tests::image_only_initialization_remains_authoritative_until_explicit_transition ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v1_migrates_only_on_an_explicit_transition_with_all_custody_retained ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::marker_publication_failure_does_not_erase_the_visible_image ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::marker_without_image_and_invalid_markers_are_never_legacy ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::nonregular_entries_are_preserved_as_recovery_faults ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::semantic_duplicates_are_refused_but_confirmed_and_pending_may_overlap ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::staging_cleanup_removes_only_a_successfully_created_owned_file ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::stale_image_and_corruption_cannot_overwrite_current_custody ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::strict_object_format_rejects_unknown_duplicate_missing_and_mistyped_fields ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::v2_auth_and_refresh_identity_reject_malformed_or_conflicting_values ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::v2_requires_strict_auth_objects_and_an_explicit_nullable_refresh_field ... ok
+test extensions::mcp::plugin_skills::uninstall_state::tests::writes_are_sorted_and_opaque_canonical_ids_are_preserved_exactly ... ok
+
+failures:
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_clean_dispose_does_no_io_but_fresh_construction_cannot_assume_the_outcome stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_clean_dispose_does_no_io_but_fresh_construction_cannot_assume_the_outcome' (17298) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:798:5:
+assertion `left == right` failed
+  left: []
+ right: [PluginSkillRecord { id: "plugin-9-test", plugin_id: "9", plugin_name: "plugin", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0cd2c656-69b3-45d0-9a3e-e60d202b5d6c/plugins/cache/market/plugin/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0cd2c656-69b3-45d0-9a3e-e60d202b5d6c/plugins/cache/market/plugin", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }, PluginSkillRecord { id: "plugin-10-test", plugin_id: "10", plugin_name: "other", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0cd2c656-69b3-45d0-9a3e-e60d202b5d6c/plugins/cache/market/other/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0cd2c656-69b3-45d0-9a3e-e60d202b5d6c/plugins/cache/market/other", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (17300) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:100:72:
+called `Result::unwrap()` on an `Err` value: Disconnected
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_exact_identity_zero_skill_release_keeps_current_denial_and_changes_once stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_exact_identity_zero_skill_release_keeps_current_denial_and_changes_once' (17301) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:55:5:
+assertion `left == right` failed
+  left: Object {"authRefusals": Array [Object {"pluginId": String("09"), "pluginName": String("Exact zero-prefixed plugin")}, Object {"marketplaceName": String("market"), "pluginId": String("9"), "pluginName": String("Plugin")}], "confirmedPluginIds": Array [], "formatVersion": Number(2), "pending": Array [], "refreshIntent": Object {"operationId": String("bd58074a-1fc4-4726-8c51-8666c507a537")}}
+ right: Object {"authRefusals": Array [Object {"pluginId": String("09"), "pluginName": String("Exact zero-prefixed plugin")}, Object {"marketplaceName": String("market"), "pluginId": String("9"), "pluginName": String("Plugin")}], "confirmedPluginIds": Array [], "formatVersion": Number(2), "pending": Array [], "refreshIntent": Null}
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_foreign_or_unreadable_outcome_image_is_not_a_known_failed_write stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_foreign_or_unreadable_outcome_image_is_not_a_known_failed_write' (17304) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:554:9:
+assertion `left == right` failed: semantic-only
+  left: "plugin uninstall recovery state is unavailable"
+ right: "plugin skills authentication recovery state is unavailable"
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_known_loader_errors_and_invalid_aggregates_preserve_offline_availability stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_known_loader_errors_and_invalid_aggregates_preserve_offline_availability' (17308) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:273:13:
+assertion `left == right` failed
+  left: [123, 10, 32, 32, 34, 102, 111, 114, 109, 97, 116, 86, 101, 114, 115, 105, 111, 110, 34, 58, 32, 50, 44, 10, 32, 32, 34, 99, 111, 110, 102, 105, 114, 109, 101, 100, 80, 108, 117, 103, 105, 110, 73, 100, 115, 34, 58, 32, 91, 93, 44, 10, 32, 32, 34, 112, 101, 110, 100, 105, 110, 103, 34, 58, 32, 91, 93, 44, 10, 32, 32, 34, 97, 117, 116, 104, 82, 101, 102, 117, 115, 97, 108, 115, 34, 58, 32, 91, 10, 32, 32, 32, 32, 123, 10, 32, 32, 32, 32, 32, 32, 34, 112, 108, 117, 103, 105, 110, 73, 100, 34, 58, 32, 34, 57, 34, 44, 10, 32, 32, 32, 32, 32, 32, 34, 112, 108, 117, 103, 105, 110, 78, 97, 109, 101, 34, 58, 32, 34, 80, 108, 117, 103, 105, 110, 34, 44, 10, 32, 32, 32, 32, 32, 32, 34, 109, 97, 114, 107, 101, 116, 112, 108, 97, 99, 101, 78, 97, 109, 101, 34, 58, 32, 34, 109, 97, 114, 107, 101, 116, 34, 10, 32, 32, 32, 32, 125, 10, 32, 32, 93, 44, 10, 32, 32, 34, 114, 101, 102, 114, 101, 115, 104, 73, 110, 116, 101, 110, 116, 34, 58, 32, 110, 117, 108, 108, 10, 125]
+ right: [123, 10, 32, 32, 34, 102, 111, 114, 109, 97, 116, 86, 101, 114, 115, 105, 111, 110, 34, 58, 32, 50, 44, 10, 32, 32, 34, 99, 111, 110, 102, 105, 114, 109, 101, 100, 80, 108, 117, 103, 105, 110, 73, 100, 115, 34, 58, 32, 91, 93, 44, 10, 32, 32, 34, 112, 101, 110, 100, 105, 110, 103, 34, 58, 32, 91, 93, 44, 10, 32, 32, 34, 97, 117, 116, 104, 82, 101, 102, 117, 115, 97, 108, 115, 34, 58, 32, 91, 10, 32, 32, 32, 32, 123, 10, 32, 32, 32, 32, 32, 32, 34, 112, 108, 117, 103, 105, 110, 73, 100, 34, 58, 32, 34, 57, 34, 44, 10, 32, 32, 32, 32, 32, 32, 34, 112, 108, 117, 103, 105, 110, 78, 97, 109, 101, 34, 58, 32, 34, 80, 108, 117, 103, 105, 110, 34, 44, 10, 32, 32, 32, 32, 32, 32, 34, 109, 97, 114, 107, 101, 116, 112, 108, 97, 99, 101, 78, 97, 109, 101, 34, 58, 32, 34, 109, 97, 114, 107, 101, 116, 34, 10, 32, 32, 32, 32, 125, 10, 32, 32, 93, 44, 10, 32, 32, 34, 114, 101, 102, 114, 101, 115, 104, 73, 110, 116, 101, 110, 116, 34, 58, 32, 123, 10, 32, 32, 32, 32, 34, 111, 112, 101, 114, 97, 116, 105, 111, 110, 73, 100, 34, 58, 32, 34, 53, 52, 53, 57, 52, 98, 52, 56, 45, 100, 53, 51, 99, 45, 52, 54, 50, 55, 45, 97, 52, 53, 52, 45, 101, 97, 50, 98, 52, 100, 54, 48, 50, 54, 98, 56, 34, 10, 32, 32, 125, 10, 125]
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_live_negative_precedes_outcome_journal_while_fresh_reader_sees_unknown stdout ----
+
+thread '<unnamed>' (17311) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:39:66:
+called `Result::unwrap()` on an `Err` value: Timeout
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_live_negative_precedes_outcome_journal_while_fresh_reader_sees_unknown' (17309) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:216:5:
+assertion failed: !h.service.admission_reader().is_denied("10")
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_negative_journal_failure_distinguishes_expected_and_candidate_recovery stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_negative_journal_failure_distinguishes_expected_and_candidate_recovery' (17313) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:162:9:
+assertion failed: !reader.is_denied("10")
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_old_loader_guard_and_repeated_dispose_cannot_alter_successor_token stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_old_loader_guard_and_repeated_dispose_cannot_alter_successor_token' (17314) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:616:13:
+assertion `left == right` failed
+  left: []
+ right: [PluginSkillRecord { id: "plugin-9-test", plugin_id: "9", plugin_name: "plugin", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-54736878-a5fa-4322-8c66-57554ace73c1/plugins/cache/market/plugin/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-54736878-a5fa-4322-8c66-57554ace73c1/plugins/cache/market/plugin", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }, PluginSkillRecord { id: "plugin-10-test", plugin_id: "10", plugin_name: "other", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-54736878-a5fa-4322-8c66-57554ace73c1/plugins/cache/market/other/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-54736878-a5fa-4322-8c66-57554ace73c1/plugins/cache/market/other", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }]
+
+thread '<unnamed>' (17317) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:39:66:
+called `Result::unwrap()` on an `Err` value: Disconnected
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_panicking_coalesced_followup_retains_unknown_and_all_waiters_settle stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_panicking_coalesced_followup_retains_unknown_and_all_waiters_settle' (17318) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:669:5:
+assertion `left == right` failed
+  left: [PluginSkillRecord { id: "plugin-9-test", plugin_id: "9", plugin_name: "plugin", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0a89bc27-9259-4394-a2d5-3e7cd5efe184/plugins/cache/market/plugin/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0a89bc27-9259-4394-a2d5-3e7cd5efe184/plugins/cache/market/plugin", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }]
+ right: [PluginSkillRecord { id: "plugin-9-test", plugin_id: "9", plugin_name: "plugin", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0a89bc27-9259-4394-a2d5-3e7cd5efe184/plugins/cache/market/plugin/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0a89bc27-9259-4394-a2d5-3e7cd5efe184/plugins/cache/market/plugin", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }, PluginSkillRecord { id: "plugin-10-test", plugin_id: "10", plugin_name: "other", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0a89bc27-9259-4394-a2d5-3e7cd5efe184/plugins/cache/market/other/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-0a89bc27-9259-4394-a2d5-3e7cd5efe184/plugins/cache/market/other", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }]
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release' (17323) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:76:5:
+assertion `left == right` failed
+  left: Some(Object {"refreshOutcomeUnknown": Bool(true), "refusals": Array [Object {"marketplaceName": String("market"), "pluginId": String("9"), "pluginName": String("Plugin")}]})
+ right: Some(Object {"refreshOutcomeUnknown": Bool(false), "refusals": Array [Object {"marketplaceName": String("market"), "pluginId": String("9"), "pluginName": String("Plugin")}]})
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_positive_journal_failure_follows_cache_barriers_and_preserves_actual_visibility stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_positive_journal_failure_follows_cache_barriers_and_preserves_actual_visibility' (17324) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:55:5:
+assertion `left == right` failed
+  left: Object {"authRefusals": Array [Object {"marketplaceName": String("market"), "pluginId": String("9"), "pluginName": String("Plugin")}], "confirmedPluginIds": Array [], "formatVersion": Number(2), "pending": Array [], "refreshIntent": Object {"operationId": String("82c42b28-41fc-4dc2-98fe-427adff38986")}}
+ right: Object {"authRefusals": Array [Object {"marketplaceName": String("market"), "pluginId": String("9"), "pluginName": String("Plugin")}], "confirmedPluginIds": Array [], "formatVersion": Number(2), "pending": Array [], "refreshIntent": Null}
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_reservation_failure_never_calls_loader_or_changes_cache stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_reservation_failure_never_calls_loader_or_changes_cache' (17325) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:118:9:
+assertion `left == right` failed
+  left: []
+ right: [PluginSkillRecord { id: "plugin-9-test", plugin_id: "9", plugin_name: "plugin", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-59ca5b48-0afb-4c36-8a5a-4167b9acc1c9/plugins/cache/market/plugin/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-59ca5b48-0afb-4c36-8a5a-4167b9acc1c9/plugins/cache/market/plugin", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }, PluginSkillRecord { id: "plugin-10-test", plugin_id: "10", plugin_name: "other", name: "Test", description: "", file_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-59ca5b48-0afb-4c36-8a5a-4167b9acc1c9/plugins/cache/market/other/skills/test/SKILL.md", plugin_version: "retained", install_path: "/home/runner/work/_temp/ocrm-sqlite-native-41603402351-1/plugin-sync-59ca5b48-0afb-4c36-8a5a-4167b9acc1c9/plugins/cache/market/other", skill_relative_path: "skills/test/SKILL.md", publisher_user_id: None, marketplace_team_id: None }]
+
+---- extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_recovery_uses_only_fresh_records_while_clean_partial_keeps_fallback stdout ----
+
+thread 'extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_recovery_uses_only_fresh_records_while_clean_partial_keeps_fallback' (17327) panicked at src/extensions/mcp/plugin_skills_auth_recovery_tests.rs:380:9:
+settled refresh-token churn is not an admission change
+
+---- extensions::mcp::plugin_skills::sync_tests::canonical_denial_survives_listing_and_materialization_failures_until_fresh_success stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::canonical_denial_survives_listing_and_materialization_failures_until_fresh_success' (17338) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:566:5:
+assertion `left == right` failed
+  left: [true, true, false, true, true, true]
+ right: [true, true, false, false, false, true]
+
+---- extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_equal_identity_restoration_reports_changed_once_including_zero_skills stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_equal_identity_restoration_reports_changed_once_including_zero_skills' (17353) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:2250:13:
+assertion `left == right` failed
+  left: true
+ right: false
+
+---- extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_fences_an_old_load_and_queued_pass_captures_when_it_really_loads stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_fences_an_old_load_and_queued_pass_captures_when_it_really_loads' (17357) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:2101:5:
+stale load cannot import its auth refusal
+
+---- extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_fences_owned_staging_even_when_the_same_id_was_already_observed stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_fences_owned_staging_even_when_the_same_id_was_already_observed' (17361) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:2145:9:
+assertion `left == right` failed
+  left: []
+ right: ["10"]
+
+---- extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_is_not_released_by_missing_or_malformed_commit_readback stdout ----
+
+thread '<unnamed>' (17366) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:39:66:
+called `Result::unwrap()` on an `Err` value: Timeout
+
+thread 'extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_is_not_released_by_missing_or_malformed_commit_readback' (17364) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:226:24:
+unexpected sync panic: ()
+
+---- extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_same_root_successor_keeps_fact_and_rejects_retired_observations stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_same_root_successor_keeps_fact_and_rejects_retired_observations' (17384) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:2314:5:
+assertion `left == right` failed
+  left: []
+ right: ["10"]
+
+---- extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_survives_fresh_publication_failures_and_unresolved_fallback_until_fresh_success stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_survives_fresh_publication_failures_and_unresolved_fallback_until_fresh_success' (17387) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:2185:9:
+assertion failed: !reader.is_denied("10")
+
+---- extensions::mcp::plugin_skills::sync_tests::different_root_retirement_does_not_let_new_root_success_clear_an_old_reader stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::different_root_retirement_does_not_let_new_root_success_clear_an_old_reader' (17393) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:1785:5:
+assertion `left == right` failed
+  left: []
+ right: ["10"]
+
+---- extensions::mcp::plugin_skills::sync_tests::disposal_after_staging_prevents_rename_pruning_and_success_and_wakes_queued_sync stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::disposal_after_staging_prevents_rename_pruning_and_success_and_wakes_queued_sync' (17396) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:334:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+
+---- extensions::mcp::plugin_skills::sync_tests::disposal_wakes_queued_callers_without_loading_or_overwriting_retained_cache stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::disposal_wakes_queued_callers_without_loading_or_overwriting_retained_cache' (17401) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:334:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+
+---- extensions::mcp::plugin_skills::sync_tests::invalid_generated_records_fail_before_publication_without_changing_cache_or_pruning stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::invalid_generated_records_fail_before_publication_without_changing_cache_or_pruning' (17430) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:334:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+
+---- extensions::mcp::plugin_skills::sync_tests::live_refusal_restoration_reports_changed_once_after_stage_or_rename_failure stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::live_refusal_restoration_reports_changed_once_after_stage_or_rename_failure' (17436) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:1384:13:
+assertion failed: !reader.is_denied("10")
+
+---- extensions::mcp::plugin_skills::sync_tests::live_refusal_survives_invalid_stage_failed_release_and_partial_until_valid_fresh_success stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::live_refusal_survives_invalid_stage_failed_release_and_partial_until_valid_fresh_success' (17439) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:1445:5:
+assertion failed: !reader.is_denied("10")
+
+---- extensions::mcp::plugin_skills::sync_tests::missing_or_malformed_readback_never_releases_a_live_refusal stdout ----
+
+thread '<unnamed>' (17462) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:39:66:
+called `Result::unwrap()` on an `Err` value: Timeout
+
+thread 'extensions::mcp::plugin_skills::sync_tests::missing_or_malformed_readback_never_releases_a_live_refusal' (17459) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:226:24:
+unexpected sync panic: ()
+
+---- extensions::mcp::plugin_skills::sync_tests::new_refusal_is_live_before_rename_and_failed_publication_preserves_old_allowed_bytes stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::new_refusal_is_live_before_rename_and_failed_publication_preserves_old_allowed_bytes' (17464) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:1524:5:
+assertion `left == right` failed
+  left: []
+ right: ["10"]
+
+---- extensions::mcp::plugin_skills::sync_tests::pending_uninstall_reports_only_admitted_changes_at_publication stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::pending_uninstall_reports_only_admitted_changes_at_publication' (17487) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:2464:13:
+assertion `left == right` failed
+  left: true
+ right: false
+
+---- extensions::mcp::plugin_skills::sync_tests::publication_failure_preserves_prior_cache_and_files_without_success stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::publication_failure_preserves_prior_cache_and_files_without_success' (17514) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:334:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+
+---- extensions::mcp::plugin_skills::sync_tests::same_root_successor_keeps_reader_and_fences_late_imports_and_old_runtime_dispose stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::same_root_successor_keeps_reader_and_fences_late_imports_and_old_runtime_dispose' (17532) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:1678:5:
+assertion `left == right` failed
+  left: []
+ right: ["10"]
+
+---- extensions::mcp::plugin_skills::sync_tests::successful_zero_skill_materialization_replaces_old_records_and_clears_denial stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::successful_zero_skill_materialization_replaces_old_records_and_clears_denial' (17545) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:590:5:
+assertion `left == right` failed
+  left: [true, true, true, true, true]
+ right: [true, true, true, false, true]
+
+---- extensions::mcp::plugin_skills::sync_tests::uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals' (17553) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:1297:5:
+assertion `left == right` failed
+  left: Object {"authRefusals": Array [Object {"marketplaceName": String("market"), "pluginId": String("9"), "pluginName": String("Plugin")}], "confirmedPluginIds": Array [], "formatVersion": Number(2), "pending": Array [Object {"operationId": String("b7fa7e99-7898-4fd9-ba5e-60a58963da33"), "pluginId": String("9")}], "refreshIntent": Object {"operationId": String("bf82daf4-9158-4f01-9fbf-175f8c3e97b0")}}
+ right: Object {"authRefusals": Array [Object {"marketplaceName": String("market"), "pluginId": String("9"), "pluginName": String("Plugin")}], "confirmedPluginIds": Array [], "formatVersion": Number(2), "pending": Array [Object {"operationId": String("b7fa7e99-7898-4fd9-ba5e-60a58963da33"), "pluginId": String("9")}], "refreshIntent": Null}
+
+---- extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_fault_requires_a_fresh_owner_after_repair stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_fault_requires_a_fresh_owner_after_repair' (17559) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:2922:9:
+assertion `left == right` failed
+  left: "plugin uninstall state is unavailable"
+ right: "plugin uninstall recovery state is unavailable"
+
+---- extensions::mcp::plugin_skills::sync_tests::uninstall_release_failure_after_valid_cache_publication_keeps_denial_and_files stdout ----
+
+thread '<unnamed>' (17570) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:39:66:
+called `Result::unwrap()` on an `Err` value: Timeout
+
+thread 'extensions::mcp::plugin_skills::sync_tests::uninstall_release_failure_after_valid_cache_publication_keeps_denial_and_files' (17568) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:3020:5:
+assertion failed: !reader.is_denied("10")
+
+---- extensions::mcp::plugin_skills::sync_tests::uninstall_reservation_fences_an_old_load_or_staged_pass_but_not_its_queued_fresh_load stdout ----
+
+thread 'extensions::mcp::plugin_skills::sync_tests::uninstall_reservation_fences_an_old_load_or_staged_pass_but_not_its_queued_fresh_load' (17571) panicked at src/extensions/mcp/plugin_skills_sync_tests.rs:2760:9:
+assertion failed: !h.service.admission_reader().is_denied("10")
+
+---- extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_creates_the_missing_directory_chain stdout ----
+
+thread 'extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_creates_the_missing_directory_chain' (17599) panicked at src/extensions/mcp/plugin_skills_uninstall_state.rs:729:84:
+called `Result::unwrap()` on an `Err` value: "plugin skills admission lock is unavailable"
+
+
+failures:
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_clean_dispose_does_no_io_but_fresh_construction_cannot_assume_the_outcome
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_exact_identity_zero_skill_release_keeps_current_denial_and_changes_once
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_foreign_or_unreadable_outcome_image_is_not_a_known_failed_write
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_known_loader_errors_and_invalid_aggregates_preserve_offline_availability
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_live_negative_precedes_outcome_journal_while_fresh_reader_sees_unknown
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_negative_journal_failure_distinguishes_expected_and_candidate_recovery
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_old_loader_guard_and_repeated_dispose_cannot_alter_successor_token
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_panicking_coalesced_followup_retains_unknown_and_all_waiters_settle
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_positive_journal_failure_follows_cache_barriers_and_preserves_actual_visibility
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_reservation_failure_never_calls_loader_or_changes_cache
+    extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_recovery_uses_only_fresh_records_while_clean_partial_keeps_fallback
+    extensions::mcp::plugin_skills::sync_tests::canonical_denial_survives_listing_and_materialization_failures_until_fresh_success
+    extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_equal_identity_restoration_reports_changed_once_including_zero_skills
+    extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_fences_an_old_load_and_queued_pass_captures_when_it_really_loads
+    extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_fences_owned_staging_even_when_the_same_id_was_already_observed
+    extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_is_not_released_by_missing_or_malformed_commit_readback
+    extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_same_root_successor_keeps_fact_and_rejects_retired_observations
+    extensions::mcp::plugin_skills::sync_tests::confirmed_uninstall_survives_fresh_publication_failures_and_unresolved_fallback_until_fresh_success
+    extensions::mcp::plugin_skills::sync_tests::different_root_retirement_does_not_let_new_root_success_clear_an_old_reader
+    extensions::mcp::plugin_skills::sync_tests::disposal_after_staging_prevents_rename_pruning_and_success_and_wakes_queued_sync
+    extensions::mcp::plugin_skills::sync_tests::disposal_wakes_queued_callers_without_loading_or_overwriting_retained_cache
+    extensions::mcp::plugin_skills::sync_tests::invalid_generated_records_fail_before_publication_without_changing_cache_or_pruning
+    extensions::mcp::plugin_skills::sync_tests::live_refusal_restoration_reports_changed_once_after_stage_or_rename_failure
+    extensions::mcp::plugin_skills::sync_tests::live_refusal_survives_invalid_stage_failed_release_and_partial_until_valid_fresh_success
+    extensions::mcp::plugin_skills::sync_tests::missing_or_malformed_readback_never_releases_a_live_refusal
+    extensions::mcp::plugin_skills::sync_tests::new_refusal_is_live_before_rename_and_failed_publication_preserves_old_allowed_bytes
+    extensions::mcp::plugin_skills::sync_tests::pending_uninstall_reports_only_admitted_changes_at_publication
+    extensions::mcp::plugin_skills::sync_tests::publication_failure_preserves_prior_cache_and_files_without_success
+    extensions::mcp::plugin_skills::sync_tests::same_root_successor_keeps_reader_and_fences_late_imports_and_old_runtime_dispose
+    extensions::mcp::plugin_skills::sync_tests::successful_zero_skill_materialization_replaces_old_records_and_clears_denial
+    extensions::mcp::plugin_skills::sync_tests::uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals
+    extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_fault_requires_a_fresh_owner_after_repair
+    extensions::mcp::plugin_skills::sync_tests::uninstall_release_failure_after_valid_cache_publication_keeps_denial_and_files
+    extensions::mcp::plugin_skills::sync_tests::uninstall_reservation_fences_an_old_load_or_staged_pass_but_not_its_queued_fresh_load
+    extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_creates_the_missing_directory_chain
+
+test result: FAILED. 56 passed; 36 failed; 0 ignored; 0 measured; 642 filtered out; finished in 21.07s
+
+error: test failed, to rerun pass `--lib`

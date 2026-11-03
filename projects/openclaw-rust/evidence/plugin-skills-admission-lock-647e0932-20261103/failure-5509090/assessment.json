@@ -1,0 +1,336 @@
+{
+  "contract": "PS-LOCK-RECONCILE-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "evidence_kind": "failed exact-subject execution; retained prior positive and directed repair",
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "550909022eba44eb9326d760f8c33d613b40a7bb",
+    "tree": "1b38ddab6958a2d091193e5834160fc296d91919",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    }
+  },
+  "execution": {
+    "run_id": 41603402351,
+    "attempt": 1,
+    "job_id": 125807272589,
+    "job": "sqlite-native-path",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41603402351/job/125807272589",
+    "status": "completed",
+    "conclusion": "failure",
+    "started_at": "2026-11-03T08:28:06Z",
+    "completed_at": "2026-11-03T08:45:49Z",
+    "raw_terminal_log": {
+      "bytes": 5984543,
+      "sha256": "7578e1dfd53994fd31955adfa3935a192ab60a3cc7199889b4a03ea5328a735e"
+    },
+    "printed_receipt": {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/portable-printed-receipt.json",
+      "bytes": 583886,
+      "sha256": "ea46091ffacb670540254c048c6ef5870fc57c263d865b7a2353121c2ebb45b2",
+      "raw_log_lines_inclusive": [
+        72060,
+        81125
+      ]
+    },
+    "reconstruction": "Strip the GitHub timestamp prefix from each decoded raw-log line. Join the exact inclusive ranges with LF and one final LF. Each selected complete command log matches the SHA256 in the actual printed receipt. No test command was executed outside Actions.",
+    "artifact": {
+      "id": 13216752439,
+      "digest": "sha256:4b96f908164240acc179e3259a246120270c80ad0abdef240c44b4412d51cc35",
+      "zip_inspected": false
+    }
+  },
+  "compile_gate": {
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--tests"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "log": "mcp-origin-constructor-check.log",
+    "result": "compiled",
+    "execution_error": null,
+    "log_sha256": "900c7ad88f273f4a650dafbe5304d3c552101d1f9c8ae407c872330cb1a11795"
+  },
+  "failed_cases": [
+    {
+      "case": "plugin-uninstall-service",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--no-fail-fast",
+        "--test",
+        "mcp_service_contract",
+        "--test",
+        "plugin_skills_contract",
+        "--test",
+        "host_bundle_and_plugin_cache_contract",
+        "--test",
+        "workflow_store_contract",
+        "--test",
+        "workflow_commands_contract",
+        "--test",
+        "legacy_live_references_contract",
+        "--test",
+        "mcp_coordinator_relay_contract",
+        "--test",
+        "mcp_extension_contract",
+        "--test",
+        "mcp_production_contract",
+        "--test",
+        "host_production_extensions_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 101,
+      "capture_exit": 0,
+      "oracle_accepted": false,
+      "missing_or_nonunique_positive_results": [
+        "confirmed_uninstall_consumers::auth_refusal_survives_failed_publication_and_fresh_process_consumers",
+        "confirmed_uninstall_consumers::auth_refresh_unknown_survives_owned_process_exit_and_recovers_without_fallback",
+        "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader"
+      ],
+      "log": {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/plugin-uninstall-service.log",
+        "bytes": 48920,
+        "sha256": "2d97eefb81e30730f0c46258aae6e075fe848c905983d672d83428e895806759",
+        "raw_log_lines_inclusive": [
+          55355,
+          56486
+        ],
+        "receipt_hash_matches": true
+      },
+      "terminal_summaries": [
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: FAILED. 15 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s",
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s",
+        "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 23 filtered out; finished in 10.01s",
+        "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 23 filtered out; finished in 10.01s",
+        "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.01s",
+        "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.01s",
+        "test result: FAILED. 21 passed; 2 failed; 1 ignored; 0 measured; 0 filtered out; finished in 11.11s",
+        "test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "test result: FAILED. 12 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s"
+      ]
+    },
+    {
+      "case": "plugin-uninstall-state",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::mcp::plugin_skills::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 101,
+      "capture_exit": 0,
+      "oracle_accepted": false,
+      "missing_or_nonunique_positive_results": [
+        "extensions::mcp::plugin_skills::sync_tests::pending_uninstall_reports_only_admitted_changes_at_publication",
+        "extensions::mcp::plugin_skills::sync_tests::uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals",
+        "extensions::mcp::plugin_skills::sync_tests::uninstall_reservation_fences_an_old_load_or_staged_pass_but_not_its_queued_fresh_load",
+        "extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_fault_requires_a_fresh_owner_after_repair",
+        "extensions::mcp::plugin_skills::sync_tests::uninstall_release_failure_after_valid_cache_publication_keeps_denial_and_files",
+        "extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_creates_the_missing_directory_chain",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_reservation_failure_never_calls_loader_or_changes_cache",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_negative_journal_failure_distinguishes_expected_and_candidate_recovery",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_live_negative_precedes_outcome_journal_while_fresh_reader_sees_unknown",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_known_loader_errors_and_invalid_aggregates_preserve_offline_availability",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_recovery_uses_only_fresh_records_while_clean_partial_keeps_fallback",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_exact_identity_zero_skill_release_keeps_current_denial_and_changes_once",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_positive_journal_failure_follows_cache_barriers_and_preserves_actual_visibility",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_foreign_or_unreadable_outcome_image_is_not_a_known_failed_write",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_old_loader_guard_and_repeated_dispose_cannot_alter_successor_token",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_panicking_coalesced_followup_retains_unknown_and_all_waiters_settle",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_clean_dispose_does_no_io_but_fresh_construction_cannot_assume_the_outcome"
+      ],
+      "log": {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/plugin-uninstall-state.log",
+        "bytes": 67841,
+        "sha256": "3f1337d14718afd3817df28c4c4fd94a0972f6bc83314b7391d7147101fee93a",
+        "raw_log_lines_inclusive": [
+          56488,
+          57568
+        ],
+        "receipt_hash_matches": true
+      },
+      "terminal_summaries": [
+        "test result: FAILED. 56 passed; 36 failed; 0 ignored; 0 measured; 642 filtered out; finished in 21.07s"
+      ]
+    },
+    {
+      "case": "plugin-session-consumer",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::session::production::plugin_skills_admission_tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 101,
+      "capture_exit": 0,
+      "oracle_accepted": false,
+      "missing_or_nonunique_positive_results": [],
+      "log": {
+        "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/plugin-session-consumer.log",
+        "bytes": 26413,
+        "sha256": "630e64dc988650bc96e5faa12becc5b3852fa79dfcc734aa9aa5941c24887adc",
+        "raw_log_lines_inclusive": [
+          59686,
+          60401
+        ],
+        "receipt_hash_matches": true
+      },
+      "terminal_summaries": [
+        "test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 731 filtered out; finished in 0.03s"
+      ]
+    }
+  ],
+  "failure_classification": {
+    "implementation": "The failed permission/availability, unchanged-refresh reporting, first-transition initialization and actual Session cases corroborate the six source findings recorded before implementation. The complete selected logs are retained; tests/negative assertions will not be removed or relaxed.",
+    "fixture_interaction": "The before-auth-outcome and after-rename retained read controls time out while the old implementation holds an exclusive lock and their synchronous readers wait for shared locks. This is an observed test orchestration wait cycle, not evidence of a production deadlock. The repair preserves nonblocking ordinary read behavior instead of weakening the controls.",
+    "downstream_missing_evidence": "LPG host, Coordinator and App commands returned success, but its reused-mcp-composition receipt is absent. The default-success Automation composition step follows the failed portable step in the same job; its two positives therefore remain missing. LPG is non-passing, and no separate preview implementation failure is inferred.",
+    "environment": "macos-15 rust-host was queued with no runner at inspection. No platform success or cause for that queue is inferred."
+  },
+  "additional_runner_decision": {
+    "id": "PS-LOCK-ERROR-CATEGORY",
+    "decision": "FIX",
+    "classification": "IMPL_BUG",
+    "rationale": "Retain the existing precise recovery-unavailable error boundaries. Actual H550 tests observed generic uninstall-state errors in an already faulted owner and uninstall-recovery text after authentication-image interference. Repair error precedence within the same owner; preserve assertions and fail-closed state. This supplements, rather than reverses, initial FIX decisions.",
+    "evidence": [
+      "plugin_skills_sync_tests.rs::uninstall_recovery_fault_requires_a_fresh_owner_after_repair",
+      "plugin_skills_auth_recovery_tests.rs::auth_foreign_or_unreadable_outcome_image_is_not_a_known_failed_write"
+    ]
+  },
+  "retained_prior_positive": {
+    "commit": "14e637798b7c76c8530f9a3710051461f793924f",
+    "tree": "adf36943502425c4a18e9dd04b359efdb5ef6c8f",
+    "run_id": 41597864483,
+    "attempt": 1,
+    "job_id": 125789361548,
+    "receipt_path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/portable-printed-receipt.json",
+    "scope": "Prior subject only; not proof for H550 or repaired source.",
+    "cases": [
+      {
+        "case": "plugin-uninstall-service",
+        "cargo_exit": 0,
+        "oracle_accepted": true,
+        "summaries": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            19,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            16,
+            0,
+            0
+          ],
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            0
+          ],
+          [
+            23,
+            0,
+            1
+          ],
+          [
+            5,
+            0,
+            0
+          ],
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "a8051e69bf7b02e00e78dd044a2bee511480ac5435cf0f19933a9b8fb9b7eefe"
+      },
+      {
+        "case": "plugin-uninstall-state",
+        "cargo_exit": 0,
+        "oracle_accepted": true,
+        "summaries": [
+          [
+            92,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "37b22798cb59ec05d23c0265f05f783b15b9c21b6fae715abc317fe68c8938a3"
+      },
+      {
+        "case": "plugin-session-consumer",
+        "cargo_exit": 0,
+        "oracle_accepted": true,
+        "summaries": [
+          [
+            3,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "bc4f5467d148da1fc9db26bb5a33a140501931b991fe53e877ca75f55800b388"
+      }
+    ]
+  },
+  "recovery_contract": {
+    "current_repair": "AR-LOCK-R1 / PS-LOCK-RECONCILE-v1 at a3030b8593f157efc5c5859e1a41b138475e438d",
+    "forbidden": "No unchanged rerun, assertion deletion, token-equality recovery reset, disk-absence denial release, or mock substitution for owned-process controls.",
+    "next_direct_instrument": "After source convergence, freeze the repaired commit and execute the existing retained Plugin Skills/Session/Workflow cases plus new causal denial-read-partial-refresh and owned-process lease cases in the existing Actions workflow.",
+    "budget": "This is the first retained failed execution of incoming 5509090 for this repair. A later failure must be classified and assessed before a focused recovery; no repeated rerun-to-green."
+  },
+  "acceptance": {
+    "repaired_candidate_executed": false,
+    "full_unit_verified": false,
+    "global_flags_changed": false,
+    "ecosystem_accepted": false,
+    "release_accepted": false
+  }
+}
