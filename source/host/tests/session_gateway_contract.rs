@@ -7235,14 +7235,6 @@ fn shipping_human_retry_identity_is_concurrent_idempotent_and_reuses_settled_int
         assert!(result.is_err(), "malicious retry arguments must fail closed: {args}");
     }
 
-    dispatch(&runtime, "sendHumanMessage", json!({
-        "conversationId":conversation_id,
-        "text":"retry exact payload",
-        "clientNonce":"retry-concurrent-nonce",
-        "composedAtMs":1234.0,
-        "attachments":[]
-    })).pipe(|_| unreachable!());
-
     runtime.append_human_message(&conversation_id, "retry exact payload",
         "retry-concurrent-nonce", Some(1234.0), None, &[])
         .expect_err("first remote dispatch is deliberately unavailable");
