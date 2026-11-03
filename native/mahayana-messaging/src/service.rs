@@ -760,6 +760,13 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 let Some(existing) = existing else {
                     return Ok(None);
                 };
+                let is_saved_messages = self
+                    .engine
+                    .state()
+                    .conversations
+                    .get(conversation_id)
+                    .is_some_and(|conv| matches!(conv.kind, ConversationKind::SavedMessages));
+                let expected_silent = if is_saved_messages { false } else { *silent };
                 // The stable/legacy lookup key already binds this replay to the authenticated
                 // actor + client_message_id, without extending the canonical Message schema.
                 if &existing.sender_id != actor_id
@@ -767,7 +774,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     || &existing.reply_to_message_id != reply_to_message_id
                     || &existing.thread_root_message_id != thread_root_message_id
                     || &existing.scheduled_at_ms != scheduled_at_ms
-                    || &existing.silent != silent
+                    || existing.silent != expected_silent
                     || &existing.protected_content != protected_content
                 {
                     return Err(MessagingServiceError::IdempotencyConflict(
@@ -894,6 +901,13 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     }
                     content
                 });
+                let is_saved_messages = self
+                    .engine
+                    .state()
+                    .conversations
+                    .get(destination_conversation_id)
+                    .is_some_and(|conv| matches!(conv.kind, ConversationKind::SavedMessages));
+                let expected_silent = if is_saved_messages { false } else { *silent };
                 if &existing.sender_id != actor_id
                     || existing.forward_origin.as_deref() != expected_origin.as_deref()
                     || expected_content
@@ -901,7 +915,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                         .is_some_and(|content| &existing.content != content)
                     || &existing.thread_root_message_id != thread_root_message_id
                     || &existing.scheduled_at_ms != scheduled_at_ms
-                    || &existing.silent != silent
+                    || existing.silent != expected_silent
                 {
                     return Err(MessagingServiceError::IdempotencyConflict(
                         client_message_id.0.clone(),

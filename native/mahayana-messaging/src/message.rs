@@ -383,6 +383,123 @@ pub enum PresenceSendTrigger {
     WhenParticipantOnline { actor_id: ActorId },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SendMenuMode {
+    #[default]
+    Disabled,
+    SilentOnly,
+    Scheduled,
+    ScheduledToUser,
+    Reminder,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SendMenuDetails {
+    pub mode: SendMenuMode,
+    pub allow_silent: bool,
+    pub allow_schedule: bool,
+    pub allow_when_online: bool,
+    pub allow_reminder: bool,
+}
+
+impl SendMenuDetails {
+    pub const fn from_mode(mode: SendMenuMode) -> Self {
+        match mode {
+            SendMenuMode::Disabled => Self {
+                mode,
+                allow_silent: false,
+                allow_schedule: false,
+                allow_when_online: false,
+                allow_reminder: false,
+            },
+            SendMenuMode::SilentOnly => Self {
+                mode,
+                allow_silent: true,
+                allow_schedule: false,
+                allow_when_online: false,
+                allow_reminder: false,
+            },
+            SendMenuMode::Scheduled => Self {
+                mode,
+                allow_silent: true,
+                allow_schedule: true,
+                allow_when_online: false,
+                allow_reminder: false,
+            },
+            SendMenuMode::ScheduledToUser => Self {
+                mode,
+                allow_silent: true,
+                allow_schedule: true,
+                allow_when_online: true,
+                allow_reminder: false,
+            },
+            SendMenuMode::Reminder => Self {
+                mode,
+                allow_silent: false,
+                allow_schedule: true,
+                allow_when_online: false,
+                allow_reminder: true,
+            },
+        }
+    }
+
+    pub const fn accepts_options(
+        &self,
+        silent: bool,
+        scheduled_at_ms: Option<i64>,
+        when_online: bool,
+    ) -> bool {
+        if when_online && !self.allow_when_online {
+            return false;
+        }
+        if scheduled_at_ms.is_some() && !self.allow_schedule {
+            return false;
+        }
+        if silent && !self.allow_silent {
+            return false;
+        }
+        if when_online && scheduled_at_ms.is_some() {
+            return false;
+        }
+        if matches!(self.mode, SendMenuMode::Disabled)
+            && (silent || scheduled_at_ms.is_some() || when_online)
+        {
+            return false;
+        }
+        true
+    }
+
+    pub const fn normalize_options(
+        &self,
+        silent: bool,
+        scheduled_at_ms: Option<i64>,
+        when_online: bool,
+    ) -> Option<(bool, Option<i64>, bool)> {
+        if when_online && (!self.allow_when_online || scheduled_at_ms.is_some()) {
+            return None;
+        }
+        if scheduled_at_ms.is_some() && !self.allow_schedule {
+            return None;
+        }
+        let normalized_silent = if matches!(self.mode, SendMenuMode::Reminder) {
+            false
+        } else {
+            silent
+        };
+        if normalized_silent && !self.allow_silent {
+            return None;
+        }
+        if matches!(self.mode, SendMenuMode::Disabled)
+            && (normalized_silent || scheduled_at_ms.is_some() || when_online)
+        {
+            return None;
+        }
+        Some((normalized_silent, scheduled_at_ms, when_online))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PendingPresenceSend {

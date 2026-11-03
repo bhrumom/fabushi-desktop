@@ -393,8 +393,9 @@ jobs:
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test m5_contacts_groups_contract -- --nocapture 2>&1 | tee artifacts/native-message/m5-contacts-groups.log
           grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored;' artifacts/native-message/m5-contacts-groups.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test messaging_contract -- --nocapture 2>&1 | tee artifacts/native-message/messaging-contract.log
-          grep -Eq 'test result: ok\. 9 passed; 0 failed; 0 ignored;' artifacts/native-message/messaging-contract.log
+          grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored;' artifacts/native-message/messaging-contract.log
           grep -Fx 'test story_sibling_resolution_fences_stale_suggestions_contacts_visibility_and_media_fallback ... ok' artifacts/native-message/messaging-contract.log
+          grep -Fx 'test send_menu_mode_and_applicability_enforces_paid_silent_only_reminder_and_scheduled_to_user ... ok' artifacts/native-message/messaging-contract.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test service_contract -- --nocapture 2>&1 | tee artifacts/native-message/service-contract.log
           grep -Eq 'test result: ok\. 11 passed; 0 failed; 0 ignored;' artifacts/native-message/service-contract.log
           grep -Fx 'test presence_triggered_send_enforces_last_seen_privacy_cancellation_reschedule_and_terminal_policy_failure ... ok' artifacts/native-message/service-contract.log

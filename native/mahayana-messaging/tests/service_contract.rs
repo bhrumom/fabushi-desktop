@@ -1343,7 +1343,8 @@ fn presence_triggered_send_enforces_last_seen_privacy_cancellation_reschedule_an
                     text: FormattedText::plain("policy revoked while pending"),
                 }
         })
-        .expect("terminal failed message recorded");
+        .expect("terminal failed message recorded")
+        .clone();
     assert!(matches!(
         &failed_message.delivery_state,
         DeliveryState::Failed {

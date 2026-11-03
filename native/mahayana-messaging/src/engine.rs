@@ -11,7 +11,7 @@ use crate::conversation::{
 };
 use crate::message::{
     ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
-    PendingPresenceSend, PresenceSendTrigger, ReactionSummary,
+    PendingPresenceSend, PresenceSendTrigger, ReactionSummary, SendMenuDetails, SendMenuMode,
 };
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
@@ -929,6 +929,188 @@ impl MessagingEngine {
         (is_contact, is_close_friend)
     }
 
+    pub fn can_schedule_when_online(
+        &self,
+        sender_id: &ActorId,
+        conversation_id: &ConversationId,
+    ) -> Option<ActorId> {
+        let sender = self.state.actors.get(sender_id)?;
+        let conversation = self.state.conversations.get(conversation_id)?;
+        if !matches!(conversation.kind, ConversationKind::Direct) {
+            return None;
+        }
+        let sender_is_participant = conversation
+            .participants
+            .iter()
+            .any(|participant| &participant.actor_id == sender_id)
+            || conversation.owner_id.as_ref() == Some(sender_id);
+        if !sender_is_participant || !conversation.permissions.can_send_messages {
+            return None;
+        }
+        let mut peer_ids = conversation
+            .participants
+            .iter()
+            .map(|participant| &participant.actor_id)
+            .chain(conversation.owner_id.iter())
+            .filter(|actor_id| *actor_id != sender_id)
+            .collect::<BTreeSet<_>>();
+        if peer_ids.len() != 1 {
+            return None;
+        }
+        let target_actor_id = peer_ids.pop_first()?;
+        let target = self.state.actors.get(target_actor_id)?;
+        if target.kind != ActorKind::Human || target.presence.status == PresenceStatus::Online {
+            return None;
+        }
+        if target.id.0.starts_with("service:")
+            || target.capabilities.iter().any(|cap| {
+                matches!(
+                    cap.as_str(),
+                    "service_notifications"
+                        | "notifications_service"
+                        | "paid_messages_required"
+                        | "stars_per_message_required"
+                )
+            })
+        {
+            return None;
+        }
+        if let Some(target_privacy) = self.state.privacy.get(target_actor_id) {
+            let target_considers_sender_contact = target
+                .capabilities
+                .iter()
+                .any(|cap| cap == &format!("contact:{}", sender_id.0));
+            let sender_considers_target_contact = sender
+                .capabilities
+                .iter()
+                .any(|cap| cap == &format!("contact:{}", target_actor_id.0));
+            if !target_privacy.can_receive_message_from(
+                sender_id,
+                target_considers_sender_contact,
+                target_considers_sender_contact && sender_considers_target_contact,
+            ) {
+                return None;
+            }
+            if let Some(last_seen_rule) = target_privacy.rules.get(&PrivacyKey::LastSeen) {
+                if !last_seen_rule.allows(sender_id, target_considers_sender_contact) {
+                    return None;
+                }
+            }
+        }
+        Some(target_actor_id.clone())
+    }
+
+    pub fn resolve_send_menu_details(
+        &self,
+        sender_id: &ActorId,
+        destination_conversation_ids: &[ConversationId],
+    ) -> SendMenuDetails {
+        let destinations = destination_conversation_ids
+            .iter()
+            .cloned()
+            .map(|conversation_id| ConversationDestination {
+                conversation_id,
+                child: None,
+            })
+            .collect::<Vec<_>>();
+        self.resolve_destination_send_menu_details(sender_id, &destinations)
+    }
+
+    pub fn resolve_destination_send_menu_details(
+        &self,
+        sender_id: &ActorId,
+        destinations: &[ConversationDestination],
+    ) -> SendMenuDetails {
+        if destinations.is_empty() || !self.state.actors.contains_key(sender_id) {
+            return SendMenuDetails::from_mode(SendMenuMode::Disabled);
+        }
+        let mut any_paid = false;
+        for destination in destinations {
+            let effective_conversation_id = destination_message_conversation_id(destination);
+            let Some(conversation) = self.state.conversations.get(effective_conversation_id)
+            else {
+                return SendMenuDetails::from_mode(SendMenuMode::Disabled);
+            };
+            if matches!(conversation.kind, ConversationKind::Secret)
+                || !conversation.permissions.can_send_messages
+            {
+                return SendMenuDetails::from_mode(SendMenuMode::Disabled);
+            }
+            let sender_is_participant = conversation
+                .participants
+                .iter()
+                .any(|participant| &participant.actor_id == sender_id)
+                || conversation.owner_id.as_ref() == Some(sender_id);
+            if !sender_is_participant {
+                return SendMenuDetails::from_mode(SendMenuMode::Disabled);
+            }
+            let child_exempts_paid = self
+                .state
+                .conversation_child_states
+                .iter()
+                .find(|child| &child.destination == destination && &child.actor_id == sender_id)
+                .is_some_and(|child| child.no_paid_messages);
+            if !child_exempts_paid {
+                let saved_sublist_requires_paid = match &destination.child {
+                    Some(ConversationChildIdentity::SavedSublist { participant_id }) => self
+                        .state
+                        .actors
+                        .get(participant_id)
+                        .is_some_and(|actor| {
+                            actor.capabilities.iter().any(|cap| {
+                                matches!(
+                                    cap.as_str(),
+                                    "paid_messages_required" | "stars_per_message_required"
+                                )
+                            })
+                        }),
+                    _ => false,
+                };
+                let peer_requires_paid = conversation
+                    .participants
+                    .iter()
+                    .map(|participant| &participant.actor_id)
+                    .chain(conversation.owner_id.iter())
+                    .filter(|actor_id| *actor_id != sender_id)
+                    .any(|actor_id| {
+                        self.state.actors.get(actor_id).is_some_and(|actor| {
+                            actor.capabilities.iter().any(|cap| {
+                                matches!(
+                                    cap.as_str(),
+                                    "paid_messages_required" | "stars_per_message_required"
+                                )
+                            })
+                        })
+                    });
+                if saved_sublist_requires_paid || peer_requires_paid {
+                    any_paid = true;
+                }
+            }
+        }
+        if any_paid {
+            return SendMenuDetails::from_mode(SendMenuMode::SilentOnly);
+        }
+        if destinations.len() == 1 {
+            let destination = &destinations[0];
+            let effective_conversation_id = destination_message_conversation_id(destination);
+            let conversation = &self.state.conversations[effective_conversation_id];
+            let is_self_destination = destination.child.is_none()
+                && matches!(conversation.kind, ConversationKind::SavedMessages)
+                && conversation.owner_id.as_ref() == Some(sender_id);
+            if is_self_destination {
+                return SendMenuDetails::from_mode(SendMenuMode::Reminder);
+            }
+            if destination.child.is_none()
+                && self
+                    .can_schedule_when_online(sender_id, effective_conversation_id)
+                    .is_some()
+            {
+                return SendMenuDetails::from_mode(SendMenuMode::ScheduledToUser);
+            }
+        }
+        SendMenuDetails::from_mode(SendMenuMode::Scheduled)
+    }
+
     pub fn execute(&mut self, command: Command) -> Result<Vec<Event>, EngineError> {
         let events = self.decide(command)?;
         for event in events.iter().cloned() {
@@ -1501,6 +1683,10 @@ impl MessagingEngine {
                         message_id: local_message_id,
                     });
                 }
+                let is_saved_messages = matches!(
+                    conversation.kind,
+                    crate::conversation::ConversationKind::SavedMessages
+                );
                 let message = Message {
                     id: local_message_id,
                     conversation_id,
@@ -1515,7 +1701,7 @@ impl MessagingEngine {
                     created_at_ms,
                     edited_at_ms: None,
                     scheduled_at_ms,
-                    silent,
+                    silent: if is_saved_messages { false } else { silent },
                     protected_content: protected_content || is_secret_content,
                     pinned: false,
                     deleted: false,
@@ -1743,6 +1929,7 @@ impl MessagingEngine {
                 if privacy.drop_captions {
                     content.clear_caption();
                 }
+                let is_saved_messages = matches!(conversation.kind, ConversationKind::SavedMessages);
                 let message = Message {
                     id: local_message_id,
                     conversation_id: destination_conversation_id,
@@ -1757,7 +1944,7 @@ impl MessagingEngine {
                     created_at_ms,
                     edited_at_ms: None,
                     scheduled_at_ms,
-                    silent,
+                    silent: if is_saved_messages { false } else { silent },
                     protected_content: original.protected_content,
                     pinned: false,
                     deleted: false,

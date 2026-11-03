@@ -934,3 +934,164 @@ fn story_sibling_resolution_fences_stale_suggestions_contacts_visibility_and_med
     assert!(!token.matches_callback(&owner_id, &StoryId("story:contacts:1".into()), 6));
     assert!(!token.matches_callback(&foreign_owner_id, &StoryId("story:contacts:1".into()), 7));
 }
+
+#[test]
+fn send_menu_mode_and_applicability_enforces_paid_silent_only_reminder_and_scheduled_to_user() {
+    let mut engine = MessagingEngine::new();
+    let sender_id = ActorId::new("human:sender");
+    let peer_offline_id = ActorId::new("human:peer-offline");
+    let peer_paid_id = ActorId::new("human:peer-paid");
+    let mut peer_paid = Actor::human("human:peer-paid", "Paid Peer");
+    peer_paid.capabilities = vec!["paid_messages_required".into()];
+
+    for actor in [
+        Actor::human("human:sender", "Sender"),
+        Actor::human("human:peer-offline", "Offline Peer"),
+        peer_paid,
+    ] {
+        engine.execute(Command::UpsertActor { actor }).unwrap();
+    }
+
+    let mut saved_messages = Conversation::direct(
+        "chat:saved",
+        "Saved Messages",
+        vec![participant("human:sender", ParticipantRole::Owner)],
+        1,
+    );
+    saved_messages.kind = ConversationKind::SavedMessages;
+
+    let direct_offline = Conversation::direct(
+        "chat:direct-offline",
+        "Offline Peer",
+        vec![
+            participant("human:sender", ParticipantRole::Owner),
+            participant("human:peer-offline", ParticipantRole::Member),
+        ],
+        1,
+    );
+    let direct_paid = Conversation::direct(
+        "chat:direct-paid",
+        "Paid Peer",
+        vec![
+            participant("human:sender", ParticipantRole::Owner),
+            participant("human:peer-paid", ParticipantRole::Member),
+        ],
+        1,
+    );
+
+    for conversation in [saved_messages, direct_offline, direct_paid] {
+        engine
+            .execute(Command::UpsertConversation { conversation })
+            .unwrap();
+    }
+
+    // 1. Empty destination selection -> Disabled
+    let disabled = engine.resolve_send_menu_details(&sender_id, &[]);
+    assert_eq!(disabled.mode, SendMenuMode::Disabled);
+    assert!(!disabled.accepts_options(true, None, false));
+    assert!(!disabled.accepts_options(false, Some(100), false));
+    assert!(!disabled.accepts_options(false, None, true));
+
+    // 2. Single SavedMessages destination -> Reminder (suppresses silent and when_online, allows schedule/reminder)
+    let reminder =
+        engine.resolve_send_menu_details(&sender_id, &[ConversationId::new("chat:saved")]);
+    assert_eq!(reminder.mode, SendMenuMode::Reminder);
+    assert!(!reminder.allow_silent);
+    assert!(reminder.allow_schedule);
+    assert!(!reminder.allow_when_online);
+    assert!(reminder.allow_reminder);
+    assert!(!reminder.accepts_options(true, Some(100), false));
+    assert_eq!(
+        reminder.normalize_options(true, Some(100), false),
+        Some((false, Some(100), false))
+    );
+
+    // QueueMessage and ForwardMessage to SavedMessages clamp silent=false
+    engine
+        .execute(Command::QueueMessage {
+            conversation_id: ConversationId::new("chat:saved"),
+            local_message_id: MessageId::new("saved:1"),
+            client_message_id: ClientMessageId("client:saved:1".into()),
+            sender_id: sender_id.clone(),
+            content: MessageContent::Text {
+                text: FormattedText::plain("Self reminder"),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            created_at_ms: 10,
+            scheduled_at_ms: Some(100),
+            silent: true,
+            protected_content: false,
+        })
+        .unwrap();
+    assert!(!engine.state().messages[&ConversationId::new("chat:saved")][&MessageId::new("saved:1")].silent);
+
+    // 3. Single offline human destination with visible LastSeen -> ScheduledToUser
+    let scheduled_to_user = engine
+        .resolve_send_menu_details(&sender_id, &[ConversationId::new("chat:direct-offline")]);
+    assert_eq!(scheduled_to_user.mode, SendMenuMode::ScheduledToUser);
+    assert!(scheduled_to_user.allow_silent);
+    assert!(scheduled_to_user.allow_schedule);
+    assert!(scheduled_to_user.allow_when_online);
+    assert!(!scheduled_to_user.allow_reminder);
+    assert!(scheduled_to_user.accepts_options(true, None, true));
+    assert!(!scheduled_to_user.accepts_options(false, Some(100), true));
+
+    // 4. Hiding LastSeen privacy downgrades ScheduledToUser -> Scheduled (suppressing when_online)
+    let mut hidden_last_seen = PrivacySettings::default();
+    hidden_last_seen.rules.insert(
+        PrivacyKey::LastSeen,
+        PrivacyRule {
+            visibility: PrivacyVisibility::Nobody,
+            allow_actors: Vec::new(),
+            disallow_actors: Vec::new(),
+        },
+    );
+    engine
+        .execute(Command::UpsertPrivacySettings {
+            actor_id: peer_offline_id.clone(),
+            settings: hidden_last_seen,
+        })
+        .unwrap();
+    let downgraded = engine
+        .resolve_send_menu_details(&sender_id, &[ConversationId::new("chat:direct-offline")]);
+    assert_eq!(downgraded.mode, SendMenuMode::Scheduled);
+    assert!(!downgraded.allow_when_online);
+
+    // 5. Paid destination constrains send menu to SilentOnly (even when combined with non-paid destination)
+    let paid_menu = engine.resolve_send_menu_details(
+        &sender_id,
+        &[
+            ConversationId::new("chat:direct-offline"),
+            ConversationId::new("chat:direct-paid"),
+        ],
+    );
+    assert_eq!(paid_menu.mode, SendMenuMode::SilentOnly);
+    assert!(paid_menu.allow_silent);
+    assert!(!paid_menu.allow_schedule);
+    assert!(!paid_menu.allow_when_online);
+    assert!(paid_menu.accepts_options(true, None, false));
+    assert!(!paid_menu.accepts_options(false, Some(200), false));
+
+    // 6. SavedSublist child for paid participant is SilentOnly unless no_paid_messages exception is set
+    let saved_sublist_dest = ConversationDestination {
+        conversation_id: ConversationId::new("chat:saved"),
+        child: Some(ConversationChildIdentity::SavedSublist {
+            participant_id: peer_paid_id,
+        }),
+    };
+    let sublist_before_exception = engine
+        .resolve_destination_send_menu_details(&sender_id, std::slice::from_ref(&saved_sublist_dest));
+    assert_eq!(sublist_before_exception.mode, SendMenuMode::SilentOnly);
+
+    engine
+        .execute(Command::SetConversationChildNoPaidMessages {
+            destination: saved_sublist_dest.clone(),
+            actor_id: sender_id.clone(),
+            no_paid_messages: true,
+        })
+        .unwrap();
+    let sublist_after_exception =
+        engine.resolve_destination_send_menu_details(&sender_id, &[saved_sublist_dest]);
+    assert_eq!(sublist_after_exception.mode, SendMenuMode::Scheduled);
+}
