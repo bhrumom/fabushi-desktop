@@ -1,5 +1,5 @@
 {
-  "contract": "PS-LOCK-RECONCILE-v1",
+  "contract": "PS-LOCK-RECONCILE-v2",
   "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
   "round": 1,
   "upstream": {
@@ -9,8 +9,8 @@
   },
   "original_scope_base": "9864d1c02e7e67881d644800963abc807b3abaab",
   "incoming_subject": "550909022eba44eb9326d760f8c33d613b40a7bb",
-  "implementation_base": "a3030b8593f157efc5c5859e1a41b138475e438d",
-  "spec": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md#ar-lock-r1--preserve-admission-semantics-under-process-exclusion",
+  "implementation_base": "a8dc16661f272a122940efec1d7b7f6822a900e9",
+  "spec": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md#ar-lock-r2--causal-cross-process-observations-and-mutation-currentness",
   "responsibility_id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
   "unit_id": "OCRM-UNIT-SKILLS-001",
   "owner_chain": [
@@ -42,11 +42,15 @@
     "PSL04": "Actual refresh work owns the process lease through loader, publication and cleanup. Terminal work releases it while readers remain; obsolete guards cannot unlock a successor.",
     "PSL05": "Known healthy negative outcomes settle their intent; identical refresh token churn is not reported as another change. Existing durable error categories and cache-before-release barriers remain.",
     "PSL06": "Explicit writers may durably create their permitted missing directory chain; constructors and pure image loads remain side-effect-free. Contention uses the pinned fs2 platform sentinel.",
-    "PSL07": "A retained initialized owner never treats total custody-file loss as legacy absence. It retains confirmed/pending/auth facts, latches recovery fault, refuses read/mutation/refresh before remote work or state reinitialization, and stays faulted after explicit restoration; a fresh owner may inspect the restored image."
+    "PSL07": "A retained initialized owner never treats total custody-file loss as legacy absence. It retains confirmed/pending/auth facts, latches recovery fault, refuses read/mutation/refresh before remote work or state reinitialization, and stays faulted after explicit restoration; a fresh owner may inspect the restored image.",
+    "PSL08": "Every actual uninstall reservation, exact settlement and confirmed-fact release rotates required nullable canonical v3 uninstallObservation. Auth/refresh-only transitions preserve it. A foreign complete cycle cannot republish a pre-cycle result even if all semantic sets return identical; pruning binds the successful pass's post-commit identity.",
+    "PSL09": "Workflow mutation selects a canonical plugin, acquires its actual SH lease, then re-reads the committed record and current publisher authority. Changed, removed or remapped records and unknown/different publishers refuse before touching either prior or current file; an unchanged current publisher can edit.",
+    "PSL10": "An image integrity error observed under authoritative SH latches owner-local recovery, preserves known facts and advances local observation. Restoration cannot heal that retained owner. Unlocked contended reads may deny only the current observation; a fresh owner may inspect explicit repair.",
+    "PSL11": "The actual upload mutation lease covers backend and cleanup I/O, then ends before either cleanup log or edge diagnostic callback. Reentrant callbacks can acquire actual EX and sync the real owner; original backend success/error and diagnostic emission remain."
   },
   "source_authority": {
     "fixed_u_observations": "Retain exact source identities and recorded historical read facts in dossiers/snapshot-skills-scoped.md §8 and evidence/plugin-materialization-647e0932-20261103/source-contract.json. This target admission repair does not upgrade canonical source-review rows or claim recursive full-source closure.",
-    "target_review": "Actual permission state machine, mutation/observation paths, service successor/guard/cleanup ordering and Session/Workflow/publish consumers are the high-risk deep review scope. Exact frozen source tree and complete original five-path plus repair diff are required before candidate review.",
+    "target_review": "Deep review of actual permission state machine, durable schema/migration, foreign-process lifecycle, file mutation and callback lease boundaries. Complete original scoped diff from 9864d1c02e7e67881d644800963abc807b3abaab and proper R1-to-R2 focused delta must accompany frozen source; historical contract/disposition reviews are not full-file reading.",
     "necessary_dependency": {
       "name": "fs2",
       "version": "0.4.3",
@@ -91,7 +95,8 @@
       "plugin-uninstall-binding",
       "plugin-uninstall-relay-handoff",
       "plugin-cache-publication",
-      "plugin-session-consumer"
+      "plugin-session-consumer",
+      "plugin-publish-cleanup-callback"
     ],
     "new_required_names": [
       "extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh",
@@ -99,20 +104,53 @@
       "extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal",
       "confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker",
       "extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration",
-      "confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish"
+      "confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish",
+      "extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation",
+      "extensions::mcp::plugin_skills::uninstall_state::tests::v3_requires_explicit_nullable_canonical_uninstall_observation",
+      "extensions::mcp::plugin_skills::uninstall_state::tests::v3_observation_cannot_be_dropped_by_an_explicit_image_transition",
+      "extensions::mcp::plugin_skills::uninstall_state::tests::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes",
+      "extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery",
+      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction",
+      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault",
+      "confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication",
+      "live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease",
+      "live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication",
+      "extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"
     ],
-    "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance.",
+    "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance. R2 adds a complete foreign-process uninstall cycle while the paused owner performs no intermediate read, authoritative corruption/restoration controls, actual workflow publication interleavings and actual cleanup-I/O fault with reentrant owner callbacks. These are source-authored until exact-H Actions returns evidence.",
     "prior_failure": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-    "exact_candidate_execution": "pending source convergence and frozen H",
+    "exact_candidate_execution": "pending R2 integrated source convergence and frozen H",
     "reuse_note": "The existing skill_publish_contract target is also selected in the Linux plugin-uninstall-service command; its four retained public publish/restore oracles run alongside the actual-owner lease regression. No second capture owner.",
     "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh."
   },
   "acceptance": {
-    "scoped_authority": "source contract and pending independent candidate review only",
+    "scoped_authority": "AR-LOCK-R2 source contract and root FIX decisions saved before implementation; fresh integrated candidate review required",
     "full_unit_verified": false,
     "canonical_source_review_changed": false,
     "global_flags_changed": false,
     "real_ecosystem_accepted": false,
     "shipping_accepted": false
+  },
+  "revision_history": [
+    {
+      "contract": "PS-LOCK-RECONCILE-v1",
+      "source_subject": "ac615165744da1b8462a35b07221800c06aad1fb",
+      "source_contract_blob": "19ea28aefe8f64b62a433e06e30c65a80917c3b0",
+      "disposition": "R1 source reviewed; four root FIX decisions require R2. Prior behavior and read facts retained; no execution acceptance.",
+      "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+    }
+  ],
+  "private_image_migration": {
+    "write_version": 3,
+    "read_versions": [
+      1,
+      2,
+      3
+    ],
+    "required_field": "uninstallObservation",
+    "values": "Explicit null or canonical UUID string; missing, duplicate, unknown and malformed data rejected.",
+    "legacy": "Read v1/v2 without rewriting or inventing an observation. Explicit writes use v3 and preserve all existing custody.",
+    "rollback": "Retained non-null identity loss to legacy/null faults. Old strict readers reject v3; rollback requires a compatible reader and cannot clear or downgrade custody.",
+    "marker": "Existing marker 1\\n and file/directory durability barriers remain unchanged."
   }
 }

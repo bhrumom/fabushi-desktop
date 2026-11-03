@@ -444,6 +444,13 @@ impl Drop for RefreshGuard<'_> {
 }
 
 impl PluginSkillsAdmissionState {
+    fn latch_recovery_fault(&mut self) {
+        if !self.recovery_fault {
+            self.recovery_fault = true;
+            self.uninstall_observation = Arc::new(());
+        }
+    }
+
     fn denies(&self, plugin_id: &str) -> bool {
         self.recovery_fault
             || self.recovery_required
@@ -462,14 +469,17 @@ impl PluginSkillsAdmissionState {
         if self.recovery_fault {
             return;
         }
-        if self.durable != DurableUninstallImage::default()
-            && durable == DurableUninstallImage::default()
+        if (self.durable != DurableUninstallImage::default()
+            && durable == DurableUninstallImage::default())
+            || (self.durable.state.uninstall_observation.is_some()
+                && durable.state.uninstall_observation.is_none())
         {
             // Both absent is legacy only for a never-initialized reader. Once
             // this owner accepted custody, disappearance cannot revoke its
             // auth, confirmed or pending facts or authorize reinitialization.
-            self.recovery_fault = true;
-            self.uninstall_observation = Arc::new(());
+            // Losing a known v3 observation is equally unsafe, even if a valid
+            // legacy image or a v3 null reproduces the old semantic sets.
+            self.latch_recovery_fault();
             return;
         }
         let completed_image = durable != DurableUninstallImage::default()
@@ -482,6 +492,7 @@ impl PluginSkillsAdmissionState {
         self.observe_negative(&durable);
         if self.durable.state.confirmed != durable.state.confirmed
             || self.durable.state.pending != durable.state.pending
+            || self.durable.state.uninstall_observation != durable.state.uninstall_observation
         {
             self.uninstall_observation = Arc::new(());
         }
@@ -513,11 +524,17 @@ impl PluginSkillsAdmissionQuery for PluginSkillsLiveAdmission {
             Ok(lock) => lock,
             Err(_) => return true,
         };
-        let durable = match load_uninstall_image(&get_plugin_skills_dir(&self.sand_root_dir)) {
-            Ok(durable) => durable,
-            Err(_) => return true,
-        };
+        let observed = load_uninstall_image(&get_plugin_skills_dir(&self.sand_root_dir));
         let Ok(mut live) = self.state.lock() else { return true; };
+        let durable = match observed {
+            Ok(durable) => durable,
+            Err(_) => {
+                if lock.is_some() {
+                    live.latch_recovery_fault();
+                }
+                return true;
+            }
+        };
         if lock.is_some() {
             live.observe_durable(durable);
             live.denies(plugin_id)
@@ -542,9 +559,16 @@ impl PluginSkillsAdmissionQuery for PluginSkillsLiveAdmission {
         // Mutation admission retains SH throughout the caller's actual work.
         // It may wait for EX, unlike the read-only query above.
         let lock = AdmissionFileLock::shared(&self.sand_root_dir)?;
-        let durable = load_uninstall_image(&get_plugin_skills_dir(&self.sand_root_dir))?;
+        let observed = load_uninstall_image(&get_plugin_skills_dir(&self.sand_root_dir));
         let mut live = self.state.lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        let durable = match observed {
+            Ok(durable) => durable,
+            Err(_) => {
+                live.latch_recovery_fault();
+                return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
+            }
+        };
         live.observe_durable(durable);
         if live.denies(plugin_id) {
             Ok(None)
@@ -762,8 +786,7 @@ impl SandPluginSkillsService {
             Err(_) => {
                 let mut live = self.admission.state.lock()
                     .map_err(|_| "plugin skills live admission poisoned".to_string())?;
-                live.recovery_fault = true;
-                live.uninstall_observation = Arc::new(());
+                live.latch_recovery_fault();
                 return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
             }
         };
@@ -797,15 +820,26 @@ impl SandPluginSkillsService {
         expected: &DurableUninstallImage,
         next: &UninstallState,
     ) -> Result<(), String> {
+        // The identity changes even if a complete reserve/settle cycle returns
+        // to the same sets. Auth-only transitions do not pass through here.
+        let mut next = next.clone();
+        next.uninstall_observation = Some(loop {
+            let candidate = uuid::Uuid::new_v4().to_string();
+            if expected.state.uninstall_observation.as_ref() != Some(&candidate)
+                && next.refresh_intent.as_ref() != Some(&candidate)
+                && !next.pending.values().any(|ticket| ticket == &candidate)
+            {
+                break candidate;
+            }
+        });
         let durable = match persist_uninstall_image_locked(
-            &get_plugin_skills_dir(&self.sand_root_dir), expected, next,
+            &get_plugin_skills_dir(&self.sand_root_dir), expected, &next,
         ) {
             Ok(durable) => durable,
             Err(_) => {
                 let mut live = self.admission.state.lock()
                     .map_err(|_| "plugin skills live admission poisoned".to_string())?;
-                live.recovery_fault = true;
-                live.uninstall_observation = Arc::new(());
+                live.latch_recovery_fault();
                 return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
             }
         };
@@ -852,8 +886,7 @@ impl SandPluginSkillsService {
                 match observed {
                     Ok(durable) => live.durable = durable,
                     Err(_) => {
-                        live.recovery_fault = true;
-                        live.uninstall_observation = Arc::new(());
+                        live.latch_recovery_fault();
                     }
                 }
                 Err(AUTH_RECOVERY_UNAVAILABLE.into())
@@ -966,8 +999,7 @@ impl SandPluginSkillsService {
         let outcome_unknown = refresh.disposition == RefreshDisposition::AwaitingResult;
         refresh.disposition = RefreshDisposition::Fenced;
         if poisoned {
-            live.recovery_fault = true;
-            live.uninstall_observation = Arc::new(());
+            live.latch_recovery_fault();
         }
         if outcome_unknown {
             live.recovery_required = true;
@@ -1210,6 +1242,7 @@ impl SandPluginSkillsService {
         let expected = self.load_uninstall_image_locked(&admission_lock)?;
         if expected.state.confirmed != pass.uninstall_facts.confirmed
             || expected.state.pending != pass.uninstall_facts.pending
+            || expected.state.uninstall_observation != pass.uninstall_facts.uninstall_observation
             || expected.state.refresh_intent.as_ref() != Some(&pass.operation_id)
         {
             return Err("plugin skills sync superseded by a cross-process admission change".into());
@@ -1253,7 +1286,7 @@ impl SandPluginSkillsService {
         successful_ids: &HashSet<String>,
         denied_ids: &HashSet<String>,
         pass: &RefreshPass,
-    ) -> Result<Option<(PluginSkillsSnapshot, bool, Arc<()>, HashSet<String>)>, String> {
+    ) -> Result<Option<(PluginSkillsSnapshot, bool, Arc<()>, Option<String>, HashSet<String>)>, String> {
         // This service has one pass writer. Keep rename, strict readback and
         // positive release in one publication interval; a successor cannot be
         // constructed until it has claimed this predecessor's same lock.
@@ -1277,6 +1310,7 @@ impl SandPluginSkillsService {
         let expected = self.load_uninstall_image_locked(&admission_lock)?;
         if expected.state.confirmed != pass.uninstall_facts.confirmed
             || expected.state.pending != pass.uninstall_facts.pending
+            || expected.state.uninstall_observation != pass.uninstall_facts.uninstall_observation
             || expected.state.refresh_intent.as_ref()
                 != pass.recovery_required.then_some(&pass.operation_id)
         {
@@ -1325,11 +1359,13 @@ impl SandPluginSkillsService {
         // Keep this pass's weak work reference through cleanup. Publication
         // settles admission, while the pass still owns its process lease.
         let committed_observation = Arc::clone(&live.uninstall_observation);
+        let committed_durable_observation = live.durable.state.uninstall_observation.clone();
         // Reporting describes this publication's admitted identities, even if
         // a later observation changes admission before its callback runs. Keep
         // the raw cache intact; unresolved tickets exclude both comparison sides.
         let pending_for_report = live.durable.state.pending.keys().cloned().collect();
-        Ok(Some((committed, released_live_refusal, committed_observation, pending_for_report)))
+        Ok(Some((committed, released_live_refusal, committed_observation,
+            committed_durable_observation, pending_for_report)))
     }
 
     fn prune_committed_if_current(
@@ -1337,6 +1373,7 @@ impl SandPluginSkillsService {
         listed: &[ListedCacheKey],
         retained_paths: &[String],
         observation: &Arc<()>,
+        durable_observation: &Option<String>,
     ) -> Result<(), String> {
         let _publication = self
             .publication
@@ -1354,7 +1391,9 @@ impl SandPluginSkillsService {
         // No state/admission mutex covers the image read or filesystem prune.
         let admission_lock = AdmissionFileLock::shared(&self.sand_root_dir)?;
         let durable = self.load_uninstall_image_locked(&admission_lock)?;
-        if !Arc::ptr_eq(&self.uninstall_observation()?, observation) {
+        if !Arc::ptr_eq(&self.uninstall_observation()?, observation)
+            || &durable.state.uninstall_observation != durable_observation
+        {
             return Ok(());
         }
         if !durable.state.pending.is_empty() {
@@ -1586,7 +1625,8 @@ impl SandPluginSkillsService {
         // Sample the callback before the publication fence. It may reenter or
         // dispose the service; no callback runs while publication is locked.
         let duration_ms = (self.now)().saturating_sub(started);
-        let Some((committed, released_live_refusal, committed_observation, pending_for_report)) =
+        let Some((committed, released_live_refusal, committed_observation,
+            committed_durable_observation, pending_for_report)) =
             self.publish_snapshot_if_active(staged, &loaded_ids, &denied, &refresh)?
         else {
             return Ok(self.current());
@@ -1616,6 +1656,7 @@ impl SandPluginSkillsService {
                 .collect::<Vec<_>>();
             self.prune_committed_if_current(
                 &loaded.listed_cache_keys, &retained_paths, &committed_observation,
+                &committed_durable_observation,
             )?;
         }
         // All owned filesystem work has ended. Retained reader custody is weak;

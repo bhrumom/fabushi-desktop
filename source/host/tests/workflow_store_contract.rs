@@ -675,6 +675,154 @@ mod live_admission {
         run_failure_case(true);
     }
 
+
+
+    struct GatedMutationAdmission {
+        inner: mahayana_host_runtime::extensions::mcp::plugin_skills::PluginSkillsAdmissionReader,
+        entered: mpsc::Sender<String>,
+        resume: Mutex<mpsc::Receiver<()>>,
+        acquisitions: Arc<AtomicUsize>,
+    }
+
+    impl mahayana_host_runtime::extensions::mcp::plugin_skills::PluginSkillsAdmissionQuery
+        for GatedMutationAdmission
+    {
+        fn is_denied(&self, plugin_id: &str) -> bool {
+            self.inner.is_denied(plugin_id)
+        }
+
+        fn acquire(&self, plugin_id: &str) -> Result<Option<
+            mahayana_host_runtime::extensions::mcp::plugin_skills::PluginSkillsAdmissionLease
+        >, String> {
+            assert_eq!(self.acquisitions.fetch_add(1, Ordering::SeqCst), 0,
+                "the actual update must acquire its mutation lease exactly once");
+            self.entered.send(plugin_id.to_string()).expect("observe actual acquire entry");
+            self.resume.lock().unwrap().recv_timeout(Duration::from_secs(5))
+                .expect("bounded release before the actual owner acquire");
+            self.inner.acquire(plugin_id)
+        }
+    }
+
+    struct ReleaseAcquisition(Option<mpsc::Sender<()>>);
+    impl Drop for ReleaseAcquisition {
+        fn drop(&mut self) {
+            if let Some(release) = self.0.take() { let _ = release.send(()); }
+        }
+    }
+
+    fn update_across_committed_publication(mode: &str) {
+        let fixture = Fixture::new(&format!("mutation-currentness-{mode}"));
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (resume_tx, resume_rx) = mpsc::channel();
+        let acquisitions = Arc::new(AtomicUsize::new(0));
+        let admission = Arc::new(GatedMutationAdmission {
+            inner: fixture.service.admission_reader(), entered: entered_tx,
+            resume: Mutex::new(resume_rx), acquisitions: Arc::clone(&acquisitions),
+        });
+        let store = FileWorkflowStore::new(
+            fixture.root.join("agents/a"), fixture.root.join("workflows"),
+        ).with_plugin_skills_admission(admission);
+        let original = store.get("plugin-9-private").expect("current committed skill");
+        assert!(original.published_by_current_user);
+        let original_bytes = fs::read(&fixture.private_path).unwrap();
+        let control_bytes = fs::read(&fixture.control_path).unwrap();
+        let remapped = fixture.private_path.parent().unwrap().parent().unwrap()
+            .join("remapped/SKILL.md");
+        fs::create_dir_all(remapped.parent().unwrap()).unwrap();
+        fs::write(&remapped, "---\nname: Private\n---\nREMAPPED_BODY\n").unwrap();
+        let remapped_bytes = fs::read(&remapped).unwrap();
+
+        std::thread::scope(|scope| {
+            let mut release = ReleaseAcquisition(Some(resume_tx));
+            let (finished_tx, finished_rx) = mpsc::channel();
+            let store_ref = &store;
+            let worker = scope.spawn(move || {
+                let result = store_ref.update("plugin-9-private", &WorkflowSpec {
+                    name: "Updated private".into(), description: "authorized only if still current".into(),
+                    body: "MUTATION_CURRENTNESS_WRITE".into(), trigger: None, source_ref: None,
+                });
+                finished_tx.send(result).expect("actual mutation completion");
+            });
+            assert_eq!(entered_rx.recv_timeout(Duration::from_secs(5)).unwrap(), "9");
+            assert_eq!(acquisitions.load(Ordering::SeqCst), 1);
+            assert!(matches!(finished_rx.try_recv(), Err(mpsc::TryRecvError::Empty)),
+                "the observed acquisition gate precedes actual mutation");
+
+            let mut loaded = fixture.published.clone();
+            match mode {
+                "different-user" => loaded.current_user_id = Some(99),
+                "unknown-user" => loaded.current_user_id = None,
+                "remapped-record" => {
+                    let plugin = loaded.plugins.iter_mut()
+                        .find(|plugin| plugin.identifier.plugin_db_id.as_deref() == Some("9")).unwrap();
+                    plugin.skills[0].path = "skills/remapped/SKILL.md".into();
+                }
+                "removed-record" => {
+                    loaded.plugins.iter_mut()
+                        .find(|plugin| plugin.identifier.plugin_db_id.as_deref() == Some("9"))
+                        .unwrap().skills.clear();
+                }
+                "unchanged-grant" => {}
+                _ => panic!("unknown currentness control"),
+            }
+            *fixture.loader.0.lock().unwrap() = loaded;
+            let current = fixture.service.sync("publish-during-workflow-acquire")
+                .expect("the real publisher commits while acquisition is held before SH");
+            assert_eq!(current.len(), if mode == "removed-record" { 1 } else { 2 });
+            assert!(!fixture.service.admission_reader().is_denied("9"),
+                "this is a publisher/record race, not a negative-admission rejection");
+            let committed_index = fs::read(fixture.cache_path()).unwrap();
+            let published_index = fixture.service.current_index().unwrap();
+            match mode {
+                "different-user" => assert_eq!(published_index.current_user_id, Some(99)),
+                "unknown-user" => assert_eq!(published_index.current_user_id, None),
+                "remapped-record" => assert_eq!(
+                    published_index.skills.iter().find(|record| record.id == "plugin-9-private")
+                        .unwrap().file_path, remapped.to_string_lossy()),
+                "removed-record" => assert!(!published_index.skills.iter()
+                    .any(|record| record.id == "plugin-9-private")),
+                "unchanged-grant" => assert_eq!(published_index.current_user_id, Some(12)),
+                _ => unreachable!(),
+            }
+            assert_eq!(fs::read(&fixture.private_path).unwrap(), original_bytes,
+                "publisher itself leaves the earlier skill bytes intact");
+            assert_eq!(fs::read(&remapped).unwrap(), remapped_bytes);
+            release.0.take().unwrap().send(()).expect("resume actual acquire");
+            let result = finished_rx.recv_timeout(Duration::from_secs(5))
+                .expect("bounded actual mutation return").expect("workflow update protocol");
+            worker.join().expect("actual workflow update worker");
+            if mode == "unchanged-grant" {
+                let updated = result.expect("current publisher remains authorized across an unchanged refresh");
+                assert!(updated.published_by_current_user);
+                assert_eq!(updated.body, "MUTATION_CURRENTNESS_WRITE");
+                assert!(fs::read_to_string(&fixture.private_path).unwrap()
+                    .contains("MUTATION_CURRENTNESS_WRITE"));
+            } else {
+                assert!(result.is_none(), "{mode}: stale publisher/record must be refused");
+                assert_eq!(fs::read(&fixture.private_path).unwrap(), original_bytes,
+                    "{mode}: the earlier selected path was modified");
+            }
+            assert_eq!(fs::read(&remapped).unwrap(), remapped_bytes,
+                "the resumed old request must not overwrite a remapped current skill");
+            assert_eq!(fs::read(&fixture.control_path).unwrap(), control_bytes);
+            assert_eq!(fs::read(fixture.cache_path()).unwrap(), committed_index,
+                "workflow mutation cannot replace the committed permission index");
+        });
+        assert_eq!(acquisitions.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease() {
+        for mode in ["different-user", "unknown-user", "remapped-record", "removed-record"] {
+            update_across_committed_publication(mode);
+        }
+    }
+
+    #[test]
+    fn real_workflow_mutation_keeps_current_publisher_after_unchanged_publication() {
+        update_across_committed_publication("unchanged-grant");
+    }
+
     #[cfg(unix)]
     fn set_old_modified(path: &Path, modified: SystemTime) {
         fs::File::open(path).unwrap().set_modified(modified).unwrap();

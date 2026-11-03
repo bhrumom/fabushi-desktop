@@ -180,7 +180,8 @@
         "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
         "source/host/app/src/tests/cron_job_identity_tests.rs",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -486,7 +487,8 @@
         "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
         "source/host/tests/memory_synthesis_service_contract.rs",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -672,7 +674,8 @@
         "docs/specs/fabushi-official-mcp-marketplace.md",
         "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/execution-r1/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -1325,7 +1328,8 @@
         "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
         "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R21",
@@ -1597,7 +1601,8 @@
         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2066,7 +2071,8 @@
         "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
         "source/host/tests/memory_synthesis_service_contract.rs",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",
@@ -2887,7 +2893,8 @@
         "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
         "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC21",
@@ -3189,7 +3196,8 @@
         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

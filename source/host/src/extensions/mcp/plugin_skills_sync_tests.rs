@@ -1294,12 +1294,18 @@ fn assert_uninstall_custody_with_auth(
         "operationId": intent.operation_id,
     })).collect::<Vec<_>>();
     let durable: Value = serde_json::from_slice(&fs::read(root.uninstall_state_path()).unwrap()).unwrap();
+    let observation = service.admission.state.lock().unwrap()
+        .durable.state.uninstall_observation.clone();
+    if let Some(identity) = &observation {
+        assert_eq!(uuid::Uuid::parse_str(identity).unwrap().to_string(), *identity);
+    }
     assert_eq!(durable, json!({
-        "formatVersion": 2,
+        "formatVersion": 3,
         "confirmedPluginIds": confirmed,
         "pending": entries,
         "authRefusals": refusals,
         "refreshIntent": refresh.map(|operation_id| json!({"operationId": operation_id})),
+        "uninstallObservation": observation,
     }));
     assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), b"1\n");
     let status = if confirmed.is_empty() && pending.is_empty() {

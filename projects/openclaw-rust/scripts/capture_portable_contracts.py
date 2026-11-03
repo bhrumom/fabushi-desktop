@@ -1027,6 +1027,9 @@ cases = [
         "confirmed_uninstall_consumers::auth_refresh_unknown_survives_owned_process_exit_and_recovers_without_fallback",
         "confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker",
         "confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish",
+        "confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication",
+        "live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease",
+        "live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication",
         "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
         "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
         "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
@@ -1081,6 +1084,13 @@ cases = [
         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback",
         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal",
         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration",
+        "extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation",
+        "extensions::mcp::plugin_skills::uninstall_state::tests::v3_requires_explicit_nullable_canonical_uninstall_observation",
+        "extensions::mcp::plugin_skills::uninstall_state::tests::v3_observation_cannot_be_dropped_by_an_explicit_image_transition",
+        "extensions::mcp::plugin_skills::uninstall_state::tests::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes",
+        "extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault",
     ]),
     ("plugin-uninstall-binding", base + ["--lib", "host_production_extensions::plugin_skills_binding_tests::", "--", "--test-threads=1"], [
         "host_production_extensions::plugin_skills_binding_tests::fresh_host_binding_recovers_uninstall_custody_before_either_startup_order",
@@ -1089,6 +1099,9 @@ cases = [
     ]),
     ("plugin-uninstall-relay-handoff", base + ["--lib", "extensions::mcp::coordinator_relay::lifecycle_tests::desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff", "--", "--exact", "--test-threads=1"], [
         "extensions::mcp::coordinator_relay::lifecycle_tests::desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff",
+    ]),
+    ("plugin-publish-cleanup-callback", base + ["--lib", "extensions::mcp::skill_publish::cleanup_callback_tests::", "--", "--test-threads=1"], [
+        "extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error",
     ]),
     ("plugin-cache-publication", base + ["--lib", "extensions::mcp::plugin_skills_cache::tests::", "--", "--test-threads=1"], []),
     ("plugin-session-consumer", base + ["--lib", "extensions::session::production::plugin_skills_admission_tests::", "--", "--test-threads=1"], []),
@@ -1373,10 +1386,10 @@ assert all(item["matches_head_bytes"] for item in box_response_inputs_before.val
 
 
 receipt = {
-    "plugin_admission_lock_contract": "PS-LOCK-RECONCILE-v1",
+    "plugin_admission_lock_contract": "PS-LOCK-RECONCILE-v2",
     "plugin_admission_lock_inputs_before": plugin_admission_lock_inputs_before,
-    "plugin_admission_lock_required_positive_names": ["extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh","extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback","extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal","confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker","extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration","confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish"],
-    "plugin_admission_lock_scope": "Existing Rust Skills admission and durable image owner preserves live denials and unknown recovery through ordinary Session/Workflow reads; healthy polling and known-fenced disposal retain cached availability. The actual OS refresh lease covers owned loader/publication/cleanup and ends with terminal work while retained readers remain. Unit cleanup gates probe the real file lock; a separate owned-process harness proves foreign-process exclusion and later recovery during held loader/failure. These are distinct controls, not a claim of a cross-process cleanup-window pause. All retained assertions remain required; real account/ecosystem, hostile directory replacement, power-loss and supported-platform package acceptance remain open.",
+    "plugin_admission_lock_required_positive_names": ["extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh","extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback","extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal","confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker","extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration","confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish","extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_requires_explicit_nullable_canonical_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_observation_cannot_be_dropped_by_an_explicit_image_transition","extensions::mcp::plugin_skills::uninstall_state::tests::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes","extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault","confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication","live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease","live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication","extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"],
+    "plugin_admission_lock_scope": "Existing Rust Skills admission and durable image owner preserves live denial and unknown recovery. Strict v3 uninstallObservation fences a foreign reserve/settle ABA across loader, publication and prune; legacy v1/v2 read facts remain. Authoritative SH image faults latch retained recovery; contended reads remain observation-only. Workflow mutation re-reads canonical current record, publisher and path under the actual lease. Actual publisher cleanup releases its lease before reentrant diagnostics. All retained assertions and OS/process controls remain required. Real accounts/ecosystem, hostile directory replacement, power loss, performance and supported-platform package acceptance remain open.",
     "local_exec_outcome_contract": "LXO-v1",
     "local_exec_outcome_inputs_before": local_exec_outcome_inputs_before,
     "local_exec_outcome_required_runner_names": ["production_generated_runner_retains_unknown_external_shell_effects","production_generated_runner_preserves_known_external_shell_outcomes","production_external_shell_adapter_types_uncertain_results_and_errors"],

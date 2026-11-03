@@ -579,10 +579,28 @@ impl FileWorkflowStore {
         id: &str,
         spec: &WorkflowSpec,
     ) -> Result<Option<WorkflowRecord>, String> {
+        // The first lookup only selects the canonical plugin whose lease is
+        // needed. It cannot grant permission across a waiting acquisition.
+        let Some((initial, _)) = self.plugin_skill_record(id) else {
+            return Ok(None);
+        };
+        let _admission_lease: Option<PluginSkillsAdmissionLease> = match &self.plugin_skills_admission {
+            Some(reader) => match reader.acquire(&initial.plugin_id)? {
+                Some(lease) => Some(lease),
+                None => return Ok(None),
+            },
+            None => None,
+        };
+        // A publisher can commit another identity or record before SH is
+        // acquired. Re-read through the same committed index owner, refuse
+        // remapping, and perform the existing publisher check under the lease.
         let Some((record, index)) = self.plugin_skill_record(id) else {
             return Ok(None);
         };
-        if record.publisher_user_id.is_none() || record.publisher_user_id != index.current_user_id {
+        if record != initial
+            || record.publisher_user_id.is_none()
+            || record.publisher_user_id != index.current_user_id
+        {
             return Ok(None);
         }
         let raw = fs::read_to_string(&record.file_path).map_err(|error| error.to_string())?;
@@ -590,15 +608,6 @@ impl FileWorkflowStore {
             return Ok(None);
         };
         let encoded = serialize_workflow_file(spec, &parsed.data);
-        // Hold the shared cross-process admission lease through the atomic
-        // file replacement so a concurrent revoke cannot pass the last check.
-        let _admission_lease: Option<PluginSkillsAdmissionLease> = match &self.plugin_skills_admission {
-            Some(reader) => match reader.acquire(&record.plugin_id)? {
-                Some(lease) => Some(lease),
-                None => return Ok(None),
-            },
-            None => None,
-        };
         self.plugin_skills_dir_watcher
             .write_file_atomic(&record.file_path, encoded.as_bytes())
             .map_err(|error| error.to_string())?;

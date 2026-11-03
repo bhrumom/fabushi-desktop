@@ -52,8 +52,15 @@ fn image(root: &TempRoot) -> Value {
 }
 
 fn assert_image(root: &TempRoot, refusals: &[PluginAuthBlock], refresh: Option<&str>) {
+    assert_image_with_observation(root, refusals, refresh, None);
+}
+
+fn assert_image_with_observation(
+    root: &TempRoot, refusals: &[PluginAuthBlock], refresh: Option<&str>, observation: Option<&str>,
+) {
     assert_eq!(image(root), json!({
-        "formatVersion": 2,
+        "formatVersion": 3,
+        "uninstallObservation": observation,
         "confirmedPluginIds": [],
         "pending": [],
         "authRefusals": refusals,
@@ -736,12 +743,15 @@ fn auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release() 
     let files = skill_file_bytes(&records);
     let sentinel = root.sentinel();
     let intent = service.begin_uninstall("9").unwrap();
+    let observation = image(&root)["uninstallObservation"].as_str().unwrap().to_string();
+    assert_eq!(uuid::Uuid::parse_str(&observation).unwrap().to_string(), observation);
     *loader.result.lock().unwrap() = Ok(refuse_nine_with_invalid_stage(&root));
     assert_eq!(service.sync("accepted-refusal-during-uninstall").unwrap_err(), "invalid plugin skills cache snapshot");
     assert_auth_recovery(&service, &[auth_block("9")], false);
     let token = abandon_refresh(&service, &loader, &root);
     assert_eq!(image(&root), json!({
-        "formatVersion": 2,
+        "formatVersion": 3,
+        "uninstallObservation": observation,
         "confirmedPluginIds": [],
         "pending": [{"pluginId": "9", "operationId": intent.operation_id}],
         "authRefusals": [auth_block("9")],
@@ -759,7 +769,8 @@ fn auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release() 
     assert!(recovered.admission_reader().is_denied("9"), "auth success cannot settle an uninstall ticket");
     assert!(!recovered.admission_reader().is_denied("10"));
     assert_eq!(image(&root), json!({
-        "formatVersion": 2,
+        "formatVersion": 3,
+        "uninstallObservation": observation,
         "confirmedPluginIds": [],
         "pending": [{"pluginId": "9", "operationId": intent.operation_id}],
         "authRefusals": [],
@@ -778,10 +789,15 @@ fn auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release() 
     assert!(sentinel.exists());
     recovered.settle_uninstall(&intent, PluginUninstallSettlement::NotRemoved).unwrap();
     assert!(!recovered.admission_reader().is_denied("9"));
-    assert_image(&root, &[], None);
+    let settled_observation = image(&root)["uninstallObservation"].as_str().unwrap().to_string();
+    assert_eq!(uuid::Uuid::parse_str(&settled_observation).unwrap().to_string(), settled_observation);
+    assert_ne!(settled_observation, observation);
+    assert_image_with_observation(&root, &[], None, Some(&settled_observation));
     assert_eq!(record_ids(&recovered.current()), vec!["10"], "zero-Skill success did not restore an old row");
     *fresh_loader.result.lock().unwrap() = Ok(two_plugins(&root, "fresh-nine-with-skill"));
     assert_eq!(record_ids(&recovered.sync("new-materialization-after-ticket").unwrap()), vec!["10", "9"]);
+    assert_eq!(image(&root)["uninstallObservation"], settled_observation,
+        "later auth-only refresh preserves the uninstall observation");
     assert!(!sentinel.exists());
     assert_skill_file_bytes(&files);
 }
@@ -1157,4 +1173,190 @@ fn auth_observed_state_loss_latches_fault_across_reads_and_restoration() {
             assert!(root.staged_files().is_empty());
         }
     }
+}
+
+#[test]
+fn auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction() {
+    const LOSS_ERROR: &str = "plugin uninstall recovery state is unavailable";
+    let mut corruptions = vec!["malformed-image", "invalid-marker", "missing-image", "directory-image"];
+    #[cfg(unix)]
+    corruptions.push("unreadable-image");
+    for corruption in corruptions {
+        for confirmed in [false, true] {
+            for first_observer in ["is_denied", "acquire"] {
+                let root = TempRoot::new();
+                let (service, loader, records) = seed(&root);
+                let files = skill_file_bytes(&records);
+                let cache = fs::read(root.cache_path()).unwrap();
+                let reader = service.admission_reader();
+                let retained = recovery_workflow_store(&root, &service);
+                assert!(retained.get("plugin-9-test").is_some());
+                assert!(retained.get("plugin-10-test").is_some());
+                *loader.result.lock().unwrap() = Ok(refuse_nine_with_invalid_stage(&root));
+                assert_eq!(service.sync("accepted-auth-fact-before-integrity-loss").unwrap_err(),
+                    "invalid plugin skills cache snapshot");
+                let intent = service.begin_uninstall("9").unwrap();
+                if confirmed {
+                    service.settle_uninstall(&intent, PluginUninstallSettlement::Removed).unwrap();
+                }
+                let confirmed_ids = if confirmed { vec!["9"] } else { vec![] };
+                let pending = if confirmed { vec![] } else {
+                    vec![json!({"pluginId":"9","operationId":intent.operation_id})]
+                };
+                let healthy_status = json!({
+                    "authBlocked":[],
+                    "uninstallRecovery":{"confirmedPluginIds":confirmed_ids,"pending":pending},
+                    "authRecovery":{"refusals":[auth_block("9")],"refreshOutcomeUnknown":false},
+                });
+                assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&service), healthy_status);
+                assert!(!reader.is_denied("10"));
+                let journal = fs::read(root.uninstall_state_path()).unwrap();
+                let marker = fs::read(root.uninstall_version_path()).unwrap();
+                let original_permissions = fs::metadata(root.uninstall_state_path()).unwrap().permissions();
+                let preserved = get_plugin_skills_dir(&root.0).join("preserved-reader-image.fixture");
+                match corruption {
+                    "malformed-image" => fs::write(root.uninstall_state_path(), b"{incomplete-custody").unwrap(),
+                    "invalid-marker" => fs::write(root.uninstall_version_path(), b"3\n").unwrap(),
+                    "missing-image" => fs::remove_file(root.uninstall_state_path()).unwrap(),
+                    "directory-image" => {
+                        fs::rename(root.uninstall_state_path(), &preserved).unwrap();
+                        fs::create_dir(root.uninstall_state_path()).unwrap();
+                        fs::write(root.uninstall_state_path().join("preserve.txt"), b"owned directory control").unwrap();
+                    }
+                    "unreadable-image" => {
+                        #[cfg(unix)]
+                        {
+                            use std::os::unix::fs::PermissionsExt;
+                            fs::set_permissions(root.uninstall_state_path(), fs::Permissions::from_mode(0o000)).unwrap();
+                            assert!(fs::read(root.uninstall_state_path()).is_err(),
+                                "the Actions fixture must establish an actual unreadable file");
+                        }
+                        #[cfg(not(unix))]
+                        unreachable!();
+                    }
+                    _ => unreachable!(),
+                }
+                let corrupt_image = fs::read(root.uninstall_state_path()).ok();
+                let corrupt_marker = fs::read(root.uninstall_version_path()).unwrap();
+                // This is the first owner observation after corruption: an
+                // unrelated allowed ID proves a new plugin-wide refusal.
+                if first_observer == "is_denied" {
+                    assert!(reader.is_denied("10"));
+                } else {
+                    assert_eq!(reader.acquire("10").err().as_deref(), Some(LOSS_ERROR));
+                }
+                let fault_status = json!({
+                    "authBlocked":[],
+                    "uninstallRecovery":{
+                        "confirmedPluginIds":confirmed_ids,"pending":pending,
+                        "fault":"uninstall-state-unavailable",
+                    },
+                    "authRecovery":{
+                        "refusals":[auth_block("9")],"refreshOutcomeUnknown":false,
+                        "fault":"admission-state-unavailable",
+                    },
+                });
+                assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&service), fault_status,
+                    "{corruption}/{first_observer}/confirmed={confirmed}");
+                let reopened = recovery_workflow_store(&root, &service);
+                for store in [&retained, &reopened] {
+                    assert!(store.get("plugin-9-test").is_none());
+                    assert!(store.get("plugin-10-test").is_none());
+                    assert!(store.list().iter().all(|record| record.source != "plugin"));
+                }
+                assert!(service.current().is_empty());
+                assert_eq!(service.sync("reader-fault-must-not-reinitialize").unwrap_err(), LOSS_ERROR);
+                assert_eq!(service.begin_uninstall("10").unwrap_err(), LOSS_ERROR);
+                assert_eq!(loader.calls.load(Ordering::SeqCst), 2);
+                assert_eq!(fs::read(root.uninstall_state_path()).ok(), corrupt_image);
+                assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), corrupt_marker);
+                assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
+                assert_skill_file_bytes(&files);
+                if corruption == "directory-image" {
+                    assert_eq!(fs::read(root.uninstall_state_path().join("preserve.txt")).unwrap(), b"owned directory control");
+                    assert_eq!(fs::read(&preserved).unwrap(), journal);
+                    fs::remove_file(root.uninstall_state_path().join("preserve.txt")).unwrap();
+                    fs::remove_dir(root.uninstall_state_path()).unwrap();
+                    fs::rename(&preserved, root.uninstall_state_path()).unwrap();
+                } else if corruption == "unreadable-image" {
+                    fs::set_permissions(root.uninstall_state_path(), original_permissions).unwrap();
+                }
+                fs::write(root.uninstall_state_path(), &journal).unwrap();
+                fs::write(root.uninstall_version_path(), &marker).unwrap();
+                assert!(reader.is_denied("9"));
+                assert!(reader.is_denied("10"));
+                assert!(reader.acquire("9").unwrap().is_none());
+                assert!(reader.acquire("10").unwrap().is_none());
+                assert!(service.current().is_empty());
+                assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&service), fault_status);
+                assert_eq!(service.sync("retained-reader-after-repair").unwrap_err(), LOSS_ERROR);
+                assert_eq!(service.begin_uninstall("10").unwrap_err(), LOSS_ERROR);
+                assert_eq!(loader.calls.load(Ordering::SeqCst), 2);
+
+                let (fresh, offline) = inline_service(&root, Err("must-not-replay-repaired-image".into()));
+                assert!(!Arc::ptr_eq(&reader, &fresh.admission_reader()));
+                assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&fresh), healthy_status);
+                assert!(fresh.admission_reader().is_denied("9"));
+                assert!(!fresh.admission_reader().is_denied("10"));
+                assert!(fresh.admission_reader().acquire("9").unwrap().is_none());
+                assert!(fresh.admission_reader().acquire("10").unwrap().is_some());
+                assert_eq!(record_ids(&fresh.current()), vec!["10"]);
+                let fresh_store = recovery_workflow_store(&root, &fresh);
+                assert!(fresh_store.get("plugin-9-test").is_none());
+                assert!(fresh_store.get("plugin-10-test").is_some());
+                assert_eq!(offline.calls.load(Ordering::SeqCst), 0);
+                assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), journal);
+                assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), marker);
+                assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
+                assert_skill_file_bytes(&files);
+                assert!(root.staged_files().is_empty());
+            }
+        }
+    }
+}
+
+#[test]
+fn auth_contended_unlocked_image_error_does_not_latch_recovery_fault() {
+    let gate = BoundaryGate::at_visit(2);
+    let h = Harness::with_hooks(Arc::new(|| 1_000), ServiceTestHooks {
+        before_auth_outcome: Some(Arc::clone(&gate.pause)),
+        ..ServiceTestHooks::default()
+    });
+    let records = h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+    let files = skill_file_bytes(&records);
+    let cache = fs::read(h.root.cache_path()).unwrap();
+    let retained = recovery_workflow_store(&h.root, &h.service);
+    let reader = h.service.admission_reader();
+    let active = h.call("held-writer-with-temporary-unreadable-image");
+    h.enter(2);
+    h.release.send(LoadStep::Loaded(refuse_nine_with_invalid_stage(&h.root))).unwrap();
+    gate.wait();
+    assert!(AdmissionFileLock::try_shared(&h.root.0).unwrap().is_none(),
+        "the actual owner holds exclusive admission at this existing boundary");
+    let journal = fs::read(h.root.uninstall_state_path()).unwrap();
+    fs::write(h.root.uninstall_state_path(), b"{temporary-incomplete-image").unwrap();
+    assert!(reader.is_denied("10"));
+    assert!(retained.get("plugin-10-test").is_none());
+    assert_auth_recovery(&h.service, &[auth_block("9")], false);
+    assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&*h.service), json!({
+        "authBlocked":[],
+        "authRecovery":{"refusals":[auth_block("9")],"refreshOutcomeUnknown":false},
+    }), "an unlocked observation cannot latch a speculative integrity fault");
+    fs::write(h.root.uninstall_state_path(), &journal).unwrap();
+    assert!(!reader.is_denied("10"), "the repaired contended observation did not poison the retained reader");
+    assert!(reader.is_denied("9"), "the accepted live negative remains enforced");
+    assert!(retained.get("plugin-10-test").is_some());
+    gate.release.send(()).unwrap();
+    assert_eq!(active.finish().unwrap_err(), "invalid plugin skills cache snapshot");
+    assert_image(&h.root, &[auth_block("9")], None);
+    assert_auth_recovery(&h.service, &[auth_block("9")], false);
+    assert_eq!(fs::read(h.root.cache_path()).unwrap(), cache);
+    assert_skill_file_bytes(&files);
+    assert_eq!(record_ids(&h.step("fresh-after-contended-observation",
+        LoadStep::Loaded(two_plugins(&h.root, "fresh"))).unwrap()), vec!["10", "9"]);
+    assert!(!reader.is_denied("9"));
+    assert!(!reader.is_denied("10"));
+    assert_auth_recovery(&h.service, &[], false);
+    assert_skill_file_bytes(&files);
+    h.assert_calls(3);
 }

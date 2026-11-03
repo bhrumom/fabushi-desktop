@@ -123,6 +123,7 @@ pub(super) struct UninstallState {
     pub pending: BTreeMap<String, String>,
     pub auth_refusals: BTreeMap<String, PluginAuthBlock>,
     pub refresh_intent: Option<String>,
+    pub uninstall_observation: Option<String>,
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -150,12 +151,24 @@ struct StoredAdmissionImage {
     pending: Vec<JsonObject<StoredPendingUninstall>>,
     auth_refusals: Vec<JsonObject<StoredAuthRefusal>>,
     refresh_intent: StoredRefreshIntent,
+    uninstall_observation: StoredUninstallObservation,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct StoredAdmissionImageV2 {
+    format_version: u32,
+    confirmed_plugin_ids: Vec<String>,
+    pending: Vec<JsonObject<StoredPendingUninstall>>,
+    auth_refusals: Vec<JsonObject<StoredAuthRefusal>>,
+    refresh_intent: StoredRefreshIntent,
 }
 
 #[derive(Deserialize)]
 #[serde(untagged)]
 enum VersionedImage {
     Current(JsonObject<StoredAdmissionImage>),
+    AuthRecovery(JsonObject<StoredAdmissionImageV2>),
     Legacy(JsonObject<StoredUninstallImage>),
 }
 
@@ -207,6 +220,34 @@ impl<'de> Deserialize<'de> for StoredRefreshIntent {
     }
 }
 
+// This nullable field is required in v3. Deserialize it explicitly so missing
+// fields, arrays, objects and wrong scalar types cannot become a legacy None.
+#[derive(Serialize)]
+#[serde(transparent)]
+struct StoredUninstallObservation(Option<String>);
+
+impl<'de> Deserialize<'de> for StoredUninstallObservation {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct ObservationVisitor;
+        impl<'de> Visitor<'de> for ObservationVisitor {
+            type Value = StoredUninstallObservation;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("null or a canonical uninstall observation UUID string")
+            }
+
+            fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+                Ok(StoredUninstallObservation(None))
+            }
+
+            fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+                Ok(StoredUninstallObservation(Some(value.to_string())))
+            }
+        }
+        deserializer.deserialize_any(ObservationVisitor)
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct StoredPendingUninstall {
@@ -242,18 +283,26 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for JsonObject<T> {
 }
 
 fn decode_state(bytes: &[u8]) -> Result<UninstallState, String> {
-    let (confirmed, pending, auth_refusals, refresh_intent) = match
+    let (confirmed, pending, auth_refusals, refresh_intent, uninstall_observation) = match
         serde_json::from_slice::<VersionedImage>(bytes).map_err(|_| INVALID_STATE.to_string())?
     {
         VersionedImage::Legacy(JsonObject(stored)) if stored.format_version == 1 => {
-            (stored.confirmed_plugin_ids, stored.pending, Vec::new(), None)
+            (stored.confirmed_plugin_ids, stored.pending, Vec::new(), None, None)
         }
-        VersionedImage::Current(JsonObject(stored)) if stored.format_version == 2 => {
+        VersionedImage::AuthRecovery(JsonObject(stored)) if stored.format_version == 2 => {
             let refresh = match stored.refresh_intent {
                 StoredRefreshIntent::Empty(()) => None,
                 StoredRefreshIntent::Active(JsonObject(operation)) => Some(operation.operation_id),
             };
-            (stored.confirmed_plugin_ids, stored.pending, stored.auth_refusals, refresh)
+            (stored.confirmed_plugin_ids, stored.pending, stored.auth_refusals, refresh, None)
+        }
+        VersionedImage::Current(JsonObject(stored)) if stored.format_version == 3 => {
+            let refresh = match stored.refresh_intent {
+                StoredRefreshIntent::Empty(()) => None,
+                StoredRefreshIntent::Active(JsonObject(operation)) => Some(operation.operation_id),
+            };
+            (stored.confirmed_plugin_ids, stored.pending, stored.auth_refusals,
+                refresh, stored.uninstall_observation.0)
         }
         _ => return Err(INVALID_STATE.into()),
     };
@@ -283,6 +332,7 @@ fn decode_state(bytes: &[u8]) -> Result<UninstallState, String> {
         }
     }
     state.refresh_intent = refresh_intent;
+    state.uninstall_observation = uninstall_observation;
     validate_state(&state)?;
     Ok(state)
 }
@@ -314,13 +364,18 @@ fn validate_state(state: &UninstallState) -> Result<(), String> {
             return Err(INVALID_STATE.into());
         }
     }
+    if let Some(observation) = &state.uninstall_observation {
+        if !Uuid::parse_str(observation).is_ok_and(|parsed| parsed.to_string() == *observation) {
+            return Err(INVALID_STATE.into());
+        }
+    }
     Ok(())
 }
 
 fn encode_state(state: &UninstallState) -> Result<Vec<u8>, String> {
     validate_state(state)?;
     let stored = StoredAdmissionImage {
-        format_version: 2,
+        format_version: 3,
         confirmed_plugin_ids: state.confirmed.iter().cloned().collect(),
         pending: state
             .pending
@@ -345,6 +400,7 @@ fn encode_state(state: &UninstallState) -> Result<Vec<u8>, String> {
             })),
             None => StoredRefreshIntent::Empty(()),
         },
+        uninstall_observation: StoredUninstallObservation(state.uninstall_observation.clone()),
     };
     serde_json::to_vec_pretty(&stored).map_err(|_| WRITE_FAILED.to_string())
 }
@@ -386,6 +442,9 @@ pub(super) fn persist_uninstall_image_locked(
     next: &UninstallState,
 ) -> Result<DurableUninstallImage, String> {
     require_unchanged(cache_dir, expected)?;
+    if expected.state.uninstall_observation.is_some() && next.uninstall_observation.is_none() {
+        return Err(CHANGED_STATE.into());
+    }
     let image_bytes = encode_state(next)?;
     ensure_directory_durable(cache_dir)?;
     let image_path = cache_dir.join(IMAGE_FILE);
@@ -670,6 +729,7 @@ mod tests {
 
     const OP_A: &str = "11111111-1111-4111-8111-111111111111";
     const OP_B: &str = "22222222-2222-4222-8222-222222222222";
+    const OP_C: &str = "33333333-3333-4333-8333-333333333333";
 
     struct TempRoot(PathBuf);
 
@@ -896,7 +956,8 @@ mod tests {
         };
         let bytes = encode_state(&state).unwrap();
         let JsonObject(decoded) = serde_json::from_slice::<JsonObject<StoredAdmissionImage>>(&bytes).unwrap();
-        assert_eq!(decoded.format_version, 2);
+        assert_eq!(decoded.format_version, 3);
+        assert!(decoded.uninstall_observation.0.is_none());
         assert!(decoded.auth_refusals.is_empty());
         assert!(matches!(decoded.refresh_intent, StoredRefreshIntent::Empty(())));
         assert_eq!(decoded.confirmed_plugin_ids, ["10", "9", "official.plugin@catalog"]);
@@ -1051,14 +1112,18 @@ mod tests {
             &fs::read(cache.join(IMAGE_FILE)).unwrap(),
         ).unwrap();
         assert_eq!(written, serde_json::json!({
-            "formatVersion": 2, "confirmedPluginIds": ["9"],
+            "formatVersion": 3, "confirmedPluginIds": ["9"],
             "pending": [{"pluginId": "9", "operationId": OP_A}],
             "authRefusals": [], "refreshIntent": {"operationId": OP_B},
+            "uninstallObservation": null,
         }));
         assert_eq!(fs::read(cache.join(MARKER_FILE)).unwrap(), b"1\n");
         assert!(serde_json::from_slice::<JsonObject<StoredUninstallImage>>(
             &fs::read(cache.join(IMAGE_FILE)).unwrap(),
-        ).is_err(), "the old strict reader must not discard v2 auth custody");
+        ).is_err(), "the old strict reader must not discard upgraded custody");
+        assert!(serde_json::from_slice::<JsonObject<StoredAdmissionImageV2>>(
+            &fs::read(cache.join(IMAGE_FILE)).unwrap(),
+        ).is_err(), "the v2 strict reader must not discard the v3 observation field");
     }
 
     #[test]
@@ -1071,6 +1136,7 @@ mod tests {
             });
         }
         state.refresh_intent = Some(OP_B.into());
+        state.uninstall_observation = Some(OP_C.into());
         let encoded = encode_state(&state).unwrap();
         assert!(decode_state(&encoded).unwrap() == state);
         let json: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
@@ -1081,6 +1147,7 @@ mod tests {
         assert_eq!(json["confirmedPluginIds"], serde_json::json!(["9"]));
         assert_eq!(json["pending"], serde_json::json!([{"pluginId":"9","operationId":OP_A}]));
         assert_eq!(json["refreshIntent"], serde_json::json!({"operationId":OP_B}));
+        assert_eq!(json["uninstallObservation"], serde_json::json!(OP_C));
         assert_eq!(encode_state(&state).unwrap(), encoded);
     }
 
@@ -1148,7 +1215,9 @@ mod tests {
     fn failed_auth_write_accepts_only_exact_expected_or_its_visible_candidate() {
         let root = TempRoot::new();
         let cache = root.cache();
-        let expected = persist_uninstall_image(&cache, &DurableUninstallImage::default(), &pending_state()).unwrap();
+        let mut initial = pending_state();
+        initial.uninstall_observation = Some(OP_C.into());
+        let expected = persist_uninstall_image(&cache, &DurableUninstallImage::default(), &initial).unwrap();
         let mut next = expected.state.clone();
         next.refresh_intent = Some(OP_B.into());
         next.auth_refusals.insert("9".into(), PluginAuthBlock {
@@ -1174,4 +1243,300 @@ mod tests {
         assert_eq!(fs::read(cache.join(IMAGE_FILE)).unwrap(), foreign);
         assert_eq!(fs::read(cache.join(MARKER_FILE)).unwrap(), MARKER_BYTES);
     }
+    #[test]
+    fn legacy_v2_migrates_to_v3_without_inventing_uninstall_observation() {
+        for initialized in [false, true] {
+            let root = TempRoot::new();
+            let bytes = format!(
+                r#"{{"formatVersion":2,"confirmedPluginIds":["9"],"pending":[{{"pluginId":"9","operationId":"{OP_A}"}}],"authRefusals":[{{"pluginId":"9","pluginName":"Actual nine"}}],"refreshIntent":{{"operationId":"{OP_B}"}}}}"#
+            );
+            let cache = root.seed_image(bytes.as_bytes());
+            if initialized {
+                fs::write(cache.join(MARKER_FILE), MARKER_BYTES).unwrap();
+            }
+            let legacy = load_uninstall_image(&cache).unwrap();
+            assert!(legacy.state.uninstall_observation.is_none());
+            assert_eq!(legacy.state.confirmed, BTreeSet::from(["9".into()]));
+            assert_eq!(legacy.state.pending, BTreeMap::from([("9".into(), OP_A.into())]));
+            assert_eq!(legacy.state.auth_refusals["9"].plugin_name, "Actual nine");
+            assert_eq!(legacy.state.refresh_intent.as_deref(), Some(OP_B));
+            assert_eq!(fs::read(cache.join(IMAGE_FILE)).unwrap(), bytes.as_bytes());
+            assert_eq!(cache.join(MARKER_FILE).exists(), initialized);
+
+            let mut next = legacy.state.clone();
+            next.refresh_intent = None;
+            let migrated = persist_uninstall_image(&cache, &legacy, &next).unwrap();
+            assert!(migrated.state == next);
+            assert!(load_uninstall_image(&cache).unwrap() == migrated);
+            let written = fs::read(cache.join(IMAGE_FILE)).unwrap();
+            assert_eq!(serde_json::from_slice::<serde_json::Value>(&written).unwrap(), serde_json::json!({
+                "formatVersion": 3,
+                "confirmedPluginIds": ["9"],
+                "pending": [{"pluginId":"9","operationId":OP_A}],
+                "authRefusals": [{"pluginId":"9","pluginName":"Actual nine"}],
+                "refreshIntent": null,
+                "uninstallObservation": null,
+            }));
+            assert!(serde_json::from_slice::<JsonObject<StoredAdmissionImageV2>>(&written).is_err());
+            assert!(serde_json::from_slice::<JsonObject<StoredUninstallImage>>(&written).is_err());
+            assert_eq!(fs::read(cache.join(MARKER_FILE)).unwrap(), MARKER_BYTES);
+        }
+    }
+
+    #[test]
+    fn v3_requires_explicit_nullable_canonical_uninstall_observation() {
+        let valid = r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,"uninstallObservation":null}"#;
+        assert!(decode_state(valid.as_bytes()).unwrap() == UninstallState::default());
+        let mut observed = pending_state();
+        observed.uninstall_observation = Some(OP_C.into());
+        let encoded = encode_state(&observed).unwrap();
+        assert!(decode_state(&encoded).unwrap() == observed);
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&encoded).unwrap()["uninstallObservation"],
+            OP_C,
+        );
+        let mut invalid = vec![
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null}"#.to_string(),
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,"uninstallObservation":null,"uninstallObservation":null}"#.to_string(),
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,"uninstallObservation":null,"uninstall\u004fbservation":null}"#.to_string(),
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,"uninstallObservation":null,"extra":true}"#.to_string(),
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"pending":[],"authRefusals":[],"refreshIntent":null,"uninstallObservation":null}"#.to_string(),
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,"refreshIntent":null,"uninstallObservation":null}"#.to_string(),
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[{"pluginId":"9","pluginName":"name"},{"pluginId":"\u0039","pluginName":"name"}],"refreshIntent":null,"uninstallObservation":null}"#.to_string(),
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"uninstallObservation":null}"#.to_string(),
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"refreshIntent":null,"uninstallObservation":null}"#.to_string(),
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,"uninstallObservation":null}"#.to_string(),
+            r#"{"formatVersion":4,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,"uninstallObservation":null}"#.to_string(),
+            r#"[3,[],[],[],null,null]"#.to_string(),
+        ];
+        for value in [
+            serde_json::json!(false), serde_json::json!(3), serde_json::json!([]),
+            serde_json::json!({}), serde_json::json!({"operationId": OP_C}),
+        ] {
+            let mut image: serde_json::Value = serde_json::from_str(valid).unwrap();
+            image["uninstallObservation"] = value;
+            invalid.push(serde_json::to_string(&image).unwrap());
+        }
+        for value in [
+            "", "bad", "33333333333343338333333333333333",
+            "{33333333-3333-4333-8333-333333333333}",
+            "urn:uuid:33333333-3333-4333-8333-333333333333",
+            "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
+            " 33333333-3333-4333-8333-333333333333",
+            "33333333-3333-4333-8333-333333333333 ",
+        ] {
+            let mut image: serde_json::Value = serde_json::from_str(valid).unwrap();
+            image["uninstallObservation"] = serde_json::json!(value);
+            invalid.push(serde_json::to_string(&image).unwrap());
+            let mut state = pending_state();
+            state.uninstall_observation = Some(value.into());
+            assert!(encode_state(&state).is_err(), "invalid observation accepted on write: {value}");
+        }
+        for bytes in invalid {
+            let root = TempRoot::new();
+            let cache = root.seed_image(bytes.as_bytes());
+            assert!(load_uninstall_image(&cache).is_err(), "invalid v3 shape: {bytes}");
+            assert!(persist_uninstall_image(&cache, &DurableUninstallImage::default(), &pending_state()).is_err());
+            assert_eq!(fs::read(cache.join(IMAGE_FILE)).unwrap(), bytes.as_bytes());
+            assert!(!cache.join(MARKER_FILE).exists());
+        }
+    }
+
+    #[test]
+    fn v3_observation_cannot_be_dropped_by_an_explicit_image_transition() {
+        let root = TempRoot::new();
+        let cache = root.cache();
+        let mut initial = pending_state();
+        initial.uninstall_observation = Some(OP_C.into());
+        let expected = persist_uninstall_image(&cache, &DurableUninstallImage::default(), &initial).unwrap();
+        let bytes = fs::read(cache.join(IMAGE_FILE)).unwrap();
+        let mut lost = expected.state.clone();
+        lost.uninstall_observation = None;
+        assert_eq!(persist_uninstall_image(&cache, &expected, &lost).err().unwrap(), CHANGED_STATE);
+        assert_eq!(fs::read(cache.join(IMAGE_FILE)).unwrap(), bytes);
+        assert_eq!(fs::read(cache.join(MARKER_FILE)).unwrap(), MARKER_BYTES);
+
+        let mut rotated = expected.state.clone();
+        rotated.uninstall_observation = Some(OP_B.into());
+        let current = persist_uninstall_image(&cache, &expected, &rotated).unwrap();
+        assert!(current.state == rotated);
+        assert!(load_uninstall_image(&cache).unwrap() == current);
+        assert!(persist_uninstall_image(&cache, &expected, &initial).is_err());
+        assert!(load_uninstall_image(&cache).unwrap() == current);
+    }
+
+    struct ObservationLoader {
+        result: std::sync::Mutex<Result<super::super::LoadedPlugins, String>>,
+        calls: std::sync::atomic::AtomicUsize,
+    }
+
+    impl super::super::PluginSkillsLoader for ObservationLoader {
+        fn load(&self) -> Result<super::super::LoadedPlugins, String> {
+            self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            self.result.lock().unwrap().clone()
+        }
+    }
+
+    fn observation_loader(
+        result: Result<super::super::LoadedPlugins, String>,
+    ) -> std::sync::Arc<ObservationLoader> {
+        std::sync::Arc::new(ObservationLoader {
+            result: std::sync::Mutex::new(result),
+            calls: std::sync::atomic::AtomicUsize::new(0),
+        })
+    }
+
+    fn zero_skill_nine(root: &TempRoot) -> super::super::LoadedPlugins {
+        let install_path = root.0.join("plugins/cache/market/nine");
+        fs::create_dir_all(&install_path).unwrap();
+        super::super::LoadedPlugins {
+            plugins: vec![super::super::InstalledPlugin {
+                identifier: super::super::PluginIdentifier {
+                    source: "cursor-first-party".into(),
+                    name: "nine".into(),
+                    plugin_db_id: Some("9".into()),
+                    version: Some("same".into()),
+                },
+                display_name: Some("Actual nine".into()),
+                load_error: None,
+                install_path,
+                skills: Vec::new(),
+            }],
+            auth_blocked: Vec::new(),
+            listed_plugin_ids: vec!["9".into()],
+            listed_cache_keys: vec![super::super::ListedCacheKey {
+                marketplace_slug: "market".into(), plugin_id: "nine".into(),
+            }],
+            publisher_facts: std::collections::HashMap::new(),
+            current_user_id: None,
+        }
+    }
+
+    fn advanced_observation(root: &TempRoot, previous: Option<&str>) -> String {
+        let current = load_uninstall_image(&root.cache()).unwrap()
+            .state.uninstall_observation.expect("explicit uninstall transition has an observation");
+        assert_eq!(Uuid::parse_str(&current).unwrap().to_string(), current);
+        assert_ne!(Some(current.as_str()), previous);
+        current
+    }
+
+    #[test]
+    fn uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes() {
+        use super::super::{PluginUninstallSettlement, SandPluginSkillsService};
+        use std::sync::Arc;
+
+        let root = TempRoot::new();
+        let loaded = zero_skill_nine(&root);
+        let loader = observation_loader(Ok(loaded.clone()));
+        let service = SandPluginSkillsService::new(&root.0, loader.clone())
+            .with_now(Arc::new(|| 1_000));
+        assert!(service.sync("seed-zero-skill").unwrap().is_empty());
+        assert!(load_uninstall_image(&root.cache()).unwrap().state.uninstall_observation.is_none());
+        let mut previous = None;
+        for settlement in [
+            PluginUninstallSettlement::NotDispatched,
+            PluginUninstallSettlement::NotRemoved,
+            PluginUninstallSettlement::Removed,
+        ] {
+            let intent = service.begin_uninstall("9").unwrap();
+            let reserved = advanced_observation(&root, previous.as_deref());
+            assert_eq!(load_uninstall_image(&root.cache()).unwrap().state.pending["9"], intent.operation_id);
+            service.settle_uninstall(&intent, settlement).unwrap();
+            let settled = advanced_observation(&root, Some(&reserved));
+            let image = load_uninstall_image(&root.cache()).unwrap();
+            assert!(image.state.pending.is_empty());
+            assert_eq!(image.state.confirmed.contains("9"), settlement == PluginUninstallSettlement::Removed);
+            let bytes = fs::read(root.cache().join(IMAGE_FILE)).unwrap();
+            assert!(service.settle_uninstall(&intent, settlement).is_err());
+            assert_eq!(fs::read(root.cache().join(IMAGE_FILE)).unwrap(), bytes);
+            previous = Some(settled);
+        }
+        let confirmed = previous.unwrap();
+        *loader.result.lock().unwrap() = Err("offline".into());
+        assert_eq!(service.sync("known-offline").unwrap_err(), "offline");
+        assert_eq!(load_uninstall_image(&root.cache()).unwrap().state.uninstall_observation.as_deref(), Some(confirmed.as_str()));
+
+        let mut refused = loaded.clone();
+        refused.auth_blocked.push(PluginAuthBlock {
+            plugin_id: "9".into(), plugin_name: "Actual nine".into(), marketplace_name: None,
+        });
+        *loader.result.lock().unwrap() = Ok(refused);
+        assert!(service.sync("auth-only-negative").unwrap().is_empty());
+        let negative = load_uninstall_image(&root.cache()).unwrap();
+        assert_eq!(negative.state.uninstall_observation.as_deref(), Some(confirmed.as_str()));
+        assert!(negative.state.auth_refusals.contains_key("9"));
+        assert!(negative.state.confirmed.contains("9"));
+        assert!(service.admission_reader().is_denied("9"));
+
+        let obsolete = root.0.join("plugins/cache/market/obsolete");
+        fs::create_dir_all(&obsolete).unwrap();
+        fs::write(obsolete.join("retained-until-commit"), b"old").unwrap();
+        *loader.result.lock().unwrap() = Ok(loaded);
+        assert!(service.sync("fresh-zero-skill-release").unwrap().is_empty());
+        let released = advanced_observation(&root, Some(&confirmed));
+        let positive = load_uninstall_image(&root.cache()).unwrap();
+        assert!(positive.state.confirmed.is_empty());
+        assert!(positive.state.auth_refusals.is_empty());
+        assert!(!service.admission_reader().is_denied("9"));
+        assert!(!obsolete.exists(), "this commit's own observation rotation must not suppress its valid cleanup");
+        assert!(service.sync("stable-auth-only-refresh").unwrap().is_empty());
+        assert_eq!(load_uninstall_image(&root.cache()).unwrap().state.uninstall_observation.as_deref(), Some(released.as_str()));
+        assert_eq!(loader.calls.load(std::sync::atomic::Ordering::SeqCst), 5);
+    }
+
+    #[test]
+    fn retained_v3_observation_loss_to_legacy_or_null_latches_recovery() {
+        use super::super::SandPluginSkillsService;
+
+        for legacy in [
+            r#"{"formatVersion":1,"confirmedPluginIds":["9"],"pending":[]}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":["9"],"pending":[],"authRefusals":[],"refreshIntent":null}"#,
+            r#"{"formatVersion":3,"confirmedPluginIds":["9"],"pending":[],"authRefusals":[],"refreshIntent":null,"uninstallObservation":null}"#,
+        ] {
+            for writer_first in [false, true] {
+                let root = TempRoot::new();
+                let initial = UninstallState {
+                    confirmed: BTreeSet::from(["9".into()]),
+                    uninstall_observation: Some(OP_C.into()),
+                    ..UninstallState::default()
+                };
+                let accepted = persist_uninstall_image(
+                    &root.cache(), &DurableUninstallImage::default(), &initial,
+                ).unwrap();
+                let bytes = fs::read(root.cache().join(IMAGE_FILE)).unwrap();
+                let loader = observation_loader(Err("must-not-load".into()));
+                let service = SandPluginSkillsService::new(&root.0, loader.clone());
+                let reader = service.admission_reader();
+                assert!(reader.is_denied("9"));
+                assert!(!reader.is_denied("10"));
+                assert!(decode_state(legacy.as_bytes()).unwrap().uninstall_observation.is_none());
+                fs::write(root.cache().join(IMAGE_FILE), legacy).unwrap();
+
+                if writer_first {
+                    assert_eq!(service.begin_uninstall("10").unwrap_err(), super::super::UNINSTALL_RECOVERY_UNAVAILABLE);
+                } else {
+                    assert!(reader.is_denied("10"));
+                }
+                assert!(reader.is_denied("9"));
+                assert!(reader.is_denied("10"));
+                assert_eq!(service.sync("lost-causal-identity").unwrap_err(), super::super::UNINSTALL_RECOVERY_UNAVAILABLE);
+                assert_eq!(service.uninstall_recovery_status(), Some(serde_json::json!({
+                    "confirmedPluginIds":["9"], "pending":[], "fault":"uninstall-state-unavailable",
+                })));
+                assert!(service.admission.state.lock().unwrap().durable == accepted);
+                assert_eq!(loader.calls.load(std::sync::atomic::Ordering::SeqCst), 0);
+                assert_eq!(fs::read(root.cache().join(IMAGE_FILE)).unwrap(), legacy.as_bytes());
+                assert_eq!(fs::read(root.cache().join(MARKER_FILE)).unwrap(), MARKER_BYTES);
+
+                fs::write(root.cache().join(IMAGE_FILE), &bytes).unwrap();
+                assert!(reader.is_denied("10"), "restoration cannot heal this retained owner");
+                let fresh = SandPluginSkillsService::new(&root.0, loader.clone());
+                assert!(fresh.admission_reader().is_denied("9"));
+                assert!(!fresh.admission_reader().is_denied("10"));
+                assert_eq!(loader.calls.load(std::sync::atomic::Ordering::SeqCst), 0);
+                assert_eq!(fs::read(root.cache().join(IMAGE_FILE)).unwrap(), bytes);
+            }
+        }
+    }
+
 }

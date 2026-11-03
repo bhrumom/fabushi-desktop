@@ -33102,7 +33102,8 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
-        "projects/openclaw-rust/scripts/capture_portable_contracts.py"
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
       ],
       "existing_owner_candidates": [
         {
@@ -33143,9 +33144,10 @@
         "Dispose before publication prevents late cache replacement; broader live revocation and restart acceptance remain open",
         "Desktop and Runner uninstall share canonical identity validation; only strict correlated confirmation records a live refusal before display projection, cleanup and refresh.",
         "Desktop settings errors or a replacement Coordinator leg cannot replay the uninstall or bypass the Rust service; malformed/unknown/false outcomes do not create confirmation.",
-        "Native lifecycle and routed-tool settlements/events retain their existing relay custody and are unavailable to paired credentials; external Coordinator Data/Control cannot acquire native settlement authority."
+        "Native lifecycle and routed-tool settlements/events retain their existing relay custody and are unavailable to paired credentials; external Coordinator Data/Control cannot acquire native settlement authority.",
+        "Private admission image v3 retains strict v1/v2 reads and durable uninstall causal identity; authoritative image faults remain latched in a retained owner. Workflow edits recheck current record and publisher under the mutation lease; upload diagnostics run after lease release."
       ],
-      "migration_rollback": "Keep the existing workflow and plugin cache owners. Version 1 distinguishes canonical denials from ambiguous legacy data; successful authoritative refresh migrates. Older binaries may ignore eligibility, so rollback is not permission acceptance.",
+      "migration_rollback": "Keep the existing workflow and plugin cache owners. Cache eligibility format and private custody image are distinct. Private admission images read strict v1/v2/v3 and write v3 with explicit nullable uninstallObservation; accepted non-null identity may not disappear. Older strict readers reject v3, so rollback requires a compatible reader without custody clearing. This candidate has no package/upgrade acceptance yet.",
       "oracle_ids": [
         "OCRM-SKILLS-RUNTIME-O01"
       ],
@@ -33237,7 +33239,18 @@
         "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal",
         "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker",
         "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_observed_state_loss_latches_fault_across_reads_and_restoration",
-        "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish"
+        "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish",
+        "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation",
+        "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs::v3_requires_explicit_nullable_canonical_uninstall_observation",
+        "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs::v3_observation_cannot_be_dropped_by_an_explicit_image_transition",
+        "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes",
+        "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs::retained_v3_observation_loss_to_legacy_or_null_latches_recovery",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_contended_unlocked_image_error_does_not_latch_recovery_fault",
+        "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication",
+        "source/host/tests/workflow_store_contract.rs::live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease",
+        "source/host/tests/workflow_store_contract.rs::live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication",
+        "source/host/src/extensions/mcp/skill_publish.rs::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"
       ],
       "typed_contracts": [
         "SkillDefinition",

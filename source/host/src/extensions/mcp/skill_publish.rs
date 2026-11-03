@@ -70,6 +70,8 @@ pub struct SandSkillPublishService {
     library: GlobalWorkflowLibrary,
     log: Option<Arc<dyn Fn(String) + Send + Sync>>,
     report_edge_failed: Option<Arc<dyn Fn(SkillPublishEdgeFailure) + Send + Sync>>,
+    #[cfg(test)]
+    test_upload_work_dir: Option<PathBuf>,
 }
 
 impl SandSkillPublishService {
@@ -80,7 +82,11 @@ impl SandSkillPublishService {
     ) -> Self {
         let sand_root_dir = sand_root_dir.into();
         let library = GlobalWorkflowLibrary::new(get_global_workflows_dir(&sand_root_dir));
-        Self { sand_root_dir, client, plugin_skills, library, log: None, report_edge_failed: None }
+        Self {
+            sand_root_dir, client, plugin_skills, library, log: None, report_edge_failed: None,
+            #[cfg(test)]
+            test_upload_work_dir: None,
+        }
     }
     pub fn with_log(mut self, log: Arc<dyn Fn(String) + Send + Sync>) -> Self { self.log = Some(log); self }
     pub fn with_edge_reporter(mut self, reporter: Arc<dyn Fn(SkillPublishEdgeFailure) + Send + Sync>) -> Self {
@@ -114,7 +120,7 @@ impl SandSkillPublishService {
         let published = self.upload(UploadArgs {
             skill_dir, skill_relative_path: &record.id, name: &record.name,
             description: &record.description, team_id, plugin_name: &record.name, display_name: None,
-        })?;
+        }, None)?;
         let landed_id = self.confirm_publish_landed(&published);
         let promoted_workflow_id = match landed_id {
             Some(id) => match self.library.remove(&record.id) { Ok(true) => Some(id), _ => None },
@@ -136,8 +142,7 @@ impl SandSkillPublishService {
         let published = self.upload(UploadArgs {
             skill_dir, skill_relative_path: &relative_path, name: &name,
             description: &parsed.description, team_id, plugin_name: &plugin_name, display_name: Some(&name),
-        })?;
-        drop(admission_lease);
+        }, Some(admission_lease))?;
         self.sync_best_effort();
         Ok(PublishSkillResult { published, promoted_workflow_id: None })
     }
@@ -164,11 +169,15 @@ impl SandSkillPublishService {
         Ok((target.parent() == Some(skills_root.as_path())).then(|| target.file_name().unwrap().to_string_lossy().to_string()))
     }
 
-    fn upload(&self, args: UploadArgs<'_>) -> Result<PublishedSkillResult, String> {
+    fn upload(
+        &self,
+        args: UploadArgs<'_>,
+        admission_lease: Option<PluginSkillsAdmissionLease>,
+    ) -> Result<PublishedSkillResult, String> {
         if args.description.trim().is_empty() {
             return Err("Add a description before publishing — it is how teammates and agents know when to use this skill.".to_string());
         }
-        let work_dir = std::env::temp_dir().join(format!("sand-publish-skill-{}", Uuid::new_v4()));
+        let work_dir = self.upload_work_dir();
         fs::create_dir_all(&work_dir).map_err(|e| e.to_string())?;
         let result = (|| {
             let staged_root = work_dir.join("staged");
@@ -187,11 +196,23 @@ impl SandSkillPublishService {
                 plugin_tar_gz: pack_plugin_artifact(&plugin_dir)?,
             }, PUBLISH_SKILL_RPC_TIMEOUT_MS)
         })();
-        if let Err(error) = fs::remove_dir_all(&work_dir) {
+        let cleanup_result = fs::remove_dir_all(&work_dir);
+        // Keep the lease through protected backend/filesystem work, then release
+        // it before public diagnostics that may reenter the Skills owner.
+        drop(admission_lease);
+        if let Err(error) = cleanup_result {
             self.log(format!("[sand:skill-publish] failed to clean up {}: {error}", work_dir.display()));
             self.report("cleanup", classify_error(&error.to_string()));
         }
         result
+    }
+
+    fn upload_work_dir(&self) -> PathBuf {
+        #[cfg(test)]
+        if let Some(path) = &self.test_upload_work_dir {
+            return path.clone();
+        }
+        std::env::temp_dir().join(format!("sand-publish-skill-{}", Uuid::new_v4()))
     }
 
     fn confirm_publish_landed(&self, published: &PublishedSkillResult) -> Option<String> {
@@ -383,4 +404,197 @@ fn classify_error(error: &str) -> String {
     else if lower.contains("auth") || lower.contains("permission") { "auth".into() }
     else if lower.contains("network") || lower.contains("connect") { "network".into() }
     else { "unknown".into() }
+}
+
+#[cfg(test)]
+mod cleanup_callback_tests {
+    use super::*;
+    use std::collections::HashMap;
+    use std::sync::{Mutex, atomic::{AtomicUsize, Ordering}};
+    use crate::extensions::mcp::plugin_skills::{
+        InstalledPlugin, InstalledSkill, ListedCacheKey, LoadedPlugins,
+        PluginIdentifier, PluginSkillsLoader, PublisherFacts,
+    };
+
+    struct TempRoot(PathBuf);
+
+    impl TempRoot {
+        fn new() -> Self {
+            let path = std::env::temp_dir().join(format!("skill-publish-cleanup-{}", Uuid::new_v4()));
+            fs::create_dir(&path).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for TempRoot {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    struct StaticLoader {
+        loaded: LoadedPlugins,
+        calls: AtomicUsize,
+    }
+
+    impl PluginSkillsLoader for StaticLoader {
+        fn load(&self) -> Result<LoadedPlugins, String> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(self.loaded.clone())
+        }
+    }
+
+    fn admission_file(sand_root: &Path) -> fs::File {
+        fs::OpenOptions::new().read(true).write(true)
+            .open(sand_root.join(".plugin-skills-admission.lock")).unwrap()
+    }
+
+    fn assert_exclusive_available(sand_root: &Path) {
+        let probe = admission_file(sand_root);
+        fs2::FileExt::try_lock_exclusive(&probe)
+            .expect("cleanup callbacks must begin after the publishing lease is released");
+        drop(probe);
+    }
+
+    struct CleanupFailureClient {
+        sand_root: PathBuf,
+        work_dir: PathBuf,
+        result: Result<PublishedSkillResult, String>,
+        calls: AtomicUsize,
+    }
+
+    impl SkillPublishClient for CleanupFailureClient {
+        fn get_teams(&self, _: u64) -> Result<Vec<SkillPublishTeam>, String> {
+            panic!("resync uses the committed marketplace identity");
+        }
+
+        fn publish_plugin(&self, request: PublishPluginInput, timeout: u64)
+            -> Result<PublishedSkillResult, String>
+        {
+            let exclusive = admission_file(&self.sand_root);
+            let error = fs2::FileExt::try_lock_exclusive(&exclusive)
+                .expect_err("the protected backend call must still hold the real admission lease");
+            assert_eq!(error.raw_os_error(), fs2::lock_contended_error().raw_os_error());
+            let compatible = admission_file(&self.sand_root);
+            fs2::FileExt::try_lock_shared(&compatible)
+                .expect("the protected operation holds a shared admission lease");
+            drop(compatible);
+            drop(exclusive);
+            assert_eq!(self.calls.fetch_add(1, Ordering::SeqCst), 0);
+            assert_eq!(timeout, PUBLISH_SKILL_RPC_TIMEOUT_MS);
+            assert_eq!(request.team_id, 9);
+            assert_eq!(request.name, "fixture-plugin");
+            assert_eq!(request.display_name, "Demo");
+            assert_eq!(request.description, "Useful fixture skill");
+            assert!(request.plugin_tar_gz.starts_with(&[0x1f, 0x8b]));
+            // The private per-instance selector identifies only this upload's
+            // owned directory. A real regular-file replacement makes the real
+            // remove_dir_all call fail; no syscall or policy is mocked.
+            fs::remove_dir_all(&self.work_dir).unwrap();
+            fs::write(&self.work_dir, b"owned cleanup refusal").unwrap();
+            self.result.clone()
+        }
+
+        fn unpublish_plugin(&self, _: &str, _: i32, _: u64) -> Result<(), String> {
+            panic!("this control exercises resync upload cleanup");
+        }
+    }
+
+    #[test]
+    fn upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error() {
+        for backend_succeeds in [true, false] {
+            let root = TempRoot::new();
+            let sand_root = root.0.join("sand");
+            let install = sand_root.join("plugins/cache/team/p9/v1");
+            let skill_file = install.join("skills/demo/SKILL.md");
+            fs::create_dir_all(skill_file.parent().unwrap()).unwrap();
+            fs::write(install.join("plugin.json"), br#"{"name":"fixture-plugin"}"#).unwrap();
+            fs::write(&skill_file,
+                "---\nname: Demo\ndescription: Useful fixture skill\n---\nSOURCE_BODY\n").unwrap();
+            let original_skill = fs::read(&skill_file).unwrap();
+            let loader = Arc::new(StaticLoader {
+                loaded: LoadedPlugins {
+                    plugins: vec![InstalledPlugin {
+                        identifier: PluginIdentifier {
+                            source: "cursor-first-party".into(), name: "fixture-plugin".into(),
+                            plugin_db_id: Some("9".into()), version: Some("v1".into()),
+                        },
+                        display_name: None, load_error: None, install_path: install,
+                        skills: vec![InstalledSkill {
+                            name: Some("Demo".into()), description: Some("Useful fixture skill".into()),
+                            path: "skills/demo/SKILL.md".into(),
+                        }],
+                    }],
+                    auth_blocked: Vec::new(), listed_plugin_ids: vec!["9".into()],
+                    listed_cache_keys: vec![ListedCacheKey {
+                        marketplace_slug: "team".into(), plugin_id: "p9".into(),
+                    }],
+                    publisher_facts: HashMap::from([("9".into(), PublisherFacts {
+                        publisher_user_id: Some(7), marketplace_team_id: Some(9),
+                    })]),
+                    current_user_id: Some(7),
+                },
+                calls: AtomicUsize::new(0),
+            });
+            let owner = Arc::new(SandPluginSkillsService::new(&sand_root, loader.clone())
+                .with_now(Arc::new(|| 1_000)));
+            assert_eq!(owner.sync("seed-cleanup-control").unwrap().len(), 1);
+            let work_dir = root.0.join("owned-upload");
+            let backend_result = if backend_succeeds {
+                Ok(PublishedSkillResult { plugin_id: "9".into(), commit_sha: "v1".into() })
+            } else {
+                Err("original backend failure".to_string())
+            };
+            let client = Arc::new(CleanupFailureClient {
+                sand_root: sand_root.clone(), work_dir: work_dir.clone(),
+                result: backend_result.clone(), calls: AtomicUsize::new(0),
+            });
+            let logs = Arc::new(Mutex::new(Vec::new()));
+            let reports = Arc::new(Mutex::new(Vec::new()));
+            let returned_callbacks = Arc::new(Mutex::new(Vec::new()));
+            let log_root = sand_root.clone();
+            let log_owner = Arc::clone(&owner);
+            let captured_logs = Arc::clone(&logs);
+            let log_returns = Arc::clone(&returned_callbacks);
+            let report_root = sand_root.clone();
+            let report_owner = Arc::clone(&owner);
+            let captured_reports = Arc::clone(&reports);
+            let report_returns = Arc::clone(&returned_callbacks);
+            let mut publisher = SandSkillPublishService::new(&sand_root, client.clone(), owner.clone())
+                .with_log(Arc::new(move |message| {
+                    // A direct, nonblocking lock assertion precedes reentry:
+                    // retaining SH fails here instead of hanging inside sync.
+                    assert_exclusive_available(&log_root);
+                    assert_eq!(log_owner.sync("cleanup-log-reentry").unwrap().len(), 1);
+                    captured_logs.lock().unwrap().push(message);
+                    log_returns.lock().unwrap().push("log");
+                }))
+                .with_edge_reporter(Arc::new(move |failure| {
+                    assert_exclusive_available(&report_root);
+                    assert_eq!(report_owner.sync("cleanup-edge-reentry").unwrap().len(), 1);
+                    captured_reports.lock().unwrap().push(failure);
+                    report_returns.lock().unwrap().push("edge");
+                }));
+            publisher.test_upload_work_dir = Some(work_dir.clone());
+
+            let expected = backend_result.map(|published| PublishSkillResult {
+                published, promoted_workflow_id: None,
+            });
+            assert_eq!(publisher.resync("plugin-9-demo"), expected);
+            assert_eq!(client.calls.load(Ordering::SeqCst), 1);
+            assert_eq!(returned_callbacks.lock().unwrap().as_slice(), &["log", "edge"]);
+            assert_eq!(loader.calls.load(Ordering::SeqCst), if backend_succeeds { 4 } else { 3 },
+                "both callbacks run real sync; only backend success adds the ordinary follow-up");
+            assert_eq!(fs::read(&skill_file).unwrap(), original_skill);
+            assert_eq!(fs::read(&work_dir).unwrap(), b"owned cleanup refusal");
+            let cleanup_error = fs::remove_dir_all(&work_dir).unwrap_err();
+            assert_eq!(logs.lock().unwrap().as_slice(), &[format!(
+                "[sand:skill-publish] failed to clean up {}: {cleanup_error}", work_dir.display(),
+            )]);
+            assert_eq!(reports.lock().unwrap().as_slice(), &[SkillPublishEdgeFailure {
+                stage: "cleanup", error_class: classify_error(&cleanup_error.to_string()),
+            }]);
+            assert_exclusive_available(&sand_root);
+        }
+    }
 }

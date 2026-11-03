@@ -625,7 +625,7 @@ mod confirmed_uninstall_consumers {
         HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_INSTALL_PLUGIN_METHOD,
         MCP_LIST_CATALOG_METHOD, MCP_LOAD_PLUGIN_SKILLS_METHOD, MCP_UNINSTALL_PLUGIN_METHOD,
     };
-    use mahayana_host_runtime::extensions::mcp::plugin_skills::SandPluginSkillsService;
+    use mahayana_host_runtime::extensions::mcp::plugin_skills::{SandPluginSkillsService, PluginSkillsSyncEvent};
     use mahayana_host_runtime::gateway_server::GatewayEventHub;
     use mahayana_host_runtime::host_event_bus::HostEventSubscription;
     use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
@@ -657,6 +657,7 @@ mod confirmed_uninstall_consumers {
         relay: Arc<CoordinatorMcpLifecycleRelay>,
         remote: Arc<Mutex<RemoteIo>>,
         skills: Arc<SandPluginSkillsService>,
+        reports: Arc<Mutex<Vec<PluginSkillsSyncEvent>>>,
         backend: Arc<CoordinatorMcpManagerBackend>,
         service: Arc<McpHostService>,
         _subscription: HostEventSubscription,
@@ -710,14 +711,16 @@ mod confirmed_uninstall_consumers {
                 };
                 weak_relay.upgrade().unwrap().resolve(&reply).unwrap();
             });
+            let reports = Arc::new(Mutex::new(Vec::<PluginSkillsSyncEvent>::new()));
+            let captured_reports = Arc::clone(&reports);
             let skills = Arc::new(SandPluginSkillsService::new(
                 root, Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&relay))),
-            ));
+            ).with_reporter(Arc::new(move |event| captured_reports.lock().unwrap().push(event))));
             let backend = Arc::new(CoordinatorMcpManagerBackend::new(
                 Arc::clone(&relay), Arc::new(|_, _| Ok(Vec::new())),
             ));
             let service = Arc::new(McpHostService::new(backend.clone(), Some(skills.clone())));
-            Self { relay, remote, skills, backend, service, _subscription: subscription }
+            Self { relay, remote, skills, reports, backend, service, _subscription: subscription }
         }
 
         fn close(&self) {
@@ -864,6 +867,16 @@ mod confirmed_uninstall_consumers {
         get_plugin_skills_dir(root).join("uninstall-state.json")
     }
 
+    fn image_uninstall_observation(image: &Value) -> Value {
+        let observation = image.get("uninstallObservation")
+            .expect("format 3 requires uninstallObservation");
+        if !observation.is_null() {
+            let value = observation.as_str().expect("nullable canonical observation UUID");
+            assert_eq!(uuid::Uuid::parse_str(value).unwrap().to_string(), value);
+        }
+        observation.clone()
+    }
+
     fn assert_recovery_state(root: &Path, skills: &SandPluginSkillsService,
         confirmed: bool, pending: bool) -> Option<PluginUninstallIntent>
     {
@@ -884,7 +897,8 @@ mod confirmed_uninstall_consumers {
             "pluginId":intent.plugin_id,"operationId":intent.operation_id,
         })]).unwrap_or_default();
         assert_eq!(image, json!({
-            "formatVersion":2,"confirmedPluginIds":confirmed_ids,"pending":pending_rows,
+            "formatVersion":3,"uninstallObservation":image_uninstall_observation(&image),
+            "confirmedPluginIds":confirmed_ids,"pending":pending_rows,
             "authRefusals":[],"refreshIntent":null,
         }));
         assert_eq!(fs::read(get_plugin_skills_dir(root).join("uninstall-state.version")).unwrap(), b"1\n");
@@ -895,6 +909,9 @@ mod confirmed_uninstall_consumers {
         } else {
             json!({"authBlocked":[]})
         });
+        if confirmed || pending {
+            assert!(image_uninstall_observation(&image).is_string(), "explicit uninstall custody has a causal identity");
+        }
         assert!(skills.current_auth_blocked().is_empty(), "uninstall custody is never an auth refusal");
         intent
     }
@@ -918,7 +935,8 @@ mod confirmed_uninstall_consumers {
         };
         let refusals = if refused { vec![auth_refusal()] } else { Vec::new() };
         assert_eq!(image, json!({
-            "formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":refusals,
+            "formatVersion":3,"uninstallObservation":image_uninstall_observation(&image),
+            "confirmedPluginIds":[],"pending":[],"authRefusals":refusals,
             "refreshIntent":operation_id.as_ref().map(|id| json!({"operationId":id})),
         }));
         assert_eq!(fs::read(get_plugin_skills_dir(root).join("uninstall-state.version")).unwrap(), b"1\n");
@@ -1274,6 +1292,8 @@ mod confirmed_uninstall_consumers {
         RecoverAuthPartial,
         ProbeActiveRefresh,
         RecoverAuthRefusalAfterWorker,
+        RepeatConfirmedAdmissionCycle,
+        NotRemovedAdmissionCycle,
     }
 
     impl UninstallChildPhase {
@@ -1287,7 +1307,8 @@ mod confirmed_uninstall_consumers {
                 Self::AuthLoaderEntered => 76,
                 Self::RecoverPending | Self::RecoverConfirmed | Self::RecoverAuthRefusal
                     | Self::RecoverAuthUnknown | Self::RecoverAuthPartial | Self::ProbeActiveRefresh
-                    | Self::RecoverAuthRefusalAfterWorker => 0,
+                    | Self::RecoverAuthRefusalAfterWorker | Self::RepeatConfirmedAdmissionCycle
+                    | Self::NotRemovedAdmissionCycle => 0,
             }
         }
     }
@@ -1644,6 +1665,71 @@ mod confirmed_uninstall_consumers {
                 workers.shutdown();
                 publish_child_receipt(&request_path, &request, &mcp.skills, &mcp.remote);
             }
+            UninstallChildPhase::RepeatConfirmedAdmissionCycle | UninstallChildPhase::NotRemovedAdmissionCycle => {
+                let original: Value = serde_json::from_slice(request.expected_image.as_ref().unwrap()).unwrap();
+                assert_eq!(fs::read(uninstall_image_path(&request.root)).unwrap(),
+                    *request.expected_image.as_ref().unwrap());
+                assert_eq!(PluginSkillsPort::status(mcp.skills.as_ref()), request.expected_status.clone().unwrap());
+                assert_eq!(original["confirmedPluginIds"], json!(["9"]));
+                assert_eq!(original["pending"], json!([]));
+                let original_observation = image_uninstall_observation(&original);
+                assert!(original_observation.is_string());
+                let seen_pending = Arc::new(Mutex::new(None::<Value>));
+                let captured_pending = Arc::clone(&seen_pending);
+                let captured_root = request.root.clone();
+                let expected_refresh = original["refreshIntent"].clone();
+                let before_observation = original_observation.clone();
+                let removed = request.phase == UninstallChildPhase::RepeatConfirmedAdmissionCycle;
+                {
+                    let mut io = mcp.remote.lock().unwrap();
+                    // Known Removed is settled before display projection. Its
+                    // malformed display prevents unrelated legacy cleanup/sync.
+                    io.uninstall = Ok(if removed {
+                        json!({"removed":true,"state":{"servers":[{"id":"missing-display-fields"}]}})
+                    } else {
+                        json!({"removed":false,"reason":"still-installed","state":desktop_state()})
+                    });
+                    io.before_uninstall_reply = Some(Arc::new(move |event| {
+                        assert_eq!(event["payload"]["method"], MCP_UNINSTALL_PLUGIN_METHOD);
+                        assert_eq!(event["payload"]["args"], json!({"pluginId":"9"}));
+                        let pending: Value = serde_json::from_slice(
+                            &fs::read(uninstall_image_path(&captured_root)).unwrap()).unwrap();
+                        assert_eq!(pending["confirmedPluginIds"], json!(["9"]));
+                        let entries = pending["pending"].as_array().unwrap();
+                        assert_eq!(entries.len(), 1);
+                        assert_eq!(entries[0]["pluginId"], "9");
+                        let ticket = entries[0]["operationId"].as_str().unwrap();
+                        assert_eq!(uuid::Uuid::parse_str(ticket).unwrap().to_string(), ticket);
+                        assert_ne!(image_uninstall_observation(&pending), before_observation);
+                        assert_eq!(pending["refreshIntent"], expected_refresh);
+                        *captured_pending.lock().unwrap() = Some(pending);
+                        true
+                    }));
+                }
+                let result = mcp.service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"9"})).unwrap();
+                if removed {
+                    assert!(result.unwrap_err().contains("MCP server requires"));
+                } else {
+                    assert_eq!(result.unwrap(), json!({"removed":false,"reason":"still-installed","state":desktop_state()}));
+                }
+                let final_image: Value = serde_json::from_slice(&fs::read(uninstall_image_path(&request.root)).unwrap()).unwrap();
+                let pending = seen_pending.lock().unwrap().take().expect("actual backend observed its reserved ticket");
+                assert_ne!(image_uninstall_observation(&final_image), image_uninstall_observation(&pending));
+                assert_ne!(image_uninstall_observation(&final_image), original_observation);
+                let mut original_facts = original.clone();
+                let mut final_facts = final_image;
+                original_facts["uninstallObservation"] = Value::Null;
+                final_facts["uninstallObservation"] = Value::Null;
+                assert_eq!(final_facts, original_facts, "the entire cycle returns every other image field to its old value");
+                assert_eq!(PluginSkillsPort::status(mcp.skills.as_ref()), request.expected_status.clone().unwrap());
+                assert_eq!(mcp.remote.lock().unwrap().calls.iter().map(|(method, _)| method.as_str()).collect::<Vec<_>>(),
+                    vec![MCP_LIST_CATALOG_METHOD, MCP_UNINSTALL_PLUGIN_METHOD]);
+                request.manifest.assert_preserved();
+                assert_eq!(fs::read(&request.manifest.legacy_file).unwrap(), request.manifest.legacy_bytes);
+                mcp.close();
+                workers.shutdown();
+                publish_child_receipt(&request_path, &request, &mcp.skills, &mcp.remote);
+            }
             UninstallChildPhase::ProbeActiveRefresh => {
                 assert_eq!(PluginSkillsPort::status(mcp.skills.as_ref()), request.expected_status.clone().unwrap());
                 let journal = request.expected_image.as_ref().unwrap();
@@ -1819,7 +1905,8 @@ mod confirmed_uninstall_consumers {
         let settled_image = fs::read(uninstall_image_path(&root)).unwrap();
         let settled: Value = serde_json::from_slice(&settled_image).unwrap();
         assert_eq!(settled, json!({
-            "formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,
+            "formatVersion":3,"uninstallObservation":null,
+            "confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,
         }));
 
         // A third OS process proves the positive completion and fallback
@@ -2096,6 +2183,116 @@ mod confirmed_uninstall_consumers {
         }
     }
 
+
+    #[test]
+    fn cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication() {
+        for phase in [UninstallChildPhase::RepeatConfirmedAdmissionCycle, UninstallChildPhase::NotRemovedAdmissionCycle] {
+            let fixture = ConsumerFixture::seed("uninstall-observation-cycle");
+            let manifest = fixture.manifest();
+            let intent = fixture.mcp.skills.begin_uninstall("9").unwrap();
+            fixture.mcp.skills.settle_uninstall(&intent, PluginUninstallSettlement::Removed).unwrap();
+            assert_recovery_state(&fixture.root, &fixture.mcp.skills, true, false);
+            assert_fixture_denied(&fixture, &manifest);
+            let success_reports = fixture.mcp.reports.lock().unwrap().iter()
+                .filter(|report| report.outcome == "ok").count();
+            let sentinel = fixture.root.join("plugins/cache/market/obsolete-cycle/keep.txt");
+            fs::create_dir_all(sentinel.parent().unwrap()).unwrap();
+            fs::write(&sentinel, b"stale cleanup must not run").unwrap();
+            let mut stale_loaded = fixture.published.clone();
+            for plugin in stale_loaded["plugins"].as_array_mut().unwrap() {
+                plugin["identifier"]["version"] = json!("stale-before-foreign-uninstall");
+            }
+            let (entered_tx, entered) = mpsc::channel();
+            let (release, release_rx) = mpsc::channel();
+            let release_rx = Arc::new(Mutex::new(release_rx));
+            {
+                let mut io = fixture.mcp.remote.lock().unwrap();
+                io.calls.clear();
+                io.loaded = Ok(stale_loaded);
+                io.before_load_reply = Some(Arc::new(move |event| {
+                    assert_eq!(event["payload"]["method"], MCP_LOAD_PLUGIN_SKILLS_METHOD);
+                    entered_tx.send(()).unwrap();
+                    release_rx.lock().unwrap().recv_timeout(Duration::from_secs(60)).unwrap();
+                    true
+                }));
+            }
+            let skills = Arc::clone(&fixture.mcp.skills);
+            let (done_tx, done) = mpsc::channel();
+            let active = std::thread::spawn(move || {
+                let _ = done_tx.send(skills.sync("stale-before-foreign-uninstall-cycle"));
+            });
+            entered.recv_timeout(Duration::from_secs(10)).expect("actual old loader entered");
+            let before = fs::read(uninstall_image_path(&fixture.root)).unwrap();
+            let before_image: Value = serde_json::from_slice(&before).unwrap();
+            assert!(before_image["refreshIntent"]["operationId"].is_string());
+            let before_observation = image_uninstall_observation(&before_image);
+            let before_text = String::from_utf8(before.clone()).unwrap();
+            // From loader entry through foreign child terminal, A performs no
+            // admission/current/status read. Only raw fixture bytes are inspected.
+            let child = run_uninstall_child(&fixture.root, &manifest, phase, Some(before), Some(json!({
+                "authBlocked":[],
+                "uninstallRecovery":{"confirmedPluginIds":["9"],"pending":[]},
+                "authRecovery":{"refusals":[],"refreshOutcomeUnknown":true},
+            })));
+            assert_eq!(child.calls.iter().map(|(method, _)| method.as_str()).collect::<Vec<_>>(),
+                vec![MCP_LIST_CATALOG_METHOD, MCP_UNINSTALL_PLUGIN_METHOD]);
+            let after_bytes = fs::read(uninstall_image_path(&fixture.root)).unwrap();
+            let after: Value = serde_json::from_slice(&after_bytes).unwrap();
+            let after_observation = image_uninstall_observation(&after);
+            assert_ne!(after_observation, before_observation);
+            assert_eq!(String::from_utf8(after_bytes).unwrap().replacen(
+                after_observation.as_str().unwrap(), before_observation.as_str().unwrap(), 1), before_text,
+                "the causal identity is the only byte difference across the foreign cycle");
+            let mut before_facts = before_image;
+            let mut after_facts = after;
+            before_facts["uninstallObservation"] = Value::Null;
+            after_facts["uninstallObservation"] = Value::Null;
+            assert_eq!(after_facts, before_facts);
+            manifest.assert_preserved();
+            release.send(()).unwrap();
+            assert_eq!(done.recv_timeout(Duration::from_secs(10)).expect("stale worker terminal").unwrap_err(),
+                "plugin skills sync superseded by a cross-process admission change");
+            active.join().unwrap();
+            assert_recovery_state(&fixture.root, &fixture.mcp.skills, true, false);
+            assert_fixture_denied(&fixture, &manifest);
+            assert_eq!(fixture.mcp.reports.lock().unwrap().iter().filter(|report| report.outcome == "ok").count(),
+                success_reports, "a stale pass must not report successful publication");
+            assert_eq!(fs::read(&sentinel).unwrap(), b"stale cleanup must not run");
+            let settled: Value = serde_json::from_slice(&fs::read(uninstall_image_path(&fixture.root)).unwrap()).unwrap();
+            assert_eq!(image_uninstall_observation(&settled), after_observation,
+                "settling old refresh custody preserves the newer uninstall identity");
+            manifest.assert_preserved();
+
+            let mut fresh = fixture.published.clone();
+            for plugin in fresh["plugins"].as_array_mut().unwrap() {
+                plugin["identifier"]["version"] = json!("fresh-after-foreign-uninstall");
+            }
+            {
+                let mut io = fixture.mcp.remote.lock().unwrap();
+                io.before_load_reply = None;
+                io.loaded = Ok(fresh);
+            }
+            let recovered = fixture.mcp.skills.sync("fresh-after-foreign-uninstall-cycle").unwrap();
+            assert_eq!(recovered.iter().map(|row| row.plugin_id.as_str()).collect::<Vec<_>>(), vec!["9", "10"]);
+            assert!(recovered.iter().all(|row| row.plugin_version == "fresh-after-foreign-uninstall"));
+            assert_run_body(&fixture.workers, &fixture.agent_id, "plugin-9-private", "PRIVATE_RUN_RECIPE");
+            assert_run_body(&fixture.workers, &fixture.agent_id, "plugin-10-allowed", "ALLOWED_RUN_RECIPE");
+            assert!(skill_prompt(&fixture.retained).contains("PRIVATE_PROVIDER_DESCRIPTION"));
+            assert_recovery_state(&fixture.root, &fixture.mcp.skills, false, false);
+            let released: Value = serde_json::from_slice(&fs::read(uninstall_image_path(&fixture.root)).unwrap()).unwrap();
+            assert_ne!(image_uninstall_observation(&released), after_observation);
+            assert!(!sentinel.exists(), "only the later fresh pass may perform complete cleanup");
+            let reports = fixture.mcp.reports.lock().unwrap();
+            assert_eq!(reports.iter().filter(|report| report.outcome == "ok").count(), success_reports + 1);
+            assert_eq!(reports.last().unwrap().trigger, "fresh-after-foreign-uninstall-cycle");
+            assert!(reports.last().unwrap().changed);
+            drop(reports);
+            manifest.after_cache_publication(&fixture.root).assert_preserved();
+            assert_eq!(fs::read(&manifest.legacy_file).unwrap(), manifest.legacy_bytes);
+            fixture.finish();
+        }
+    }
+
     #[test]
     fn confirmed_uninstall_reaches_retained_session_reads_and_prompt_before_failed_refresh() {
         confirmed_uninstall_consumers_case(false, false);
@@ -2123,7 +2320,7 @@ mod confirmed_uninstall_consumers {
             root, workers, agent_id, retained, mcp, published, files,
             user: _, managed: _, legacy, cache_path,
         } = fixture;
-        let RealMcp { relay, remote, skills, backend, service, _subscription } = mcp;
+        let RealMcp { relay, remote, skills, reports: _, backend, service, _subscription } = mcp;
         let legacy_before = fs::read(&legacy.file_path).unwrap();
         let raw_reply = json!({
             "removed":true,
