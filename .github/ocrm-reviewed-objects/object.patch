@@ -1,0 +1,192 @@
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 2c7b233c8d5d0456050e8d2dc5e16a223155e550..4e6844496f267050e4236494de424de28630ccc8 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -29,7 +29,7 @@
+   "responsibilities": [
+     {
+       "adr_refs": [],
+-      "behavior": "Preserve a provider-bound default through the existing desktop bridge and Rust Settings; resolve an authorized Fabushi turn once and retain identity in actual Responses JSON, metadata, accepted checkpoint retry, summarization and turn-memory. The broader catalog, picker mutation and interrupted-turn recovery remain separate responsibilities.",
++      "behavior": "Preserve a provider-bound default through the existing desktop bridge and Rust Settings; resolve an authorized Fabushi or Codex turn once and retain identity in actual Responses JSON, metadata, attempts/nudges, accepted known-model checkpoint retry, summarization and turn-memory. Generic Codex model-less legacy checkpoints remain compatible. The broader catalog, picker mutation and interrupted-turn recovery remain separate responsibilities.",
+       "blocker_ids": [
+         "OCRM-MODEL-IDENTITY-SCOPED-AUTHORITY-PENDING",
+         "OCRM-MODEL-IDENTITY-EXACT-H-BEHAVIOR-PENDING",
+@@ -39,7 +39,8 @@
+       "capability_ids": [
+         "models.provider_bound_default",
+         "inference.frozen_fabushi_model",
+-        "runner.accepted_checkpoint_model_identity"
++        "runner.accepted_checkpoint_model_identity",
++        "inference.frozen_codex_model"
+       ],
+       "dependencies": [
+         "SettingsService atomic writer and checked source reader",
+@@ -65,7 +66,10 @@
+         "source/host/tests/fabushi_model_identity_production_contract.rs",
+         "source/electron-main/main-edge.ts",
+         "source/shared/node/settings/sand-settings-store.ts",
+-        "source/electron-main/main-edge-model.contract.test.ts"
++        "source/electron-main/main-edge-model.contract.test.ts",
++        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
++        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
++        "source/host/app/src/tests/codex_model_admission_tests.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -87,7 +91,7 @@
+       ],
+       "id": "OCRM-RESP-MODEL-IDENTITY-001",
+       "integration": {
+-        "consumer": "Fabushi Responses serializer, runtime model metadata, accepted checkpoint retry, turn-memory and independent summarization producer",
++        "consumer": "Existing Fabushi and Codex Responses serializers, runtime model metadata, production Runner attempts/nudges, accepted known-model checkpoint retry, turn-memory and independent summarization producer",
+         "entrypoint": "Existing agents.setDefaultModel appWindow RPC to Host Settings; source/host/app/src/main.rs::prepare_routed_turn_model_admission after route/session authorization",
+         "owner": "ProductionAgentInferenceOwner selects; existing Settings and Session persist; Runner carries immutable identity",
+         "producer": "Authenticated config.set / setHostSettings / specialized Settings writer and existing Session model read"
+@@ -97,7 +101,7 @@
+         "Legacy unbound defaults retain Cursor semantics; another provider binding cannot select a Fabushi or Cursor default",
+         "Raw explicit presence is validated before priority selection; invalid persistent source is never absence",
+         "Accepted checkpoint identity cannot silently fall back to environment or a new default",
+-        "Generic Codex legacy checkpoint decoding remains compatible; only Fabushi enforces the strict model fence"
++        "Generic Codex model-less legacy checkpoints remain compatible; known Codex identities must match the captured model, while Fabushi also refuses model-less legacy resume"
+       ],
+       "migration_rollback": "Retain the additive optional checkpoint field and stored default fields; never replay accepted Fabushi effects under an unknown or changed model. Revert composition only with compatible persisted data and a verified release.",
+       "oracle_ids": [
+@@ -107,11 +111,13 @@
+         "OCRM-MODEL-IDENTITY-O04",
+         "OCRM-MODEL-IDENTITY-O05",
+         "OCRM-MODEL-IDENTITY-O06",
+-        "OCRM-MODEL-IDENTITY-O07"
++        "OCRM-MODEL-IDENTITY-O07",
++        "CMI-O1",
++        "CMI-O2"
+       ],
+       "owner_decision": "Extend existing Settings/Inference/Runner boundaries; no new runtime owner or store. Host remains a thin authorized composition and lease bridge.",
+       "postconditions": [
+-        "Actual Fabushi request model and runtime metadata equal the frozen turn model",
++        "Actual Fabushi/Codex request model and runtime metadata equal the frozen authorized turn model",
+         "An updated default affects a later turn, while accepted tool continuation and retry retain the old model",
+         "Identity refusal releases an already accepted lease before permission direction, attachments, auth, HTTP or tools advance"
+       ],
+@@ -162,7 +168,7 @@
+         "OCRM-AC23"
+       ],
+       "responsibility_kind": "business-runtime",
+-      "reviewer": "Current production chain reconciled read-only at 0533ca72870a2794c2db32959b9d01427abf325a; new bridge and source-tool review pending; no scoped acceptance",
++      "reviewer": "Current production chain reconciled read-only at 0533ca72870a2794c2db32959b9d01427abf325a; new bridge and source-tool review pending; no scoped acceptance; CMI-v1 extends the same production owner to Codex. Independent frozen review and exact-subject Actions remain required; historical source reads, statuses and blockers are retained.",
+       "risk": "High: provider identity, persisted configuration, accepted tool effects, stale settings, cancellation and lease/permission ordering. Full relevant implementation/call-state review required; no source-wide contract-only completion claim.",
+       "selected_owner": "source/host/src/extensions/inference/production.rs",
+       "source_refs": [
+@@ -666,7 +672,7 @@
+       "target": {
+         "language": "Rust",
+         "path": "source/host/src/extensions/inference/production.rs",
+-        "symbol": "ProductionAgentInferenceOwner::resolve_fabushi_turn_model"
++        "symbol": "ProductionAgentInferenceOwner::{resolve_fabushi_turn_model,resolve_codex_turn_model}"
+       },
+       "tests": [
+         "source/host/tests/settings_service_contract.rs",
+@@ -679,7 +685,9 @@
+         "source/host/tests/runner_production_bridge_contract.rs",
+         "source/host/tests/runner_routed_provider_contract.rs",
+         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+-        "source/electron-main/main-edge-model.contract.test.ts"
++        "source/electron-main/main-edge-model.contract.test.ts",
++        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
++        "source/host/app/src/tests/codex_model_admission_tests.rs"
+       ],
+       "typed_contracts": [
+         "OCRM-MODEL-IDENTITY-v1",
+@@ -688,7 +696,11 @@
+         "RoutedProviderOptions::fabushi_model",
+         "CodexDirectCheckpoint::model",
+         "resolve_fabushi_request_model",
+-        "OCRM-MODEL-BRIDGE-v1"
++        "OCRM-MODEL-BRIDGE-v1",
++        "OCRM-CODEX-MODEL-IDENTITY-v1",
++        "ProductionRunnerCompositionInput::codex_model",
++        "RoutedProviderOptions::codex_model",
++        "resolve_codex_request_model"
+       ],
+       "unit_id": "OCRM-UNIT-MODEL-IDENTITY-001"
+     },
+diff --git a/source/host/app/src/main.rs b/source/host/app/src/main.rs
+index 4929c514b110cc5105f2f7abcc6e7e53226fa501..c3ee3dc9d1647853bace9dcb944878211edfcc2c 100644
+--- a/source/host/app/src/main.rs
++++ b/source/host/app/src/main.rs
+@@ -1406,6 +1406,7 @@ struct RoutedTurnModelAdmission {
+     lease_guard: RoutedTurnLeaseGuard,
+     persisted_session_model: SessionModelEntryState,
+     fabushi_model: Option<String>,
++    codex_model: Option<String>,
+     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
+     direction_epoch: u64,
+     original_turn: Option<OriginalTurnReference>,
+@@ -1522,6 +1523,15 @@ fn prepare_routed_turn_model_admission_with_guard(
+     } else {
+         None
+     };
++    let codex_model = if provider == RoutedProvider::Codex {
++        Some(inference.port().resolve_codex_turn_model(
++            persisted_session_model.model_override.as_deref(),
++            persisted_session_model.provider_override.as_deref(),
++            explicit_model_id,
++        ).map_err(|error| GatewayCommandError::BadRequest(error.to_string()))?)
++    } else {
++        None
++    };
+     let fabushi_request_binding = if provider == RoutedProvider::Fabushi {
+         Some(capture_fabushi_responses_request_binding().map_err(|error| match &error {
+             ProviderSessionError::Authentication(_) => GatewayCommandError::Unauthorized(error.to_string()),
+@@ -1553,6 +1563,7 @@ fn prepare_routed_turn_model_admission_with_guard(
+         lease_guard,
+         persisted_session_model,
+         fabushi_model,
++        codex_model,
+         fabushi_request_binding,
+         direction_epoch,
+         original_turn,
+@@ -9253,6 +9264,7 @@ fn start_routed_provider_task(
+         lease_guard: routed_turn_lease_guard,
+         persisted_session_model,
+         fabushi_model,
++        codex_model,
+         fabushi_request_binding,
+         direction_epoch: turn_local_tool_direction_epoch,
+         original_turn,
+@@ -12117,7 +12129,8 @@ fn start_routed_provider_task(
+             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
+             let settle_labeling_auth = Arc::clone(&cursor_auth);
+             let cursor_model_id = cursor_auth.requested_model().model_id;
+-            let turn_model_id = fabushi_model.clone().unwrap_or_else(|| cursor_model_id.clone());
++            let turn_model_id = fabushi_model.clone().or_else(|| codex_model.clone())
++                .unwrap_or_else(|| cursor_model_id.clone());
+             let web_executor: Arc<dyn WebToolExecutor> = Arc::new(
+                 ProductionWebToolExecutor::new(Arc::clone(&inference), cursor_model_id),
+             );
+@@ -12196,6 +12209,7 @@ fn start_routed_provider_task(
+                 ProductionRunnerCompositionInput {
+                     provider,
+                     fabushi_model: fabushi_model.clone(),
++                    codex_model: codex_model.clone(),
+                     fabushi_request_binding: fabushi_request_binding.clone(),
+                     bridge,
+                     cursor_auth: Some(cursor_auth),
+@@ -12702,7 +12716,7 @@ fn start_routed_provider_task(
+                                 |system_prompt: &str, user_prompt: &str| -> Result<String, String> {
+                                     let should_cancel = || memory_cancellation.is_cancelled();
+                                     inference.run_turn_memory_prompt(
+-                                        &data_dir, provider, fabushi_model.as_deref(),
++                                        &data_dir, provider, fabushi_model.as_deref(), codex_model.as_deref(),
+                                         fabushi_request_binding.as_ref(), system_prompt,
+                                         user_prompt, &should_cancel,
+                                     ).map_err(|error| error.to_string())
+@@ -17844,6 +17858,9 @@ mod tests {
+     #[path = "config_secret_boundary_tests.rs"]
+     mod config_secret_boundary_tests;
+ 
++    #[path = "codex_model_admission_tests.rs"]
++    mod codex_model_admission_tests;
++
+     use super::{
+         BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBrowserUaLog,
+         ProductionHostExtensions, ProductionRunnerRequestContextSource, UnifiedGatewayApi,

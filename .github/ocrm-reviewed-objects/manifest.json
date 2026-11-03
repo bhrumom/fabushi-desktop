@@ -1,0 +1,27 @@
+{
+  "kind": "reviewed-git-object-staging-manifest",
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "base_commit": "84120837330f88d9a7b21e9a5bc75daaa728de82",
+  "candidate_tree": "6472d14c1ad0f20ed0fb56a40d5ef84689efb92c",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "patch_sha256": "7a1673c4c42922d1b2ec07f1e3c50b810754145e28c824af896f8598a8899424",
+  "targets": [
+    {
+      "path": "source/host/app/src/main.rs",
+      "before_blob": "4929c514b110cc5105f2f7abcc6e7e53226fa501",
+      "after_blob": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+      "after_bytes": 985710,
+      "after_sha256": "139d55d9e2c52eeaeef78eced67ce7130f45207b92968dd761535bdf8dd6f625"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "before_blob": "2c7b233c8d5d0456050e8d2dc5e16a223155e550",
+      "after_blob": "4e6844496f267050e4236494de424de28630ccc8",
+      "after_bytes": 1386279,
+      "after_sha256": "4076ad135b934be9156af3390aebf25a082366e4194262fe064eb50028671916"
+    }
+  ],
+  "scope": "Materialize only the two declared immutable Git objects. No product execution, branch update, validation or semantic acceptance is performed by this carrier."
+}
