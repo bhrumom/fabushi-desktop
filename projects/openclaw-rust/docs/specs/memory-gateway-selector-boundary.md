@@ -134,3 +134,67 @@ methods are existing Fabushi RPCs; their classification is this native supplemen
 not a claim that OpenClaw exposes identically named methods. Historical source
 facts and all global completion flags stay unchanged.
 
+
+## Checked native Memory listing — MGL-v1
+
+Discovery subject: `3a572381230ad1068d4fd5556e455d2d81085d81`;
+the fixed U remains unchanged. This is an existing Fabushi read-contract
+preservation under OCRM-R13/R24 and AC13/AC17/AC18/AC24. It does not renew
+historical upstream source-reading or Memory equivalence credit.
+
+The actual native HTTP/Gateway delegate reaches the validated
+`TranscriptManager::dispatch_memory_gateway_call` and then
+`MemoryService::list` / `FileMemoryStore::list_memories`.
+The current `facts` implementation silently drops directory-entry/type errors,
+directory-read failures and every file-read failure. Invalid UTF-8 in an
+existing profile or monthly log therefore produces a successful empty or
+partial array. A readable neighboring fact does not make that reply complete.
+
+Decision **MGL-01 — FIX / IMPL_BUG**: add a checked listing operation to the
+existing FileMemoryStore and MemoryService, and consume it at this existing
+read RPC. Keep the existing store, parser, record ordering, Session ownership,
+authorization and error channel. No parallel store, snapshot, read repair,
+notification, permission rule or runtime is introduced.
+
+| ID | Required behavior and oracle |
+| --- | --- |
+| MGL-01 | A genuinely absent optional profile or log directory retains empty-input behavior by matching only `io::ErrorKind::NotFound`. Other errors reading the profile or enumerating its log directory propagate. Do not use `exists()` or a generic empty fallback as proof of absence. A missing safe Agent ID still returns `[]` without creating its directory. |
+| MGL-02 | Propagate log directory-entry and file-type lookup errors. Keep the existing nonregular and non-`.md` entry filtering. Every selected regular Markdown log must read successfully; an error, including disappearance after enumeration, refuses the checked list. Parse readable Markdown with the same existing parser: comments, malformed fact lines and invalid dates keep their existing skip policy. |
+| MGL-03 | Assemble the complete checked fact set before applying the limit. Share parsing and profile-first/date/order projection with the existing implementation; preserve raw record identity, normalization, date, tie order and the 100-record native bound. A failed older log cannot be hidden merely because 100 newer facts are already available. Existing best-effort recall and other legacy list consumers retain their behavior until separately reviewed. |
+| MGL-04 | `getAgentMemories` validates the original trimmed canonical selector before resolving the store, then consumes the checked result. Store failures become the existing string/Internal Gateway failure, never a successful empty/partial list. Do not include memory content in error messages. Paired/native authorization and its zero-owner-dispatch refusals remain unchanged. |
+| MGL-05 | Reads, including failed reads, do not write, create, repair or rename files, invalidate frozen prompts, change a pending mutation journal, emit mutation notifications or introduce accepted background work. Existing raw file bytes and unrelated agent state survive a refusal and owner reopen. Only explicit fixture/user repair changes the faulty input; the same owner can then read the original complete projection successfully. |
+| MGL-06 | Use actual FileMemoryStore, MemoryService, TranscriptManager and the existing real HTTP Memory Gateway fixture. Exercise invalid UTF-8 profile and monthly log with readable neighbors, a file occupying the log-directory path, a directory occupying the profile path, errors beyond the result limit, missing/empty/readable/ordering positives, exact raw-byte retention, reopen and explicit repair. Retain all MGS/MGA selector, permission, projection, mutation, snapshot, journal and no-private-content assertions. |
+
+The checked public operations return `io::Result<Vec<MemoryRecord>>` in the
+existing FileMemoryStore/MemoryService. The existing list operations keep their
+current return types for other consumers. Reuse one text-parser helper and one
+record projection/sort implementation where that avoids divergent semantics;
+do not duplicate the persisted format. The TranscriptManager maps the checked
+error through its existing error contract, and the shipping UnifiedGatewayApi
+already maps that error to `GatewayCommandError::Internal`.
+
+Production scope is `memory/memory_service.rs` and
+`transcript/transcript_manager.rs`. Controls belong in the existing
+`memory_service_contract.rs`, `transcript_manager_contract.rs` and
+`memory_gateway_authorization_contract.rs`. The HTTP fixture must delegate to
+the actual owners, establish readable facts before corruption, observe exactly
+one admitted dispatch and an error response rather than `[]`, retain actual
+permission refusals, and verify valid recovery. A controlled storage fault is
+not real remote-device or full Host/UI acceptance.
+
+Freeze the complete source/tests/CI scope for fresh GENERAL and STRUCTURE
+review. Root alone integrates shared workflow, capture and OCRM evidence.
+Execute the affected contracts and locked shipping Host compile only in
+GitHub Actions on exact H, preserving existing named assertions and Linux/macOS
+coverage. No local or htch-runtime validation. Authored source and review do
+not establish execution or broad responsibility acceptance.
+
+This synchronous read adds no cancellation or restart state and changes no
+persisted format. Rollback needs no conversion and would restore the known
+silent partial-read behavior. Multi-file atomic snapshots, external writer
+races, symlink confinement, strict model-prompt/synthesis reads, successful
+episode settlement concurrency, complete Memory/platform/UI compatibility and
+all final migration gates remain required separately. The narrow MWR append
+contract's historical read-listing limitation is addressed here only for this
+checked native entry. No global completion flag or source-review status is
+promoted.
