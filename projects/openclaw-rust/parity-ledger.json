@@ -12,10 +12,10 @@
   "file_coverage": {
     "applicability_assessed_paths": 0,
     "dispositioned_paths": 0,
-    "mapped_paths": 850,
+    "mapped_paths": 877,
     "omitted_known": 0,
     "tracked_paths": 62130,
-    "unclassified_paths": 61280,
+    "unclassified_paths": 61253,
     "unreviewed_applicable_paths": 0
   },
   "inventory_authority": {
@@ -789,8 +789,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 205,
-                "end_line": 320
+                "end_line": 320,
+                "start_line": 205
               }
             ],
             "read_status": "partial"
@@ -803,8 +803,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 350,
-                "end_line": 472
+                "end_line": 472,
+                "start_line": 350
               }
             ],
             "read_status": "partial"
@@ -817,12 +817,12 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 91,
-                "end_line": 147
+                "end_line": 147,
+                "start_line": 91
               },
               {
-                "start_line": 279,
-                "end_line": 348
+                "end_line": 348,
+                "start_line": 279
               }
             ],
             "read_status": "partial"
@@ -835,8 +835,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 254,
-                "end_line": 310
+                "end_line": 310,
+                "start_line": 254
               }
             ],
             "read_status": "partial"
@@ -849,8 +849,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 136
+                "end_line": 136,
+                "start_line": 1
               }
             ],
             "read_status": "read-complete"
@@ -863,8 +863,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 172
+                "end_line": 172,
+                "start_line": 1
               }
             ],
             "read_status": "read-complete"
@@ -877,8 +877,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 254
+                "end_line": 254,
+                "start_line": 1
               }
             ],
             "read_status": "read-complete"
@@ -891,8 +891,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 161,
-                "end_line": 289
+                "end_line": 289,
+                "start_line": 161
               }
             ],
             "read_status": "partial"
@@ -905,12 +905,12 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 72,
-                "end_line": 107
+                "end_line": 107,
+                "start_line": 72
               },
               {
-                "start_line": 168,
-                "end_line": 240
+                "end_line": 240,
+                "start_line": 168
               }
             ],
             "read_status": "partial"
@@ -923,16 +923,16 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 75,
-                "end_line": 112
+                "end_line": 112,
+                "start_line": 75
               },
               {
-                "start_line": 278,
-                "end_line": 311
+                "end_line": 311,
+                "start_line": 278
               },
               {
-                "start_line": 482,
-                "end_line": 584
+                "end_line": 584,
+                "start_line": 482
               }
             ],
             "read_status": "partial"
@@ -945,8 +945,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 422,
-                "end_line": 490
+                "end_line": 490,
+                "start_line": 422
               }
             ],
             "read_status": "partial"
@@ -959,16 +959,16 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 51,
-                "end_line": 100
+                "end_line": 100,
+                "start_line": 51
               },
               {
-                "start_line": 130,
-                "end_line": 214
+                "end_line": 214,
+                "start_line": 130
               },
               {
-                "start_line": 235,
-                "end_line": 282
+                "end_line": 282,
+                "start_line": 235
               }
             ],
             "read_status": "partial"
@@ -981,8 +981,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 140,
-                "end_line": 182
+                "end_line": 182,
+                "start_line": 140
               }
             ],
             "read_status": "partial"
@@ -995,8 +995,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 127
+                "end_line": 127,
+                "start_line": 1
               }
             ],
             "read_status": "read-complete"
@@ -1009,8 +1009,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 15
+                "end_line": 15,
+                "start_line": 1
               }
             ],
             "read_status": "read-complete"
@@ -1023,8 +1023,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 50
+                "end_line": 50,
+                "start_line": 1
               }
             ],
             "read_status": "read-complete"
@@ -1037,8 +1037,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 11
+                "end_line": 11,
+                "start_line": 1
               }
             ],
             "read_status": "read-complete"
@@ -1051,8 +1051,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 38
+                "end_line": 38,
+                "start_line": 1
               }
             ],
             "read_status": "read-complete"
@@ -1065,12 +1065,12 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 1,
-                "end_line": 31
+                "end_line": 31,
+                "start_line": 1
               },
               {
-                "start_line": 44,
-                "end_line": 69
+                "end_line": 69,
+                "start_line": 44
               }
             ],
             "read_status": "partial"
@@ -1083,8 +1083,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 29,
-                "end_line": 50
+                "end_line": 50,
+                "start_line": 29
               }
             ],
             "read_status": "partial"
@@ -1097,12 +1097,12 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 310,
-                "end_line": 366
+                "end_line": 366,
+                "start_line": 310
               },
               {
-                "start_line": 555,
-                "end_line": 627
+                "end_line": 627,
+                "start_line": 555
               }
             ],
             "read_status": "partial"
@@ -1115,8 +1115,8 @@
           "range": {
             "read_ranges": [
               {
-                "start_line": 63,
-                "end_line": 203
+                "end_line": 203,
+                "start_line": 63
               }
             ],
             "read_status": "partial"
