@@ -16,6 +16,7 @@ on:
           - full
           - ocrm-config
           - ocrm-mcp-native
+          - ocrm-custody-recovery
   push:
     branches:
       - main
@@ -74,7 +75,7 @@ concurrency:
 
 jobs:
   rust-host:
-    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
+    if: ${{ (!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -1459,6 +1460,7 @@ jobs:
               "join_expiry_is_rechecked_after_a_delayed_successful_commit",
               "join_concurrent_file_owners_publish_one_payload",
               "join_gateway_reports_storage_failure_and_preserves_public_recovery",
+              "join_deferred_commit_refusal_is_qualified_and_preserves_recovery",
           ]
           passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
@@ -3193,7 +3195,7 @@ jobs:
           retention-days: 90
 
   config-restore-linux:
-    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
+    if: ${{ (!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
     name: OCRM installation key restore boundary / Linux
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -3354,7 +3356,7 @@ jobs:
           retention-days: 90
 
   sqlite-native-path:
-    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
+    if: ${{ (!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -4652,7 +4654,7 @@ jobs:
           retention-days: 90
 
   media-store-windows:
-    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
+    if: ${{ (!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
     name: OCRM media cleanup / Windows
     runs-on: windows-2025
     timeout-minutes: 45
@@ -4699,7 +4701,7 @@ jobs:
           retention-days: 90
 
   pressure-profiler-platform:
-    if: ${{ (github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+    if: ${{ ((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
     name: Pressure profiler / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -4755,7 +4757,7 @@ jobs:
           -- --exact --nocapture
 
   platform-worker:
-    if: ${{ (github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+    if: ${{ ((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -4795,6 +4797,7 @@ jobs:
         run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
 
   renderer:
+    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -5618,3 +5621,108 @@ jobs:
       - name: Check Grok final architecture gate
         if: ${{ env.OCRM_PLUGIN_SCOPE != 'true' }}
         run: node scripts/check-grok-architecture.mjs --strict
+
+
+  custody-recovery:
+    if: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
+    name: OCRM custody recovery / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
+      OCRM_PORTABLE_SCOPE: custody-recovery
+      OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/custody-recovery/unselected-palette.json
+      TMPDIR: ${{ github.workspace }}/.evidence/custody-recovery/owned-tmp
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact focused subject and owned evidence root
+        id: bind
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$FABUSHI_TARGET_SHA"
+          if [ -n "$EXPECTED_DISPATCH_SHA" ]; then
+            [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
+            test "$actual" = "$EXPECTED_DISPATCH_SHA"
+          fi
+          mkdir -p "$TMPDIR"
+          echo "Focused custody subject: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            source/host -> target
+            source/host/app -> target
+            source/box-exec-daemon -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Install existing Linux Host native dependencies
+        if: ${{ runner.os == 'Linux' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Compile the exact shipping Host for the selected recovery
+        id: shipping_host
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml > .evidence/custody-recovery/shipping-host.log 2>&1
+          command_status=$?
+          set -e
+          export CRF_HOST_COMPILE_EXIT="$command_status"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path(".evidence/custody-recovery")
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"]
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          raw = (root / "shipping-host.log").read_bytes()
+          status = int(os.environ["CRF_HOST_COMPILE_EXIT"])
+          receipt = {
+              "contract": "CRF-v1-shipping-compile", "validation_scope": "custody-recovery",
+              "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
+              "command": ["cargo", "check", "--locked", "--profile", "ci", "--bin", "mahayana-app-host",
+                  "--manifest-path", "source/host/app/Cargo.toml"],
+              "command_exit": status, "capture_exit": 0,
+              "log": "shipping-host.log", "log_sha256": hashlib.sha256(raw).hexdigest(),
+              "result": "compiled" if status == 0 else "failed-or-incomplete",
+              "scope": "Compilation only, not runtime, full-contract or package acceptance.",
+          }
+          (root / "shipping-host.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          PY
+          cat .evidence/custody-recovery/shipping-host.log
+          exit "$command_status"
+      - name: Execute selected real custody contracts
+        id: custody_contracts
+        shell: bash
+        run: python3 projects/openclaw-rust/scripts/capture_portable_contracts.py
+      - name: Upload exact-subject focused evidence including owned failures
+        if: ${{ always() && steps.bind.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-custody-recovery-${{ runner.os }}-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/custody-recovery/
+          if-no-files-found: error
+          retention-days: 90

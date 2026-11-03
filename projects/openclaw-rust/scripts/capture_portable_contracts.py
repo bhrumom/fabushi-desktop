@@ -1,5 +1,9 @@
 import hashlib, json, os, pathlib, re, subprocess
-root = pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery")
+validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
+if validation_scope not in ("full", "custody-recovery"):
+    raise ValueError("Unknown portable contract scope")
+root = pathlib.Path(".evidence/custody-recovery" if validation_scope == "custody-recovery"
+    else ".evidence/sqlite-native-path/channel-pending-recovery")
 root.mkdir(parents=True, exist_ok=True)
 head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
 assert head == os.environ["FABUSHI_TARGET_SHA"], "Exact CWR execution subject mismatch"
@@ -8,6 +12,7 @@ palette_fixture.parent.mkdir(parents=True, exist_ok=True)
 assert not palette_fixture.exists(), "PMS export must be produced freshly by this exact-H Rust execution"
 lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
 inputs = [
+    "projects/openclaw-rust/docs/specs/custody-recovery-verification.md",
     ".github/workflows/rust-desktop-runtime.yml",
     "projects/openclaw-rust/scripts/capture_portable_contracts.py",
     "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
@@ -909,6 +914,7 @@ cases = [
         "join_expiry_is_rechecked_after_a_delayed_successful_commit",
         "join_concurrent_file_owners_publish_one_payload",
         "join_gateway_reports_storage_failure_and_preserves_public_recovery",
+        "join_deferred_commit_refusal_is_qualified_and_preserves_recovery",
     ]),
     ('device-join-limit-state', base + ['--lib', 'gateway_server::join_rate_limit_tests::', '--', '--test-threads=1'], [
         'gateway_server::join_rate_limit_tests::join_limit_defaults_window_lockout_and_retry_boundaries',
@@ -1274,6 +1280,89 @@ cases = [
     ("box-response-shell-capture-consumer", base + ["--test", "box_exec_daemon_process_contract", "box_foreground_capture_", "--", "--ignored", "--test-threads=1"], ["foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"]),
     ("box-response-shell-capture-disconnect", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::disconnect_aborts_foreground_shell_process_group", "--", "--exact", "--test-threads=1"], ["server::tests::disconnect_aborts_foreground_shell_process_group"]),
 ]
+
+# CRF-v1 selects from the retained full plan, never mutates its contract list.
+# A scoped success is distinct from whole-contract acceptance.
+full_cases = list(cases)
+custody_box_labels = (
+    "box-response-manager", "box-response-codec", "box-response-runner-bridge",
+    "box-response-spill", "box-response-prompt-glue", "box-response-manager-exhaustion",
+    "box-response-forever-box", "box-response-real-daemon",
+    "box-response-shell-capture-unit", "box-response-shell-capture-consumer",
+    "box-response-shell-capture-disconnect",
+)
+custody_desktop_names = (
+    "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
+    "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
+    "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
+)
+djc_qualified_name = "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
+
+def select_portable_cases(scope, declared):
+    if scope not in ("full", "custody-recovery"):
+        raise ValueError("Unknown portable contract scope")
+    indexed = {label: (label, command, required) for label, command, required in declared}
+    if len(indexed) != len(declared):
+        raise ValueError("Duplicate portable case label")
+    if scope == "full":
+        return list(declared)
+    needed = (*custody_box_labels, "plugin-uninstall-service",
+        "plugin-uninstall-relay-handoff", "device-pairing-join")
+    if any(label not in indexed for label in needed):
+        raise ValueError("Focused recovery lost a declared command")
+    selected = [indexed[label] for label in custody_box_labels]
+    service_required = indexed["plugin-uninstall-service"][2]
+    for index, name in enumerate(custody_desktop_names):
+        if service_required.count(name) != 1:
+            raise ValueError("Focused desktop oracle is absent or ambiguous")
+        selected.append((f"plugin-custody-desktop-{index + 1}",
+            base + ["--test", "mcp_coordinator_relay_contract", name,
+                "--", "--exact", "--test-threads=1"], [name]))
+    selected.append(indexed["plugin-uninstall-relay-handoff"])
+    if indexed["device-pairing-join"][2].count(djc_qualified_name) != 1:
+        raise ValueError("Focused causal COMMIT oracle is absent or ambiguous")
+    selected.append(("device-pairing-join-qualified",
+        base + ["--test", "device_pairing_join_admission_contract", djc_qualified_name,
+            "--", "--exact", "--test-threads=1"], [djc_qualified_name]))
+    if len(selected) != 16 or len({case[0] for case in selected}) != len(selected):
+        raise ValueError("Focused recovery plan is incomplete or duplicated")
+    if any(not required or len(set(required)) != len(required)
+        for _, _, required in selected):
+        raise ValueError("Focused recovery needs unique nonempty test names")
+    if any("join_storage_commit_refusal_never_publishes_payload" in required
+        for _, _, required in selected):
+        raise ValueError("Unchanged failed lock instrument cannot be retried by this scope")
+    return selected
+
+selection_controls = []
+for control, scope, declared, expected in [
+    ("full-preserved", "full", full_cases, True),
+    ("qualified-focused", "custody-recovery", full_cases, True),
+    ("unknown-scope", "unqualified", full_cases, False),
+    ("duplicate-label", "custody-recovery", full_cases + [full_cases[0]], False),
+    ("missing-box-command", "custody-recovery",
+        [case for case in full_cases if case[0] != "box-response-shell-capture-unit"], False),
+    ("missing-relay-command", "custody-recovery",
+        [case for case in full_cases if case[0] != "plugin-uninstall-relay-handoff"], False),
+    ("missing-desktop-name", "custody-recovery",
+        [(label, command, [name for name in required if name != custody_desktop_names[0]])
+            for label, command, required in full_cases], False),
+    ("missing-causal-commit-name", "custody-recovery",
+        [(label, command, [name for name in required if name != djc_qualified_name])
+            for label, command, required in full_cases], False),
+    ("duplicate-required-name", "custody-recovery",
+        [(label, command, required + required if label == "box-response-shell-capture-unit" else required)
+            for label, command, required in full_cases], False),
+]:
+    try:
+        selected = select_portable_cases(scope, declared)
+        actual = selected == full_cases if scope == "full" else True
+    except ValueError:
+        actual = False
+    selection_controls.append({"case": control, "expected": expected, "actual": actual})
+    assert actual == expected, f"CRF selection oracle failed: {control}"
+cases = select_portable_cases(validation_scope, full_cases)
+
 def successful_test_names(output):
     # libtest decorates an expected-panic success without changing its name.
     return re.findall(r"^test (\S+)(?: - should panic)? \.\.\. ok$", output, re.MULTILINE)
@@ -1329,7 +1418,7 @@ def box_response_observed_names(output):
     return [box_response_exhaustion_name if name == "r#" + box_response_exhaustion_name else name
         for name in names]
 
-def box_response_results_accepted(label, cargo_exit, capture_exit, required, output):
+def exact_target_results_accepted(cargo_exit, capture_exit, required, output, allow_filtered):
     text = output.replace("\r\n", "\n")
     names = box_response_observed_names(text)
     complete = [tuple(map(int, row)) for row in re.findall(
@@ -1339,7 +1428,11 @@ def box_response_results_accepted(label, cargo_exit, capture_exit, required, out
         and sorted(names) == sorted(required)
         and len(complete) == 1
         and complete[0][:4] == (len(required), 0, 0, 0)
-        and (label in box_response_filtered_cases or complete[0][4] == 0))
+        and (allow_filtered or complete[0][4] == 0))
+
+def box_response_results_accepted(label, cargo_exit, capture_exit, required, output):
+    return exact_target_results_accepted(cargo_exit, capture_exit, required, output,
+        label in box_response_filtered_cases)
 
 box_response_positive = (
     f"test {box_response_exhaustion_name} ... ok\n"
@@ -1369,6 +1462,30 @@ for label, case, output, cargo_exit, capture_exit, expected in [
     box_response_oracle_controls.append({"case": label, "expected": expected, "actual": actual})
     assert actual == expected, f"BXR result oracle control failed: {label}"
 
+
+# Exact selected Plugin/DJC commands use the same strict single-target oracle.
+selected_oracle_name = custody_desktop_names[0]
+selected_oracle_text = (f"test {selected_oracle_name} ... ok\n"
+    "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.01s\n")
+selected_result_controls = []
+for control, output, command_exit, capture_exit, expected in [
+    ("exact-filtered-positive", selected_oracle_text, 0, 0, True),
+    ("missing-positive", selected_oracle_text.split("\n", 1)[1], 0, 0, False),
+    ("duplicate-positive", selected_oracle_text + f"test {selected_oracle_name} ... ok\n", 0, 0, False),
+    ("extra-positive", selected_oracle_text + "test unrelated ... ok\n", 0, 0, False),
+    ("ignored-positive", selected_oracle_text.replace(" ... ok", " ... ignored"), 0, 0, False),
+    ("ignored-summary", selected_oracle_text.replace("0 ignored", "1 ignored"), 0, 0, False),
+    ("measured-summary", selected_oracle_text.replace("0 measured", "1 measured"), 0, 0, False),
+    ("duplicate-summary", selected_oracle_text + selected_oracle_text.split("\n", 1)[1], 0, 0, False),
+    ("zero-tests", "", 0, 0, False),
+    ("command-refusal", selected_oracle_text, 101, 0, False),
+    ("capture-refusal", selected_oracle_text, 0, 1, False),
+]:
+    actual = exact_target_results_accepted(command_exit, capture_exit,
+        [selected_oracle_name], output, True)
+    selected_result_controls.append({"case": control, "expected": expected, "actual": actual})
+    assert actual == expected, f"CRF result oracle failed: {control}"
+
 box_daemon_lock = pathlib.Path("source/box-exec-daemon/Cargo.lock")
 box_daemon_lock_tracked = subprocess.run(
     ["git", "cat-file", "-e", f"{head}:source/box-exec-daemon/Cargo.lock"],
@@ -1391,6 +1508,19 @@ def source_bindings(paths):
         }
     return bindings
 
+custody_recovery_inputs = [
+    "projects/openclaw-rust/upstream.lock.json",
+    "projects/openclaw-rust/docs/specs/custody-recovery-verification.md",
+    "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+    "source/host/tests/device_pairing_join_admission_contract.rs",
+    "source/host/src/device_pairing_owner.rs",
+    "source/host/src/extensions/mcp/coordinator_relay.rs",
+    "source/host/src/extensions/mcp/mcp_service.rs",
+    "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
+    "source/host/app/src/main.rs",
+]
+custody_recovery_inputs_before = source_bindings(custody_recovery_inputs)
+assert all(item["matches_head_bytes"] for item in custody_recovery_inputs_before.values()), "CRF source input differs from exact H"
 plugin_admission_lock_inputs_before = source_bindings(plugin_admission_lock_inputs)
 assert all(item["matches_head_bytes"] for item in plugin_admission_lock_inputs_before.values()), "Plugin admission lock source input differs from exact H"
 local_exec_outcome_inputs_before = source_bindings(local_exec_outcome_inputs)
@@ -1400,6 +1530,21 @@ assert all(item["matches_head_bytes"] for item in box_response_inputs_before.val
 
 
 receipt = {
+    "validation_scope": validation_scope,
+    "scope_selection_controls": selection_controls,
+    "selected_result_oracle_controls": selected_result_controls,
+    "custody_recovery_inputs_before": custody_recovery_inputs_before,
+    "full_contract_acceptance": "not-assessed-by-this-selected-receipt",
+    "unexecuted_full_plan_cases": [label for label, _, _ in full_cases
+        if label not in {selected[0] for selected in cases}],
+    "retained_unresolved_checks": [{
+        "case": "join_storage_commit_refusal_never_publishes_payload",
+        "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+        "run": "41618863245", "attempt": 1, "job": "125859112570",
+        "state": "historical-eight-second-observation-failed; unchanged assertion retained",
+        "selected_here": validation_scope == "full",
+        "qualification": "DJC-07 success does not resolve this lock timing failure",
+    }],
     "plugin_admission_lock_contract": "PS-LOCK-RECONCILE-v2",
     "plugin_admission_lock_inputs_before": plugin_admission_lock_inputs_before,
     "plugin_admission_lock_required_positive_names": ["extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh","extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback","extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal","confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker","extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration","confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish","extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_requires_explicit_nullable_canonical_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_observation_cannot_be_dropped_by_an_explicit_image_transition","extensions::mcp::plugin_skills::uninstall_state::tests::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes","extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault","confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication","live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease","live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication","extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_recovers_after_actual_first_image_publication","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_constructor_corruption_remains_faulted_after_restore","extensions::mcp::plugin_skills::auth_recovery_tests::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes"],
@@ -1692,6 +1837,8 @@ for label, command, required in cases:
     if label == "mcp-origin-canonical-boundary":
         accepted = (accepted and len(counts) == 1 and counts[0][2] == 0
             and counts[0][0] == len(passed) and len(passed) >= len(required))
+    if validation_scope == "custody-recovery" and not label.startswith("box-response-"):
+        accepted = exact_target_results_accepted(cargo_exit, capture_exit, required, text, True)
     if label.startswith("box-response-"):
         accepted = box_response_results_accepted(label, cargo_exit, capture_exit, required, text)
         complete_counts = [tuple(map(int, count)) for count in re.findall(
@@ -1709,9 +1856,17 @@ for label, command, required in cases:
     (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 receipt.pop("active_case", None)
 palette_exported = palette_fixture.is_file()
-receipt["palette_export"] = {"path": str(palette_fixture),
+palette_required = (validation_scope == "full"
+    or any("palette_message_gateway_exports_persisted_rust_search_results" in required
+        for _, _, required in cases))
+receipt["palette_export"] = {"path": str(palette_fixture), "required_by_selection": palette_required,
     "sha256": hashlib.sha256(palette_fixture.read_bytes()).hexdigest() if palette_exported else None,
-    "produced_by": "palette_message_gateway_exports_persisted_rust_search_results"}
+    "produced_by": "palette_message_gateway_exports_persisted_rust_search_results" if palette_exported else None}
+custody_recovery_inputs_after = source_bindings(custody_recovery_inputs)
+custody_recovery_sources_unchanged = (custody_recovery_inputs_after == custody_recovery_inputs_before
+    and all(item["matches_head_bytes"] for item in custody_recovery_inputs_after.values()))
+receipt["custody_recovery_inputs_after"] = custody_recovery_inputs_after
+receipt["custody_recovery_sources_unchanged"] = custody_recovery_sources_unchanged
 plugin_admission_lock_inputs_after = source_bindings(plugin_admission_lock_inputs)
 receipt["plugin_admission_lock_inputs_after"] = plugin_admission_lock_inputs_after
 plugin_admission_lock_sources_unchanged = (plugin_admission_lock_inputs_after == plugin_admission_lock_inputs_before
@@ -1745,11 +1900,16 @@ capture_unchanged = (capture_passed
     and capture_build["binary_sha256_after_cases"] == capture_build["binary_sha256_before_cases"]
     and capture_build["lock_sha256_after_cases"] == capture_build["lock_sha256_before_build"])
 receipt["box_shell_capture_test_producer_unchanged"] = capture_unchanged
-accepted = (palette_exported and len(receipt["executions"]) == len(cases)
+accepted = ((palette_exported if palette_required else True) and len(receipt["executions"]) == len(cases)
     and all(case["oracle_accepted"] for case in receipt["executions"])
     and box_response_sources_unchanged and daemon_unchanged and capture_unchanged and local_exec_outcome_sources_unchanged
-    and plugin_admission_lock_sources_unchanged)
-receipt["result"] = "passed" if accepted else "failed-or-incomplete"
+    and plugin_admission_lock_sources_unchanged and custody_recovery_sources_unchanged)
+if validation_scope == "custody-recovery":
+    receipt["scope"] = ("CRF-v1: selected Box producer/consumer/state controls, repaired actual Plugin "
+        "desktop/library custody oracles and DJC-07 qualified COMMIT refusal only. Historical DJC lock "
+        "timing remains unresolved; unrelated full-plan cases, real ecosystems, packages and full OCRM "
+        "acceptance are not inferred. Requirement metadata elsewhere in this receipt is not execution.")
+receipt["result"] = ("passed-scoped-only" if validation_scope == "custody-recovery" else "passed") if accepted else "failed-or-incomplete"
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(json.dumps(receipt, indent=2), flush=True)
 raise SystemExit(0 if accepted else 1)
