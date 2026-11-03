@@ -8,7 +8,7 @@ import { TranscriptAttachmentGallery } from "./media-viewer";
 import { MermaidDiagram } from "./mermaid";
 import { createPromptEditorExtensions } from "./rich-text-editor";
 import type { AttachmentBytesResult, AttachmentMedia } from "../../../contracts/desktop-bridge";
-import { shouldShowSentWhileOfflineNotice, type ConversationTranscriptEntry, type TranscriptComputerHandoff, type TranscriptMessage, type TranscriptThinking, type TranscriptToolCall } from "./model";
+import { shouldShowHumanForwardedNotice, shouldShowHumanReadReceipt, shouldShowSentWhileOfflineNotice, type ConversationTranscriptEntry, type TranscriptComputerHandoff, type TranscriptMessage, type TranscriptThinking, type TranscriptToolCall } from "./model";
 import type { TranscriptCardEntry } from "../cards/transcript-card/protocol";
 import { TranscriptNoticeCard } from "../cards/notice/view";
 import { TranscriptCardRootEntry } from "../cards/transcript-card/root";
@@ -99,6 +99,21 @@ function SentWhileOfflineNotice({ composedAtMs }: { composedAtMs: number }) {
     label = new Date(composedAtMs).toISOString();
   }
   return <div className="sand-sent-while-offline-notice sand-pvyfi4 sand-78zum5 sand-6s0dn4 sand-1a02dak sand-13a6bvl sand-11twubx sand-1om1abp sand-h4j8nf sand-1hc1fzr sand-b3r6kr sand-ltd7ks sand-hj7x8a sand-s9c323 sand-oddwdg sand-8m7ss9 sand-1ympp8d sand-16ges1v sand-1rrsdy6" role="status"><span className="sand-1o0liin sand-y5h43f sand-19ji09o">Sent while offline · {label}</span></div>;
+}
+
+function ForwardedFromNotice({ authorName }: { authorName: string }) {
+  return <div aria-label={`Forwarded from ${authorName}`} className="sand-forwarded-from-notice sand-78zum5 sand-6s0dn4 sand-1a02dak sand-11twubx sand-1om1abp" role="note"><span className="sand-1o0liin sand-y5h43f sand-19ji09o">Forwarded from {authorName}</span></div>;
+}
+
+function HumanReadReceiptNotice({ readAt }: { readAt: string }) {
+  let label: string;
+  const parsedMs = Date.parse(readAt);
+  try {
+    label = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(parsedMs));
+  } catch {
+    label = new Date(parsedMs).toISOString();
+  }
+  return <div aria-label={`Read · ${label}`} className="sand-read-receipt-notice sand-pvyfi4 sand-78zum5 sand-6s0dn4 sand-1a02dak sand-13a6bvl sand-11twubx sand-1om1abp" data-read-at={readAt} role="status"><span className="sand-1o0liin sand-y5h43f sand-19ji09o">Read · {label}</span></div>;
 }
 
 function messageActionLabel(entry: TranscriptMessage): string {
@@ -834,6 +849,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
             <time dateTime={new Date(entry.timestampMs).toISOString()} hidden id={ids.timestamp}>{new Date(entry.timestampMs).toLocaleString()}</time>
             <MessageActionAnchor entry={entry} isReadOnly={isReadOnly} onCopy={onCopyMessage} onForward={onForward} onOpenThread={resolveTranscriptCardInteractions?.openThread} onReply={onReply} onStartThread={onStartThread} renderReactionActions={reactionActions} threadRootId={threadRootId} threadSummary={threadSummary}>
               <div aria-label={entry.role === "assistant" ? "Agent message" : undefined} className="sand-message" data-group-start={messageAdjacency.isGroupStart || undefined} data-role={entry.role} role="group">
+                {shouldShowHumanForwardedNotice(entry) ? <ForwardedFromNotice authorName={entry.forwardedFromAuthorName} /> : null}
                 {replyPreview != null && onOpenReply != null ? <ReferencedMessagePreviewTrigger
                   authorName={referencedAuthorName}
                   isInScope={isReplyTargetInScope?.(entry.replyToId ?? "") === true}
@@ -848,6 +864,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
                 {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
                 {entry.delivery === "queued" && (entry.authorKind === "human" || entry.composedAtMs == null) ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
                 {shouldShowSentWhileOfflineNotice(entry) ? <SentWhileOfflineNotice composedAtMs={entry.composedAtMs} /> : null}
+                {shouldShowHumanReadReceipt(entry) ? <HumanReadReceiptNotice readAt={entry.readAt} /> : null}
                 {failed ? <FailedSendActions entry={entry} onDelete={onDeleteFailedSend} onResend={onResendFailedSend} /> : null}
               </div>
             </MessageActionAnchor>

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { shouldShowSentWhileOfflineNotice, type ConversationTranscriptEntry, type TranscriptMessage } from "../recovered/features/conversation/workspace/model.ts";
+import {
+  shouldShowHumanForwardedNotice,
+  shouldShowHumanReadReceipt,
+  shouldShowSentWhileOfflineNotice,
+  type ConversationTranscriptEntry,
+  type TranscriptMessage,
+} from "../recovered/features/conversation/workspace/model.ts";
 import { coalesceProjectedUserAttachmentTurns, projectTranscriptEntry, projectTranscriptPageResult } from "./model.ts";
 import {
   createTranscriptPaginationController,
@@ -1161,4 +1167,117 @@ test("NMR-OFFLINE-ORIGIN-01 Human offline labels require an explicit origin and 
   assert.equal(shouldShowSentWhileOfflineNotice({ ...agent, delivery: "pending" }), true);
   assert.equal(shouldShowSentWhileOfflineNotice({ ...agent, delivery: "queued" }), true);
   assert.equal(shouldShowSentWhileOfflineNotice({ ...agent, delivery: "failed" }), false);
+});
+
+test("NMR-READ-RECEIPT-01 Human read receipts and forwarded provenance require valid canonical state and preserve monotonic readAt across refreshes", () => {
+  const canonical = {
+    id: "human-server-message:44",
+    kind: "message",
+    role: "user",
+    authorKind: "human",
+    authorId: "self",
+    clientNonce: "read-receipt-nonce",
+    remoteMessageId: "44",
+    content: "Read receipt and forward provenance message",
+    timestampMs: 1_700_000_000_000,
+    delivery: "sent",
+  };
+  const project = (value: Record<string, unknown>): TranscriptMessage => {
+    const entry = projectTranscriptEntry(value, 0, "Alice", "human:a");
+    assert.ok(entry?.kind === "message");
+    return entry;
+  };
+
+  const t1 = "2026-11-04T02:01:00Z";
+  const t2 = "2026-11-04T02:05:00Z";
+  const t3 = "2026-11-04T02:10:00.250+00:00";
+
+  const withRead = project({ ...canonical, readAt: `  ${t2}  ` });
+  assert.equal(withRead.readAt, t2);
+  assert.equal(shouldShowHumanReadReceipt(withRead), true);
+
+  for (const invalidReadAt of [
+    undefined,
+    null,
+    "",
+    "   ",
+    "not-a-timestamp",
+    "12345",
+    "2026-11-04",
+    "2026-99-99T00:00:00Z",
+    1_700_000_000_000,
+    [],
+    {},
+  ]) {
+    const projected = project({
+      ...canonical,
+      ...(invalidReadAt === undefined ? {} : { readAt: invalidReadAt }),
+    });
+    assert.equal(projected.readAt, undefined, String(invalidReadAt));
+    assert.equal(shouldShowHumanReadReceipt(projected), false, String(invalidReadAt));
+  }
+
+  for (const nonCanonicalPatch of [
+    { delivery: "pending" },
+    { delivery: "queued" },
+    { delivery: "dispatching" },
+    { delivery: "failed" },
+    { id: "human-message:read-receipt-nonce" },
+    { id: "human-server-message:45" },
+    { remoteMessageId: undefined },
+    { remoteMessageId: "0" },
+    { authorId: "" },
+    { authorKind: undefined },
+  ]) {
+    const projected = project({ ...canonical, readAt: t2, ...nonCanonicalPatch });
+    assert.equal(projected.readAt, undefined);
+    assert.equal(shouldShowHumanReadReceipt(projected), false);
+  }
+
+  // Monotonic read-state non-regression across refresh, mutation, and buffered read updates
+  const olderRead = project({ ...canonical, readAt: t1 });
+  const omittedRead = project({ ...canonical });
+  const newerRead = project({ ...canonical, readAt: t3 });
+  for (const staleCandidate of [olderRead, omittedRead]) {
+    for (const merged of [
+      mergeAuthoritativeTranscriptMessage(withRead, staleCandidate),
+      row(reconcileTranscriptRefresh([withRead], [staleCandidate], [withRead]), canonical.id),
+      row(reconcileTranscriptMutation([withRead], staleCandidate), canonical.id),
+      row(applyTranscriptReadUpdates([staleCandidate], new Map([[canonical.id, withRead]])), canonical.id),
+    ]) {
+      assert.equal(merged.readAt, t2);
+      assert.equal(shouldShowHumanReadReceipt(merged), true);
+    }
+  }
+
+  const advanced = mergeAuthoritativeTranscriptMessage(withRead, newerRead);
+  assert.equal(advanced.readAt, t3);
+  assert.equal(shouldShowHumanReadReceipt(advanced), true);
+
+  // Forwarded provenance honours dropSenderNames and dropCaptions privacy flags
+  const visibleForward = project({
+    ...canonical,
+    forwardContext: {
+      origin: { authorName: "Carol", conversationId: "human:c", messageId: "human-server-message:9" },
+      privacy: { dropSenderNames: false, dropCaptions: false },
+    },
+  });
+  assert.equal(visibleForward.forwardedFromAuthorName, "Carol");
+  assert.equal(shouldShowHumanForwardedNotice(visibleForward), true);
+
+  for (const privacy of [
+    { dropSenderNames: true, dropCaptions: false },
+    { dropSenderNames: false, dropCaptions: true },
+    { dropSenderNames: true, dropCaptions: true },
+  ]) {
+    const hiddenForward = project({
+      ...canonical,
+      forwardContext: {
+        origin: { authorName: "Carol", conversationId: "human:c", messageId: "human-server-message:9" },
+        privacy,
+      },
+    });
+    assert.equal(hiddenForward.forwardedFromAuthorName, undefined);
+    assert.equal(shouldShowHumanForwardedNotice(hiddenForward), false);
+  }
 });

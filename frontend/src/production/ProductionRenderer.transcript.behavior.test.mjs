@@ -1249,3 +1249,61 @@ test("human_history_coverage_continuation_advances_multi_window_sync_and_fences_
   await f.frames();
   assert.equal(await f.page.getByText("STALE_ACCOUNT_A_COVERAGE_SYNC", { exact: false }).count(), 0);
 });
+
+test("human_entry_refresh_renders_monotonic_read_receipts_and_privacy_gated_forwarded_provenance", { timeout: 60_000 }, async (t) => {
+  const receiptRow = humanRefreshMessage(9401, "OUTBOUND_RECEIPT_MESSAGE");
+  const visibleForwardRow = {
+    ...humanRefreshMessage(9402, "VISIBLE_FORWARDED_BODY"),
+    forwardContext: {
+      origin: { authorId: "peer-carol", authorName: "Carol", conversationId: "human:carol", messageId: "human-server-message:55" },
+      privacy: { dropSenderNames: false, dropCaptions: false },
+    },
+  };
+  const anonymousForwardRow = {
+    ...humanRefreshMessage(9403, "ANONYMOUS_FORWARDED_BODY"),
+    forwardContext: {
+      origin: { authorId: "peer-carol", authorName: "Carol", conversationId: "human:carol", messageId: "human-server-message:56" },
+      privacy: { dropSenderNames: true, dropCaptions: false },
+    },
+  };
+  const f = await refreshRoot(t, [receiptRow, visibleForwardRow, anonymousForwardRow]);
+
+  // Verify forwarded provenance DOM rendering and privacy gating
+  const visibleForwardNotice = f.row(visibleForwardRow.id).locator('.sand-forwarded-from-notice[role="note"]');
+  await visibleForwardNotice.waitFor();
+  assert.equal(await visibleForwardNotice.innerText(), "Forwarded from Carol");
+  assert.equal(await f.row(anonymousForwardRow.id).locator(".sand-forwarded-from-notice").count(), 0);
+
+  // Initially unread canonical message renders no read-receipt status notice
+  const receiptNotice = f.row(receiptRow.id).locator('.sand-read-receipt-notice[role="status"]');
+  assert.equal(await receiptNotice.count(), 0);
+
+  // Valid RFC3339 readAt update renders accessible read receipt
+  const t1 = "2026-11-04T02:01:00Z";
+  const t2 = "2026-11-04T02:05:00Z";
+  const t3 = "2026-11-04T02:10:00Z";
+  await f.update({ ...receiptRow, readAt: t2 });
+  await receiptNotice.waitFor();
+  assert.equal(await receiptNotice.getAttribute("data-read-at"), t2);
+  assert.match(await receiptNotice.innerText(), /^Read · /);
+
+  // Older or omitted or invalid readAt on subsequent refresh/update cannot regress monotonic read state
+  await f.update({ ...receiptRow, readAt: t1 });
+  await f.frames();
+  assert.equal(await receiptNotice.getAttribute("data-read-at"), t2);
+  await f.update({ ...receiptRow });
+  await f.frames();
+  assert.equal(await receiptNotice.getAttribute("data-read-at"), t2);
+  await f.update({ ...receiptRow, readAt: "invalid-date" });
+  await f.frames();
+  assert.equal(await receiptNotice.getAttribute("data-read-at"), t2);
+
+  // Newer valid readAt advances the displayed receipt
+  await f.update({ ...receiptRow, readAt: t3 });
+  await f.page.waitForFunction(
+    ([rowId, expected]) => document.querySelector(`[data-entry-id="${rowId}"] .sand-read-receipt-notice`)?.getAttribute("data-read-at") === expected,
+    [receiptRow.id, t3],
+  );
+  assert.equal(await receiptNotice.getAttribute("data-read-at"), t3);
+  await f.noSend();
+});

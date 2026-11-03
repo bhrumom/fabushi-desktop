@@ -1,13 +1,14 @@
-import type {
-  ConversationAgentSummary,
-  ConversationAgentLastEntry,
-  ConversationTranscriptEntry,
-  DraftAttachment,
-  TranscriptMessage,
-  TranscriptLocalToolPermission,
-  TranscriptPermissionRequest,
-  TranscriptThinking,
-  TranscriptToolCall
+import {
+  isValidHumanReadAtTimestamp,
+  type ConversationAgentSummary,
+  type ConversationAgentLastEntry,
+  type ConversationTranscriptEntry,
+  type DraftAttachment,
+  type TranscriptMessage,
+  type TranscriptLocalToolPermission,
+  type TranscriptPermissionRequest,
+  type TranscriptThinking,
+  type TranscriptToolCall
 } from "../recovered/features/conversation/workspace/model";
 import type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/model";
 import { projectTranscriptCardEntry } from "../recovered/features/conversation/cards/transcript-card/protocol";
@@ -445,6 +446,15 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
       : undefined;
   const humanAuthorName = value.authorKind === "human" ? (stringValue(value.authorName) ?? undefined) : undefined;
   const forwardedFromAuthorName = value.authorKind === "human" ? visibleForwardOriginAuthorName(value) : undefined;
+  const resolvedDelivery = transcriptDelivery(value) ?? "sent";
+  const isCanonicalSettledHumanRow = value.authorKind === "human"
+    && resolvedDelivery === "sent"
+    && typeof value.authorId === "string" && value.authorId.trim().length > 0
+    && humanRemoteMessageId !== undefined && /^[1-9][0-9]*$/.test(humanRemoteMessageId)
+    && id === `human-server-message:${humanRemoteMessageId}`;
+  const humanReadAt = isCanonicalSettledHumanRow && isValidHumanReadAtTimestamp(value.readAt)
+    ? value.readAt.trim()
+    : undefined;
   const transcriptAuthor = {
     ...(value.authorKind === "human" ? {
       authorKind: "human" as const,
@@ -456,6 +466,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     ...(humanAuthorName === undefined ? {} : { authorName: humanAuthorName }),
     ...(forwardedFromAuthorName === undefined ? {} : { forwardedFromAuthorName }),
     ...(humanRemoteMessageId === undefined ? {} : { remoteMessageId: humanRemoteMessageId }),
+    ...(humanReadAt === undefined ? {} : { readAt: humanReadAt }),
   };
   const composedAtMs = typeof (value.composedAtMs ?? value.queuedAtMs) === "number" && Number.isFinite(value.composedAtMs ?? value.queuedAtMs)
     ? Number(value.composedAtMs ?? value.queuedAtMs)

@@ -883,8 +883,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 43' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 43' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 44' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 44' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
@@ -1021,8 +1021,8 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# tests 14' artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# pass 14' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 15' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 15' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
@@ -1033,7 +1033,8 @@ jobs:
             'human_entry_refresh_retires_removed_pdf_and_late_resource_reads' \
             'human_entry_refresh_retires_spreadsheet_mount_when_source_changes' \
             'command_palette_searches_human_conversations_messages_and_files_and_paginates_older_targets' \
-            'human_history_coverage_continuation_advances_multi_window_sync_and_fences_account_switches'; do
+            'human_history_coverage_continuation_advances_multi_window_sync_and_fences_account_switches' \
+            'human_entry_refresh_renders_monotonic_read_receipts_and_privacy_gated_forwarded_provenance'; do
             grep -Eq "^ok [0-9]+ - ${entry_case}$" artifacts/native-message-ui/production-transcript.log
           done
       - name: Actual ProductionRenderer author and draft recovery behaviors

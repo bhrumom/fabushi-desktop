@@ -254,6 +254,8 @@ export interface TranscriptMessage {
   authorName?: string;
   forwardedFromAuthorName?: string;
   remoteMessageId?: string;
+  /** Validated RFC3339/ISO read timestamp on canonical settled Human messages. */
+  readAt?: string;
   /** General composition time; it does not by itself prove offline origin. */
   composedAtMs?: number;
   /** Explicit Host-owned Human origin, independent of a busy online queue. */
@@ -270,6 +272,35 @@ export interface TranscriptMessage {
   adjacency?: SendMessageTextAdjacency;
   /** Exact send-message:text projection retained for its mounted transcript seam. */
   sendMessageText?: import("../cards/transcript-card/send-message-text").SendMessageTextProjection;
+}
+
+const RFC3339_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i;
+
+export function isValidHumanReadAtTimestamp(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  if (!RFC3339_TIMESTAMP_PATTERN.test(trimmed)) return false;
+  return Number.isFinite(Date.parse(trimmed));
+}
+
+export function shouldShowHumanForwardedNotice(
+  entry: TranscriptMessage,
+): entry is TranscriptMessage & { forwardedFromAuthorName: string } {
+  return entry.authorKind === "human"
+    && typeof entry.forwardedFromAuthorName === "string"
+    && entry.forwardedFromAuthorName.trim().length > 0;
+}
+
+export function shouldShowHumanReadReceipt(
+  entry: TranscriptMessage,
+): entry is TranscriptMessage & { readAt: string } {
+  return entry.authorKind === "human"
+    && entry.role === "user"
+    && entry.delivery === "sent"
+    && typeof entry.authorId === "string" && entry.authorId.trim().length > 0
+    && typeof entry.remoteMessageId === "string" && /^[1-9][0-9]*$/.test(entry.remoteMessageId)
+    && entry.id === `human-server-message:${entry.remoteMessageId}`
+    && isValidHumanReadAtTimestamp(entry.readAt);
 }
 
 /** Agent timestamp behavior is retained; Human status requires durable origin. */

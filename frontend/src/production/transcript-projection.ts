@@ -1,4 +1,9 @@
-import type { ConversationTranscriptEntry, DraftAttachment, TranscriptMessage } from "../recovered/features/conversation/workspace/model";
+import {
+  isValidHumanReadAtTimestamp,
+  type ConversationTranscriptEntry,
+  type DraftAttachment,
+  type TranscriptMessage,
+} from "../recovered/features/conversation/workspace/model";
 
 export type TranscriptReadUpdateBuffer = {
   readonly accountSlot: string | null;
@@ -37,6 +42,36 @@ function mergeTranscriptAttachments(
   return merged;
 }
 
+function monotonicHumanReadAt(
+  current: TranscriptMessage,
+  incoming: TranscriptMessage,
+  delivery: TranscriptMessage["delivery"],
+): string | undefined {
+  if (
+    incoming.authorKind !== "human"
+    || incoming.role !== "user"
+    || delivery !== "sent"
+    || typeof incoming.authorId !== "string" || incoming.authorId.trim().length === 0
+    || typeof incoming.remoteMessageId !== "string" || !/^[1-9][0-9]*$/.test(incoming.remoteMessageId)
+    || incoming.id !== `human-server-message:${incoming.remoteMessageId}`
+  ) {
+    return undefined;
+  }
+  const sameCanonicalRow = current.id === incoming.id
+    && current.authorKind === "human"
+    && current.authorId === incoming.authorId;
+  const prior = sameCanonicalRow && isValidHumanReadAtTimestamp(current.readAt)
+    ? current.readAt.trim()
+    : undefined;
+  const next = isValidHumanReadAtTimestamp(incoming.readAt)
+    ? incoming.readAt.trim()
+    : undefined;
+  if (prior !== undefined && next !== undefined) {
+    return Date.parse(next) > Date.parse(prior) ? next : prior;
+  }
+  return next ?? prior;
+}
+
 export function mergeAuthoritativeTranscriptMessage(
   current: TranscriptMessage,
   incoming: TranscriptMessage,
@@ -44,12 +79,16 @@ export function mergeAuthoritativeTranscriptMessage(
 ): TranscriptMessage {
   if (isCanonicalHumanSend(current) && isLocalSendPlaceholder(incoming)
     && transcriptEntriesCorrelate(current, incoming)) {
-    return {
+    const readAt = monotonicHumanReadAt(current, current, current.delivery);
+    const preserved: TranscriptMessage = {
       ...incoming,
       ...current,
       // A late local snapshot cannot restore obsolete committed paths.
       attachments: [...(current.attachments ?? [])],
+      ...(readAt === undefined ? {} : { readAt }),
     };
+    if (readAt === undefined) delete preserved.readAt;
+    return preserved;
   }
   const humanSettlement = isLocalSendPlaceholder(current) && isCanonicalHumanSend(incoming)
     && transcriptEntriesCorrelate(current, incoming);
@@ -62,6 +101,7 @@ export function mergeAuthoritativeTranscriptMessage(
         ? undefined : mergeTranscriptAttachments(current.attachments, incoming.attachments);
   const clientNonce = human && "clientNonce" in incoming ? incoming.clientNonce : incoming.clientNonce ?? current.clientNonce;
   const delivery = options.preserveCurrentId ? current.delivery : incoming.delivery ?? current.delivery;
+  const readAt = monotonicHumanReadAt(current, incoming, delivery);
   const merged: TranscriptMessage = {
     ...current,
     ...incoming,
@@ -70,7 +110,9 @@ export function mergeAuthoritativeTranscriptMessage(
     ...(attachments === undefined ? {} : { attachments }),
     ...(clientNonce === undefined && !(human && "clientNonce" in incoming) ? {} : { clientNonce }),
     ...(delivery === undefined && incoming.delivery === undefined ? {} : { delivery }),
+    ...(readAt === undefined ? {} : { readAt }),
   };
+  if (readAt === undefined) delete merged.readAt;
   if (options.preserveCurrentId && !("delivery" in current)) delete merged.delivery;
   return merged;
 }
