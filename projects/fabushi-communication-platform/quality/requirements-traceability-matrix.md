@@ -916,6 +916,7 @@ full source/product/independent acceptance.
 | Requirement | Existing production owner / behavior | Test and evidence status |
 |---|---|---|
 | NMR-CONVERSATION-IDENTITY-01a | `ProductionSessionWorkers::read_human_conversation_metadata` checks Human kind, requested/persisted ID, two distinct canonical participant strings and `human_direct_conversation_id` equality for cached and cold owner access. | Implemented in `source/host/src/extensions/session/production.rs`; reversed participant order and title independence remain compatible. |
-| NMR-CONVERSATION-IDENTITY-01b/01c | Existing Session/Transcript/SandAgentDb authority; identity refusal does not repair, rewrite or delete metadata, transcript, resources or journals. | Existing retry admission matrix gains a rebound-peer owner-open negative. Original metadata restoration remains the recovery path. |
+| NMR-CONVERSATION-IDENTITY-01b | Existing Session/Transcript/SandAgentDb authority; identity refusal does not repair, rewrite or delete metadata, transcript, resources or journals. | Rebound peer is refused before ordinary owner use; original metadata and all rows remain intact. |
+| NMR-CONVERSATION-IDENTITY-01c | Existing owner reopens only after the original participant pair is restored; no automatic repair or migration. | Existing retry admission matrix and pure reopen path preserve the original conversation identity. |
 | NMR-AC-CONVERSATION-IDENTITY-01 | Existing `shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation` Host test and `native-message-reconciliation` Actions job. | Test is authored and pushed at `bbcee06bc82333e10b8fbea331fbd0f31453b32c`; run41564603392 is nonterminal at this receipt. No pass is claimed. |
 
