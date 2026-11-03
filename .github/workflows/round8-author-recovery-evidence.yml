@@ -1,0 +1,105 @@
+name: Round8 author recovery evidence read
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths: ['.github/workflows/round8-author-recovery-evidence.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect-retained-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Read only the exact failed UI artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence-input evidence-summary
+          gh api repos/bhrumom/fabushi-desktop/actions/runs/41559676882 > evidence-input/run.json
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/13197690404 > evidence-input/artifact.json
+          python3 - <<'PY'
+          import json
+          run=json.load(open("evidence-input/run.json"))
+          artifact=json.load(open("evidence-input/artifact.json"))
+          assert run["head_sha"]=="1de845141d5e30ae9ff4965caf2915f68df2f650"
+          assert run["run_attempt"]==1
+          assert artifact["id"]==13197690404 and artifact["workflow_run"]["id"]==41559676882
+          assert artifact["workflow_run"]["head_sha"]==run["head_sha"]
+          assert artifact["digest"]=="sha256:e06334d026a6086c574fd3f884e465d60d166e4d88de4754d7ec7d24beb0f575"
+          assert not artifact["expired"]
+          PY
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/13197690404/zip > evidence-input/ui.zip
+          python3 - <<'PY'
+          import collections,hashlib,io,json,pathlib,zipfile
+          source=pathlib.Path("evidence-input/ui.zip").read_bytes()
+          digest=hashlib.sha256(source).hexdigest()
+          assert digest=="e06334d026a6086c574fd3f884e465d60d166e4d88de4754d7ec7d24beb0f575"
+          summary={"purpose":"Read retained evidence only; no product execution or acceptance","head":"1de845141d5e30ae9ff4965caf2915f68df2f650","run":41559676882,"job":125666991740,"artifact":13197690404,"artifact_sha256":digest}
+          with zipfile.ZipFile(io.BytesIO(source)) as archive:
+            names=archive.namelist()
+            report_paths=[n for n in names if n.endswith("artifacts/native-message-ui/author-recovery.json")]
+            assert len(report_paths)==1
+            target_paths=[n for n in names if n.endswith("artifacts/native-message-ui/target-sha.txt")]
+            assert len(target_paths)==1 and archive.read(target_paths[0]).decode().strip()==summary["head"]
+            report=json.loads(archive.read(report_paths[0]))
+            tests=[]
+            def visit(suite):
+              for spec in suite.get("specs",[]):
+                for test in spec.get("tests",[]):
+                  tests.append({"title":spec["title"],"line":spec.get("line"),"expectedStatus":test.get("expectedStatus"),"status":test.get("status"),"results":test.get("results",[])})
+              for child in suite.get("suites",[]):visit(child)
+            for suite in report["suites"]:visit(suite)
+            summary["report_stats"]=report["stats"]
+            summary["report_errors"]=report.get("errors",[])
+            summary["cases"]=[{"title":x["title"],"line":x["line"],"status":x["status"],"results":[{"status":r.get("status"),"retry":r.get("retry"),"duration":r.get("duration"),"startTime":r.get("startTime"),"errors":r.get("errors",[])} for r in x["results"]]} for x in tests]
+            failed=[x for x in tests if x["title"].startswith("NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE")]
+            assert len(failed)==1 and len(failed[0]["results"])==1
+            result=failed[0]["results"][0]
+            summary["failed_case_attachments"]=[{"name":a.get("name"),"contentType":a.get("contentType")} for a in result.get("attachments",[])]
+            steps=[]
+            def step_visit(items,depth=0):
+              for s in items:
+                steps.append({"title":s.get("title"),"category":s.get("category"),"duration":s.get("duration"),"startTime":s.get("startTime"),"error":s.get("error"),"depth":depth})
+                step_visit(s.get("steps",[]),depth+1)
+            step_visit(result.get("steps",[]))
+            summary["failed_step_count"]=len(steps)
+            summary["slow_steps"]=[s for s in steps if (s.get("duration") or 0)>=2000]
+            summary["last_steps"]=steps[-35:]
+            traces=[n for n in names if "507b3" in n and n.endswith("/trace.zip")]
+            assert len(traces)==1
+            tracebytes=archive.read(traces[0])
+            with zipfile.ZipFile(io.BytesIO(tracebytes)) as trace:
+              tracefiles=[n for n in trace.namelist() if n.endswith(".trace")]
+              summary["trace_files"]=[{"name":n,"bytes":trace.getinfo(n).file_size} for n in tracefiles]
+              sequences=[]
+              for name in tracefiles:
+                before={}
+                completed=[]
+                types=collections.Counter()
+                for line in trace.read(name).splitlines():
+                  try:e=json.loads(line)
+                  except ValueError:continue
+                  types[e.get("type")]+=1
+                  if e.get("type")=="before":
+                    before[e.get("callId")]={"api":e.get("apiName"),"class":e.get("class"),"method":e.get("method"),"start":e.get("startTime")}
+                  elif e.get("type")=="after":
+                    prior=before.pop(e.get("callId"),{})
+                    start=prior.get("start")
+                    end=e.get("endTime")
+                    completed.append({**prior,"end":end,"duration":end-start if isinstance(start,(int,float)) and isinstance(end,(int,float)) else None,"error":e.get("error")})
+                sequences.append({"file":name,"event_types":dict(types),"open_calls":list(before.values())[-25:],"last_completed_calls":completed[-25:],"slow_calls":[c for c in completed if (c.get("duration") or 0)>=2000]})
+              summary["trace_calls"]=sequences
+          output=json.dumps(summary,ensure_ascii=False,indent=2)+"\n"
+          pathlib.Path("evidence-summary/summary.json").write_text(output)
+          print(output)
+          PY
+      - name: Preserve bounded read-only summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: round8-author-recovery-evidence-${{ github.sha }}
+          path: evidence-summary
+          if-no-files-found: error
