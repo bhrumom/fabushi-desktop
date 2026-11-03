@@ -1048,3 +1048,160 @@ metadata is the union, including all existing pairing controls. Fresh focused
 reviews cover these repairs and the integrated workflow before publication;
 the full twelve-path scope remains available as context. Exact-H Actions,
 complete source/dependency closure and final acceptance are still required.
+
+### Authentication refusal recovery — OCRM-PLUGIN-AUTH-RECOVERY-v1
+
+Decision **PS-AUTH-RECOVERY-01 — FIX / IMPL_BUG**, before implementation.
+Base `54b32b96ff827f4fee56fed494c866ca8c8b53ec`; fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. A validated canonical auth refusal
+currently survives failed cache publication only in the existing reader Arc.
+Fresh Host construction loses it and can admit the old allowed Skill while
+refresh is offline. This amendment closes that same-root accepted-refusal
+recovery boundary. It extends PR-02's existing private image, without another
+permission database, loader, scheduler, Session writer or marketplace.
+The incoming clone-only auth classification and isolated SDK staging are retained.
+
+**AR-01 — custody before observation.** Each actual sync worker, including an
+actual coalesced follow-up, persists one unique refresh UUID before entering its
+loader. Joining/queuing a pass reserves nothing. Clone current uninstall and
+auth facts, including retained live refusals, into that transition. Failed
+reservation prevents loader entry. A live healthy pass keeps ordinary cached
+availability while waiting; the intent is neither a denial nor a grant.
+Complete aggregate validation, active owner and current uninstall observation
+remain necessary before importing any returned auth fact. A returned error or
+invalid aggregate proves no aggregate was admitted by this Rust owner; it does
+not prove the upstream observed no denial or performed no effect.
+
+**AR-02 — one strict image.** Keep `uninstall-state.json` and its existing
+publication mechanism. Explicit writes emit payload version 2 with exactly:
+`formatVersion`, existing `confirmedPluginIds` and `pending`, `authRefusals`,
+and `refreshIntent`. `authRefusals` is a sorted unique list of strict objects
+containing exact `pluginId`, `pluginName`, and optional `marketplaceName` from
+`PluginAuthBlock`; do not fabricate display metadata. `refreshIntent` is
+required null or a strict `{operationId}` object containing a canonical UUID.
+Auth IDs retain the current `!id.is_empty() && id.trim() == id` predicate;
+`09` and `9` remain distinct. Do not apply uninstall's stricter identity rules
+to auth. Uninstall UUID/identity/duplicate checks remain intact. Reject duplicate
+fields/IDs, unknown fields, positional arrays, missing v2 fields, wrong types,
+noncanonical UUIDs and unsupported versions without resetting the image.
+
+Decode valid v1 exactly as before, with empty auth facts and no refresh intent;
+never rewrite during construction. Both files absent retains legacy offline
+behavior. Valid image without marker remains authoritative interrupted
+initialization. The marker stays exactly `1\n`: it versions initialization,
+while the payload versions its own fields. Missing initialized image, invalid
+marker, invalid/unreadable/nonregular image retains the existing plugin-wide
+recovery fault. Old v1 binaries refuse v2. No arbitrary valid-image rollback or
+multiple concurrent processes writing one root is claimed.
+
+**AR-03 — accepted negative before content.** Under the existing P interval,
+import the fully validated current refusals into live admission and durably
+merge them before cache serialization/staging. Keep earlier auth facts even
+when a new pass appears successful. For a healthy pass, settle its refresh
+intent in that same negative-image transition. For an inherited unknown, retain
+the intent until AR-05. A stage/rename failure after durable negative import
+therefore retains exact refusal 9 across fresh processes while unrelated allowed
+10 and user/managed workflows stay available. Cache/file retention and the
+post-rename unknown-publication distinction remain unchanged.
+
+**AR-04 — known failure and lost outcome differ.** Fresh construction loads
+all auth facts into the same reader and sets `recovery_required` when the image
+contains a refresh intent. It performs no replay or repair. This unknown blocks
+plugin admission, independently of auth and uninstall reasons, while user and
+managed workflows keep their owners. A clean active pass returning an error or
+rejected aggregate may durably clear only its own exact intent, using current
+uninstall/auth facts, and retain ordinary offline availability. A superseded
+clean aggregate may similarly settle custody but cannot publish or import its
+stale result. A later error never clears an inherited unknown. A loader panic
+retains unknown custody, settles existing coalesced waiters, and allows a later
+explicit recovery attempt without inventing a remote retry.
+
+**AR-05 — positive ordering and unknown recovery.** Only fresh materialization
+of an exact ID, including zero Skills, without a current denial releases that
+ID's auth fact. Publish the corresponding strict cache through its existing
+file/directory barriers and readback before durable positive release. Pending
+uninstall never clears, and its pruning suppression remains. Current denial
+wins; unrelated fresh success cannot release another ID. A recovery-required
+pass must omit all prior-cache fallback, publish only fresh successful records,
+then durably clear its exact refresh intent before clearing the live unknown.
+A partial recovery may preserve files but cannot reopen unresolved old rows.
+Normal clean partial passes retain their existing safe fallback. Release and
+unknown-to-known admission restoration count as a real `changed` event once;
+routine reserve/settle churn does not count as a permission change.
+
+**AR-06 — persistence errors retain their actual meaning.** Preserve PR-04's
+existing uninstall error semantics. After an auth-write error, strictly read
+under P: only the exact expected image or this operation's exact encoded
+candidate, with the permitted absent/initialized marker intermediate, is a
+known result. Semantic equality with foreign bytes is insufficient. Retain
+adverse live facts and return a fixed error; stop loader entry, publication,
+pruning or positive release for that failed transition. A known failed negative
+write can keep precise live denial 9 while allowing 10; a fresh process seeing
+only its earlier intent must conservatively block both. Unknown/corrupt/drifted
+readback latches the existing full recovery fault. No rollback or automatic
+retry is permitted. A known reread does not prove the failed durability barrier.
+After cache barriers, a positive journal image may become visible before a
+later barrier/readback error: the live operation remains failed and refused,
+but a fresh owner may safely read the completed positive image. Do not assert
+that every release error must preserve old denial across restart.
+
+**AR-07 — token lifetime and unchanged composition.** Every in-process refresh
+has exact owner/token identity in the shared admission state. Dispose/retire
+holds P, fences its own active token, drops service-state before admission,
+and performs no I/O; `PluginSkillsBinding` may hold its lock around retirement.
+A clean known-fenced token retains healthy same-process cache availability;
+an inherited unknown remains unknown. The same-root successor inherits that
+Arc and may replace the old fenced token at its next actual reservation under
+its own P, preserving all adverse facts. Old guards, old repeated dispose and
+late results cannot touch a successor token or write through an old P. If the
+process ends before a later transition settles a fenced token, fresh startup
+is conservatively unknown, including a graceful shutdown in that window.
+This bounded implementation does not promise offline availability after every
+such interrupted refresh. Fresh construction alone is not a same-root handoff.
+Auth-only writes do not advance the uninstall observation; real uninstall
+transitions and integrity faults still fence old passes. No state/admission/
+binding guard spans I/O, a clock, a loader or an external callback.
+
+**AR-08 — truthful existing status.** Keep cache `authBlocked` and existing
+`uninstallRecovery` semantics. Add optional `authRecovery` with sorted actual
+`refusals` and boolean `refreshOutcomeUnknown`; include fixed
+`fault: "admission-state-unavailable"` when integrity recovery is unsafe.
+Present it only when facts, unknown or a fault exist, preserving the healthy
+empty status shape. This is a projection of the same owner, not a new grant,
+uninstall receipt or assertion that a remote effect stopped.
+
+**AR-09 — direct oracles and delivery.** Use the existing Actions Linux Host
+cache, strict command/capture receipts and actual shipping compilation. Extend
+existing private-image/sync modules and the real MCP/Session owned-process
+harness; do not weaken retained assertions or use a copied reconciliation loop.
+Required evidence covers:
+
+- strict v1/v2/legacy/unmarked migration, malformed/duplicate/alias/drift inputs;
+- intent reservation failure with zero loader calls; expected-versus-candidate
+  failure cuts, unknown readback and bytes retained; actual file publication
+  paths with narrow test-only I/O failure cuts identified as instrumentation;
+- real refusal plus invalid cache stage and real rename failure, then a distinct
+  child-process reader with offline loader: 9 excluded through Session get/list/
+  update/run/reference and actual provider prompt, 10/user/managed retained;
+- owned process loss at the durable-intent/loader boundary and a separate fresh
+  process: unknown, no replay, and later offline error cannot clear it; private
+  pre-outcome write controls establish the same pending image and fresh-owner
+  refusal without claiming every injected cut was a separate OS crash;
+- clean offline/malformed-result availability versus unknown partial recovery
+  with no old fallback; exact-ID/zero-Skill/current-denial release, failed cache
+  and journal release ordering, and truthful changed reporting;
+- existing healthy dispose, coalescing, recursion, panic, successor, old-prune
+  and pending-uninstall controls; held old loader/guard/dispose cannot alter a
+  successor's exact token or bytes. Preserve all original uninstall assertions;
+  update only private-format expectations to v2 and add the new field oracles.
+
+Root owns the private schema, service, production status and shared capture.
+Disjoint test authors may edit only assigned modules against this contract.
+Freeze the full integrated tree, independently review its state machine,
+permission/lifetime/oracles, then inspect exact-H Actions. No local or
+htch-runtime validation. Root re-read the fixed-U activation/Skill contribution
+files recorded in dossier §8; their identities and historical scope stay intact.
+The target owner and consumer chain, not an upstream auth-journal claim, motivates
+this repair. Full source/dependency closure, account/backend incarnation after
+response, already captured prompts/effects, real ecosystems, platform barriers,
+UI and all G01–G12/AC01–AC24 remain unaccepted; no global flag is promoted.

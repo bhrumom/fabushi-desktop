@@ -1,4 +1,4 @@
-//! Private durable image for the existing Plugin Skills owner's uninstall custody.
+//! Private durable image for the existing Plugin Skills owner's admission custody.
 //! The caller holds its publication lock; this is not a second writer or a
 //! cross-process compare-and-swap. Loading never creates or repairs files.
 
@@ -14,6 +14,8 @@ use serde::{Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
 
 use super::super::mcp_service::is_canonical_uninstall_plugin_id;
+use super::super::plugin_skills_cache::PluginAuthBlock;
+use super::is_canonical_plugin_id;
 
 const IMAGE_FILE: &str = "uninstall-state.json";
 const MARKER_FILE: &str = "uninstall-state.version";
@@ -27,6 +29,8 @@ const PUBLICATION_UNKNOWN: &str = "plugin uninstall state publication outcome is
 pub(super) struct UninstallState {
     pub confirmed: BTreeSet<String>,
     pub pending: BTreeMap<String, String>,
+    pub auth_refusals: BTreeMap<String, PluginAuthBlock>,
+    pub refresh_intent: Option<String>,
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -44,6 +48,71 @@ struct StoredUninstallImage {
     format_version: u32,
     confirmed_plugin_ids: Vec<String>,
     pending: Vec<JsonObject<StoredPendingUninstall>>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct StoredAdmissionImage {
+    format_version: u32,
+    confirmed_plugin_ids: Vec<String>,
+    pending: Vec<JsonObject<StoredPendingUninstall>>,
+    auth_refusals: Vec<JsonObject<StoredAuthRefusal>>,
+    refresh_intent: StoredRefreshIntent,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum VersionedImage {
+    Current(JsonObject<StoredAdmissionImage>),
+    Legacy(JsonObject<StoredUninstallImage>),
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct StoredAuthRefusal {
+    plugin_id: String,
+    plugin_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    marketplace_name: Option<String>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct StoredRefreshOperation {
+    operation_id: String,
+}
+
+// A required nullable field cannot be Option<T>: serde would accept a missing
+// field as None. deserialize_any rejects a missing field while accepting JSON
+// null or exactly the declared operation object.
+#[derive(Serialize)]
+#[serde(untagged)]
+enum StoredRefreshIntent {
+    Empty(()),
+    Active(JsonObject<StoredRefreshOperation>),
+}
+
+impl<'de> Deserialize<'de> for StoredRefreshIntent {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct IntentVisitor;
+        impl<'de> Visitor<'de> for IntentVisitor {
+            type Value = StoredRefreshIntent;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("null or a refresh operation object")
+            }
+
+            fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+                Ok(StoredRefreshIntent::Empty(()))
+            }
+
+            fn visit_map<A: MapAccess<'de>>(self, map: A) -> Result<Self::Value, A::Error> {
+                StoredRefreshOperation::deserialize(MapAccessDeserializer::new(map))
+                    .map(|operation| StoredRefreshIntent::Active(JsonObject(operation)))
+            }
+        }
+        deserializer.deserialize_any(IntentVisitor)
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -81,18 +150,28 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for JsonObject<T> {
 }
 
 fn decode_state(bytes: &[u8]) -> Result<UninstallState, String> {
-    let JsonObject(stored) = serde_json::from_slice::<JsonObject<StoredUninstallImage>>(bytes)
-        .map_err(|_| INVALID_STATE.to_string())?;
-    if stored.format_version != 1 {
-        return Err(INVALID_STATE.into());
-    }
+    let (confirmed, pending, auth_refusals, refresh_intent) = match
+        serde_json::from_slice::<VersionedImage>(bytes).map_err(|_| INVALID_STATE.to_string())?
+    {
+        VersionedImage::Legacy(JsonObject(stored)) if stored.format_version == 1 => {
+            (stored.confirmed_plugin_ids, stored.pending, Vec::new(), None)
+        }
+        VersionedImage::Current(JsonObject(stored)) if stored.format_version == 2 => {
+            let refresh = match stored.refresh_intent {
+                StoredRefreshIntent::Empty(()) => None,
+                StoredRefreshIntent::Active(JsonObject(operation)) => Some(operation.operation_id),
+            };
+            (stored.confirmed_plugin_ids, stored.pending, stored.auth_refusals, refresh)
+        }
+        _ => return Err(INVALID_STATE.into()),
+    };
     let mut state = UninstallState::default();
-    for id in stored.confirmed_plugin_ids {
+    for id in confirmed {
         if !state.confirmed.insert(id) {
             return Err(INVALID_STATE.into());
         }
     }
-    for JsonObject(pending) in stored.pending {
+    for JsonObject(pending) in pending {
         if state
             .pending
             .insert(pending.plugin_id, pending.operation_id)
@@ -101,6 +180,17 @@ fn decode_state(bytes: &[u8]) -> Result<UninstallState, String> {
             return Err(INVALID_STATE.into());
         }
     }
+    for JsonObject(block) in auth_refusals {
+        let block = PluginAuthBlock {
+            plugin_id: block.plugin_id,
+            plugin_name: block.plugin_name,
+            marketplace_name: block.marketplace_name,
+        };
+        if state.auth_refusals.insert(block.plugin_id.clone(), block).is_some() {
+            return Err(INVALID_STATE.into());
+        }
+    }
+    state.refresh_intent = refresh_intent;
     validate_state(&state)?;
     Ok(state)
 }
@@ -120,13 +210,25 @@ fn validate_state(state: &UninstallState) -> Result<(), String> {
             return Err(INVALID_STATE.into());
         }
     }
+    if state.auth_refusals.iter().any(|(id, block)| {
+        id != &block.plugin_id || !is_canonical_plugin_id(id)
+    }) {
+        return Err(INVALID_STATE.into());
+    }
+    if let Some(operation_id) = &state.refresh_intent {
+        if !Uuid::parse_str(operation_id).is_ok_and(|parsed| parsed.to_string() == *operation_id)
+            || operation_ids.contains(operation_id)
+        {
+            return Err(INVALID_STATE.into());
+        }
+    }
     Ok(())
 }
 
 fn encode_state(state: &UninstallState) -> Result<Vec<u8>, String> {
     validate_state(state)?;
-    let stored = StoredUninstallImage {
-        format_version: 1,
+    let stored = StoredAdmissionImage {
+        format_version: 2,
         confirmed_plugin_ids: state.confirmed.iter().cloned().collect(),
         pending: state
             .pending
@@ -138,6 +240,19 @@ fn encode_state(state: &UninstallState) -> Result<Vec<u8>, String> {
                 })
             })
             .collect(),
+        auth_refusals: state.auth_refusals.values().map(|block| {
+            JsonObject(StoredAuthRefusal {
+                plugin_id: block.plugin_id.clone(),
+                plugin_name: block.plugin_name.clone(),
+                marketplace_name: block.marketplace_name.clone(),
+            })
+        }).collect(),
+        refresh_intent: match &state.refresh_intent {
+            Some(operation_id) => StoredRefreshIntent::Active(JsonObject(StoredRefreshOperation {
+                operation_id: operation_id.clone(),
+            })),
+            None => StoredRefreshIntent::Empty(()),
+        },
     };
     serde_json::to_vec_pretty(&stored).map_err(|_| WRITE_FAILED.to_string())
 }
@@ -193,6 +308,36 @@ pub(super) fn persist_uninstall_image(
     }
     require_unchanged(cache_dir, &published)?;
     Ok(published)
+}
+
+/// A failed auth transition may retain the expected bytes or expose exactly
+/// its candidate before a later barrier fails. Neither observation proves
+/// durability, but both distinguish known negative admission from foreign or
+/// unreadable state. The caller retains adverse live facts on every error.
+pub(super) fn inspect_failed_auth_publication(
+    cache_dir: &Path,
+    expected: &DurableUninstallImage,
+    next: &UninstallState,
+) -> Result<DurableUninstallImage, String> {
+    let observed = load_uninstall_image(cache_dir)?;
+    if observed == *expected {
+        return Ok(observed);
+    }
+    let mut candidate = DurableUninstallImage {
+        state: next.clone(),
+        image_bytes: Some(encode_state(next)?),
+        marker_bytes: expected.marker_bytes.clone(),
+    };
+    if observed == candidate {
+        return Ok(observed);
+    }
+    if candidate.marker_bytes.is_none() {
+        candidate.marker_bytes = Some(MARKER_BYTES.to_vec());
+        if observed == candidate {
+            return Ok(observed);
+        }
+    }
+    Err(CHANGED_STATE.into())
 }
 
 fn require_unchanged(cache_dir: &Path, expected: &DurableUninstallImage) -> Result<(), String> {
@@ -314,11 +459,21 @@ impl StagedUninstallFile {
     }
 
     fn publish(mut self, destination: &Path) -> Result<(), String> {
+        #[cfg(test)]
+        let injected = image_publish_failure(destination);
+        #[cfg(test)]
+        if matches!(injected, Some(ImagePublishFailure::BeforeRename)) {
+            return Err(WRITE_FAILED.into());
+        }
         let path = self.path.as_ref().expect("staged uninstall file is owned");
         fs::rename(path, destination).map_err(|_| WRITE_FAILED.to_string())?;
         // A later barrier/readback failure must not erase the published image.
         // Nor may Drop remove another file later created at the staging name.
         self.path = None;
+        #[cfg(test)]
+        if matches!(injected, Some(ImagePublishFailure::AfterRename)) {
+            return Err(PUBLICATION_UNKNOWN.into());
+        }
         sync_directory(directory_parent(destination)?)
             .map_err(|_| PUBLICATION_UNKNOWN.to_string())
     }
@@ -343,6 +498,56 @@ fn sync_directory(_path: &Path) -> io::Result<()> {
     // Keep the Host stores' established std-only non-Unix limit. File sync and
     // atomic rename do not establish a portable directory durability barrier.
     Ok(())
+}
+
+// Narrow I/O fault instrumentation: only this thread's nth image publication,
+// never its marker or another test's operation. Shipping builds have no hook.
+#[cfg(test)]
+#[derive(Clone, Copy)]
+pub(super) enum ImagePublishFailure {
+    BeforeRename,
+    AfterRename,
+}
+
+#[cfg(test)]
+thread_local! {
+    static IMAGE_PUBLISH_FAILURE: std::cell::RefCell<Option<(usize, ImagePublishFailure)>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(super) fn with_image_publish_failure<T>(
+    nth: usize,
+    phase: ImagePublishFailure,
+    operation: impl FnOnce() -> T,
+) -> T {
+    assert!(nth > 0, "publication ordinal must be positive");
+    struct Restore(Option<(usize, ImagePublishFailure)>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            IMAGE_PUBLISH_FAILURE.with(|slot| *slot.borrow_mut() = self.0.take());
+        }
+    }
+    let _restore = Restore(IMAGE_PUBLISH_FAILURE.with(|slot| slot.replace(Some((nth, phase)))));
+    operation()
+}
+
+#[cfg(test)]
+fn image_publish_failure(destination: &Path) -> Option<ImagePublishFailure> {
+    if destination.file_name() != Some(std::ffi::OsStr::new(IMAGE_FILE)) {
+        return None;
+    }
+    IMAGE_PUBLISH_FAILURE.with(|slot| {
+        let mut pending = slot.borrow_mut();
+        let (remaining, phase) = pending.as_mut()?;
+        if *remaining > 1 {
+            *remaining -= 1;
+            return None;
+        }
+        let phase = *phase;
+        *pending = None;
+        Some(phase)
+    })
 }
 
 #[cfg(test)]
@@ -383,6 +588,7 @@ mod tests {
         UninstallState {
             confirmed: BTreeSet::from(["9".into()]),
             pending: BTreeMap::from([("9".into(), OP_A.into())]),
+            ..UninstallState::default()
         }
     }
 
@@ -533,6 +739,7 @@ mod tests {
             let state = UninstallState {
                 confirmed: BTreeSet::from([invalid_id.into()]),
                 pending: BTreeMap::new(),
+                ..UninstallState::default()
             };
             assert!(encode_state(&state).is_err());
         }
@@ -548,6 +755,7 @@ mod tests {
             let state = UninstallState {
                 confirmed: BTreeSet::new(),
                 pending: BTreeMap::from([("9".into(), invalid_operation.into())]),
+                ..UninstallState::default()
             };
             assert!(encode_state(&state).is_err());
             let stored = StoredUninstallImage {
@@ -570,9 +778,13 @@ mod tests {
         let state = UninstallState {
             confirmed: BTreeSet::from(["official.plugin@catalog".into(), "9".into(), "10".into()]),
             pending: BTreeMap::from([("9".into(), OP_B.into()), ("10".into(), OP_A.into())]),
+            ..UninstallState::default()
         };
         let bytes = encode_state(&state).unwrap();
-        let JsonObject(decoded) = serde_json::from_slice::<JsonObject<StoredUninstallImage>>(&bytes).unwrap();
+        let JsonObject(decoded) = serde_json::from_slice::<JsonObject<StoredAdmissionImage>>(&bytes).unwrap();
+        assert_eq!(decoded.format_version, 2);
+        assert!(decoded.auth_refusals.is_empty());
+        assert!(matches!(decoded.refresh_intent, StoredRefreshIntent::Empty(())));
         assert_eq!(decoded.confirmed_plugin_ids, ["10", "9", "official.plugin@catalog"]);
         assert_eq!(decoded.pending.iter().map(|entry| entry.0.plugin_id.as_str()).collect::<Vec<_>>(), ["10", "9"]);
         assert!(decode_state(&bytes).unwrap() == state);
@@ -703,5 +915,149 @@ mod tests {
         assert!(load_uninstall_image(&cache).is_err());
         fs::remove_dir(marker_path).unwrap();
         assert!(load_uninstall_image(&cache).unwrap().state == pending_state());
+    }
+
+    #[test]
+    fn legacy_v1_migrates_only_on_an_explicit_transition_with_all_custody_retained() {
+        let root = TempRoot::new();
+        let bytes = format!(
+            "{{\n  \"formatVersion\":1,\"confirmedPluginIds\":[\"9\"],\"pending\":[{{\"pluginId\":\"9\",\"operationId\":\"{OP_A}\"}}]\n}}"
+        );
+        let cache = root.seed_image(bytes.as_bytes());
+        let legacy = load_uninstall_image(&cache).unwrap();
+        assert!(legacy.state == pending_state());
+        assert_eq!(fs::read(cache.join(IMAGE_FILE)).unwrap(), bytes.as_bytes());
+        assert!(!cache.join(MARKER_FILE).exists());
+        let mut next = legacy.state.clone();
+        next.refresh_intent = Some(OP_B.into());
+        let migrated = persist_uninstall_image(&cache, &legacy, &next).unwrap();
+        assert!(migrated.state == next);
+        assert!(load_uninstall_image(&cache).unwrap() == migrated);
+        let written: serde_json::Value = serde_json::from_slice(
+            &fs::read(cache.join(IMAGE_FILE)).unwrap(),
+        ).unwrap();
+        assert_eq!(written, serde_json::json!({
+            "formatVersion": 2, "confirmedPluginIds": ["9"],
+            "pending": [{"pluginId": "9", "operationId": OP_A}],
+            "authRefusals": [], "refreshIntent": {"operationId": OP_B},
+        }));
+        assert_eq!(fs::read(cache.join(MARKER_FILE)).unwrap(), b"1\n");
+        assert!(serde_json::from_slice::<JsonObject<StoredUninstallImage>>(
+            &fs::read(cache.join(IMAGE_FILE)).unwrap(),
+        ).is_err(), "the old strict reader must not discard v2 auth custody");
+    }
+
+    #[test]
+    fn auth_identity_metadata_and_uninstall_custody_remain_distinct_and_sorted() {
+        let mut state = pending_state();
+        for (id, name) in [("9", "Actual nine"), ("09", "Distinct leading zero")] {
+            state.auth_refusals.insert(id.into(), PluginAuthBlock {
+                plugin_id: id.into(), plugin_name: name.into(),
+                marketplace_name: Some("Actual market".into()),
+            });
+        }
+        state.refresh_intent = Some(OP_B.into());
+        let encoded = encode_state(&state).unwrap();
+        assert!(decode_state(&encoded).unwrap() == state);
+        let json: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(json["authRefusals"], serde_json::json!([
+            {"pluginId":"09","pluginName":"Distinct leading zero","marketplaceName":"Actual market"},
+            {"pluginId":"9","pluginName":"Actual nine","marketplaceName":"Actual market"},
+        ]));
+        assert_eq!(json["confirmedPluginIds"], serde_json::json!(["9"]));
+        assert_eq!(json["pending"], serde_json::json!([{"pluginId":"9","operationId":OP_A}]));
+        assert_eq!(json["refreshIntent"], serde_json::json!({"operationId":OP_B}));
+        assert_eq!(encode_state(&state).unwrap(), encoded);
+    }
+
+    #[test]
+    fn v2_requires_strict_auth_objects_and_an_explicit_nullable_refresh_field() {
+        let valid = r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null}"#;
+        assert!(decode_state(valid.as_bytes()).unwrap() == UninstallState::default());
+        let invalid = [
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[]}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"refreshIntent":null}"#,
+            r#"{"formatVersion":1,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null}"#,
+            r#"{"formatVersion":3,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":null,"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":[]}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":{}}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":{"operationId":"11111111-1111-4111-8111-111111111111","extra":true}}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":{"operationId":"11111111-1111-4111-8111-111111111111","operationId":"11111111-1111-4111-8111-111111111111"}}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"authRefusals":[],"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[["9","name"]],"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[{"pluginId":"9"}],"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[{"pluginId":"9","pluginName":"name","extra":true}],"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[{"pluginId":"9","pluginId":"9","pluginName":"name"}],"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[{"pluginId":"9","pluginName":"name","pluginName":"name"}],"refreshIntent":null}"#,
+            r#"{"formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[{"pluginId":"9","pluginName":"name"},{"pluginId":"\u0039","pluginName":"name"}],"refreshIntent":null}"#,
+        ];
+        for bytes in invalid {
+            let root = TempRoot::new();
+            let cache = root.seed_image(bytes.as_bytes());
+            assert!(load_uninstall_image(&cache).is_err(), "invalid durable shape: {bytes}");
+            assert!(persist_uninstall_image(&cache, &DurableUninstallImage::default(), &pending_state()).is_err());
+            assert_eq!(fs::read(cache.join(IMAGE_FILE)).unwrap(), bytes.as_bytes());
+            assert!(!cache.join(MARKER_FILE).exists());
+        }
+    }
+
+    #[test]
+    fn v2_auth_and_refresh_identity_reject_malformed_or_conflicting_values() {
+        for id in ["", " 9", "9 ", "9\n"] {
+            let mut state = UninstallState::default();
+            state.auth_refusals.insert(id.into(), PluginAuthBlock {
+                plugin_id: id.into(), plugin_name: "Actual name".into(), marketplace_name: None,
+            });
+            assert!(encode_state(&state).is_err());
+        }
+        let mut mismatch = UninstallState::default();
+        mismatch.auth_refusals.insert("9".into(), PluginAuthBlock {
+            plugin_id: "10".into(), plugin_name: "Actual name".into(), marketplace_name: None,
+        });
+        assert!(encode_state(&mismatch).is_err());
+        for operation in ["", "bad", "11111111111141118111111111111111", "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA", OP_A] {
+            let mut state = pending_state();
+            state.refresh_intent = Some(operation.into());
+            assert!(encode_state(&state).is_err());
+            let invalid = serde_json::json!({
+                "formatVersion":2,"confirmedPluginIds":["9"],
+                "pending":[{"pluginId":"9","operationId":OP_A}],
+                "authRefusals":[],"refreshIntent":{"operationId":operation},
+            });
+            assert!(decode_state(&serde_json::to_vec(&invalid).unwrap()).is_err());
+        }
+    }
+
+    #[test]
+    fn failed_auth_write_accepts_only_exact_expected_or_its_visible_candidate() {
+        let root = TempRoot::new();
+        let cache = root.cache();
+        let expected = persist_uninstall_image(&cache, &DurableUninstallImage::default(), &pending_state()).unwrap();
+        let mut next = expected.state.clone();
+        next.refresh_intent = Some(OP_B.into());
+        next.auth_refusals.insert("9".into(), PluginAuthBlock {
+            plugin_id:"9".into(),plugin_name:"Actual nine".into(),marketplace_name:None,
+        });
+        let before = with_image_publish_failure(1, ImagePublishFailure::BeforeRename, || {
+            persist_uninstall_image(&cache, &expected, &next)
+        });
+        assert!(before.is_err());
+        assert!(inspect_failed_auth_publication(&cache, &expected, &next).unwrap() == expected);
+        let after = with_image_publish_failure(1, ImagePublishFailure::AfterRename, || {
+            persist_uninstall_image(&cache, &expected, &next)
+        });
+        assert!(after.is_err());
+        let visible = inspect_failed_auth_publication(&cache, &expected, &next).unwrap();
+        assert!(visible.state == next);
+        assert!(visible != expected);
+        let mut foreign = fs::read(cache.join(IMAGE_FILE)).unwrap();
+        foreign.push(b'\n');
+        fs::write(cache.join(IMAGE_FILE), &foreign).unwrap();
+        assert!(load_uninstall_image(&cache).unwrap().state == next);
+        assert!(inspect_failed_auth_publication(&cache, &expected, &next).is_err());
+        assert_eq!(fs::read(cache.join(IMAGE_FILE)).unwrap(), foreign);
+        assert_eq!(fs::read(cache.join(MARKER_FILE)).unwrap(), MARKER_BYTES);
     }
 }

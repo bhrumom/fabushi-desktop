@@ -966,7 +966,8 @@ mod lifecycle_tests {
             let journal_path = cache_dir.join("uninstall-state.json");
             let journal = fs::read(&journal_path).unwrap();
             assert_eq!(serde_json::from_slice::<Value>(&journal).unwrap(), json!({
-                "formatVersion":1, "confirmedPluginIds":["41"], "pending":pending,
+                "formatVersion":2, "confirmedPluginIds":["41"], "pending":pending,
+                "authRefusals":[], "refreshIntent":null,
             }));
             assert_eq!(fs::read(cache_dir.join("uninstall-state.version")).unwrap(), b"1\n");
             assert!(retained.get("plugin-43-retained").is_none());

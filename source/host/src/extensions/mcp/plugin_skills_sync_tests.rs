@@ -17,6 +17,8 @@ const DEADLINE: Duration = Duration::from_secs(5);
 // builds contain neither the hooks nor a callback under the publication mutex.
 #[derive(Default)]
 pub(super) struct ServiceTestHooks {
+    pub(super) after_refresh_reservation: Option<Arc<BoundaryPause>>,
+    pub(super) before_auth_outcome: Option<Arc<BoundaryPause>>,
     pub(super) after_rename: Option<Arc<BoundaryPause>>,
     pub(super) after_commit: Option<Arc<BoundaryPause>>,
     pub(super) prune_locked: Option<Arc<BoundaryPause>>,
@@ -39,14 +41,14 @@ pub(super) fn pause_at(pause: &Option<Arc<BoundaryPause>>) {
     }
 }
 
-struct BoundaryGate {
-    pause: Arc<BoundaryPause>,
+pub(super) struct BoundaryGate {
+    pub(super) pause: Arc<BoundaryPause>,
     entered: Receiver<()>,
-    release: Sender<()>,
+    pub(super) release: Sender<()>,
 }
 
 impl BoundaryGate {
-    fn at_visit(visit: usize) -> Self {
+    pub(super) fn at_visit(visit: usize) -> Self {
         let (entered_tx, entered) = mpsc::channel();
         let (release, release_rx) = mpsc::channel();
         Self {
@@ -61,21 +63,21 @@ impl BoundaryGate {
         }
     }
 
-    fn wait(&self) {
+    pub(super) fn wait(&self) {
         self.entered.recv_timeout(DEADLINE).expect("service boundary not reached");
     }
 }
 
-enum LoadStep {
+pub(super) enum LoadStep {
     Loaded(LoadedPlugins),
     Failed,
     Panicked,
 }
 
-struct GateLoader {
+pub(super) struct GateLoader {
     entered: Sender<usize>,
     release: Mutex<Receiver<LoadStep>>,
-    calls: AtomicUsize,
+    pub(super) calls: AtomicUsize,
     active: AtomicUsize,
     max_active: AtomicUsize,
 }
@@ -104,9 +106,9 @@ impl PluginSkillsLoader for GateLoader {
     }
 }
 
-struct TempRoot(PathBuf);
+pub(super) struct TempRoot(pub(super) PathBuf);
 impl TempRoot {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         let root = std::env::temp_dir().join(format!("plugin-sync-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(root.join("plugins/cache/market/plugin/skills/test")).unwrap();
         Self(root)
@@ -141,15 +143,15 @@ impl TempRoot {
         }
     }
 
-    fn cache_path(&self) -> PathBuf {
+    pub(super) fn cache_path(&self) -> PathBuf {
         get_plugin_skills_cache_path(get_plugin_skills_dir(&self.0))
     }
 
-    fn uninstall_state_path(&self) -> PathBuf {
+    pub(super) fn uninstall_state_path(&self) -> PathBuf {
         get_plugin_skills_dir(&self.0).join("uninstall-state.json")
     }
 
-    fn uninstall_version_path(&self) -> PathBuf {
+    pub(super) fn uninstall_version_path(&self) -> PathBuf {
         get_plugin_skills_dir(&self.0).join("uninstall-state.version")
     }
 
@@ -170,14 +172,14 @@ impl TempRoot {
         fs::write(path, serde_json::to_vec(value).unwrap()).unwrap();
     }
 
-    fn sentinel(&self) -> PathBuf {
+    pub(super) fn sentinel(&self) -> PathBuf {
         let path = self.0.join("plugins/cache/market/unlisted/keep.txt");
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, "must survive an incomplete pass").unwrap();
         path
     }
 
-    fn staged_files(&self) -> Vec<PathBuf> {
+    pub(super) fn staged_files(&self) -> Vec<PathBuf> {
         fs::read_dir(get_plugin_skills_dir(&self.0))
             .unwrap()
             .map(Result::unwrap)
@@ -192,12 +194,12 @@ impl Drop for TempRoot {
     }
 }
 
-struct Call {
+pub(super) struct Call {
     result: Receiver<Result<SyncResult, ()>>,
     thread: JoinHandle<()>,
 }
 impl Call {
-    fn start(service: &Arc<SandPluginSkillsService>, trigger: &'static str) -> Self {
+    pub(super) fn start(service: &Arc<SandPluginSkillsService>, trigger: &'static str) -> Self {
         let service = Arc::clone(service);
         let (tx, result) = mpsc::channel();
         let thread = thread::spawn(move || {
@@ -207,11 +209,11 @@ impl Call {
         Self { result, thread }
     }
 
-    fn assert_waiting(&self) {
+    pub(super) fn assert_waiting(&self) {
         assert!(matches!(self.result.try_recv(), Err(TryRecvError::Empty)));
     }
 
-    fn outcome(self) -> Result<SyncResult, ()> {
+    pub(super) fn outcome(self) -> Result<SyncResult, ()> {
         let result = self
             .result
             .recv_timeout(DEADLINE)
@@ -220,21 +222,21 @@ impl Call {
         result
     }
 
-    fn finish(self) -> SyncResult {
+    pub(super) fn finish(self) -> SyncResult {
         self.outcome().expect("unexpected sync panic")
     }
 }
 
-struct Harness {
-    root: TempRoot,
-    service: Arc<SandPluginSkillsService>,
-    loader: Arc<GateLoader>,
+pub(super) struct Harness {
+    pub(super) root: TempRoot,
+    pub(super) service: Arc<SandPluginSkillsService>,
+    pub(super) loader: Arc<GateLoader>,
     entered: Receiver<usize>,
-    release: Sender<LoadStep>,
-    events: Arc<Mutex<Vec<PluginSkillsSyncEvent>>>,
+    pub(super) release: Sender<LoadStep>,
+    pub(super) events: Arc<Mutex<Vec<PluginSkillsSyncEvent>>>,
 }
 impl Harness {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self::with_now(Arc::new(|| 1_000))
     }
 
@@ -242,7 +244,7 @@ impl Harness {
         Self::with_hooks(now, ServiceTestHooks::default())
     }
 
-    fn with_hooks(now: Arc<dyn Fn() -> i64 + Send + Sync>, hooks: ServiceTestHooks) -> Self {
+    pub(super) fn with_hooks(now: Arc<dyn Fn() -> i64 + Send + Sync>, hooks: ServiceTestHooks) -> Self {
         let root = TempRoot::new();
         let (tx, entered) = mpsc::channel();
         let (release, rx) = mpsc::channel();
@@ -270,11 +272,11 @@ impl Harness {
         }
     }
 
-    fn call(&self, trigger: &'static str) -> Call {
+    pub(super) fn call(&self, trigger: &'static str) -> Call {
         Call::start(&self.service, trigger)
     }
 
-    fn enter(&self, pass: usize) {
+    pub(super) fn enter(&self, pass: usize) {
         assert_eq!(
             self.entered
                 .recv_timeout(DEADLINE)
@@ -283,7 +285,7 @@ impl Harness {
         );
     }
 
-    fn pending(&self, trigger: &str) {
+    pub(super) fn pending(&self, trigger: &str) {
         // Wait for actual enrollment, not an assumed OS scheduling delay.
         let until = Instant::now() + DEADLINE;
         let mut state = self.service.state.lock().unwrap();
@@ -313,7 +315,7 @@ impl Harness {
             .unwrap();
     }
 
-    fn step(&self, trigger: &'static str, step: LoadStep) -> SyncResult {
+    pub(super) fn step(&self, trigger: &'static str, step: LoadStep) -> SyncResult {
         let next = self.loader.calls.load(Ordering::SeqCst) + 1;
         let call = self.call(trigger);
         self.enter(next);
@@ -321,7 +323,7 @@ impl Harness {
         call.finish()
     }
 
-    fn assert_calls(&self, calls: usize) {
+    pub(super) fn assert_calls(&self, calls: usize) {
         assert_eq!(self.loader.calls.load(Ordering::SeqCst), calls);
         assert_eq!(self.loader.max_active.load(Ordering::SeqCst), 1);
     }
@@ -506,7 +508,7 @@ fn same_thread_recursive_sync_fails_explicitly_instead_of_waiting_on_itself() {
     assert!(service.state.lock().unwrap().pending.is_none());
 }
 
-fn auth_block(id: &str) -> PluginAuthBlock {
+pub(super) fn auth_block(id: &str) -> PluginAuthBlock {
     PluginAuthBlock {
         plugin_id: id.into(),
         plugin_name: "Plugin".into(),
@@ -954,19 +956,31 @@ fn invalid_generated_records_fail_before_publication_without_changing_cache_or_p
 
 #[test]
 fn staging_failure_preserves_existing_path_and_materialized_files_without_success() {
-    let h = Harness::new();
+    let gate = PublicationGate::at_clock_call(2);
+    let h = Harness::with_now(Arc::clone(&gate.now));
     let cache_dir = get_plugin_skills_dir(&h.root.0);
+    let sentinel = h.root.sentinel();
+    let active = h.call("stage-failure");
+    h.enter(1);
+    h.loaded("v1");
+    gate.wait();
+    // Refresh custody now precedes content staging. Introduce the original
+    // non-directory obstruction at the actual stage's clock boundary, after
+    // its settled journal is durable, so this still exercises cache staging.
+    let journal = fs::read(h.root.uninstall_state_path()).unwrap();
+    let preserved = h.root.0.join("preserved-plugin-skills.fixture");
+    fs::rename(&cache_dir, &preserved).unwrap();
     fs::write(&cache_dir, "existing non-directory cache path").unwrap();
     let bytes = fs::read(&cache_dir).unwrap();
-    let sentinel = h.root.sentinel();
-    assert!(
-        h.step("stage-failure", LoadStep::Loaded(h.root.loaded("v1")))
-            .is_err(),
-    );
+    gate.release.send(()).unwrap();
+    assert!(active.finish().is_err());
     assert_eq!(fs::read(&cache_dir).unwrap(), bytes);
+    assert_eq!(fs::read(preserved.join("uninstall-state.json")).unwrap(), journal);
+    assert_eq!(fs::read(preserved.join("uninstall-state.version")).unwrap(), b"1\n");
     assert!(sentinel.exists());
     assert!(h.root.0.join("plugins/cache/market/plugin").exists());
     assert!(h.events.lock().unwrap().is_empty());
+    h.assert_calls(1);
 }
 
 struct PublicationGate {
@@ -1202,7 +1216,7 @@ fn real_poll_shutdown_fences_an_active_load_before_join_finishes() {
     h.assert_calls(1);
 }
 
-fn two_plugins(root: &TempRoot, version: &str) -> LoadedPlugins {
+pub(super) fn two_plugins(root: &TempRoot, version: &str) -> LoadedPlugins {
     let mut loaded = root.loaded(version);
     let mut other = loaded.plugins[0].clone();
     other.identifier.plugin_db_id = Some("10".into());
@@ -1224,7 +1238,7 @@ fn two_plugins(root: &TempRoot, version: &str) -> LoadedPlugins {
     loaded
 }
 
-fn refuse_nine_with_invalid_stage(root: &TempRoot) -> LoadedPlugins {
+pub(super) fn refuse_nine_with_invalid_stage(root: &TempRoot) -> LoadedPlugins {
     let mut loaded = two_plugins(root, "must-not-publish");
     loaded.auth_blocked.push(auth_block("9"));
     // This is a valid authoritative loader aggregate. Its generated record for
@@ -1233,7 +1247,7 @@ fn refuse_nine_with_invalid_stage(root: &TempRoot) -> LoadedPlugins {
     loaded
 }
 
-fn skill_file_bytes(records: &[PluginSkillRecord]) -> Vec<(PathBuf, Vec<u8>)> {
+pub(super) fn skill_file_bytes(records: &[PluginSkillRecord]) -> Vec<(PathBuf, Vec<u8>)> {
     records.iter().map(|record| {
         let path = PathBuf::from(&record.file_path);
         let bytes = fs::read(&path).unwrap();
@@ -1241,13 +1255,13 @@ fn skill_file_bytes(records: &[PluginSkillRecord]) -> Vec<(PathBuf, Vec<u8>)> {
     }).collect()
 }
 
-fn assert_skill_file_bytes(files: &[(PathBuf, Vec<u8>)]) {
+pub(super) fn assert_skill_file_bytes(files: &[(PathBuf, Vec<u8>)]) {
     for (path, bytes) in files {
         assert_eq!(&fs::read(path).unwrap(), bytes, "{}", path.display());
     }
 }
 
-fn record_ids(records: &[PluginSkillRecord]) -> Vec<&str> {
+pub(super) fn record_ids(records: &[PluginSkillRecord]) -> Vec<&str> {
     let mut ids = records.iter().map(|record| record.plugin_id.as_str()).collect::<Vec<_>>();
     ids.sort_unstable();
     ids
@@ -1264,15 +1278,28 @@ fn assert_uninstall_custody(
     confirmed: &[&str],
     pending: &[&PluginUninstallIntent],
 ) {
+    assert_uninstall_custody_with_auth(service, root, confirmed, pending, &[], None);
+}
+
+fn assert_uninstall_custody_with_auth(
+    service: &SandPluginSkillsService,
+    root: &TempRoot,
+    confirmed: &[&str],
+    pending: &[&PluginUninstallIntent],
+    refusals: &[PluginAuthBlock],
+    refresh: Option<&str>,
+) {
     let entries = pending.iter().map(|intent| json!({
         "pluginId": intent.plugin_id,
         "operationId": intent.operation_id,
     })).collect::<Vec<_>>();
     let durable: Value = serde_json::from_slice(&fs::read(root.uninstall_state_path()).unwrap()).unwrap();
     assert_eq!(durable, json!({
-        "formatVersion": 1,
+        "formatVersion": 2,
         "confirmedPluginIds": confirmed,
         "pending": entries,
+        "authRefusals": refusals,
+        "refreshIntent": refresh.map(|operation_id| json!({"operationId": operation_id})),
     }));
     assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), b"1\n");
     let status = if confirmed.is_empty() && pending.is_empty() {
@@ -1285,7 +1312,20 @@ fn assert_uninstall_custody(
     if let Some(status) = status {
         projected["uninstallRecovery"] = status;
     }
+    if !refusals.is_empty() {
+        projected["authRecovery"] = json!({
+            "refusals": refusals,
+            "refreshOutcomeUnknown": false,
+        });
+    }
     assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(service), projected);
+}
+
+pub(super) fn refresh_operation_id(root: &TempRoot) -> String {
+    let image: Value = serde_json::from_slice(&fs::read(root.uninstall_state_path()).unwrap()).unwrap();
+    let operation_id = image["refreshIntent"]["operationId"].as_str().unwrap();
+    assert_eq!(uuid::Uuid::parse_str(operation_id).unwrap().to_string(), operation_id);
+    operation_id.to_string()
 }
 
 #[test]
@@ -1925,6 +1965,8 @@ fn confirmed_uninstall_refuses_only_the_exact_id_in_retained_and_new_workflow_st
         body: "USER_BODY".into(), trigger: None, source_ref: None,
     }).unwrap().unwrap();
 
+    let clean_journal = fs::read(h.root.uninstall_state_path()).unwrap();
+    assert_uninstall_custody(&h.service, &h.root, &[], &[]);
     for invalid in ["", " ", " 9", "9 ", "\t9", "\u{feff}9", "9\u{feff}", "9\n0", "09", "00"] {
         assert_eq!(
             h.service.begin_uninstall(invalid).unwrap_err(),
@@ -1933,8 +1975,8 @@ fn confirmed_uninstall_refuses_only_the_exact_id_in_retained_and_new_workflow_st
         assert!(!reader.is_denied("9"));
         assert_eq!(h.service.current(), seed);
         assert!(h.service.uninstall_recovery_status().is_none());
-        assert!(!h.root.uninstall_state_path().exists());
-        assert!(!h.root.uninstall_version_path().exists());
+        assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), clean_journal);
+        assert_uninstall_custody(&h.service, &h.root, &[], &[]);
     }
     confirm_uninstall(&h.service, "99").unwrap();
     assert!(reader.is_denied("99"));
@@ -2558,6 +2600,10 @@ fn uninstall_settlement_requires_the_exact_current_ticket_without_advancing_obse
     let journal = fs::read(h.root.uninstall_state_path()).unwrap();
     let active = h.call("load-survives-refused-tickets");
     h.enter(2);
+    // Actual loader entry has reserved its own refresh token. Refused uninstall
+    // operations must preserve this active image as well as both exact tickets.
+    let active_journal = fs::read(h.root.uninstall_state_path()).unwrap();
+    let refresh = refresh_operation_id(&h.root);
     assert_eq!(h.service.begin_uninstall("9").unwrap_err(), "plugin uninstall already has an unresolved intent");
     let wrong_tickets = [
         PluginUninstallIntent { plugin_id: "9".into(), operation_id: ten.operation_id.clone() },
@@ -2576,8 +2622,8 @@ fn uninstall_settlement_requires_the_exact_current_ticket_without_advancing_obse
                 h.service.settle_uninstall(wrong, settlement).unwrap_err(),
                 "plugin uninstall settlement does not match the current intent",
             );
-            assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), journal);
-            assert_uninstall_custody(&h.service, &h.root, &[], &[&ten, &nine]);
+            assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), active_journal);
+            assert_uninstall_custody_with_auth(&h.service, &h.root, &[], &[&ten, &nine], &[], Some(&refresh));
         }
     }
     assert_eq!(fs::read(h.root.cache_path()).unwrap(), cache);
@@ -2585,6 +2631,7 @@ fn uninstall_settlement_requires_the_exact_current_ticket_without_advancing_obse
     assert!(h.service.current_auth_blocked().is_empty());
     h.release.send(LoadStep::Loaded(two_plugins(&h.root, "current-load"))).unwrap();
     assert_empty(active.finish());
+    assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), journal);
     assert!(sentinel.exists());
     assert_skill_file_bytes(&files);
 
@@ -2640,9 +2687,10 @@ fn uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals() {
             }
             let intent = h.service.begin_uninstall("9").unwrap();
             let confirmed: &[&str] = if confirmed_before { &["9"] } else { &[] };
-            assert_uninstall_custody(&h.service, &h.root, confirmed, &[&intent]);
+            let refusals = if auth_before { vec![auth_block("9")] } else { vec![] };
+            assert_uninstall_custody_with_auth(&h.service, &h.root, confirmed, &[&intent], &refusals, None);
             h.service.settle_uninstall(&intent, settlement).unwrap();
-            assert_uninstall_custody(&h.service, &h.root, confirmed, &[]);
+            assert_uninstall_custody_with_auth(&h.service, &h.root, confirmed, &[], &refusals, None);
             assert!(reader.is_denied("9"));
             assert!(!reader.is_denied("10"));
             assert_eq!(record_ids(&h.service.current()), vec!["10"]);
@@ -2654,7 +2702,7 @@ fn uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals() {
             assert_eq!(record_ids(&h.step("unresolved-after-reply", LoadStep::Loaded(unresolved)).unwrap()), vec!["10"]);
             assert_eq!(blocked_ids(&h.service), if auth_before { vec!["9"] } else { vec![] });
             assert!(reader.is_denied("9"));
-            assert_uninstall_custody(&h.service, &h.root, confirmed, &[]);
+            assert_uninstall_custody_with_auth(&h.service, &h.root, confirmed, &[], &refusals, None);
             assert_eq!(record_ids(&h.step("fresh-reinstall", LoadStep::Loaded(two_plugins(&h.root, "restored"))).unwrap()), vec!["10", "9"]);
             assert_uninstall_custody(&h.service, &h.root, &[], &[]);
             assert!(!reader.is_denied("9"));
@@ -2686,8 +2734,9 @@ fn uninstall_reservation_fences_an_old_load_or_staged_pass_but_not_its_queued_fr
         }
         let queued = h.call("queued-before-reservation");
         h.pending("queued-before-reservation");
+        let refresh = if staged { None } else { Some(refresh_operation_id(&h.root)) };
         let intent = h.service.begin_uninstall("9").unwrap();
-        assert_uninstall_custody(&h.service, &h.root, &[], &[&intent]);
+        assert_uninstall_custody_with_auth(&h.service, &h.root, &[], &[&intent], &[], refresh.as_deref());
         if let Some(gate) = &gate {
             gate.release.send(()).unwrap();
         } else {
@@ -2729,9 +2778,10 @@ fn uninstall_terminal_settlements_fence_loads_started_before_the_reply() {
         let intent = h.service.begin_uninstall("9").unwrap();
         let old = h.call("before-terminal-reply");
         h.enter(2);
+        let refresh = refresh_operation_id(&h.root);
         h.service.settle_uninstall(&intent, settlement).unwrap();
         let confirmed: &[&str] = if settlement == PluginUninstallSettlement::Removed { &["9"] } else { &[] };
-        assert_uninstall_custody(&h.service, &h.root, confirmed, &[]);
+        assert_uninstall_custody_with_auth(&h.service, &h.root, confirmed, &[], &[], Some(&refresh));
         let mut stale = two_plugins(&h.root, "must-not-publish");
         stale.auth_blocked.push(auth_block("10"));
         h.release.send(LoadStep::Loaded(stale)).unwrap();
@@ -2925,7 +2975,9 @@ fn uninstall_recovery_preserves_a_valid_unmarked_image_until_an_explicit_transit
     h.enter(2);
     h.release.send(LoadStep::Loaded(two_plugins(&h.root, "fresh"))).unwrap();
     assert_eq!(record_ids(&fresh.finish().unwrap()), vec!["10"]);
-    assert!(!h.root.uninstall_version_path().exists());
+    // AR-01 makes an actual refresh an explicit durable transition. Loading
+    // the unmarked image above remains read-only; reservation initializes it.
+    assert_eq!(fs::read(h.root.uninstall_version_path()).unwrap(), b"1\n");
     assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), journal);
     let ten = recovered.begin_uninstall("10").unwrap();
     assert_uninstall_custody(&recovered, &h.root, &[], &[&ten, &nine]);
@@ -3010,9 +3062,11 @@ fn pending_uninstall_same_root_successor_rejects_every_retired_settlement() {
     let reader = h.service.admission_reader();
     let old = h.call("old-pending-load");
     h.enter(2);
+    let active_journal = fs::read(h.root.uninstall_state_path()).unwrap();
+    let refresh = refresh_operation_id(&h.root);
     let successor = h.service.successor_with_loader(Arc::new(StaticLoader(two_plugins(&h.root, "successor")))).unwrap();
     assert!(Arc::ptr_eq(&reader, &successor.admission_reader()));
-    assert_uninstall_custody(&successor, &h.root, &[], &[&intent]);
+    assert_uninstall_custody_with_auth(&successor, &h.root, &[], &[&intent], &[], Some(&refresh));
     for settlement in [
         PluginUninstallSettlement::NotDispatched,
         PluginUninstallSettlement::NotRemoved,
@@ -3022,8 +3076,8 @@ fn pending_uninstall_same_root_successor_rejects_every_retired_settlement() {
             h.service.settle_uninstall(&intent, settlement).unwrap_err(),
             "plugin skills owner is disposed; uninstall state was not changed",
         );
-        assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), journal);
-        assert_uninstall_custody(&successor, &h.root, &[], &[&intent]);
+        assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), active_journal);
+        assert_uninstall_custody_with_auth(&successor, &h.root, &[], &[&intent], &[], Some(&refresh));
     }
     assert_eq!(h.service.begin_uninstall("10").unwrap_err(), "plugin skills owner is disposed; uninstall state was not changed");
     assert_eq!(record_ids(&successor.sync("fresh-successor-while-pending").unwrap()), vec!["10"]);

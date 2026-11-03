@@ -299,6 +299,9 @@ impl PluginSkillsPort for SandPluginSkillsService {
         if let Some(recovery) = self.uninstall_recovery_status() {
             status["uninstallRecovery"] = recovery;
         }
+        if let Some(recovery) = self.auth_recovery_status() {
+            status["authRecovery"] = recovery;
+        }
         status
     }
 

@@ -650,6 +650,7 @@ mod confirmed_uninstall_consumers {
         uninstall: Result<Value, String>,
         calls: Vec<(String, Value)>,
         before_uninstall_reply: Option<Arc<dyn Fn(&Value) -> bool + Send + Sync>>,
+        before_load_reply: Option<Arc<dyn Fn(&Value) -> bool + Send + Sync>>,
     }
 
     struct RealMcp {
@@ -669,6 +670,7 @@ mod confirmed_uninstall_consumers {
             let relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(events.clone(), timeout));
             let remote = Arc::new(Mutex::new(RemoteIo {
                 loaded, uninstall, calls: Vec::new(), before_uninstall_reply: None,
+                before_load_reply: None,
             }));
             let weak_relay = Arc::downgrade(&relay);
             let remote_io = Arc::clone(&remote);
@@ -690,8 +692,11 @@ mod confirmed_uninstall_consumers {
                         MCP_INSTALL_PLUGIN_METHOD => Ok(desktop_state()),
                         _ => Err(format!("unexpected remote method {method}")),
                     };
-                    let before_reply = (method == MCP_UNINSTALL_PLUGIN_METHOD)
-                        .then(|| io.before_uninstall_reply.clone()).flatten();
+                    let before_reply = match method {
+                        MCP_UNINSTALL_PLUGIN_METHOD => io.before_uninstall_reply.clone(),
+                        MCP_LOAD_PLUGIN_SKILLS_METHOD => io.before_load_reply.clone(),
+                        _ => None,
+                    };
                     (result, before_reply)
                 };
                 // This controls remote I/O at the actual backend/relay entry;
@@ -808,7 +813,7 @@ mod confirmed_uninstall_consumers {
                 &self.user.file_path, &self.managed.file_path].into_iter()
                 .map(|path| (path.clone(), fs::read(path).unwrap())).collect();
             ConsumerManifest {
-                agent_id: self.agent_id.clone(), files: self.files.clone(),
+                agent_id: self.agent_id.clone(), files: self.files.clone(), loaded: self.published.clone(),
                 user_id: self.user.id.clone(), user_file: self.user.file_path.clone(),
                 managed_file: self.managed.file_path.clone(), legacy_file: self.legacy.file_path.clone(),
                 legacy_bytes: fs::read(&self.legacy.file_path).unwrap(), preserved,
@@ -828,6 +833,7 @@ mod confirmed_uninstall_consumers {
     struct ConsumerManifest {
         agent_id: String,
         files: Vec<PathBuf>,
+        loaded: Value,
         user_id: String,
         user_file: PathBuf,
         managed_file: PathBuf,
@@ -841,6 +847,16 @@ mod confirmed_uninstall_consumers {
             for (path, bytes) in &self.preserved {
                 assert_eq!(fs::read(path).unwrap(), *bytes, "preserve {}", path.display());
             }
+        }
+
+        fn after_cache_publication(&self, root: &Path) -> Self {
+            let mut next = self.clone();
+            let cache_path = get_plugin_skills_cache_path(get_plugin_skills_dir(root));
+            let (_, bytes) = next.preserved.iter_mut().find(|(path, _)| *path == cache_path)
+                .expect("the manifest must retain the actual cache path");
+            *bytes = fs::read(cache_path).unwrap();
+            next.assert_preserved();
+            next
         }
     }
 
@@ -868,7 +884,8 @@ mod confirmed_uninstall_consumers {
             "pluginId":intent.plugin_id,"operationId":intent.operation_id,
         })]).unwrap_or_default();
         assert_eq!(image, json!({
-            "formatVersion":1,"confirmedPluginIds":confirmed_ids,"pending":pending_rows,
+            "formatVersion":2,"confirmedPluginIds":confirmed_ids,"pending":pending_rows,
+            "authRefusals":[],"refreshIntent":null,
         }));
         assert_eq!(fs::read(get_plugin_skills_dir(root).join("uninstall-state.version")).unwrap(), b"1\n");
         assert_eq!(status, if confirmed || pending {
@@ -882,41 +899,106 @@ mod confirmed_uninstall_consumers {
         intent
     }
 
+    fn auth_refusal() -> Value {
+        json!({"pluginId":"9","pluginName":"Private","marketplaceName":"Private market"})
+    }
+
+    fn assert_auth_recovery_state(root: &Path, skills: &SandPluginSkillsService,
+        refused: bool, unknown: bool, pending: bool) -> Option<String>
+    {
+        let image: Value = serde_json::from_slice(&fs::read(uninstall_image_path(root)).unwrap()).unwrap();
+        let operation_id = if pending {
+            let intent = image["refreshIntent"].as_object().expect("refresh custody object");
+            assert_eq!(intent.len(), 1);
+            let id = intent["operationId"].as_str().unwrap().to_string();
+            assert_eq!(uuid::Uuid::parse_str(&id).unwrap().to_string(), id);
+            Some(id)
+        } else {
+            None
+        };
+        let refusals = if refused { vec![auth_refusal()] } else { Vec::new() };
+        assert_eq!(image, json!({
+            "formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":refusals,
+            "refreshIntent":operation_id.as_ref().map(|id| json!({"operationId":id})),
+        }));
+        assert_eq!(fs::read(get_plugin_skills_dir(root).join("uninstall-state.version")).unwrap(), b"1\n");
+        assert_eq!(PluginSkillsPort::status(skills), if refused || unknown {
+            json!({"authBlocked":[],"authRecovery":{
+                "refusals":refusals,"refreshOutcomeUnknown":unknown,
+            }})
+        } else {
+            json!({"authBlocked":[]})
+        });
+        assert!(skills.current_auth_blocked().is_empty(),
+            "the retained cache must not explain the durable authentication refusal");
+        operation_id
+    }
+
     fn assert_actual_consumers_denied(workers: &Arc<ProductionSessionWorkers>,
         stores: &[&FileWorkflowStore], manifest: &ConsumerManifest)
     {
+        assert_actual_consumers_admission(workers, stores, manifest, false);
+    }
+
+    fn assert_actual_consumers_admission(workers: &Arc<ProductionSessionWorkers>,
+        stores: &[&FileWorkflowStore], manifest: &ConsumerManifest, all_plugins_denied: bool)
+    {
+        let denied = [
+            ("plugin-9-private", "9", 0, "PRIVATE_PROVIDER_DESCRIPTION"),
+            ("plugin-10-allowed", "10", 1, "ALLOWED_PROVIDER_DESCRIPTION"),
+        ].into_iter().filter(|(_, id, _, _)| *id == "9" || all_plugins_denied)
+            .collect::<Vec<_>>();
         for store in stores {
-            assert!(store.get("plugin-9-private").is_none());
-            assert!(!store.list().iter().any(|row| row.plugin_id.as_deref() == Some("9")));
-            assert!(store.update("plugin-9-private", &WorkflowSpec {
-                name: "Forbidden".into(), description: String::new(),
-                body: "MUST_NOT_WRITE".into(), trigger: None, source_ref: None,
-            }).unwrap().is_none());
             let prompt = skill_prompt(store);
-            assert!(!prompt.contains("PRIVATE_PROVIDER_DESCRIPTION"));
-            assert!(!prompt.contains(manifest.files[0].to_string_lossy().as_ref()));
+            for &(id, plugin_id, file_index, description) in &denied {
+                assert!(store.get(id).is_none());
+                assert!(!store.list().iter().any(|row| row.plugin_id.as_deref() == Some(plugin_id)));
+                assert!(store.update(id, &WorkflowSpec {
+                    name: "Forbidden".into(), description: String::new(),
+                    body: "MUST_NOT_WRITE".into(), trigger: None, source_ref: None,
+                }).unwrap().is_none());
+                assert!(!prompt.contains(description));
+                assert!(!prompt.contains(manifest.files[file_index].to_string_lossy().as_ref()));
+            }
             for (file, description) in [
-                (&manifest.files[1], "ALLOWED_PROVIDER_DESCRIPTION"),
                 (&manifest.user_file, "USER_PROVIDER_DESCRIPTION"),
                 (&manifest.managed_file, "MANAGED_PROVIDER_DESCRIPTION"),
             ] {
                 assert!(prompt.contains(file.to_string_lossy().as_ref()));
                 assert!(prompt.contains(description));
             }
+            if !all_plugins_denied {
+                assert!(store.get("plugin-10-allowed").is_some());
+                assert!(prompt.contains(manifest.files[1].to_string_lossy().as_ref()));
+                assert!(prompt.contains("ALLOWED_PROVIDER_DESCRIPTION"));
+            }
         }
-        let fetched = dispatch_workflow_command(Arc::clone(workers), "getAgentWorkflow",
-            &json!({"id":manifest.agent_id,"workflowId":"plugin-9-private"})).unwrap().unwrap();
-        assert!(fetched.is_null());
-        assert!(prepare_workflow_run_now(Arc::clone(workers),
-            &json!({"id":manifest.agent_id,"workflowId":"plugin-9-private"})).unwrap().is_none());
-        assert_eq!(expand_workflow_references(Arc::clone(workers), &manifest.agent_id,
-            "USER_REQUEST", Some(&reference("plugin-9-private"))).unwrap(), "USER_REQUEST");
+        let listed = dispatch_workflow_command(Arc::clone(workers), "getAgentWorkflows",
+            &json!({"id":manifest.agent_id})).unwrap().unwrap();
+        for &(id, _, _, _) in &denied {
+            let fetched = dispatch_workflow_command(Arc::clone(workers), "getAgentWorkflow",
+                &json!({"id":manifest.agent_id,"workflowId":id})).unwrap().unwrap();
+            assert!(fetched.is_null());
+            assert!(!listed.as_array().unwrap().iter().any(|row| row["id"] == id));
+            let updated = dispatch_workflow_command(Arc::clone(workers), "updateAgentWorkflow",
+                &json!({"id":manifest.agent_id,"workflowId":id,
+                    "spec":{"name":"Forbidden","body":"MUST_NOT_WRITE"}})).unwrap().unwrap();
+            assert!(!updated.as_array().unwrap().iter().any(|row| row["id"] == id));
+            assert!(prepare_workflow_run_now(Arc::clone(workers),
+                &json!({"id":manifest.agent_id,"workflowId":id})).unwrap().is_none());
+            assert_eq!(expand_workflow_references(Arc::clone(workers), &manifest.agent_id,
+                "USER_REQUEST", Some(&reference(id))).unwrap(), "USER_REQUEST");
+        }
         for (id, body) in [
-            ("plugin-10-allowed", "ALLOWED_RUN_RECIPE"),
             (manifest.user_id.as_str(), "USER_RUN_RECIPE"),
             ("managed-uninstall-control", "MANAGED_RUN_RECIPE"),
         ] {
+            assert!(listed.as_array().unwrap().iter().any(|row| row["id"] == id));
             assert_run_body(workers, &manifest.agent_id, id, body);
+        }
+        if !all_plugins_denied {
+            assert!(listed.as_array().unwrap().iter().any(|row| row["id"] == "plugin-10-allowed"));
+            assert_run_body(workers, &manifest.agent_id, "plugin-10-allowed", "ALLOWED_RUN_RECIPE");
         }
         manifest.assert_preserved();
     }
@@ -1132,6 +1214,9 @@ mod confirmed_uninstall_consumers {
         let fixture = ConsumerFixture::seed("intent-write-failure");
         let manifest = fixture.manifest();
         let directory = get_plugin_skills_dir(&fixture.root);
+        assert_recovery_state(&fixture.root, &fixture.mcp.skills, false, false);
+        let image_before = fs::read(uninstall_image_path(&fixture.root)).unwrap();
+        let marker_before = fs::read(directory.join("uninstall-state.version")).unwrap();
         let restore = RestorePermissions(directory.clone(), fs::metadata(&directory).unwrap().permissions());
         fs::set_permissions(&directory, fs::Permissions::from_mode(0o500)).unwrap();
         let probe = directory.join(format!("owned-write-probe-{}", uuid::Uuid::new_v4()));
@@ -1142,11 +1227,14 @@ mod confirmed_uninstall_consumers {
             &json!({"pluginId":"9"})).unwrap().is_err());
         assert_eq!(fixture.mcp.remote.lock().unwrap().calls.iter()
             .map(|(method, _)| method.as_str()).collect::<Vec<_>>(), vec![MCP_LIST_CATALOG_METHOD]);
-        assert!(!uninstall_image_path(&fixture.root).exists());
-        assert!(!directory.join("uninstall-state.version").exists());
+        assert_eq!(fs::read(uninstall_image_path(&fixture.root)).unwrap(), image_before);
+        assert_eq!(fs::read(directory.join("uninstall-state.version")).unwrap(), marker_before);
         assert_eq!(PluginSkillsPort::status(fixture.mcp.skills.as_ref()), json!({
             "authBlocked":[],"uninstallRecovery":{
                 "confirmedPluginIds":[],"pending":[],"fault":"uninstall-state-unavailable",
+            },
+            "authRecovery":{
+                "refusals":[],"refreshOutcomeUnknown":false,"fault":"admission-state-unavailable",
             },
         }));
         assert!(fixture.mcp.skills.current().is_empty());
@@ -1178,6 +1266,12 @@ mod confirmed_uninstall_consumers {
         RemovedAfterFailedRefresh,
         RecoverPending,
         RecoverConfirmed,
+        AuthRefusalAfterStageFailure,
+        AuthRefusalAfterRenameFailure,
+        AuthLoaderEntered,
+        RecoverAuthRefusal,
+        RecoverAuthUnknown,
+        RecoverAuthPartial,
     }
 
     impl UninstallChildPhase {
@@ -1186,7 +1280,11 @@ mod confirmed_uninstall_consumers {
                 Self::Reserved => 71,
                 Self::BackendEntered => 72,
                 Self::RemovedAfterFailedRefresh => 73,
-                Self::RecoverPending | Self::RecoverConfirmed => 0,
+                Self::AuthRefusalAfterStageFailure => 74,
+                Self::AuthRefusalAfterRenameFailure => 75,
+                Self::AuthLoaderEntered => 76,
+                Self::RecoverPending | Self::RecoverConfirmed | Self::RecoverAuthRefusal
+                    | Self::RecoverAuthUnknown | Self::RecoverAuthPartial => 0,
             }
         }
     }
@@ -1417,6 +1515,145 @@ mod confirmed_uninstall_consumers {
                 publish_child_receipt(&request_path, &request, &mcp.skills, &mcp.remote);
                 std::process::exit(request.phase.exit_code());
             }
+            UninstallChildPhase::AuthRefusalAfterStageFailure
+                | UninstallChildPhase::AuthRefusalAfterRenameFailure =>
+            {
+                assert_auth_recovery_state(&request.root, &mcp.skills, false, false, false);
+                assert_eq!(mcp.skills.current().len(), 2);
+                assert_run_body(&workers, &request.manifest.agent_id, "plugin-9-private", "PRIVATE_RUN_RECIPE");
+                assert!(skill_prompt(&retained).contains("PRIVATE_PROVIDER_DESCRIPTION"));
+                let mut denied = request.manifest.loaded.clone();
+                denied["plugins"].as_array_mut().unwrap()
+                    .retain(|plugin| plugin["identifier"]["pluginDbId"] != "9");
+                denied["authBlocked"] = json!([auth_refusal()]);
+                let stage_failure = request.phase == UninstallChildPhase::AuthRefusalAfterStageFailure;
+                if stage_failure {
+                    // The complete aggregate is valid, but its actual cache
+                    // projection fails the production absolute-path parser.
+                    denied["plugins"][0]["installPath"] = json!("relative/auth-refusal-stage");
+                }
+                mcp.remote.lock().unwrap().loaded = Ok(denied);
+                let cache = get_plugin_skills_cache_path(get_plugin_skills_dir(&request.root));
+                let preserved_cache = request_path.parent().unwrap().join("preserved-cache.json");
+                if !stage_failure {
+                    fs::rename(&cache, &preserved_cache).unwrap();
+                    fs::create_dir(&cache).unwrap();
+                }
+                let result = mcp.skills.sync("auth-refusal-publication-failure");
+                if !stage_failure {
+                    assert!(cache.is_dir(), "the real rename destination must remain obstructed");
+                    fs::remove_dir(&cache).unwrap();
+                    fs::rename(&preserved_cache, &cache).unwrap();
+                }
+                let error = result.unwrap_err();
+                if stage_failure {
+                    assert_eq!(error, "invalid plugin skills cache snapshot");
+                } else {
+                    assert_ne!(error, "invalid plugin skills cache snapshot",
+                        "the valid rename fixture must pass cache validation");
+                }
+                assert_auth_recovery_state(&request.root, &mcp.skills, true, false, false);
+                let reopened = session.workflow_store_for(&request.manifest.agent_id).unwrap();
+                assert_actual_consumers_denied(&workers, &[&retained, &reopened], &request.manifest);
+                assert_eq!(mcp.skills.current().iter().map(|row| row.plugin_id.as_str())
+                    .collect::<Vec<_>>(), vec!["10"]);
+                assert_eq!(fs::read(&request.manifest.legacy_file).unwrap(), request.manifest.legacy_bytes);
+                assert_eq!(mcp.remote.lock().unwrap().calls.iter()
+                    .map(|(method, _)| method.as_str()).collect::<Vec<_>>(), vec![MCP_LOAD_PLUGIN_SKILLS_METHOD]);
+                publish_child_receipt(&request_path, &request, &mcp.skills, &mcp.remote);
+                // No disposal/guard settlement can stand in for process loss.
+                std::process::exit(request.phase.exit_code());
+            }
+            UninstallChildPhase::AuthLoaderEntered => {
+                assert_auth_recovery_state(&request.root, &mcp.skills, false, false, false);
+                let captured_request = request.clone();
+                let captured_path = request_path.clone();
+                let weak_skills = Arc::downgrade(&mcp.skills);
+                let weak_remote = Arc::downgrade(&mcp.remote);
+                let captured_workers = Arc::clone(&workers);
+                mcp.remote.lock().unwrap().before_load_reply = Some(Arc::new(move |event| {
+                    assert_eq!(event["payload"]["method"], MCP_LOAD_PLUGIN_SKILLS_METHOD);
+                    assert_eq!(event["payload"]["args"], json!({}));
+                    let skills = weak_skills.upgrade().unwrap();
+                    assert_auth_recovery_state(&captured_request.root, &skills, false, false, true);
+                    assert_eq!(skills.current().len(), 2,
+                        "an active healthy refresh intent must not hide cached controls");
+                    assert_run_body(&captured_workers, &captured_request.manifest.agent_id,
+                        "plugin-9-private", "PRIVATE_RUN_RECIPE");
+                    assert_run_body(&captured_workers, &captured_request.manifest.agent_id,
+                        "plugin-10-allowed", "ALLOWED_RUN_RECIPE");
+                    captured_request.manifest.assert_preserved();
+                    publish_child_receipt(&captured_path, &captured_request, &skills, &weak_remote.upgrade().unwrap());
+                    // This is the real Coordinator loader request, after its
+                    // durable intent and before any aggregate can return.
+                    std::process::exit(captured_request.phase.exit_code());
+                }));
+                let result = mcp.skills.sync("exit-at-actual-loader-entry");
+                panic!("loader-entry process must exit before an aggregate: {result:?}");
+            }
+            UninstallChildPhase::RecoverAuthRefusal | UninstallChildPhase::RecoverAuthPartial => {
+                let refused = request.phase == UninstallChildPhase::RecoverAuthRefusal;
+                assert_auth_recovery_state(&request.root, &mcp.skills, refused, false, false);
+                assert_eq!(PluginSkillsPort::status(mcp.skills.as_ref()), request.expected_status.clone().unwrap());
+                let journal = request.expected_image.as_ref().unwrap();
+                assert_eq!(fs::read(uninstall_image_path(&request.root)).unwrap(), *journal);
+                let reopened = session.workflow_store_for(&request.manifest.agent_id).unwrap();
+                assert_actual_consumers_denied(&workers, &[&retained, &reopened], &request.manifest);
+                assert_eq!(mcp.skills.current().iter().map(|row| row.plugin_id.as_str())
+                    .collect::<Vec<_>>(), vec!["10"]);
+                assert!(mcp.remote.lock().unwrap().calls.is_empty(), "fresh construction must not replay remote work");
+                mcp.remote.lock().unwrap().loaded = Err("offline authentication refresh".into());
+                assert!(mcp.skills.sync("fresh-process-offline").unwrap_err().contains("offline authentication refresh"));
+                assert_auth_recovery_state(&request.root, &mcp.skills, refused, false, false);
+                assert_eq!(fs::read(uninstall_image_path(&request.root)).unwrap(), *journal);
+                assert_actual_consumers_denied(&workers, &[&retained, &reopened], &request.manifest);
+                assert_eq!(fs::read(&request.manifest.legacy_file).unwrap(), request.manifest.legacy_bytes);
+                assert_eq!(mcp.remote.lock().unwrap().calls.iter()
+                    .map(|(method, _)| method.as_str()).collect::<Vec<_>>(), vec![MCP_LOAD_PLUGIN_SKILLS_METHOD]);
+                mcp.close();
+                workers.shutdown();
+                publish_child_receipt(&request_path, &request, &mcp.skills, &mcp.remote);
+            }
+            UninstallChildPhase::RecoverAuthUnknown => {
+                let initial_token = assert_auth_recovery_state(&request.root, &mcp.skills, false, true, true).unwrap();
+                assert_eq!(PluginSkillsPort::status(mcp.skills.as_ref()), request.expected_status.clone().unwrap());
+                assert_eq!(fs::read(uninstall_image_path(&request.root)).unwrap(), *request.expected_image.as_ref().unwrap());
+                let reopened = session.workflow_store_for(&request.manifest.agent_id).unwrap();
+                assert_actual_consumers_admission(&workers, &[&retained, &reopened], &request.manifest, true);
+                assert!(mcp.skills.current().is_empty());
+                assert!(mcp.remote.lock().unwrap().calls.is_empty(), "unknown reconstruction cannot replay a load or uninstall");
+                mcp.remote.lock().unwrap().loaded = Err("offline authentication refresh".into());
+                assert!(mcp.skills.sync("unknown-offline").unwrap_err().contains("offline authentication refresh"));
+                let failed_token = assert_auth_recovery_state(&request.root, &mcp.skills, false, true, true).unwrap();
+                assert_ne!(initial_token, failed_token, "the explicit follow-up owns a fresh intent");
+                assert_actual_consumers_admission(&workers, &[&retained, &reopened], &request.manifest, true);
+                assert!(mcp.skills.current().is_empty(), "an offline error cannot settle inherited unknown");
+
+                let mut partial = request.manifest.loaded.clone();
+                partial["plugins"].as_array_mut().unwrap()
+                    .retain(|plugin| plugin["identifier"]["pluginDbId"] == "10");
+                assert_eq!(partial["listedPluginIds"], json!(["9","10"]),
+                    "9 remains listed, so normal partial reconciliation would retain its old fallback");
+                mcp.remote.lock().unwrap().loaded = Ok(partial);
+                assert_eq!(mcp.skills.sync("unknown-fresh-control-only").unwrap().iter()
+                    .map(|row| row.plugin_id.as_str()).collect::<Vec<_>>(), vec!["10"]);
+                assert_auth_recovery_state(&request.root, &mcp.skills, false, false, false);
+                let cache: Value = serde_json::from_slice(&fs::read(
+                    get_plugin_skills_cache_path(get_plugin_skills_dir(&request.root))).unwrap()).unwrap();
+                assert_eq!(cache["cacheFormatVersion"], 1);
+                assert_eq!(cache["skills"].as_array().unwrap().len(), 1);
+                assert_eq!(cache["skills"][0]["pluginId"], "10");
+                assert_eq!(cache["authBlocked"], json!([]));
+                let published = request.manifest.after_cache_publication(&request.root);
+                assert_actual_consumers_denied(&workers, &[&retained, &reopened], &published);
+                assert_eq!(fs::read(&request.manifest.legacy_file).unwrap(), request.manifest.legacy_bytes);
+                assert_eq!(mcp.remote.lock().unwrap().calls.iter()
+                    .map(|(method, _)| method.as_str()).collect::<Vec<_>>(),
+                    vec![MCP_LOAD_PLUGIN_SKILLS_METHOD, MCP_LOAD_PLUGIN_SKILLS_METHOD]);
+                mcp.close();
+                workers.shutdown();
+                publish_child_receipt(&request_path, &request, &mcp.skills, &mcp.remote);
+            }
         }
     }
 
@@ -1428,7 +1665,7 @@ mod confirmed_uninstall_consumers {
             let fixture = ConsumerFixture::seed("process-recovery");
             let root = fixture.root.clone();
             let manifest = fixture.manifest();
-            assert!(!uninstall_image_path(&root).exists());
+            assert_recovery_state(&root, &fixture.mcp.skills, false, false);
             // Only normal production seeding happens in the parent. Close and
             // drop every owner before the first separately owned process opens.
             fixture.mcp.close();
@@ -1459,6 +1696,96 @@ mod confirmed_uninstall_consumers {
             // and both nonce-qualified receipts passed every assertion.
             fs::remove_dir_all(root).unwrap();
         }
+    }
+
+    #[test]
+    fn auth_refusal_survives_failed_publication_and_fresh_process_consumers() {
+        for phase in [UninstallChildPhase::AuthRefusalAfterStageFailure,
+            UninstallChildPhase::AuthRefusalAfterRenameFailure]
+        {
+            let fixture = ConsumerFixture::seed("auth-refusal-process-recovery");
+            let root = fixture.root.clone();
+            let manifest = fixture.manifest();
+            assert_auth_recovery_state(&root, &fixture.mcp.skills, false, false, false);
+            fixture.mcp.close();
+            fixture.workers.shutdown();
+            drop(fixture);
+
+            let producer = run_uninstall_child(&root, &manifest, phase, None, None);
+            assert_eq!(producer.calls.iter().map(|(method, _)| method.as_str())
+                .collect::<Vec<_>>(), vec![MCP_LOAD_PLUGIN_SKILLS_METHOD]);
+            assert_eq!(producer.status, json!({"authBlocked":[],"authRecovery":{
+                "refusals":[auth_refusal()],"refreshOutcomeUnknown":false,
+            }}));
+            let journal = fs::read(uninstall_image_path(&root)).unwrap();
+            manifest.assert_preserved();
+            let recovered = run_uninstall_child(&root, &manifest, UninstallChildPhase::RecoverAuthRefusal,
+                Some(journal.clone()), Some(producer.status.clone()));
+            assert_ne!(producer.pid, recovered.pid);
+            assert_eq!(recovered.status, producer.status);
+            assert_eq!(recovered.calls.iter().map(|(method, _)| method.as_str())
+                .collect::<Vec<_>>(), vec![MCP_LOAD_PLUGIN_SKILLS_METHOD],
+                "only the explicit offline refresh may enter the loader; no reconstruction replay");
+            assert_eq!(fs::read(uninstall_image_path(&root)).unwrap(), journal);
+            manifest.assert_preserved();
+            assert_eq!(fs::read(&manifest.legacy_file).unwrap(), manifest.legacy_bytes);
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn auth_refresh_unknown_survives_owned_process_exit_and_recovers_without_fallback() {
+        let fixture = ConsumerFixture::seed("auth-unknown-process-recovery");
+        let root = fixture.root.clone();
+        let manifest = fixture.manifest();
+        assert_auth_recovery_state(&root, &fixture.mcp.skills, false, false, false);
+        fixture.mcp.close();
+        fixture.workers.shutdown();
+        drop(fixture);
+
+        let producer = run_uninstall_child(&root, &manifest, UninstallChildPhase::AuthLoaderEntered, None, None);
+        assert_eq!(producer.status, json!({"authBlocked":[]}),
+            "live healthy loading is not itself a permission refusal");
+        assert_eq!(producer.calls.iter().map(|(method, _)| method.as_str())
+            .collect::<Vec<_>>(), vec![MCP_LOAD_PLUGIN_SKILLS_METHOD]);
+        let pending_image = fs::read(uninstall_image_path(&root)).unwrap();
+        let pending: Value = serde_json::from_slice(&pending_image).unwrap();
+        assert!(pending["refreshIntent"]["operationId"].is_string());
+        assert_eq!(pending["authRefusals"], json!([]), "unknown cannot invent a denial identity");
+        manifest.assert_preserved();
+        let recovered = run_uninstall_child(&root, &manifest, UninstallChildPhase::RecoverAuthUnknown,
+            Some(pending_image), Some(json!({"authBlocked":[],"authRecovery":{
+                "refusals":[],"refreshOutcomeUnknown":true,
+            }})));
+        assert_ne!(producer.pid, recovered.pid);
+        assert_eq!(recovered.calls.iter().map(|(method, _)| method.as_str()).collect::<Vec<_>>(),
+            vec![MCP_LOAD_PLUGIN_SKILLS_METHOD, MCP_LOAD_PLUGIN_SKILLS_METHOD],
+            "only the explicit offline attempt and fresh partial recovery may load");
+        assert_eq!(recovered.status, json!({"authBlocked":[]}));
+        let published = manifest.after_cache_publication(&root);
+        let cache: Value = serde_json::from_slice(&fs::read(
+            get_plugin_skills_cache_path(get_plugin_skills_dir(&root))).unwrap()).unwrap();
+        assert_eq!(cache["skills"].as_array().unwrap().len(), 1);
+        assert_eq!(cache["skills"][0]["pluginId"], "10");
+        let settled_image = fs::read(uninstall_image_path(&root)).unwrap();
+        let settled: Value = serde_json::from_slice(&settled_image).unwrap();
+        assert_eq!(settled, json!({
+            "formatVersion":2,"confirmedPluginIds":[],"pending":[],"authRefusals":[],"refreshIntent":null,
+        }));
+
+        // A third OS process proves the positive completion and fallback
+        // omission survived, rather than relying on the recovery child's Arc.
+        let reopened = run_uninstall_child(&root, &published, UninstallChildPhase::RecoverAuthPartial,
+            Some(settled_image.clone()), Some(json!({"authBlocked":[]})));
+        assert_ne!(reopened.pid, recovered.pid);
+        assert_ne!(reopened.pid, producer.pid);
+        assert_eq!(reopened.status, json!({"authBlocked":[]}));
+        assert_eq!(reopened.calls.iter().map(|(method, _)| method.as_str())
+            .collect::<Vec<_>>(), vec![MCP_LOAD_PLUGIN_SKILLS_METHOD]);
+        assert_eq!(fs::read(uninstall_image_path(&root)).unwrap(), settled_image);
+        published.assert_preserved();
+        assert_eq!(fs::read(&manifest.legacy_file).unwrap(), manifest.legacy_bytes);
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

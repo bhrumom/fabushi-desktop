@@ -305,6 +305,7 @@ jobs:
               "source/host/src/extensions/mcp/plugin_skills_cache.rs",
               "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
               "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+              "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
               "source/host/src/extensions/mcp/production.rs",
               "source/host/src/host_production_extensions.rs",
               "source/host/src/gateway_server.rs",

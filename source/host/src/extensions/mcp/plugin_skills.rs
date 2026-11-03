@@ -22,10 +22,12 @@ use super::plugin_skills_cache::{
 mod uninstall_state;
 
 use uninstall_state::{
-    DurableUninstallImage, UninstallState, load_uninstall_image, persist_uninstall_image,
+    DurableUninstallImage, UninstallState, inspect_failed_auth_publication,
+    load_uninstall_image, persist_uninstall_image,
 };
 
 const UNINSTALL_RECOVERY_UNAVAILABLE: &str = "plugin uninstall recovery state is unavailable";
+const AUTH_RECOVERY_UNAVAILABLE: &str = "plugin skills authentication recovery state is unavailable";
 
 pub const EFFECTIVE_PLUGINS_RPC_TIMEOUT_MS: u64 = 15_000;
 pub const CURRENT_USER_RPC_TIMEOUT_MS: u64 = 10_000;
@@ -384,9 +386,41 @@ struct PluginSkillsAdmissionState {
     denied: BTreeMap<String, PluginAuthBlock>,
     durable: DurableUninstallImage,
     recovery_fault: bool,
+    recovery_required: bool,
+    refresh: Option<LiveRefreshCustody>,
     // Each observation replaces this opaque identity. An active pass keeps its
     // Arc alive, preventing identity reuse without a counter or overflow case.
     uninstall_observation: Arc<()>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RefreshDisposition {
+    AwaitingResult,
+    KnownResult,
+    Fenced,
+}
+
+struct LiveRefreshCustody {
+    owner: Arc<()>,
+    operation_id: String,
+    disposition: RefreshDisposition,
+}
+
+struct RefreshPass {
+    operation_id: String,
+    uninstall_observation: Arc<()>,
+    recovery_required: bool,
+}
+
+struct RefreshGuard<'a> {
+    service: &'a SandPluginSkillsService,
+    pass: &'a RefreshPass,
+}
+
+impl Drop for RefreshGuard<'_> {
+    fn drop(&mut self) {
+        self.service.finish_refresh_guard(self.pass);
+    }
 }
 
 impl PluginSkillsAdmissionQuery for PluginSkillsLiveAdmission {
@@ -395,7 +429,9 @@ impl PluginSkillsAdmissionQuery for PluginSkillsLiveAdmission {
             .lock()
             .map(|state| {
                 state.recovery_fault
+                    || state.recovery_required
                     || state.denied.contains_key(plugin_id)
+                    || state.durable.state.auth_refusals.contains_key(plugin_id)
                     || state.durable.state.confirmed.contains(plugin_id)
                     || state.durable.state.pending.contains_key(plugin_id)
             })
@@ -451,6 +487,7 @@ pub struct SandPluginSkillsService {
     now: Arc<dyn Fn() -> i64 + Send + Sync>,
     report_sync: Option<Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>>,
     publication: Mutex<()>,
+    refresh_owner: Arc<()>,
     admission: Arc<PluginSkillsLiveAdmission>,
     state: Mutex<ServiceState>,
     changed: Condvar,
@@ -466,6 +503,8 @@ impl SandPluginSkillsService {
         // before installation; same-root successors preserve the live reader.
         let state = match load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir)) {
             Ok(durable) => PluginSkillsAdmissionState {
+                denied: durable.state.auth_refusals.clone(),
+                recovery_required: durable.state.refresh_intent.is_some(),
                 durable,
                 ..PluginSkillsAdmissionState::default()
             },
@@ -492,6 +531,7 @@ impl SandPluginSkillsService {
             now: Arc::new(|| chrono::Utc::now().timestamp_millis()),
             report_sync: None,
             publication: Mutex::new(()),
+            refresh_owner: Arc::new(()),
             admission,
             state: Mutex::new(ServiceState::default()),
             changed: Condvar::new(),
@@ -521,7 +561,9 @@ impl SandPluginSkillsService {
         }
         let operation_id = loop {
             let candidate = uuid::Uuid::new_v4().to_string();
-            if !expected.state.pending.values().any(|ticket| ticket == &candidate) {
+            if expected.state.refresh_intent.as_ref() != Some(&candidate)
+                && !expected.state.pending.values().any(|ticket| ticket == &candidate)
+            {
                 break candidate;
             }
         };
@@ -610,6 +652,190 @@ impl SandPluginSkillsService {
         Ok(())
     }
 
+    // Auth transitions keep the uninstall observation unchanged. A failed
+    // write retains all adverse live facts; exact known disk alternatives are
+    // usable by a later explicit transition, never a claim of durable success.
+    fn persist_auth_transition(
+        &self,
+        expected: &DurableUninstallImage,
+        next: &UninstallState,
+    ) -> Result<(), String> {
+        let directory = get_plugin_skills_dir(&self.sand_root_dir);
+        match persist_uninstall_image(&directory, expected, next) {
+            Ok(durable) => {
+                self.admission.state.lock()
+                    .map_err(|_| "plugin skills live admission poisoned".to_string())?
+                    .durable = durable;
+                Ok(())
+            }
+            Err(_) => {
+                let observed = inspect_failed_auth_publication(&directory, expected, next);
+                let mut live = self.admission.state.lock()
+                    .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+                match observed {
+                    Ok(durable) => live.durable = durable,
+                    Err(_) => {
+                        live.recovery_fault = true;
+                        live.uninstall_observation = Arc::new(());
+                    }
+                }
+                Err(AUTH_RECOVERY_UNAVAILABLE.into())
+            }
+        }
+    }
+
+    fn begin_refresh(&self) -> Result<Option<RefreshPass>, String> {
+        let _publication = self.publication.lock()
+            .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        if self.state.lock()
+            .map_err(|_| "plugin skills state poisoned".to_string())?.disposed
+        {
+            return Ok(None);
+        }
+        let (expected, retained, recovery_required) = {
+            let live = self.admission.state.lock()
+                .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+            if live.recovery_fault {
+                return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
+            }
+            if live.refresh.as_ref().is_some_and(|refresh| {
+                refresh.disposition != RefreshDisposition::Fenced
+            }) {
+                return Err("plugin skills refresh custody is already active".into());
+            }
+            (live.durable.clone(), live.denied.clone(), live.recovery_required)
+        };
+        let operation_id = loop {
+            let candidate = uuid::Uuid::new_v4().to_string();
+            if expected.state.refresh_intent.as_ref() != Some(&candidate)
+                && !expected.state.pending.values().any(|ticket| ticket == &candidate)
+            {
+                break candidate;
+            }
+        };
+        let mut next = expected.state.clone();
+        next.auth_refusals.extend(retained);
+        next.refresh_intent = Some(operation_id.clone());
+        self.persist_auth_transition(&expected, &next)?;
+        let mut live = self.admission.state.lock()
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        live.refresh = Some(LiveRefreshCustody {
+            owner: Arc::clone(&self.refresh_owner),
+            operation_id: operation_id.clone(),
+            disposition: RefreshDisposition::AwaitingResult,
+        });
+        Ok(Some(RefreshPass {
+            operation_id,
+            uninstall_observation: Arc::clone(&live.uninstall_observation),
+            recovery_required,
+        }))
+    }
+
+    fn owns_refresh(&self, refresh: &LiveRefreshCustody, pass: &RefreshPass) -> bool {
+        Arc::ptr_eq(&refresh.owner, &self.refresh_owner)
+            && refresh.operation_id == pass.operation_id
+    }
+
+    // Called only while this service holds P. It performs no I/O, including
+    // when Host composition holds its binding lock around one-shot retirement.
+    fn fence_owned_refresh(&self) -> Result<(), String> {
+        let mut live = self.admission.state.lock()
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        if let Some(refresh) = live.refresh.as_mut() {
+            if Arc::ptr_eq(&refresh.owner, &self.refresh_owner) {
+                refresh.disposition = RefreshDisposition::Fenced;
+            }
+        }
+        Ok(())
+    }
+
+    fn finish_refresh_guard(&self, pass: &RefreshPass) {
+        let (publication, poisoned) = match self.publication.lock() {
+            Ok(guard) => (guard, false),
+            Err(error) => (error.into_inner(), true),
+        };
+        let _publication = publication;
+        let Ok(mut live) = self.admission.state.lock() else { return; };
+        let Some(refresh) = live.refresh.as_mut() else { return; };
+        if !self.owns_refresh(refresh, pass) || refresh.disposition == RefreshDisposition::Fenced {
+            return;
+        }
+        let outcome_unknown = refresh.disposition == RefreshDisposition::AwaitingResult;
+        refresh.disposition = RefreshDisposition::Fenced;
+        if poisoned {
+            live.recovery_fault = true;
+            live.uninstall_observation = Arc::new(());
+        }
+        if outcome_unknown {
+            live.recovery_required = true;
+        }
+    }
+
+    fn settle_unadmitted_refresh(&self, pass: &RefreshPass) -> Result<(), String> {
+        let _publication = self.publication.lock()
+            .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        if self.state.lock()
+            .map_err(|_| "plugin skills state poisoned".to_string())?.disposed
+        {
+            // Retirement already fenced this owner. Never write through an old
+            // P after a successor can own the shared reader and image.
+            return Ok(());
+        }
+        let expected = {
+            let mut live = self.admission.state.lock()
+                .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+            if live.recovery_fault {
+                return Err(AUTH_RECOVERY_UNAVAILABLE.into());
+            }
+            let Some(refresh) = live.refresh.as_mut() else { return Ok(()); };
+            if !self.owns_refresh(refresh, pass) {
+                return Err("plugin skills refresh custody changed".into());
+            }
+            if refresh.disposition == RefreshDisposition::KnownResult {
+                // An accepted aggregate's failed write must not be retried or
+                // relabeled as an unadmitted result by generic error cleanup.
+                return Ok(());
+            }
+            refresh.disposition = RefreshDisposition::Fenced;
+            if live.recovery_required {
+                return Ok(());
+            }
+            if live.durable.state.refresh_intent.as_ref() != Some(&pass.operation_id) {
+                return Err("plugin skills refresh custody changed".into());
+            }
+            live.durable.clone()
+        };
+        let mut next = expected.state.clone();
+        next.refresh_intent = None;
+        self.persist_auth_transition(&expected, &next)?;
+        let mut live = self.admission.state.lock()
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        if live.refresh.as_ref().is_some_and(|refresh| self.owns_refresh(refresh, pass)) {
+            live.refresh = None;
+        }
+        Ok(())
+    }
+
+    pub fn auth_recovery_status(&self) -> Option<Value> {
+        let Ok(live) = self.admission.state.lock() else {
+            return Some(serde_json::json!({
+                "refusals": [], "refreshOutcomeUnknown": true,
+                "fault": "admission-state-unavailable",
+            }));
+        };
+        if !live.recovery_fault && !live.recovery_required && live.denied.is_empty() {
+            return None;
+        }
+        let mut status = serde_json::json!({
+            "refusals": live.denied.values().collect::<Vec<_>>(),
+            "refreshOutcomeUnknown": live.recovery_required,
+        });
+        if live.recovery_fault {
+            status["fault"] = Value::String("admission-state-unavailable".into());
+        }
+        Some(status)
+    }
+
     pub fn uninstall_recovery_status(&self) -> Option<Value> {
         let Ok(live) = self.admission.state.lock() else {
             return Some(serde_json::json!({
@@ -669,7 +895,8 @@ impl SandPluginSkillsService {
         state.replacement_claimed = true;
         state.pending = None;
         self.changed.notify_all();
-        Ok(())
+        drop(state);
+        self.fence_owned_refresh()
     }
 
     pub fn with_now(mut self, now: Arc<dyn Fn() -> i64 + Send + Sync>) -> Self {
@@ -712,6 +939,10 @@ impl SandPluginSkillsService {
         state.disposed = true;
         state.pending = None;
         self.changed.notify_all();
+        drop(state);
+        // Repeated disposal of a predecessor cannot fence its successor's
+        // distinct owner/token. Keep this no-I/O boundary under composition.
+        let _ = self.fence_owned_refresh();
     }
 
     fn filter_live_records(&self, mut records: Vec<PluginSkillRecord>) -> Vec<PluginSkillRecord> {
@@ -752,7 +983,7 @@ impl SandPluginSkillsService {
     fn import_live_refusals_if_active(
         &self,
         blocks: &[PluginAuthBlock],
-        observation: &Arc<()>,
+        pass: &RefreshPass,
     ) -> Result<Option<(Vec<PluginAuthBlock>, HashSet<String>)>, String> {
         let _publication = self
             .publication
@@ -768,19 +999,35 @@ impl SandPluginSkillsService {
         }
         // The complete loader aggregate was validated before reaching this
         // boundary. Never hold ServiceState while reading or changing admission.
-        let mut live = self
-            .admission
-            .state
-            .lock()
+        self.require_current_uninstall_observation(&pass.uninstall_observation)?;
+        let (expected, retained) = {
+            let mut live = self.admission.state.lock()
+                .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+            if !live.refresh.as_ref().is_some_and(|refresh| {
+                self.owns_refresh(refresh, pass)
+                    && refresh.disposition == RefreshDisposition::AwaitingResult
+            }) || live.durable.state.refresh_intent.as_ref() != Some(&pass.operation_id) {
+                return Err("plugin skills refresh custody changed".into());
+            }
+            for block in blocks {
+                live.denied.insert(block.plugin_id.clone(), block.clone());
+            }
+            live.refresh.as_mut().expect("checked refresh custody").disposition =
+                RefreshDisposition::KnownResult;
+            (live.durable.clone(), live.denied.clone())
+        };
+        #[cfg(test)]
+        sync_tests::pause_at(&self.test_hooks.before_auth_outcome);
+        let mut next = expected.state.clone();
+        next.auth_refusals.extend(retained);
+        if !pass.recovery_required {
+            next.refresh_intent = None;
+        }
+        self.persist_auth_transition(&expected, &next)?;
+        let mut live = self.admission.state.lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
-        if live.recovery_fault {
-            return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
-        }
-        if !Arc::ptr_eq(&live.uninstall_observation, observation) {
-            return Err("plugin skills sync superseded by an uninstall observation".into());
-        }
-        for block in blocks {
-            live.denied.insert(block.plugin_id.clone(), block.clone());
+        if !pass.recovery_required {
+            live.refresh = None;
         }
         Ok(Some((
             live.denied.values().cloned().collect(),
@@ -794,7 +1041,7 @@ impl SandPluginSkillsService {
         staged: super::plugin_skills_cache::StagedPluginSkillsCache,
         successful_ids: &HashSet<String>,
         denied_ids: &HashSet<String>,
-        observation: &Arc<()>,
+        pass: &RefreshPass,
     ) -> Result<Option<(PluginSkillsSnapshot, bool, Arc<()>, HashSet<String>)>, String> {
         // This service has one pass writer. Keep rename, strict readback and
         // positive release in one publication interval; a successor cannot be
@@ -813,7 +1060,7 @@ impl SandPluginSkillsService {
         }
         // Observations use this same publication lock. Check before rename,
         // then keep admission unlocked during filesystem work and readback.
-        self.require_current_uninstall_observation(observation)?;
+        self.require_current_uninstall_observation(&pass.uninstall_observation)?;
         staged.publish()?;
         #[cfg(test)]
         sync_tests::pause_at(&self.test_hooks.after_rename);
@@ -825,13 +1072,26 @@ impl SandPluginSkillsService {
         let expected = self.uninstall_image()?;
         let mut next = expected.state.clone();
         for id in successful_ids {
-            if !denied_ids.contains(id) && !next.pending.contains_key(id) {
-                next.confirmed.remove(id);
+            if !denied_ids.contains(id) {
+                next.auth_refusals.remove(id);
+                if !next.pending.contains_key(id) {
+                    next.confirmed.remove(id);
+                }
             }
+        }
+        if pass.recovery_required {
+            if next.refresh_intent.as_ref() != Some(&pass.operation_id) {
+                return Err("plugin skills refresh custody changed".into());
+            }
+            next.refresh_intent = None;
         }
         let durable_release = next != expected.state;
         if durable_release {
-            self.persist_uninstall_transition(&expected, &next)?;
+            if next.confirmed != expected.state.confirmed {
+                self.persist_uninstall_transition(&expected, &next)?;
+            } else {
+                self.persist_auth_transition(&expected, &next)?;
+            }
         }
         let mut live = self
             .admission
@@ -840,10 +1100,16 @@ impl SandPluginSkillsService {
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
         // A failed denial publication can leave the old allowed cache intact;
         // releasing its live refusal is still an observable admission change.
-        let mut released_live_refusal = durable_release;
+        let mut released_live_refusal = durable_release || live.recovery_required;
         for id in successful_ids {
             if !denied_ids.contains(id) {
                 released_live_refusal |= live.denied.remove(id).is_some();
+            }
+        }
+        if pass.recovery_required {
+            live.recovery_required = false;
+            if live.refresh.as_ref().is_some_and(|refresh| self.owns_refresh(refresh, pass)) {
+                live.refresh = None;
             }
         }
         let committed_observation = Arc::clone(&live.uninstall_observation);
@@ -989,14 +1255,20 @@ impl SandPluginSkillsService {
         let started = (self.now)();
         // Capture for each actual load, including a queued follow-up, rather
         // than when a caller first joined a pending/coalesced pass.
-        let observation = self.uninstall_observation()?;
+        let Some(refresh) = self.begin_refresh()? else {
+            return Ok(self.current());
+        };
+        let _refresh_guard = RefreshGuard { service: self, pass: &refresh };
+        #[cfg(test)]
+        sync_tests::pause_at(&self.test_hooks.after_refresh_reservation);
         let loaded = match self.loader.load().and_then(|loaded| {
             validate_loaded_plugins(&loaded)?;
             Ok(loaded)
         }) {
             Ok(value) => value,
             Err(error) => {
-                self.require_current_uninstall_observation(&observation)?;
+                self.settle_unadmitted_refresh(&refresh)?;
+                self.require_current_uninstall_observation(&refresh.uninstall_observation)?;
                 if let Some(report) = &self.report_sync {
                     report(PluginSkillsSyncEvent {
                         trigger: trigger.into(),
@@ -1010,8 +1282,14 @@ impl SandPluginSkillsService {
                 return Err(error);
             }
         };
-        let Some((live_blocks, uninstall_refusals)) =
-            self.import_live_refusals_if_active(&loaded.auth_blocked, &observation)?
+        let imported = match self.import_live_refusals_if_active(&loaded.auth_blocked, &refresh) {
+            Ok(imported) => imported,
+            Err(error) => {
+                self.settle_unadmitted_refresh(&refresh)?;
+                return Err(error);
+            }
+        };
+        let Some((live_blocks, uninstall_refusals)) = imported
         else {
             return Ok(self.current());
         };
@@ -1066,7 +1344,8 @@ impl SandPluginSkillsService {
             previous_records
                 .iter()
                 .filter(|record| {
-                    listed.contains(&record.plugin_id)
+                    !refresh.recovery_required
+                        && listed.contains(&record.plugin_id)
                         && !loaded_ids.contains(&record.plugin_id)
                         && !denied.contains(&record.plugin_id)
                         && !uninstall_refusals.contains(&record.plugin_id)
@@ -1093,7 +1372,7 @@ impl SandPluginSkillsService {
         // dispose the service; no callback runs while publication is locked.
         let duration_ms = (self.now)().saturating_sub(started);
         let Some((committed, released_live_refusal, committed_observation, pending_for_report)) =
-            self.publish_snapshot_if_active(staged, &loaded_ids, &denied, &observation)?
+            self.publish_snapshot_if_active(staged, &loaded_ids, &denied, &refresh)?
         else {
             return Ok(self.current());
         };
@@ -1155,3 +1434,7 @@ impl SandPluginSkillsService {
 #[cfg(test)]
 #[path = "plugin_skills_sync_tests.rs"]
 mod sync_tests;
+
+#[cfg(test)]
+#[path = "plugin_skills_auth_recovery_tests.rs"]
+mod auth_recovery_tests;

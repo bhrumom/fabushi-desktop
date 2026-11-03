@@ -2048,7 +2048,10 @@ mod plugin_skills_binding_tests {
         seed.dispose();
         drop(seed);
         let marker = get_plugin_skills_dir(profile.sand()).join("uninstall-state.version");
-        fs::write(&marker, b"1\n").unwrap();
+        // A real refresh now persists admission custody. Remove only this
+        // fixture's seeded image to exercise initialized-image loss as before.
+        assert_eq!(fs::read(&marker).unwrap(), b"1\n");
+        fs::remove_file(get_plugin_skills_dir(profile.sand()).join("uninstall-state.json")).unwrap();
 
         let sessions = profile.sessions();
         let record = sessions.materialize_new_session(None, "user", None).unwrap();

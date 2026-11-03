@@ -703,6 +703,21 @@ mod desktop_service_contracts {
         fn assert_uninstall_custody(&self, confirmed: &[&str], pending: &[&PluginUninstallIntent])
             -> UninstallCustodySnapshot
         {
+            self.assert_uninstall_custody_with_refresh(confirmed, pending, None)
+        }
+
+        fn refresh_operation_id(&self) -> String {
+            let image: Value = serde_json::from_slice(&fs::read(
+                get_plugin_skills_dir(&self.root.0).join("uninstall-state.json"),
+            ).unwrap()).unwrap();
+            let operation_id = image["refreshIntent"]["operationId"].as_str().unwrap().to_string();
+            assert_eq!(uuid::Uuid::parse_str(&operation_id).unwrap().to_string(), operation_id);
+            operation_id
+        }
+
+        fn assert_uninstall_custody_with_refresh(&self, confirmed: &[&str],
+            pending: &[&PluginUninstallIntent], refresh: Option<&str>) -> UninstallCustodySnapshot
+        {
             let pending_rows = pending.iter().map(|intent| json!({
                 "pluginId":intent.plugin_id, "operationId":intent.operation_id,
             })).collect::<Vec<_>>();
@@ -717,7 +732,8 @@ mod desktop_service_contracts {
             let directory = get_plugin_skills_dir(&self.root.0);
             let image = fs::read(directory.join("uninstall-state.json")).unwrap();
             assert_eq!(serde_json::from_slice::<Value>(&image).unwrap(), json!({
-                "formatVersion":1, "confirmedPluginIds":confirmed, "pending":pending_rows,
+                "formatVersion":2, "confirmedPluginIds":confirmed, "pending":pending_rows,
+                "authRefusals":[], "refreshIntent":refresh.map(|id| json!({"operationId":id})),
             }));
             let marker = fs::read(directory.join("uninstall-state.version")).unwrap();
             assert_eq!(marker, b"1\n");
@@ -905,6 +921,7 @@ mod desktop_service_contracts {
         let skills = Arc::clone(&fixture.skills);
         let (old_worker, old_result) = spawn_operation(move || skills.sync("held-before-uninstall"));
         let old_load = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+        let old_refresh = fixture.refresh_operation_id();
 
         let service = Arc::clone(&fixture.service);
         let (worker, result) = spawn_operation(move || {
@@ -914,10 +931,10 @@ mod desktop_service_contracts {
         fixture.resolve(&catalog, json!([]));
         let uninstall = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
         let intent = fixture.pending_uninstall("41");
-        fixture.assert_uninstall_custody(&[], &[&intent]);
+        fixture.assert_uninstall_custody_with_refresh(&[], &[&intent], Some(&old_refresh));
         fixture.resolve(&uninstall, json!({"removed":true,"state":null}));
         assert!(finish(worker, result).unwrap_err().contains("requires servers"));
-        let confirmed = fixture.assert_uninstall_custody(&["41"], &[]);
+        let confirmed = fixture.assert_uninstall_custody_with_refresh(&["41"], &[], Some(&old_refresh));
         assert!(fixture.skills.admission_reader().is_denied("41"));
         assert!(fixture.skills.current().is_empty());
         assert_eq!(fixture.relay.pending_count(), 1);
@@ -932,7 +949,9 @@ mod desktop_service_contracts {
         assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
         assert!(fixture.skills.admission_reader().is_denied("41"));
         assert!(fixture.skills.current().is_empty());
-        assert_eq!(fixture.assert_uninstall_custody(&["41"], &[]), confirmed);
+        let settled = fixture.assert_uninstall_custody(&["41"], &[]);
+        assert_eq!(settled.status, confirmed.status);
+        assert_eq!(settled.marker, confirmed.marker);
         assert_eq!(fixture.relay.pending_count(), 0);
         assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
 
@@ -940,7 +959,11 @@ mod desktop_service_contracts {
         let skills = Arc::clone(&fixture.skills);
         let (worker, result) = spawn_operation(move || skills.sync("fresh-reinstall"));
         let fresh = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
-        assert_eq!(fixture.assert_uninstall_custody(&["41"], &[]), confirmed);
+        let fresh_refresh = fixture.refresh_operation_id();
+        assert_ne!(fresh_refresh, old_refresh);
+        let refreshing = fixture.assert_uninstall_custody_with_refresh(&["41"], &[], Some(&fresh_refresh));
+        assert_eq!(refreshing.status, settled.status);
+        assert_eq!(refreshing.marker, settled.marker);
         fixture.resolve(&fresh, fixture.payload.clone());
         assert_eq!(finish(worker, result).unwrap().len(), 1);
         assert!(!fixture.skills.admission_reader().is_denied("41"));
