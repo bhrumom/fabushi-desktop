@@ -720,7 +720,7 @@ for (const outcome of ['failure', 'selection-expired-success'] as const) {
     await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(2);
     await expect(original).toContainText('Original retry before successor');
     await expect(original.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
-    await expect(page.locator('[contenteditable="true"]')).toHaveText('New unsent draft after successor');
+    // The successor now owns the active send lane; the editor becomes\n    // read-only but its unsent draft must remain visible in Prompt.\n    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveText('New unsent draft after successor');\n    await expect(page.getByRole('button', { name: 'Send message', exact: true })).toBeDisabled();
     const requests = await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage'));
     expect(requests).toHaveLength(2);
     expect(requests.map((request) => request.args.text)).toEqual(['Original retry before successor', 'Queued successor must advance']);
@@ -733,7 +733,7 @@ for (const outcome of ['failure', 'selection-expired-success'] as const) {
     await expect(messageRow(page, 'human-server-message:101')).toContainText('Queued successor must advance');
     await expect(successor).toHaveCount(0);
     await expect(original).toContainText('Original retry before successor');
-    await expect(page.locator('[contenteditable="true"]')).toHaveText('New unsent draft after successor');
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveText('New unsent draft after successor');\n    await expect(page.locator('[contenteditable="true"]')).toHaveText('New unsent draft after successor');
     await flushRenderer(page);
     expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(2);
     await milestone(page, info, `local-retry-successor-${outcome}`);
