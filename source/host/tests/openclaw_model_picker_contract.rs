@@ -421,3 +421,37 @@ fn test_ocrm_model_picker_o04_placement_fences_and_successful_mutation() {
     assert_eq!(entry.model_override, None);
     assert_eq!(entry.updated_at, 3000);
 }
+
+#[test]
+fn model_picker_display_hint_cannot_clear_override() {
+    let mut entry = SessionModelEntryState {
+        session_id: "agent-1".into(),
+        provider_override: Some("cursor".into()),
+        model_override: Some("old".into()),
+        ..Default::default()
+    };
+    let catalog = [ModelCatalogEntry {
+        provider: "cursor".into(), id: "new".into(), name: None,
+        context_window: None, context_tokens: None, api: None,
+        base_url: None, reasoning: None,
+    }];
+    let result = apply_session_model_selection(&mut entry,
+        ApplySessionModelSelectionParams {
+            agent_id: "agent-1", session_key: "agent:agent-1:main",
+            default_provider: "cursor", default_model: "default",
+            current_provider: "cursor", current_model: "old",
+            model_catalog: &catalog, visibility_policy: None,
+            operator_authority: None, placement_context: None,
+            candidate_execution_mode: None,
+            initial_generation: Some(7), current_generation: Some(7),
+            request: SessionModelSelectionRequest {
+                provider: "cursor".into(), model: "new".into(),
+                is_default: true, reset_to_default: false,
+                alias: None, profile_override: None,
+                runtime: SessionModelSelectionRuntime::Unchanged,
+            },
+        }, 42);
+    assert!(matches!(result, ApplySessionModelSelectionResult::Applied(_)));
+    assert_eq!(entry.provider_override.as_deref(), Some("cursor"));
+    assert_eq!(entry.model_override.as_deref(), Some("new"));
+}
