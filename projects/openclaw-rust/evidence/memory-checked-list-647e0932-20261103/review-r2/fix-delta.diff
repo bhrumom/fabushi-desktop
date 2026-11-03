@@ -1,0 +1,64 @@
+diff --git a/projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json
+index 5faa312be5f00dee2d5b74c915df376ef66efd65..8c4e86de0769a6f50bceec6f7be056ea801664d1 100644
+--- a/projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json
+@@ -279,6 +279,12 @@
+         "base_blob": "ba92e497b1e31cef4405958c259485635ace019d",
+         "candidate_blob": "e006bafd844737c3a778e4b3569198e17bd7657b",
+         "review_depth": "Complete changed test delta with actual fixture/owner and native platform oracles; prior unchanged facts retained"
++      },
++      {
++        "path": "source/host/tests/session_paths_contract.rs",
++        "base_blob": "0941afd83232a7ace463e8113478b3a3d86c1dc6",
++        "candidate_blob": "929c818bfd9222f4c8dfa05478ea157bc99d0a8c",
++        "review_depth": "Complete existing nine-case target read; root-resolution fixture now provides an asserted native absolute override on each platform, retaining its name and actual owner assertion."
+       }
+     ],
+     "adjacent_read_facts": [
+@@ -451,6 +457,12 @@
+         ],
+         "depth": "Constructor/legacy migration side-effect contract read by native source worker",
+         "fact": "Default construction invokes legacy migration, so invalid-ID refusal must precede factory invocation; Windows regression child CWD remains inside fixture."
++      },
++      {
++        "path": "source/host/src/host_paths.rs",
++        "blob": "844be87e4a278bca99bc4968bbf85b6d751983b9",
++        "depth": "complete file",
++        "fact": "resolve_sand_data_root_override admits only Path::is_absolute values; get_sand_root_dir_with chooses that same root before user-data-dir and variant fallback. The selected Session-path fixture must supply a native absolute path."
+       }
+     ],
+     "ledger_relationship": "OCRM remains the only inventory/ledger/RTM. This native preservation supplement is linked to the six existing RTM rows without inventing an upstream Memory equivalence row. Existing OCRM-RESP-GW-DISPATCH-REGISTRY-001 and MGA method/role/pairing/revocation responsibilities remain adjacent dependencies; their status and source histories are unchanged.",
+@@ -562,7 +574,7 @@
+       "source/host/src/workflows/workflow_store.rs"
+     ],
+     "retained": "All inherited full-plan command groups and requirements remain. The existing integration and namespace groups gain applicable current-platform required names, and three explicit native owner groups are added to the portable full plan. Scoped execution does not execute unrelated groups. Historical failed DJC check remains non-passing and retained.",
+-    "source_review": "pending complete immutable candidate and fresh GENERAL/STRUCTURE review",
++    "source_review": "pending complete immutable 14-path candidate and fresh focused GENERAL/STRUCTURE review",
+     "execution": "not-run",
+     "platform_groups": {
+       "unix": [
+diff --git a/source/host/tests/session_paths_contract.rs b/source/host/tests/session_paths_contract.rs
+index 0941afd83232a7ace463e8113478b3a3d86c1dc6..929c818bfd9222f4c8dfa05478ea157bc99d0a8c 100644
+--- a/source/host/tests/session_paths_contract.rs
++++ b/source/host/tests/session_paths_contract.rs
+@@ -104,13 +104,18 @@
+     let home = Path::new("/home/tester");
+     let cwd = Path::new("/workspace");
+     let argv = vec!["mahayana-app-host".to_string()];
++    #[cfg(windows)]
++    let data_root = Path::new(r"C:\var\lib\fabushi");
++    #[cfg(not(windows))]
++    let data_root = Path::new("/var/lib/fabushi");
++    assert!(data_root.is_absolute(), "native absolute override fixture");
+     let environment = BTreeMap::from([(
+         "SAND_DATA_ROOT".to_string(),
+-        "/var/lib/fabushi".to_string(),
++        data_root.to_str().expect("UTF-8 fixture path").to_string(),
+     )]);
+     assert_eq!(
+         get_sand_transcripts_dir_with(home, &argv, &environment, cwd),
+-        Path::new("/var/lib/fabushi").join("agent-transcripts")
++        data_root.join("agent-transcripts")
+     );
+ }
+ 

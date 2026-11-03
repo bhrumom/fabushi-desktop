@@ -1,0 +1,248 @@
+{
+  "schema": "ocrm-independent-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 2,
+  "review": "MGL-focused-R2",
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_id": 1375312893,
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "scope_mode": "complete immutable candidate against exact frozen base",
+  "base": "e2b91700f145b9b13bb77cdf6f7981aafd433627",
+  "starting_head": "e2b91700f145b9b13bb77cdf6f7981aafd433627",
+  "base_tree": "31505eccdce32a9fddd5ef9942033362c5da44f2",
+  "candidate_commit": "f1e86d9eb3e0a7479d45e1735f3d7d96a4c46907",
+  "candidate_tree": "8f357a751682bedec2ab7964968e26e817efc023",
+  "applied_to_branch": false,
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "authority": {
+    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+    "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+    "behavior_spec": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+    "behavior_spec_blob": "c081c6d5701510b699bb734fcd5a11fb0f156638"
+  },
+  "complete_diff": {
+    "path": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/review-r2/complete.diff",
+    "blob": "e86e3103d17c066c989303c05e9289988344b3d8",
+    "bytes": 220175,
+    "sha256": "78a45495d1a2270e3965df591378f39c4edf8882a79140bc913501198cf9d1ce",
+    "binary_or_rename_changes": false,
+    "acquisition": "Read-isolated Git object tree; exact parent files and candidate blobs fetched through connector. Complete text delta reconstructed without executing repository tools or changing shared staging state."
+  },
+  "files": [
+    {
+      "path": "source/host/src/extensions/memory/memory_service.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "a8a084a38d3717686393847746468bc10b91b337",
+      "candidate_blob": "abcde0d5ba3f73dfb60dcd7607bee1eb55a868c4",
+      "candidate_utf8": {
+        "bytes": 55223,
+        "sha256": "ff6b01d4d03c4b4bd80632ef362d36660db768025d60211fbda0727faeffcfe9"
+      }
+    },
+    {
+      "path": "source/host/src/extensions/transcript/transcript_manager.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "caa2bf73398d4499d51d3152b494ff2d605b4e54",
+      "candidate_blob": "71e90fb820d492d7e9607f63311595aed076c29a",
+      "candidate_utf8": {
+        "bytes": 33985,
+        "sha256": "2c9a67d22d93173a499b25f5bff6fa68b4baade5e35b720f9e03194f4bdc50f7"
+      }
+    },
+    {
+      "path": "source/host/tests/memory_service_contract.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "1a7379713165ff5e50528971756786382fec1c07",
+      "candidate_blob": "2171ce61768aff44ab2c2cc19eb8c1001d1505c6",
+      "candidate_utf8": {
+        "bytes": 61374,
+        "sha256": "da79afd9e850e72a4df9e10193897dc243312127bec02d81298cf968bf2e3dbb"
+      }
+    },
+    {
+      "path": "source/host/tests/transcript_manager_contract.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "d9aa3eab2de2c8971688c2b5ae7db90db71ef6b5",
+      "candidate_blob": "a4f71a536beda9e2509653fe4b819d3da3d79eda",
+      "candidate_utf8": {
+        "bytes": 75014,
+        "sha256": "c0267dd53b66442eb448152154d798b2346289a1c5c290cd9385d33d9489c569"
+      }
+    },
+    {
+      "path": "source/host/tests/memory_gateway_authorization_contract.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "1d5e5434a7e7576d68262d39c8d198885cb3beba",
+      "candidate_blob": "ad9cb9f3b6ab0f1bf8f330ac36f233bc5b7829a9",
+      "candidate_utf8": {
+        "bytes": 44655,
+        "sha256": "0d6a5903f3ea9115e9b12f0c03cc240e0996ecd650bd94ed2e381bdb10058d53"
+      }
+    },
+    {
+      "path": "source/host/src/storage/agent_paths.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "5b023b86317d7f726945522d456ef1c2537c21b4",
+      "candidate_blob": "0d4c7f6fc0f8ec81c26aa529b4a3d3c22390c507",
+      "candidate_utf8": {
+        "bytes": 1753,
+        "sha256": "770c44c4e6c226f0d68ddbf5f567b6d0661cd2928bc1d83f52cce3bef0f5378e"
+      }
+    },
+    {
+      "path": "source/host/src/extensions/memory/agent_state.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "5571649fa666753c3732e235523029027852cdd7",
+      "candidate_blob": "9b9b40967bc366ba425d2cb17ae1820d1b6eceda",
+      "candidate_utf8": {
+        "bytes": 29442,
+        "sha256": "459167d7b21f48f8837c1c7b86de6e6855fcc1a02cfac5219d1944984b18a9db"
+      }
+    },
+    {
+      "path": "source/host/tests/host_storage_contract.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "efb525cfd19f0bf66515b3eac64e1019968a4869",
+      "candidate_blob": "9bd9ce45398ce1c993bacd9102ff0e76b6608219",
+      "candidate_utf8": {
+        "bytes": 21868,
+        "sha256": "f8a24b73b6be162dbb7d642a5303cd64a9e10c3246bec3a0ef5251d4a3885e10"
+      }
+    },
+    {
+      "path": "source/host/tests/agent_state_contract.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "ba92e497b1e31cef4405958c259485635ace019d",
+      "candidate_blob": "e006bafd844737c3a778e4b3569198e17bd7657b",
+      "candidate_utf8": {
+        "bytes": 36766,
+        "sha256": "078622bfc4f296885181c152b839b8185a75b6cb41aa2c7e47892131b53cb58b"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "083b67625c01f02ba01ab507a87bd20275f8a0cf",
+      "candidate_blob": "04e8651579cee3a72fd637de471e3b6f9643f1a0",
+      "candidate_utf8": {
+        "bytes": 216286,
+        "sha256": "91ba173bf8fede63690f1d057c90d62ea487b53548f22aa6e84cd9fb233d66b7"
+      }
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "6e315ffc0419a883b13065705c70b4db996cb9f2",
+      "candidate_blob": "0c530c5038bf7ad6c095ecb9db728805a21c7a71",
+      "candidate_utf8": {
+        "bytes": 473159,
+        "sha256": "33eb9f50587f8eb33f9c684eb112446bfb7e58f8c562b1eadd4e8e24b109e2cb"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "4a415a830fccdfec7b7ae73fa16133929c84652f",
+      "candidate_blob": "4966c264bf2b83fac44a3683d1a2f24cfece04af",
+      "candidate_utf8": {
+        "bytes": 179271,
+        "sha256": "066791df97855570e2cb1257af47822742a827b10311d4e511346c09ddebcd27"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json",
+      "status": "added",
+      "mode": "100644",
+      "base_blob": null,
+      "candidate_blob": "8c4e86de0769a6f50bceec6f7be056ea801664d1",
+      "candidate_utf8": {
+        "bytes": 47859,
+        "sha256": "e696beb85241fd1b5f3444b58cbf1eabbda0b8aa9c13d5ef8f38e4d42be16536"
+      }
+    },
+    {
+      "path": "source/host/tests/session_paths_contract.rs",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "0941afd83232a7ace463e8113478b3a3d86c1dc6",
+      "candidate_blob": "929c818bfd9222f4c8dfa05478ea157bc99d0a8c",
+      "candidate_utf8": {
+        "bytes": 7504,
+        "sha256": "179e708faa416879eca9f50b5b1bd16c274c21e0cccbdd91d8f0b7ce5de5e844"
+      }
+    }
+  ],
+  "review_contract": {
+    "complete_scope_required": true,
+    "adjacent_consumers_required": true,
+    "fresh_and_blind": true,
+    "round_cap": 10,
+    "general": {
+      "model": "configured parent model",
+      "reasoning_effort": "xhigh"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh"
+    },
+    "reason": "Native path escape, read refusal semantics, state-constructor side effects, real HTTP authorization/consumer tests and multi-platform strict CI/source identity.",
+    "findings": "Falsifiable path/symbol/trigger/failure/severity/fix. No preference-only blockers, no policy or permission changes."
+  },
+  "verification": {
+    "state": "not-run",
+    "environment": "GitHub Actions only",
+    "candidate_scope": "ocrm-memory-checked-list",
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15",
+      "windows-2025"
+    ],
+    "expected_positive_cases": {
+      "Linux": 66,
+      "macOS": 66,
+      "Windows": 65
+    },
+    "groups": 7,
+    "windows_shipping_app": "not-executed/unaccepted; known source incompatibility remains separate; library compile cannot substitute.",
+    "full_acceptance": false
+  },
+  "preservation": {
+    "original_positive_assertions": "retained",
+    "fixed_U_changed": false,
+    "source_read_credit_changed": false,
+    "ledger_changed": false,
+    "global_completion_flags_changed": false,
+    "unrelated_work": "Original RMD candidate remains unapplied and its denied opaque-revision payload is not included; BGC exact scoped approval and originalfailedDJC remain intact."
+  },
+  "prior_candidate": "ec49fed9e3ccec083d421a9f89c079da62641b69",
+  "fix_delta": {
+    "path": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/review-r2/fix-delta.diff",
+    "blob": "f3d507bd66452c0e64a8c8e92785bf103e2e9fa7",
+    "bytes": 4213,
+    "sha256": "9cf9d1f3091bdd6f450ed806e616bc106780056a9ae083302af72640c4dbfb21",
+    "paths": [
+      "source/host/tests/session_paths_contract.rs",
+      "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json"
+    ]
+  },
+  "scope_amendment": "The existing selected Session-path fixture is added to the immutable base scope to provide a native absolute root. Original production/capture/workflow/RTM blobs and seven-group totals remain exact R1 bytes. Complete current scope remains review context; focused review reads changed function plus actual owner/callers and source bindings."
+}
