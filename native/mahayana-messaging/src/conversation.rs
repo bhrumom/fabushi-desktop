@@ -412,6 +412,50 @@ impl ConversationChildPaginationState {
         }
         removed
     }
+
+    /// Rekeys a settled local message identity to its canonical server message
+    /// identity (`data_history_messages.cpp:502-511`). If `to_id` is already
+    /// present in the window, collapses the duplicate `from_id` in place and
+    /// decrements `full_count` by 1 so the window remains deduplicated.
+    pub fn rekey_message_id(&mut self, from_id: &str, to_id: &str) -> bool {
+        let from_id = from_id.trim();
+        let to_id = to_id.trim();
+        if from_id.is_empty()
+            || to_id.is_empty()
+            || to_id.len() > 200
+            || from_id == to_id
+            || self.message_ids.is_empty()
+        {
+            return false;
+        }
+        let Some(from_index) = self.message_ids.iter().position(|id| id == from_id) else {
+            return false;
+        };
+        if self.message_ids.iter().any(|id| id == to_id) {
+            self.message_ids.remove(from_index);
+            self.full_count = self
+                .full_count
+                .map(|full_count| full_count.saturating_sub(1));
+        } else {
+            self.message_ids[from_index] = to_id.to_string();
+        }
+        true
+    }
+
+    /// Marks the newest end of the window as incomplete while retaining cached
+    /// `message_ids` and `skipped_before` (`SparseIdsList::invalidateBottom`).
+    pub fn invalidate_bottom(&mut self) {
+        self.skipped_after = None;
+        self.full_count = None;
+    }
+
+    /// Establishes a known complete empty window (`SparseIdsList::removeAll`).
+    pub fn clear_to_complete_empty(&mut self) {
+        self.message_ids.clear();
+        self.skipped_before = Some(0);
+        self.skipped_after = Some(0);
+        self.full_count = Some(0);
+    }
 }
 
 /// Account-scoped state for a typed child inside the canonical Conversation owner.
@@ -546,6 +590,57 @@ impl ConversationChildRuntimeState {
             self.note_locally_empty();
         }
         cleared_reply || removed > 0
+    }
+
+    /// Rekeys a settled local message identity across child draft reply targets,
+    /// pagination windows, and read watermarks (`data_history_messages.cpp:502-511`).
+    pub fn rekey_message_id(
+        &mut self,
+        from_id: &str,
+        to_id: &str,
+        accepted_at_ms: Option<i64>,
+    ) -> bool {
+        let from_id = from_id.trim();
+        let to_id = to_id.trim();
+        if from_id.is_empty() || to_id.is_empty() || to_id.len() > 200 || from_id == to_id {
+            return false;
+        }
+        let mut changed = false;
+        if self.draft_reply_to_message_id.as_deref() == Some(from_id) {
+            self.draft_reply_to_message_id = Some(to_id.to_string());
+            changed = true;
+        }
+        if self.pagination.rekey_message_id(from_id, to_id) {
+            changed = true;
+        }
+        if let Some(pos) = self.inbox_read_till.as_mut() {
+            if pos.message_id == from_id {
+                pos.message_id = to_id.to_string();
+                if let Some(ts) = accepted_at_ms {
+                    pos.created_at_ms = pos.created_at_ms.max(ts);
+                }
+                changed = true;
+            }
+        }
+        if let Some(pos) = self.outbox_read_till.as_mut() {
+            if pos.message_id == from_id {
+                pos.message_id = to_id.to_string();
+                if let Some(ts) = accepted_at_ms {
+                    pos.created_at_ms = pos.created_at_ms.max(ts);
+                }
+                changed = true;
+            }
+        }
+        changed
+    }
+
+    pub fn invalidate_bottom(&mut self) {
+        self.pagination.invalidate_bottom();
+    }
+
+    pub fn clear_to_complete_empty(&mut self) {
+        self.pagination.clear_to_complete_empty();
+        self.note_locally_empty();
     }
 
     pub fn set_active(&mut self, active: bool) {
@@ -969,6 +1064,93 @@ mod child_destination_tests {
         assert_eq!(state.draft_updated_at_ms, None);
         assert!(state.pagination.message_ids.is_empty());
         assert_eq!(state.pagination.full_count, Some(1));
+        assert!(!state.pinned);
+        assert!(state.restore_pinned_when_non_empty);
+    }
+
+    #[test]
+    fn child_runtime_rekeys_local_to_server_message_id_and_invalidates_bottom_window() {
+        let destination = ConversationDestination::topic(
+            ConversationId::new("conversation:parent"),
+            "topic:42",
+        );
+        let mut state =
+            ConversationChildRuntimeState::new(destination, ActorId::new("human:self"))
+                .expect("valid child state");
+        state.pinned = true;
+        state.set_draft("replying to pending", Some("local:pending:1".into()), 50);
+        assert!(state.advance_inbox_read_till(
+            ConversationMessagePosition::new(10, "local:pending:1"),
+            Some(0),
+        ));
+        assert!(state.advance_outbox_read_till(
+            ConversationMessagePosition::new(10, "local:pending:1"),
+        ));
+        assert!(state.pagination.replace_window(
+            vec!["msg:older".into(), "local:pending:1".into()],
+            Some(1),
+            Some(0),
+            Some(3),
+        ));
+
+        assert!(state.rekey_message_id("local:pending:1", "server:settled:100", Some(25)));
+        assert_eq!(
+            state.draft_reply_to_message_id.as_deref(),
+            Some("server:settled:100")
+        );
+        assert_eq!(
+            state.pagination.message_ids,
+            vec!["msg:older".to_string(), "server:settled:100".to_string()]
+        );
+        assert_eq!(state.pagination.full_count, Some(3));
+        assert_eq!(
+            state.inbox_read_till,
+            Some(ConversationMessagePosition::new(25, "server:settled:100"))
+        );
+        assert_eq!(
+            state.outbox_read_till,
+            Some(ConversationMessagePosition::new(25, "server:settled:100"))
+        );
+
+        // If the server ID was already inserted before rekeying a duplicate local ID,
+        // the window collapses the duplicate and decrements full_count by 1.
+        assert!(state.pagination.replace_window(
+            vec![
+                "msg:older".into(),
+                "local:dup:2".into(),
+                "server:settled:200".into(),
+            ],
+            Some(1),
+            Some(0),
+            Some(4),
+        ));
+        assert!(state.rekey_message_id("local:dup:2", "server:settled:200", Some(30)));
+        assert_eq!(
+            state.pagination.message_ids,
+            vec!["msg:older".to_string(), "server:settled:200".to_string()]
+        );
+        assert_eq!(state.pagination.full_count, Some(3));
+
+        // invalidate_bottom keeps cached message_ids and skipped_before while clearing
+        // skipped_after and full_count.
+        state.invalidate_bottom();
+        assert_eq!(
+            state.pagination.message_ids,
+            vec!["msg:older".to_string(), "server:settled:200".to_string()]
+        );
+        assert_eq!(state.pagination.skipped_before, Some(1));
+        assert_eq!(state.pagination.skipped_after, None);
+        assert_eq!(state.pagination.full_count, None);
+        assert!(state.pagination.has_gap_after());
+
+        // clear_to_complete_empty establishes a known complete empty range and notes locally empty.
+        state.clear_to_complete_empty();
+        assert!(state.pagination.message_ids.is_empty());
+        assert_eq!(state.pagination.skipped_before, Some(0));
+        assert_eq!(state.pagination.skipped_after, Some(0));
+        assert_eq!(state.pagination.full_count, Some(0));
+        assert!(!state.pagination.has_gap_before());
+        assert!(!state.pagination.has_gap_after());
         assert!(!state.pinned);
         assert!(state.restore_pinned_when_non_empty);
     }

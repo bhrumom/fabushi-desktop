@@ -1860,4 +1860,72 @@ fn deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_chil
     assert_eq!(child_state.pagination.full_count, Some(0));
     assert!(!child_state.pinned);
     assert!(child_state.restore_pinned_when_non_empty);
+
+    // Local-to-server identity settlement rekeys reply_to_message_id, drafts,
+    // topic_drafts, read cursors, and child pagination windows in place.
+    let reply_child_id = MessageId::new("message:m6:3");
+    engine
+        .execute(Command::QueueMessage {
+            conversation_id: conversation_id.clone(),
+            local_message_id: reply_child_id.clone(),
+            client_message_id: ClientMessageId("client:m6:3".into()),
+            sender_id: ActorId::new("human:owner"),
+            content: text_message("reply to pending second"),
+            reply_to_message_id: Some(second_message_id.clone()),
+            thread_root_message_id: Some(MessageId::new("topic:study")),
+            created_at_ms: 40,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+        })
+        .unwrap();
+    engine
+        .execute(Command::SetTopicDraft {
+            draft: TopicDraft {
+                conversation_id: conversation_id.clone(),
+                topic_id: "study".into(),
+                actor_id: ActorId::new("human:owner"),
+                text: "replying to second".into(),
+                reply_to_message_id: Some(second_message_id.0.clone()),
+                updated_at_ms: 41,
+            },
+        })
+        .unwrap();
+    engine
+        .execute(Command::ReplaceConversationChildWindow {
+            destination: topic_destination.clone(),
+            actor_id: ActorId::new("human:owner"),
+            message_ids: vec![second_message_id.clone(), reply_child_id.clone()],
+            skipped_before: Some(0),
+            skipped_after: Some(0),
+            full_count: Some(2),
+        })
+        .unwrap();
+    let settled_second_id = MessageId::new("server:m6:202");
+    engine
+        .execute(Command::AcknowledgeMessage {
+            conversation_id: conversation_id.clone(),
+            local_message_id: second_message_id,
+            server_message_id: settled_second_id.clone(),
+            accepted_at_ms: 45,
+        })
+        .unwrap();
+
+    let state = engine.state();
+    assert_eq!(
+        state.messages[&conversation_id][&reply_child_id].reply_to_message_id,
+        Some(settled_second_id.clone())
+    );
+    let rekeyed_child = state
+        .conversation_child_states
+        .iter()
+        .find(|child| {
+            child.destination == topic_destination && child.actor_id == ActorId::new("human:owner")
+        })
+        .expect("rekeyed topic child state");
+    assert_eq!(
+        rekeyed_child.pagination.message_ids,
+        vec![settled_second_id.0.clone(), reply_child_id.0]
+    );
+    assert!(rekeyed_child.pinned);
 }

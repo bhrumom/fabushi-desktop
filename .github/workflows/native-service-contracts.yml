@@ -388,8 +388,9 @@ jobs:
           grep -Fx 'test search::recipient_policy_tests::forward_origin_visibility_and_multi_term_field_matching_enforce_domain_policy ... ok' artifacts/native-message/messaging-core-search.log
           grep -Fx 'test search::recipient_policy_tests::search_index_supports_scoped_media_files_links_collections_and_filename_matching ... ok' artifacts/native-message/messaging-core-search.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --lib child_destination_tests -- --nocapture 2>&1 | tee artifacts/native-message/child-destination-tests.log
-          grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored;' artifacts/native-message/child-destination-tests.log
+          grep -Eq 'test result: ok\. 8 passed; 0 failed; 0 ignored;' artifacts/native-message/child-destination-tests.log
           grep -Fx 'test conversation::child_destination_tests::child_runtime_removes_deleted_messages_and_clears_matching_draft_reply_without_losing_text ... ok' artifacts/native-message/child-destination-tests.log
+          grep -Fx 'test conversation::child_destination_tests::child_runtime_rekeys_local_to_server_message_id_and_invalidates_bottom_window ... ok' artifacts/native-message/child-destination-tests.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test m5_contacts_groups_contract -- --nocapture 2>&1 | tee artifacts/native-message/m5-contacts-groups.log
           grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored;' artifacts/native-message/m5-contacts-groups.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test messaging_contract -- --nocapture 2>&1 | tee artifacts/native-message/messaging-contract.log

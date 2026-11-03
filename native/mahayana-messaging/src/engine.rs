@@ -878,6 +878,15 @@ fn destination_message_conversation_id(
     }
 }
 
+fn is_self_saved_messages(conversation: &Conversation, actor_id: &ActorId) -> bool {
+    matches!(conversation.kind, ConversationKind::SavedMessages)
+        && (conversation.owner_id.as_ref() == Some(actor_id)
+            || conversation.participants.iter().any(|participant| {
+                &participant.actor_id == actor_id
+                    && matches!(participant.role, ParticipantRole::Owner)
+            }))
+}
+
 fn append_community_audit(
     community: &mut CommunityState,
     actor_id: &ActorId,
@@ -1208,9 +1217,8 @@ impl MessagingEngine {
             let destination = &destinations[0];
             let effective_conversation_id = destination_message_conversation_id(destination);
             let conversation = &self.state.conversations[effective_conversation_id];
-            let is_self_destination = destination.child.is_none()
-                && matches!(conversation.kind, ConversationKind::SavedMessages)
-                && conversation.owner_id.as_ref() == Some(sender_id);
+            let is_self_destination =
+                destination.child.is_none() && is_self_saved_messages(conversation, sender_id);
             if is_self_destination {
                 return SendMenuDetails::from_mode(SendMenuMode::Reminder);
             }
@@ -2391,10 +2399,7 @@ impl MessagingEngine {
                         // an explicit monoforum parent chat. Fabushi does not yet model the
                         // monoforum parent relation, so accept only the canonical self
                         // SavedMessages parent and fail closed for all other parent kinds.
-                        let self_saved_messages = matches!(
-                            conversation.kind,
-                            ConversationKind::SavedMessages
-                        ) && conversation.owner_id.as_ref() == Some(&actor_id);
+                        let self_saved_messages = is_self_saved_messages(conversation, &actor_id);
                         let participant_exists = self.state.actors.contains_key(participant_id);
                         if !self_saved_messages || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
@@ -2539,10 +2544,7 @@ impl MessagingEngine {
                         // an explicit monoforum parent chat. Fabushi does not yet model the
                         // monoforum parent relation, so accept only the canonical self
                         // SavedMessages parent and fail closed for all other parent kinds.
-                        let self_saved_messages = matches!(
-                            conversation.kind,
-                            ConversationKind::SavedMessages
-                        ) && conversation.owner_id.as_ref() == Some(&actor_id);
+                        let self_saved_messages = is_self_saved_messages(conversation, &actor_id);
                         let participant_exists = self.state.actors.contains_key(participant_id);
                         if !self_saved_messages || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
@@ -2701,8 +2703,7 @@ impl MessagingEngine {
                     .find(|state| state.destination == destination && state.actor_id == actor_id)
                     .is_some_and(|state| state.marked_unread || state.unread_count.unwrap_or(0) > 0);
                 let context = crate::conversation::ConversationChildUnreadContext {
-                    parent_is_self: matches!(conversation.kind, ConversationKind::SavedMessages)
-                        && conversation.owner_id.as_ref() == Some(&actor_id),
+                    parent_is_self: is_self_saved_messages(conversation, &actor_id),
                     parent_is_community: self.state.communities.contains_key(&destination.conversation_id),
                     actor_is_monoforum_admin: false,
                 };
@@ -3986,6 +3987,66 @@ impl MessagingEngine {
                         message.delivery_state = DeliveryState::Sent;
                         message.created_at_ms = accepted_at_ms;
                         messages.insert(server_message_id.clone(), message);
+                    }
+                    if local_message_id != server_message_id {
+                        for message in messages.values_mut() {
+                            if message.reply_to_message_id.as_ref() == Some(&local_message_id) {
+                                message.reply_to_message_id = Some(server_message_id.clone());
+                            }
+                            if message.thread_root_message_id.as_ref() == Some(&local_message_id) {
+                                message.thread_root_message_id = Some(server_message_id.clone());
+                            }
+                        }
+                    }
+                }
+                if local_message_id != server_message_id {
+                    if let Some(by_actor) = self.state.drafts.get_mut(&conversation_id) {
+                        for draft in by_actor.values_mut() {
+                            if draft.reply_to_message_id.as_deref()
+                                == Some(local_message_id.0.as_str())
+                            {
+                                draft.reply_to_message_id = Some(server_message_id.0.clone());
+                            }
+                        }
+                    }
+                    if let Some(by_actor) = self.state.topic_drafts.get_mut(&conversation_id) {
+                        for by_topic in by_actor.values_mut() {
+                            for draft in by_topic.values_mut() {
+                                if draft.reply_to_message_id.as_deref()
+                                    == Some(local_message_id.0.as_str())
+                                {
+                                    draft.reply_to_message_id = Some(server_message_id.0.clone());
+                                }
+                            }
+                        }
+                    }
+                    if let Some(by_actor) = self.state.read_cursors.get_mut(&conversation_id) {
+                        for cursor in by_actor.values_mut() {
+                            if *cursor == local_message_id {
+                                *cursor = server_message_id.clone();
+                            }
+                        }
+                    }
+                    if let Some(by_actor) = self.state.topic_read_cursors.get_mut(&conversation_id)
+                    {
+                        for by_topic in by_actor.values_mut() {
+                            for cursor in by_topic.values_mut() {
+                                if *cursor == local_message_id {
+                                    *cursor = server_message_id.clone();
+                                }
+                            }
+                        }
+                    }
+                    for child in &mut self.state.conversation_child_states {
+                        if destination_message_conversation_id(&child.destination)
+                            == &conversation_id
+                        {
+                            child.rekey_message_id(
+                                &local_message_id.0,
+                                &server_message_id.0,
+                                Some(accepted_at_ms),
+                            );
+                        }
                     }
                 }
                 if let Some(conversation) = self.state.conversations.get_mut(&conversation_id) {
