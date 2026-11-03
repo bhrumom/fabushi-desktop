@@ -259,7 +259,7 @@ test("Host preserves opaque strings and bigint IDs above the safe-number range e
   assert.deepEqual(result.publisherFacts["18446744073709551615"], { publisherUserId: 8, marketplaceTeamId: 5 });
 });
 
-test("Host authorization failures use the canonical DB ID when the slug matches another plugin's DB ID", async (t) => {
+test("local install permission failures never become remote authorization blocks", async (t) => {
   const host = await fixture(t, async () => ({
     plugins: [effectivePlugin("41", "7", "{}"), effectivePlugin("7", "healthy", "{}")],
   }), withInstall(async (entry, _targetDir, actual) => {
@@ -271,7 +271,7 @@ test("Host authorization failures use the canonical DB ID when the slug matches 
   const result = await host.load();
 
   assert.deepEqual(result.listedPluginIds, ["41", "7"]);
-  assert.deepEqual(result.authBlocked, [{ pluginId: "41", pluginName: "7", marketplaceName: "cursor-public" }]);
+  assert.deepEqual(result.authBlocked, [], "install/cache permission errors are not remote Git authorization decisions");
   assert.equal(result.plugins[0]?.identifier.pluginDbId, "41");
   assert.match(result.plugins[0]?.loadError ?? "", /Permission denied/);
   assert.equal(result.plugins[1]?.identifier.pluginDbId, "7");
