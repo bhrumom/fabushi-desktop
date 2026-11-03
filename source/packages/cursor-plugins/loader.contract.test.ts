@@ -197,6 +197,37 @@ test("SDK installation failure retains canonical identity and old files during a
   }), false);
 });
 
+test("an older failed install cannot remove a successor published cache directory", async (t) => {
+  const cache = await cacheFixture(t);
+  const plugin = entry();
+  const olderEntered = Promise.withResolvers<void>();
+  const releaseOlder = Promise.withResolvers<void>();
+  const older: MarketplaceLoaderClient = {
+    async listEnabledPlugins() { return { plugins: [plugin] }; },
+    async installPlugin(_entry, targetDir) {
+      olderEntered.resolve();
+      await releaseOlder.promise;
+      await writeSkill(targetDir, "older-partial");
+      throw new Error("older install failed after timeout");
+    },
+  };
+  const newer: MarketplaceLoaderClient = {
+    async listEnabledPlugins() { return { plugins: [plugin] }; },
+    async installPlugin(_entry, targetDir) { await writeSkill(targetDir, "successor-skill"); },
+  };
+  const olderPass = loadFromMarketplaceSource({ client: older, userId: "fixture-user", cacheManager: cache, pruneOldVersions: false });
+  await olderEntered.promise;
+  const newerPass = await loadFromMarketplaceSource({ client: newer, userId: "fixture-user", cacheManager: cache, pruneOldVersions: false });
+  assert.equal(newerPass.failures.length, 0);
+  assert.equal(newerPass.plugins[0]?.skills[0]?.name, "successor-skill");
+  releaseOlder.resolve();
+  const olderResult = await olderPass;
+  assert.equal(olderResult.failures.length, 1);
+  assert.equal(await cache.isCached({ marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version }), true);
+  const published = cache.getCacheDir({ marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version });
+  assert.match(await readFile(join(published, "SKILL.md"), "utf8"), /successor-skill instructions/);
+});
+
 test("SDK version-resolution failures reach the Host with their canonical DB ID", async (t) => {
   const cache = await cacheFixture(t);
   const failure = {
