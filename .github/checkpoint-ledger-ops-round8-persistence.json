@@ -1,0 +1,62 @@
+{
+  "format_version": 3,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "reviewed_base": "6da98eae8c42a53f24a42d7e3301693bd449ecab",
+  "input_blob": "d5f16f98d6ae28342c9e06a3b17069121769aa79",
+  "authored_ui_cases": 23,
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+      },
+      "normalize": {
+        "fabushi_target_paths": [],
+        "fabushi_target_symbols": []
+      },
+      "append": {
+        "requirement_ids": [
+          "NMR-PERSIST-MIGRATION-01a",
+          "NMR-PERSIST-MIGRATION-01b",
+          "NMR-PERSIST-MIGRATION-01c"
+        ],
+        "oracle_ids": [
+          "NMR-AC-PERSIST-MIGRATION-01"
+        ],
+        "fabushi_target_paths": [
+          "source/shared/client-persistence-store.ts",
+          "source/shared/client-persistence-store.contract.test.ts"
+        ],
+        "fabushi_target_symbols": [
+          "hasCompletedOneShotMigration",
+          "migrateFromLocalStorage"
+        ],
+        "production_entrypoints": [
+          "source/electron-main/secrets/secrets-ipc.ts#registerSecretsIpc",
+          "source/shared/client-persistence-store.ts#SandClientPersistenceStore"
+        ],
+        "command_event_contracts": [
+          "NMR-PERSIST-MIGRATION-01: existing trusted main/preload migration API treats only ENOENT as absent, refuses unknown/nonregular marker state before any import, and commits its unchanged final marker by same-directory temporary write plus rename. Existing keys, namespace/caps and serialized owner remain; no automatic startup import is added."
+        ],
+        "unit_case_ids": [
+          "source/shared/client-persistence-store.contract.test.ts#NMR-DRAFT-01 one-shot migration rejects marker I/O errors without resurrecting retired drafts",
+          "source/shared/client-persistence-store.contract.test.ts#NMR-DRAFT-01 one-shot migration commits its marker atomically and recovers after write or rename failure"
+        ],
+        "fault_recovery_case_ids": [
+          "NMR-PERSIST-MIGRATION-01: a completed migration plus ordinary removal cannot be reversed by stale legacy input during EIO/wrapped EACCES/null marker observations. Partial temporary writes/rename failure preserve committed blobs; same/reopened owner retry retains newer B, fills missing eligible keys and only then commits completion."
+        ],
+        "production_evidence": [
+          "Exact-H6da readonly receipt2453879a56a7c801010b024958d95f72bc7397db traces entry -> production service -> existing userData persistence owner -> trusted secrets IPC -> preload. The inspected frontend startup/draft paths use read/write/remove; automatic legacy startup import is unproven and not added."
+        ],
+        "test_evidence": [
+          "NMR-AC-PERSIST-MIGRATION-01 authors two additional actual-owner controlled-filesystem tests, retaining all5 old cases; required persistence7 and complete UI205 at containing H. This is authored coverage, not an execution or physical power-loss claim."
+        ]
+      },
+      "note": "\nNMR-PERSIST-MIGRATION-01 adds only existing owner marker error/atomic-completion recovery and two exact contract cases. Same/reopened owner and newer-canonical preservation are required; automatic startup/unknown legacy data and final source/product/independent ACCEPT remain unqualified."
+    }
+  ]
+}

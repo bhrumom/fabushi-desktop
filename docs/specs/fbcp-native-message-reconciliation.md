@@ -2535,3 +2535,67 @@ separate production semantic error and body-oracle error. No local validation,
 backend deployment, source acceptance, signed-platform or independent release
 acceptance is implied. Rollback removes optional origin interpretation while
 leaving original rows, timestamps, draft identities and outbox intact.
+
+
+## NMR-PERSIST-MIGRATION-01 — Existing one-shot persistence marker recovery
+
+Current source review at `6da98eae8c42a53f24a42d7e3301693bd449ecab`,
+receipt `2453879a56a7c801010b024958d95f72bc7397db`, identifies two
+faults in the existing SandClientPersistenceStore: every marker stat error is
+converted to absence, and completion writes directly to the final marker.
+A stale supplied legacy snapshot can then resurrect an ordinarily removed key,
+or a failed partial marker write can falsely report completion. The actual
+Electron main service creates the existing userData/sand-client-persistence
+owner; trusted secrets IPC and preload expose this API. The inspected frontend
+startup/draft restore paths use read/write/remove. This batch qualifies that
+existing exposed migration API; it neither adds nor proves automatic startup
+migration, and does not certify unknown historical Telegram data.
+
+- **NMR-PERSIST-MIGRATION-01a:** Probe the existing completion marker without
+  treating unknown I/O as absence. A rejected fileSize means absent only for
+  genuine ENOENT, including the existing wrapped errno form. Propagate other
+  errors unchanged before importing, creating directories, writing, renaming
+  or removing any file. The actual Node adapter returns null for a non-regular
+  file; this is an indeterminate marker and must reject, not reimport. Preserve
+  the existing completed interpretation of a regular marker, including a
+  historical zero-byte marker. Do not guess, delete or backfill old markers.
+- **NMR-PERSIST-MIGRATION-01b:** After all eligible entries have been processed
+  under the same serialized owner, write the original ISO timestamp marker
+  format to the same-directory marker filename plus the existing .tmp suffix,
+  then rename to the unchanged final filename. Return completion only after
+  rename. A partial temporary write or failed rename rejects and leaves final
+  completion absent, while already committed blobs remain. Use the existing
+  temporary cleanup and owner queue; no second journal, store or authority.
+- **NMR-PERSIST-MIGRATION-01c:** Same-owner retry and a replacement owner must
+  preserve newer canonical values, resume missing eligible entries, and commit
+  one marker. Existing-key-wins, allowed key namespace, per-key/total caps and
+  cap-skipping policy remain unchanged. Retain supplied legacy entries and
+  user-original storage. A completed marker short-circuits later stale imports.
+  Do not add automatic startup invocation or alter IPC trust/admission, Agent,
+  message transport, schema, filenames or migration format.
+
+**NMR-AC-PERSIST-MIGRATION-01:** Preserve all5 existing tests in
+source/shared/client-persistence-store.contract.test.ts and append exactly:
+
+1. `NMR-DRAFT-01 one-shot migration rejects marker I/O errors without resurrecting retired drafts`.
+   Exercise actual store methods with controlled external file operations:
+   completed migration then ordinary removal; EIO/wrapped EACCES marker reads
+   through the same and reopened owner; exact error identity, untouched file
+   bytes and zero mutating calls; non-regular/null rejection; recovery observing
+   the retained marker; real and wrapped ENOENT first-migration controls.
+2. `NMR-DRAFT-01 one-shot migration commits its marker atomically and recovers after write or rename failure`.
+   Exercise partial marker temporary writes and failed rename, both owner
+   lifetimes, no final marker after failure, retained committed blobs, newer B
+   surviving stale A retry, missing-entry continuation, unchanged supplied
+   originals, successful old-format marker, cleanup and later no-write replay.
+   Include namespace/cap compatibility controls. These external-boundary tests
+   do not certify physical power-loss or automatic legacy startup migration.
+
+Freeze the implementation and tests together and execute only in GitHub Actions.
+The persistence group target becomes7 and the complete current UI target205
+(previous203 plus2); all other reconciliation121/Human77, projection43, retry47, browser13,
+author23 and actual Electron2+2 requirements remain. A failed existing gate is
+preserved and repaired causally, never hidden by this independent batch.
+Rollback restores the prior API implementation while leaving final markers,
+canonical blobs and legacy originals in place. Full migration, service/platform
+and independent ACCEPT requirements remain unchanged.
