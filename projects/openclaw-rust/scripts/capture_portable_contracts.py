@@ -1,6 +1,6 @@
 import hashlib, json, os, pathlib, re, subprocess
 validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
-if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation"):
+if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation", "memory-synthesis-snapshot"):
     raise ValueError("Unknown portable contract scope")
 root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
     else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
@@ -416,7 +416,42 @@ djc_reader_observation_inputs = [
     "source/host/app/src/main.rs",
     "source/host/tests/device_pairing_join_admission_contract.rs"
 ]
-inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs) | set(djc_reader_observation_inputs))
+memory_synthesis_snapshot_inputs = [
+    "projects/openclaw-rust/upstream.lock.json",
+    "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+    "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+    "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+    "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+    "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "source/host/Cargo.toml",
+    "source/host/Cargo.lock",
+    "source/host/app/Cargo.toml",
+    "source/host/app/Cargo.lock",
+    "source/host/app/src/main.rs",
+    "source/host/src/extensions/memory/memory_service.rs",
+    "source/host/src/extensions/memory/memory_synthesis_service.rs",
+    "source/host/src/extensions/memory/production.rs",
+    "source/host/src/extensions/memory/production_append_read_tests.rs",
+    "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+    "source/host/src/extensions/memory/production_identity_tests.rs",
+    "source/host/src/extensions/memory/extension.rs",
+    "source/host/src/host_production_extensions.rs",
+    "source/host/src/extensions/session/production.rs",
+    "source/host/src/extensions/inference/production.rs",
+    "source/host/src/extensions/inference/summary_job.rs",
+    "source/host/tests/memory_service_contract.rs",
+    "source/host/tests/memory_synthesis_store_contract.rs",
+    "source/host/tests/memory_synthesis_service_contract.rs",
+    "source/host/src/watched_directory.rs",
+    "source/host/src/extensions/telemetry/memory_synthesis_telemetry.rs",
+    "source/host/src/extensions/inference/provider_session.rs",
+    "source/host/src/extensions/inference/codex_request_binding.rs",
+    "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+    "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
+]
+inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs) | set(djc_reader_observation_inputs) | set(memory_synthesis_snapshot_inputs))
 base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
 integration = base + ["--no-fail-fast"]
 for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
@@ -1792,11 +1827,125 @@ for label, command, required in memory_checked_list_cases:
         for name in required:
             if name not in matches[0][2]:
                 matches[0][2].append(name)
+# MSSA-v1 extends existing full-plan parents; no second runtime or runner.
+memory_synthesis_snapshot_store_names = [
+    "synthesis_create_read_errors_preserve_memory_and_metadata",
+    "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
+    "synthesis_batch_preflights_later_append_before_earlier_remove",
+    "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+    "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+    "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+    "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+    "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+    "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+    "checked_synthesis_snapshot_refuses_native_type_obstacles",
+    "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"
+]
+memory_synthesis_snapshot_service_names = [
+    "parser_rejects_unknown_evidence_and_clock_only_creation",
+    "proposal_and_verification_commit_through_synthesis_target",
+    "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
+    "evidence_bounding_keeps_both_ends",
+    "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+    "frozen_production_scheduling_constants_are_enforced",
+    "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+    "typed_identity_refusals_settle_without_retry_or_temporal_review",
+    "one_snapshot_factory_survives_worker_timeout_and_retry",
+    "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+    "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+    "snapshot_read_cancellation_suppresses_failure_and_model_work"
+]
+memory_synthesis_snapshot_codex_names = [
+    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata",
+    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal"
+]
+memory_synthesis_snapshot_production_names = [
+    "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+]
+memory_synthesis_snapshot_parents = {
+    "memory-checked-list-store": "integration",
+    "memory-synthesis-snapshot-store": "integration",
+    "memory-synthesis-snapshot-service": "integration",
+    "production-memory-synthesis": "production-memory-synthesis",
+    "memory-synthesis-identity": "memory-synthesis-identity",
+    "memory-synthesis-snapshot-codex": "codex-workspace-http",
+    "memory-synthesis-snapshot-production": "memory-synthesis-snapshot-production",
+}
+memory_synthesis_snapshot_expected_counts = {"unix": 63, "windows": 61}
+memory_synthesis_snapshot_retained = {
+    label: (label, list(command), list(required))
+    for label, command, required in cases
+    if label in ("production-memory-synthesis", "memory-synthesis-identity")
+}
+
+def memory_synthesis_snapshot_plan(platform):
+    if platform not in memory_synthesis_snapshot_expected_counts:
+        raise ValueError("Unsupported synthesis snapshot native platform")
+    native_store = [row for row in memory_checked_list_plan(platform)
+        if row[0] == "memory-checked-list-store"]
+    if len(native_store) != 1:
+        raise ValueError("Synthesis snapshot needs the complete existing native store target")
+    store_names = [name for name in memory_synthesis_snapshot_store_names
+        if platform == "unix"
+        or name != "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"]
+    selected = native_store + [
+        ("memory-synthesis-snapshot-store", base + ["--test",
+            "memory_synthesis_store_contract", "--", "--test-threads=1"], store_names),
+        ("memory-synthesis-snapshot-service", base + ["--test",
+            "memory_synthesis_service_contract", "--", "--test-threads=1"],
+            list(memory_synthesis_snapshot_service_names)),
+        memory_synthesis_snapshot_retained["production-memory-synthesis"],
+        memory_synthesis_snapshot_retained["memory-synthesis-identity"],
+        ("memory-synthesis-snapshot-codex", base + ["--lib",
+            "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::", "--", "--test-threads=1"],
+            list(memory_synthesis_snapshot_codex_names)),
+        ("memory-synthesis-snapshot-production", base + ["--lib",
+            "extensions::memory::production::snapshot_read_tests::", "--", "--test-threads=1"],
+            list(memory_synthesis_snapshot_production_names)),
+    ]
+    expected = memory_synthesis_snapshot_expected_counts[platform]
+    if (len(selected) != 7 or len({row[0] for row in selected}) != 7
+        or sum(len(row[2]) for row in selected) != expected
+        or len({name for _, _, required in selected for name in required}) != expected):
+        raise ValueError("Synthesis snapshot plan is incomplete or duplicated")
+    return [(label, list(command), list(required)) for label, command, required in selected]
+
+memory_synthesis_snapshot_cases = memory_synthesis_snapshot_plan(memory_checked_list_native_platform)
+memory_synthesis_snapshot_required = {
+    label: tuple(required) for label, _, required in memory_synthesis_snapshot_cases}
+memory_synthesis_snapshot_filtered = {
+    "production-memory-synthesis", "memory-synthesis-identity",
+    "memory-synthesis-snapshot-codex", "memory-synthesis-snapshot-production",
+}
+for label, command, required in memory_synthesis_snapshot_cases:
+    parent = memory_synthesis_snapshot_parents[label]
+    matches = [case for case in cases if case[0] == parent]
+    if parent == label and not matches:
+        cases.append((label, command, required))
+    else:
+        if len(matches) != 1:
+            raise ValueError("Synthesis snapshot lost a unique full-plan parent")
+        if parent == label and (matches[0][1] != command or matches[0][2] != required):
+            raise ValueError("Synthesis snapshot changed a retained parent")
+        for name in required:
+            if name not in matches[0][2]:
+                matches[0][2].append(name)
+
 full_cases = list(cases)
 memory_checked_list_parent_contracts = {
     label: (tuple(command), tuple(required))
     for label, command, required in full_cases
     if label in set(memory_checked_list_parents.values())
+}
+
+memory_synthesis_snapshot_parent_contracts = {
+    label: (tuple(command), tuple(required))
+    for label, command, required in full_cases
+    if label in set(memory_synthesis_snapshot_parents.values())
 }
 
 custody_box_labels = (
@@ -1853,11 +2002,24 @@ djc_reader_parent_contract = next(
 
 
 def select_portable_cases(scope, declared):
-    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation"):
+    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation", "memory-synthesis-snapshot"):
         raise ValueError("Unknown portable contract scope")
     indexed = {label: (label, command, required) for label, command, required in declared}
     if len(indexed) != len(declared):
         raise ValueError("Duplicate portable case label")
+    if scope == "memory-synthesis-snapshot":
+        for parent, expected in memory_synthesis_snapshot_parent_contracts.items():
+            if parent not in indexed:
+                raise ValueError("Synthesis snapshot lost a full-plan parent")
+            _, command, required = indexed[parent]
+            if (tuple(command), tuple(required)) != expected:
+                raise ValueError("Synthesis snapshot parent command or names drifted")
+        selected = memory_synthesis_snapshot_plan(memory_checked_list_native_platform)
+        for label, _, names in selected:
+            required = indexed[memory_synthesis_snapshot_parents[label]][2]
+            if any(required.count(name) != 1 for name in names):
+                raise ValueError("Synthesis snapshot needs each exact parent name once")
+        return selected
     if scope == "djc-reader-observation":
         if "device-pairing-join" not in indexed:
             raise ValueError("DJC reader observation lost its complete parent target")
@@ -2113,10 +2275,57 @@ for platform, expected in [("unix", True), ("windows", True), ("foreign", False)
         {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
     assert actual == expected, f"MGL fixture platform plan failed: {platform}"
 
+memory_synthesis_snapshot_selection_controls = []
+memory_synthesis_snapshot_variants = [
+    ("qualified-snapshot-plan", full_cases, True),
+    ("duplicate-parent-label", full_cases + [full_cases[0]], False),
+]
+for parent in memory_synthesis_snapshot_parent_contracts:
+    memory_synthesis_snapshot_variants.extend([
+        ("missing-parent:" + parent, [case for case in full_cases if case[0] != parent], False),
+        ("changed-parent-command:" + parent,
+            [(label, command + ["--foreign"], required) if label == parent
+                else (label, command, required) for label, command, required in full_cases], False),
+    ])
+for label, _, names in memory_synthesis_snapshot_cases:
+    parent = memory_synthesis_snapshot_parents[label]
+    for name in names:
+        memory_synthesis_snapshot_variants.extend([
+            ("missing-positive:" + name,
+                [(item, command, [value for value in required if value != name])
+                    if item == parent else (item, command, required)
+                    for item, command, required in full_cases], False),
+            ("duplicate-positive:" + name,
+                [(item, command, required + [name]) if item == parent
+                    else (item, command, required) for item, command, required in full_cases], False),
+        ])
+for control, declared, expected in memory_synthesis_snapshot_variants:
+    try:
+        selected = select_portable_cases("memory-synthesis-snapshot", declared)
+        actual = selected == memory_synthesis_snapshot_cases
+    except ValueError:
+        actual = False
+    memory_synthesis_snapshot_selection_controls.append(
+        {"case": control, "expected": expected, "actual": actual})
+    assert actual == expected, f"MSSA selection oracle failed: {control}"
+for platform, expected in [("unix", True), ("windows", True), ("foreign", False)]:
+    try:
+        selected = memory_synthesis_snapshot_plan(platform)
+        names = {name for _, _, required in selected for name in required}
+        actual = (len(selected) == 7
+            and len(names) == memory_synthesis_snapshot_expected_counts[platform]
+            and ("checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"
+                in names) == (platform == "unix"))
+    except ValueError:
+        actual = False
+    memory_synthesis_snapshot_selection_controls.append(
+        {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
+    assert actual == expected, f"MSSA platform plan failed: {platform}"
+
 for selected_scope, expected in [("full", True), ("custody-recovery", True),
     ("background-custody", True), ("background-custody-recovery", True),
     ("memory-checked-list", False), ("memory-fixture-lifecycle", False),
-    ("djc-reader-observation", False)]:
+    ("djc-reader-observation", False), ("memory-synthesis-snapshot", False)]:
     actual = any(label.startswith("box-response-")
         for label, _, _ in select_portable_cases(selected_scope, full_cases))
     selection_controls.append({"case": "box-producer-required-" + selected_scope,
@@ -2508,7 +2717,17 @@ assert all(item["matches_head_bytes"] for item in memory_checked_list_inputs_bef
 djc_reader_inputs_before = source_bindings(djc_reader_observation_inputs)
 assert all(item["matches_head_bytes"] for item in djc_reader_inputs_before.values()), "DJC reader source input differs from exact H"
 
+memory_synthesis_snapshot_inputs_before = source_bindings(memory_synthesis_snapshot_inputs)
+assert all(item["matches_head_bytes"] for item in memory_synthesis_snapshot_inputs_before.values()), "MSSA source input differs from exact H"
+
 receipt = {
+    "memory_synthesis_snapshot_contract": "MSSA-v1",
+    "memory_synthesis_snapshot_selected_here": validation_scope in ("full", "memory-synthesis-snapshot"),
+    "memory_synthesis_snapshot_expected_positive_count": memory_synthesis_snapshot_expected_counts[memory_checked_list_native_platform],
+    "memory_synthesis_snapshot_required_names": {label: list(names)
+        for label, names in memory_synthesis_snapshot_required.items()},
+    "memory_synthesis_snapshot_selection_controls": memory_synthesis_snapshot_selection_controls,
+    "memory_synthesis_snapshot_inputs_before": memory_synthesis_snapshot_inputs_before,
     "djc_reader_observation_contract": "DJC-09",
     "djc_reader_observation_selected_here": validation_scope == "djc-reader-observation",
     "djc_reader_selection_controls": djc_reader_selection_controls,
@@ -2674,10 +2893,29 @@ if validation_scope == "djc-reader-observation":
         "reason": "Only the retained reader fixture/observation instrument changes; compile its exact integration target.",
     }
 
+if validation_scope == "memory-synthesis-snapshot":
+    receipt["scope"] = ("MSSA-v1: checked complete-before-projection synthesis acquisition, existing "
+        "Failed/cancellation/evidence settlement, unchanged durable bytes, actual Native production "
+        "factory and Session-gated recovery, retained write-stage refusal and Native/Codex identity "
+        "controls. Three complete integration targets and four private module groups; 63 Unix or "
+        "61 Windows exact names. Ordinary prompt reads, concurrent filesystem snapshots, metadata "
+        "error classification, durable synthesis restart, real providers and full Memory/platform "
+        "package/OCRM acceptance remain open. Requirement metadata is not execution evidence.")
+    if os.name == "nt":
+        receipt["shipping_host_verification"] = {
+            "result": "not-executed", "accepted": False,
+            "reason": "Windows shipping App signal-hook repair remains a separate Host lifecycle batch; this job compiles and runs the selected Host library consumers.",
+        }
+
 # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
 # the complete Host test graph once; this is a compile gate, not test evidence.
 constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
-if validation_scope == "djc-reader-observation":
+if validation_scope == "memory-synthesis-snapshot":
+    constructor_command = constructor_command[:-1] + ["--lib"]
+    for target in ("memory_service_contract", "memory_synthesis_store_contract",
+        "memory_synthesis_service_contract"):
+        constructor_command.extend(["--test", target])
+elif validation_scope == "djc-reader-observation":
     constructor_command = constructor_command[:-1] + ["--test", "device_pairing_join_admission_contract"]
 elif validation_scope == "memory-fixture-lifecycle":
     constructor_command = constructor_command[:-1]
@@ -2903,6 +3141,10 @@ for label, command, required in cases:
         child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_TEST_BIN"] = str(daemon_binary)
     if label in ("box-response-shell-capture-consumer", "box-response-background-custody-consumer") and capture_passed:
         child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN"] = str(capture_binary)
+    if label in memory_synthesis_snapshot_required:
+        owned_tmp = (root / "owned-tmp").resolve()
+        owned_tmp.mkdir(parents=True, exist_ok=True)
+        child_environment_overrides.update({name: str(owned_tmp) for name in ("TMPDIR", "TMP", "TEMP")})
     child_environment = dict(os.environ, **child_environment_overrides) if child_environment_overrides else None
     try:
         if label == "box-response-real-daemon" and not daemon_passed:
@@ -2924,7 +3166,7 @@ for label, command, required in cases:
     except OSError as error:
         capture_exit, execution_error = 1, str(error)
     text = raw.decode("utf-8", errors="replace")
-    if label in memory_checked_list_required:
+    if label in memory_checked_list_required or label in memory_synthesis_snapshot_required:
         text = text.replace("\r\n", "\n")
     print(text, flush=True)
     raw_passed = successful_test_names(text)
@@ -2956,6 +3198,12 @@ for label, command, required in cases:
     if label in memory_checked_list_required:
         accepted = exact_target_results_accepted(cargo_exit, capture_exit, required, text,
             label in memory_checked_list_filtered_labels)
+        complete_counts = [tuple(map(int, count)) for count in re.findall(
+            r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
+            text, re.MULTILINE)]
+    if label in memory_synthesis_snapshot_required:
+        accepted = exact_target_results_accepted(cargo_exit, capture_exit, required, text,
+            label in memory_synthesis_snapshot_filtered)
         complete_counts = [tuple(map(int, count)) for count in re.findall(
             r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
             text, re.MULTILINE)]
@@ -3043,7 +3291,13 @@ djc_reader_sources_unchanged = (djc_reader_inputs_after == djc_reader_inputs_bef
     and all(item["matches_head_bytes"] for item in djc_reader_inputs_after.values()))
 receipt["djc_reader_inputs_after"] = djc_reader_inputs_after
 receipt["djc_reader_sources_unchanged"] = djc_reader_sources_unchanged
-accepted = (djc_reader_sources_unchanged
+memory_synthesis_snapshot_inputs_after = source_bindings(memory_synthesis_snapshot_inputs)
+memory_synthesis_snapshot_sources_unchanged = (
+    memory_synthesis_snapshot_inputs_after == memory_synthesis_snapshot_inputs_before
+    and all(item["matches_head_bytes"] for item in memory_synthesis_snapshot_inputs_after.values()))
+receipt["memory_synthesis_snapshot_inputs_after"] = memory_synthesis_snapshot_inputs_after
+receipt["memory_synthesis_snapshot_sources_unchanged"] = memory_synthesis_snapshot_sources_unchanged
+accepted = (memory_synthesis_snapshot_sources_unchanged and djc_reader_sources_unchanged
     and (palette_exported if palette_required else True) and len(receipt["executions"]) == len(cases)
     and all(case["oracle_accepted"] for case in receipt["executions"])
     and box_response_sources_unchanged and (not box_producer_required or (daemon_unchanged and capture_unchanged))

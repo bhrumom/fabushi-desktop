@@ -1,0 +1,305 @@
+{
+  "schema": "ocrm-scoped-production-source-contract-v1",
+  "contract": "MSSA-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "authority": {
+    "repository": "bhrumom/fabushi-desktop",
+    "investigation_base": "45847ae07d0af58e8caaea4dcdad60c179da0631",
+    "implementation_base": "19100decdaba01486a15340ddf46e9f9987324eb",
+    "integration_base": "238ee2a3ce904a8fb71ae0771b57398bb6a6007e",
+    "live_main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    "source_lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+    "spec": {
+      "path": "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+      "blob": "f64cdce30fa33c20c371b177d9100031c4faf260",
+      "carrier": "19100decdaba01486a15340ddf46e9f9987324eb"
+    }
+  },
+  "production_behavior": "Memory synthesis obtains every selected fact input before ranking/limiting or model job allocation. A refused acquisition settles the captured attempt through existing Failed handling; repair admits a fresh complete snapshot to the existing inference factory and Session-gated file mutation.",
+  "owners": {
+    "primary": "OCRM-M20 existing extensions/memory FileMemoryStore, MemoryService and MemorySynthesisService",
+    "consumers": [
+      "OCRM-M07 existing Session MemorySynthesisBridge/admission gate",
+      "Existing ProductionInferenceExtension and per-snapshot Native/Codex SummaryInferenceJob identity",
+      "Existing HostMemoryExtension temporal/evidence scheduling and Host telemetry"
+    ],
+    "new_runtime_owner": false,
+    "new_store": false,
+    "new_scheduler": false,
+    "new_dependency": false,
+    "new_RPC_or_persistent_schema": false
+  },
+  "chain": {
+    "entry": "host_production_extensions -> create_production_memory_synthesis -> HostMemoryExtension start/poll",
+    "producer": "Current evidence queue or due temporal attempt",
+    "acquisition": "SynthesisTarget::prepare_synthesis required io::Result; FileMemoryStore and ProductionSynthesisTarget call prepare_synthesis_checked",
+    "state": "Existing canonical Memory profile/log files, origin/tombstone projection, next-refresh-at, and existing in-memory attempt/evidence queue",
+    "execution": "One admitted production job per successful snapshot, existing proposal/verification/retry handling",
+    "consumer": "Existing Session MemoryService apply_synthesis admission, FileMemoryStore strict append preflight and telemetry",
+    "read_failure": "Cancel after acquisition takes precedence. Otherwise Failed with captured evidence_count and input_count/change_count zero; finish captured IDs only, no factory/proposal/verifier/apply/temporal-review/Ok event or implicit model retry",
+    "recovery": "Due bytes remain due; existing poll or distinct later evidence acquires fresh current inputs after repair. No newly promised durable attempt recovery."
+  },
+  "source_review": [
+    {
+      "role": "fixed-U-input-contract",
+      "repository": "openclaw/openclaw",
+      "path": "extensions/memory-core/src/short-term-promotion-memory-write.ts",
+      "blob": "d225aca8f60d6b9424a2d0c2b57820b60f12ac71",
+      "depth": "implementation and callers relevant to optional absence, failed reads and promotion inputs; not a global full-source reading credit"
+    },
+    {
+      "role": "fixed-U-apply-consumer",
+      "repository": "openclaw/openclaw",
+      "path": "extensions/memory-core/src/short-term-promotion-apply.ts",
+      "blob": "8027ca1a0832c0bcfc90ea38d02122778e27a164",
+      "depth": "implementation/state-effect review for promotion read and apply boundaries"
+    },
+    {
+      "role": "fixed-U-model-consumer",
+      "repository": "openclaw/openclaw",
+      "path": "extensions/memory-core/src/dreaming-consolidation.ts",
+      "blob": "a3529dfaa42674a74ca92d677223df77d9f236a1",
+      "depth": "implementation and error/fallback consumer contract; model-plan fallback does not authorize unreadable input becoming successful empty data"
+    },
+    {
+      "role": "Fabushi-high-risk",
+      "paths": [
+        "source/host/src/extensions/memory/memory_service.rs",
+        "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "source/host/src/extensions/memory/production.rs",
+        "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+        "source/host/tests/memory_synthesis_store_contract.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
+      ],
+      "depth": "complete changed functions/modules and actual producer, Session/inference consumer, cancellation, temporal and write-stage recovery boundaries; immutable independent complete-scope review remains required"
+    },
+    {
+      "role": "unchanged-dependencies",
+      "paths": [
+        "source/host/Cargo.toml",
+        "source/host/Cargo.lock",
+        "source/host/app/Cargo.toml",
+        "source/host/app/Cargo.lock"
+      ],
+      "depth": "existing resolution/build use; no added download, patch, generator, LFS or license input in this batch; inherited source-closure work remains open"
+    }
+  ],
+  "implementation_files": [
+    {
+      "path": "source/host/src/extensions/memory/memory_service.rs",
+      "before_blob": "abcde0d5ba3f73dfb60dcd7607bee1eb55a868c4",
+      "after_blob": "f4e77202b3fd7bd59f4d1c5572211a1c2c6cc2a0"
+    },
+    {
+      "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+      "before_blob": "2036760fd35ddd7c4de2baf09c345305c9651d4a",
+      "after_blob": "e7c7c1669fa6fa7a51b9dfe75fb57eb80fa3e27b"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production.rs",
+      "before_blob": "38deca4dbbcb78536ae7ccbe84fce989633b96da",
+      "after_blob": "f45cf96676c3dad4fb72d954956681d21e377140"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_append_read_tests.rs",
+      "before_blob": "70d227908f5cc537239480a5334b60b2991ead77",
+      "after_blob": "7dc05a68f5d58420200d44fec1404e4050f137bf"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_identity_tests.rs",
+      "before_blob": "a536a31c0c8ba6d56d119e63973f48f22f6065c1",
+      "after_blob": "b9d2a2457b5464991fc21cb3c6fd17c4249d46fc"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+      "before_blob": null,
+      "after_blob": "4a0aaaf6d1ae4a7905c654d36c9e999bca3445bc"
+    },
+    {
+      "path": "source/host/tests/memory_synthesis_store_contract.rs",
+      "before_blob": "d0c2545e3aff1461578be30d76e931eff96f7452",
+      "after_blob": "2546fa0c7de4b596fbfd539af7fc5cbbd5a03ddd"
+    },
+    {
+      "path": "source/host/tests/memory_synthesis_service_contract.rs",
+      "before_blob": "6460a1ad9e930819c93bd0584329f4bdf1efcfd6",
+      "after_blob": "03ef1e198da5a98adcce5726f3b1fef6a677ea1f"
+    }
+  ],
+  "contract_oracles": [
+    {
+      "id": "MSSA-01",
+      "requirement": "One complete checked read set before projection; same-read fingerprint and facts, original ranking/dedup/512 bound",
+      "tests": [
+        "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+        "checked_synthesis_snapshot_reads_beyond_the_input_limit"
+      ]
+    },
+    {
+      "id": "MSSA-02",
+      "requirement": "Precise absence and native selected-path errors without silently changing synthesis selection/symlink policy",
+      "tests": [
+        "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+        "checked_synthesis_snapshot_refuses_native_type_obstacles",
+        "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"
+      ],
+      "platform_note": "Symlink control Unix only; native type obstacles and absence controls required on all three runners"
+    },
+    {
+      "id": "MSSA-03",
+      "requirement": "Required fallible production target before job and both NoWork branches",
+      "tests": [
+        "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+        "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+      ]
+    },
+    {
+      "id": "MSSA-04",
+      "requirement": "Existing Failed settlement preserves distinct evidence, durable tree/due bytes and cancellation precedence",
+      "tests": [
+        "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+        "snapshot_read_cancellation_suppresses_failure_and_model_work"
+      ]
+    },
+    {
+      "id": "MSSA-05",
+      "requirement": "Actual factory/Native HTTP zero request before repair and Session-gated fresh complete recovery, unchanged admission/history",
+      "tests": [
+        "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+      ]
+    },
+    {
+      "id": "MSSA-06",
+      "requirement": "Independent actual append preflight after admitted snapshot, both kinds and earlier removal preserved; MSI identities retained",
+      "tests": [
+        "production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
+        "production_synthesis_preserves_invalid_and_stale_temporal_controls"
+      ],
+      "retained_modules": [
+        "extensions::memory::production::identity_tests::",
+        "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::"
+      ]
+    }
+  ],
+  "production_fixture": {
+    "transport": "Owned loopback HTTP only; real production factory/request assembly/verification and Session apply",
+    "native_cases": [
+      "corrupt profile with readable log",
+      "corrupt monthly log with readable profile",
+      "already queued temporal attempt with wholly unreadable fact input"
+    ],
+    "positive_oracle": "Exactly six HTTP requests total: one proposal and one verification only after each repair, complete persisted facts, distinct repair evidence IDs, exactly one permitted apply per case",
+    "process": "Same exact private test reexecution with test/nonce/PID receipt, env_clear plus named native loader paths, owned HOME/profile/Codex/temp/credentials/endpoints and proxy bypass",
+    "bounds": {
+      "child_seconds": 60,
+      "forced_retirement_seconds": 3,
+      "peer_seconds": 60,
+      "peer_read_seconds": 5,
+      "request_bytes": 1048576,
+      "stdout_bytes": 1048576,
+      "stderr_bytes": 1048576,
+      "terminal_receipt_bytes": 16384
+    },
+    "failure_policy": "Forced cleanup cannot pass. Bounded regular-file UTF-8 diagnostics fail on oversize rather than truncating, failure roots retained. Retire exact child, peer, target closures and Session owner before strict deletion."
+  },
+  "verification": {
+    "state": "not-executed",
+    "environment": "GitHub Actions only",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "scope": "ocrm-memory-synthesis-snapshot",
+    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "push_prefix": "fix(ocrm-memory-synthesis-snapshot):",
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15",
+      "windows-2025"
+    ],
+    "groups": 7,
+    "source_declared_counts": {
+      "unix": 63,
+      "windows": 61
+    },
+    "count_qualification": "Source-declared expected counts; no execution result yet",
+    "groups_expected": {
+      "native_store": {
+        "unix": 25,
+        "windows": 24
+      },
+      "synthesis_store": {
+        "unix": 11,
+        "windows": 10
+      },
+      "synthesis_service": 12,
+      "production_append": 2,
+      "native_identity": 6,
+      "codex_identity": 6,
+      "production_snapshot": 1
+    },
+    "compile": "cargo check --locked --manifest-path source/host/Cargo.toml --lib --test memory_service_contract --test memory_synthesis_store_contract --test memory_synthesis_service_contract; selected private Cargo unit commands also compile their graph",
+    "shipping": "Existing ordinary App compilation on Linux/macOS only. Windows shipping signal-hook repair is an independent pending Host lifecycle batch; no package or shipping acceptance.",
+    "evidence": "Exact H/tree/U; each declared source matches H before/after; unique exact positive names with complete count/zero ignored/measured; whole integration targets zero filtered; private modules permit filtered counts; command/capture exits and hashed raw logs; existing 11 strict-result controls and new 141 Unix/137 Windows parent/name/platform selection controls.",
+    "input_paths": [
+      "projects/openclaw-rust/upstream.lock.json",
+      "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+      "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+      "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+      "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+      "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "source/host/Cargo.toml",
+      "source/host/Cargo.lock",
+      "source/host/app/Cargo.toml",
+      "source/host/app/Cargo.lock",
+      "source/host/app/src/main.rs",
+      "source/host/src/extensions/memory/memory_service.rs",
+      "source/host/src/extensions/memory/memory_synthesis_service.rs",
+      "source/host/src/extensions/memory/production.rs",
+      "source/host/src/extensions/memory/production_append_read_tests.rs",
+      "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+      "source/host/src/extensions/memory/production_identity_tests.rs",
+      "source/host/src/extensions/memory/extension.rs",
+      "source/host/src/host_production_extensions.rs",
+      "source/host/src/extensions/session/production.rs",
+      "source/host/src/extensions/inference/production.rs",
+      "source/host/src/extensions/inference/summary_job.rs",
+      "source/host/tests/memory_service_contract.rs",
+      "source/host/tests/memory_synthesis_store_contract.rs",
+      "source/host/tests/memory_synthesis_service_contract.rs",
+      "source/host/src/watched_directory.rs",
+      "source/host/src/extensions/telemetry/memory_synthesis_telemetry.rs",
+      "source/host/src/extensions/inference/provider_session.rs",
+      "source/host/src/extensions/inference/codex_request_binding.rs",
+      "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+      "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
+    ],
+    "Box_producers_selected": false,
+    "normal_campaign_budget": 1,
+    "focused_recovery_campaign_budget": 1
+  },
+  "preservation": {
+    "source_ledger_read_flags_changed": false,
+    "source_inventory_counts_changed": false,
+    "completion_flags_changed": false,
+    "RTM_acceptance_statuses_changed": false,
+    "retained_failed_DJC": "H45847 macOS original eight-second observation remains failed/DEFER; independent MSSA evidence cannot accept it",
+    "unchanged_native_capabilities": "Existing ordinary prompt facade, parser/origin/tombstone/ranking, mutation admission, model identity, write-stage refusal and existing Fabushi owners are retained."
+  },
+  "limitations": [
+    "No real Native/Codex provider account compatibility from loopback responses",
+    "No atomic concurrent multi-file filesystem snapshot or hostile replacement policy",
+    "Origin/tombstone metadata error classification and ordinary-turn prompt read behavior remain separate",
+    "No durable synthesis attempt or original-process-loss recovery guarantee",
+    "No full Memory/upstream equivalence, plugin/channel/node/device, UI, soak, signed package, upgrade/rollback or independent final ACCEPT"
+  ]
+}

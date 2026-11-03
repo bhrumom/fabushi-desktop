@@ -55,7 +55,7 @@ impl Fixture {
             MemoryKind::Profile => MemoryKind::Log,
             MemoryKind::Log => MemoryKind::Profile,
         };
-        assert_eq!(target.apply_synthesis(&target.prepare_synthesis(), &[
+        assert_eq!(target.apply_synthesis(&target.prepare_synthesis().expect("readable admitted synthesis snapshot"), &[
             SynthesisChange::Create { content: SOURCE_FACT.into(), kind: source_kind },
             SynthesisChange::Create { content: DESTINATION_HISTORY.into(), kind: destination_kind },
             SynthesisChange::Create { content: RETIRED_FACT.into(), kind: source_kind },
@@ -87,7 +87,7 @@ impl Fixture {
     }
 
     fn assert_committed_history(&self) {
-        let records = self.target.prepare_synthesis().memories;
+        let records = self.target.prepare_synthesis().expect("readable admitted synthesis snapshot").memories;
         assert!(!records.iter().any(|record| record.content == SOURCE_FACT));
         assert!(records.iter().any(|record| record.content == DESTINATION_HISTORY));
         assert!(records.iter().any(|record| record.content == EXPLICIT_FACT
@@ -103,8 +103,14 @@ impl Fixture {
     }
 
     fn close(self) {
-        self.workers.shutdown();
-        fs::remove_dir_all(self.root).expect("remove owned temporal fixture");
+        let Self { root, workers, target, .. } = self;
+        assert_eq!(Arc::strong_count(&target), 1, "retire service-held targets before cleanup");
+        workers.shutdown();
+        drop(target);
+        let owner = Arc::downgrade(&workers);
+        drop(workers);
+        assert!(owner.upgrade().is_none(), "Session owner must retire before native cleanup");
+        fs::remove_dir_all(root).expect("remove owned temporal fixture");
     }
 }
 
@@ -173,11 +179,11 @@ fn production_synthesis_read_failure_preserves_temporal_bytes_and_recovers() {
             fs::read_to_string(&destination).unwrap());
         let mut corrupt = repaired.as_bytes().to_vec();
         corrupt.extend_from_slice(&[0xff, 0xfe]);
-        fs::write(&destination, &corrupt).unwrap();
-        assert_eq!(fs::read(&destination).unwrap(), corrupt);
-        assert_eq!(fs::read_to_string(&destination).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
-        let before = memory_tree(&fixture.memory_dir());
-        let snapshot = fixture.target.prepare_synthesis();
+
+        // Admit a genuinely readable empty destination. The fixture will corrupt
+        // it only after acquisition, independently of MSSA's earlier read refusal.
+        fs::write(&destination, b"").unwrap();
+        let snapshot = fixture.target.prepare_synthesis().expect("readable empty append destination");
         let source = snapshot.memories.iter().find(|record| record.content == SOURCE_FACT).unwrap();
         assert_ne!(source.kind, destination_kind);
         assert_eq!(source.origin, MemoryOrigin::Synthesis);
@@ -185,18 +191,36 @@ fn production_synthesis_read_failure_preserves_temporal_bytes_and_recovers() {
         let changes = [SynthesisChange::Update {
             id: source.id.clone(), content: UPDATED_FACT.into(), kind: destination_kind,
         }];
+        fs::write(&destination, &corrupt).unwrap();
+        assert_eq!(fs::read(&destination).unwrap(), corrupt);
+        assert_eq!(fs::read_to_string(&destination).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
+        assert!(fixture.target.prepare_synthesis().is_err());
+        assert_eq!(fixture.target.store.prepare_synthesis().fingerprint, snapshot.fingerprint,
+            "legacy apply fingerprint represents both empty and unreadable text as empty");
+        let before = memory_tree(&fixture.memory_dir());
         assert_eq!(fixture.target.apply_synthesis(&snapshot, &changes, NOW_MS),
-            SynthesisApplyResult::Failed, "the actual Session gate must retain Store I/O failure");
+            SynthesisApplyResult::Failed, "actual Session gate must retain append-stage I/O failure");
         assert_eq!(memory_tree(&fixture.memory_dir()), before);
 
+        fs::write(&destination, b"").expect("restore readable admission input before service");
         let requests = Arc::new(Mutex::new(Vec::new()));
         let proposed = Arc::clone(&requests);
+        let corrupt_path = destination.clone();
+        let corrupt_bytes = corrupt.clone();
+        let apply_store = fixture.target.store.clone();
+        let admitted_fingerprint = snapshot.fingerprint.clone();
         let (service, reports) = service_for(&fixture, move |request, _| {
             let source = request.current_memories.iter()
                 .find(|record| record.content == SOURCE_FACT).expect("readable synthesized source");
             assert_eq!(source.origin, MemoryOrigin::Synthesis);
             let evidence_id = if request.new_evidence.is_empty() {
                 assert!(!request.current_memories.iter().any(|record| record.content == DESTINATION_HISTORY));
+                fs::write(&corrupt_path, &corrupt_bytes).expect("owned post-acquisition fault");
+                assert_eq!(fs::read(&corrupt_path).unwrap(), corrupt_bytes);
+                assert_eq!(fs::read_to_string(&corrupt_path).unwrap_err().kind(),
+                    std::io::ErrorKind::InvalidData);
+                assert!(apply_store.prepare_synthesis_checked().is_err());
+                assert_eq!(apply_store.prepare_synthesis().fingerprint, admitted_fingerprint);
                 "clock"
             } else {
                 assert_eq!(request.new_evidence.len(), 1);
@@ -208,12 +232,10 @@ fn production_synthesis_read_failure_preserves_temporal_bytes_and_recovers() {
             proposed.lock().unwrap().push(request);
             Ok(output)
         });
-        // The due marker and corrupt file precede start, so this is an actual
-        // temporal attempt. No background poller or provider account is started.
         service.start();
         assert_eq!(service.run_now(), vec![SynthesisOutcome::Failed]);
         assert_eq!(memory_tree(&fixture.memory_dir()), before,
-            "temporal apply refusal must preserve all memory, origin, tombstone and review bytes");
+            "only the fixture fault changes bytes; append refusal must preserve its full baseline");
         assert!(fixture.target.is_temporal_review_due(NOW_MS));
         assert_eq!(reports.lock().unwrap().as_slice(), &[SynthesisReport {
             outcome: SynthesisReportOutcome::Failed,
@@ -227,7 +249,7 @@ fn production_synthesis_read_failure_preserves_temporal_bytes_and_recovers() {
         assert_eq!(fixture.workers.read_session_work_admission(&fixture.target.agent_id).unwrap(), admission);
 
         fs::write(&destination, &repaired).expect("fixture-owned repair");
-        assert_ne!(fixture.target.prepare_synthesis().fingerprint, snapshot.fingerprint);
+        assert_ne!(fixture.target.prepare_synthesis().unwrap().fingerprint, snapshot.fingerprint);
         service.record_turn(&fixture.target.agent_id, Some("repair-evidence".into()),
             "The destination was repaired; retain the updated fact.", "Acknowledged.", NOW_MS);
         assert_eq!(service.run_now(), vec![SynthesisOutcome::Committed]);
@@ -246,6 +268,7 @@ fn production_synthesis_read_failure_preserves_temporal_bytes_and_recovers() {
         drop(reports);
         assert!(service.run_now().is_empty());
         service.dispose();
+        drop(service);
         fixture.close();
     }
 }
@@ -254,7 +277,7 @@ fn production_synthesis_read_failure_preserves_temporal_bytes_and_recovers() {
 fn production_synthesis_preserves_invalid_and_stale_temporal_controls() {
     let fixture = Fixture::new("invalid-control", MemoryKind::Profile);
     let before = memory_tree(&fixture.memory_dir());
-    let snapshot = fixture.target.prepare_synthesis();
+    let snapshot = fixture.target.prepare_synthesis().expect("readable admitted synthesis snapshot");
     let raw = update_proposal("unknown-snapshot-id", fixture.destination_kind, "clock");
     let parsed = parse_memory_synthesis_changes(&raw).expect("valid parsed update");
     assert!(uses_known_evidence(&HashSet::new(), &parsed, true));
@@ -285,11 +308,12 @@ fn production_synthesis_preserves_invalid_and_stale_temporal_controls() {
     assert!(service.run_now().is_empty());
     assert_eq!(proposals.load(Ordering::SeqCst), 1);
     service.dispose();
+    drop(service);
     fixture.close();
 
     let fixture = Fixture::new("stale-control", MemoryKind::Log);
     let before = memory_tree(&fixture.memory_dir());
-    let snapshot = fixture.target.prepare_synthesis();
+    let snapshot = fixture.target.prepare_synthesis().expect("readable admitted synthesis snapshot");
     let destination = fixture.destination();
     let concurrent = format!("{}\n<!-- Concurrent readable edit during proposal -->\n",
         fs::read_to_string(&destination).unwrap());
@@ -315,7 +339,7 @@ fn production_synthesis_preserves_invalid_and_stale_temporal_controls() {
     assert_eq!(memory_tree(&fixture.memory_dir()), expected,
         "Stale adds no writes beyond the fixture's concurrent edit, including no review marker");
     assert!(fixture.target.is_temporal_review_due(NOW_MS));
-    assert_ne!(fixture.target.prepare_synthesis().fingerprint, snapshot.fingerprint);
+    assert_ne!(fixture.target.prepare_synthesis().expect("readable admitted synthesis snapshot").fingerprint, snapshot.fingerprint);
     assert_eq!(reports.lock().unwrap().as_slice(), &[SynthesisReport {
         outcome: SynthesisReportOutcome::Stale,
         agent_id: Some(fixture.target.agent_id.clone()),
@@ -329,5 +353,6 @@ fn production_synthesis_preserves_invalid_and_stale_temporal_controls() {
     assert_eq!(reports.lock().unwrap()[1].outcome, SynthesisReportOutcome::Committed);
     assert!(service.run_now().is_empty());
     service.dispose();
+    drop(service);
     fixture.close();
 }

@@ -1,0 +1,177 @@
+{
+  "schema": "ocrm-independent-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "MSSA-v1",
+  "round": 1,
+  "base_commit": "238ee2a3ce904a8fb71ae0771b57398bb6a6007e",
+  "candidate_commit": "7e2b41893ea4800bab46fb6b84eecf4d6d6cd49c",
+  "candidate_tree": "8cc9accdb936d342850873b713ea18f437a70aee",
+  "scope_blob": "b37d37c5792daa51e383ea5ebe8c7fc525fd8e1a",
+  "complete_patch_blob": "d5c51850f245d73c72fac31ec34fbac79d0edc3b",
+  "review_packet_carrier": "02bc9974100ac58b777780ff2a21b1a0aa7e9b36",
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "verdict": "APPROVE",
+      "review_kind": "fresh blind read-only source review",
+      "base": "238ee2a3ce904a8fb71ae0771b57398bb6a6007e",
+      "candidate": "7e2b41893ea4800bab46fb6b84eecf4d6d6cd49c",
+      "tree": "8cc9accdb936d342850873b713ea18f437a70aee",
+      "scope_blob": "b37d37c5792daa51e383ea5ebe8c7fc525fd8e1a",
+      "patch_blob": "d5c51850f245d73c72fac31ec34fbac79d0edc3b",
+      "spec_blob": "f64cdce30fa33c20c371b177d9100031c4faf260",
+      "actual_scope": "Complete 12-path untruncated base/candidate tree difference and patch; exact before/after identities, instructions, relevant owner mapping, complete MSSA spec, adjacent production and build declarations",
+      "findings": [],
+      "assessment": [
+        {
+          "id": "MSSA-01",
+          "source_assessment": "Single checked selected input read set; raw fingerprint and facts from identical reads, then shared ranking/dedup/512 projection."
+        },
+        {
+          "id": "MSSA-02",
+          "source_assessment": "Existing optional-absence classifier, exact .md selection, enumeration/type/dangling/invalid-UTF8/disappearance refusals; no new symlink policy."
+        },
+        {
+          "id": "MSSA-03",
+          "source_assessment": "Required Result trait without default success wrapper; real FileMemoryStore and ProductionSynthesisTarget checked before NoWork/factory/model/apply."
+        },
+        {
+          "id": "MSSA-04",
+          "source_assessment": "Existing Failed/error redaction and captured-ID settlement, zero accepted input/change, no temporal write/Stale/model retry; cancellation checked after acquisition before settlement."
+        },
+        {
+          "id": "MSSA-05",
+          "source_assessment": "Real production options/factory, Native HTTP and Session gate; fixture-owned complete repaired snapshots, bounded child/peer/diagnostics and nonce/PID terminal receipt."
+        },
+        {
+          "id": "MSSA-06",
+          "source_assessment": "Preserved write-stage preflight with readable-empty snapshot then proposal-time corruption; unchanged fingerprint causal control, both kinds and original recovery assertions; Native/Codex identity regressions retained."
+        }
+      ],
+      "integration_review": [
+        "Host production composition and HostMemoryExtension",
+        "production_memory_synthesis_options and SummaryInferenceJob",
+        "Native credential/request binding in provider_session.rs",
+        "ProductionSessionWorkers::bind_memory_synthesis_gate and canonical admission/filesystem mutation owner",
+        "No second persistence owner, apply authority or scheduler",
+        "Service bridge, synthesis/Session target closures and actual owners retire before strict native deletion"
+      ],
+      "evidence_review": "Source-only verification of seven selected groups, complete names/counts, before/after inputs, selection/result negative controls, three native runners and no selected Box producers. RTM statuses and eight flags unchanged.",
+      "fixed_upstream_review": "Verified U commit/tree and the three declared exact blobs; non-absence/UTF-8 reads precede consolidation and its downstream model-plan fallback. No global full-reading or equivalence credit.",
+      "limitations": [
+        "No build/test/lint/generator/schema/dispatch/mutation/upload performed",
+        "63 Unix/61 Windows are source-declared expected counts only",
+        "Exact integrated-H Actions needed on each selected runner",
+        "Windows ordinary shipping App acceptance is separate",
+        "Spec exclusions and global/full Memory/OCRM acceptance remain open"
+      ],
+      "phase": {
+        "model": "configured-parent",
+        "effort": "xhigh",
+        "applied": "Parent spawn used exposed reasoning_effort=xhigh; reviewer retained configured model",
+        "reason": "Filesystem admission, cancellation/settlement, production inference identity, Session persistence and native fixture lifetime"
+      }
+    },
+    {
+      "lens": "STRUCTURE/REUSE",
+      "verdict": "APPROVE",
+      "review_kind": "fresh blind read-only source review",
+      "base": "238ee2a3ce904a8fb71ae0771b57398bb6a6007e",
+      "candidate": "7e2b41893ea4800bab46fb6b84eecf4d6d6cd49c",
+      "tree": "8cc9accdb936d342850873b713ea18f437a70aee",
+      "scope_blob": "b37d37c5792daa51e383ea5ebe8c7fc525fd8e1a",
+      "patch_blob": "d5c51850f245d73c72fac31ec34fbac79d0edc3b",
+      "spec_blob": "f64cdce30fa33c20c371b177d9100031c4faf260",
+      "findings": [],
+      "actual_scope": "Complete 12-path changed scope, exact parent/tree identities, applicable instructions/specs/M07-M20 mapping, adjacent production and build declarations; no nested AGENTS under changed paths",
+      "source_assessment": [
+        "Shared read_synthesis_files and snapshot_from_synthesis_state preserve one authoritative fingerprint/projection/ranking/dedup/bound implementation.",
+        "Required fallible SynthesisTarget has no default success adapter; both real implementations use checked reads while unchanged direct facade remains.",
+        "run_agent acquisition precedes NoWork/factory; cancellation after acquisition, existing captured-ID Failed settlement, no new queue/scheduler/temporal write.",
+        "Session owns canonical location/admission and filesystem mutation, Inference owns per-snapshot identity; no added runtime, dependency, persistence schema or RPC.",
+        "New native fixture exercises actual options/factory, Native HTTP and Session apply, rejects incomplete/refused evidence and requires six post-repair calls; owned environment/receipt/cleanup boundaries.",
+        "Independent MWR preflight uses post-acquisition corruption with unchanged legacy fingerprint, both kinds retain all write/refusal/repair controls; Native/Codex identity groups retained.",
+        "Existing harness and three-platform scoped job bind full required names, parent commands, exits, complete summaries, ignored/measured/filtered policy and before/after source identities.",
+        "RTM refs/oracles only; all flags/statuses unchanged. Fixed U bounded read/apply/model fallback contract does not establish full Memory equivalence."
+      ],
+      "limitations": [
+        "No executable validation or mutation performed",
+        "Planned 63 Unix/61 Windows counts not observed results",
+        "Exact integrated-H Actions required; Windows ordinary shipping and real provider/package/full acceptance remain open"
+      ],
+      "phase": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "applied": "Parent spawn explicitly selected model=gpt-6.1-sol and reasoning_effort=xhigh; reviewer could not independently introspect runtime settings",
+        "reason": "Required Rust trait, filesystem and native owner lifetime, shared CI and production consumers"
+      }
+    }
+  ],
+  "decisions": [],
+  "runner_decision": "SOURCE-CONVERGED; integrate identical declared blobs and execute selected exact-H GitHub Actions. This is not runtime or product acceptance.",
+  "source_files": [
+    {
+      "path": "source/host/src/extensions/memory/memory_service.rs",
+      "before_blob": "abcde0d5ba3f73dfb60dcd7607bee1eb55a868c4",
+      "reviewed_blob": "f4e77202b3fd7bd59f4d1c5572211a1c2c6cc2a0"
+    },
+    {
+      "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+      "before_blob": "2036760fd35ddd7c4de2baf09c345305c9651d4a",
+      "reviewed_blob": "e7c7c1669fa6fa7a51b9dfe75fb57eb80fa3e27b"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production.rs",
+      "before_blob": "38deca4dbbcb78536ae7ccbe84fce989633b96da",
+      "reviewed_blob": "f45cf96676c3dad4fb72d954956681d21e377140"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_append_read_tests.rs",
+      "before_blob": "70d227908f5cc537239480a5334b60b2991ead77",
+      "reviewed_blob": "7dc05a68f5d58420200d44fec1404e4050f137bf"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_identity_tests.rs",
+      "before_blob": "a536a31c0c8ba6d56d119e63973f48f22f6065c1",
+      "reviewed_blob": "b9d2a2457b5464991fc21cb3c6fd17c4249d46fc"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+      "before_blob": null,
+      "reviewed_blob": "4a0aaaf6d1ae4a7905c654d36c9e999bca3445bc"
+    },
+    {
+      "path": "source/host/tests/memory_synthesis_store_contract.rs",
+      "before_blob": "d0c2545e3aff1461578be30d76e931eff96f7452",
+      "reviewed_blob": "2546fa0c7de4b596fbfd539af7fc5cbbd5a03ddd"
+    },
+    {
+      "path": "source/host/tests/memory_synthesis_service_contract.rs",
+      "before_blob": "6460a1ad9e930819c93bd0584329f4bdf1efcfd6",
+      "reviewed_blob": "03ef1e198da5a98adcce5726f3b1fef6a677ea1f"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "before_blob": "0a53c7f781189b145e67b2c64b56d8dd9f3ac34a",
+      "reviewed_blob": "c63851a254b26a5a841dd07f2d8e37e4694b2ecc"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "before_blob": "d72e5591ecb27a29439e55d778ada74a343279bc",
+      "reviewed_blob": "472b9bea1cabfb8f3eb9731c02c1ea74f8d82701"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "before_blob": "3422c11400b60393f0f68d9e0e2dfb55715d22d4",
+      "reviewed_blob": "0f59b5d5d49a742ee47cb08fc9dfb0de66b4eed5"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+      "before_blob": null,
+      "reviewed_blob": "440527533e19c733141568e7accb7f1c50fb77ac"
+    }
+  ],
+  "runtime_evidence": "not-executed; subsequent immutable integrated H, run attempt, jobs, exits, exact names and artifacts required",
+  "completion_flags_changed": false,
+  "RTM_acceptance_statuses_changed": false
+}

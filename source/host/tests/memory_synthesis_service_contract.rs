@@ -4,10 +4,12 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, Weak, mpsc};
 use std::time::Duration;
 
-use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, MemoryKind};
+use mahayana_host_runtime::extensions::memory::memory_service::{
+    FileMemoryStore, MemoryKind, SynthesisApplyResult, SynthesisChange, SynthesisSnapshot,
+};
 use mahayana_host_runtime::extensions::memory::memory_synthesis_service::{
     MEMORY_SYNTHESIS_DEADLINE_MS, MEMORY_SYNTHESIS_DEBOUNCE_MS,
-    MEMORY_SYNTHESIS_POLL_INTERVAL_MS, MemoryEvidence, MemorySynthesisOptions,
+    MEMORY_SYNTHESIS_POLL_INTERVAL_MS, MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS, MemoryEvidence, MemorySynthesisOptions,
     MemorySynthesisService, SynthesisInferenceError, SynthesisModelJob, SynthesisOutcome,
     SynthesisReportOutcome, SynthesisTarget,
     bounded_evidence_text, parse_memory_synthesis_changes, synthesis_request_json,
@@ -478,4 +480,139 @@ fn stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence() {
     assert!(service.run_now().is_empty());
     service.dispose();
     fs::remove_dir_all(root).unwrap();
+}
+
+struct BlockedSnapshotTarget {
+    store: Arc<FileMemoryStore>,
+    entered: mpsc::SyncSender<()>,
+    release: Mutex<mpsc::Receiver<()>>,
+    block_once: AtomicBool,
+    applies: Arc<AtomicUsize>,
+    reviews: Arc<AtomicUsize>,
+}
+
+impl SynthesisTarget for BlockedSnapshotTarget {
+    fn prepare_synthesis(&self) -> std::io::Result<SynthesisSnapshot> {
+        if self.block_once.swap(false, Ordering::SeqCst) {
+            self.entered.send(()).expect("announce actual read boundary");
+            self.release.lock().unwrap().recv_timeout(Duration::from_secs(5))
+                .expect("release owned read boundary");
+        }
+        self.store.prepare_synthesis_checked()
+    }
+
+    fn apply_synthesis(&self, snapshot: &SynthesisSnapshot, changes: &[SynthesisChange],
+        now: i64) -> SynthesisApplyResult {
+        self.applies.fetch_add(1, Ordering::SeqCst);
+        self.store.apply_synthesis(snapshot, changes, now).unwrap_or(SynthesisApplyResult::Failed)
+    }
+
+    fn has_memories(&self) -> bool { self.store.has_memories() }
+    fn is_temporal_review_due(&self, now: i64) -> bool { self.store.is_temporal_review_due(now) }
+    fn mark_temporal_review(&self, now: i64) {
+        self.reviews.fetch_add(1, Ordering::SeqCst);
+        self.store.mark_temporal_review(now).unwrap();
+    }
+}
+
+fn blocked_snapshot_read(cancel: bool) {
+    let (root, store) = temp_store();
+    let now = 1_700_000_000_000;
+    store.add_memory("Complete readable snapshot fact", now, MemoryKind::Profile).unwrap();
+    store.mark_temporal_review(now - MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS - 1).unwrap();
+    let profile = store.get_location().join("profile.md");
+    let marker = store.get_location().join(".dreaming/next-refresh-at");
+    let repaired = fs::read(&profile).unwrap();
+    let review_bytes = fs::read(&marker).unwrap();
+    let (entered_tx, entered_rx) = mpsc::sync_channel(1);
+    let (release_tx, release_rx) = mpsc::sync_channel(1);
+    let applies = Arc::new(AtomicUsize::new(0));
+    let reviews = Arc::new(AtomicUsize::new(0));
+    let target: Arc<dyn SynthesisTarget> = Arc::new(BlockedSnapshotTarget {
+        store: store.clone(), entered: entered_tx, release: Mutex::new(release_rx),
+        block_once: AtomicBool::new(true), applies: applies.clone(), reviews: reviews.clone(),
+    });
+    let listed = target.clone();
+    let selected = target.clone();
+    let factories = Arc::new(AtomicUsize::new(0));
+    let allocated = factories.clone();
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let proposed = requests.clone();
+    let mut options = MemorySynthesisOptions::new_with_job_factory(
+        Arc::new(move || vec![("agent".into(), listed.clone())]),
+        Arc::new(move |id| (id == "agent").then(|| selected.clone())),
+        Arc::new(move || {
+            allocated.fetch_add(1, Ordering::SeqCst);
+            let proposed = proposed.clone();
+            SynthesisModelJob::new(Arc::new(move |request, _| {
+                proposed.lock().unwrap().push(request);
+                Ok(json!({"changes":[]}))
+            }), Some(Arc::new(|_, _| panic!("empty proposal does not verify"))))
+        }),
+    );
+    options.now = Arc::new(move || now);
+    options.retry_attempts = 3;
+    let reports = Arc::new(Mutex::new(Vec::new()));
+    let reported = reports.clone();
+    options.report = Some(Arc::new(move |report| reported.lock().unwrap().push(report)));
+    let service = Arc::new(MemorySynthesisService::new(options));
+    service.start();
+    service.record_turn("agent", Some("refused-evidence".into()), "first user", "first reply", now);
+    let running = service.clone();
+    let worker = std::thread::spawn(move || running.run_now());
+    entered_rx.recv_timeout(Duration::from_secs(5)).expect("owned acquisition entered");
+    let mut corrupt = repaired.clone();
+    corrupt.push(0xff);
+    fs::write(&profile, &corrupt).unwrap();
+    assert_eq!(fs::read_to_string(&profile).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
+    service.record_turn("agent", Some("concurrent-evidence".into()), "later user", "later reply", now);
+    if cancel { service.dispose(); }
+    release_tx.send(()).unwrap();
+    assert_eq!(worker.join().expect("owned acquisition worker"),
+        vec![if cancel { SynthesisOutcome::NoWork } else { SynthesisOutcome::Failed }]);
+    assert_eq!(factories.load(Ordering::SeqCst), 0);
+    assert!(requests.lock().unwrap().is_empty());
+    assert_eq!(applies.load(Ordering::SeqCst), 0);
+    assert_eq!(reviews.load(Ordering::SeqCst), 0);
+    assert_eq!(fs::read(&profile).unwrap(), corrupt);
+    assert_eq!(fs::read(&marker).unwrap(), review_bytes);
+    assert!(store.is_temporal_review_due(now));
+    if cancel {
+        assert!(reports.lock().unwrap().is_empty(), "cancelled acquisition cannot report Failed");
+        assert!(service.run_now().is_empty());
+    } else {
+        let report = reports.lock().unwrap()[0].clone();
+        assert_eq!(report.outcome, SynthesisReportOutcome::Failed);
+        assert_eq!((report.evidence_count, report.input_memory_count, report.change_count), (1, 0, 0));
+        assert_eq!(reports.lock().unwrap().len(), 1);
+        fs::write(&profile, &repaired).expect("explicit repair after read refusal");
+        assert_eq!(service.run_now(), vec![SynthesisOutcome::NoWork]);
+        let requests = requests.lock().unwrap();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].new_evidence.iter().map(|item| item.id.as_str()).collect::<Vec<_>>(),
+            vec!["concurrent-evidence"], "only captured evidence settles on refusal");
+        assert_eq!(requests[0].current_memories.len(), 1);
+        assert_eq!(requests[0].current_memories[0].content, "Complete readable snapshot fact");
+        drop(requests);
+        assert_eq!(factories.load(Ordering::SeqCst), 1);
+        assert_eq!(reports.lock().unwrap()[1].outcome, SynthesisReportOutcome::NoWork);
+        assert!(service.run_now().is_empty(), "neither failed nor repaired attempt replays");
+        assert_eq!(fs::read(&marker).unwrap(), review_bytes,
+            "later evidence-only NoWork retains the existing temporal settlement policy");
+    }
+    service.dispose();
+    drop(service);
+    drop(target);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove retired acquisition fixture");
+}
+
+#[test]
+fn snapshot_read_refusal_settles_only_captured_evidence_and_recovers() {
+    blocked_snapshot_read(false);
+}
+
+#[test]
+fn snapshot_read_cancellation_suppresses_failure_and_model_work() {
+    blocked_snapshot_read(true);
 }

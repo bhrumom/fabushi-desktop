@@ -466,7 +466,7 @@ use chrono::{TimeZone, Utc};
 use super::memory_service::FileMemoryStore;
 
 pub trait SynthesisTarget: Send + Sync {
-    fn prepare_synthesis(&self) -> SynthesisSnapshot;
+    fn prepare_synthesis(&self) -> std::io::Result<SynthesisSnapshot>;
     fn apply_synthesis(
         &self,
         snapshot: &SynthesisSnapshot,
@@ -479,8 +479,8 @@ pub trait SynthesisTarget: Send + Sync {
 }
 
 impl SynthesisTarget for FileMemoryStore {
-    fn prepare_synthesis(&self) -> SynthesisSnapshot {
-        FileMemoryStore::prepare_synthesis(self)
+    fn prepare_synthesis(&self) -> std::io::Result<SynthesisSnapshot> {
+        FileMemoryStore::prepare_synthesis_checked(self)
     }
 
     fn apply_synthesis(
@@ -1083,12 +1083,30 @@ impl MemorySynthesisService {
             self.finish(agent_id, &evidence, temporal);
             return SynthesisOutcome::NoWork;
         };
-        let snapshot = target.prepare_synthesis();
         let started = (self.options.now)();
-
+        let acquired = target.prepare_synthesis();
+        // Acquisition may block in filesystem I/O. Lifetime cancellation owns
+        // settlement even when that I/O subsequently returns an error.
         if self.cancel.is_cancelled() {
             return SynthesisOutcome::NoWork;
         }
+        let snapshot = match acquired {
+            Ok(snapshot) => snapshot,
+            Err(_) => {
+                // No model job or write has started. Preserve the due marker and
+                // use existing captured-evidence settlement without model retries.
+                self.finish(agent_id, &evidence, temporal);
+                self.report(
+                    SynthesisReportOutcome::Failed,
+                    Some(agent_id.to_string()),
+                    evidence.len(),
+                    0,
+                    0,
+                    started,
+                );
+                return SynthesisOutcome::Failed;
+            }
+        };
         if snapshot.memories.is_empty() && evidence.is_empty() {
             if temporal {
                 target.mark_temporal_review(started);

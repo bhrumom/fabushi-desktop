@@ -393,7 +393,18 @@ impl FileMemoryStore {
     }
 
     pub fn prepare_synthesis(&self) -> SynthesisSnapshot {
-        let (fingerprint, mut facts) = self.read_synthesis_state();
+        Self::snapshot_from_synthesis_state(self.read_synthesis_state())
+    }
+
+    /// Admit every selected input before returning a bounded synthesis snapshot.
+    /// Fingerprint and facts come from the same reads, including files beyond the limit.
+    pub fn prepare_synthesis_checked(&self) -> io::Result<SynthesisSnapshot> {
+        Ok(Self::snapshot_from_synthesis_state(self.read_synthesis_state_checked()?))
+    }
+
+    fn snapshot_from_synthesis_state(
+        (fingerprint, mut facts): (String, Vec<SynthesisStoredFact>),
+    ) -> SynthesisSnapshot {
         facts.sort_by(|left, right| {
             usize::from(right.origin == MemoryOrigin::Explicit)
                 .cmp(&usize::from(left.origin == MemoryOrigin::Explicit))
@@ -524,8 +535,6 @@ impl FileMemoryStore {
     }
 
     fn read_synthesis_state(&self) -> (String, Vec<SynthesisStoredFact>) {
-        let mut hasher = Sha256::new();
-        let mut output = Vec::new();
         let mut files = vec![(self.profile_file.clone(), MemoryKind::Profile)];
         let mut logs = match fs::read_dir(&self.log_dir) {
             Ok(entries) => entries
@@ -537,8 +546,61 @@ impl FileMemoryStore {
         };
         logs.sort();
         files.extend(logs.into_iter().map(|path| (path, MemoryKind::Log)));
+        self.read_synthesis_files(files, |path, _| {
+            Ok(fs::read_to_string(path).unwrap_or_default())
+        }).expect("best-effort synthesis reads never return an error")
+    }
+
+    fn read_synthesis_state_checked(&self) -> io::Result<(String, Vec<SynthesisStoredFact>)> {
+        let mut files = vec![(self.profile_file.clone(), MemoryKind::Profile)];
+        let mut logs = match fs::metadata(&self.log_dir) {
+            Ok(metadata) => {
+                if !metadata.is_dir() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::NotADirectory,
+                        "memory log input is not a directory",
+                    ));
+                }
+                // Synthesis selects all .md paths, including symlinks and type
+                // obstacles. Do not substitute the listing's regular-file filter.
+                let mut paths = Vec::new();
+                for entry in fs::read_dir(&self.log_dir)? {
+                    let path = entry?.path();
+                    if path.extension().and_then(|value| value.to_str()) == Some("md") {
+                        paths.push(path);
+                    }
+                }
+                paths
+            }
+            Err(error)
+                if error.kind() == io::ErrorKind::NotFound
+                    && optional_memory_input_is_absent(&self.log_dir) => Vec::new(),
+            Err(error) => return Err(error),
+        };
+        logs.sort();
+        files.extend(logs.into_iter().map(|path| (path, MemoryKind::Log)));
+        self.read_synthesis_files(files, |path, kind| {
+            match fs::read_to_string(path) {
+                Ok(raw) => Ok(raw),
+                Err(error)
+                    if kind == MemoryKind::Profile
+                        && error.kind() == io::ErrorKind::NotFound
+                        && optional_memory_input_is_absent(path) => Ok(String::new()),
+                // Once a log is selected, even its disappearance refuses admission.
+                Err(error) => Err(error),
+            }
+        })
+    }
+
+    fn read_synthesis_files(
+        &self,
+        files: Vec<(PathBuf, MemoryKind)>,
+        read: impl Fn(&Path, MemoryKind) -> io::Result<String>,
+    ) -> io::Result<(String, Vec<SynthesisStoredFact>)> {
+        let mut hasher = Sha256::new();
+        let mut output = Vec::new();
         for (path, kind) in files {
-            let raw = fs::read_to_string(&path).unwrap_or_default();
+            let raw = read(&path, kind)?;
             hasher.update(path.to_string_lossy().as_bytes());
             hasher.update([0]);
             hasher.update(raw.as_bytes());
@@ -568,7 +630,7 @@ impl FileMemoryStore {
             }
         }
         let fingerprint = format!("{:x}", hasher.finalize());
-        (fingerprint, output)
+        Ok((fingerprint, output))
     }
 
     fn metadata_path(&self, content: &str, origin: MemoryOrigin) -> PathBuf {

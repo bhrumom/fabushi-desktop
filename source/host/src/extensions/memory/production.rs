@@ -68,8 +68,8 @@ struct ProductionSynthesisTarget {
 }
 
 impl SynthesisTarget for ProductionSynthesisTarget {
-    fn prepare_synthesis(&self) -> SynthesisSnapshot {
-        self.store.prepare_synthesis()
+    fn prepare_synthesis(&self) -> std::io::Result<SynthesisSnapshot> {
+        self.store.prepare_synthesis_checked()
     }
 
     fn apply_synthesis(
@@ -190,3 +190,7 @@ mod append_read_tests;
 #[cfg(test)]
 #[path = "production_identity_tests.rs"]
 mod identity_tests;
+
+#[cfg(test)]
+#[path = "production_snapshot_read_tests.rs"]
+mod snapshot_read_tests;

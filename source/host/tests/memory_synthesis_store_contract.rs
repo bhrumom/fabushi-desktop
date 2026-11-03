@@ -85,7 +85,7 @@ impl SynthesisAppendFixture {
 
 impl Drop for SynthesisAppendFixture {
     fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.root);
+        fs::remove_dir_all(&self.root).expect("remove owned synthesis append fixture");
     }
 }
 
@@ -410,4 +410,147 @@ fn stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation() {
     );
     assert_eq!(store.count_memories(), 0);
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection() {
+    let (root, store) = temp_store();
+    let absent = store.prepare_synthesis_checked().expect("genuinely absent inputs");
+    assert_eq!(absent, store.prepare_synthesis());
+    assert!(!store.get_location().exists(), "acquisition must not create Memory");
+    fs::create_dir_all(store.get_location().join("log")).unwrap();
+    fs::write(store.get_location().join("profile.md"), b"").unwrap();
+    assert_eq!(store.prepare_synthesis_checked().unwrap(), absent);
+    store.add_memory("Explicit Unicode 中文 🦀 \u{fffd}", 1_700_000_000_000, MemoryKind::Profile).unwrap();
+    let profile = store.get_location().join("profile.md");
+    let mut raw = fs::read_to_string(&profile).unwrap();
+    raw.push_str("- (2023-11-12) Older profile\ninvalid fact\n- (2023-99-99) Invalid date\n");
+    fs::write(&profile, &raw).unwrap();
+    fs::write(store.get_location().join("log/2023-10.md"),
+        "- (2023-10-01) Repeated log\n- (2023-10-02) Older log\n").unwrap();
+    fs::write(store.get_location().join("log/2023-11.md"),
+        "- (2023-11-01) Repeated log\n- (2023-11-02) Newer log\n").unwrap();
+    fs::create_dir(store.get_location().join("log/ignored")).unwrap();
+    fs::write(store.get_location().join("log/ignored.bin"), [0xff]).unwrap();
+    let checked = store.prepare_synthesis_checked().unwrap();
+    assert_eq!(checked, store.prepare_synthesis(), "same fingerprint, parser, ranking and dedup");
+    assert_eq!(checked, store.prepare_synthesis_checked().unwrap());
+    assert_eq!(checked.memories.iter().map(|record| record.content.as_str()).collect::<Vec<_>>(),
+        vec!["Explicit Unicode 中文 🦀 \u{fffd}", "Older profile", "Newer log", "Repeated log", "Older log"]);
+    assert_eq!(checked.memories[0].origin, MemoryOrigin::Explicit);
+    raw.push_str("<!-- fingerprint retains even unparsed raw content -->\n");
+    fs::write(&profile, raw).unwrap();
+    let changed = store.prepare_synthesis_checked().unwrap();
+    assert_ne!(changed.fingerprint, checked.fingerprint);
+    assert_eq!(changed.memories, checked.memories);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove owned snapshot projection fixture");
+}
+
+#[test]
+fn checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers() {
+    for relative in ["profile.md", "log/2026-09.md"] {
+        let fixture = SynthesisAppendFixture::new();
+        let original = fixture.store.prepare_synthesis_checked().unwrap();
+        let (path, repaired, observed_error) = fixture.corrupt_destination(relative);
+        let before = synthesis_memory_tree(&fixture.store.get_location());
+        let error = fixture.store.prepare_synthesis_checked().unwrap_err();
+        assert_eq!(error.kind(), observed_error.kind());
+        assert_eq!(error.raw_os_error(), observed_error.raw_os_error());
+        let reopened = FileMemoryStore::with_synthesis_metadata(fixture.store.get_location(), true);
+        assert_eq!(reopened.prepare_synthesis_checked().unwrap_err().kind(), observed_error.kind());
+        assert_eq!(synthesis_memory_tree(&fixture.store.get_location()), before);
+        fs::write(path, repaired).expect("explicit fixture repair");
+        assert_eq!(fixture.store.prepare_synthesis_checked().unwrap(), original);
+        assert_eq!(reopened.prepare_synthesis_checked().unwrap(), original);
+    }
+}
+
+#[test]
+fn checked_synthesis_snapshot_reads_beyond_the_input_limit() {
+    use mahayana_host_runtime::extensions::memory::memory_service::MEMORY_SYNTHESIS_INPUT_LIMIT;
+    let (root, store) = temp_store();
+    fs::create_dir_all(store.get_location().join("log")).unwrap();
+    let profile = (0..MEMORY_SYNTHESIS_INPUT_LIMIT + 1)
+        .map(|index| format!("- (2023-11-14) Profile fact {index}\n")).collect::<String>();
+    fs::write(store.get_location().join("profile.md"), profile).unwrap();
+    let older = store.get_location().join("log/2000-01.md");
+    let repaired = b"- (2000-01-01) Older selected fact\n";
+    fs::write(&older, repaired).unwrap();
+    let healthy = store.prepare_synthesis_checked().unwrap();
+    assert_eq!(healthy.memories.len(), MEMORY_SYNTHESIS_INPUT_LIMIT);
+    assert!(healthy.memories.iter().all(|record| record.kind == MemoryKind::Profile));
+    let mut corrupt = repaired.to_vec();
+    corrupt.push(0xff);
+    fs::write(&older, &corrupt).unwrap();
+    assert_eq!(fs::read_to_string(&older).unwrap_err().kind(), io::ErrorKind::InvalidData);
+    let before = synthesis_memory_tree(&store.get_location());
+    assert_eq!(store.prepare_synthesis_checked().unwrap_err().kind(), io::ErrorKind::InvalidData);
+    assert_eq!(synthesis_memory_tree(&store.get_location()), before);
+    fs::write(older, repaired).unwrap();
+    assert_eq!(store.prepare_synthesis_checked().unwrap(), healthy);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove owned bounded-input fixture");
+}
+
+#[test]
+fn checked_synthesis_snapshot_refuses_native_type_obstacles() {
+    for obstacle in ["profile", "log-root", "selected-log", "ancestor"] {
+        let (root, store) = temp_store();
+        let memory = store.get_location();
+        fs::create_dir_all(&memory).unwrap();
+        match obstacle {
+            "profile" => {
+                fs::create_dir(memory.join("profile.md")).unwrap();
+                fs::write(memory.join("profile.md/untouched"), b"owned sentinel").unwrap();
+            }
+            "log-root" => { fs::write(memory.join("log"), b"owned sentinel").unwrap(); }
+            "selected-log" => {
+                fs::create_dir_all(memory.join("log/selected.md")).unwrap();
+                fs::write(memory.join("log/selected.md/untouched"), b"owned sentinel").unwrap();
+            }
+            "ancestor" => {
+                fs::remove_dir(&memory).unwrap();
+                fs::write(&memory, b"owned ancestor sentinel").unwrap();
+            }
+            _ => unreachable!(),
+        }
+        let before = synthesis_memory_tree(&memory);
+        assert!(store.prepare_synthesis_checked().is_err(), "{obstacle} must refuse");
+        assert_eq!(synthesis_memory_tree(&memory), before);
+        if memory.is_dir() { fs::remove_dir_all(&memory).unwrap(); }
+        else { fs::remove_file(&memory).unwrap(); }
+        assert!(store.prepare_synthesis_checked().unwrap().memories.is_empty());
+        assert!(!memory.exists(), "successful missing input remains read-only");
+        drop(store);
+        fs::remove_dir_all(root).expect("remove owned native obstacle fixture");
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs() {
+    use std::os::unix::fs::symlink;
+    for relative in ["profile.md", "log/linked.md"] {
+        let (root, store) = temp_store();
+        fs::create_dir_all(store.get_location().join("log")).unwrap();
+        let owned_target = root.join("owned-target.md");
+        let link = store.get_location().join(relative);
+        let raw = b"- (2023-11-14) Readable symlink fact\n";
+        fs::write(&owned_target, raw).unwrap();
+        symlink(&owned_target, &link).unwrap();
+        let healthy = store.prepare_synthesis_checked().unwrap();
+        assert_eq!(healthy, store.prepare_synthesis());
+        assert_eq!(healthy.memories.len(), 1);
+        fs::remove_file(&owned_target).unwrap();
+        assert!(fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+        assert!(store.prepare_synthesis_checked().is_err());
+        assert_eq!(fs::read_link(&link).unwrap(), owned_target);
+        assert!(!owned_target.exists());
+        fs::write(&owned_target, raw).unwrap();
+        assert_eq!(store.prepare_synthesis_checked().unwrap(), healthy);
+        assert_eq!(fs::read(&owned_target).unwrap(), raw);
+        drop(store);
+        fs::remove_dir_all(root).expect("remove owned symlink fixture");
+    }
 }

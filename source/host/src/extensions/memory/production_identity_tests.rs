@@ -393,7 +393,7 @@ fn run_child(root: &Path, case: Case) {
         store:memory.synthesis_target_for_agent(&agent.id).unwrap(),
         service:Arc::clone(&memory),
     };
-    assert_eq!(target.apply_synthesis(&target.prepare_synthesis(), &[
+    assert_eq!(target.apply_synthesis(&target.prepare_synthesis().expect("readable admitted synthesis snapshot"), &[
         SynthesisChange::Create { content:SOURCE.into(), kind:MemoryKind::Profile },
         SynthesisChange::Create { content:RETIRED.into(), kind:MemoryKind::Log },
     ], NOW), SynthesisApplyResult::Committed);
@@ -459,7 +459,7 @@ fn run_child(root: &Path, case: Case) {
         assert_eq!(reports.lock().unwrap().len(), 2);
         assert_eq!(reports.lock().unwrap()[1].evidence_count, 1,
             "the refused snapshot evidence must settle without erasing later evidence");
-        let facts = target.prepare_synthesis().memories;
+        let facts = target.prepare_synthesis().expect("readable admitted synthesis snapshot").memories;
         assert_eq!(facts.iter().filter(|fact| fact.content == UPDATED).count(), 1);
         assert!(!facts.iter().any(|fact| fact.content == SOURCE || fact.content == RETIRED));
         assert!(facts.iter().any(|fact| fact.content == EXPLICIT && fact.origin == MemoryOrigin::Explicit));

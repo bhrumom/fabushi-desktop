@@ -969,7 +969,10 @@
         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
-        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -1008,7 +1011,13 @@
         "MGS-06",
         "MGL-07",
         "MGL-08",
-        "DJC-09"
+        "DJC-09",
+        "MSSA-01",
+        "MSSA-02",
+        "MSSA-03",
+        "MSSA-04",
+        "MSSA-05",
+        "MSSA-06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -2598,7 +2607,10 @@
         "source/host/tests/session_paths_contract.rs",
         "source/host/tests/memory_extension_contract.rs",
         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
-        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
+        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC13",
@@ -2621,7 +2633,13 @@
         "MGS-05",
         "MGS-06",
         "MGL-07",
-        "MGL-08"
+        "MGL-08",
+        "MSSA-01",
+        "MSSA-02",
+        "MSSA-03",
+        "MSSA-04",
+        "MSSA-05",
+        "MSSA-06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2862,7 +2880,10 @@
         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
-        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2913,7 +2934,13 @@
         "MGS-06",
         "MGL-07",
         "MGL-08",
-        "DJC-09"
+        "DJC-09",
+        "MSSA-01",
+        "MSSA-02",
+        "MSSA-03",
+        "MSSA-04",
+        "MSSA-05",
+        "MSSA-06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2999,7 +3026,10 @@
         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
-        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC18",
@@ -3032,7 +3062,13 @@
         "MGS-06",
         "MGL-07",
         "MGL-08",
-        "DJC-09"
+        "DJC-09",
+        "MSSA-01",
+        "MSSA-02",
+        "MSSA-03",
+        "MSSA-04",
+        "MSSA-05",
+        "MSSA-06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -3494,7 +3530,10 @@
         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
-        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
@@ -3587,7 +3626,13 @@
         "MGS-06",
         "MGL-07",
         "MGL-08",
-        "DJC-09"
+        "DJC-09",
+        "MSSA-01",
+        "MSSA-02",
+        "MSSA-03",
+        "MSSA-04",
+        "MSSA-05",
+        "MSSA-06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
