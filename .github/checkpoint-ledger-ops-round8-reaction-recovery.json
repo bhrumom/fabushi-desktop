@@ -1,0 +1,75 @@
+{
+  "format_version": 3,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "reviewed_base": "e8ee557383661694c44a590950f2fdc8631c39a9",
+  "input_blob": "cd1b4b2cee8763b61392cb0be718354b20d02eee",
+  "authored_ui_cases": 23,
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+      },
+      "normalize": {
+        "fabushi_target_paths": [],
+        "fabushi_target_symbols": []
+      },
+      "append": {
+        "requirement_ids": [
+          "NMR-REACTION-RECOVERY-01a",
+          "NMR-REACTION-RECOVERY-01b",
+          "NMR-REACTION-RECOVERY-01c",
+          "NMR-REACTION-RECOVERY-01d"
+        ],
+        "oracle_ids": [
+          "NMR-AC-REACTION-RECOVERY-01"
+        ],
+        "fabushi_target_paths": [
+          "source/host/src/extensions/session/native_messaging.rs",
+          "source/host/src/extensions/session/production.rs",
+          "source/host/tests/session_gateway_contract.rs"
+        ],
+        "fabushi_target_symbols": [
+          "sync_human_conversation_history",
+          "sync_human_conversations",
+          "sync_human_calls",
+          "replay_human_reaction_intent",
+          "request_credential_fingerprint",
+          "list_human_calls",
+          "get_human_call"
+        ],
+        "production_entrypoints": [
+          "source/host/src/extensions/session/production.rs#sync_human_conversation",
+          "source/host/src/extensions/session/production.rs#sync_human_conversations",
+          "source/host/src/extensions/session/production.rs#sync_human_calls"
+        ],
+        "command_event_contracts": [
+          "NMR-REACTION-RECOVERY-01: only admitted actual404/409 with explicit success:false and stable original complete credential may defer its original error while bounded history/later friends/Calls progress. Keep exact intent/error, existing owners and public RPC schema. Later hard errors take precedence; no deletion or reaction acknowledgement is inferred."
+        ],
+        "integration_case_ids": [
+          "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_rejection_preserves_intent_while_history_progresses_after_restart",
+          "source/host/tests/session_gateway_contract.rs#shipping_human_roster_reaction_rejection_does_not_starve_other_conversations_or_calls",
+          "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_rejection_continuation_refuses_changed_credentials_before_downstream_work",
+          "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_rejection_keeps_admission_and_protocol_failures_fail_closed"
+        ],
+        "fault_recovery_case_ids": [
+          "NMR-REACTION-RECOVERY-01: pure reopen preserves desired-state intent/coverage; deterministic held response and original six-field credential/root/participant checks before downstream work; unchanged invalid-intent and protocol failures remain fail-closed."
+        ],
+        "production_evidence": [
+          "Current exacte8ee557383661694c44a590950f2fdc8631c39a9 source shows same-conversation and roster starvation at reaction replay error. The scoped repair reuses Native status/credential handling, Session locks and SQLite/feed, existing Renderer error-to-local-read fallback and CallSession owner; service deployment remains unverified."
+        ],
+        "test_evidence": [
+          "NMR-AC-REACTION-RECOVERY-01 retains original77 Human cases plus4 new exact named cases; requires containing-H Human81/reconciliation125, UI205, owner40, actualMac2+2 and all shipping gates. Authored expectations are not execution evidence."
+        ],
+        "test_execution_evidence": [
+          "Prior exacte8ee557383661694c44a590950f2fdc8631c39a9 run41560824752 reconciliation job125670726762 passed121 (Human77); owner job125670726674 passed40 selected outer cases (10+11+6+8+5). Source run41560824735 passed161 Node/37 Python/schema0 and unaccepted-candidate-consistent. These prior inputs do not qualify the new reaction continuation changes; UI/shipping remained nonterminal at preparation."
+        ]
+      },
+      "note": "\nNMR-REACTION-RECOVERY-01 adds narrow structured-refusal continuation under the original credential and existing owner binding. It preserves unconfirmed intents/errors and all fatal admission/protocol boundaries, with four real Host/SQLite/HTTP cases requiring frozen containing-H Actions. Permanent-intent termination, canonical mutation discovery, active backend and full source/product/independent acceptance remain open."
+    }
+  ]
+}

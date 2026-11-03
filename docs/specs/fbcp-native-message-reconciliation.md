@@ -2710,3 +2710,163 @@ sidecars, original readers and credentials remain. These controlled regression
 results do not certify user-data import, remote Telegram or Fabushi services,
 signed installed packages, full caller inventory, complete source/legal/Bot/
 quality acceptance, power-loss, upgrade/rollback or independent ACCEPT.
+
+## NMR-REACTION-RECOVERY-01 — Continue bounded recovery after an admitted reaction refusal
+
+### Current source, scope and existing owners
+
+At `e8ee557383661694c44a590950f2fdc8631c39a9`, Session
+`production.rs@74a43082ed4be5370cf38af2a0477957ece2c8a1` returns from
+`sync_human_conversation_history` on any reaction-replay error before history.
+The roster loop also returns before later friends and Calls.
+`native_messaging.rs@45f46333306873e3ffeb6bcbb42a67db5306e683` discards
+structured reaction HTTP status into the existing error string. This can leave
+an unconfirmed reaction blocking unrelated recoverable work.
+
+Keep Session's conversation mutation lane, existing Native HTTP client,
+SandAgentDb transcript/kv, CallSession owner and post-commit Transcript feed.
+Keep the existing RPC/UI error contract: ProductionRenderer already catches
+Human sync failures, reads local roster/tail and displays the notice. There is
+no new message owner, service endpoint, persistence table, global queue or
+partial-success wire schema. Permitted production/test paths are the existing
+`native_messaging.rs`, `production.rs` and
+`source/host/tests/session_gateway_contract.rs`; root integration owns this
+Spec, native-service workflow, the single NMR ledger row and RTM.
+
+Backend source is a boundary, not deployment proof:
+`bhrumom/fabushi-backend` main
+`687718ce9e0083aa124d29005bcce4051d357919` lacks reaction tombstones; draft,
+open, unmerged PR137 at `52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23` returns
+404 for missing/invisible targets and409 for a deleted target. These failures
+contain no canonical message/tombstone. The exact handlers are
+`6179f3ce8e223f4e0bd9664885871e134f4488a8` and
+`fca0ed323b34fe767cad262af57cedcf0e71a79f`.
+Read-only source audits are `801399ef2b4a21937c56d8a0d901f290ae95b21c` and
+`307a653214620cb0b6bf12cdb83f51ecac91abb2`. Active Worker/D1/afterId=0
+readiness remains unverified. This batch does not merge, deploy or probe it.
+
+### Required behavior and implementation boundary
+
+**NMR-REACTION-RECOVERY-01a — Typed, narrow refusal.** Introduce an internal
+Native result category only after the original local intent, canonical settled
+target, local account, exact participants, remote identity and emoji have
+passed existing admission. A deferrable refusal requires an actual HTTP404
+or409, a decoded envelope with explicit `success:false`, and both existing
+complete Native credential-stability checks. Preserve the original public
+error text. String matching, status-looking error text, transport errors,
+401/403, malformed/contradictory JSON, invalid/missing success ACK, wrong
+message ID/summary/desired state, and local intent/target/permission/root/DB
+failures are not deferrable. Keep compatible public String-returning methods
+and expose the category only to the existing Session recovery path. After the
+HTTP refusal, reread and validate the original owner, participants and target
+again before allowing deferral; a target changed while the response was held
+cannot borrow the earlier admission.
+
+**NMR-REACTION-RECOVERY-01b — Progress without acknowledgement.** On this
+qualified refusal, retain the exact five-field `humanReactionIntent` and its
+first original error; do not alter target reactions, infer deletion, toggle
+again, clear the intent or mark success. Continue the same conversation's
+ordered pending replay and bounded history. In roster sync continue later
+friends and Calls, then return the original refusal. Carry the fact that this
+invocation has entered refusal continuation into every later friend, including
+one with no reaction intent of its own. A later hard failure
+stops immediately and takes precedence over the earlier deferred refusal.
+Valid commits before a hard failure remain durable. In this new continuation
+branch, preserve each pending append Result, recheck the original binding and
+return any Err immediately. Likewise, a remote-row validation Err stops this
+branch before later rows/pages instead of entering the old accumulated-error
+path. Do not classify either error by text. The existing no-refusal branches
+retain their established pending/partial-history error behavior. A failed
+checkpoint or DB operation is never treated as successful progress. Keep forward recovery
+order, at most one replay of this reaction per conversation/invocation,
+200 rows/page and the absolute32 history-GET budget, including empty/short
+pages and optional latest refresh. Ordinary direct reaction commands retain
+their original error/settlement semantics; an occupied reaction slot is not
+silently replaced by a newer intent.
+
+**NMR-REACTION-RECOVERY-01c — Preserve the invocation binding.** Capture and
+retain the original local account and existing full credential fingerprint
+(token, device, user, session, expiry and issuer) across the continued work.
+Capture this binding before the existing forward-recovery call and recheck it
+after that call; forward recovery does not authorize rebinding. Do not authorize
+continuation by accepting a newly read credential as a new lease. Recheck the original binding before downstream HTTP or persistence,
+after pending-send replay (which currently ignores individual append errors),
+after completed history responses and before materialization/coverage writes.
+Empty pages and latest refresh receive the same checks. A synchronous committed
+row notification can rotate the credential: retain that already committed row
+and its existing materialization/activity unit, then detect the change before
+coverage or the next request/write unit. Do not promise an atomic credential
+lease across that existing unit.
+
+Use the existing native-root, non-symlink/regular-store, cached-owner metadata
+and exact conversation-participant checks again before resumed effects.
+A changed root, closed/unreadable store or changed participants is a hard
+failure, never a deferred reaction result. Check before next-friend
+`create_human_conversation`, since that operation itself can create files
+and metadata. This is the existing credential snapshot/owner model, not a new
+interprocess atomic lease or a claim against arbitrary filesystem ABA.
+
+Continue Calls under the original invocation binding, before any discovered
+conversation or CallSession creation and before event/cursor application.
+Add the existing Native post-body credential stability check to
+`list_human_calls` and `get_human_call`; checking only after the full Calls
+routine would be too late. Reuse the existing CallSession permission,
+participant, scope, generation and event-sequence checks. Preserve public
+call signatures and normal no-Native behavior. Do not relax any existing
+send, forward, reaction, call or history authenticity gate.
+
+**NMR-REACTION-RECOVERY-01d — Observable recovery and truthful limits.** The
+existing authorized post-commit transcript feed and local read fallback must
+expose independent durable history progress while the original RPC error
+remains observable. A pure reopen must recover the same desired-state intent
+and resume from durable coverage; it must not manufacture a new toggle.
+A permanently refused intent can still be retried once on a later invocation
+and still occupy its reaction slot. Safe cancellation/terminal settlement,
+canonical revisions/tombstones and discovery of arbitrary old remote
+mutations require their separately reviewed contracts. None is inferred
+from this starvation repair or from a generic404/409.
+
+### NMR-AC-REACTION-RECOVERY-01 — Frozen behavior and regression gates
+
+Append four top-level `shipping_human_` cases to the existing real
+Host/SQLite/HTTP suite, preserving the original77 cases and their negative
+oracles:
+
+1. `shipping_human_reaction_rejection_preserves_intent_while_history_progresses_after_restart`:
+   qualified404/409 matrix, exact original error/intent and desired-state POST,
+   later row/coverage/feed progress, pure reopen and continued bounded history.
+2. `shipping_human_roster_reaction_rejection_does_not_starve_other_conversations_or_calls`:
+   first friend refuses, its history and a second friend still persist, incoming
+   CallSession/event/cursor progress occurs, exact requests and original error
+   remain; local roster/tail exposes committed results.
+3. `shipping_human_reaction_rejection_continuation_refuses_changed_credentials_before_downstream_work`:
+   deterministic held/streaming HTTP boundaries, six credential-field
+   rotations plus issuer/file refusal, history/Calls response and write
+   boundaries; once the original binding is rejected there are no downstream
+   HTTP, new friend stores/call rows, events or coverage writes. Snapshot the
+   already constructed CallSession DB rows; its file already exists at Session
+   startup. Retain old intent
+   and earlier valid state. Include exact owner/participant failure controls.
+4. `shipping_human_reaction_rejection_keeps_admission_and_protocol_failures_fail_closed`:
+  401/403, malformed404/409, contradictory success, forged error text and
+   invalid success ACK remain hard errors with no continued work. Include
+   a later friend with no reaction but a failing pending append or invalid
+   remote row after the first friend's deferred refusal; hard error priority
+   and zero later effects must hold across that boundary. The existing
+   30 invalid persisted-intent variants and all previous protocol negatives
+   keep their zero-HTTP/no-mutation assertions.
+
+The containing frozen commit must execute Human81 and reconciliation125
+(3+81+3+14+3+1+12+4+3+1), zero failures/ignored, with all four names present.
+Preserve UI205, desktop owner40, actual Mac Plugins2/Human2 and all original
+shipping/dependency/binary/package gates; nested child summaries are not
+extra cases. Use GitHub Actions only, retain failed evidence and repair by
+cause. Static review, authored cases, queued jobs and controlled service
+fixtures do not establish deployment or independent ACCEPT.
+
+No persisted schema changes or user-data deletion are required. Reverting
+this code restores the previous early return while preserving pending
+intents, transcripts, cursors and old stores. Full fixed-U source/legal,
+active service, installed/signed supported platforms, complete Bot/UI/
+accessibility/security/performance/soak/upgrade/rollback and independent
+acceptance requirements remain unchanged.
