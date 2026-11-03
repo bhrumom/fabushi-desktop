@@ -1511,7 +1511,7 @@ fn deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_chil
                 conversation_id: conversation_id.clone(),
                 actor_id: ActorId::new("human:owner"),
                 text: "keep root text".into(),
-                reply_to_message_id: Some(first_message_id.clone()),
+                reply_to_message_id: Some(first_message_id.0.clone()),
                 updated_at_ms: 30,
             },
         })
@@ -1523,7 +1523,7 @@ fn deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_chil
                 conversation_id: conversation_id.clone(),
                 actor_id: ActorId::new("human:admin"),
                 text: String::new(),
-                reply_to_message_id: Some(first_message_id.clone()),
+                reply_to_message_id: Some(first_message_id.0.clone()),
                 updated_at_ms: 31,
             },
         })
@@ -1536,7 +1536,7 @@ fn deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_chil
                 topic_id: "study".into(),
                 actor_id: ActorId::new("human:owner"),
                 text: "keep topic text".into(),
-                reply_to_message_id: Some(first_message_id.clone()),
+                reply_to_message_id: Some(first_message_id.0.clone()),
                 updated_at_ms: 32,
             },
         })

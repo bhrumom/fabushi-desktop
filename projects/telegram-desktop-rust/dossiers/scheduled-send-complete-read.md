@@ -41,13 +41,12 @@ Current implementation status:
 - the canonical native messaging model now has a source-neutral typed `PresenceSendTrigger::WhenParticipantOnline` and `PendingPresenceSend`; Telegram's magic timestamp sentinel is not copied;
 - pending presence sends live inside the existing serialized `MessagingState`, are exposed in actor-scoped sync, survive `MessagingService::load()`, and are keyed by the canonical `ClientMessageId`;
 - `MessagingService` releases matching pending sends only on a non-online -> Online presence transition, reuses the canonical QueueMessage/AcknowledgeMessage path, removes the pending trigger only after successful queue/ack, and stable message identity makes duplicate Online events / client replays idempotent;
-- target eligibility is fail-closed to a distinct Human participant in a canonical Direct Conversation and reuses the current QueueMessage policy before the trigger is accepted;
-- focused Rust contract coverage now exercises durable pending state, sync visibility, restart recovery, Offline->Online release, duplicate Online idempotency, and post-release client replay.
+- target eligibility is fail-closed to a distinct Human participant in a canonical Direct Conversation, excludes notifications-service and per-message Stars / paid-messages actors, enforces `PrivacyKey::LastSeen` visibility and block/contact policy in `MessagingEngine` (`MessagingState::privacy`), and reuses the current QueueMessage policy before the trigger is accepted;
+- explicit sender-scoped cancellation (`ClientCommand::CancelPresenceTriggeredSend`), atomic rescheduling to timed/immediate send (`ClientCommand::SendMessage` with the same `client_message_id`), sender-scoped multi-device journal settlement (`ServerEvent::PresenceTriggeredSendChanged`), and explicit terminal failure settlement (`Command::FailPresenceTriggeredSend` -> `DeliveryState::Failed`) when policy or privacy changes while pending are implemented in `native/mahayana-messaging` and covered by `native/mahayana-messaging/tests/service_contract.rs`.
 
 Still open:
-- shipping composer/menu eligibility is not yet wired, including last-seen visibility, notifications-service exclusion and any Stars requirement;
-- reminder mode, repeat policy, cancellation/reschedule, explicit terminal failure settlement when policy changes while pending, and multi-device UI settlement remain open;
-- exact-head GitHub Actions evidence is pending, so this responsibility is implemented only at the native-domain slice and is not verified.
+- shipping composer/menu UI eligibility, reminder mode, and repeat policy remain open;
+- containing-head GitHub Actions evidence and independent review remain required before verification/acceptance.
 
 The correct direction is to extend the existing canonical message schedule policy with a typed trigger and reuse Presence/Privacy/Conversation owners, not to copy Telegram's sentinel or create a ShareBox scheduler.
 

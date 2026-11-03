@@ -18,6 +18,7 @@ use crate::miniapp::{
     MiniAppSession,
 };
 use crate::payment::{CustomerInfo, Invoice, Money, PaymentOrder, PaymentStatus};
+use crate::privacy::{PrivacyKey, PrivacySettings};
 use crate::story::{Story, StoryError, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccountId, WalletError, WalletLedger};
 use serde::{Deserialize, Serialize};
@@ -33,6 +34,10 @@ use thiserror::Error;
 pub enum Command {
     UpsertActor {
         actor: Actor,
+    },
+    UpsertPrivacySettings {
+        actor_id: ActorId,
+        settings: PrivacySettings,
     },
     SetPresence {
         actor_id: ActorId,
@@ -95,6 +100,14 @@ pub enum Command {
     },
     QueuePresenceTriggeredSend {
         pending: PendingPresenceSend,
+    },
+    CancelPresenceTriggeredSend {
+        actor_id: ActorId,
+        client_message_id: ClientMessageId,
+    },
+    FailPresenceTriggeredSend {
+        client_message_id: ClientMessageId,
+        failed_at_ms: i64,
     },
     RemovePresenceTriggeredSend {
         client_message_id: ClientMessageId,
@@ -355,6 +368,10 @@ pub enum Event {
     ActorUpserted {
         actor: Actor,
     },
+    PrivacySettingsUpdated {
+        actor_id: ActorId,
+        settings: PrivacySettings,
+    },
     PresenceUpdated {
         actor_id: ActorId,
         presence: Presence,
@@ -549,6 +566,7 @@ pub enum Event {
 #[serde(default, rename_all = "camelCase")]
 pub struct MessagingState {
     pub actors: BTreeMap<ActorId, Actor>,
+    pub privacy: BTreeMap<ActorId, PrivacySettings>,
     pub conversations: BTreeMap<ConversationId, Conversation>,
     pub folders: BTreeMap<String, ConversationFolder>,
     pub messages: BTreeMap<ConversationId, BTreeMap<MessageId, Message>>,
@@ -909,6 +927,10 @@ impl MessagingEngine {
                 }
                 Ok(vec![Event::ActorUpserted { actor }])
             }
+            Command::UpsertPrivacySettings { actor_id, settings } => {
+                self.require_actor(&actor_id)?;
+                Ok(vec![Event::PrivacySettingsUpdated { actor_id, settings }])
+            }
             Command::SetPresence { actor_id, presence } => {
                 self.require_actor(&actor_id)?;
                 Ok(vec![Event::PresenceUpdated { actor_id, presence }])
@@ -1103,13 +1125,48 @@ impl MessagingEngine {
             Command::UpsertFolder { folder } => Ok(vec![Event::FolderUpserted { folder }]),
             Command::DeleteFolder { folder_id } => Ok(vec![Event::FolderDeleted { folder_id }]),
             Command::QueuePresenceTriggeredSend { pending } => {
-                self.require_actor(&pending.sender_id)?;
+                let sender = self.require_actor(&pending.sender_id)?;
                 let target_actor_id = match &pending.trigger {
                     PresenceSendTrigger::WhenParticipantOnline { actor_id } => actor_id,
                 };
                 let target = self.require_actor(target_actor_id)?;
                 if target.kind != ActorKind::Human || &pending.sender_id == target_actor_id {
                     return Err(EngineError::InvalidPresenceTriggeredSend);
+                }
+                if target.id.0.starts_with("service:")
+                    || target.capabilities.iter().any(|cap| {
+                        matches!(
+                            cap.as_str(),
+                            "service_notifications"
+                                | "notifications_service"
+                                | "paid_messages_required"
+                                | "stars_per_message_required"
+                        )
+                    })
+                {
+                    return Err(EngineError::InvalidPresenceTriggeredSend);
+                }
+                if let Some(target_privacy) = self.state.privacy.get(target_actor_id) {
+                    let target_considers_sender_contact = target
+                        .capabilities
+                        .iter()
+                        .any(|cap| cap == &format!("contact:{}", pending.sender_id.0));
+                    let sender_considers_target_contact = sender
+                        .capabilities
+                        .iter()
+                        .any(|cap| cap == &format!("contact:{}", target_actor_id.0));
+                    if !target_privacy.can_receive_message_from(
+                        &pending.sender_id,
+                        target_considers_sender_contact,
+                        target_considers_sender_contact && sender_considers_target_contact,
+                    ) {
+                        return Err(EngineError::InvalidPresenceTriggeredSend);
+                    }
+                    if let Some(last_seen_rule) = target_privacy.rules.get(&PrivacyKey::LastSeen) {
+                        if !last_seen_rule.allows(&pending.sender_id, target_considers_sender_contact) {
+                            return Err(EngineError::InvalidPresenceTriggeredSend);
+                        }
+                    }
                 }
                 if target.presence.status == PresenceStatus::Online {
                     return Err(EngineError::PresenceTriggerAlreadySatisfied);
@@ -1157,6 +1214,62 @@ impl MessagingEngine {
                     return Err(EngineError::InvalidPresenceTriggeredSend);
                 }
                 Ok(vec![Event::PresenceTriggeredSendQueued { pending }])
+            }
+            Command::CancelPresenceTriggeredSend {
+                actor_id,
+                client_message_id,
+            } => {
+                self.require_actor(&actor_id)?;
+                let Some(existing) = self.state.pending_presence_sends.get(&client_message_id)
+                else {
+                    return Ok(Vec::new());
+                };
+                if existing.sender_id != actor_id {
+                    return Err(EngineError::InvalidPresenceTriggeredSend);
+                }
+                Ok(vec![Event::PresenceTriggeredSendRemoved {
+                    client_message_id,
+                }])
+            }
+            Command::FailPresenceTriggeredSend {
+                client_message_id,
+                failed_at_ms,
+            } => {
+                let Some(pending) = self
+                    .state
+                    .pending_presence_sends
+                    .get(&client_message_id)
+                    .cloned()
+                else {
+                    return Ok(Vec::new());
+                };
+                let message = Message {
+                    id: pending.local_message_id.clone(),
+                    conversation_id: pending.conversation_id.clone(),
+                    sender_id: pending.sender_id.clone(),
+                    client_message_id: Some(pending.client_message_id.clone()),
+                    content: pending.content,
+                    reply_to_message_id: pending.reply_to_message_id,
+                    thread_root_message_id: pending.thread_root_message_id,
+                    forward_origin: None,
+                    forward_from_actor_id: None,
+                    forward_from_display_name: None,
+                    forward_privacy: None,
+                    delivery_state: DeliveryState::Failed,
+                    reactions: Vec::new(),
+                    created_at_ms: failed_at_ms,
+                    edited_at_ms: None,
+                    scheduled_at_ms: None,
+                    expires_at_ms: None,
+                    pinned: false,
+                    silent: pending.silent,
+                    protected_content: pending.protected_content,
+                    deleted: false,
+                };
+                Ok(vec![
+                    Event::MessageQueued { message },
+                    Event::PresenceTriggeredSendRemoved { client_message_id },
+                ])
             }
             Command::RemovePresenceTriggeredSend { client_message_id } => {
                 if self
@@ -3194,6 +3307,9 @@ impl MessagingEngine {
             Event::ActorUpserted { actor } => {
                 self.state.actors.insert(actor.id.clone(), actor);
             }
+            Event::PrivacySettingsUpdated { actor_id, settings } => {
+                self.state.privacy.insert(actor_id, settings);
+            }
             Event::PresenceUpdated { actor_id, presence } => {
                 if let Some(actor) = self.state.actors.get_mut(&actor_id) {
                     actor.presence = presence;
@@ -3336,26 +3452,30 @@ impl MessagingEngine {
                 self.state.pending_presence_sends.remove(&client_message_id);
             }
             Event::MessageQueued { message } => {
-                if let Some(conversation) =
-                    self.state.conversations.get_mut(&message.conversation_id)
-                {
-                    conversation.last_message_id = Some(message.id.0.clone());
-                    conversation.updated_at_ms = message.created_at_ms;
+                if message.delivery_state != DeliveryState::Failed {
+                    if let Some(conversation) =
+                        self.state.conversations.get_mut(&message.conversation_id)
+                    {
+                        conversation.last_message_id = Some(message.id.0.clone());
+                        conversation.updated_at_ms = message.created_at_ms;
+                    }
                 }
                 self.state
                     .messages
                     .entry(message.conversation_id.clone())
                     .or_default()
                     .insert(message.id.clone(), message.clone());
-                if let Some(thread_root) = &message.thread_root_message_id {
-                    if let Some(topic_id) = topic_id_from_root(thread_root) {
-                        if let Some(topic) = self
-                            .state
-                            .communities
-                            .get_mut(&message.conversation_id)
-                            .and_then(|community| community.topics.get_mut(topic_id))
-                        {
-                            topic.last_message_id = Some(message.id.0);
+                if message.delivery_state != DeliveryState::Failed {
+                    if let Some(thread_root) = &message.thread_root_message_id {
+                        if let Some(topic_id) = topic_id_from_root(thread_root) {
+                            if let Some(topic) = self
+                                .state
+                                .communities
+                                .get_mut(&message.conversation_id)
+                                .and_then(|community| community.topics.get_mut(topic_id))
+                            {
+                                topic.last_message_id = Some(message.id.0);
+                            }
                         }
                     }
                 }
@@ -3431,7 +3551,7 @@ impl MessagingEngine {
                         if draft
                             .reply_to_message_id
                             .as_ref()
-                            .is_some_and(|reply_id| deleted_ids.contains(&reply_id.0))
+                            .is_some_and(|reply_id| deleted_ids.contains(reply_id))
                         {
                             draft.reply_to_message_id = None;
                         }
@@ -3449,7 +3569,7 @@ impl MessagingEngine {
                             if draft
                                 .reply_to_message_id
                                 .as_ref()
-                                .is_some_and(|reply_id| deleted_ids.contains(&reply_id.0))
+                                .is_some_and(|reply_id| deleted_ids.contains(reply_id))
                             {
                                 draft.reply_to_message_id = None;
                             }

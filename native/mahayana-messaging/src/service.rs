@@ -260,7 +260,11 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 let bot_invocations = events
                     .iter()
                     .filter_map(|event| match event {
-                        Event::MessageQueued { message } => Some(message),
+                        Event::MessageQueued { message }
+                            if message.delivery_state != DeliveryState::Failed =>
+                        {
+                            Some(message)
+                        }
                         _ => None,
                     })
                     .flat_map(|message| self.bot_invocations_for_message(message))
@@ -323,23 +327,66 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 .collect::<Vec<_>>();
 
             for pending in pending {
-                let queued = self.engine.execute(Command::QueueMessage {
-                    conversation_id: pending.conversation_id.clone(),
-                    local_message_id: pending.local_message_id.clone(),
-                    client_message_id: pending.client_message_id.clone(),
-                    sender_id: pending.sender_id.clone(),
-                    content: pending.content.clone(),
-                    reply_to_message_id: pending.reply_to_message_id.clone(),
-                    thread_root_message_id: pending.thread_root_message_id.clone(),
-                    created_at_ms: server_time_ms,
-                    scheduled_at_ms: None,
-                    silent: pending.silent,
-                    protected_content: pending.protected_content,
+                let target_privacy_allows = self
+                    .engine
+                    .state()
+                    .privacy
+                    .get(actor_id)
+                    .is_none_or(|privacy| {
+                        let target_is_contact = self
+                            .engine
+                            .state()
+                            .actors
+                            .get(actor_id)
+                            .is_some_and(|target| {
+                                target
+                                    .capabilities
+                                    .iter()
+                                    .any(|cap| cap == &format!("contact:{}", pending.sender_id.0))
+                            });
+                        let sender_is_contact = self
+                            .engine
+                            .state()
+                            .actors
+                            .get(&pending.sender_id)
+                            .is_some_and(|sender| {
+                                sender
+                                    .capabilities
+                                    .iter()
+                                    .any(|cap| cap == &format!("contact:{}", actor_id.0))
+                            });
+                        privacy.can_receive_message_from(
+                            &pending.sender_id,
+                            target_is_contact,
+                            target_is_contact && sender_is_contact,
+                        ) && privacy
+                            .rules
+                            .get(&crate::privacy::PrivacyKey::LastSeen)
+                            .is_none_or(|rule| rule.allows(&pending.sender_id, target_is_contact))
+                    });
+                let queued = target_privacy_allows.then(|| {
+                    self.engine.execute(Command::QueueMessage {
+                        conversation_id: pending.conversation_id.clone(),
+                        local_message_id: pending.local_message_id.clone(),
+                        client_message_id: pending.client_message_id.clone(),
+                        sender_id: pending.sender_id.clone(),
+                        content: pending.content.clone(),
+                        reply_to_message_id: pending.reply_to_message_id.clone(),
+                        thread_root_message_id: pending.thread_root_message_id.clone(),
+                        created_at_ms: server_time_ms,
+                        scheduled_at_ms: None,
+                        silent: pending.silent,
+                        protected_content: pending.protected_content,
+                    })
                 });
-                let Ok(queued) = queued else {
-                    // Current send policy may have changed while the trigger was pending.
-                    // Keep the durable pending request rather than dropping it or blocking
-                    // the target actor's presence transition.
+                let Some(Ok(queued)) = queued else {
+                    // Send policy or privacy changed while the trigger was pending.
+                    // Settle the pending trigger into an explicit terminal Failed message
+                    // and retire the pending trigger so it never hangs indefinitely.
+                    events.extend(self.engine.execute(Command::FailPresenceTriggeredSend {
+                        client_message_id: pending.client_message_id,
+                        failed_at_ms: server_time_ms,
+                    })?);
                     continue;
                 };
                 events.extend(queued);
@@ -358,7 +405,11 @@ impl<S: MessagingStateStore> MessagingService<S> {
         let bot_invocations = events
             .iter()
             .filter_map(|event| match event {
-                Event::MessageQueued { message } => Some(message),
+                Event::MessageQueued { message }
+                    if message.delivery_state != DeliveryState::Failed =>
+                {
+                    Some(message)
+                }
                 _ => None,
             })
             .flat_map(|message| self.bot_invocations_for_message(message))
@@ -1663,6 +1714,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .iter()
                     .filter_map(|id| state.messages.get(id))
                     .flat_map(|messages| messages.values())
+                    .filter(|message| {
+                        message.delivery_state != DeliveryState::Failed
+                            || &message.sender_id == actor_id
+                    })
                     .take(max_items)
                     .map(|message| self.project_message_for_actor(actor_id, message))
                     .collect(),
@@ -1834,6 +1889,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
         match command {
             ClientCommand::Sync { .. } => Vec::new(),
             ClientCommand::UpsertProfile { actor } => vec![Command::UpsertActor { actor }],
+            ClientCommand::UpsertPrivacySettings { settings } => {
+                vec![Command::UpsertPrivacySettings {
+                    actor_id: actor_id.clone(),
+                    settings,
+                }]
+            }
             ClientCommand::SetPresence { presence } => vec![Command::SetPresence {
                 actor_id: actor_id.clone(),
                 presence,
@@ -1935,11 +1996,19 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 protected_content,
             } => {
                 let message_id = stable_message_id(actor_id, &client_message_id);
-                vec![
+                let replaces_pending_presence = self
+                    .engine
+                    .state()
+                    .pending_presence_sends
+                    .get(&client_message_id)
+                    .is_some_and(|pending| {
+                        &pending.sender_id == actor_id && pending.conversation_id == conversation_id
+                    });
+                let mut commands = vec![
                     Command::QueueMessage {
                         conversation_id: conversation_id.clone(),
                         local_message_id: message_id.clone(),
-                        client_message_id,
+                        client_message_id: client_message_id.clone(),
                         sender_id: actor_id.clone(),
                         content,
                         reply_to_message_id,
@@ -1955,7 +2024,11 @@ impl<S: MessagingStateStore> MessagingService<S> {
                         server_message_id: message_id,
                         accepted_at_ms: now_ms,
                     },
-                ]
+                ];
+                if replaces_pending_presence {
+                    commands.push(Command::RemovePresenceTriggeredSend { client_message_id });
+                }
+                commands
             }
             ClientCommand::SendWhenParticipantOnline {
                 conversation_id,
@@ -1983,6 +2056,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     created_at_ms: now_ms,
                 },
             }],
+            ClientCommand::CancelPresenceTriggeredSend { client_message_id } => {
+                vec![Command::CancelPresenceTriggeredSend {
+                    actor_id: actor_id.clone(),
+                    client_message_id,
+                }]
+            }
             ClientCommand::ForwardMessage {
                 source_conversation_id,
                 message_id,
@@ -2366,6 +2445,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
     ) -> Option<ServerEnvelope> {
         let server_event = match event {
             Event::ActorUpserted { actor } => ServerEvent::ActorChanged { actor },
+            Event::PrivacySettingsUpdated { .. } => return None,
             Event::PresenceUpdated { actor_id, presence } => {
                 ServerEvent::PresenceChanged { actor_id, presence }
             }
@@ -2670,11 +2750,25 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     Self::extend_conversation_audience(&mut audience, conversation);
                 }
             }
-            ServerEvent::PresenceTriggeredSendChanged { pending, .. } => {
+            ServerEvent::PresenceTriggeredSendChanged {
+                client_message_id,
+                pending,
+            } => {
+                audience.clear();
                 if let Some(pending) = pending {
                     audience.insert(pending.sender_id.clone());
-                    let PresenceSendTrigger::WhenParticipantOnline { actor_id } = &pending.trigger;
-                    audience.insert(actor_id.clone());
+                } else if let Some(sender_id) = self
+                    .engine
+                    .state()
+                    .messages
+                    .values()
+                    .flat_map(|messages| messages.values())
+                    .find(|message| message.client_message_id.as_ref() == Some(client_message_id))
+                    .map(|message| message.sender_id.clone())
+                {
+                    audience.insert(sender_id);
+                } else {
+                    audience.insert(initiator.clone());
                 }
             }
             ServerEvent::PresenceChanged { actor_id, .. } => {
@@ -2719,7 +2813,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 audience.insert(draft.actor_id.clone());
             }
             ServerEvent::MessageAdded { message } | ServerEvent::MessageChanged { message } => {
-                self.extend_conversation_id_audience(&mut audience, &message.conversation_id);
+                if message.delivery_state == DeliveryState::Failed {
+                    audience.clear();
+                    audience.insert(message.sender_id.clone());
+                } else {
+                    self.extend_conversation_id_audience(&mut audience, &message.conversation_id);
+                }
             }
             ServerEvent::MessagesDeleted {
                 conversation_id, ..
