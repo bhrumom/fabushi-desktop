@@ -1,0 +1,40 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 5,
+  "fixedUpstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "base": "bca00fed5ec6d11e5854209230fedeb3b7feb8d0",
+  "implementation": {
+    "path": "source/host/src/extensions/session/production.rs",
+    "change": "retry_human_message now holds a dedicated conversation+clientNonce retry lane across dispatch, while the ordinary conversation mutation lane can still be released around HTTP for sync progress. This prevents two concurrent retry callers from both entering the same remote POST.",
+    "blob": "8b48f841af989d08e7c5bf3444bd7eb89c727f43"
+  },
+  "test": {
+    "path": "source/host/tests/session_gateway_contract.rs",
+    "name": "shipping_human_retry_identity_is_concurrent_idempotent_and_reuses_settled_intent",
+    "coverage": [
+      "malformed/extra identity-only retry parameters rejected",
+      "durable initial dispatch failure",
+      "deterministic two-caller concurrency with a held HTTP response",
+      "one retry POST for both callers",
+      "same canonical settlement returned to both callers",
+      "settled replay and post-restart settled replay",
+      "exact durable request body and nonce retained"
+    ],
+    "blob": "7fff7960839ae2d62d64f33354c45536dd99b563"
+  },
+  "verification": {
+    "local_or_htch_runtime": "not run; prohibited by FMEP-001",
+    "github_actions": "not yet observed for exact H",
+    "workflow_oracle_gap": "native-service-contracts.yml still asserts 69 shipping_human_ tests; this new test increases the filtered count to 70. Attempted workflow file update was denied by GitHub integration (403 Resource not accessible by integration). Do not treat this batch as CI-verified.",
+    "fetch_commit_workflow_runs": "returned no PR-triggered runs for exact H"
+  },
+  "remaining": [
+    "update native-service-contracts.yml count to 70 using an authorized workflow write, then freeze a new H and verify exact-H Actions",
+    "Session uploaded-resource retry reuse and failure recovery with actual upload fixture",
+    "gateway SQLite/HTTP identity corruption, duplicate nonce and foreign identity negatives",
+    "ProductionRenderer persisted lastDispatchError restart projection",
+    "real ProductionRenderer duplicate-click and account/selection ABA behavior tests",
+    "complete FBCP/TDRP inventory, ledger, RTM and fixed-U source closure",
+    "final complete acceptance"
+  ]
+}
