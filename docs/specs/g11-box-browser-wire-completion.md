@@ -385,8 +385,11 @@ This is a necessary existing Box/Runner contract correction, not a new runtime.
   capture as complete output. Retry Interrupted reads under the Read contract.
 - SC02: BoxExecRuntime remains the only child, process-group, pipe and capture
   worker owner. Retain ownership through terminal cleanup. Early failure must
-  terminate/reap the owned child where still live, observe both capture workers
-  and remove the foreground registration. Do not detach the second worker after
+  terminate/reap the owned child where still live and observe both capture workers.
+  Remove its foreground registration only after an observed reap. If bounded
+  cleanup cannot establish terminal ownership, retain the owned child in that
+  same registry and report unknown cleanup; bounded stop must not claim clean
+  shutdown. Do not detach the second worker after
   an error from the first. Cleanup must not signal a stale PID after reaping,
   deadlock on an inherited pipe, or erase the original unknown classification.
   A cleanup error remains unknown; it is never evidence that effects did not occur.
