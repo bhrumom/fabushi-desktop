@@ -176,6 +176,16 @@ pub fn find_agent_content_matches(
     matches
 }
 
+pub fn search_human_conversation_messages(
+    session: &Arc<ProductionSessionWorkers>,
+    _content_search: Option<&dyn RosterContentSearch>,
+    conversation_id: &str,
+    query: &str,
+    limit: usize,
+) -> Result<Vec<Value>, String> {
+    session.search_human_messages(conversation_id, query, limit)
+}
+
 pub fn search_agents(
     session: &Arc<ProductionSessionWorkers>,
     content_search: Option<&dyn RosterContentSearch>,
@@ -187,7 +197,8 @@ pub fn search_agents(
         return Ok(Vec::new());
     }
     if let Some(content_search) = content_search.filter(|search| search.is_search_ready()) {
-        let indexed_limit = limit.saturating_add(content_search.max_matches_per_agent());
+        let max_matches_per_agent = content_search.max_matches_per_agent();
+        let indexed_limit = limit.saturating_add(max_matches_per_agent);
         if let Some(indexed) = content_search.search_messages(&normalized, indexed_limit) {
             let existing_agent_ids = session
                 .list_agent_summaries(None)?
@@ -205,6 +216,11 @@ pub fn search_agents(
                     snippet: matched.snippet,
                 })
                 .collect::<Vec<_>>();
+            results.extend(collect_human_conversation_search_results(
+                session,
+                &normalized,
+                max_matches_per_agent,
+            )?);
             results.sort_by(|left, right| {
                 right
                     .timestamp_ms
@@ -227,32 +243,41 @@ pub fn search_media(
     if limit == 0 {
         return Ok(Vec::new());
     }
-    let Some(content_search) = content_search.filter(|search| search.is_search_ready()) else {
-        return Ok(Vec::new());
-    };
-    let Some(indexed) = content_search.search_media(query.trim(), limit) else {
-        return Ok(Vec::new());
-    };
-    let existing_agent_ids = session
-        .list_agent_summaries(None)?
-        .into_iter()
-        .map(|agent| agent.id)
-        .collect::<std::collections::HashSet<_>>();
-    Ok(indexed
-        .into_iter()
-        .filter(|matched| existing_agent_ids.contains(&matched.agent_id))
-        .map(|matched| RosterMediaSearchResult {
-            agent_id: matched.agent_id,
-            entry_id: matched.entry_id,
-            file_name: matched.file_name,
-            ext: matched.ext,
-            mime: matched.mime,
-            kind: attachment_kind_name(matched.kind).to_string(),
-            timestamp_ms: matched.timestamp_ms,
-            width: matched.width,
-            height: matched.height,
-        })
-        .collect())
+    let trimmed_query = query.trim();
+    let mut results = Vec::new();
+    if let Some(content_search) = content_search.filter(|search| search.is_search_ready()) {
+        if let Some(indexed) = content_search.search_media(trimmed_query, limit) {
+            let existing_agent_ids = session
+                .list_agent_summaries(None)?
+                .into_iter()
+                .map(|agent| agent.id)
+                .collect::<std::collections::HashSet<_>>();
+            results.extend(
+                indexed
+                    .into_iter()
+                    .filter(|matched| existing_agent_ids.contains(&matched.agent_id))
+                    .map(|matched| RosterMediaSearchResult {
+                        agent_id: matched.agent_id,
+                        entry_id: matched.entry_id,
+                        file_name: matched.file_name,
+                        ext: matched.ext,
+                        mime: matched.mime,
+                        kind: attachment_kind_name(matched.kind).to_string(),
+                        timestamp_ms: matched.timestamp_ms,
+                        width: matched.width,
+                        height: matched.height,
+                    }),
+            );
+        }
+    }
+    results.extend(collect_human_conversation_media_results(
+        session,
+        trimmed_query,
+        limit,
+    )?);
+    results.sort_by(|left, right| right.timestamp_ms.cmp(&left.timestamp_ms));
+    results.truncate(limit);
+    Ok(results)
 }
 
 fn attachment_kind_name(kind: AttachmentKind) -> &'static str {
@@ -302,6 +327,11 @@ pub fn search_agents_linear(
             });
         }
     }
+    results.extend(collect_human_conversation_search_results(
+        session,
+        &normalized,
+        AGENT_CONTENT_SEARCH_MAX_MATCHES_PER_AGENT,
+    )?);
     results.sort_by(|left, right| {
         right
             .timestamp_ms
@@ -310,6 +340,292 @@ pub fn search_agents_linear(
     });
     results.truncate(limit);
     Ok(results)
+}
+
+fn collect_human_conversation_search_results(
+    session: &Arc<ProductionSessionWorkers>,
+    normalized_query: &str,
+    max_matches_per_conversation: usize,
+) -> Result<Vec<TranscriptSearchResult>, String> {
+    if normalized_query.is_empty() || max_matches_per_conversation == 0 {
+        return Ok(Vec::new());
+    }
+    let Ok(local_human_id) = session.local_human_id() else {
+        return Ok(Vec::new());
+    };
+    let conversations = session.list_human_conversations()?;
+    let mut results = Vec::new();
+    for conversation in conversations {
+        let Some(conversation_id) = conversation.get("id").and_then(Value::as_str) else {
+            continue;
+        };
+        let fallback_timestamp_ms = conversation
+            .get("updatedAt")
+            .and_then(Value::as_f64)
+            .filter(|value| value.is_finite())
+            .unwrap_or_default();
+        let Ok(entries) = session.read_human_conversation_transcript(conversation_id) else {
+            continue;
+        };
+        let mut matched_count = 0usize;
+        for entry in entries.iter().rev() {
+            if matched_count >= max_matches_per_conversation {
+                break;
+            }
+            let Some(snippet) = human_entry_search_snippet(entry, normalized_query) else {
+                continue;
+            };
+            let Some(entry_id) = entry.get("id").and_then(Value::as_str) else {
+                continue;
+            };
+            let role = if entry.get("authorKind").and_then(Value::as_str) == Some("human") {
+                if entry.get("authorId").and_then(Value::as_str) == Some(local_human_id) {
+                    "user"
+                } else {
+                    "assistant"
+                }
+            } else if entry.get("role").and_then(Value::as_str) == Some("user") {
+                "user"
+            } else {
+                "assistant"
+            };
+            let timestamp_ms = entry
+                .get("timestampMs")
+                .and_then(Value::as_f64)
+                .filter(|value| value.is_finite() && *value > 0.0)
+                .unwrap_or(fallback_timestamp_ms);
+            results.push(TranscriptSearchResult {
+                agent_id: conversation_id.to_string(),
+                entry_id: entry_id.to_string(),
+                role: role.to_string(),
+                timestamp_ms,
+                snippet,
+            });
+            matched_count += 1;
+        }
+    }
+    Ok(results)
+}
+
+fn human_entry_search_snippet(entry: &Value, normalized_query: &str) -> Option<String> {
+    if entry.get("kind").and_then(Value::as_str) != Some("message") {
+        return None;
+    }
+    let content = entry
+        .get("content")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if let Some(snippet) = build_content_snippet(content, normalized_query) {
+        return Some(snippet);
+    }
+    let mut parts = Vec::new();
+    if let Some(author_name) = entry
+        .get("authorName")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        parts.push(author_name);
+    }
+    if !content.trim().is_empty() {
+        parts.push(content.trim());
+    }
+    if let Some(attachments) = entry.get("attachments").and_then(Value::as_array) {
+        for attachment in attachments {
+            if let Some(name) = attachment
+                .get("name")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            {
+                parts.push(name);
+            }
+        }
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    build_content_snippet(&parts.join(" "), normalized_query)
+}
+
+fn collect_human_conversation_media_results(
+    session: &Arc<ProductionSessionWorkers>,
+    query: &str,
+    limit: usize,
+) -> Result<Vec<RosterMediaSearchResult>, String> {
+    if limit == 0 || session.local_human_id().is_err() {
+        return Ok(Vec::new());
+    }
+    let normalized_query = query.trim().to_lowercase();
+    let conversations = session.list_human_conversations()?;
+    let mut results = Vec::new();
+    for conversation in conversations {
+        let Some(conversation_id) = conversation.get("id").and_then(Value::as_str) else {
+            continue;
+        };
+        let fallback_timestamp_ms = conversation
+            .get("updatedAt")
+            .and_then(Value::as_f64)
+            .filter(|value| value.is_finite())
+            .unwrap_or_default();
+        let Ok(entries) = session.read_human_conversation_transcript(conversation_id) else {
+            continue;
+        };
+        for entry in entries.iter().rev() {
+            if entry.get("kind").and_then(Value::as_str) != Some("message") {
+                continue;
+            }
+            let Some(entry_id) = entry.get("id").and_then(Value::as_str) else {
+                continue;
+            };
+            let Some(attachments) = entry.get("attachments").and_then(Value::as_array) else {
+                continue;
+            };
+            let timestamp_ms = entry
+                .get("timestampMs")
+                .and_then(Value::as_f64)
+                .filter(|value| value.is_finite() && *value > 0.0)
+                .unwrap_or(fallback_timestamp_ms)
+                .round() as i64;
+            for attachment in attachments {
+                let Some(file_name) = attachment
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                else {
+                    continue;
+                };
+                let path = attachment
+                    .get("path")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let ext = human_attachment_extension(file_name)
+                    .or_else(|| human_attachment_extension(path))
+                    .map(|extension| format!(".{extension}"))
+                    .unwrap_or_default();
+                let mime = attachment
+                    .get("mimeType")
+                    .or_else(|| attachment.get("contentType"))
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_string)
+                    .or_else(|| human_attachment_mime(file_name));
+                let kind = attachment_kind_name(classify_human_attachment(file_name, path)).to_string();
+                let matches_query = normalized_query.is_empty()
+                    || file_name.to_lowercase().contains(&normalized_query)
+                    || ext.to_lowercase().contains(&normalized_query)
+                    || kind.to_lowercase().contains(&normalized_query)
+                    || mime
+                        .as_deref()
+                        .is_some_and(|value| value.to_lowercase().contains(&normalized_query));
+                if !matches_query {
+                    continue;
+                }
+                results.push(RosterMediaSearchResult {
+                    agent_id: conversation_id.to_string(),
+                    entry_id: entry_id.to_string(),
+                    file_name: file_name.to_string(),
+                    ext,
+                    mime,
+                    kind,
+                    timestamp_ms,
+                    width: None,
+                    height: None,
+                });
+                break;
+            }
+        }
+    }
+    Ok(results)
+}
+
+fn human_attachment_extension(subject: &str) -> Option<String> {
+    let base = subject.rsplit(['/', '\\']).next().unwrap_or("");
+    let dot = base.rfind('.')?;
+    if dot == 0 || dot + 1 >= base.len() {
+        return None;
+    }
+    Some(base[dot + 1..].to_ascii_lowercase())
+}
+
+fn human_attachment_mime(file_name: &str) -> Option<String> {
+    let extension = human_attachment_extension(file_name)?;
+    let mime = match extension.as_str() {
+        "avif" => "image/avif",
+        "bmp" => "image/bmp",
+        "gif" => "image/gif",
+        "ico" => "image/x-icon",
+        "jpeg" | "jpg" => "image/jpeg",
+        "png" => "image/png",
+        "svg" => "image/svg+xml",
+        "webp" => "image/webp",
+        "m4v" | "mp4" => "video/mp4",
+        "mov" => "video/quicktime",
+        "ogv" => "video/ogg",
+        "webm" => "video/webm",
+        "aac" => "audio/aac",
+        "flac" => "audio/flac",
+        "m4a" => "audio/mp4",
+        "mp3" => "audio/mpeg",
+        "oga" | "ogg" | "opus" => "audio/ogg",
+        "wav" => "audio/wav",
+        "weba" => "audio/webm",
+        _ => return None,
+    };
+    Some(mime.into())
+}
+
+fn classify_human_attachment(file_name: &str, url_or_path: &str) -> AttachmentKind {
+    const IMAGES: &[&str] = &["avif", "bmp", "gif", "ico", "jpeg", "jpg", "png", "svg", "webp"];
+    const VIDEOS: &[&str] = &["m4v", "mov", "mp4", "ogv", "webm"];
+    const AUDIO: &[&str] = &["aac", "flac", "m4a", "mp3", "oga", "ogg", "opus", "wav", "weba"];
+    const MARKDOWN: &[&str] = &["md", "markdown", "mdx"];
+    const TABLES: &[&str] = &["csv", "tsv", "xlsx", "xls"];
+    const JSON: &[&str] = &["json", "jsonc", "json5", "ndjson"];
+    const ARCHIVES: &[&str] = &[
+        "zip", "tar", "gz", "tgz", "bz2", "tbz2", "xz", "txz", "zst", "7z", "rar",
+    ];
+    const TEXT: &[&str] = &[
+        "txt", "text", "log", "rst", "adoc", "tex", "xml", "yaml", "yml", "toml", "ini",
+        "cfg", "conf", "env", "properties", "plist", "gradle", "html", "htm", "css", "scss",
+        "sass", "less", "js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts", "py", "pyi",
+        "rb", "go", "rs", "java", "kt", "kts", "c", "h", "cc", "cpp", "cxx", "hpp", "hh",
+        "cs", "php", "swift", "scala", "dart", "lua", "pl", "pm", "r", "sql", "graphql",
+        "gql", "proto", "vue", "svelte", "astro", "sh", "bash", "zsh", "fish", "bat", "ps1",
+        "tf", "tfvars", "dockerfile", "diff", "patch",
+    ];
+    let classify = |subject: &str| -> Option<AttachmentKind> {
+        let extension = human_attachment_extension(subject)?;
+        let extension = extension.as_str();
+        if IMAGES.contains(&extension) {
+            Some(AttachmentKind::Image)
+        } else if VIDEOS.contains(&extension) {
+            Some(AttachmentKind::Video)
+        } else if AUDIO.contains(&extension) {
+            Some(AttachmentKind::Audio)
+        } else if extension == "pdf" {
+            Some(AttachmentKind::Pdf)
+        } else if TABLES.contains(&extension) {
+            Some(AttachmentKind::Table)
+        } else if JSON.contains(&extension) {
+            Some(AttachmentKind::Json)
+        } else if MARKDOWN.contains(&extension) {
+            Some(AttachmentKind::Markdown)
+        } else if extension == "docx" {
+            Some(AttachmentKind::Document)
+        } else if TEXT.contains(&extension) {
+            Some(AttachmentKind::Text)
+        } else if ARCHIVES.contains(&extension) {
+            Some(AttachmentKind::Archive)
+        } else {
+            None
+        }
+    };
+    classify(file_name)
+        .or_else(|| classify(url_or_path))
+        .unwrap_or(AttachmentKind::File)
 }
 
 fn char_boundary_at_or_after(text: &str, mut index: usize) -> usize {

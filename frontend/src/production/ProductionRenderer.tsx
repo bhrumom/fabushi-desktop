@@ -948,6 +948,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [conversationOutlineAgentId, setConversationOutlineAgentId] = useState<string | null>(null);
   const [asyncTasksAgentId, setAsyncTasksAgentId] = useState<string | null>(null);
   const [paletteMessageTarget, setPaletteMessageTarget] = useState<Pick<CommandPaletteMessage, "agentId" | "entryId"> | null>(null);
+  const paletteMessagePagesLoadedRef = useRef(0);
   const [deleteAgent, setDeleteAgent] = useState<AgentDeleteTarget | null>(null);
   const [deleteSection, setDeleteSection] = useState<SidebarSectionDeleteTarget | null>(null);
   const [settingsSection, setSettingsSection] = useState<SettingsSectionId>("general");
@@ -3172,6 +3173,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setOverlay(null);
       setWorkspaceRoute(null);
       setCommandPaletteOpen(false);
+      setPaletteMessageTarget((current) => {
+        if (current == null || current.agentId === agentId) return current;
+        paletteMessagePagesLoadedRef.current = 0;
+        return null;
+      });
     }
     const isHumanTranscript = humanConversationsRef.current.some((conversation) => conversation.id === agentId);
     if (initialTranscriptRequestRef.current?.agentId === agentId
@@ -3723,12 +3729,61 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [activeAgentId]);
 
   useEffect(() => {
-    if (paletteMessageTarget == null || activeAgentId !== paletteMessageTarget.agentId || entriesByAgent[paletteMessageTarget.agentId] == null) return;
+    if (paletteMessageTarget == null) return;
+    if (account?.kind !== "logged-in") {
+      paletteMessagePagesLoadedRef.current = 0;
+      setPaletteMessageTarget(null);
+      return;
+    }
+    if (activeAgentId !== paletteMessageTarget.agentId || entriesByAgent[paletteMessageTarget.agentId] == null) return;
     const row = [...document.querySelectorAll<HTMLElement>("[data-entry-id]")].find((candidate) => candidate.dataset.entryId === paletteMessageTarget.entryId);
-    if (row == null) return;
-    row.scrollIntoView({ block: "center", behavior: "smooth" });
-    setPaletteMessageTarget(null);
-  }, [activeAgentId, entriesByAgent, paletteMessageTarget]);
+    if (row != null) {
+      row.scrollIntoView({ block: "center", behavior: "smooth" });
+      paletteMessagePagesLoadedRef.current = 0;
+      setPaletteMessageTarget(null);
+      return;
+    }
+    if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(paletteMessageTarget.entryId) === true) {
+      paletteMessagePagesLoadedRef.current = 0;
+      setPaletteMessageTarget(null);
+      return;
+    }
+    if (entries.some((entry) => entry.id === paletteMessageTarget.entryId)) return;
+    const pagination = transcriptPaginationController.getSnapshot();
+    if (pagination.agentId !== paletteMessageTarget.agentId
+      || pagination.accountSlot !== transcriptAccountSlot
+      || pagination.isLoadingOlder) {
+      return;
+    }
+    if (pagination.cursor.kind === "exhausted"
+      || pagination.cursor.kind === "unavailable"
+      || pagination.olderFailure != null
+      || paletteMessagePagesLoadedRef.current >= 32) {
+      paletteMessagePagesLoadedRef.current = 0;
+      setPaletteMessageTarget(null);
+      return;
+    }
+    if (pagination.cursor.kind !== "more") return;
+    paletteMessagePagesLoadedRef.current += 1;
+    void transcriptPaginationController.loadOlder().catch((error: unknown) => {
+      if (activeAgentIdRef.current !== paletteMessageTarget.agentId) return;
+      setNotice(error instanceof Error ? `Search navigation unavailable: ${error.message}` : `Search navigation unavailable: ${String(error)}`);
+    });
+  }, [
+    account?.kind,
+    activeAgentId,
+    entries,
+    entriesByAgent,
+    paletteMessageTarget,
+    transcriptAccountSlot,
+    transcriptPaginationController,
+    transcriptPaginationSnapshot.accountSlot,
+    transcriptPaginationSnapshot.agentId,
+    transcriptPaginationSnapshot.cursor,
+    transcriptPaginationSnapshot.hasOlder,
+    transcriptPaginationSnapshot.isLoadingOlder,
+    transcriptPaginationSnapshot.olderFailure,
+  ]);
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L523
   useEffect(() => {
@@ -3878,6 +3933,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         setIsRosterRetrying(false);
         pinnedStateVersionRef.current += 1; pinnedAgentIdsRef.current = []; setPinnedAgentIds([]);
         navigationHistoryRef.current = createRootShellNavigationState();
+        paletteMessagePagesLoadedRef.current = 0;
         setPaletteMessageTarget(null);
         setRoutinesInfoPaneOpen(false);
         setRoutinesAutomationId(null);
@@ -4542,10 +4598,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     closeChooser: () => setOverlay(null),
     openOrgChart: () => setWorkspaceRoute("org-chart"),
   }), [orgChartIsAvailable]);
-  const openPaletteFile = useCallback((file: { agentId: string }) => {
+  const openPaletteFile = useCallback((file: { agentId: string; entryId?: string }) => {
+    paletteMessagePagesLoadedRef.current = 0;
+    if (typeof file.entryId === "string" && file.entryId.length > 0) {
+      setPaletteMessageTarget({ agentId: file.agentId, entryId: file.entryId });
+    }
     void openAgent(file.agentId);
   }, [openAgent]);
   const openPaletteMessage = useCallback((message: CommandPaletteMessage) => {
+    paletteMessagePagesLoadedRef.current = 0;
     setPaletteMessageTarget({ agentId: message.agentId, entryId: message.entryId });
     void openAgent(message.agentId);
   }, [openAgent]);
@@ -5180,7 +5241,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           opening the selected agent's routines pane. */}
       {/* onOpenRoutine={(agentId) => void openAgent(agentId)} */}
       <CommandPalette
-        agents={agents}
+        agents={allConversations}
         commands={paletteCommands}
         routines={routineSnapshot.value}
         routineStatus={routineSnapshot.status}

@@ -18,7 +18,8 @@ use crate::extensions::transcript::send_message_shaping::{
 };
 use crate::extensions::transcript::send_thread_stamping::resolve_send_reply_threading;
 use crate::extensions::transcript::roster_search::{
-    AGENT_CONTENT_SEARCH_MAX_RESULTS, RosterContentSearch, search_agents, search_media,
+    AGENT_CONTENT_SEARCH_MAX_RESULTS, RosterContentSearch, search_agents,
+    search_human_conversation_messages, search_media,
 };
 use crate::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
@@ -479,10 +480,15 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .and_then(Value::as_u64)
                     .and_then(|value| usize::try_from(value).ok())
                     .unwrap_or(50);
-                session
-                    .search_human_messages(conversation_id, query, limit)
-                    .map(Value::Array)
-                    .map_err(SessionGatewayError::internal)
+                search_human_conversation_messages(
+                    session,
+                    content_search,
+                    conversation_id,
+                    query,
+                    limit,
+                )
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
             })
         }),
         "getCallTransportIdentity" => session

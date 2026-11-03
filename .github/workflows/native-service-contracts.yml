@@ -7,7 +7,9 @@ on:
       - 'source/host/src/transcript_mutation_events.rs'
       - 'source/host/src/extensions/transcript/extension.rs'
       - 'source/host/src/extensions/transcript/roster_emit.rs'
+      - 'source/host/src/extensions/transcript/roster_search.rs'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
+      - 'source/host/tests/roster_search_contract.rs'
       - 'source/host/tests/session_gateway_contract.rs'
       - 'source/host/src/gateway_server.rs'
       - 'source/host/tests/gateway_server_contract.rs'
@@ -374,6 +376,13 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test gateway_server_contract gateway_forward_recipient_methods_are_authenticated_and_unknown_methods_stay_closed -- --nocapture 2>&1 | tee artifacts/native-message/forward-http.log
           grep -Eq 'test result: ok\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-http.log
+      - name: Canonical Search merges authenticated Human and Agent conversations
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test roster_search_contract -- --nocapture 2>&1 | tee artifacts/native-message/roster-search.log
+          grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/roster-search.log
+          grep -Fx 'test canonical_search_merges_authenticated_human_and_agent_conversations_and_enforces_account_isolation ... ok' artifacts/native-message/roster-search.log
       - name: Diagnose locked Session dependency drift (no acceptance)
         if: failure()
         shell: bash
@@ -1007,8 +1016,8 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# tests 12' artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# pass 12' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 13' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 13' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
@@ -1017,7 +1026,8 @@ jobs:
             'human_entry_refresh_requeries_search_and_discards_older_results' \
             'human_entry_refresh_retires_action_menus_without_hook_order_errors' \
             'human_entry_refresh_retires_removed_pdf_and_late_resource_reads' \
-            'human_entry_refresh_retires_spreadsheet_mount_when_source_changes'; do
+            'human_entry_refresh_retires_spreadsheet_mount_when_source_changes' \
+            'command_palette_searches_human_conversations_messages_and_files_and_paginates_older_targets'; do
             grep -Eq "^ok [0-9]+ - ${entry_case}$" artifacts/native-message-ui/production-transcript.log
           done
       - name: Actual ProductionRenderer author and draft recovery behaviors

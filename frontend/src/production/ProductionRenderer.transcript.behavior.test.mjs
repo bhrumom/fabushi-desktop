@@ -71,7 +71,7 @@ const historyPage = (entries, nextBeforeSeq, nextBeforeCursor) => {
   return { entries, ...(nextBeforeSeq == null ? {} : { nextBeforeSeq, nextBeforeCursor }) };
 };
 
-async function fixture(t) {
+async function fixture(t, { globalSearch = false } = {}) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const diagnostics = [];
   const name = t.name.replace(/[^a-z0-9]+/gi, "-");
@@ -97,7 +97,7 @@ async function fixture(t) {
     assert.deepEqual(state.unexpected, [], "undeclared boundary calls must not be hidden by the fixture");
     assert.deepEqual(diagnostics, [], "real renderer mount must not hide browser/runtime errors");
   });
-  await page.goto(url);
+  await page.goto(globalSearch ? `${url}?globalSearch=1` : url);
   try {
     await page.getByTestId("messenger-workspace").waitFor();
     await page.getByRole("button", { name: "Alpha", exact: true }).waitFor();
@@ -1069,4 +1069,102 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
     allPublicRequestsSettled: true, currentDownload: true,
     disposedRead: null, disposedDownload: false, noDispatchAfterDispose: true, currentClosed: true,
   });
+});
+
+test("command_palette_searches_human_conversations_messages_and_files_and_paginates_older_targets", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t, { globalSearch: true });
+  const initial = await f.request(TAIL, { conversationId: A, beforeSeq: null });
+  await f.resolveRequest(initial, historyPage(messages(41, 64), 41, ALPHA_41));
+  await f.expectRows(ids(41, 64));
+  await f.frames();
+
+  const palette = f.page.getByRole("dialog", { name: "Search", exact: true });
+  await f.page.getByRole("button", { name: "Search", exact: true }).click();
+  await palette.waitFor();
+  await palette.getByRole("option").filter({ hasText: "Alpha" }).first().waitFor();
+  await palette.getByRole("option").filter({ hasText: "Beta" }).first().waitFor();
+
+  await f.call("holdActionRpc", "searchAgents");
+  await f.call("holdActionRpc", "searchMedia");
+  await palette.getByRole("combobox", { name: "Search", exact: true }).fill("needle");
+
+  const mediaSearch = await f.request("searchMedia", { query: "needle", limit: 50 });
+  const messageSearch = await f.request("searchAgents", { query: "needle" });
+  await f.resolveRequest(mediaSearch, [
+    {
+      agentId: B,
+      entryId: "b-file-1",
+      fileName: "needle-report.pdf",
+      ext: "pdf",
+      mime: "application/pdf",
+      kind: "pdf",
+      timestampMs: 1_700_000_000_500,
+      width: null,
+      height: null,
+    },
+  ]);
+  await f.resolveRequest(messageSearch, [
+    {
+      agentId: A,
+      entryId: "m15",
+      role: "assistant",
+      timestampMs: 1_700_000_000_900,
+      snippet: "Alpha older needle on page three",
+    },
+  ]);
+
+  const messageOption = palette.getByRole("option").filter({ hasText: "Alpha older needle on page three" });
+  const fileOption = palette.getByRole("option").filter({ hasText: "needle-report.pdf" });
+  await messageOption.waitFor();
+  await fileOption.waitFor();
+  assert.match(await messageOption.innerText(), /Alpha to you/);
+  assert.match(await fileOption.innerText(), /Beta/);
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 0);
+
+  await messageOption.click();
+  await palette.waitFor({ state: "detached" });
+
+  const page2 = await f.request(TAIL, { conversationId: A, beforeSeq: 41, beforeCursor: ALPHA_41 }, initial.id);
+  await f.resolveRequest(page2, historyPage(messages(21, 40), 21, ALPHA_21));
+  const page3 = await f.request(TAIL, { conversationId: A, beforeSeq: 21, beforeCursor: ALPHA_21 }, page2.id);
+  await f.resolveRequest(page3, historyPage(messages(1, 20)));
+  await f.expectRows(ids(1, 64));
+  await f.frames();
+  assert.equal(await f.page.locator('[data-entry-id="m15"]').count(), 1);
+
+  await f.page.getByRole("button", { name: "Search", exact: true }).click();
+  await palette.waitFor();
+  const emptyMediaSearch = await f.request("searchMedia", { query: "", limit: 50 }, mediaSearch.id);
+  await f.resolveRequest(emptyMediaSearch, [
+    {
+      agentId: B,
+      entryId: "b10",
+      fileName: "beta-archive.pdf",
+      ext: "pdf",
+      mime: "application/pdf",
+      kind: "pdf",
+      timestampMs: 1_700_000_000_800,
+      width: null,
+      height: null,
+    },
+  ]);
+  await palette.getByRole("tab", { name: "Files", exact: true }).click();
+  const betaFileOption = palette.getByRole("option").filter({ hasText: "beta-archive.pdf" });
+  await betaFileOption.waitFor();
+  await betaFileOption.click();
+  await palette.waitFor({ state: "detached" });
+
+  const betaInitial = await f.request(TAIL, { conversationId: B, beforeSeq: null }, page3.id);
+  await f.resolveRequest(betaInitial, historyPage(messages(21, 40, "b"), 21, ALPHA_21));
+  const betaOlder = await f.request(TAIL, { conversationId: B, beforeSeq: 21, beforeCursor: ALPHA_21 }, betaInitial.id);
+
+  await f.call("switchAccount", "fixture-b");
+  const accountBMedia = await f.request("searchMedia", { query: "", limit: 50, account: "fixture-b" }, emptyMediaSearch.id);
+  const accountBTail = await f.request(TAIL, { conversationId: A, beforeSeq: null, account: "fixture-b" }, betaOlder.id);
+  await f.rejectRequest(betaOlder, "STALE_ACCOUNT_A_SEARCH_NAVIGATION");
+  await f.resolveRequest(accountBMedia, []);
+  await f.resolveRequest(accountBTail, historyPage(messages(101, 102, "acctb-")));
+  await f.expectRows(["acctb-101", "acctb-102"]);
+  await f.frames();
+  assert.equal(await f.page.getByText("STALE_ACCOUNT_A_SEARCH_NAVIGATION", { exact: false }).count(), 0);
 });

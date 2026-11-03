@@ -36,13 +36,21 @@ fn run() -> Result<(), String> {
         .name("mahayana-gateway-events".into())
         .spawn(move || {
             while !pump_shutdown.load(Ordering::Acquire) {
+                // Poll non-blockingly under the runtime mutex and sleep outside
+                // the guard when idle so OS unfair mutexes cannot starve stdin
+                // request dispatch while waiting on the runtime event channel.
                 let received = pump_runtime
                     .lock()
                     .map_err(|_| "runtime mutex poisoned".to_string())
-                    .and_then(|runtime| runtime.receive(250));
+                    .and_then(|runtime| runtime.receive(0));
                 let raw_event = match received {
                     Ok(Some(event)) => event,
-                    Ok(None) => continue,
+                    Ok(None) => {
+                        if !pump_shutdown.load(Ordering::Acquire) {
+                            thread::sleep(Duration::from_millis(10));
+                        }
+                        continue;
+                    }
                     Err(error) => {
                         eprintln!("mahayana-gateway runtime receive failed: {error}");
                         break;

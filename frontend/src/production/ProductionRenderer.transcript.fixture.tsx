@@ -36,14 +36,16 @@ const humans = [
   { kind: "human", id: "human:alpha", title: "Alpha", participantIds: ["peer-alpha"], updatedAt: 2 },
   { kind: "human", id: "human:beta", title: "Beta", participantIds: ["peer-beta"], updatedAt: 1 },
 ];
+const globalSearch = new URLSearchParams(window.location.search).get("globalSearch") === "1";
 const controlled = new Set(["getHumanConversationTranscriptTail", "getHumanConversationTranscript", "searchHumanMessages"]);
 const fixedReplies: Record<string, unknown> = {
   listAgents: [], searchAgents: [], countAgents: 0,
+  ...(globalSearch ? { searchMedia: [] } : {}),
   listHumanConversations: humans, syncHumanConversations: humans,
   syncHumanConversation: null, syncHumanCalls: null, listCallSessions: [],
   listAllAutomations: [], getAgentAutomations: [], getAgentWorkflows: [],
   getTrays: [], getListenerIntegrations: { integrations: [] }, getAsyncTasks: [],
-  isAgentNetworkEnabled: false, isGlobalSearchEnabled: false,
+  isAgentNetworkEnabled: false, isGlobalSearchEnabled: globalSearch,
   getForeverBoxStatus: null, getSubagents: [], isEgressTunnelAvailable: false,
 };
 class FixturePort implements TransferredCoordinatorPort {
@@ -261,7 +263,7 @@ Object.assign(window, {
     event: emit,
     // Opt-in controls keep the original eight cases' RPC allowlist unchanged.
     holdActionRpc: (method: string) => {
-      if (!["reactHumanMessage", "searchHumanRecipients"].includes(method)) throw new Error("Unsupported action RPC control");
+      if (!["reactHumanMessage", "searchHumanRecipients", "searchAgents", "searchMedia"].includes(method)) throw new Error("Unsupported action RPC control");
       controlled.add(method);
     },
     declareResource,

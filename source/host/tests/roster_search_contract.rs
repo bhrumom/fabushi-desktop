@@ -212,3 +212,175 @@ fn production_gateway_consumes_ready_content_search_for_indexed_messages_and_med
     session.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enforces_account_isolation() {
+    let root = temp_root("canonical-human-agent-search");
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(root.clone()),
+    );
+    let session = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+            &root,
+            500,
+            Some("human-local".into()),
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+    let agent = session
+        .materialize_new_session(Some(&profile("IndexedAgent")), "user", None)
+        .expect("indexed agent");
+    let human_conversation = session
+        .create_human_conversation("human-peer", "Alice")
+        .expect("human conversation");
+    let conversation_id = human_conversation["id"]
+        .as_str()
+        .expect("conversation id")
+        .to_string();
+
+    let human_first = session
+        .append_human_message(
+            &conversation_id,
+            "needle from local human",
+            "nonce-search-1",
+            Some(950.0),
+            None,
+            &[json!({"path": "/tmp/needle-report.pdf", "name": "needle-report.pdf"})],
+        )
+        .expect("first human message");
+    let human_agent_handoff = session
+        .append_human_agent_message(
+            &conversation_id,
+            &agent.id,
+            "stream-search-1",
+            "needle from handoff agent",
+            980.0,
+        )
+        .expect("human agent handoff message");
+
+    let indexed = FakeIndexedRosterSearch {
+        agent_id: agent.id.clone(),
+    };
+
+    let unified_messages = dispatch_production_session_gateway_call_with_content_search(
+        &session,
+        Some(&indexed),
+        "searchAgents",
+        &json!({"query":" needle ","limit":10}),
+    )
+    .expect("searchAgents method")
+    .expect("unified searchAgents");
+    let unified_array = unified_messages.as_array().expect("searchAgents array");
+    assert_eq!(unified_array.len(), 3);
+    assert_eq!(unified_array[0]["agentId"], conversation_id);
+    assert_eq!(unified_array[0]["entryId"], human_agent_handoff["id"]);
+    assert_eq!(unified_array[0]["role"], "assistant");
+    assert_eq!(unified_array[1]["agentId"], conversation_id);
+    assert_eq!(unified_array[1]["entryId"], human_first["id"]);
+    assert_eq!(unified_array[1]["role"], "user");
+    assert_eq!(unified_array[2]["agentId"], agent.id);
+    assert_eq!(unified_array[2]["entryId"], "indexed-message");
+
+    let linear_messages = dispatch_production_session_gateway_call(
+        &session,
+        "searchAgents",
+        &json!({"query":"needle-report.pdf","limit":10}),
+    )
+    .expect("searchAgents linear method")
+    .expect("linear searchAgents");
+    let linear_array = linear_messages.as_array().expect("linear array");
+    assert_eq!(linear_array.len(), 1);
+    assert_eq!(linear_array[0]["agentId"], conversation_id);
+    assert_eq!(linear_array[0]["entryId"], human_first["id"]);
+
+    let unified_media = dispatch_production_session_gateway_call_with_content_search(
+        &session,
+        Some(&indexed),
+        "searchMedia",
+        &json!({"query":"needle","limit":10}),
+    )
+    .expect("searchMedia method")
+    .expect("unified searchMedia");
+    let media_array = unified_media.as_array().expect("searchMedia array");
+    assert_eq!(media_array.len(), 2);
+    assert_eq!(media_array[0]["agentId"], conversation_id);
+    assert_eq!(media_array[0]["entryId"], human_first["id"]);
+    assert_eq!(media_array[0]["fileName"], "needle-report.pdf");
+    assert_eq!(media_array[0]["ext"], ".pdf");
+    assert_eq!(media_array[0]["kind"], "pdf");
+    assert_eq!(media_array[1]["agentId"], agent.id);
+    assert_eq!(media_array[1]["entryId"], "indexed-media");
+
+    let scoped_human_messages = dispatch_production_session_gateway_call_with_content_search(
+        &session,
+        Some(&indexed),
+        "searchHumanMessages",
+        &json!({
+            "conversationId": conversation_id,
+            "query": "needle",
+            "limit": 10
+        }),
+    )
+    .expect("searchHumanMessages method")
+    .expect("scoped searchHumanMessages");
+    assert_eq!(
+        scoped_human_messages,
+        json!([human_agent_handoff, human_first])
+    );
+
+    session.shutdown();
+
+    let foreign_memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(root.clone()),
+    );
+    let foreign = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+            &root,
+            500,
+            Some("human-foreign".into()),
+            Arc::new(|| None),
+            foreign_memory,
+        ),
+    );
+    let foreign_messages = dispatch_production_session_gateway_call_with_content_search(
+        &foreign,
+        Some(&indexed),
+        "searchAgents",
+        &json!({"query":"needle","limit":10}),
+    )
+    .expect("foreign searchAgents method")
+    .expect("foreign searchAgents");
+    let foreign_array = foreign_messages.as_array().expect("foreign array");
+    assert_eq!(foreign_array.len(), 1);
+    assert_eq!(foreign_array[0]["agentId"], agent.id);
+
+    let foreign_media = dispatch_production_session_gateway_call_with_content_search(
+        &foreign,
+        Some(&indexed),
+        "searchMedia",
+        &json!({"query":"needle","limit":10}),
+    )
+    .expect("foreign searchMedia method")
+    .expect("foreign searchMedia");
+    let foreign_media_array = foreign_media.as_array().expect("foreign media array");
+    assert_eq!(foreign_media_array.len(), 1);
+    assert_eq!(foreign_media_array[0]["agentId"], agent.id);
+
+    let foreign_scoped = dispatch_production_session_gateway_call_with_content_search(
+        &foreign,
+        Some(&indexed),
+        "searchHumanMessages",
+        &json!({
+            "conversationId": conversation_id,
+            "query": "needle",
+            "limit": 10
+        }),
+    )
+    .expect("foreign searchHumanMessages")
+    .expect_err("foreign account must be rejected from non-participant Human search");
+    assert!(format!("{foreign_scoped:?}").contains("not a conversation participant"));
+
+    foreign.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
