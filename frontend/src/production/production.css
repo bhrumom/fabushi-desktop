@@ -365,9 +365,6 @@ button, textarea, input { font: inherit; }
 .sand-chat-header {
   position: relative;
   z-index: 5000;
-  /* Human handoff controls share the titlebar row. Reserve the real native
-   * window-control inset so the select cannot cover Minimize/Maximize/Close. */
-  padding-right: max(16px, var(--sand-window-controls-inset, 0px));
   -webkit-app-region: drag;
   app-region: drag;
 }
