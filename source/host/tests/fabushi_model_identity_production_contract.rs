@@ -705,6 +705,7 @@ impl ProductionFixtureOwners {
                 provider: self.provider,
                 fabushi_model: Some(model.clone()),
                 codex_model: None,
+                codex_request_binding: None,
                 fabushi_request_binding,
                 bridge: Arc::new(EmptyBridge),
                 cursor_auth: None,
@@ -999,6 +1000,7 @@ enum BindingCase {
     AcceptedCheckpointRotation,
     FollowupAccountSwap,
     FollowupRotation,
+    AdmittedSummary,
 }
 
 impl BindingCase {
@@ -1010,6 +1012,7 @@ impl BindingCase {
             Self::AcceptedCheckpointRotation => "accepted_checkpoint_retry_accepts_same_context_token_rotation",
             Self::FollowupAccountSwap => "same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account",
             Self::FollowupRotation => "same_runner_nudges_and_turn_memory_accept_same_context_token_rotation",
+            Self::AdmittedSummary => "admitted_turn_summary_retains_fabushi_model_and_request_binding",
         }
     }
 
@@ -1025,6 +1028,10 @@ impl BindingCase {
         matches!(self, Self::FollowupAccountSwap | Self::FollowupRotation)
     }
 
+    fn has_admitted_summary(self) -> bool {
+        matches!(self, Self::AdmittedSummary)
+    }
+
     fn expected_requests(self) -> usize {
         match self {
             Self::PreEffectAccountSwap => 1,
@@ -1033,6 +1040,7 @@ impl BindingCase {
             Self::AcceptedCheckpointRotation => 4,
             Self::FollowupAccountSwap => 3,
             Self::FollowupRotation => 7,
+            Self::AdmittedSummary => 3,
         }
     }
 }
@@ -1102,6 +1110,14 @@ fn binding_success_response(text: &str) -> (&'static str, &'static str, String) 
 }
 
 fn binding_response(case: BindingCase, index: usize) -> (&'static str, &'static str, String) {
+    if case.has_admitted_summary() {
+        return binding_success_response(match index {
+            0 => "admitted Native primary summary",
+            1 => "admitted Native prefix summary",
+            2 => "independent Native B summary",
+            _ => "unexpected extra dispatch",
+        });
+    }
     if case.has_followups() {
         let text = if case.rotates() {
             match index {
@@ -1202,7 +1218,7 @@ impl BindingFixture {
                     state.requests.push(request);
                     index
                 };
-                let before_retry = !case.has_followups()
+                let before_retry = !case.has_followups() && !case.has_admitted_summary()
                     && index == if case.has_checkpoint() { 2 } else { 0 };
                 if before_retry {
                     if case.has_checkpoint() {
@@ -1399,7 +1415,7 @@ fn run_bound_memory_consumers(
         |system, user| {
             calls += 1;
             let result = owners.inference.run_turn_memory_prompt(
-                root, owners.provider, Some(model), None, Some(binding), system, user, &|| false,
+                root, owners.provider, Some(model), None, None, Some(binding), system, user, &|| false,
             );
             if case.rotates() {
                 assert!(result.is_ok(), "actual turn-memory consumer must permit same-context rotation");
@@ -1455,7 +1471,7 @@ fn run_bound_memory_consumers(
         |system, user| {
             evidence_inference_calls += 1;
             owners.inference.run_turn_memory_prompt(
-                root, owners.provider, Some(model), None, Some(binding), system, user, &|| false,
+                root, owners.provider, Some(model), None, None, Some(binding), system, user, &|| false,
             ).map_err(|_| "unexpected evidence-mode inference".to_string())
         },
     );
@@ -1528,14 +1544,14 @@ fn run_binding_followup_child(root: &Path, case: BindingCase) {
         generation = next_generation;
     }
     let missing_binding = owners.inference.run_turn_memory_prompt(
-        root, owners.provider, Some(model.as_str()), None, None,
+        root, owners.provider, Some(model.as_str()), None, None, None,
         "Check Native turn-memory binding admission.", "This prompt must not be dispatched.",
         &|| false,
     );
     assert!(matches!(missing_binding, Err(ProviderSessionError::Configuration(_))),
         "Native turn-memory must refuse a missing admitted binding before transport");
     let cancelled_without_binding = owners.inference.run_turn_memory_prompt(
-        root, owners.provider, Some(model.as_str()), None, None,
+        root, owners.provider, Some(model.as_str()), None, None, None,
         "Check Native turn-memory binding admission.", "This prompt must not be dispatched.",
         &|| true,
     );
@@ -1614,7 +1630,24 @@ fn assert_binding_http_outcome(root: &Path, case: BindingCase, state: &BindingSe
     assert_eq!(state.requests.len(), state.accepted, "every accepted request must parse completely");
     assert_eq!(state.responded, state.accepted, "every accepted request must receive its complete response");
     let requests = &state.requests;
-    if case.has_followups() {
+    if case.has_admitted_summary() {
+        for (request, (token, model, system, user)) in requests.iter().zip([
+            (BINDING_TOKEN_A, MODEL_A, "Summarize admitted Native primary history.", "Private Native A primary history."),
+            (BINDING_TOKEN_ROTATED, MODEL_A, "Summarize admitted Native prefix history.", "Private Native A prefix history."),
+            (BINDING_TOKEN_B, MODEL_B, "Summarize independent Native B history.", "New independently authorized Native B history."),
+        ]) {
+            assert_binding_request(request, token, model);
+            assert!(request.json.get("tools").is_none(), "admitted and independent summaries expose no tools");
+            let instructions = request.json["instructions"].as_str().expect("actual summary instructions");
+            assert!(instructions.contains(system));
+            assert!(!instructions.contains(SAND_SUMMARIZATION_MODEL_ID));
+            assert!(request.json["input"].as_array().expect("actual summary input").iter().any(|item| {
+                item["role"] == "user" && item["content"] == user
+            }));
+        }
+        assert!(state.checkpoint_files_before_503.is_none());
+        assert_no_provider_checkpoints(&ProductionRoutedProviderCheckpointStore::new(root, AGENT_ID, "admitted-summary"));
+    } else if case.has_followups() {
         assert_binding_request(&requests[0], BINDING_TOKEN_A, MODEL_A);
         let later_index = if case.rotates() { 5 } else { 1 };
         if case.rotates() {
@@ -1677,7 +1710,9 @@ fn assert_binding_http_outcome(root: &Path, case: BindingCase, state: &BindingSe
 fn run_binding_case(case: BindingCase) {
     if let Some(root) = std::env::var_os(BINDING_ROOT_ENV) {
         assert_eq!(std::env::var(BINDING_CASE_ENV).expect("exact binding child case"), case.test_name());
-        if case.has_followups() {
+        if case.has_admitted_summary() {
+            run_binding_summary_child(Path::new(&root));
+        } else if case.has_followups() {
             run_binding_followup_child(Path::new(&root), case);
         } else {
             run_binding_retry_child(Path::new(&root), case);
@@ -1746,4 +1781,96 @@ fn same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account() {
 #[test]
 fn same_runner_nudges_and_turn_memory_accept_same_context_token_rotation() {
     run_binding_case(BindingCase::FollowupRotation);
+}
+
+fn run_binding_summary_child(root: &Path) {
+    let owners = production_fixture_owners(root);
+    let model = owners.inference.port().resolve_fabushi_turn_model(None, None, None)
+        .expect("resolve admitted Native summary model");
+    assert_eq!(model, MODEL_A);
+    let binding = capture_fabushi_responses_request_binding()
+        .expect("capture the admitted Native summary binding");
+    let previous = owners.settings.get_host_settings_snapshot();
+    owners.settings.set_host_settings_if_current(
+        Some(&previous.hash), json!({"agentDefaultModel": bound_model(MODEL_B)}),
+    ).expect("save later default independently of the admitted summary");
+    assert_eq!(owners.inference.port().resolve_fabushi_turn_model(None, None, None).unwrap(), MODEL_B);
+    let path = root.join("credential.json");
+    let endpoint = std::env::var("FABUSHI_RESPONSES_URL").expect("child-fixed summary endpoint");
+    let origin = endpoint.strip_suffix("/v1/responses").expect("fixed summary endpoint path");
+    replace_binding_credential(&path, origin, FixtureCredential::AccountB)
+        .expect("replace the real credential before summary admission guards");
+    let b_bytes = fs::read(&path).unwrap();
+    for (admitted_model, request_binding) in [
+        (None, Some(&binding)), (Some(model.as_str()), None), (None, None),
+    ] {
+        let result = owners.inference.run_turn_summarization_prompt(
+            root, owners.provider, admitted_model, None, None, request_binding,
+            "Check Native summary admission.", "This request must not be dispatched.", &|| false,
+        );
+        assert!(matches!(result, Err(ProviderSessionError::Configuration(_))),
+            "Native summary requires the admitted model and binding before credential work");
+        assert_eq!(fs::read(&path).unwrap(), b_bytes);
+    }
+    for (admitted_model, request_binding) in [
+        (None, None), (Some("bad\nmodel"), Some(&binding)), (Some(model.as_str()), Some(&binding)),
+    ] {
+        let result = owners.inference.run_turn_summarization_prompt(
+            root, owners.provider, admitted_model, None, None, request_binding,
+            "Check cancelled Native summary.", "This request must not be dispatched.", &|| true,
+        );
+        assert!(matches!(result, Err(ProviderSessionError::Cancelled(_))),
+            "explicit cancellation wins over missing, malformed or changed identity");
+        assert_eq!(fs::read(&path).unwrap(), b_bytes);
+    }
+    let summarize = |system: &str, user: &str| {
+        owners.inference.run_turn_summarization_prompt(
+            root, owners.provider, Some(&model), None, None, Some(&binding), system, user, &|| false,
+        )
+    };
+    let refused_primary = summarize("Summarize admitted Native primary history.", "Private Native A primary history.");
+    assert_authentication_refusal(&refused_primary);
+    assert_eq!(fs::read(&path).unwrap(), b_bytes, "refused primary must not rewrite account B");
+
+    replace_binding_credential(&path, origin, FixtureCredential::AccountA)
+        .expect("restore the originally admitted context for the real primary control");
+    let a_bytes = fs::read(&path).unwrap();
+    assert_eq!(summarize("Summarize admitted Native primary history.", "Private Native A primary history.")
+        .unwrap(), "admitted Native primary summary");
+    assert_eq!(fs::read(&path).unwrap(), a_bytes);
+
+    replace_binding_credential(&path, origin, FixtureCredential::RotatedA)
+        .expect("rotate only the admitted Native credential token");
+    let rotated_bytes = fs::read(&path).unwrap();
+    assert_eq!(summarize("Summarize admitted Native prefix history.", "Private Native A prefix history.")
+        .unwrap(), "admitted Native prefix summary");
+    assert_eq!(fs::read(&path).unwrap(), rotated_bytes);
+
+    replace_binding_credential(&path, origin, FixtureCredential::AccountB)
+        .expect("replace the account before a later admitted prefix");
+    let later_b_bytes = fs::read(&path).unwrap();
+    let refused_prefix = summarize("Summarize admitted Native prefix history.", "Private Native A prefix history.");
+    assert_authentication_refusal(&refused_prefix);
+    assert_eq!(fs::read(&path).unwrap(), later_b_bytes, "refused prefix must not rewrite account B");
+
+    assert_eq!(owners.inference.run_summarization_prompt(
+        root, "Summarize independent Native B history.", "New independently authorized Native B history.", &|| false,
+    ).unwrap(), "independent Native B summary");
+    assert_eq!(fs::read(&path).unwrap(), later_b_bytes);
+    assert_eq!(owners.settings.get_agent_default_model_checked().unwrap(), Some(bound_model(MODEL_B)));
+    assert_eq!(owners.settings.get_inference_provider(), "fabushi");
+    let usage = owners.settings.get_inference_router_usage();
+    assert_eq!(usage["providers"]["fabushi"]["requests"], 3,
+        "successful admitted and independent summaries retain existing usage accounting");
+    assert_eq!(usage["providers"]["fabushi"]["inputTokens"], 33);
+    assert_eq!(usage["providers"]["fabushi"]["outputTokens"], 6);
+    assert!(owners.delivery_sink.deliveries.lock().unwrap().is_empty());
+    assert!(owners.retry_events.lock().unwrap().is_empty());
+    assert!(owners.retry_reports.lock().unwrap().is_empty());
+    assert_no_provider_checkpoints(&ProductionRoutedProviderCheckpointStore::new(root, AGENT_ID, "admitted-summary"));
+}
+
+#[test]
+fn admitted_turn_summary_retains_fabushi_model_and_request_binding() {
+    run_binding_case(BindingCase::AdmittedSummary);
 }

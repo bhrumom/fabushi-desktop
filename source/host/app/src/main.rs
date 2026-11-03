@@ -210,10 +210,11 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     request_disk_saver_audit, run_created_agent_kickstart,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    FabushiResponsesRequestBinding, McpCatalogKind, McpCatalogReason, McpCatalogRefusal,
+    CodexResponsesRequestBinding, FabushiResponsesRequestBinding,
+    McpCatalogKind, McpCatalogReason, McpCatalogRefusal,
     ProviderMessage, ProviderSessionError, RoutedProvider,
     RoutedMcpMetaToolDefinition, RoutedToolDefinition, configured_routed_provider,
-    capture_fabushi_responses_request_binding,
+    capture_codex_responses_request_binding, capture_fabushi_responses_request_binding,
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
     ChannelInboundAppendAttempt, ChannelInboundAppendFailure,
@@ -1407,6 +1408,7 @@ struct RoutedTurnModelAdmission {
     persisted_session_model: SessionModelEntryState,
     fabushi_model: Option<String>,
     codex_model: Option<String>,
+    codex_request_binding: Option<CodexResponsesRequestBinding>,
     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     direction_epoch: u64,
     original_turn: Option<OriginalTurnReference>,
@@ -1541,6 +1543,19 @@ fn prepare_routed_turn_model_admission_with_guard(
     } else {
         None
     };
+    let codex_request_binding = if provider == RoutedProvider::Codex {
+        lease_guard.check_start()?;
+        let binding = capture_codex_responses_request_binding();
+        // A cancellation observed during credential I/O owns this refusal.
+        lease_guard.check_start()?;
+        Some(binding.map_err(|error| match &error {
+            ProviderSessionError::Authentication(_) => GatewayCommandError::Unauthorized(error.to_string()),
+            ProviderSessionError::Configuration(_) => GatewayCommandError::BadRequest(error.to_string()),
+            _ => GatewayCommandError::Internal(error.to_string()),
+        })?)
+    } else {
+        None
+    };
     let original_turn = if let Some(model_id) = fabushi_model.as_deref() {
         // Optional original-work proof cannot bypass the independent checked
         // start admission below. Session I/O remains outside the owner mutex.
@@ -1564,6 +1579,7 @@ fn prepare_routed_turn_model_admission_with_guard(
         persisted_session_model,
         fabushi_model,
         codex_model,
+        codex_request_binding,
         fabushi_request_binding,
         direction_epoch,
         original_turn,
@@ -8545,9 +8561,13 @@ fn resolve_split_compaction_summary(
         Ok(prompt) => Some(summarize_prefix(&prompt)),
         Err(_) => None,
     };
-    // Typed provider cancellation is authoritative even without a shared-token
-    // change. Only ordinary errors may select the fitted degraded fallback.
-    if matches!(prefix, Some(Err(ProviderSessionError::Cancelled(_))))
+    // Cancellation and identity/configuration refusal cannot authorize a
+    // compaction commit. Only ordinary errors select the fitted fallback.
+    if matches!(prefix, Some(Err(
+        ProviderSessionError::Cancelled(_)
+            | ProviderSessionError::Authentication(_)
+            | ProviderSessionError::Configuration(_)
+    )))
         || should_cancel()
     {
         return None;
@@ -8574,6 +8594,24 @@ fn starts_new_local_tool_direction(
         && !turn_hidden
         && !is_group_member_turn
         && !has_generated_parent
+}
+
+fn compose_admitted_turn_summarization_prompt(
+    inference: Arc<ProductionInferenceExtension>,
+    data_dir: PathBuf,
+    provider: RoutedProvider,
+    fabushi_model: Option<String>,
+    codex_model: Option<String>,
+    codex_request_binding: Option<CodexResponsesRequestBinding>,
+    fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
+) -> ProductionTurnSummarizationPrompt {
+    Arc::new(move |system_prompt, user_prompt, should_cancel| {
+        inference.run_turn_summarization_prompt(
+            &data_dir, provider, fabushi_model.as_deref(), codex_model.as_deref(),
+            codex_request_binding.as_ref(), fabushi_request_binding.as_ref(),
+            system_prompt, user_prompt, should_cancel,
+        )
+    })
 }
 
 /// Runs the shipping post-turn compaction producer through the existing Runner
@@ -8672,9 +8710,13 @@ fn run_post_turn_compaction(
             eprintln!(
                 "mahayana-host compaction_summary_failed agent={agent_id} run={source_turn_id} error={error}"
             );
-            if matches!(error, ProviderSessionError::Cancelled(_)) || should_cancel() {
+            if matches!(error,
+                ProviderSessionError::Cancelled(_)
+                    | ProviderSessionError::Authentication(_)
+                    | ProviderSessionError::Configuration(_)
+            ) || should_cancel() {
                 eprintln!(
-                    "mahayana-host compaction_cancelled_after_summary agent={agent_id} run={source_turn_id}"
+                    "mahayana-host compaction_stopped_after_summary agent={agent_id} run={source_turn_id}"
                 );
                 return;
             }
@@ -9279,6 +9321,7 @@ fn start_routed_provider_task(
         persisted_session_model,
         fabushi_model,
         codex_model,
+        codex_request_binding,
         fabushi_request_binding,
         direction_epoch: turn_local_tool_direction_epoch,
         original_turn,
@@ -12224,6 +12267,7 @@ fn start_routed_provider_task(
                     provider,
                     fabushi_model: fabushi_model.clone(),
                     codex_model: codex_model.clone(),
+                    codex_request_binding: codex_request_binding.clone(),
                     fabushi_request_binding: fabushi_request_binding.clone(),
                     bridge,
                     cursor_auth: Some(cursor_auth),
@@ -12293,17 +12337,11 @@ fn start_routed_provider_task(
                 },
             )
             .with_silence_allowed(prompt_is_silence_allowed);
-            let summarization_inference = Arc::clone(&inference);
-            let summarization_data_dir = data_dir.clone();
-            let summarization_prompt: ProductionTurnSummarizationPrompt =
-                Arc::new(move |system_prompt, user_prompt, should_cancel| {
-                    summarization_inference.run_summarization_prompt(
-                        &summarization_data_dir,
-                        system_prompt,
-                        user_prompt,
-                        should_cancel,
-                    )
-                });
+            let summarization_prompt = compose_admitted_turn_summarization_prompt(
+                Arc::clone(&inference), data_dir.clone(), provider,
+                fabushi_model.clone(), codex_model.clone(),
+                codex_request_binding.clone(), fabushi_request_binding.clone(),
+            );
             let turn_static_config = ProductionTurnAgentStaticConfig {
                 model_id: turn_model_id.clone(),
                 agent_token_limit: SAND_AGENT_TOKEN_LIMIT,
@@ -12731,6 +12769,7 @@ fn start_routed_provider_task(
                                     let should_cancel = || memory_cancellation.is_cancelled();
                                     inference.run_turn_memory_prompt(
                                         &data_dir, provider, fabushi_model.as_deref(), codex_model.as_deref(),
+                                        codex_request_binding.as_ref(),
                                         fabushi_request_binding.as_ref(), system_prompt,
                                         user_prompt, &should_cancel,
                                     ).map_err(|error| error.to_string())
@@ -18114,7 +18153,18 @@ mod tests {
     // planning, fitting and Session/SQLite writes stay real.
     fn post_turn_compaction_runner(
         fixture: &PostTurnCompactionFixture,
-        response: impl Fn(usize) -> Result<String, super::ProviderSessionError> + Send + Sync + 'static,
+        response: impl Fn(usize, &str, &str, &dyn Fn() -> bool) -> Result<String, super::ProviderSessionError> + Send + Sync + 'static,
+    ) -> (super::SandAgentRunner, std::sync::Arc<std::sync::atomic::AtomicUsize>) {
+        post_turn_compaction_runner_for_context(
+            &fixture.root, &fixture.agent_id, &fixture.cancellation, response,
+        )
+    }
+
+    fn post_turn_compaction_runner_for_context(
+        root: &std::path::Path,
+        agent_id: &str,
+        cancellation: &super::RoutedProviderCancellation,
+        response: impl Fn(usize, &str, &str, &dyn Fn() -> bool) -> Result<String, super::ProviderSessionError> + Send + Sync + 'static,
     ) -> (super::SandAgentRunner, std::sync::Arc<std::sync::atomic::AtomicUsize>) {
         use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
         use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
@@ -18128,12 +18178,12 @@ mod tests {
                 context: mahayana_host_runtime::host_request_context::HostRequestContext {
                     os_version: "compaction-contract".into(), shell: None,
                     time_zone: Some("UTC".into()),
-                    transcripts_folder: fixture.root.join("transcripts").to_string_lossy().into_owned(),
+                    transcripts_folder: root.join("transcripts").to_string_lossy().into_owned(),
                     user_full_name: None,
                 },
                 rules: None,
             },
-            fixture.cancellation.clone(),
+            cancellation.clone(),
             Arc::new(UnusedCompactionProviderPorts),
         );
         let calls = Arc::new(AtomicUsize::new(0));
@@ -18152,13 +18202,13 @@ mod tests {
                 }
                 _ => panic!("unexpected extra summarization request"),
             }
-            response(index)
+            response(index, system, user, should_cancel)
         });
         let bindings = super::ProductionTurnAgentBuildBindings::new(
             super::ProductionTurnAgentStaticConfig {
                 model_id: "compaction-contract".into(),
                 agent_token_limit: super::SAND_AGENT_TOKEN_LIMIT,
-                conversation_id: fixture.agent_id.clone(),
+                conversation_id: agent_id.to_string(),
                 is_box_scoped_subagent: false, is_subagent_runner: false,
                 is_shared_room_runner: false, sand_send_message_delivery_owed: false,
                 transcripts_folder_available: true,
@@ -18179,7 +18229,7 @@ mod tests {
                 let before = fixture.snapshot();
                 let publications = PostTurnCompactionPublications::new(&fixture);
                 let cancellation = fixture.cancellation.clone();
-                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
+                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index, _, _, _| {
                     if index < phase {
                         return Ok(COMPACTION_HISTORY_SUMMARY.into());
                     }
@@ -18204,7 +18254,7 @@ mod tests {
         let fixture = PostTurnCompactionFixture::new("cancelled-before-start");
         let before = fixture.snapshot();
         let publications = PostTurnCompactionPublications::new(&fixture);
-        let (runner, calls) = post_turn_compaction_runner(&fixture, |_| panic!("cancelled attempt must not summarize"));
+        let (runner, calls) = post_turn_compaction_runner(&fixture, |_, _, _, _| panic!("cancelled attempt must not summarize"));
         fixture.cancellation.cancel("cancelled before compaction");
         fixture.run(&runner, &|| fixture.cancellation.is_cancelled());
         assert_eq!(calls.load(Ordering::SeqCst), 0);
@@ -18223,7 +18273,7 @@ mod tests {
                 let publications = PostTurnCompactionPublications::new(&fixture);
                 let cancel_after_sample = Arc::new(AtomicBool::new(false));
                 let arm_after_return = Arc::clone(&cancel_after_sample);
-                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
+                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index, _, _, _| {
                     if index == phase {
                         arm_after_return.store(true, Ordering::SeqCst);
                         if provider_failed {
@@ -18259,7 +18309,7 @@ mod tests {
             let fixture = PostTurnCompactionFixture::new(&format!("provider-failed-{phase}"));
             let before = fixture.snapshot();
             let publications = PostTurnCompactionPublications::new(&fixture);
-            let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
+            let (runner, calls) = post_turn_compaction_runner(&fixture, move |index, _, _, _| {
                 if index == phase {
                     Err(super::ProviderSessionError::Transport("ordinary provider failure".into()))
                 } else {
@@ -18287,7 +18337,7 @@ mod tests {
         let fixture = PostTurnCompactionFixture::new("successful-split-turn");
         let before = fixture.snapshot();
         let publications = PostTurnCompactionPublications::new(&fixture);
-        let (runner, calls) = post_turn_compaction_runner(&fixture, |index| {
+        let (runner, calls) = post_turn_compaction_runner(&fixture, |index, _, _, _| {
             Ok((if index == 0 { COMPACTION_HISTORY_SUMMARY } else { COMPACTION_PREFIX_SUMMARY }).into())
         });
         fixture.run(&runner, &|| fixture.cancellation.is_cancelled());

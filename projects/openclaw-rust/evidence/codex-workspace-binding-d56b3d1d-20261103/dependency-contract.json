@@ -1,0 +1,331 @@
+{
+  "kind": "bounded-dependency-source-contract",
+  "scope": "Prerequisite source assessment for a private Codex request hook and access-token workspace parser. No product implementation, package execution, tests, validator, platform acceptance, or full dependency closure.",
+  "reasoning_effort": "xhigh, inherited/configured for credential and cancellation boundaries",
+  "target_snapshot": {
+    "commit": "916d79a2b191a12676d1e0df675393e05d59c6f2",
+    "host_manifest_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+    "host_lock_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+    "app_manifest_blob": "4cd51b5e35192f3f8ad1e6dff3699ec9a63e8928",
+    "app_lock_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+    "provider_session_blob": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+    "cmi_scope_precedent_blob": "009022caee1936e7e79058e521d7c4cfbc4b84b3"
+  },
+  "conclusion": {
+    "request_hook": "The locked native reqwest API supports the proposed boundary without a new client, custom transport, or dependency patch. Build the real request, inspect it privately, and execute it with its embedded client. Preserve builder errors inside the future observed by await_reqwest so cancellation remains dominant.",
+    "observation_limit": "The hook observes the final application-created URL, auth/account headers and serialized body. It precedes client-default, proxy and lower HTTP-layer additions; it is not an observation of every final wire header or of real ChatGPT service acceptance.",
+    "jwt_decoder": "The existing URL_SAFE_NO_PAD engine is suitable for strict unpadded base64url payload decoding. It rejects padding, nonalphabet/whitespace input and nonzero discarded trailing bits. Exact JWT component count, JSON object/claim typing and workspace equality remain caller responsibilities.",
+    "dependency_changes": "No version, feature, source patch, vendoring or added dependency is needed for these mechanics.",
+    "acceptance": "Source-supported mechanics only. Root retains the resume-compatibility decision and implementation ownership."
+  },
+  "request_contract": [
+    {
+      "id": "R1",
+      "fact": "RequestBuilder stores its original Client plus Result<Request>. header() appends a converted header, stores conversion errors in that Result, and does not dispatch. json(), gated by feature json, serializes once with serde_json::to_vec, preserves an explicitly supplied Content-Type and stores a reusable byte body. Serialization errors are retained as reqwest builder errors.",
+      "source": "reqwest request.rs:32-39,193-243,435-465",
+      "implication": "Place the hook after these actual calls. Assert one expected Authorization and one account header; do not replace the credential loader or reproduce serialization in the fixture."
+    },
+    {
+      "id": "R2",
+      "fact": "build() returns the stored Result<Request>; build_split() returns that result and its original Client. send() dispatches valid requests to Client::execute_request or wraps the exact stored error in Pending::new_err. Public Client::execute calls the same execute_request. Client clones retain the same Arc<ClientRef>.",
+      "source": "reqwest request.rs:480-521; client.rs:72-95,2555-2577,3015-3039",
+      "implication": "Prefer build_split to avoid accidentally selecting another client. Keep the complete Request and its method, version, timeout extensions, body and headers; change only the destination URL under an armed cfg(test) scope."
+    },
+    {
+      "id": "R3",
+      "fact": "The Host cancellation wrapper checks should_cancel before polling the reqwest future and maps its reqwest error to ProviderSessionError::Transport only after the cancellable await. A stored builder error in send() is therefore still subject to that cancellation check.",
+      "source": "provider_session.rs:351-388; reqwest client.rs:3015-3039",
+      "required_shape": "Pass a future equivalent to: async move { let (client, built) = builder.build_split(); let mut request = built?; invoke_private_test_hook_if_armed(&mut request); client.execute(request).await } into the existing await_reqwest with the same cancellation callback and label. The hook is cfg(test) only.",
+      "refusal": "Do not use an eager build()? or convert the builder error to Authentication/Protocol before entering await_reqwest. Do not spawn a detached send, create a replacement cancellation loop, or bypass the existing polling/typed error path.",
+      "timing_limit": "Constructing/serializing the builder still occurs at the existing site. In the proposed future, execute and hook entry begin after the first cancellation check; no exact scheduling or wire-send timing equivalence is claimed."
+    },
+    {
+      "id": "R4",
+      "fact": "Request exposes url/url_mut, headers/headers_mut and body/body_mut. A JSON Vec<u8> or the existing OAuth form String creates a reusable Body; as_bytes returns its existing bytes without consuming it. A streaming Body returns None.",
+      "source": "reqwest request.rs:67-101,447-456; body.rs:49-58,119-123,196-220",
+      "implication": "Inspect method, original URL, headers and body().and_then(Body::as_bytes), then mutate only url_mut for loopback. Do not remove/rebuild the body or reconstruct headers. A fixture expecting JSON/form bytes must fail if it sees a streaming/absent body."
+    },
+    {
+      "id": "R5",
+      "fact": "execute_request validates scheme/https_only, fills only vacant header names from client defaults, applies proxy handling, creates the underlying request and establishes client/request timeout state. Existing request headers win over client defaults. HTTP proxy custom headers can be inserted later.",
+      "source": "reqwest client.rs:2579-2700",
+      "implication": "Use the original client and execute path to preserve defaults, connection pool and timeout behavior. Do not describe the pre-execute hook as seeing final Host/Content-Length/proxy headers. The present Host shared client configures pool/keepalive and no default auth header.",
+      "target_source": "provider_session.rs:336-348,1189-1222"
+    },
+    {
+      "id": "R6",
+      "fact": "ClientBuilder starts with Accept */*, auto system proxy enabled and normal redirect/retry policy. Build installs the system matcher when enabled. reqwest's NoProxy contract documents NO_PROXY/no_proxy and '*' matching all hostnames; system matching delegates to hyper-util.",
+      "source": "reqwest client.rs:280-315,411-421; proxy.rs:473-525",
+      "fixture_requirement": "The owned child must establish proxy-isolated synthetic environment before initializing the shared client: remove inherited HTTP_PROXY/HTTPS_PROXY/ALL_PROXY and lowercase variants, set owned NO_PROXY/no_proxy for all destinations, and use a fixture-owned literal loopback address. Observe the loopback server's actual receipt and return no redirects. Do not change production proxy/client policy to make the test pass.",
+      "limit": "Hyper-util's proxy resolver, OS proxy implementation and redirect/retry internals were not fully read; this report does not certify general network isolation or all transport behavior."
+    }
+  ],
+  "private_scope_contract": {
+    "location": "Below read_codex_credentials and actual final request header/body construction, immediately before execute. Distinguish Codex inference and Codex OAuth refresh requests privately; do not intercept the unrelated Native branch merely because it shares send_codex_request.",
+    "precedent": "The existing CMI RefCell<Option<Rc<...>>> scope releases its borrow before calling user callbacks, retains the previous scope, checks owner ThreadId and is !Send through PhantomData<Rc<()>> (codex_model_identity_tests.rs:84-117). Reuse that custody pattern, not its mock-transport boundary.",
+    "requirements": [
+      "Registration remains private under cfg(test), with no production env/config/public endpoint override. Production credentials and fixed URLs are still constructed by the same owner.",
+      "Release the thread-local borrow before invoking the callback. Capture/validate an owner-thread scope token; do not silently fall through to a real endpoint if execution moves away from the armed scope.",
+      "Run the hook synchronously before the network await; hold no RefCell borrow across an await, do not move its Rc/guard into tokio::spawn, and do not create an extra executor.",
+      "Assert the original fixed production URL, POST method, expected one-account/one-bearer header pair and actual body first. Redirect only that recognized synthetic request to the owned fixture. Unexpected request kinds/destinations fail closed in the armed fixture.",
+      "Retain bounded child/server retirement and restore scope on Drop. No callback or captured request may outlive its scope. Never Debug-print a real Request: header() uses sensitive=false unless the supplied value was already marked sensitive.",
+      "The server observes actual loopback requests; this establishes the local credential/header/Runner behavior only, not TLS or real provider acceptance."
+    ],
+    "necessary_actions_oracles_not_run": [
+      "Cancellation already true plus a builder error: Cancelled, zero hook entries and zero sends.",
+      "Builder error without cancellation: existing Transport result, zero hook entries and zero sends; no swallowed or reclassified reqwest error.",
+      "Valid built request: hook observes the original fixed URL/auth/account/body, then loopback receipt confirms those application headers/body were retained.",
+      "Existing account-switch, same-account rotation, checkpoint/custody and refresh-response cases use this boundary, not the earlier CMI TransportFactory that skips credential reading."
+    ]
+  },
+  "base64_contract": [
+    {
+      "id": "B1",
+      "fact": "URL_SAFE_NO_PAD is GeneralPurpose(URL_SAFE, NO_PAD). URL_SAFE uses A-Z, a-z, 0-9, '-' and '_'. The decode table marks every other byte invalid; '+' and '/', whitespace and non-ASCII bytes are not alternative accepted alphabet characters.",
+      "source": "base64 alphabet.rs:168-180; general_purpose/mod.rs:208-225,337-352; general_purpose/decode.rs:174-298"
+    },
+    {
+      "id": "B2",
+      "fact": "NO_PAD changes the default config to encode_padding=false and DecodePaddingMode::RequireNone. decode_allow_trailing_bits remains false. The actual suffix decoder rejects any suffix padding, illegal/interior padding, invalid final symbol count and nonzero discarded bits.",
+      "source": "base64 general_purpose/mod.rs:251-315,349-352; engine/mod.rs:448-460; decode_suffix.rs:31-109,123-141",
+      "consequences": "Do not add padding, strip '=', trim payload whitespace, swap alphabets, set DecodePaddingMode::Indifferent, or enable trailing-bit forgiveness. A payload whose encoded length is 1 modulo 4 is invalid. Valid unpadded lengths modulo 4 are 0, 2 or 3, subject to the final-bit rules.",
+      "error_limit": "Do not assert one specific DecodeError variant for every malformed input: invalid padding can be classified as InvalidByte before the final InvalidPadding check."
+    },
+    {
+      "id": "B3",
+      "fact": "Engine::decode is enabled by alloc, allocates a conservatively sized Vec, invokes the selected engine's internal decoder, returns DecodeError on failure and truncates the successful output. Default std enables alloc in this package.",
+      "source": "base64 engine/mod.rs:224-268; Cargo.toml:82-85; general_purpose/mod.rs:167-184",
+      "implication": "Use the existing imported Engine/URL_SAFE_NO_PAD directly; no new decoder package or custom decoder is required. This decoder does not validate JWT structure or signatures."
+    },
+    {
+      "id": "B4",
+      "required_parser_boundary": "Count exactly three '.'-separated components, rejecting a missing third or any fourth component rather than split('.').nth(1) alone. Decode only the payload with URL_SAFE_NO_PAD, parse the decoded bytes as a JSON object, require the named auth claim to be an object and its workspace to be a nonempty string, then apply the established exact file/account/binding comparison.",
+      "caller_limit": "The base64 dependency neither checks header/signature components nor requires them to be nonempty. Any stronger header/signature shape rule is an explicit product contract choice; metadata parsing is not signature, issuer, expiry or principal verification.",
+      "compatibility_limit": "This report establishes strict Rust decoder behavior. It does not claim identical acceptance of malformed base64 to fixed-U's Node Buffer decoder. Ordinary unpadded URL-safe JWT payloads are the intended shape.",
+      "errors": "Map failure to the scoped generic credential Authentication refusal. Do not include the token, decoded JSON or raw credential document in diagnostics."
+    }
+  ],
+  "features_and_patch_disposition": {
+    "host": "source/host/Cargo.toml14 selects base640.22 with default features; line19 selects reqwest0.12 with default-features=false and blocking,json,multipart,rustls-tls,stream. Lines12-14 of provider_session already import Engine, URL_SAFE_NO_PAD and the asynchronous reqwest Client.",
+    "app": "App Cargo.toml13-15 selects base640.22 and the path Host runtime; both lockfiles resolve base640.22.1 and reqwest0.12.28 with the same acquired checksums.",
+    "reqwest_features": "json is explicitly available. Native Request/Client/Body exports are under not(target_arch=wasm32), independently of the blocking feature. rustls-tls expands to webpki roots and the rustls/ring support features. No extra feature is required for build_split, Request accessors, execute or reusable Body::as_bytes.",
+    "unification_limit": "The direct manifest disables reqwest defaults; other dependency paths can unify additional features. No cargo metadata/tree/build was run, and no full resolved feature-graph claim is made. The chosen methods do not depend on those optional extras being absent.",
+    "patches": "The inspected Host/App manifests and tracked ancestor Cargo config paths contain no [patch], [replace] or source replace-with override. Both inspected lockfiles identify these packages as crates.io registry dependencies. No dependency patch or source replacement is proposed. External/untracked/command-line Cargo configuration was not inspected.",
+    "vcs_note": "The reqwest release archive's .cargo_vcs_info.json records ef2768a823b28bf00e23e218e034be035b08d770 with dirty=true. Therefore the exact registry archive/checksum, not a presumed clean Git checkout of that SHA, is the source authority. Base64 records e14400697453bcc85997119b874bc03d9601d0af.",
+    "licenses": "Both acquired packages declare MIT OR Apache-2.0 and include both license texts. Host/App declare Apache-2.0. Reuse existing locked dependencies without copying or modifying their implementation. Preserve the applicable license/copyright/notice material through the existing distribution owner; this task does not audit packaging compliance."
+  },
+  "provenance": {
+    "acquisition_receipt": "fusion-review/codex-binding-dependencies/acquisition.json",
+    "identity_basis": "Parent-acquired registry archives and receipt checksums were compared with exact Host/App lock entries by source read. Additional archive members were read directly to stdout; their SHA-256 identities were calculated only for source provenance. No crate code was installed or executed.",
+    "packages": [
+      {
+        "package": "reqwest",
+        "version": "0.12.28",
+        "archive_url": "https://static.crates.io/crates/reqwest/reqwest-0.12.28.crate",
+        "archive_sha256": "eddd3ca559203180a307f12d114c268abf583f59b03cb906fd0b3ff8646c1147",
+        "archive_bytes": 157031,
+        "lock_ranges": [
+          "source/host/Cargo.lock2847-2854",
+          "source/host/app/Cargo.lock4164-4171"
+        ],
+        "files": [
+          {
+            "path": "src/async_impl/request.rs",
+            "sha256": "22bb3a3810cfe505a1eb34e4bf6f16db9f9dbcfb7ec79d1652996e72a6738fd3",
+            "raw_read": [
+              "1-120",
+              "160-250",
+              "430-535"
+            ]
+          },
+          {
+            "path": "src/async_impl/client.rs",
+            "sha256": "8c30b009838be2126b90344ef97fb6141ac8bdf695f4e7bb00a3052a707d9b5c",
+            "raw_read": [
+              "70-103",
+              "277-368",
+              "411-456",
+              "1080-1115",
+              "1130-1172",
+              "2520-2708",
+              "3010-3040"
+            ]
+          },
+          {
+            "path": "src/async_impl/body.rs",
+            "sha256": "60948ec5a44c995beb2dd22f6d4ca1f48a56cf01f8fc3174ed809a1e3dd9ce59",
+            "raw_read": [
+              "1-105",
+              "110-158",
+              "185-260"
+            ],
+            "source": "archive member, not written to workspace"
+          },
+          {
+            "path": "src/lib.rs",
+            "sha256": "e31f340ec37d77c27ddad9ef7889f4924efa12450b63bf0c5af98c337876c9f3",
+            "raw_read": [
+              "255-277",
+              "350-394"
+            ],
+            "source": "archive member, not written to workspace"
+          },
+          {
+            "path": "src/proxy.rs",
+            "sha256": "7d5d3ed0fe95b0c82f1081e0907f4691d53c929dbe0f2c6134dceaca304839ba",
+            "raw_read": [
+              "472-535"
+            ],
+            "source": "archive member, not written to workspace; delegation implementation beyond reqwest not read"
+          },
+          {
+            "path": "Cargo.toml",
+            "sha256": "23c8a0827aaac74059965a182c6873990e75aa550e8079d3b51bb95092871205",
+            "raw_read": [
+              "1-182"
+            ]
+          },
+          {
+            "path": ".cargo_vcs_info.json",
+            "sha256": "74291d442dbcefcec4747a78fc59d6f048d1c567960f5788af7e36c50ff5d898",
+            "raw_read": [
+              "whole"
+            ]
+          },
+          {
+            "path": "LICENSE-MIT",
+            "sha256": "47d4e1803702728e03d30f8a848ae2249ba274bbd9f8443e803f7924d83cd371",
+            "raw_read": [
+              "1-20"
+            ]
+          },
+          {
+            "path": "LICENSE-APACHE",
+            "sha256": "751963a8b88c0e3a9f27e98933079fbcf09b9998b2c13ac49c2e4d58444520d6",
+            "raw_read": [
+              "1-18",
+              "65-127",
+              "176-201"
+            ]
+          }
+        ]
+      },
+      {
+        "package": "base64",
+        "version": "0.22.1",
+        "archive_url": "https://static.crates.io/crates/base64/base64-0.22.1.crate",
+        "archive_sha256": "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6",
+        "archive_bytes": 81597,
+        "lock_ranges": [
+          "source/host/Cargo.lock210-214",
+          "source/host/app/Cargo.lock301-305"
+        ],
+        "files": [
+          {
+            "path": "src/engine/general_purpose/mod.rs",
+            "sha256": "901760a7f5721ec3bafad5fea6251f57de0f767ecb2e1e2fdfe64d661404ec34",
+            "raw_read": [
+              "1-45",
+              "163-189",
+              "208-239",
+              "241-352"
+            ]
+          },
+          {
+            "path": "src/engine/general_purpose/decode.rs",
+            "sha256": "d865b057e5788e7fefd189cf57ec913df263e6a0742dfa52513f587e14fa1a92",
+            "raw_read": [
+              "1-310"
+            ]
+          },
+          {
+            "path": "src/engine/general_purpose/decode_suffix.rs",
+            "sha256": "689688f7bf442b232d3b9f56a1b41c56d9393ace88556a165c224b93dd19b74e",
+            "raw_read": [
+              "1-162"
+            ],
+            "source": "archive member, not written to workspace"
+          },
+          {
+            "path": "src/engine/mod.rs",
+            "sha256": "5e4a6c0e86417f3b62350264ef383f91e9864390f7c315d786ecd8e9c920ee9f",
+            "raw_read": [
+              "205-273",
+              "442-470"
+            ],
+            "source": "archive member, not written to workspace"
+          },
+          {
+            "path": "src/decode.rs",
+            "sha256": "b046a72d62eaac58dc42efcf7848d9d96d022f6594e851cf87074b77ce45c04a",
+            "raw_read": [
+              "1-92"
+            ]
+          },
+          {
+            "path": "src/alphabet.rs",
+            "sha256": "5de2beb8fcccb078c61cac2c0477ebbde145122d6c10a0f7ea2e57e8159318e0",
+            "raw_read": [
+              "50-64",
+              "165-183"
+            ]
+          },
+          {
+            "path": "Cargo.toml",
+            "sha256": "52bee6a418e14918d37058fd15fccfd0f417a06fe4f9668b6f97866bf7f991e3",
+            "raw_read": [
+              "1-85"
+            ]
+          },
+          {
+            "path": ".cargo_vcs_info.json",
+            "sha256": "4d505b174c7ecd854ad5668b1750be31305ca69e4634131e7bb262e98f3cf50e",
+            "raw_read": [
+              "whole"
+            ]
+          },
+          {
+            "path": "LICENSE-MIT",
+            "sha256": "0dd882e53de11566d50f8e8e2d5a651bcf3fabee4987d70f306233cf39094ba7",
+            "raw_read": [
+              "1-21"
+            ]
+          },
+          {
+            "path": "LICENSE-APACHE",
+            "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+            "raw_read": [
+              "1-18",
+              "65-127",
+              "176-201"
+            ]
+          }
+        ]
+      }
+    ],
+    "target_raw_reads": [
+      "source/host/Cargo.toml1-59",
+      "source/host/app/Cargo.toml1-43",
+      "source/host/src/extensions/inference/provider_session.rs1-43,320-388,1189-1222",
+      "source/host/src/extensions/inference/codex_model_identity_tests.rs77-117",
+      "Exact lock entry ranges above; other base64 versions were observed but are not assessed.",
+      "Exact Git tree metadata and targeted patch/source-override searches at the recorded commit."
+    ],
+    "acquired_but_not_deep_read": "Both Cargo.toml.orig files were searched for metadata/features/override declarations, not deeply read in full. No remainder of either crate or transitive dependency graph is represented as closed."
+  },
+  "remaining_boundaries": [
+    "No further raw dependency read is necessary to justify the selected build/inspect/execute and strict payload-decoder APIs. Implementation must retain the requirements and be observed in the existing Actions-only actual-owner gates.",
+    "The private fixture's lifecycle implementation and precise hook registration/thread custody remain source-review and execution obligations of the implementation; this report does not certify code not yet written.",
+    "Root owns low-level resumed-call compatibility, shared schema/composition plumbing and refresh publication scope. This report does not change those decisions.",
+    "No real credential, service call, network fixture, Cargo command, build, lint, test or validator was run."
+  ],
+  "activity": {
+    "output": "fusion-review/codex-binding-dependency-contract.json",
+    "source_reads_and_identity_only": true,
+    "product_changes": false,
+    "source_acquisition_files_modified": false,
+    "local_or_htch_product_validation": false,
+    "acceptance_claim": false
+  }
+}
+

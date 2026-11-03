@@ -8,7 +8,7 @@ use serde_json::Value;
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::session::typed_replay::TypedReplayEntry;
 use crate::extensions::inference::provider_session::{
-    FabushiResponsesRequestBinding, ProviderMessage, ProviderSessionError,
+    CodexResponsesRequestBinding, FabushiResponsesRequestBinding, ProviderMessage, ProviderSessionError,
     ProviderTokenUsage, ProviderToolStepReminderHook,
     RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
@@ -321,6 +321,7 @@ pub struct TurnAgentComposition {
     provider: RoutedProvider,
     fabushi_model: Option<String>,
     codex_model: Option<String>,
+    codex_request_binding: Option<CodexResponsesRequestBinding>,
     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     bridge: Arc<dyn RoutedToolBridge>,
     cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
@@ -392,6 +393,7 @@ impl TurnAgentComposition {
             provider,
             fabushi_model: None,
             codex_model: None,
+            codex_request_binding: None,
             fabushi_request_binding: None,
             bridge,
             cursor_auth: None,
@@ -461,6 +463,14 @@ impl TurnAgentComposition {
         binding: FabushiResponsesRequestBinding,
     ) -> Self {
         self.fabushi_request_binding = Some(binding);
+        self
+    }
+
+    pub fn with_codex_request_binding(
+        mut self,
+        binding: CodexResponsesRequestBinding,
+    ) -> Self {
+        self.codex_request_binding = Some(binding);
         self
     }
 
@@ -1110,6 +1120,7 @@ impl TurnAgentComposition {
                 provider: self.provider,
                 fabushi_model: self.fabushi_model.clone(),
                 codex_model: self.codex_model.clone(),
+                codex_request_binding: self.codex_request_binding.clone(),
                 fabushi_request_binding: self.fabushi_request_binding.clone(),
                 data_dir,
                 messages,

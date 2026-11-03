@@ -210,3 +210,11 @@ acceptance, interrupted-turn disk recovery, catalog/aliases/fallback ladders,
 full source/legal/dependency closure, UI/platform/upgrade/soak and G01–G12 /
 AC01–AC24 remain open. No scoped verified/accepted state or global flag is
 promoted by this contract, source review, authored tests or publication alone.
+
+CWB-v1 now implements the separately specified Codex source/workspace boundary
+under the same provider and Runner owners; see `codex-request-workspace-binding.md`.
+Its required real-file/HTTP/refresh and App checks remain a new exact-H subject.
+Model-less Codex continuation retains the CMI history/effect oracle through an
+initialized admitted binding; the unbound low-level convenience resume path
+refuses. The prior CMI subject and model-only transport evidence remain unchanged
+historical facts and do not grant account or real-service acceptance.

@@ -15,11 +15,14 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, ThreadId};
 use std::time::{Duration, Instant};
 
+use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use serde_json::{Value, json};
 
 use super::{
-    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint,
-    RoutedProviderOptions, RoutedToolDefinition, run_routed_provider_text_with_lifecycle,
+    CodexResponsesRequestBinding, ProviderMessage, ProviderSessionError, RoutedProvider,
+    RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
+    capture_codex_responses_request_binding, run_routed_provider_text_with_lifecycle,
 };
 use crate::agents::agent_messaging::AgentMessageImage;
 use crate::cursor_backend::SandPrivacyMode;
@@ -367,6 +370,39 @@ fn bound_model(provider: &str, model: &str) -> Value {
     json!({"provider":provider,"modelId":model,"maxMode":true,"parameters":[]})
 }
 
+// The model oracle still replaces only the final transport. A supplied CWB
+// binding must nevertheless pass the real private-file credential admission.
+// Negative cases deliberately never call this helper and retain missing-auth
+// evidence for their existing cancellation/model/provider precedence checks.
+fn synthetic_codex_binding(root: &Path) -> CodexResponsesRequestBinding {
+    let path = root.join("codex/auth.json");
+    if !path.exists() {
+        let payload = URL_SAFE_NO_PAD.encode(serde_json::to_vec(&json!({
+            "https://api.openai.com/auth":{"chatgpt_account_id":"cmi-synthetic-workspace"},
+        })).unwrap());
+        let document = json!({
+            "auth_mode":"chatgpt",
+            "tokens":{
+                "access_token":format!("cmi-header.{payload}.cmi-signature"),
+                "refresh_token":"cmi-synthetic-refresh",
+                "id_token":"cmi-synthetic-id",
+                "account_id":"cmi-synthetic-workspace",
+            },
+        });
+        let mut options = OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        options.open(&path).expect("create private synthetic Codex credential")
+            .write_all(&serde_json::to_vec(&document).unwrap())
+            .expect("write private synthetic Codex credential");
+    }
+    capture_codex_responses_request_binding().expect("real synthetic Codex binding admission")
+}
+
 fn save_default(settings: &SettingsService, model: &str) {
     let before = settings.get_host_settings_snapshot();
     let committed = settings.set_host_settings_if_current(
@@ -506,6 +542,7 @@ impl Owners {
                 provider: self.provider,
                 fabushi_model: None,
                 codex_model: Some(model.clone()),
+                codex_request_binding: Some(synthetic_codex_binding(root)),
                 fabushi_request_binding: None,
                 bridge: Arc::new(EmptyBridge::default()),
                 cursor_auth: None,
@@ -760,6 +797,7 @@ fn direct_runner(
 ) -> Result<String, ProviderSessionError> {
     run_routed_provider_in_runner(RoutedProviderRun {
         provider: RoutedProvider::Codex, fabushi_model: None, codex_model: model,
+        codex_request_binding: None,
         fabushi_request_binding: None, data_dir: root, messages: &messages("direct"), typed_replay: None,
         bridge, cursor_auth: None, request_context: request_context(root), cancellation,
         checkpoint_store: store,
@@ -773,6 +811,7 @@ fn direct_runner(
 #[test]
 fn cmi_direct_runner_fallback_is_frozen_before_tools_and_retry() {
     isolated("cmi_direct_runner_fallback_is_frozen_before_tools_and_retry", "run", &[], |root| {
+        let _admitted_fixture = synthetic_codex_binding(root);
         let config = root.join("codex/config.toml");
         fs::write(&config, format!("model = \"{MODEL_A}\"\n")).unwrap();
         let change_at_failure = config.clone();
@@ -940,6 +979,17 @@ fn adapter(
     cancelled: bool,
     effects: &AdapterEffects,
 ) -> Result<String, ProviderSessionError> {
+    adapter_with_binding(root, model, None, resume, cancelled, effects)
+}
+
+fn adapter_with_binding(
+    root: &Path,
+    model: Option<&str>,
+    binding: Option<&CodexResponsesRequestBinding>,
+    resume: Option<&RoutedProviderCheckpoint>,
+    cancelled: bool,
+    effects: &AdapterEffects,
+) -> Result<String, ProviderSessionError> {
     let mut execute_tool = |_: &RoutedToolDefinition, _: Value, _: &str| {
         effects.tools.set(effects.tools.get() + 1);
         panic!("refusal or text-only legacy continuation dispatched an effect")
@@ -950,6 +1000,7 @@ fn adapter(
     let mut options = RoutedProviderOptions {
         data_dir: root, typed_replay: None,
         fabushi_model: None, codex_model: model, fabushi_request_binding: None,
+        codex_request_binding: binding,
         cursor_auth: None, tools: &[], mcp_server_url: None,
         execute_tool: &mut execute_tool, on_text_delta: &mut delta,
         on_partial_tool_call: None, should_cancel: &|| cancelled,
@@ -1043,6 +1094,7 @@ fn cmi_cancelled_dispatch_precedes_model_transport_and_tools() {
 #[test]
 fn cmi_legacy_checkpoint_preserves_history_without_replaying_tools() {
     isolated("cmi_legacy_checkpoint_preserves_history_without_replaying_tools", "run", &[], |root| {
+        let binding = synthetic_codex_binding(root);
         let legacy: CodexDirectCheckpoint = serde_json::from_value(json!({
             "input":[
                 {"role":"user","content":"existing legacy turn"},
@@ -1063,7 +1115,7 @@ fn cmi_legacy_checkpoint_preserves_history_without_replaying_tools() {
         let script = Script::new(vec![terminal("resumed")]);
         let _scope = script.install();
         let effects = AdapterEffects::default();
-        assert_eq!(adapter(root, Some(MODEL_B), Some(&checkpoint), false, &effects).unwrap(), "prior resumed");
+        assert_eq!(adapter_with_binding(root, Some(MODEL_B), Some(&binding), Some(&checkpoint), false, &effects).unwrap(), "prior resumed");
         assert_eq!(effects.tools.get(), 0);
         assert_eq!(effects.checkpoints.get(), 0);
         assert_eq!(effects.deltas.borrow().as_slice(), &[("resumed".into(), "prior resumed".into())]);
@@ -1080,6 +1132,7 @@ fn cmi_memory_and_summary_consume_the_correct_admitted_model() {
     isolated("cmi_memory_and_summary_consume_the_correct_admitted_model", "run", &[], |root| {
         let owners = Owners::new(root, Some(MODEL_A));
         let admitted = owners.admit();
+        let admitted_binding = synthetic_codex_binding(root);
         save_default(&owners.settings, MODEL_B);
         let script = Script::new(vec![
             terminal("profile: The admitted Codex model remains fixed"),
@@ -1088,10 +1141,10 @@ fn cmi_memory_and_summary_consume_the_correct_admitted_model() {
         ]);
         let _scope = script.install();
         assert!(matches!(owners.inference.run_turn_memory_prompt(
-            root, owners.provider, None, None, None, "memory", "must refuse", &|| false,
+            root, owners.provider, None, None, None, None, "memory", "must refuse", &|| false,
         ), Err(ProviderSessionError::Configuration(_))));
         assert!(matches!(owners.inference.run_turn_memory_prompt(
-            root, owners.provider, None, None, None, "memory", "must cancel", &|| true,
+            root, owners.provider, None, None, None, None, "memory", "must cancel", &|| true,
         ), Err(ProviderSessionError::Cancelled(_))));
         assert_eq!(script.factories.get(), 0, "missing identity/cancellation must precede transport construction");
         assert!(script.requests().is_empty());
@@ -1108,7 +1161,8 @@ fn cmi_memory_and_summary_consume_the_correct_admitted_model() {
             |system, user| {
                 calls += 1;
                 owners.inference.run_turn_memory_prompt(
-                    root, owners.provider, None, Some(&admitted), None, system, user, &|| false,
+                    root, owners.provider, None, Some(&admitted), Some(&admitted_binding), None,
+                    system, user, &|| false,
                 ).map_err(|error| error.to_string())
             },
         );

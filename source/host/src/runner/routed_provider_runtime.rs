@@ -17,7 +17,8 @@ use uuid::Uuid;
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::session::typed_replay::TypedReplayEntry;
 use crate::extensions::inference::provider_session::{
-    FabushiResponsesRequestBinding, McpCatalogRefusal, ProviderMessage, ProviderPartialToolCall,
+    CodexResponsesRequestBinding, FabushiResponsesRequestBinding,
+    McpCatalogRefusal, ProviderMessage, ProviderPartialToolCall,
     ProviderSessionError, ProviderTokenUsage,
     ProviderToolStepReminderHook, RoutedMcpMetaToolDefinition, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
@@ -481,6 +482,7 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
     provider: RoutedProvider,
     fabushi_model: Option<String>,
     codex_model: Option<String>,
+    codex_request_binding: Option<CodexResponsesRequestBinding>,
     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     data_dir: &'a Path,
     messages: &'a [ProviderMessage],
@@ -546,6 +548,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
                 typed_replay: self.typed_replay,
                 fabushi_model: self.fabushi_model.as_deref(),
                 codex_model: self.codex_model.as_deref(),
+                codex_request_binding: self.codex_request_binding.as_ref(),
                 fabushi_request_binding: self.fabushi_request_binding.as_ref(),
                 cursor_auth: self.cursor_auth.clone(),
                 tools: self.tools,
@@ -591,6 +594,7 @@ pub struct RoutedProviderRun<'a> {
     pub provider: RoutedProvider,
     pub fabushi_model: Option<String>,
     pub codex_model: Option<String>,
+    pub codex_request_binding: Option<CodexResponsesRequestBinding>,
     pub fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     pub data_dir: &'a Path,
     pub messages: &'a [ProviderMessage],
@@ -671,6 +675,13 @@ pub fn run_routed_provider_in_runner(
         provider: run.provider,
         fabushi_model: run.fabushi_model.clone(),
         codex_model,
+        codex_request_binding: if run.provider == RoutedProvider::Codex {
+            Some(run.codex_request_binding.clone().unwrap_or_else(
+                CodexResponsesRequestBinding::for_runner_invocation,
+            ))
+        } else {
+            None
+        },
         fabushi_request_binding: if run.provider == RoutedProvider::Fabushi {
             Some(run.fabushi_request_binding.clone().unwrap_or_else(
                 FabushiResponsesRequestBinding::for_runner_invocation,

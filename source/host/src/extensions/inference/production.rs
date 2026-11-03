@@ -27,9 +27,11 @@ use super::inference_service::{
     HostInferenceService, InferenceRoute, InferenceSettings, InferenceUsage,
 };
 use super::provider_session::{
-    FabushiResponsesRequestBinding, ProviderMessage, ProviderSessionError,
+    CodexResponsesRequestBinding, FabushiResponsesRequestBinding,
+    ProviderMessage, ProviderSessionError,
     ProviderTokenUsage, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
+    capture_codex_responses_request_binding,
     resolve_codex_request_model, resolve_fabushi_request_model, run_routed_provider_text,
     run_routed_provider_text_with_lifecycle_reporting_usage,
 };
@@ -555,6 +557,7 @@ impl ProductionInferenceExtension {
         provider: RoutedProvider,
         fabushi_model: Option<&str>,
         codex_model: Option<&str>,
+        codex_request_binding: Option<&CodexResponsesRequestBinding>,
         fabushi_request_binding: Option<&FabushiResponsesRequestBinding>,
         system_prompt: &str,
         user_prompt: &str,
@@ -573,6 +576,11 @@ impl ProductionInferenceExtension {
         if provider == RoutedProvider::Codex && codex_model.is_none() {
             return Err(ProviderSessionError::Configuration(
                 "Codex turn-memory inference requires its admitted model identity.".into(),
+            ));
+        }
+        if provider == RoutedProvider::Codex && codex_request_binding.is_none() {
+            return Err(ProviderSessionError::Configuration(
+                "Codex turn-memory inference requires its admitted request binding.".into(),
             ));
         }
         let messages = vec![
@@ -594,6 +602,7 @@ impl ProductionInferenceExtension {
             typed_replay: None,
             fabushi_model,
             codex_model,
+            codex_request_binding,
             fabushi_request_binding,
             cursor_auth: Some(self.auth.clone()),
             tools: &[],
@@ -606,6 +615,45 @@ impl ProductionInferenceExtension {
         run_routed_provider_text(provider, &messages, &mut options)
     }
 
+    /// Automatic summaries belong to the already-admitted turn. Keep that
+    /// caller's route, model and credential identity through every phase.
+    pub fn run_turn_summarization_prompt(
+        &self,
+        data_dir: &Path,
+        provider: RoutedProvider,
+        fabushi_model: Option<&str>,
+        codex_model: Option<&str>,
+        codex_request_binding: Option<&CodexResponsesRequestBinding>,
+        fabushi_request_binding: Option<&FabushiResponsesRequestBinding>,
+        system_prompt: &str,
+        user_prompt: &str,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        if should_cancel() {
+            return Err(ProviderSessionError::Cancelled("summarization cancelled".into()));
+        }
+        if provider == RoutedProvider::Codex
+            && (codex_model.is_none() || codex_request_binding.is_none())
+        {
+            return Err(ProviderSessionError::Configuration(
+                "Codex turn summarization requires its admitted model and request binding.".into(),
+            ));
+        }
+        if provider == RoutedProvider::Fabushi
+            && (fabushi_model.is_none() || fabushi_request_binding.is_none())
+        {
+            return Err(ProviderSessionError::Configuration(
+                "Native turn summarization requires its admitted model and request binding.".into(),
+            ));
+        }
+        self.run_summarization_prompt_with_identity(
+            data_dir, provider, fabushi_model, codex_model,
+            codex_request_binding, fabushi_request_binding,
+            system_prompt, user_prompt, should_cancel,
+        )
+    }
+
+    /// An independent summary has its own current route/model/credential capture.
     pub fn run_summarization_prompt(
         &self,
         data_dir: &Path,
@@ -630,6 +678,39 @@ impl ProductionInferenceExtension {
         } else {
             None
         };
+        let codex_request_binding = if provider == RoutedProvider::Codex {
+            if should_cancel() {
+                return Err(ProviderSessionError::Cancelled("summarization cancelled".into()));
+            }
+            let binding = capture_codex_responses_request_binding();
+            if should_cancel() {
+                return Err(ProviderSessionError::Cancelled("summarization cancelled".into()));
+            }
+            Some(binding?)
+        } else {
+            None
+        };
+        self.run_summarization_prompt_with_identity(
+            data_dir, provider, fabushi_model.as_deref(), codex_model.as_deref(),
+            codex_request_binding.as_ref(), None, system_prompt, user_prompt, should_cancel,
+        )
+    }
+
+    fn run_summarization_prompt_with_identity(
+        &self,
+        data_dir: &Path,
+        provider: RoutedProvider,
+        fabushi_model: Option<&str>,
+        codex_model: Option<&str>,
+        codex_request_binding: Option<&CodexResponsesRequestBinding>,
+        fabushi_request_binding: Option<&FabushiResponsesRequestBinding>,
+        system_prompt: &str,
+        user_prompt: &str,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        if should_cancel() {
+            return Err(ProviderSessionError::Cancelled("summarization cancelled".into()));
+        }
         let session_options = summarization_session_options();
         let cursor_auth = self.cursor_auth_for_session(Some(&session_options));
         let messages = vec![
@@ -655,9 +736,10 @@ impl ProductionInferenceExtension {
         let mut options = RoutedProviderOptions {
             data_dir,
             typed_replay: None,
-            fabushi_model: fabushi_model.as_deref(),
-            codex_model: codex_model.as_deref(),
-            fabushi_request_binding: None,
+            fabushi_model,
+            codex_model,
+            codex_request_binding,
+            fabushi_request_binding,
             cursor_auth: Some(cursor_auth),
             tools: &[],
             mcp_server_url: None,

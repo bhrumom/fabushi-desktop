@@ -1194,6 +1194,7 @@ fn run_wire_child(root: PathBuf) {
             provider: RoutedProvider::Fabushi,
             fabushi_model: Some(MODEL.into()),
             codex_model: None,
+            codex_request_binding: None,
             fabushi_request_binding: None,
             data_dir: &root,
             messages: &messages,

@@ -465,6 +465,9 @@ jobs:
               "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
               "source/host/src/extensions/inference/provider_session.rs",
               "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+              "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
+              "source/host/src/extensions/inference/codex_request_binding.rs",
+              "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
               "source/host/src/extensions/inference/codex_model_identity_tests.rs",
               "source/host/app/src/tests/codex_model_admission_tests.rs",
               "source/host/src/extensions/inference/production.rs",
@@ -910,6 +913,108 @@ jobs:
           raise SystemExit(0 if accepted else 1)
           PY
           exit "$cmi_status"
+      - name: Test Codex workspace identity through real private credentials and HTTP
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
+          cwb_status=0
+          run_recovery_check codex-workspace-binding cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::inference::provider_session::codex_request_binding::tests:: -- --test-threads=1 || cwb_status=1
+          run_recovery_check codex-workspace-http cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::inference::provider_session::codex_request_workspace_tests:: -- --test-threads=1 || cwb_status=1
+          python3 - <<'CWB_PY' || cwb_status=1
+          import hashlib, json, os, re, runpy, shlex, subprocess
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = json.loads((root / "subject.json").read_text())
+          read_command_evidence = runpy.run_path(str(root / "command-evidence.py"))["read_command_evidence"]
+          cases = [
+              ("codex-workspace-binding", "extensions::inference::provider_session::codex_request_binding::tests::", [
+                  "cwb_o1_private_file_rotation_and_workspace_refusal",
+                  "cwb_o1_invalid_sources_do_not_initialize_binding",
+                  "cwb_o1_source_path_survives_environment_and_cwd_changes",
+                  "cwb_o1_concurrent_first_readers_keep_one_identity",
+                  "cwb_o1_refresh_workspace_gate_preserves_source_and_redacts",
+                  "cwb_o1_jwt_shape_claim_and_workspace_validation",
+                  "cwb_o1_binding_debug_redacts_source_and_credentials",
+              ]),
+              ("codex-workspace-http", "extensions::inference::provider_session::codex_request_workspace_tests::", [
+                  "codex_workspace_real_http_retry_refuses_replaced_account_and_new_turn_binds_current",
+                  "codex_workspace_real_http_retry_accepts_same_workspace_rotation",
+                  "codex_workspace_real_http_checkpoint_refusal_preserves_history_and_effect_custody",
+                  "codex_workspace_real_http_refresh_same_workspace_persists_and_resends",
+                  "codex_workspace_real_http_refresh_refuses_missing_or_changed_workspace_without_write",
+                  "codex_workspace_real_http_refusals_precede_credentials_transport_and_tools",
+                  "codex_workspace_real_http_memory_keeps_bound_workspace_and_summary_captures_current",
+                  "codex_workspace_request_hook_restores_scope_and_rejects_stale_or_unexpected_targets",
+                  "codex_workspace_built_request_errors_keep_cancellation_precedence",
+                  "codex_workspace_actual_watchdog_preserves_credential_refusal_and_user_cancellation",
+                  "codex_workspace_admitted_summary_keeps_identity_across_compaction_phases",
+              ]),
+          ]
+          executions = []
+          for label, prefix, names in cases:
+              log_path, command_path = root / (label + ".log"), root / (label + ".command.txt")
+              raw = log_path.read_bytes() if log_path.is_file() else b""
+              command = command_path.read_text().strip() if command_path.is_file() else ""
+              evidence = read_command_evidence(root, label)
+              required = [prefix + name for name in names]
+              text = raw.decode("utf-8", errors="replace")
+              passed = re.findall(r"^test (\S+) \.\.\. ok$", text, re.MULTILINE)
+              counts = [tuple(map(int, row)) for row in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
+              expected = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml", "--lib", prefix, "--", "--test-threads=1"]
+              accepted = (evidence["accepted"] and shlex.split(command) == expected
+                  and counts == [(len(required), 0, 0)] and all(passed.count(name) == 1 for name in required))
+              executions.append({"label": label, "command": command, **evidence,
+                  "required_tests": required, "observed_passed_test_names": passed,
+                  "summaries_passed_failed_ignored": counts,
+                  "log_sha256": hashlib.sha256(raw).hexdigest(), "oracle_accepted": accepted})
+          # Reuse the earlier full Native contract command from this exact H.
+          label = "settings-inference"
+          log_path, command_path = root / (label + ".log"), root / (label + ".command.txt")
+          raw = log_path.read_bytes() if log_path.is_file() else b""
+          command = command_path.read_text().strip() if command_path.is_file() else ""
+          evidence = read_command_evidence(root, label)
+          required = ["admitted_turn_summary_retains_fabushi_model_and_request_binding"]
+          passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
+          counts = [tuple(map(int, row)) for row in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", raw.decode("utf-8", errors="replace"))]
+          expected = ["cargo", "test", "--locked", "--no-fail-fast", "--manifest-path", "source/host/Cargo.toml"]
+          for target in [
+              "host_secret_store_contract", "host_foundation_contract",
+              "box_store_download_frozen_parity_contract", "box_store_transfer_frozen_parity_contract",
+              "box_copy_in_production_wiring_contract", "box_store_sync_production_wiring_contract",
+              "settings_service_contract", "openclaw_sessions_and_config_contract",
+              "inference_extension_composition_contract", "settings_extension_contract",
+              "production_settings_single_owner_contract", "gateway_command_error_contract",
+              "openclaw_agent_roster_contract", "extensions_auth_service_contract",
+              "extensions_auth_credential_renewer_contract", "extensions_auth_extension_contract",
+              "inference_codex_direct_contract", "inference_provider_session_contract",
+              "runner_production_bridge_contract", "fabushi_model_identity_production_contract",
+              "fabushi_responses_credential_context_contract",
+          ]:
+              expected += ["--test", target]
+          accepted = (evidence["accepted"] and shlex.split(command) == expected
+              and len(counts) == 21 and all(n > 0 and f == 0 for n, f, _i in counts)
+              and all(passed.count(name) == 1 for name in required))
+          executions.append({"label": label, "command": command, **evidence,
+              "reused_same_subject_command": True, "required_tests": required,
+              "observed_passed_test_names": passed, "summaries_passed_failed_ignored": counts,
+              "log_sha256": hashlib.sha256(raw).hexdigest(), "oracle_accepted": accepted})
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+              and tree == subject["subject_tree"] and len(executions) == len(cases) + 1
+              and all(item["oracle_accepted"] for item in executions))
+          receipt = {key: subject[key] for key in (
+              "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+          receipt.update({"contract": "CWB-v1", "executions": executions,
+              "result": "passed" if accepted else "failed",
+              "scope": "Real private credential loader, fixed source/workspace binding, actual Codex HTTP/refresh assembly and existing Runner/checkpoint/custody/Memory and admitted summary consumers. Native admitted summary reuses the earlier exact-subject settings-inference command. Only built request destinations use owned loopback peers. Synthetic accounts do not establish real service, external-writer settlement, process-restart, UI or package acceptance."})
+          (root / "codex-workspace-binding.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          raise SystemExit(0 if accepted else 1)
+          CWB_PY
+          exit "$cwb_status"
       - name: Test media admission, HTTP failure diagnostics and content publication through existing attachment owners
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
@@ -1080,6 +1185,10 @@ jobs:
               tests::codex_model_admission_tests::cmi_shipping_refusal_releases_lease_without_permission_or_settings_effects \
               tests::codex_model_admission_tests::cmi_shipping_session_precedence_preserves_raw_validation_and_other_routes \
               tests::codex_model_admission_tests::cmi_shipping_cancellation_before_and_after_model_capture_preserves_admission_owners \
+              tests::codex_model_admission_tests::cwb_shipping_credential_refusal_preserves_accepted_input_settings_and_exact_lease \
+              tests::codex_model_admission_tests::cwb_shipping_bound_memory_refuses_changed_workspace_before_transport_and_later_admission \
+              tests::codex_model_admission_tests::cwb_shipping_cancellation_precedes_credentials_and_other_routes_stay_isolated \
+              tests::codex_model_admission_tests::cwb_shipping_compaction_uses_admitted_identity_and_preserves_refused_history \
               tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce \
               tests::upgrade_marker_handoff_preserves_kickstart_intent_on_failure \
               tests::upgrade_marker_startup_checks_all_rows_before_any_dispatch \
@@ -1880,6 +1989,10 @@ jobs:
               "cmi_shipping_refusal_releases_lease_without_permission_or_settings_effects",
               "cmi_shipping_session_precedence_preserves_raw_validation_and_other_routes",
               "cmi_shipping_cancellation_before_and_after_model_capture_preserves_admission_owners",
+              "cwb_shipping_credential_refusal_preserves_accepted_input_settings_and_exact_lease",
+              "cwb_shipping_bound_memory_refuses_changed_workspace_before_transport_and_later_admission",
+              "cwb_shipping_cancellation_precedes_credentials_and_other_routes_stay_isolated",
+              "cwb_shipping_compaction_uses_admitted_identity_and_preserves_refused_history",
           ]]
           executions = []
           for name in names:
@@ -1902,7 +2015,7 @@ jobs:
               and all(item["oracle_accepted"] for item in executions))
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
-          receipt.update({"contract": "CMI-v1-shipping-admission", "executions": executions,
+          receipt.update({"contract": "CMI-v1/CWB-v1-shipping-admission", "executions": executions,
               "result": "passed" if accepted else "failed",
               "scope": "Actual admitted lease, saved model, Session precedence, raw/config refusal, permission ordering and Native recovery isolation. Provider requests and retries have separate actual Codex consumer evidence; no service or packaged acceptance."})
           (root / "codex-model-admission.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -2605,7 +2718,8 @@ jobs:
               "config_public_secret_scope": "Real shipping dispatcher and filesystem Settings owner cover four public routes, exact masked skill bytes, opaque normalized/raw revisions, same-owner CAS, commit receipts and key lifetime. Existing backup/restore owners cover actual installation-root propagation, key exclusion and bounded pre-mutation identity/deletion refusal. Real Linux mounted-descendant execution has a separate required job and receipt on this H; this macOS receipt does not assert its result. These handler/state-machine checks are not live client/auth compatibility, cross-process Settings transactions, external namespace mutation exclusion, complete schema hints or secret-provider resolution acceptance.",
               "model_identity_contract": "OCRM-MODEL-IDENTITY-v1",
               "codex_model_identity_contract": "CMI-v1",
-              "codex_model_identity_receipts": ["codex-model-identity.receipt.json", "codex-model-admission.receipt.json"],
+              "codex_model_identity_receipts": ["codex-model-identity.receipt.json", "codex-model-admission.receipt.json", "codex-workspace-binding.receipt.json"],
+              "codex_workspace_binding_contract": "CWB-v1",
               "codex_model_identity_scope": "Actual persisted model admission through existing production composition, Runner attempts, Codex request serialization, known-checkpoint and generic legacy controls, turn memory and summary, with only the final transport controlled. Exact command/capture and named-result receipts are separate required consumers; real Codex accounts, service compatibility and process-loss recovery remain open.",
               "fabushi_credential_context_contract": "OCRM-FABUSHI-CREDENTIAL-CONTEXT-v1",
               "fabushi_credential_context_result": "passed",
@@ -3413,6 +3527,9 @@ jobs:
               "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
               "source/host/src/extensions/inference/provider_session.rs",
               "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+              "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
+              "source/host/src/extensions/inference/codex_request_binding.rs",
+              "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
               "source/host/src/extensions/inference/codex_model_identity_tests.rs",
               "source/host/app/src/tests/codex_model_admission_tests.rs",
               "source/host/src/extensions/inference/production.rs",
@@ -3724,6 +3841,32 @@ jobs:
                       "cmi_transport_factory_is_thread_scoped_borrow_free_and_restored",
                   ]
               ]),
+              ("codex-workspace-binding", base + ["--lib", "extensions::inference::provider_session::codex_request_binding::tests::", "--", "--test-threads=1"], [
+                  "extensions::inference::provider_session::codex_request_binding::tests::" + name for name in [
+                      "cwb_o1_private_file_rotation_and_workspace_refusal",
+                      "cwb_o1_invalid_sources_do_not_initialize_binding",
+                      "cwb_o1_source_path_survives_environment_and_cwd_changes",
+                      "cwb_o1_concurrent_first_readers_keep_one_identity",
+                      "cwb_o1_refresh_workspace_gate_preserves_source_and_redacts",
+                      "cwb_o1_jwt_shape_claim_and_workspace_validation",
+                      "cwb_o1_binding_debug_redacts_source_and_credentials",
+                  ]
+              ]),
+              ("codex-workspace-http", base + ["--lib", "extensions::inference::provider_session::codex_request_workspace_tests::", "--", "--test-threads=1"], [
+                  "extensions::inference::provider_session::codex_request_workspace_tests::" + name for name in [
+                      "codex_workspace_real_http_retry_refuses_replaced_account_and_new_turn_binds_current",
+                      "codex_workspace_real_http_retry_accepts_same_workspace_rotation",
+                      "codex_workspace_real_http_checkpoint_refusal_preserves_history_and_effect_custody",
+                      "codex_workspace_real_http_refresh_same_workspace_persists_and_resends",
+                      "codex_workspace_real_http_refresh_refuses_missing_or_changed_workspace_without_write",
+                      "codex_workspace_real_http_refusals_precede_credentials_transport_and_tools",
+                      "codex_workspace_real_http_memory_keeps_bound_workspace_and_summary_captures_current",
+                      "codex_workspace_request_hook_restores_scope_and_rejects_stale_or_unexpected_targets",
+                      "codex_workspace_built_request_errors_keep_cancellation_precedence",
+                      "codex_workspace_actual_watchdog_preserves_credential_refusal_and_user_cancellation",
+                      "codex_workspace_admitted_summary_keeps_identity_across_compaction_phases",
+                  ]
+              ]),
               ("codex-model-regressions", base + ["--no-fail-fast", "--test", "settings_service_contract", "--test", "inference_extension_composition_contract", "--test", "inference_codex_direct_contract", "--test", "inference_provider_session_contract", "--test", "fabushi_model_identity_production_contract", "--test", "runner_effect_custody_contract", "--", "--test-threads=1"], [
                   "bound_defaults_are_isolated_from_cursor_and_do_not_change_route_authority",
                   "checkpoint_model_identity_is_durable_and_cross_model_resume_fails_before_request",
@@ -3732,6 +3875,7 @@ jobs:
                   "persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization",
                   "accepted_checkpoint_retry_refuses_a_changed_fabushi_account",
                   "accepted_checkpoint_retry_accepts_same_context_token_rotation",
+                  "admitted_turn_summary_retains_fabushi_model_and_request_binding",
               ]),
               ("memory-account-binding", base + ["--test", "fabushi_model_identity_production_contract", "same_runner_nudges_and_turn_memory_", "--", "--test-threads=1"], [
                   "same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account",
@@ -3919,7 +4063,8 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "CWB-v1"],
+              "codex_workspace_binding_scope": "Actual private credential loading, per-turn source/workspace continuity, same-workspace rotation, recreated retry/checkpoint refusal, one-401 refresh before persistence and bound/fresh Memory consumers through real HTTP with owned redirected destinations. Real service, external-writer settlement and process-restart acceptance remain open.",
               "generated_history_scope": "Actual generated Runner retains ordered known successful tool observations and the accepted user through the existing canonical root/Journal transaction after provider failure or cancellation. Owned fresh processes observe history without provider/tool replay or completion/marker authority. Real provider-store refusal retains unaccepted effect custody; unknown/no-effect/root-drift controls, original typed error preservation, prior-completion invalidation and ordinary success remain required. Controlled Responses do not prove real provider compatibility, unknown/pending history, complete typed replay/UI, original-turn restart or packaged-platform acceptance.",
               "plugin_uninstall_recovery_scope": "Durable pre-dispatch tickets and exact settlements in the existing MCP/Skills owner, pending and confirmed refusal in actual Session/prompt consumers, strict image/marker recovery, cache-before-release barriers, and same-root Host handoff. Owned producer process exits and fresh consumer processes use controlled backend I/O. Pending outcomes are never replayed or cleared by ordinary sync. Account/backend incarnation, remote receipt/quiescence reconciliation, real ecosystem, hardware power-loss and packaged-platform acceptance remain open.",
               "checkpoint_publication_scope": "Actual provider checkpoint writer: private owned staging, exact payload preservation, no-clobber final publication, directory-entry barriers including retry after a failed creation barrier, and retained visible payload after a controlled final barrier failure. Actual shell adapter retains a completed file effect as uncheckpointed after real store refusal and explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance.",
@@ -3954,7 +4099,7 @@ jobs:
               missing = [name for name in required if passed.count(name) != 1]
               counts = [tuple(map(int, count)) for count in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
-              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history"):
+              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "codex-workspace-binding", "codex-workspace-http"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
               complete_counts = None
               if label in ("device-pairing-revocation-authority", "device-pairing-revocation-gateway", "device-pairing-retained-stream"):
@@ -4298,6 +4443,9 @@ jobs:
               "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
               "source/host/src/extensions/inference/provider_session.rs",
               "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+              "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
+              "source/host/src/extensions/inference/codex_request_binding.rs",
+              "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
               "source/host/src/extensions/inference/codex_model_identity_tests.rs",
               "source/host/app/src/tests/codex_model_admission_tests.rs",
               "source/host/src/extensions/inference/production.rs",
@@ -4316,7 +4464,7 @@ jobs:
           receipt = {
               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1/DVR-v1",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
-              "model_contract": "CMI-v1",
+              "model_contract": "CMI-v1/CWB-v1",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -4467,6 +4615,10 @@ jobs:
                   "cmi_shipping_refusal_releases_lease_without_permission_or_settings_effects",
                   "cmi_shipping_session_precedence_preserves_raw_validation_and_other_routes",
                   "cmi_shipping_cancellation_before_and_after_model_capture_preserves_admission_owners",
+                  "cwb_shipping_credential_refusal_preserves_accepted_input_settings_and_exact_lease",
+                  "cwb_shipping_bound_memory_refuses_changed_workspace_before_transport_and_later_admission",
+                  "cwb_shipping_cancellation_precedes_credentials_and_other_routes_stay_isolated",
+                  "cwb_shipping_compaction_uses_admitted_identity_and_preserves_refused_history",
               ]]
               required += ["tests::routed_preentry_cancellation_tests::" + name for name in [
                   "routed_preentry_public_cancellation_stops_actual_start_before_model_and_preserves_input",

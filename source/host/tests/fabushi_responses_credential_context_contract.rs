@@ -527,6 +527,7 @@ fn exercise_provider(root: &Path, explicit_cancel: bool) -> Value {
         &mut RoutedProviderOptions {
             data_dir: root, typed_replay: None, fabushi_model: Some(MODEL),
             codex_model: None,
+            codex_request_binding: None,
             fabushi_request_binding: None, cursor_auth: None,
             tools: &[], mcp_server_url: None,
             execute_tool: &mut |_, _, _| { tools += 1; Ok(json!({})) },
@@ -615,6 +616,7 @@ impl RoutedProviderAttemptExecutor for RoutedRefusalExecutor<'_> {
             &mut RoutedProviderOptions {
                 data_dir: self.root, typed_replay: None, fabushi_model: Some(MODEL),
                 codex_model: None,
+                codex_request_binding: None,
                 fabushi_request_binding: None, cursor_auth: None,
                 tools: &[], mcp_server_url: None,
                 execute_tool: &mut |_, _, _| panic!("refused tool execution"),
@@ -693,6 +695,7 @@ impl RoutedProviderAttemptExecutor for RoutedHttpErrorExecutor<'_> {
             &mut RoutedProviderOptions {
                 data_dir: self.root, typed_replay: None, fabushi_model: Some(MODEL),
                 codex_model: None,
+                codex_request_binding: None,
                 fabushi_request_binding: None, cursor_auth: None,
                 tools: &[], mcp_server_url: None,
                 execute_tool: &mut |_, _, _| { *tools += 1; Ok(json!({})) },

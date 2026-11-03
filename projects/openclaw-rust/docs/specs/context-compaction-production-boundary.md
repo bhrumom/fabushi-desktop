@@ -230,6 +230,27 @@ compatibility or complete process-restart recovery. Validate only in Actions.
 
 ## 5. Current state
 
+### Admitted summary identity (`CWB-v1`, 2026-11-03)
+
+Automatic history and split-prefix summaries retain the foreground worker's
+admitted provider, model and request binding through the existing Inference
+summary implementation. Independent summary operations retain their separate
+fresh admission. Usage reporting, Cursor summary options, no-tool behavior,
+fitting and Session/DB cancellation/custody fences remain in their existing owners.
+
+The CWB decision narrows the ordinary-error fallback rule above: an
+`Authentication` or `Configuration` result from either admitted summary phase
+stops that compaction without replacing history with a degraded summary.
+This retains the original history for a later authorized attempt; a successful
+first phase does not authorize committing after an identity-refused prefix.
+Ordinary transport errors still use the existing fitted local fallback and its
+positive controls. This is an explicit target policy, not a claim that every
+fixed-U backend implements the same account check. The source addendum preserves
+the old behavior and its original fallback proposal; the root decision records
+why this narrower identity-refusal policy was selected before implementation.
+Only exact-H Actions may verify the new App/HTTP cases; no acceptance state is
+advanced by this amendment.
+
 ### Planning recovery at H `49200bf2577c9d83aee1f02eef2c65150ca2c2d8`
 
 The exact-U dossier's current identities supersede the historical implementation

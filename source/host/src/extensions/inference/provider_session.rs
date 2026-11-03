@@ -43,6 +43,17 @@ use super::typed_replay_serialization::{
 #[path = "codex_model_identity_tests.rs"]
 mod codex_model_identity_tests;
 
+#[path = "codex_request_binding.rs"]
+mod codex_request_binding;
+pub use codex_request_binding::{
+    CodexResponsesRequestBinding, capture_codex_responses_request_binding,
+};
+use codex_request_binding::validate_codex_access_workspace;
+
+#[cfg(test)]
+#[path = "codex_request_workspace_tests.rs"]
+mod codex_request_workspace_tests;
+
 pub const FABUSHI_ROUTER_SYSTEM_PROMPT: &str =
     "You are Fabushi, a warm, concise desktop assistant.\n\
 You are running inside Fabushi, not inside Codex CLI or Claude Code.\n\
@@ -682,6 +693,7 @@ fn read_codex_credentials(path: &Path) -> Result<CodexCredentials, ProviderSessi
             "Codex login is missing an account ID. Run `codex login` again.".into(),
         ));
     };
+    validate_codex_access_workspace(&access_token, &account_id)?;
     Ok(CodexCredentials {
         access_token,
         refresh_token,
@@ -715,6 +727,9 @@ fn persist_refreshed_credentials(
     refresh_token: String,
     id_token: String,
 ) -> Result<CodexCredentials, ProviderSessionError> {
+    // Validate the actual new token before mutating or publishing any image.
+    // The binding is a workspace boundary, not signature verification.
+    validate_codex_access_workspace(&access_token, &current.account_id)?;
     let mut document = current.document.clone();
     let root = document.as_object_mut().ok_or_else(|| {
         ProviderSessionError::Protocol("Codex auth document was not an object.".into())
@@ -783,6 +798,7 @@ async fn refresh_codex_credentials(
     client: &AsyncClient,
     current: &CodexCredentials,
     should_cancel: &dyn Fn() -> bool,
+    #[cfg(test)] request_hook: Option<&codex_request_workspace_tests::CapturedRequestHook>,
 ) -> Result<CodexCredentials, ProviderSessionError> {
     let client_id = jwt_audience(&current.id_token).ok_or_else(|| {
         ProviderSessionError::Authentication(
@@ -796,11 +812,13 @@ async fn refresh_codex_credentials(
         form_encode(&client_id),
     );
     let response = await_reqwest(
-        client
+        execute_responses_http_request(client
             .post("https://auth.openai.com/oauth/token")
             .header("content-type", "application/x-www-form-urlencoded")
-            .body(body)
-            .send(),
+            .body(body),
+            #[cfg(test)] request_hook,
+            #[cfg(test)] codex_request_workspace_tests::RequestKind::Refresh,
+        ),
         should_cancel,
         "the Codex login refresh request",
     )
@@ -1148,18 +1166,24 @@ pub fn capture_fabushi_responses_request_binding(
 struct CodexHttpTransport {
     client: AsyncClient,
     credentials: ResponsesHttpCredentials,
+    #[cfg(test)]
+    request_hook: Option<codex_request_workspace_tests::CapturedRequestHook>,
 }
 
 impl CodexHttpTransport {
     fn with_credentials(credentials: ResponsesHttpCredentials) -> Result<Self, ProviderSessionError> {
         let client = responses_http_client()?.clone();
-        Ok(Self { client, credentials })
-    }
-
-    fn new_codex(auth_path: &Path) -> Result<Self, ProviderSessionError> {
-        Self::with_credentials(ResponsesHttpCredentials::ChatGpt(
-            read_codex_credentials(auth_path)?,
-        ))
+        #[cfg(test)]
+        let request_hook = if matches!(&credentials, ResponsesHttpCredentials::ChatGpt(_)) {
+            codex_request_workspace_tests::capture_request_hook_for_current_thread()
+        } else {
+            None
+        };
+        Ok(Self {
+            client,
+            credentials,
+            #[cfg(test)] request_hook,
+        })
     }
 
     fn new_fabushi() -> Result<Self, ProviderSessionError> {
@@ -1176,14 +1200,45 @@ impl CodexHttpTransport {
     }
 }
 
-fn new_codex_direct_transport() -> Result<Box<dyn CodexDirectTransport>, ProviderSessionError> {
+fn new_codex_direct_transport(
+    binding: Option<&CodexResponsesRequestBinding>,
+) -> Result<Box<dyn CodexDirectTransport>, ProviderSessionError> {
+    // Even model-only test substitution must honor supplied admission identity.
+    let credentials = binding.map(CodexResponsesRequestBinding::credentials_for_transport)
+        .transpose()?;
     #[cfg(test)]
     if let Some(transport) = codex_model_identity_tests::transport_for_current_thread() {
         return Ok(transport);
     }
-    Ok(Box::new(CodexHttpTransport::new_codex(
-        &codex_home().join("auth.json"),
-    )?))
+    let transport = match credentials {
+        Some(credentials) => CodexHttpTransport::with_credentials(
+            ResponsesHttpCredentials::ChatGpt(credentials),
+        )?,
+        None => CodexHttpTransport::with_credentials(ResponsesHttpCredentials::ChatGpt(
+            CodexResponsesRequestBinding::for_runner_invocation().credentials_for_transport()?,
+        ))?,
+    };
+    Ok(Box::new(transport))
+}
+
+// Building remains inside the cancelable future: a pre-dispatch cancellation
+// must win over a stored RequestBuilder error. The original client is retained.
+async fn execute_responses_http_request(
+    builder: reqwest::RequestBuilder,
+    #[cfg(test)] request_hook: Option<&codex_request_workspace_tests::CapturedRequestHook>,
+    #[cfg(test)] request_kind: codex_request_workspace_tests::RequestKind,
+) -> Result<AsyncResponse, reqwest::Error> {
+    let (client, request) = builder.build_split();
+    let request = request?;
+    #[cfg(test)]
+    let request = {
+        let mut request = request;
+        if let Some(hook) = request_hook {
+            hook.apply(request_kind, &mut request);
+        }
+        request
+    };
+    client.execute(request).await
 }
 
 async fn send_codex_request(
@@ -1191,6 +1246,7 @@ async fn send_codex_request(
     credentials: &ResponsesHttpCredentials,
     request: &Value,
     should_cancel: &dyn Fn() -> bool,
+    #[cfg(test)] request_hook: Option<&codex_request_workspace_tests::CapturedRequestHook>,
 ) -> Result<AsyncResponse, ProviderSessionError> {
     let request_builder = match credentials {
         ResponsesHttpCredentials::ChatGpt(credentials) => client
@@ -1209,12 +1265,14 @@ async fn send_codex_request(
             .header("authorization", format!("Bearer {}", credential.access_token().trim())),
     };
     await_reqwest(
-        request_builder
+        execute_responses_http_request(request_builder
             .header("content-type", "application/json")
             .header("accept", "text/event-stream")
             .header("user-agent", "fabushi-router/1")
-            .json(request)
-            .send(),
+            .json(request),
+            #[cfg(test)] request_hook,
+            #[cfg(test)] codex_request_workspace_tests::RequestKind::Responses,
+        ),
         should_cancel,
         "the Responses provider request",
     )
@@ -1225,11 +1283,14 @@ async fn refresh_responses_credentials(
     client: &AsyncClient,
     current: &ResponsesHttpCredentials,
     should_cancel: &dyn Fn() -> bool,
+    #[cfg(test)] request_hook: Option<&codex_request_workspace_tests::CapturedRequestHook>,
 ) -> Result<ResponsesHttpCredentials, ProviderSessionError> {
     match current {
         ResponsesHttpCredentials::ChatGpt(credentials) => Ok(
             ResponsesHttpCredentials::ChatGpt(
-                refresh_codex_credentials(client, credentials, should_cancel).await?,
+                refresh_codex_credentials(client, credentials, should_cancel,
+                    #[cfg(test)] request_hook,
+                ).await?,
             ),
         ),
         ResponsesHttpCredentials::Fabushi {
@@ -1269,6 +1330,7 @@ impl CodexDirectTransport for CodexHttpTransport {
                 &credentials,
                 request,
                 should_cancel,
+                #[cfg(test)] self.request_hook.as_ref(),
             )
             .await
             .map_err(codex_provider_error)?;
@@ -1278,6 +1340,7 @@ impl CodexDirectTransport for CodexHttpTransport {
                     &client,
                     &credentials,
                     should_cancel,
+                    #[cfg(test)] self.request_hook.as_ref(),
                 )
                 .await
                 .map_err(codex_provider_error)?;
@@ -1286,6 +1349,7 @@ impl CodexDirectTransport for CodexHttpTransport {
                     &credentials,
                     request,
                     should_cancel,
+                    #[cfg(test)] self.request_hook.as_ref(),
                 )
                 .await
                 .map_err(codex_provider_error)?;
@@ -1512,6 +1576,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         messages,
         None,
         None,
+        None,
         tools,
         execute_tool,
         on_text_delta,
@@ -1521,6 +1586,9 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         on_usage,
         max_steps,
         tool_step_reminder,
+        false,
+        #[cfg(test)]
+        None,
     )
 }
 
@@ -1528,6 +1596,7 @@ fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_rep
     messages: &[ProviderMessage],
     typed_replay: Option<&[TypedReplayEntry]>,
     requested_model: Option<&str>,
+    request_binding: Option<&CodexResponsesRequestBinding>,
     tools: &[RoutedToolDefinition],
     execute_tool: &mut dyn FnMut(
         &RoutedToolDefinition,
@@ -1543,6 +1612,8 @@ fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_rep
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
+    preserve_attempt_failure: bool,
+    #[cfg(test)] after_credentials_prepared: Option<&dyn Fn()>,
 ) -> Result<String, ProviderSessionError> {
     if should_cancel() {
         return Err(ProviderSessionError::Cancelled(
@@ -1550,7 +1621,33 @@ fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_rep
         ));
     }
     let model = resolve_codex_request_model(requested_model, resume_from)?;
-    let mut transport = new_codex_direct_transport()?;
+    if resume_from.is_some()
+        && !request_binding.is_some_and(CodexResponsesRequestBinding::is_initialized)
+    {
+        return Err(ProviderSessionError::Configuration(
+            "Codex continuation requires its retained admitted request binding.".into(),
+        ));
+    }
+    if should_cancel() {
+        return Err(ProviderSessionError::Cancelled(
+            "Runner cancelled before provider dispatch".into(),
+        ));
+    }
+    let transport = new_codex_direct_transport(request_binding);
+    #[cfg(test)]
+    if let Some(observe) = after_credentials_prepared {
+        observe();
+    }
+    // The Runner predicate includes watchdog/custody stops. Its existing outer
+    // adapter and shell must see preparation errors before adjudicating those
+    // signals; the shell separately gives actual user cancellation priority.
+    // Ordinary low-level callers still give their cancellation predicate priority.
+    if should_cancel() && (!preserve_attempt_failure || transport.is_ok()) {
+        return Err(ProviderSessionError::Cancelled(
+            "Runner cancelled before provider dispatch".into(),
+        ));
+    }
+    let mut transport = transport?;
     let system_prompt = assembled_provider_system_prompt(messages);
     let input = responses_input_for_turn(
         messages,
@@ -1706,6 +1803,7 @@ pub struct RoutedProviderOptions<'a> {
     pub typed_replay: Option<&'a [TypedReplayEntry]>,
     pub fabushi_model: Option<&'a str>,
     pub codex_model: Option<&'a str>,
+    pub codex_request_binding: Option<&'a CodexResponsesRequestBinding>,
     pub fabushi_request_binding: Option<&'a FabushiResponsesRequestBinding>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub tools: &'a [RoutedToolDefinition],
@@ -1776,6 +1874,8 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
         8,
         None,
         false,
+        #[cfg(test)]
+        None,
     )
 }
 
@@ -1797,6 +1897,8 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     run_routed_provider_text_with_lifecycle_impl(
         provider, messages, options, resume_from, on_checkpoint, on_usage,
         max_steps, tool_step_reminder, true,
+        #[cfg(test)]
+        None,
     )
 }
 
@@ -1812,6 +1914,7 @@ fn run_routed_provider_text_with_lifecycle_impl(
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
     preserve_attempt_failure: bool,
+    #[cfg(test)] after_codex_credentials_prepared: Option<&dyn Fn()>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
     if options.typed_replay.is_some()
@@ -1950,6 +2053,7 @@ fn run_routed_provider_text_with_lifecycle_impl(
                 messages,
                 options.typed_replay,
                 options.codex_model,
+                options.codex_request_binding,
                 options.tools,
                 options.execute_tool,
                 options.on_text_delta,
@@ -1959,6 +2063,9 @@ fn run_routed_provider_text_with_lifecycle_impl(
                 on_usage,
                 max_steps,
                 tool_step_reminder,
+                preserve_attempt_failure,
+                #[cfg(test)]
+                after_codex_credentials_prepared,
             )
         }
         RoutedProvider::OpenRouter => {

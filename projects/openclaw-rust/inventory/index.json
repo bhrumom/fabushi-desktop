@@ -35,6 +35,146 @@
     "unread": 62082,
     "unreviewed_applicable": 0
   },
+  "pending_mapping_additions": {
+    "entries": [
+      {
+        "blob_sha": "5861377169b54c96e42164997a8cf078d7ed0e8c",
+        "path": "src/agents/execution-auth-binding.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "c6e51477f738eabebe67360c0633dd426e9be673",
+        "path": "packages/ai/src/providers/openai-chatgpt-responses.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "01155083b3d310ca6491889a110d30d339e2c076",
+        "path": "packages/ai/src/utils/oauth/openai-chatgpt-jwt.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "a7dbeb0864316a06c8eb14a5086a74b6f5a51537",
+        "path": "packages/ai/src/providers/openai-chatgpt-request-headers.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "959d2185f78d8d2135556a42506a2f3a73a1d7ec",
+        "path": "extensions/openai/openai-chatgpt-oauth-flow.runtime.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "af91d5efc6ff90b29623d5a20416df978362bf16",
+        "path": "src/agents/embedded-agent-runner/run/attempt-finalize.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "674007e41e588021fb83fee8c5f8c8aafa8ef47b",
+        "path": "src/agents/embedded-agent-runner/run/attempt-prompt-helpers.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "aec5f3992a61d6f43b19c1e9e0b94411073b5c44",
+        "path": "src/agents/embedded-agent-runner/compaction-runtime-context.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "67cc1a115ed76d246af17fc1a49b33a49c5efe3d",
+        "path": "src/agents/embedded-agent-runner/context-engine-maintenance.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "f724518a8f5e9db9a8c65316d7c796a74ccac5a5",
+        "path": "src/agents/embedded-agent-runner/context-engine-maintenance-execution.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "099b2d14d18b00f20a9adb4adbe0ffb14176b214",
+        "path": "src/agents/embedded-agent-runner/compact.types.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "a555f37cbc4caa8056a59cbc6e8f5ca06d6f7b82",
+        "path": "src/agents/embedded-agent-runner/compaction-runtime-preparation.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "78ce1616200e22c0926b3a537063f0be85e73e81",
+        "path": "src/agents/embedded-agent-runner/direct-compaction-preparation.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "03267c63f18efa56dfba9eaa0b9f7f8f0a8c23b4",
+        "path": "src/agents/embedded-agent-runner/prepared-compaction-runtime.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "d11e6e202af75483219b87e2b0a9fed9c30fd3ef",
+        "path": "src/agents/embedded-agent-runner/compaction-session-execution.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "0783677fd762d642169eed15189222942b92a4c5",
+        "path": "src/agents/embedded-agent-runner/compact.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "0f3967e921acb9119e29dd606d9e258362ec1885",
+        "path": "src/agents/embedded-agent-runner/run/compaction-runtime.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "125330c1c82bc66846cca341df3d1852888fa2a8",
+        "path": "src/agents/embedded-agent-runner/run/params.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "c5230ec9cb44d857edee5a7dac4134dfdf701f45",
+        "path": "src/agents/compaction.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "b6aafed0640c1f0a765c14068040b7e209df501c",
+        "path": "src/agents/sessions/index.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "8cc6dc9c87269c5d64de1bf4352365a79bfd57dd",
+        "path": "src/agents/sessions/compaction/compaction.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "adfc2f1cca3d58d0ebfd0391dde16a8cd7d6fed1",
+        "path": "src/agents/sessions/compaction/runtime.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "53d1b5e172aad55161086281df7297416bb03dbf",
+        "path": "src/agents/runtime/index.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "438f5c49265021b9f674944133d4d06aa8430409",
+        "path": "src/plugin-sdk/agent-core.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "3a4395f8e0991e85c6f7fe3a7af5ec65d95391fb",
+        "path": "packages/agent-core/src/index.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "9ee5706cfd94a75f36e43752e16d1f75d9975147",
+        "path": "packages/agent-core/src/harness/compaction/compaction.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      },
+      {
+        "blob_sha": "7e4b86c73a22a0cd942f36dd73d857f4cb3c5669",
+        "path": "packages/agent-core/src/harness/compaction/summarization-completion.ts",
+        "responsibility_id": "OCRM-RESP-MODEL-IDENTITY-001"
+      }
+    ],
+    "from_canonical_inventory_sha256": "c314c2d6d20fcb7f8a2a1d8b474a736a85ed58c0c82c3ef257bb5b4ad21d4673"
+  },
   "project_id": "OCRM-001",
   "spec_revision": 2,
   "upstream": {
