@@ -1,0 +1,145 @@
+{
+  "contract": "ONP-v1",
+  "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": "41580539491",
+  "run_attempt": "1",
+  "job": "renderer",
+  "runner_os": "Linux",
+  "node": "v24.22.1",
+  "inputs_sha256": {
+    ".github/workflows/rust-desktop-runtime.yml": "ea056ef0bb5d77f1aa680b649335b8ec141be1f8b27a69562af86e5ae16f7e44",
+    ".github/workflows/release-macos-main.yml": "255354819897d57d4e75a871373bfd51c3a39c7991bc16cec9e2590e87e6f89b",
+    "projects/openclaw-rust/upstream.lock.json": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+    "projects/openclaw-rust/docs/specs/desktop-openclaw-notice.md": "44987d7643d7343fc4b1e2f4f5987da54386e30f6e4079a8151102bef44be56d",
+    "desktop/resources/licenses/openclaw/LICENSE": "9efd316ecf1c4c60f6fd5d26433142fff2b6794d7d328e9bc6179b29bf9c82a4",
+    "desktop/package.json": "942aa4db49e1ddc1825df616510da868385a1b5d0126cca97e6c3516629b82b4",
+    "desktop/resources/licenses/openclaw/.gitattributes": "c33e569edc1001d82ffbb5276646d85439c308f14b1b10c21b4c8a35b7d2fe82",
+    "desktop/scripts/check-electron-runtime-bundle.mjs": "38b4c700448f8a7dff225071033e8ce877a121fc9c549269c1bb697af9e0c75e",
+    "desktop/scripts/openclaw-notice.contract.test.mjs": "e41bd31afcd236a57dcf9cf1c6a6ee7146a43d6a123acad33bd63c4f77807641"
+  },
+  "planned_commands": [
+    {
+      "case": "source-notice",
+      "command": [
+        "node",
+        "desktop/scripts/check-electron-runtime-bundle.mjs",
+        "--notice-only"
+      ]
+    },
+    {
+      "case": "notice-contract",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "desktop/scripts/openclaw-notice.contract.test.mjs"
+      ]
+    }
+  ],
+  "required_tests": [
+    "onp_real_notice_only_uses_locked_source_and_common_mapping",
+    "onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts",
+    "onp_default_mode_retains_all_required_runtime_artifacts",
+    "onp_default_mode_accepts_complete_controlled_runtime_and_notice",
+    "onp_missing_source_notice_is_refused_without_repair",
+    "onp_changed_source_bytes_are_refused_without_normalization",
+    "onp_non_file_source_notice_is_refused",
+    "onp_missing_malformed_and_invalid_lock_identity_are_refused",
+    "onp_root_license_identity_cannot_follow_discovery_candidate",
+    "onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused",
+    "onp_platform_only_mapping_cannot_replace_the_common_mapping",
+    "onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination",
+    "onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused",
+    "onp_packaged_resources_requires_an_existing_directory",
+    "onp_unknown_conflicting_and_incomplete_cli_options_are_refused",
+    "onp_default_mode_retains_preload_and_coordinator_contracts",
+    "onp_default_mode_retains_forbidden_product_code_and_resources",
+    "onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs",
+    "onp_competing_resource_writers_are_refused_across_common_and_platform_sets",
+    "onp_disjoint_resource_mappings_preserve_all_platforms",
+    "onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf"
+  ],
+  "executions": [
+    {
+      "case": "source-notice",
+      "command": [
+        "node",
+        "desktop/scripts/check-electron-runtime-bundle.mjs",
+        "--notice-only"
+      ],
+      "command_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "log": "source-notice.log",
+      "log_sha256": "4da2c122733058bc013660d36ec4ae41a29f651da970884f382ed63f4e7a731f",
+      "oracle_accepted": true
+    },
+    {
+      "case": "notice-contract",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "desktop/scripts/openclaw-notice.contract.test.mjs"
+      ],
+      "command_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "log": "notice-contract.log",
+      "log_sha256": "f2acf084bbba9b4476806936e02709f92fb73f6ece44fd1414f9760eeb0b9198",
+      "observed_passed_test_names": [
+        "onp_real_notice_only_uses_locked_source_and_common_mapping",
+        "onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts",
+        "onp_default_mode_retains_all_required_runtime_artifacts",
+        "onp_default_mode_accepts_complete_controlled_runtime_and_notice",
+        "onp_missing_source_notice_is_refused_without_repair",
+        "onp_changed_source_bytes_are_refused_without_normalization",
+        "onp_non_file_source_notice_is_refused",
+        "onp_missing_malformed_and_invalid_lock_identity_are_refused",
+        "onp_root_license_identity_cannot_follow_discovery_candidate",
+        "onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused",
+        "onp_platform_only_mapping_cannot_replace_the_common_mapping",
+        "onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination",
+        "onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused",
+        "onp_packaged_resources_requires_an_existing_directory",
+        "onp_unknown_conflicting_and_incomplete_cli_options_are_refused",
+        "onp_default_mode_retains_preload_and_coordinator_contracts",
+        "onp_default_mode_retains_forbidden_product_code_and_resources",
+        "onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs",
+        "onp_competing_resource_writers_are_refused_across_common_and_platform_sets",
+        "onp_disjoint_resource_mappings_preserve_all_platforms",
+        "onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "tap_counts": {
+        "tests": [
+          "21"
+        ],
+        "pass": [
+          "21"
+        ],
+        "fail": [
+          "0"
+        ],
+        "cancelled": [
+          "0"
+        ],
+        "skipped": [
+          "0"
+        ],
+        "todo": [
+          "0"
+        ]
+      },
+      "oracle_accepted": true
+    }
+  ],
+  "result": "passed",
+  "scope": "Actual locked source notice and common electron-builder mapping plus the real checker CLI over owned byte-preserved fixtures. Negative controls cover source/lock/mapping/options, competing common/platform resource writers and packaged-resource validation; default runtime assertions are retained. Actual isolated Git autocrlf checkout consumes the tracked narrow attribute, with an independent no-attribute byte-conversion refusal control. Fixture Resources are not a signed installer or actual packaged artifact. Actual macOS/Windows/Linux packages, signing, complete recursive legal provenance and full migration acceptance remain open."
+}

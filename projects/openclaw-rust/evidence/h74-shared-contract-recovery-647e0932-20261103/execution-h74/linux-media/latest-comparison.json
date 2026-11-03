@@ -1,0 +1,20 @@
+[
+  {
+    "path": "source/host/src/extensions/session/agent_db.rs",
+    "read_ref": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+    "latest_reported_sha": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+    "h74_sha": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+    "identical_content": true,
+    "encoding": "utf-8",
+    "display_url": "https://github.com/bhrumom/fabushi-desktop/blob/4f0639321c4ae03cc7dbef1d8e49dea0f042e180/source/host/src/extensions/session/agent_db.rs"
+  },
+  {
+    "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+    "read_ref": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+    "latest_reported_sha": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+    "h74_sha": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+    "identical_content": true,
+    "encoding": "utf-8",
+    "display_url": "https://github.com/bhrumom/fabushi-desktop/blob/4f0639321c4ae03cc7dbef1d8e49dea0f042e180/source/host/tests/openclaw_sessions_and_config_contract.rs"
+  }
+]

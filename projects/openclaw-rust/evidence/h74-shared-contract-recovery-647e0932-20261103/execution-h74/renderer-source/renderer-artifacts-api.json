@@ -1,0 +1,61 @@
+{
+  "artifacts": [
+    {
+      "id": 13206320377,
+      "name": "ocrm-plugin-edge-74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "size_in_bytes": 10476,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13206320377",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13206320377/zip",
+      "expired": false,
+      "created_at": "2026-11-03T04:52:14Z",
+      "expires_at": "2027-02-01T04:51:40Z",
+      "updated_at": "2026-11-03T04:52:14Z",
+      "digest": "sha256:6bad6ca91105832529a1dde5d05132731acbff5883da97aa811a6e1d143e766e",
+      "workflow_run": {
+        "id": 41580539491,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "74f11d3d31c6245ac5886dc0181460b2d4349744"
+      }
+    },
+    {
+      "id": 13205785701,
+      "name": "ocrm-openclaw-notice-74f11d3d31c6245ac5886dc0181460b2d4349744-41580539491-1",
+      "size_in_bytes": 3840,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13205785701",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13205785701/zip",
+      "expired": false,
+      "created_at": "2026-11-03T04:52:01Z",
+      "expires_at": "2027-02-01T04:51:40Z",
+      "updated_at": "2026-11-03T04:52:01Z",
+      "digest": "sha256:6f59330ac0fb72e69124dafd6f285046632b3c61ce0665d73b52c509366acd68",
+      "workflow_run": {
+        "id": 41580539491,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "74f11d3d31c6245ac5886dc0181460b2d4349744"
+      }
+    },
+    {
+      "id": 13205204882,
+      "name": "ocrm-mab-74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "size_in_bytes": 10833,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13205204882",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13205204882/zip",
+      "expired": false,
+      "created_at": "2026-11-03T04:52:16Z",
+      "expires_at": "2027-02-01T04:51:40Z",
+      "updated_at": "2026-11-03T04:52:16Z",
+      "digest": "sha256:71e068a817540f58d9f6ca44f0a58a7766457856a822bcac5d9ce0f5dfa564a9",
+      "workflow_run": {
+        "id": 41580539491,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "74f11d3d31c6245ac5886dc0181460b2d4349744"
+      }
+    }
+  ]
+}

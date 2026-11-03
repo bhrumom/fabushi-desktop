@@ -1396,7 +1396,7 @@
         "source/host/app/src/tests/local_media_file_url_tests.rs",
         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -1553,7 +1553,7 @@
         "source/host/tests/channel_attachment_contract.rs",
         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2919,7 +2919,7 @@
         "source/host/app/src/tests/local_media_file_url_tests.rs",
         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -3099,7 +3099,7 @@
         "source/host/tests/channel_attachment_contract.rs",
         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

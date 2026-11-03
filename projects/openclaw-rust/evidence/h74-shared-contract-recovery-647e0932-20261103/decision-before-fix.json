@@ -1,0 +1,80 @@
+{
+  "format": "OCRM-H74-SHARED-CONTRACT-RECOVERY-DECISION-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixedU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixedUTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "observedSubject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "observedTree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "repairBase": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "repairBaseTree": "cbc9418ee7572f44d59e067e450a67f6c0bc22a0",
+  "preFix": true,
+  "phase": {
+    "effort": "xhigh",
+    "model": "configured",
+    "reason": "Shared source accounting plus high-risk media transaction safety oracles; preserve negative controls and actual-owner assertions before future execution."
+  },
+  "decisions": [
+    {
+      "id": "H74-SOURCE-REVERSE-LINK",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "evidence": "Source run41580539540 job125734077461 fails pre-expansion reverse source/responsibility link; current_evidence_reference_read report independently matches five fixed-U identities and existing source_review gate.",
+      "action": "Add exactly five pending_mapping_additions tuples to inventory/index.json anchored to unchanged canonical SHA2568994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93. Existing Actions expansion owns unioned reverse mappings/counters. Preserve prior scope ID, unread/review facts, statuses and eight false flags.",
+      "paths": [
+        "projects/openclaw-rust/inventory/index.json"
+      ]
+    },
+    {
+      "id": "H74-MSU-EVIDENCE-REFERENCES",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "evidence": "Exact-H404 and directory/body reads show ledger2/RTM4 references name absent files. Existing fixed-u-contract.md and current-owner-audit.md contain intended bounded historical inputs; this is not observed source failure branch.",
+      "action": "Replace only six absent path literals with actual evidence filenames; preserve historical subject scopes and bodies.",
+      "paths": [
+        "projects/openclaw-rust/parity-ledger.json",
+        "projects/openclaw-rust/requirements-traceability-matrix.json"
+      ]
+    },
+    {
+      "id": "H74-MSU-TRANSCRIPT-EXPECTATION",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "evidence": "Runtime41580539491 Linux125734079585 original artifact13205686727 shows two AgentDb tests expect only send but owner transcript includes mandatory outgoing-media-settlement receipt. MSU-v1 and unchanged owner parsing require both. Real fault-applied/retirement/durable two-row checks ran before failure; do not claim later assertions executed.",
+      "action": "Keep exact send and full receipt equality, using one test-only fixture expected vector for storage and owner reopen/cross-owner reads. Preserve typed unknown, fault application, exact owner retirement, full identity/fence/file bytes, and zero-publication checks; do not alter production parsing.",
+      "paths": [
+        "source/host/src/extensions/session/agent_db.rs"
+      ]
+    },
+    {
+      "id": "H74-MSU-INHERENT-OWNER-ORACLE",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "evidence": "Same original runtime has six cascading source-oracle failures: candidate selection counts impl Drop for SandAgentDb as a second owner; token walker then treats the trait impl as inherent syntax. Baseline currently fails before mutation probes.",
+      "action": "Filter trait implementations from inherent owner selection and specialized token walk only. Leave trait bodies in global raw-COMMIT/extra-caller scope; preserve uniqueness/exact-type/attribute/signature/admission/prefix/tail and original negatives. Add positive baseline trait coexistence and negative raw-COMMIT/aliased-helper use inside a trait body so exclusion cannot grant a global exception.",
+      "paths": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs"
+      ]
+    },
+    {
+      "id": "H74-CJI-MOVED-PROJECTION-ANCHOR",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "evidence": "Source-proven latent defect, not an observed H74 executed failure: existing cron projection source test still slices thin UnifiedGatewayApi wrappers after reviewed CJI extraction to private actual-owner helpers. Earlier MSU failure prevented this group execution.",
+      "action": "Re-anchor every existing projection/terminal assertion to list_openclaw_cron_jobs and trigger_openclaw_cron_job; preserve all meaningful conditions and add explicit thin-wrapper delegation assertions. No product behavior change or fake pass.",
+      "paths": [
+        "source/host/tests/openclaw_chat_cron_node_contract.rs"
+      ]
+    }
+  ],
+  "limits": [
+    "No local executable validation; GitHub Actions only on successor frozen H.",
+    "No schema/validator/workflow weakening, counter edits, new owner, duplicate runtime or status promotion.",
+    "Fixes are not verified until exact successor-H affected source/media/App/cron/native checks execute with original evidence.",
+    "Current user-facing CJI and MSU source implementations remain governed by existing scoped specs; full G01-G12/AC01-AC24 and real ecosystem/platform acceptance remain open."
+  ],
+  "reviewPlan": "Freeze complete six-path diff and exact base/tree through private index, run fresh blind general/security and pinned gpt-6.1-sol structure/reuse/performance reviews at xhigh; record findings before any further fix and retain focused rereview deltas.",
+  "cloudPlan": "Publish exact live-parent composition with original H74 evidence and review decision records, compare all changed file bytes through GitHub API, then use existing affected Actions workflow. Preserve concurrent evidence commits."
+}

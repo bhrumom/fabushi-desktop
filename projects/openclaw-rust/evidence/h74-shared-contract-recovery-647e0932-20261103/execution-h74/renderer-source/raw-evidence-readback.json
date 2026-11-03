@@ -1,0 +1,244 @@
+{
+  "method": "Read existing evidence only. No test, validator, parser, generator or harness from the repository was executed. Job framing removed only for byte comparison with original artifact TAP.",
+  "tap_group_count_in_original_job_log": 3,
+  "groups": [
+    {
+      "kind": "notice",
+      "path": "notice-artifact/notice-contract.log",
+      "sha256": "f2acf084bbba9b4476806936e02709f92fb73f6ece44fd1414f9760eeb0b9198",
+      "bytes": 4193,
+      "tap_counts": {
+        "tests": [
+          "21"
+        ],
+        "pass": [
+          "21"
+        ],
+        "fail": [
+          "0"
+        ],
+        "cancelled": [
+          "0"
+        ],
+        "skipped": [
+          "0"
+        ],
+        "todo": [
+          "0"
+        ]
+      },
+      "nonunique_positive_names": [],
+      "same_bytes_as_timestamp_stripped_job_TAP": true,
+      "job_TAP_sha256": "f2acf084bbba9b4476806936e02709f92fb73f6ece44fd1414f9760eeb0b9198",
+      "required_positive_counts": {
+        "onp_real_notice_only_uses_locked_source_and_common_mapping": 1,
+        "onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts": 1,
+        "onp_default_mode_retains_all_required_runtime_artifacts": 1,
+        "onp_default_mode_accepts_complete_controlled_runtime_and_notice": 1,
+        "onp_missing_source_notice_is_refused_without_repair": 1,
+        "onp_changed_source_bytes_are_refused_without_normalization": 1,
+        "onp_non_file_source_notice_is_refused": 1,
+        "onp_missing_malformed_and_invalid_lock_identity_are_refused": 1,
+        "onp_root_license_identity_cannot_follow_discovery_candidate": 1,
+        "onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused": 1,
+        "onp_platform_only_mapping_cannot_replace_the_common_mapping": 1,
+        "onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination": 1,
+        "onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused": 1,
+        "onp_packaged_resources_requires_an_existing_directory": 1,
+        "onp_unknown_conflicting_and_incomplete_cli_options_are_refused": 1,
+        "onp_default_mode_retains_preload_and_coordinator_contracts": 1,
+        "onp_default_mode_retains_forbidden_product_code_and_resources": 1,
+        "onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs": 1,
+        "onp_competing_resource_writers_are_refused_across_common_and_platform_sets": 1,
+        "onp_disjoint_resource_mappings_preserve_all_platforms": 1,
+        "onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf": 1
+      },
+      "top_level_positive_count": 21,
+      "nested_positive_names": [],
+      "nested_positive_count": 0,
+      "all_levels_positive_count": 21
+    },
+    {
+      "kind": "plugin-edge",
+      "path": "plugin-edge-artifact/ocrm-plugin-edge.tap",
+      "sha256": "c19add4713a4cc5169bfd6872edd34122713b82dec4ec6921b768b0a97784dd2",
+      "bytes": 32653,
+      "tap_counts": {
+        "tests": [
+          "148"
+        ],
+        "pass": [
+          "148"
+        ],
+        "fail": [
+          "0"
+        ],
+        "cancelled": [
+          "0"
+        ],
+        "skipped": [
+          "0"
+        ],
+        "todo": [
+          "0"
+        ]
+      },
+      "nonunique_positive_names": [],
+      "same_bytes_as_timestamp_stripped_job_TAP": true,
+      "job_TAP_sha256": "c19add4713a4cc5169bfd6872edd34122713b82dec4ec6921b768b0a97784dd2",
+      "required_positive_counts": {
+        "SDK late failed materialization preserves the completed winner and a fresh cache hit": 1,
+        "SDK concurrent successful materializations reuse the first completed directory": 1,
+        "SDK incomplete and non-directory cache targets are preserved without installation": 1,
+        "SDK a target appearing during materialization is preserved without publication": 1,
+        "SDK a failed materialization removes only its owned staging directory": 1,
+        "SDK marker and publication failures do not report a successful materialization": 1,
+        "SDK cleanup I/O failures preserve the primary load category and raw causes": 1,
+        "Host late failed materialization preserves a zero-skill winner and a fresh cache hit": 1,
+        "Host staging cleanup failure preserves the canonical authorization denial": 1,
+        "Host cleanup I/O failures preserve canonical remote denial and recovery": 1,
+        "Host cache-owned materialization failures cannot create authorization denials": 1,
+        "router set waits for Host acknowledgement and mirrors its canonical provider": 1,
+        "router preserves all five configured providers and reconciles reads with diagnostic fallbacks": 1,
+        "router invalid requests and untrusted frames cause no Host or mirror effects": 1,
+        "router refuses malformed Host replies without local fallback and permits later reconciliation": 1,
+        "router Host refusal releases a queued read and read rejection does not poison later calls": 1,
+        "router unknown transport outcome can follow a Host commit and requires an explicit read": 1,
+        "router local persistence failure leaves the Host commit intact and a later get repairs the mirror": 1,
+        "router orders a held get before set through mirror persistence": 1,
+        "router orders a held set before get through mirror persistence": 1,
+        "router serializes two sets so a late acknowledgement cannot overwrite the later mirror": 1,
+        "a pending router IPC does not order unrelated methods or another MainEdge instance": 1
+      },
+      "top_level_positive_count": 144,
+      "nested_positive_names": [
+        "peek-before-logout-login",
+        "login-before-peek",
+        "departed",
+        "unreadable"
+      ],
+      "nested_positive_count": 4,
+      "all_levels_positive_count": 148
+    },
+    {
+      "kind": "mab",
+      "path": "mab-artifact/tests.tap",
+      "sha256": "13d42d7713fb2a74e3c209291c33b24a630b338acc7cf4317f70603930b78e58",
+      "bytes": 19412,
+      "tap_counts": {
+        "tests": [
+          "85"
+        ],
+        "pass": [
+          "85"
+        ],
+        "fail": [
+          "0"
+        ],
+        "cancelled": [
+          "0"
+        ],
+        "skipped": [
+          "0"
+        ],
+        "todo": [
+          "0"
+        ]
+      },
+      "nonunique_positive_names": [],
+      "same_bytes_as_timestamp_stripped_job_TAP": true,
+      "job_TAP_sha256": "13d42d7713fb2a74e3c209291c33b24a630b338acc7cf4317f70603930b78e58",
+      "required_positive_counts": {
+        "MAB account capture waits for authorization and identifies the exact active runtime": 1,
+        "MAB account same-account refresh and restart preserve the captured lifetime": 1,
+        "MAB account departure retires before callbacks and scopes port revocation after preparation": 1,
+        "MAB account logout retires immediately and settles inactive after preparation": 1,
+        "MAB account queued A to B to A never revives the original binding": 1,
+        "MAB account completed A to B to A creates distinct permanent lifetimes": 1,
+        "MAB account reentrant observation preserves the latest claim after renderer revocation": 1,
+        "MAB account logged-out and refused states cannot furnish a capture": 1,
+        "MAB account reentrant start during construction cannot launch a second runtime": 1,
+        "MAB account same-account construction refresh preserves the pending lifetime": 1,
+        "MAB account stale construction waits for exit without invoking departure port revoke": 1,
+        "MAB account construction A to B to A cannot publish the retired candidate": 1,
+        "MAB account reentrant construction disposal waits for the owned exit and stays terminal": 1,
+        "MAB account synchronous stale disposal failure stays blocked even if reporting throws": 1,
+        "MAB account rejected stale exit stays blocked across later claims": 1,
+        "MAB account timed-out stale exit recovers only the latest observed account": 1,
+        "MAB account normal exit timeout retains cleanup ordering and recovers the latest claim": 1,
+        "MAB account disposal from shared-port revocation cannot restore an active state": 1,
+        "MAB account timed-out retirement cannot recover after disposal": 1,
+        "MAB account disposal during authorization prevents later account effects": 1,
+        "MAB transport denied admission stays request-local and uses bounded error text": 1,
+        "MAB transport denied queued work leaves ordinary cleanup in the same ready flush": 1,
+        "MAB transport unchanged guard completes queued work on its captured client": 1,
+        "MAB transport ready flush rechecks each call and fences an already posted reply": 1,
+        "MAB transport retired pending calls reject both reply outcomes without consuming other replies": 1,
+        "MAB transport client live phase is terminal before shutdown and close callbacks": 1,
+        "MAB transport captures and ownership fail synchronously at every terminal client phase": 1,
+        "MAB transport same lifetime port replacement never rebinds an old capture": 1,
+        "MAB transport failed hello preserves a valid previous client": 1,
+        "MAB transport hello-time revoke cannot resurrect the outer candidate": 1,
+        "MAB transport hello-time disposal cannot resurrect the outer candidate": 1,
+        "MAB transport hello-time nested adoption keeps only the successor current": 1,
+        "MAB transport previous-close revoke retires the published candidate": 1,
+        "MAB transport previous-close disposal retires the published candidate": 1,
+        "MAB transport previous-close nested adoption cannot be cleared by old settlement": 1,
+        "MAB transport listener and start reentrancy never publishes a retired candidate": 1,
+        "MAB transport listener and start failures close only their owned candidate": 1,
+        "MAB transport exact ownership revoke is idempotent and cannot revoke a successor": 1,
+        "MAB transport an old ownership revoke during hello cannot retire the new candidate": 1,
+        "MAB transport capture rechecks identity after its opaque guard reenters": 1,
+        "MAB transport disposed owner closes incoming ports without sending hello": 1,
+        "a request post failure settles the pending call and closes the main-data port": 1,
+        "a request waits for main-data ready before it is posted": 1,
+        "a queued request is rejected when the main-data port settles before ready": 1,
+        "a hello post failure does not replace the current main-data generation": 1,
+        "a protocol breach still settles when the shutdown frame cannot be posted": 1,
+        "dispose settles pending calls when the shutdown frame cannot be posted": 1,
+        "settlement survives an endpoint close failure": 1,
+        "renderer port replacement and restart retire the old generation before launching the next": 1,
+        "MAB attachment multichunk read returns actual bytes through one production session": 1,
+        "MAB attachment same account refresh preserves a multichunk read lifetime": 1,
+        "MAB attachment switch at probe rejects before the first data chunk": 1,
+        "MAB attachment switch at first chunk cannot append successor bytes": 1,
+        "MAB attachment switch at last chunk cannot return a stale completed preview": 1,
+        "MAB attachment zero byte probe still checks its captured lifetime": 1,
+        "MAB attachment zero byte positive returns an empty preview without a data request": 1,
+        "MAB attachment queued before ready is rejected while ordinary Host cleanup flushes": 1,
+        "MAB attachment late text reply after native retirement is rejected without replay": 1,
+        "MAB attachment text reply continuation cannot escape a just retired session": 1,
+        "MAB attachment image fallback reply continuation rejects stale remote pixels": 1,
+        "MAB attachment link reply continuation rejects metadata from a retired session": 1,
+        "MAB attachment link image continuation rechecks lifetime after native image work": 1,
+        "MAB attachment text image and link positive controls use the production session": 1,
+        "MAB attachment same account restart waits for exit and never migrates an old operation": 1,
+        "MAB attachment renderer replacement waits for exit and never migrates an old operation": 1,
+        "MAB attachment runtime identity join rejects a foreign current port and disposal preserves it": 1,
+        "MAB attachment failed production adoption cannot capture or revoke a prior foreign port": 1,
+        "MAB attachment shipping disposal withdraws its own port before actual child exit": 1,
+        "MAB attachment download positive writes real multichunk and zero size files": 1,
+        "MAB attachment download account switch during dialog preserves existing destination bytes": 1,
+        "MAB attachment download account switch during dialog does not create a destination": 1,
+        "MAB attachment download switch after real open closes and cleans the destination": 1,
+        "MAB attachment download switch between real chunk writes closes and cleans": 1,
+        "MAB attachment download switch after the final real write cannot return success": 1,
+        "MAB attachment download switch during final close cannot return success": 1,
+        "MAB attachment staged read switch sends no upload and preserves the real original": 1,
+        "MAB attachment staged positive uploads exact real bytes and retains originals until discard": 1,
+        "MAB attachment upload reply continuation rejects stale paths and keeps all staged originals": 1,
+        "MAB attachment offline local image staging and discard need no account or network": 1,
+        "MAB attachment failed local read cannot capture an account that appeared during I O": 1,
+        "MAB attachment failed local read preserves its original optional fallback identity": 1,
+        "MAB attachment production onLaunched same account refresh publishes only after construction": 1,
+        "MAB attachment production onLaunched account switch fences the unpublished child until exit": 1,
+        "MAB attachment production onLaunched disposal withdraws an unpublished own port and waits for exit": 1,
+        "MAB attachment production onLaunched foreign adoption never becomes the runtime owned session": 1
+      },
+      "top_level_positive_count": 85,
+      "nested_positive_names": [],
+      "nested_positive_count": 0,
+      "all_levels_positive_count": 85
+    }
+  ]
+}

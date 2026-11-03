@@ -36788,8 +36788,8 @@
       "evidence_refs": [
         "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md",
-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-unknown-current-audit.md",
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/current-owner-audit.md",
         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-concurrency-consumer-notes.md",
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/attachment_paths.rs",

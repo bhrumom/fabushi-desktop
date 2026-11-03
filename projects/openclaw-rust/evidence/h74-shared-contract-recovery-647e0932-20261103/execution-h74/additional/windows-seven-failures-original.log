@@ -1,0 +1,50 @@
+failures:
+
+---- channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source stdout ----
+
+thread 'channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source' (6008) panicked at tests\openclaw_sessions_and_config_contract.rs:2619:7:
+prove only the media exception before exercising the unchanged channel oracle
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl stdout ----
+
+thread 'channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl' (1904) panicked at tests\openclaw_sessions_and_config_contract.rs:2471:7:
+prove only the media exception before exercising the unchanged channel oracle
+
+---- media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards stdout ----
+
+thread 'media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards' (2596) panicked at tests\openclaw_sessions_and_config_contract.rs:1889:10:
+the actual media command and consumer must establish the bounded exception
+
+---- media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method stdout ----
+
+thread 'media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method' (2060) panicked at tests\openclaw_sessions_and_config_contract.rs:2097:14:
+the unchanged bounded adapters still prove their own handling
+
+---- media_commit_oracle_rejects_missing_duplicate_or_conditional_owner stdout ----
+
+thread 'media_commit_oracle_rejects_missing_duplicate_or_conditional_owner' (2548) panicked at tests\openclaw_sessions_and_config_contract.rs:1945:59:
+actual media signature
+
+---- test_agent_db_has_no_direct_commit_error_propagation stdout ----
+
+thread 'test_agent_db_has_no_direct_commit_error_propagation' (4448) panicked at tests\openclaw_sessions_and_config_contract.rs:2360:10:
+both command adapters must return to their individually checked transaction owners
+
+---- test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup stdout ----
+
+thread 'test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup' (844) panicked at tests\openclaw_sessions_and_config_contract.rs:2411:7:
+prove only the media exception before exercising the unchanged channel oracle
+
+
+failures:
+    channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source
+    channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl
+    media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards
+    media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method
+    media_commit_oracle_rejects_missing_duplicate_or_conditional_owner
+    test_agent_db_has_no_direct_commit_error_propagation
+    test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup
+
+test result: FAILED. 20 passed; 7 failed; 0 ignored; 0 measured; 40 filtered out; finished in 21.42s
+

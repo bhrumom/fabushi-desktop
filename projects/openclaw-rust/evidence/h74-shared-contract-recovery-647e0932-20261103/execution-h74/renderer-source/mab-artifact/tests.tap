@@ -1,0 +1,520 @@
+TAP version 13
+# Subtest: MAB attachment multichunk read returns actual bytes through one production session
+ok 1 - MAB attachment multichunk read returns actual bytes through one production session
+  ---
+  duration_ms: 73.636099
+  type: 'test'
+  ...
+# Subtest: MAB attachment same account refresh preserves a multichunk read lifetime
+ok 2 - MAB attachment same account refresh preserves a multichunk read lifetime
+  ---
+  duration_ms: 23.698527
+  type: 'test'
+  ...
+# Subtest: MAB attachment switch at probe rejects before the first data chunk
+ok 3 - MAB attachment switch at probe rejects before the first data chunk
+  ---
+  duration_ms: 7.360373
+  type: 'test'
+  ...
+# Subtest: MAB attachment switch at first chunk cannot append successor bytes
+ok 4 - MAB attachment switch at first chunk cannot append successor bytes
+  ---
+  duration_ms: 17.988297
+  type: 'test'
+  ...
+# Subtest: MAB attachment switch at last chunk cannot return a stale completed preview
+ok 5 - MAB attachment switch at last chunk cannot return a stale completed preview
+  ---
+  duration_ms: 9.809548
+  type: 'test'
+  ...
+# Subtest: MAB attachment zero byte probe still checks its captured lifetime
+ok 6 - MAB attachment zero byte probe still checks its captured lifetime
+  ---
+  duration_ms: 3.904764
+  type: 'test'
+  ...
+# Subtest: MAB attachment zero byte positive returns an empty preview without a data request
+ok 7 - MAB attachment zero byte positive returns an empty preview without a data request
+  ---
+  duration_ms: 2.914232
+  type: 'test'
+  ...
+# Subtest: MAB attachment queued before ready is rejected while ordinary Host cleanup flushes
+ok 8 - MAB attachment queued before ready is rejected while ordinary Host cleanup flushes
+  ---
+  duration_ms: 3.462611
+  type: 'test'
+  ...
+# Subtest: MAB attachment late text reply after native retirement is rejected without replay
+ok 9 - MAB attachment late text reply after native retirement is rejected without replay
+  ---
+  duration_ms: 3.848138
+  type: 'test'
+  ...
+# Subtest: MAB attachment text reply continuation cannot escape a just retired session
+ok 10 - MAB attachment text reply continuation cannot escape a just retired session
+  ---
+  duration_ms: 3.404649
+  type: 'test'
+  ...
+# Subtest: MAB attachment image fallback reply continuation rejects stale remote pixels
+ok 11 - MAB attachment image fallback reply continuation rejects stale remote pixels
+  ---
+  duration_ms: 3.956981
+  type: 'test'
+  ...
+# Subtest: MAB attachment link reply continuation rejects metadata from a retired session
+ok 12 - MAB attachment link reply continuation rejects metadata from a retired session
+  ---
+  duration_ms: 3.827202
+  type: 'test'
+  ...
+# Subtest: MAB attachment link image continuation rechecks lifetime after native image work
+ok 13 - MAB attachment link image continuation rechecks lifetime after native image work
+  ---
+  duration_ms: 3.666961
+  type: 'test'
+  ...
+# Subtest: MAB attachment text image and link positive controls use the production session
+ok 14 - MAB attachment text image and link positive controls use the production session
+  ---
+  duration_ms: 3.639028
+  type: 'test'
+  ...
+# Subtest: MAB attachment same account restart waits for exit and never migrates an old operation
+ok 15 - MAB attachment same account restart waits for exit and never migrates an old operation
+  ---
+  duration_ms: 3.166957
+  type: 'test'
+  ...
+# Subtest: MAB attachment renderer replacement waits for exit and never migrates an old operation
+ok 16 - MAB attachment renderer replacement waits for exit and never migrates an old operation
+  ---
+  duration_ms: 6.488223
+  type: 'test'
+  ...
+# Subtest: MAB attachment runtime identity join rejects a foreign current port and disposal preserves it
+ok 17 - MAB attachment runtime identity join rejects a foreign current port and disposal preserves it
+  ---
+  duration_ms: 3.09196
+  type: 'test'
+  ...
+# Subtest: MAB attachment failed production adoption cannot capture or revoke a prior foreign port
+ok 18 - MAB attachment failed production adoption cannot capture or revoke a prior foreign port
+  ---
+  duration_ms: 2.991716
+  type: 'test'
+  ...
+# Subtest: MAB attachment shipping disposal withdraws its own port before actual child exit
+ok 19 - MAB attachment shipping disposal withdraws its own port before actual child exit
+  ---
+  duration_ms: 2.683606
+  type: 'test'
+  ...
+# Subtest: MAB attachment download positive writes real multichunk and zero size files
+ok 20 - MAB attachment download positive writes real multichunk and zero size files
+  ---
+  duration_ms: 17.956067
+  type: 'test'
+  ...
+# Subtest: MAB attachment download account switch during dialog preserves existing destination bytes
+ok 21 - MAB attachment download account switch during dialog preserves existing destination bytes
+  ---
+  duration_ms: 4.157705
+  type: 'test'
+  ...
+# Subtest: MAB attachment download account switch during dialog does not create a destination
+ok 22 - MAB attachment download account switch during dialog does not create a destination
+  ---
+  duration_ms: 3.071981
+  type: 'test'
+  ...
+# Subtest: MAB attachment download switch after real open closes and cleans the destination
+ok 23 - MAB attachment download switch after real open closes and cleans the destination
+  ---
+  duration_ms: 4.684248
+  type: 'test'
+  ...
+# Subtest: MAB attachment download switch between real chunk writes closes and cleans
+ok 24 - MAB attachment download switch between real chunk writes closes and cleans
+  ---
+  duration_ms: 10.842755
+  type: 'test'
+  ...
+# Subtest: MAB attachment download switch after the final real write cannot return success
+ok 25 - MAB attachment download switch after the final real write cannot return success
+  ---
+  duration_ms: 18.506191
+  type: 'test'
+  ...
+# Subtest: MAB attachment download switch during final close cannot return success
+ok 26 - MAB attachment download switch during final close cannot return success
+  ---
+  duration_ms: 24.351987
+  type: 'test'
+  ...
+# Subtest: MAB attachment staged read switch sends no upload and preserves the real original
+ok 27 - MAB attachment staged read switch sends no upload and preserves the real original
+  ---
+  duration_ms: 4.501556
+  type: 'test'
+  ...
+# Subtest: MAB attachment staged positive uploads exact real bytes and retains originals until discard
+ok 28 - MAB attachment staged positive uploads exact real bytes and retains originals until discard
+  ---
+  duration_ms: 5.577883
+  type: 'test'
+  ...
+# Subtest: MAB attachment upload reply continuation rejects stale paths and keeps all staged originals
+ok 29 - MAB attachment upload reply continuation rejects stale paths and keeps all staged originals
+  ---
+  duration_ms: 5.922267
+  type: 'test'
+  ...
+# Subtest: MAB attachment offline local image staging and discard need no account or network
+ok 30 - MAB attachment offline local image staging and discard need no account or network
+  ---
+  duration_ms: 4.356467
+  type: 'test'
+  ...
+# Subtest: MAB attachment failed local read cannot capture an account that appeared during I O
+ok 31 - MAB attachment failed local read cannot capture an account that appeared during I O
+  ---
+  duration_ms: 3.124271
+  type: 'test'
+  ...
+# Subtest: MAB attachment failed local read preserves its original optional fallback identity
+ok 32 - MAB attachment failed local read preserves its original optional fallback identity
+  ---
+  duration_ms: 3.545691
+  type: 'test'
+  ...
+# Subtest: MAB attachment production onLaunched same account refresh publishes only after construction
+ok 33 - MAB attachment production onLaunched same account refresh publishes only after construction
+  ---
+  duration_ms: 2.86805
+  type: 'test'
+  ...
+# Subtest: MAB attachment production onLaunched account switch fences the unpublished child until exit
+ok 34 - MAB attachment production onLaunched account switch fences the unpublished child until exit
+  ---
+  duration_ms: 2.923914
+  type: 'test'
+  ...
+# Subtest: MAB attachment production onLaunched disposal withdraws an unpublished own port and waits for exit
+ok 35 - MAB attachment production onLaunched disposal withdraws an unpublished own port and waits for exit
+  ---
+  duration_ms: 2.807297
+  type: 'test'
+  ...
+# Subtest: MAB attachment production onLaunched foreign adoption never becomes the runtime owned session
+ok 36 - MAB attachment production onLaunched foreign adoption never becomes the runtime owned session
+  ---
+  duration_ms: 2.736995
+  type: 'test'
+  ...
+# Subtest: MAB account capture waits for authorization and identifies the exact active runtime
+ok 37 - MAB account capture waits for authorization and identifies the exact active runtime
+  ---
+  duration_ms: 6.425186
+  type: 'test'
+  ...
+# Subtest: MAB account same-account refresh and restart preserve the captured lifetime
+ok 38 - MAB account same-account refresh and restart preserve the captured lifetime
+  ---
+  duration_ms: 0.839476
+  type: 'test'
+  ...
+# Subtest: MAB account departure retires before callbacks and scopes port revocation after preparation
+ok 39 - MAB account departure retires before callbacks and scopes port revocation after preparation
+  ---
+  duration_ms: 4.633985
+  type: 'test'
+  ...
+# Subtest: MAB account logout retires immediately and settles inactive after preparation
+ok 40 - MAB account logout retires immediately and settles inactive after preparation
+  ---
+  duration_ms: 0.73477
+  type: 'test'
+  ...
+# Subtest: MAB account queued A to B to A never revives the original binding
+ok 41 - MAB account queued A to B to A never revives the original binding
+  ---
+  duration_ms: 1.2333
+  type: 'test'
+  ...
+# Subtest: MAB account completed A to B to A creates distinct permanent lifetimes
+ok 42 - MAB account completed A to B to A creates distinct permanent lifetimes
+  ---
+  duration_ms: 1.61891
+  type: 'test'
+  ...
+# Subtest: MAB account reentrant observation preserves the latest claim after renderer revocation
+ok 43 - MAB account reentrant observation preserves the latest claim after renderer revocation
+  ---
+  duration_ms: 0.622922
+  type: 'test'
+  ...
+# Subtest: MAB account logged-out and refused states cannot furnish a capture
+ok 44 - MAB account logged-out and refused states cannot furnish a capture
+  ---
+  duration_ms: 0.580193
+  type: 'test'
+  ...
+# Subtest: MAB account reentrant start during construction cannot launch a second runtime
+ok 45 - MAB account reentrant start during construction cannot launch a second runtime
+  ---
+  duration_ms: 0.713882
+  type: 'test'
+  ...
+# Subtest: MAB account same-account construction refresh preserves the pending lifetime
+ok 46 - MAB account same-account construction refresh preserves the pending lifetime
+  ---
+  duration_ms: 0.560686
+  type: 'test'
+  ...
+# Subtest: MAB account stale construction waits for exit without invoking departure port revoke
+ok 47 - MAB account stale construction waits for exit without invoking departure port revoke
+  ---
+  duration_ms: 9.48311
+  type: 'test'
+  ...
+# Subtest: MAB account construction A to B to A cannot publish the retired candidate
+ok 48 - MAB account construction A to B to A cannot publish the retired candidate
+  ---
+  duration_ms: 0.691811
+  type: 'test'
+  ...
+# Subtest: MAB account reentrant construction disposal waits for the owned exit and stays terminal
+ok 49 - MAB account reentrant construction disposal waits for the owned exit and stays terminal
+  ---
+  duration_ms: 1.358514
+  type: 'test'
+  ...
+# Subtest: MAB account synchronous stale disposal failure stays blocked even if reporting throws
+ok 50 - MAB account synchronous stale disposal failure stays blocked even if reporting throws
+  ---
+  duration_ms: 0.586774
+  type: 'test'
+  ...
+# Subtest: MAB account rejected stale exit stays blocked across later claims
+ok 51 - MAB account rejected stale exit stays blocked across later claims
+  ---
+  duration_ms: 0.48271
+  type: 'test'
+  ...
+# Subtest: MAB account timed-out stale exit recovers only the latest observed account
+ok 52 - MAB account timed-out stale exit recovers only the latest observed account
+  ---
+  duration_ms: 0.806414
+  type: 'test'
+  ...
+# Subtest: MAB account normal exit timeout retains cleanup ordering and recovers the latest claim
+ok 53 - MAB account normal exit timeout retains cleanup ordering and recovers the latest claim
+  ---
+  duration_ms: 0.655833
+  type: 'test'
+  ...
+# Subtest: MAB account disposal from shared-port revocation cannot restore an active state
+ok 54 - MAB account disposal from shared-port revocation cannot restore an active state
+  ---
+  duration_ms: 0.361414
+  type: 'test'
+  ...
+# Subtest: MAB account timed-out retirement cannot recover after disposal
+ok 55 - MAB account timed-out retirement cannot recover after disposal
+  ---
+  duration_ms: 4.531342
+  type: 'test'
+  ...
+# Subtest: MAB account disposal during authorization prevents later account effects
+ok 56 - MAB account disposal during authorization prevents later account effects
+  ---
+  duration_ms: 0.511304
+  type: 'test'
+  ...
+# Subtest: a request post failure settles the pending call and closes the main-data port
+ok 57 - a request post failure settles the pending call and closes the main-data port
+  ---
+  duration_ms: 3.752059
+  type: 'test'
+  ...
+# Subtest: a request waits for main-data ready before it is posted
+ok 58 - a request waits for main-data ready before it is posted
+  ---
+  duration_ms: 1.443032
+  type: 'test'
+  ...
+# Subtest: a queued request is rejected when the main-data port settles before ready
+ok 59 - a queued request is rejected when the main-data port settles before ready
+  ---
+  duration_ms: 0.631588
+  type: 'test'
+  ...
+# Subtest: a hello post failure does not replace the current main-data generation
+ok 60 - a hello post failure does not replace the current main-data generation
+  ---
+  duration_ms: 0.84149
+  type: 'test'
+  ...
+# Subtest: a protocol breach still settles when the shutdown frame cannot be posted
+ok 61 - a protocol breach still settles when the shutdown frame cannot be posted
+  ---
+  duration_ms: 0.462683
+  type: 'test'
+  ...
+# Subtest: dispose settles pending calls when the shutdown frame cannot be posted
+ok 62 - dispose settles pending calls when the shutdown frame cannot be posted
+  ---
+  duration_ms: 0.492068
+  type: 'test'
+  ...
+# Subtest: settlement survives an endpoint close failure
+ok 63 - settlement survives an endpoint close failure
+  ---
+  duration_ms: 0.937646
+  type: 'test'
+  ...
+# Subtest: MAB transport denied admission stays request-local and uses bounded error text
+ok 64 - MAB transport denied admission stays request-local and uses bounded error text
+  ---
+  duration_ms: 0.946436
+  type: 'test'
+  ...
+# Subtest: MAB transport denied queued work leaves ordinary cleanup in the same ready flush
+ok 65 - MAB transport denied queued work leaves ordinary cleanup in the same ready flush
+  ---
+  duration_ms: 2.506095
+  type: 'test'
+  ...
+# Subtest: MAB transport unchanged guard completes queued work on its captured client
+ok 66 - MAB transport unchanged guard completes queued work on its captured client
+  ---
+  duration_ms: 0.887756
+  type: 'test'
+  ...
+# Subtest: MAB transport ready flush rechecks each call and fences an already posted reply
+ok 67 - MAB transport ready flush rechecks each call and fences an already posted reply
+  ---
+  duration_ms: 0.805743
+  type: 'test'
+  ...
+# Subtest: MAB transport retired pending calls reject both reply outcomes without consuming other replies
+ok 68 - MAB transport retired pending calls reject both reply outcomes without consuming other replies
+  ---
+  duration_ms: 1.13152
+  type: 'test'
+  ...
+# Subtest: MAB transport client live phase is terminal before shutdown and close callbacks
+ok 69 - MAB transport client live phase is terminal before shutdown and close callbacks
+  ---
+  duration_ms: 1.051812
+  type: 'test'
+  ...
+# Subtest: MAB transport captures and ownership fail synchronously at every terminal client phase
+ok 70 - MAB transport captures and ownership fail synchronously at every terminal client phase
+  ---
+  duration_ms: 2.93229
+  type: 'test'
+  ...
+# Subtest: MAB transport same lifetime port replacement never rebinds an old capture
+ok 71 - MAB transport same lifetime port replacement never rebinds an old capture
+  ---
+  duration_ms: 1.3135
+  type: 'test'
+  ...
+# Subtest: MAB transport failed hello preserves a valid previous client
+ok 72 - MAB transport failed hello preserves a valid previous client
+  ---
+  duration_ms: 0.516494
+  type: 'test'
+  ...
+# Subtest: MAB transport hello-time revoke cannot resurrect the outer candidate
+ok 73 - MAB transport hello-time revoke cannot resurrect the outer candidate
+  ---
+  duration_ms: 0.850366
+  type: 'test'
+  ...
+# Subtest: MAB transport hello-time disposal cannot resurrect the outer candidate
+ok 74 - MAB transport hello-time disposal cannot resurrect the outer candidate
+  ---
+  duration_ms: 0.395628
+  type: 'test'
+  ...
+# Subtest: MAB transport hello-time nested adoption keeps only the successor current
+ok 75 - MAB transport hello-time nested adoption keeps only the successor current
+  ---
+  duration_ms: 0.652958
+  type: 'test'
+  ...
+# Subtest: MAB transport previous-close revoke retires the published candidate
+ok 76 - MAB transport previous-close revoke retires the published candidate
+  ---
+  duration_ms: 0.58436
+  type: 'test'
+  ...
+# Subtest: MAB transport previous-close disposal retires the published candidate
+ok 77 - MAB transport previous-close disposal retires the published candidate
+  ---
+  duration_ms: 0.509781
+  type: 'test'
+  ...
+# Subtest: MAB transport previous-close nested adoption cannot be cleared by old settlement
+ok 78 - MAB transport previous-close nested adoption cannot be cleared by old settlement
+  ---
+  duration_ms: 0.56801
+  type: 'test'
+  ...
+# Subtest: MAB transport listener and start reentrancy never publishes a retired candidate
+ok 79 - MAB transport listener and start reentrancy never publishes a retired candidate
+  ---
+  duration_ms: 3.51088
+  type: 'test'
+  ...
+# Subtest: MAB transport listener and start failures close only their owned candidate
+ok 80 - MAB transport listener and start failures close only their owned candidate
+  ---
+  duration_ms: 2.281496
+  type: 'test'
+  ...
+# Subtest: MAB transport exact ownership revoke is idempotent and cannot revoke a successor
+ok 81 - MAB transport exact ownership revoke is idempotent and cannot revoke a successor
+  ---
+  duration_ms: 1.4852
+  type: 'test'
+  ...
+# Subtest: MAB transport an old ownership revoke during hello cannot retire the new candidate
+ok 82 - MAB transport an old ownership revoke during hello cannot retire the new candidate
+  ---
+  duration_ms: 0.392401
+  type: 'test'
+  ...
+# Subtest: MAB transport capture rechecks identity after its opaque guard reenters
+ok 83 - MAB transport capture rechecks identity after its opaque guard reenters
+  ---
+  duration_ms: 0.346937
+  type: 'test'
+  ...
+# Subtest: MAB transport disposed owner closes incoming ports without sending hello
+ok 84 - MAB transport disposed owner closes incoming ports without sending hello
+  ---
+  duration_ms: 0.202938
+  type: 'test'
+  ...
+# Subtest: renderer port replacement and restart retire the old generation before launching the next
+ok 85 - renderer port replacement and restart retire the old generation before launching the next
+  ---
+  duration_ms: 4.781269
+  type: 'test'
+  ...
+1..85
+# tests 85
+# suites 0
+# pass 85
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 408.683727

@@ -1,0 +1,285 @@
+{
+  "format": "OCRM-RECOVERY-REQUIREMENT-CHECKPOINT-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "fixedU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "lastRemoteSubject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "repairBase": {
+    "sha": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+    "tree": "cbc9418ee7572f44d59e067e450a67f6c0bc22a0"
+  },
+  "candidateTree": "406f8668a83a30a24c83b442b97d3a2b4d64927f",
+  "requirements": [
+    {
+      "id": "full-scope",
+      "done": false,
+      "evidence": "Media file-URL, plugin materialization and current cron identity production batches; whole products/platform ecosystem remains open."
+    },
+    {
+      "id": "fixed-U-full-accounting",
+      "done": false,
+      "evidence": "U1440bb177... unchanged; H23 source run41576692891 tracked62130 identities, recursive/download/LFS/legal complete closure pending."
+    },
+    {
+      "id": "risk-proportionate-review",
+      "done": false,
+      "evidence": "Current schema/validator prior implementation; cron high-risk state/callers bounded reviewed, preserve historical facts; global coverage remains pending."
+    },
+    {
+      "id": "existing-production-owner",
+      "done": false,
+      "evidence": "Cron list/trigger -> existing Session/AutomationRuntime/FileStore using stable_automation_id; no secondary runtime/store; other unclosed owners remain."
+    },
+    {
+      "id": "behavioral-batches",
+      "done": false,
+      "evidence": "CJI existing stable job identity shipped6d/H74; five real Session/AutomationRuntime/FileStore owner tests authored and selected, not yet executed due earlier shared failure. MSU receipt/unknown source implementations preserved; test contract recovery frozen406f."
+    },
+    {
+      "id": "scoped-authority",
+      "done": false,
+      "evidence": "H74 renderer Plugin148/MAB85/Notice21 and Linux restore29ordinary+2mounted passed with original evidence. H74 source failed reverse mapping; Linux media8fail/Windows9fail; App/CJI not reached. Recovery exact candidate source review in progress; no new scoped unit verified."
+    },
+    {
+      "id": "parallel-exclusive-integration",
+      "done": true,
+      "evidence": "Exclusive test authoring, fresh blind R1 lenses, serial exact71 four-path merge; private Git indices; no shared tree reset."
+    },
+    {
+      "id": "github-only-verify-cloud",
+      "done": false,
+      "evidence": "Own6d/H74 remote commit/tree/full file readback verified. Recovery source and original evidence blobs uploaded but no new branch commit yet; execution remains Actions-only."
+    },
+    {
+      "id": "failure-recovery",
+      "done": false,
+      "evidence": "H23 App compilation failure fixedH74. H74 source reverse links, media exact-receipt/inherent-trait/WindowsCRLF flaws and latent cron moved anchor diagnosed, durable decisions precede six-path repair, original positives/failures retained, independent review underway."
+    },
+    {
+      "id": "sole-ocrm-ledger-schema",
+      "done": false,
+      "evidence": "Existing §17.2 schema33/inventory21 controls remain; current repair uses existing pending5reverse edge admission and6evidence literals only. No validator/schema/counter/status/global-flag bypass."
+    },
+    {
+      "id": "final-acceptance",
+      "done": false,
+      "evidence": "All G01–G12/AC01–AC24 remain unaccepted overall; real providers/channels/plugins/nodes/devices/platform packages/soak/upgrade/rollback and independent ACCEPT open."
+    },
+    {
+      "id": "delivery-end-gate",
+      "done": false,
+      "evidence": "H74 is remotely verified; new H74 diagnostic evidence and minimal recovery batch are not yet cloud saved. Final cannot claim this recovery delivered."
+    }
+  ],
+  "finalGates": [
+    {
+      "id": "G01",
+      "complete": false,
+      "evidence": "Fixed U and tracked-tree structural identity evidence; recursive closure open"
+    },
+    {
+      "id": "G02",
+      "complete": false,
+      "evidence": "Existing §17.2 schema/source-review33+inventory21 controls preserved; full/scoped new-H pending"
+    },
+    {
+      "id": "G03",
+      "complete": false,
+      "evidence": "Current scoped existing-owner source review; global reachability open"
+    },
+    {
+      "id": "G04",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    },
+    {
+      "id": "G05",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    },
+    {
+      "id": "G06",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    },
+    {
+      "id": "G07",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    },
+    {
+      "id": "G08",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    },
+    {
+      "id": "G09",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    },
+    {
+      "id": "G10",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    },
+    {
+      "id": "G11",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    },
+    {
+      "id": "G12",
+      "complete": false,
+      "evidence": "Applicable final full-scope exact-H evidence remains incomplete"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC01",
+      "condition": "Full fixed-U recursive dependency/LFS/source closure and exact target provenance",
+      "evidence": "open; tracked-tree structural evidence only",
+      "complete": false
+    },
+    {
+      "id": "AC02",
+      "condition": "Every source identity has required risk-proportionate review/disposition",
+      "evidence": "open; bounded plugin/media reviews do not close global review",
+      "complete": false
+    },
+    {
+      "id": "AC03",
+      "condition": "All responsibilities mapped bidirectionally to unique owners",
+      "evidence": "open; existing Skills responsibility link preserved",
+      "complete": false
+    },
+    {
+      "id": "AC04",
+      "condition": "All runtime business is Rust, thin presentation/platform bridges only",
+      "evidence": "open; current cache I/O adapter preserves Rust lifecycle; full fusion incomplete",
+      "complete": false
+    },
+    {
+      "id": "AC05",
+      "condition": "All actual production producer-owner-consumer paths and nonruntime consumers",
+      "evidence": "open; current SDK/Host and Rust media path implemented, exact-H pending",
+      "complete": false
+    },
+    {
+      "id": "AC06",
+      "condition": "Canonical subsystem boundaries and approved new owners",
+      "evidence": "open globally; current batch adds no owner",
+      "complete": false
+    },
+    {
+      "id": "AC07",
+      "condition": "All existing Fabushi regressions",
+      "evidence": "not completed at current candidate",
+      "complete": false
+    },
+    {
+      "id": "AC08",
+      "condition": "All Agent/model/tool/session lifetime behavior",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC09",
+      "condition": "Every pinned provider/channel real service conformance",
+      "evidence": "open; real accounts/services not proved",
+      "complete": false
+    },
+    {
+      "id": "AC10",
+      "condition": "All plugin/skills/SDK/MCP install/update/uninstall permission lifecycles",
+      "evidence": "open; custody repair subset only",
+      "complete": false
+    },
+    {
+      "id": "AC11",
+      "condition": "Gateway/CLI/TUI/API/companion compatibility matrix",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC12",
+      "condition": "Automation triggers/time/grants/execution/delivery/unknown/heartbeat/Lobster",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC13",
+      "condition": "Memory/search/wiki/vault/project/team/visitor/setup/repair full functions",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC14",
+      "condition": "Browser/Computer/node/device capabilities/approval real commands",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC15",
+      "condition": "Audio/media/meeting/canvas/document/resource whole lifecycles",
+      "evidence": "open; delivered media fix is a subset",
+      "complete": false
+    },
+    {
+      "id": "AC16",
+      "condition": "Unified routes/UI/visual/a11y/i18n/IME/state continuity",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC17",
+      "condition": "Identity/tenant/account/session isolation and security negatives",
+      "evidence": "open; scoped category/custody negatives authored pending H",
+      "complete": false
+    },
+    {
+      "id": "AC18",
+      "condition": "Cancellation/timeout/crash/restart/stale/unknown recovery",
+      "evidence": "open; controlled cleanup subset pending H",
+      "complete": false
+    },
+    {
+      "id": "AC19",
+      "condition": "Upgrade/import preview/backup/conflict/idempotency/recovery/rollback",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC20",
+      "condition": "Every supported platform/device/service package/operation/upgrade cell",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC21",
+      "condition": "Approved performance/capacity/power/storage/soak budgets",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC22",
+      "condition": "Licenses/source/NOTICE/SBOM/signing/release provenance/branding exceptions",
+      "evidence": "open",
+      "complete": false
+    },
+    {
+      "id": "AC23",
+      "condition": "Current exact subject full RTM receipts/digests/independent verdict",
+      "evidence": "open; no current full receipts",
+      "complete": false
+    },
+    {
+      "id": "AC24",
+      "condition": "No open blockers/P0/P1 and independent packaged ACCEPT",
+      "evidence": "open; full scope incomplete",
+      "complete": false
+    }
+  ],
+  "taskComplete": false,
+  "remainingNextConcreteWork": "Publish reviewed six-path repair with originalH74evidence, read back exact GitHub commit/files, then assess successor Actions source/media/App/CJI results. Repair shared failures before manual-admission result work.",
+  "historicalScope": "This checkpoint is authored before its carrier commit exists. Its requirement statuses are recorded at the frozen-source stage; successor publication/Actions receipts must separately bind their actual exact commit. It cannot promote any scope."
+}

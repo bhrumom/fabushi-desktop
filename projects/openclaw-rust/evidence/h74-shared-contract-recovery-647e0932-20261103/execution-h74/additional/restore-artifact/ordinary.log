@@ -1,0 +1,36 @@
+
+running 31 tests
+test actual_installation_key_and_staging_native_aliases_refuse_local_hit_changes ... ok
+test byte_budget_admits_an_oversized_item_when_idle ... ok
+test actual_installation_root_refuses_key_staging_and_ancestor_imports_without_effects ... ok
+test all_local_pack_members_skip_pack_download_and_are_counted_by_bulk_phase ... ok
+test distinct_same_content_and_unrelated_hardlinks_remain_ordinary_local_hits ... ok
+test actual_installation_neighbors_and_unrelated_matching_names_restore ... ok
+test empty_installation_cannot_import_a_foreign_key_or_create_restore_directories ... ok
+test existing_and_manifest_symlink_aliases_cannot_route_restore_into_key_paths ... ok
+test critical_files_precede_bulk_and_prefetch_failure_falls_back_to_blob_reads ... ok
+test file_and_symlink_ancestors_cannot_remove_an_installed_revision_key ... ok
+test hardlinked_local_hit_cannot_change_installed_key_metadata ... ok
+test linux_bind_mounted_descendant_file_restore_boundary ... ignored, requires Linux Actions private mount namespace and CAP_SYS_ADMIN
+test linux_bind_mounted_descendant_symlink_restore_boundary ... ignored, requires Linux Actions private mount namespace and CAP_SYS_ADMIN
+test duplicate_large_blob_streams_once_then_copies_from_the_verified_local_file ... ok
+test ordinary_directory_symlink_replacement_preserves_installation_material ... ok
+test incoming_key_and_publication_artifacts_refuse_the_entire_restore_without_mutation ... ok
+test duplicate_small_blob_is_fetched_once_and_local_hits_are_reused ... ok
+test ordinary_directory_file_replacement_preserves_installation_material ... ok
+test protected_portable_namespace_case_aliases_are_refused_before_restore ... ok
+test ordinary_restore_preserves_key_and_allows_unrelated_matching_basenames ... ok
+test pack_restore_reports_each_restored_path_and_skips_loose_blobs ... ok
+test recursive_removal_unreadable_identity_refuses_without_effects ... ok
+test restore_cannot_detach_an_existing_symlink_to_the_installation_directory ... ok
+test recursive_removal_depth_limit_refuses_without_effects ... ok
+test recursive_replacement_refuses_descendant_key_and_staging_hardlinks_without_effects ... ok
+test symlink_restore_reports_all_frozen_steps_and_allows_absolute_targets_inside_root ... ok
+test symlink_target_checks_expand_existing_links_before_parent_components ... ok
+test unreadable_staging_identity_refuses_before_store_or_restore_effects ... ok
+test staging_identity_limit_admits_32_and_refuses_33_without_effects ... ok
+test staged_key_hardlinks_refuse_but_distinct_same_content_local_hits_restore ... ok
+test recursive_removal_entry_limit_refuses_without_effects ... ok
+
+test result: ok. 29 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 1.16s
+

@@ -1,0 +1,807 @@
+{
+  "format": "OCRM-SHARED-RECOVERY-PUBLICATION-MANIFEST-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "publicationParent": "37ffd42410d37013512e8efbf3bda5b549f3a4db",
+  "publicationParentTree": "dc9af82ac4a14937d92e4c230c1cbb1e7585afab",
+  "reviewedScopeTree": "406f8668a83a30a24c83b442b97d3a2b4d64927f",
+  "fixedU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixedUTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "evidenceSubject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "evidenceSubjectTree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "core": [
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "sha": "6905d89a058a59f09a2ec3f5b3b4afc6f751919d",
+      "reviewedBaseBlob": "a4f62bdd60e624b630b0e735bb42e020e8f82a35",
+      "alreadyPresentInPublicationParent": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "99fd980c1f8bee47327efc49e59e0d5544dcf46f",
+      "reviewedBaseBlob": "2f0d7d43f54c9abedebbe25f40f21acd20a19c30",
+      "alreadyPresentInPublicationParent": false
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "bd1a56a6990168c384bb553c269a3fc1b695a14a",
+      "reviewedBaseBlob": "d62c6816905709d9dfed939a3581633488d9921c",
+      "alreadyPresentInPublicationParent": false
+    },
+    {
+      "path": "source/host/tests/openclaw_chat_cron_node_contract.rs",
+      "sha": "2bde1d3f9ab87f53e00079140a414ad492ac2ab6",
+      "reviewedBaseBlob": "b6a107dda12c867e57e7cd6ff38d245308f723ea",
+      "alreadyPresentInPublicationParent": false
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "sha": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "reviewedBaseBlob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+      "alreadyPresentInPublicationParent": false
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "sha": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "reviewedBaseBlob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+      "alreadyPresentInPublicationParent": false
+    }
+  ],
+  "evidence": [
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/COLLECTION-INVENTORY-NOTE.md",
+      "sha": "bca03a45db648341c47dfc2d67939284f897ee43",
+      "sha256": "87dbc379634915a933f53db25c48988c3df46dd94eaa49418c5babfcb2b729f7",
+      "bytes": 1296
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/FILE-INVENTORY.tsv",
+      "sha": "ebf191ea8f2832750f688365bbf07422cc11a6de",
+      "sha256": "caab1751d1d38df33f3674cce5e3fab6baca01798e301b598e6276a4ea166edd",
+      "bytes": 15136
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/REPORT.md",
+      "sha": "3108580227998338780087fdac60c80dfef31950",
+      "sha256": "93176dae61a92807bab5409284024a53072dc4da0696fdbe9d820858516abbd8",
+      "bytes": 10053
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/WINDOWS-EXTRA-FAILURE.md",
+      "sha": "9d729f20ff1c10fb9f1415088d21556fde9dfd7b",
+      "sha256": "f0aeacf5dac71671560663c2d5400a37bd514b93190e61c2e39d042d93bf802b",
+      "bytes": 3211
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/attempt-1-jobs-api.json",
+      "sha": "8e805546f7fbb93ad3a1ef2daf0ad8dd33ff7809",
+      "sha256": "c717d706d760f7e51db15c585340d47674b486ec559eb8f2bb0bc1f1915f1e69",
+      "bytes": 20643
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/evidence-integrity.json",
+      "sha": "a036fa2a893c0415471acb554e92403769b33151",
+      "sha256": "a52b53262c756c02240750b61fcf8b37657c7643ad102f0d0692c9ff57e9a495",
+      "bytes": 14243
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/linux-restore-13205531160.zip",
+      "sha": "25d91f72cf3942358c7d6fa1bb4c4da8f2b3b4f7",
+      "sha256": "e3f38fdea40e2264349e23c6c6830d59192c01dfe1525aaa1c1f47bdcb9a4599",
+      "bytes": 47233
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/restore-artifact/compiled.json",
+      "sha": "21af7b3ac3d14b40d066724f64c4fa8ac13fc71e",
+      "sha256": "1347ef3f695408c789a549c5117f93f71e2a305d20b755d70158a494db265090",
+      "bytes": 1056
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/restore-artifact/compiler-artifacts.jsonl",
+      "sha": "ae9f43d564821d7a0c09bf60adadc1c963ac4477",
+      "sha256": "02395e80a670f4016b312b3c1653d7c984d47362f2e651fe2069a5d3b91856f7",
+      "bytes": 598319
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/restore-artifact/execution.json",
+      "sha": "4658dd1a1d3eb02a8cf525d68c80c6ac57bc87c2",
+      "sha256": "594aa8d713e695dfab8a1d6404d232379c379a40f7f3629dc671eb5ae6ee4da5",
+      "bytes": 3993
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/restore-artifact/linux_bind_mounted_descendant_file_restore_boundary.log",
+      "sha": "e15ea9dd8a393bd435df1278a45113d750229565",
+      "sha256": "6a4e7e28651c7c2b1c5866aceeccaa4a15c99c363f0d035d26552ed73e1c7bf4",
+      "bytes": 177
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/restore-artifact/linux_bind_mounted_descendant_symlink_restore_boundary.log",
+      "sha": "2995fa11800d1d6889ca6949dac18232663fd040",
+      "sha256": "440cf3d7e0e6eace8956a7f34d65489d87be9b68b0d67ae796d9df965585c3b7",
+      "bytes": 180
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/restore-artifact/ordinary.log",
+      "sha": "5f583488a0208b16f3980dc4b00e688a4f2a7336",
+      "sha256": "cfd7359a1317f9d68dfb8597f8dba87071ff6b71a7240c0f98c4337d8c5b293a",
+      "bytes": 2744
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/restore-artifact/subject.json",
+      "sha": "3d9fd429101d2e028c2136f01ba53bf8f0a9dfdf",
+      "sha256": "dfddb9ef635afa59dc094ba9a556bc82ec0fc1a85fc0787d278f02e0a3281fac",
+      "bytes": 477
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/restore-job-log.log",
+      "sha": "86ff31aa5b2b3f348e756cd13a707a74d5fdd0ab",
+      "sha256": "ac08021e574e569a58c21c042b3cae222a3af923def580cc96c9fdfefd05f2f8",
+      "bytes": 91557
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/run-artifacts-api.json",
+      "sha": "c49a575dd5eb80b8c9cc89f0a5d9ca117995fa23",
+      "sha256": "476e1774488314ae52d388bc0a100bfd975491a9570e5612a55fbf0897a8092f",
+      "bytes": 5408
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/source-input-identities.json",
+      "sha": "bddafbeda0f1e6fa679889ac159c87f1dd568e4e",
+      "sha256": "168dbc3767e07efd587cb09c5273d24ce62ef67a679ced67db7558d8a431667d",
+      "bytes": 75467
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/agent-management-consumers.log",
+      "sha": "050ffa1e8b4da0cae76c77404ee1849174e7f36a",
+      "sha256": "5365349baab4fb0dda3d98fff01b093f13cfc11c2cd21934a4e0b84e4d392482",
+      "bytes": 28939
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/bounded-reader-box-consumer.log",
+      "sha": "5fefe6c1b4a30e01271abbf0054b58048f89b668",
+      "sha256": "81f6d966791416e180bc634234a94f5bcef1c2ab8542ae80ea098b4db46b9660",
+      "bytes": 28792
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/bounded-reader-channel-consumers.log",
+      "sha": "74410b65ad20befd24c94e5a5d0fe2d8718abae7",
+      "sha256": "3d80b1f13208637ade299057af60b78701cd12b8980e6956a92afb3aeb130af4",
+      "bytes": 29269
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/bounded-reader-image-consumer.log",
+      "sha": "915583fcf43450aec0e0250107d0857fb0e64ace",
+      "sha256": "cf9fdf198a4ffee726f1d9ced9ad76a888448caf7af906bf996815d917c5f24c",
+      "bytes": 28693
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/bounded-reader-owner.log",
+      "sha": "dc98ce46320807ca09bb0cbdaf3c0668f6de9437",
+      "sha256": "6e91286169ae1fa82ff1ad94658a9bf284198a17cf68c668a6eb0e2a3ec9949e",
+      "bytes": 30237
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/bounded-reader-public.log",
+      "sha": "ea92046e5396479f91f52d6402a70c95e1c70c16",
+      "sha256": "01cdb999a6d5cfdd8280b9f436b3f6d10ce59794d25d6d33d2014fcbf9cb866e",
+      "bytes": 31160
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/cleanup-consumers.log",
+      "sha": "63e57531975f0d2210b98a7dbd091a93f0f06e9b",
+      "sha256": "d6b05e0dd4362d1a86fee12e4826824b43d30f80738281b6d8becc4fa141a896",
+      "bytes": 29801
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/cleanup-owner.log",
+      "sha": "e0466fa1e7443e0204483b43b140c4d25dcc8217",
+      "sha256": "09bc60e6dc793624dc4fb09a6941ce5d41bc11973bf3bebb45ce711fc809cfac",
+      "bytes": 29204
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/explicit-html-consumers.log",
+      "sha": "1283239da81c6d46ebc395fd96c43566ea76fe01",
+      "sha256": "46daf4d74d0053ebb56057d6733a4a5c1be9a2d076ab3774552e4a44d3b6d04c",
+      "bytes": 30548
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/file-context-consumers.log",
+      "sha": "38f906bfd5f94966078a49be03b1064a9b164fae",
+      "sha256": "51d4fe86aa36e7a1c4768839578dbbab264bd47c565e7400c784b3f090bef222",
+      "bytes": 29374
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/file-url-admission.log",
+      "sha": "5ec08dd1663f4b7065aabe6fd0aa6b38deae1eb0",
+      "sha256": "18d615ab7a8cacfc14cf6aac2c39756f54988df5ee3b86e018db22b2bb5e21b8",
+      "bytes": 29042
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/host-read-format.log",
+      "sha": "7b70c8330ac4eba6eb12a4e1ce8df62735de757d",
+      "sha256": "38888694f152c64a1f67cdd3836f3868f6fc840cc7528a44828833a60623af89",
+      "bytes": 28795
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/html-policy.log",
+      "sha": "e7f96b8230bfbe32394de3b55a27b2fffd185d93",
+      "sha256": "1c2e0a2ebc33649f81f3467d5804465aff0050d1d0a73eda070f419699b6e0d2",
+      "bytes": 29247
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/image-probe-consumers.log",
+      "sha": "5ee1a7b7c3a167febea6b917d9ef04c49707879e",
+      "sha256": "6bf9b7bba7d7b25a29f29ce91e3e7494b40e91e9fb7f4dbab4ae56ad4eb9f9c6",
+      "bytes": 29739
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/local-file-url-owner.log",
+      "sha": "26ede16e9fad0f84877459ec01b0d0029f4b895d",
+      "sha256": "8860f20be403ab611542a4735133bff1d223f3e6390dcd93795f2e5e5557cbee",
+      "bytes": 29427
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/media-settlement-owner.log",
+      "sha": "6d18808a2620e0630692eef9fdb14e399bf875b3",
+      "sha256": "c73d70c1d9829a1b8404f8e888e048c4a5a997c63f4f0ead5221f6e4b3cffcb9",
+      "bytes": 34262
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/outgoing-media-custody.log",
+      "sha": "d96e9734cae7b75f4d0dd5c6a69ba52107345f4c",
+      "sha256": "b721149c77bc329b06c084ecfe2ad5fee214793f7ec3462e2e6de607ce22c623",
+      "bytes": 28779
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/receipt.json",
+      "sha": "9aaed756ac79e9048f7c48111cf9d40213c660a2",
+      "sha256": "c79d4e0d447831aae967a80be6d74b5c39b71c0daa64d18ac0595f151f563ce8",
+      "bytes": 121109
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/send-message-consumers.log",
+      "sha": "b08176a788d4682b947b4e9c54ba495833c589da",
+      "sha256": "c9cba2ad7f3adc4ab960a3efc7493920408a4a44e272984ba361dc594c980c06",
+      "bytes": 30212
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-artifact/transaction-commit-owners.log",
+      "sha": "9a4533bdf3bc5898a104ad4ea6d44457fade0d42",
+      "sha256": "2e25b24f4252140b8d4c9f063b62b9d596b62d2ed833fc3b2afef896fa922bf3",
+      "bytes": 33774
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-execution-readback.json",
+      "sha": "075de940983e9d333c61b568d7799705dede79db",
+      "sha256": "0b6541609e179bbdd195a456a26569dc9d6f012d7f2f994f2352e9ac071c5855",
+      "bytes": 14996
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-extra-failure-byte-evidence.json",
+      "sha": "7192957797b77aa53cfb4ebbc2cec31568583a53",
+      "sha256": "033cb9aaf7a34ea73bc9d3f3d134bd389f8cfececd10a349247ecd328da28362",
+      "bytes": 814
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-media-13206046601.zip",
+      "sha": "4997e2ebf150828e177fb0bc708ceac9354c88e4",
+      "sha256": "184296dcafd2b230021ed8523d4e159cc34473d4436a5a9f5198c28c1bcac96f",
+      "bytes": 149588
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/additional/windows-seven-failures-original.log",
+      "sha": "2334850accd60f12dfd6e20a67a5c84039caa6ce",
+      "sha256": "2436dbf215cc1e8c9f0c7c781fedb1b4a63a85d54b5d54355cb442f76ace8e5a",
+      "bytes": 2925
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/COLLECTION-INVENTORY-NOTE.md",
+      "sha": "a0ff6864015a5f562d0b552ad6220c169a035794",
+      "sha256": "306bad5b3895d82a31d15625b0725e4040106978261ac9f84b2919d9d133e248",
+      "bytes": 1136
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/diagnosis.md",
+      "sha": "57b113a86ac0bd06f6b0f655ebc73d5ee5acab8e",
+      "sha256": "5ab006f18dbfc03aebad524baa53014bbae55b0b3a0ab8843e1a3b772d2c0e7e",
+      "bytes": 11703
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/evidence-manifest.json",
+      "sha": "97d50bc5e1a0082eb01133f238f55f87e7d1919b",
+      "sha256": "c90d0939ba8ff3bf122504f7659a4ac8c8c49578a3646874558ef9a60ff930d4",
+      "bytes": 5809
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/h74-runtime-original-artifact13205686727.zip",
+      "sha": "41d504d68df12eb474d4588e74902667d7cf3430",
+      "sha256": "284a316258ebf9b60dd29d781c6aceb44ef3d1ca351a3337e0945efd7b2699b5",
+      "bytes": 142379
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/latest-comparison.json",
+      "sha": "6ca1125c0daccb5d718a09b5e5a4fdf05ed9ec91",
+      "sha256": "202dbb8af7fea400c2a02feca0db596b0728a43942046e927e51d3eec247bc9b",
+      "bytes": 975
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/agent-management-consumers.log",
+      "sha": "74e2b399d24a3468b22fc27fcdadfff94cf369d2",
+      "sha256": "2b5e3928fda7ec4eec17247b890a9cc14cb86f7ad745df14ee03fabc1052b992",
+      "bytes": 27684
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/bounded-reader-box-consumer.log",
+      "sha": "8a0d8a5ae49e02078b4a1ae3e345eab4f8ac24a0",
+      "sha256": "01e1cdac6cfa34e0ff02e5830928815ca63bc231bdb07161f22d8f1dba1ec7df",
+      "bytes": 27537
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/bounded-reader-channel-consumers.log",
+      "sha": "0908ca385d2724ca9e07d4a3074701198c92ae12",
+      "sha256": "cfa9bf892d3a37b9e04789367cc942b6bf899ec1705dc16322a65a7613aae15f",
+      "bytes": 27941
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/bounded-reader-image-consumer.log",
+      "sha": "06e7b4f9f98bb962bb41378e9b18000205c1c593",
+      "sha256": "923f04ea2975909514c7ce97ff66f3641cbfe150a90e0d8fe385a501c285fa98",
+      "bytes": 27425
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/bounded-reader-owner.log",
+      "sha": "2276fc0f5f7d5c6e2a42295906267d70dab984d1",
+      "sha256": "0149691bc3fb9562f32d9042a9933c4f78a843b3d051225379ea6c7ee535fd84",
+      "bytes": 27944
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/bounded-reader-public.log",
+      "sha": "196ce8fb092da983a9e2ed86843e039d4ec6a405",
+      "sha256": "4ca0d911ae0409c8f888f8ffe273483bd9e315629a39b24320095429040f6b41",
+      "bytes": 29905
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/cleanup-consumers.log",
+      "sha": "1f052032dc6648a075fc96be87b7613444184f7e",
+      "sha256": "0faea9e4b8ad247d68dad55efc84c439e4d28c18a36bacba887d7b8f43184556",
+      "bytes": 28639
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/cleanup-owner.log",
+      "sha": "1587af719a90b7f5f1dc8bcc44e8f47783b00e86",
+      "sha256": "af2ad85d829433118dbe8dfe263c79d96d00ffb8f6d13f1d21ad25f1919efb9b",
+      "bytes": 25578
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/explicit-html-consumers.log",
+      "sha": "2cae625cf0cc957b4f99a695c7b6e945e806bb23",
+      "sha256": "bfad9fb28468cbc9e5d51ba523e7998bfed253f9056350032f3ef6d89050d689",
+      "bytes": 29433
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/file-context-consumers.log",
+      "sha": "f979925d63e0568ab5dff3408288ea060315b6c5",
+      "sha256": "b2a4f2290ede92813bf8691f04370dc1d2bab6e1d4ae652e46c5f0c5ea50c741",
+      "bytes": 28105
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/file-url-admission.log",
+      "sha": "564de38c7b54a6230f7021050519b9769646284d",
+      "sha256": "bd6ab4e0580a037b1b82f749dfeccec08e78f3c9f5c2acf7de3546b344417bf9",
+      "bytes": 25410
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/host-read-format.log",
+      "sha": "0663421a93f34b4b0e5a66c9deb63d482bbf31a6",
+      "sha256": "fe856724bfb63d6e093a0f5b205ee02e3a56a1108b01fa099341c04d4f355794",
+      "bytes": 27540
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/html-policy.log",
+      "sha": "b8fffb254f5a543039950731ba614b1705b0d6e8",
+      "sha256": "62616319485eee4a056168f492ef2ae5b69ff3001796ff8fc87036a05b12be73",
+      "bytes": 28200
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/image-probe-consumers.log",
+      "sha": "e3bf6bd271daccc26bced6341c60162ce50737ed",
+      "sha256": "6271cef00e2a83ea6b892a7122edd5697a549b680029fc4d4504e31029ab0f06",
+      "bytes": 28484
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/local-file-url-owner.log",
+      "sha": "87629758881b728871fb053500205b04f26ec592",
+      "sha256": "8bf4dbf06663971876e17f26997a86bd22d3c19e8ed53db95b440fc33baa9b51",
+      "bytes": 28096
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/media-settlement-owner.log",
+      "sha": "4525632074634d8dd88721d6276e8aa90faf80f8",
+      "sha256": "26ab3027d0bd03ff450927df814349347f9fb104f0b8ec2677b4126aa838fad8",
+      "bytes": 30567
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/outgoing-media-custody.log",
+      "sha": "ff0cbfdabd3fd3a1dcb76fc328541c0394c9194e",
+      "sha256": "12fd5519dac296210ecc857ac42b461c5354c87921570426f54783ad61a6f19c",
+      "bytes": 25266
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/receipt.json",
+      "sha": "86708948c8a6d1e246408536e1ad11a5c582150a",
+      "sha256": "5fc8dfd24cf2635e253056c12d06c1f67f29e66f5cabe9e3003a1efc0bdfc6e2",
+      "bytes": 120067
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/send-message-consumers.log",
+      "sha": "34737d079568ee75c2228427ffaa5a30e7499916",
+      "sha256": "3894e838fd5f8259607b1ffa8681b92b3eba3b4c477e30da4cb94b3da82e7df5",
+      "bytes": 28957
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/original-artifact/transaction-commit-owners.log",
+      "sha": "8f66864af3f678b379f1918cc160b9ae991e5384",
+      "sha256": "921b7317adf72cfad5ddd22b541f1e366a4d8beddc48214b913f642fbaaf1bc5",
+      "bytes": 32185
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/windows-supplement-byte-proof.json",
+      "sha": "e0bd8ac55e182b5e46105530c5ad1a34c74440e9",
+      "sha256": "c4b21ffb209adf80bbcaeaa2fdd50b89eda657e3fb662cfa6645113a0858dab0",
+      "bytes": 2490
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/linux-media/windows-supplement.md",
+      "sha": "1c8f8e6a6ce2adcdfa9f7170c44f7342c5ecbe6e",
+      "sha256": "551810397f7d731738490f059c70e8616ce101cfdb36e283d023df3164197c37",
+      "bytes": 3454
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/COLLECTION-INVENTORY-NOTE.md",
+      "sha": "fe079c0441244ea33822ec50b96ba7f4040b1108",
+      "sha256": "00533739afe754e80e704dddc3ac1d863551d2ae50630f5af3067de4f75101b6",
+      "bytes": 1198
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/FILE-INVENTORY.tsv",
+      "sha": "b381b57654bb059f6b0aea13f6d152da4c82422d",
+      "sha256": "e8f1ac2e1dcf19d9886478558967728a2ccaa5dfeeddb503ab2c8e3e656b970d",
+      "bytes": 12771
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/REPORT.md",
+      "sha": "d14ec2c855ae11a237a878bcc62758611c9f1b5c",
+      "sha256": "08174c491dd9b8e6c291900e70f820dc11fa4680a75549b369e9e031242cb00c",
+      "bytes": 11895
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/evidence-integrity.json",
+      "sha": "301258408b1f8ea335f88292499edaf1d51783b2",
+      "sha256": "3775d503a9bd486b20b775b4238efc7d21da8e478f98a0a2cbbf70a8d8896d3f",
+      "bytes": 7725
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/capture.exit",
+      "sha": "573541ac9702dd3969c9bc859d2b91ec1f7e6e56",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/capture-failure/capture.exit",
+      "sha": "d00491fd7e5bb6fa28c517a0bb32b8b506539d4d",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/capture-failure/errexit.entry",
+      "sha": "d00491fd7e5bb6fa28c517a0bb32b8b506539d4d",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/capture-failure/node.exit",
+      "sha": "573541ac9702dd3969c9bc859d2b91ec1f7e6e56",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/capture-failure/wrapper.exit",
+      "sha": "d00491fd7e5bb6fa28c517a0bb32b8b506539d4d",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/capture-failure/wrapper.log",
+      "sha": "0718c8faaa3d86b73d24cf2ea7ead76617bb983a",
+      "sha256": "17fe1eef2a4435a5a4bd46b28d76c41ba071d67a5ee419ecfd7438616e5e99ff",
+      "bytes": 75
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/node-failure/capture.exit",
+      "sha": "573541ac9702dd3969c9bc859d2b91ec1f7e6e56",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/node-failure/errexit.entry",
+      "sha": "d00491fd7e5bb6fa28c517a0bb32b8b506539d4d",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/node-failure/node.exit",
+      "sha": "7f8f011eb73d6043d2e6db9d2c101195ae2801f2",
+      "sha256": "10159baf262b43a92d95db59dae1f72c645127301661e0a3ce4e38b295a97c58",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/node-failure/tests.tap",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/node-failure/wrapper.exit",
+      "sha": "d00491fd7e5bb6fa28c517a0bb32b8b506539d4d",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/controls/node-failure/wrapper.log",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/errexit.entry",
+      "sha": "d00491fd7e5bb6fa28c517a0bb32b8b506539d4d",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/node.exit",
+      "sha": "573541ac9702dd3969c9bc859d2b91ec1f7e6e56",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/receipt.json",
+      "sha": "4155b1b1ae4a0e3ce5b86a91ce34ec9f3b99ed32",
+      "sha256": "7253583e0cd8427db008c7ef977c75101286ffb7d2655fb4c2b581294dfc93b1",
+      "bytes": 21003
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/mab-artifact/tests.tap",
+      "sha": "2da367efe2c1c7f17cac030bcecd198e6a4c894b",
+      "sha256": "13d42d7713fb2a74e3c209291c33b24a630b338acc7cf4317f70603930b78e58",
+      "bytes": 19412
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/notice-artifact/notice-contract.log",
+      "sha": "f4500671621da650ebf25301308f1cedbbd50c00",
+      "sha256": "f2acf084bbba9b4476806936e02709f92fb73f6ece44fd1414f9760eeb0b9198",
+      "bytes": 4193
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/notice-artifact/receipt.json",
+      "sha": "4eab00b9fd64c490f3c115d873ca34d8f7078b04",
+      "sha256": "22e04ace3f6c689e7ad39146300709a396081818b27d36fec92388705dfbd581",
+      "bytes": 6858
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/notice-artifact/source-notice.log",
+      "sha": "4683fd5917f644f661bdb895da8098804090dbfe",
+      "sha256": "4da2c122733058bc013660d36ec4ae41a29f651da970884f382ed63f4e7a731f",
+      "bytes": 440
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/plugin-edge-artifact/ocrm-plugin-edge.json",
+      "sha": "b4819485cf25e417ea1c6ed0f5358d48b1d69b63",
+      "sha256": "aca3935f1780c29c6e26df67e2c68b771dbb0ea76640122287e85fd38e5b1ac9",
+      "bytes": 11220
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/plugin-edge-artifact/ocrm-plugin-edge.tap",
+      "sha": "1ea437c29ff2023cf8024566fe8aa67883913146",
+      "sha256": "c19add4713a4cc5169bfd6872edd34122713b82dec4ec6921b768b0a97784dd2",
+      "bytes": 32653
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/raw-evidence-readback.json",
+      "sha": "5debe321b4c9aa8191f93ccc33424abf55186c1f",
+      "sha256": "8167067cf7d5f0944477f7896cf93f59f3a911da9c1bcf1e06efcb99e9c4bf18",
+      "bytes": 14519
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/renderer-artifacts-api.json",
+      "sha": "9204150d0a39da87f896c714333945a81238cc9b",
+      "sha256": "fbc6cb7edb41aabdf3ece7acdec910ffd9db332233a45af53bf9b1fbf60d932b",
+      "bytes": 2685
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/renderer-build-original-excerpt.log",
+      "sha": "779fb5557b7c529c4e1a72faf7be46749d1c8941",
+      "sha256": "142e0a7bc1b747260a846a6013db56554356e4deb50d038a129ca6474e3b1b5e",
+      "bytes": 11182
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/renderer-log.log",
+      "sha": "200ca184c685e3f5897a78d63c836c71ed19bbd7",
+      "sha256": "676554df0a6df0000d9c1e1bc40959209d034979894b03b835856804b4b55840",
+      "bytes": 202722
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/renderer-mab-13205204882.zip",
+      "sha": "a3ef0dd54bf0b11bee39a91b9eff40d5866033b4",
+      "sha256": "71e068a817540f58d9f6ca44f0a58a7766457856a822bcac5d9ce0f5dfa564a9",
+      "bytes": 10833
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/renderer-notice-13205785701.zip",
+      "sha": "03ac3fa7a69f0b561b765b4380cbfd91f7ac41eb",
+      "sha256": "6f59330ac0fb72e69124dafd6f285046632b3c61ce0665d73b52c509366acd68",
+      "bytes": 3840
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/renderer-plugin-edge-13206320377.zip",
+      "sha": "1baf3cd1129fff48c1dc58efdda850daccd52bb4",
+      "sha256": "6bad6ca91105832529a1dde5d05132731acbff5883da97aa811a6e1d143e766e",
+      "bytes": 10476
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/runtime-jobs-api.json",
+      "sha": "45fa2a5f6379491f63db54a6904a74e53e7f90ea",
+      "sha256": "2a715a165fc6097d09257268f9765eddb4e535f93448aec83fc2d2e2cd948ce8",
+      "bytes": 19023
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/runtime-run-api.json",
+      "sha": "155a268935e5744bb379aa298b3862a1d5fd4e7b",
+      "sha256": "8e9b8a4df5515f6a607278e32ca343ff6b22f057146d4c7419601d7240e346d4",
+      "bytes": 13487
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/source-artifacts-api.json",
+      "sha": "08944e0f51c515b2a160ffd22abef9ef99fda766",
+      "sha256": "fb09a9699b26ad536855bb4263ff01baa31a107d9af48b348e96cb4a9eb2b8d9",
+      "bytes": 22
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/source-input-comparison.json",
+      "sha": "56d5737180494eceb5d8766dea154df3bcc8df6b",
+      "sha256": "4032cbaa545ba2ce6ab561c2c7b6618f962a044bbfee541472192d60c774a317",
+      "bytes": 31668
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/source-jobs-api.json",
+      "sha": "9371dc57f50fd3c44daf9482e2c33ad7f6cd585b",
+      "sha256": "116cdc99be12b576525158b953dac41ff94cb21184a4d3489db9821b2aeabba0",
+      "bytes": 4999
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/source-log.log",
+      "sha": "9cf4fe0160c63468d3a0c63f925500334fcccfc2",
+      "sha256": "31f25cb8af36bfb77ebfbd4179ea5728774379f2cf70f7dddebf2e1f2fc9dd1c",
+      "bytes": 28920
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/source-run-api.json",
+      "sha": "629913e1729d978f9c804bce2380ddf8e198464f",
+      "sha256": "51059c92c84cf55904c5d89bdf9ac4bc7a89a6c0ccd23d561e45ccb202e2d7d6",
+      "bytes": 13495
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/source-terminal-original-excerpt.log",
+      "sha": "4d2413c2b517571d170123af5b31c8cd32051930",
+      "sha256": "d7f7a615dfb09a91f712c0899a24a96f0613c2d04a0f1321fbb2098e33584591",
+      "bytes": 4467
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/execution-h74/renderer-source/upstream-U-api.json",
+      "sha": "8d527ed8f80fc217b3b068f056d1a54d6dfa2c33",
+      "sha256": "83ce5d6f260cf268c74b6967f09619a1955398135699042568a025ffc779b0d6",
+      "bytes": 3383
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/decision-before-fix.json",
+      "sha": "799781bbe05b3fe541bd9035f61229cd83673365",
+      "sha256": "79a484998a0b6443bda8f4fdd550e70532a651976f1d51796ea94b6c564171bb",
+      "bytes": 5872
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/decision-windows-crlf-before-fix.json",
+      "sha": "52573b4a7917f923ba6cc6c121d364ce6c583781",
+      "sha256": "524a4d6813bd434c3ade008963e6e3b3723b3c6b2a1b095b496570d88ab77f72",
+      "bytes": 1881
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/r1-manifest.json",
+      "sha": "cacf94ce1f06ffcfce9ee813c5cc6d851e6ff14c",
+      "sha256": "03de5f25832afcaeede3a1f9d6854950e47959ecb24313eecfa462cbe6098d82",
+      "bytes": 3151
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/r1-complete.patch",
+      "sha": "09f3f45589671c93fe1af1df45f5a6480e557ae6",
+      "sha256": "17280ae7b638e814a51ea05e25970abfc42481c495ac5c08e6a4b465f7922995",
+      "bytes": 23279
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/media-candidate-manifest.json",
+      "sha": "fcaf70c17e4e2ee5bdb97d1aee0dc5a324196dee",
+      "sha256": "08cf4ce26bc87d5a78c278babdfc8fdc28fe364a28193824e6f62c185fd1ef72",
+      "bytes": 1868
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/media-candidate.diff",
+      "sha": "846476e82fe703b32d393607d3c02a51957d26ae",
+      "sha256": "e098cba321192b43d1716fdb620e58ccbb0cb1c0f8c0a30b31b0a8a2015f256a",
+      "bytes": 14640
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/media-repair-report.md",
+      "sha": "30ebf9458c0e5ad4613c33d65a416232c1708708",
+      "sha256": "3073a5666c9be54de6b07f5f2a7d0f192d55e200fa7dd6c1f53872b33e139bae",
+      "bytes": 6958
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/source-mapping-diagnosis.md",
+      "sha": "fb34dbc68c75a488f5a88aa8a357465c36d5f30f",
+      "sha256": "15750733445bed8a5deb058b9b1085a19c1af1f97a63b74501baf51c0182ffa8",
+      "bytes": 24919
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/next-manual-admission-inputs/contract.md",
+      "sha": "0effbb61dc6f28725a7ad65d77bc99ee8da54cf4",
+      "sha256": "c84550c1fe6fdef08f797cb65f8fe58823c40f2e48b1fb2825acee360bdfcc7c",
+      "bytes": 9186
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/next-manual-admission-inputs/source-reads.md",
+      "sha": "185c9cc3ab279baf33de640d41a4d08c4498a92d",
+      "sha256": "eaa782376a3a357ffc9cb8d0a18055642ac5ee1a7c7f78da388c42b35268f3e4",
+      "bytes": 11683
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/requirements-checkpoint.json",
+      "sha": "ee0f3f47171d5ff19b797ef8a82b46115f941b5d",
+      "sha256": "19926356e35f4b4ad63da9d5335acb32b9518f677d289408880012c01bf4317d",
+      "bytes": 10705
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/r1-general-review.md",
+      "sha": "c8f2b0bcf8b035c7358c6fa2eacf151a01f3e055",
+      "sha256": "b28e416d0ec7082d5fc4ab825b18ff2c553f561f51e966259e62ecccc4b7986a",
+      "bytes": 15337
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/r1-structure-review.md",
+      "sha": "0ae45eb6f227c5cd8d9edeb96b590ddd17203c0d",
+      "sha256": "8cb2a5e5cbf6d6fe41e19f748c3a691af0ae106a287cab6efc8b6505376ff1b1",
+      "bytes": 10078
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/review-decisions.json",
+      "sha": "c22a0cf29a53f4d16afd97ffaa2cc970b7563757",
+      "sha256": "14f0ff5cf83cfbbdc23921124f88e8f2037b8ff6b20280fc7692eacdcaa71d00",
+      "bytes": 1264
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/integration.json",
+      "sha": "beaac46468010cd1f2efed504793a8d6b6ca79d1",
+      "sha256": "02bc6b26274d6eff8de4516a51b4f6d7c203c26bef4c50ce5f358b85ec839bd9",
+      "bytes": 2610
+    }
+  ],
+  "omissions": [
+    "Original collection inventories enumerate acquisition caches, not all publication files; COLLECTION-INVENTORY-NOTE.md records each subset.",
+    "Source snapshots and raw blob response bodies are not duplicated; exactH74/source blob references remain retrievable. No blanket full-source reading claim.",
+    "Authenticated artifact-download responses/URLs and duplicate log API envelopes omitted.",
+    "Full Windows job log1281835bytes sha25644dd336b57476e793afa35134517b0fe888fd0d976eb583ddb5f0991dc7d4abc omitted; untouched originalZIP,receipt,all19commandlogs,andsevenfailureexcerpt retained.",
+    "No executable/database/customer payload is added. Original selected artifact contents are testlogs/receipts/compiler metadata and synthetic fixture observations.",
+    "The first incomplete local Git-diff acquisition was never reviewed or used as evidence; final complete frozen patch and acquisition note bind the recovered source scope."
+  ],
+  "boundary": "Manifest does not self-reference its carrier hash. HistoricalH74 results and current source-only approvals do not prove successor runtime or complete migration acceptance. A separate API commit/full-content readback and exact-H Actions results remain required."
+}

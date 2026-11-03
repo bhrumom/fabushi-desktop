@@ -1,0 +1,353 @@
+{
+  "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": "41580539491",
+  "run_attempt": "1",
+  "assessment_generated_at_utc": "2026-11-03T05:02:08.908142+00:00",
+  "restore": {
+    "receipt_result": "passed",
+    "receipt_scope": "Ordinary restore contracts plus real private-namespace bind-mounted descendant file/symlink replacements, using synthetic installation keys and owned fixtures. Missing privileges fail execution. This is not exclusion of concurrent external namespace mutation or full backup/client compatibility acceptance.",
+    "compiled": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "box_store_download_frozen_parity_contract",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "executable": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+      "executable_sha256": "7e94797e865d7e4f1f94ecc8f3dbc3d6633e2e289ded004fdc53123099f0bf24",
+      "manifest_sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+      "lock_sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+      "compiler_artifacts_sha256": "02395e80a670f4016b312b3c1653d7c984d47362f2e651fe2069a5d3b91856f7",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "compiler_uid": 1001
+    },
+    "compiler_artifacts_raw_sha256": "02395e80a670f4016b312b3c1653d7c984d47362f2e651fe2069a5d3b91856f7",
+    "compiler_artifacts_hash_match": true,
+    "compiler_items": [
+      {
+        "reason": "compiler-artifact",
+        "target": {
+          "kind": [
+            "test"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "box_store_download_frozen_parity_contract",
+          "src_path": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/tests/box_store_download_frozen_parity_contract.rs",
+          "edition": "2024",
+          "doc": false,
+          "doctest": false,
+          "test": true
+        },
+        "executable": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+        "fresh": false
+      }
+    ],
+    "executions": [
+      {
+        "case": "ordinary",
+        "command": [
+          "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+          "--nocapture"
+        ],
+        "exit_code": 0,
+        "receipt_counts": {
+          "passed": 29,
+          "failed": 0,
+          "ignored": 2
+        },
+        "observed_positive_names": [
+          "actual_installation_key_and_staging_native_aliases_refuse_local_hit_changes",
+          "byte_budget_admits_an_oversized_item_when_idle",
+          "actual_installation_root_refuses_key_staging_and_ancestor_imports_without_effects",
+          "all_local_pack_members_skip_pack_download_and_are_counted_by_bulk_phase",
+          "distinct_same_content_and_unrelated_hardlinks_remain_ordinary_local_hits",
+          "actual_installation_neighbors_and_unrelated_matching_names_restore",
+          "empty_installation_cannot_import_a_foreign_key_or_create_restore_directories",
+          "existing_and_manifest_symlink_aliases_cannot_route_restore_into_key_paths",
+          "critical_files_precede_bulk_and_prefetch_failure_falls_back_to_blob_reads",
+          "file_and_symlink_ancestors_cannot_remove_an_installed_revision_key",
+          "hardlinked_local_hit_cannot_change_installed_key_metadata",
+          "duplicate_large_blob_streams_once_then_copies_from_the_verified_local_file",
+          "ordinary_directory_symlink_replacement_preserves_installation_material",
+          "incoming_key_and_publication_artifacts_refuse_the_entire_restore_without_mutation",
+          "duplicate_small_blob_is_fetched_once_and_local_hits_are_reused",
+          "ordinary_directory_file_replacement_preserves_installation_material",
+          "protected_portable_namespace_case_aliases_are_refused_before_restore",
+          "ordinary_restore_preserves_key_and_allows_unrelated_matching_basenames",
+          "pack_restore_reports_each_restored_path_and_skips_loose_blobs",
+          "recursive_removal_unreadable_identity_refuses_without_effects",
+          "restore_cannot_detach_an_existing_symlink_to_the_installation_directory",
+          "recursive_removal_depth_limit_refuses_without_effects",
+          "recursive_replacement_refuses_descendant_key_and_staging_hardlinks_without_effects",
+          "symlink_restore_reports_all_frozen_steps_and_allows_absolute_targets_inside_root",
+          "symlink_target_checks_expand_existing_links_before_parent_components",
+          "unreadable_staging_identity_refuses_before_store_or_restore_effects",
+          "staging_identity_limit_admits_32_and_refuses_33_without_effects",
+          "staged_key_hardlinks_refuse_but_distinct_same_content_local_hits_restore",
+          "recursive_removal_entry_limit_refuses_without_effects"
+        ],
+        "observed_ignored_names": [
+          "linux_bind_mounted_descendant_file_restore_boundary",
+          "linux_bind_mounted_descendant_symlink_restore_boundary"
+        ],
+        "log_sha256": "cfd7359a1317f9d68dfb8597f8dba87071ff6b71a7240c0f98c4337d8c5b293a",
+        "receipt_log_match": true,
+        "raw_summaries": [
+          [
+            "ok",
+            "29",
+            "0",
+            "2",
+            "0",
+            "0"
+          ]
+        ]
+      },
+      {
+        "case": "linux_bind_mounted_descendant_file_restore_boundary",
+        "command": [
+          "sudo",
+          "-n",
+          "unshare",
+          "--mount",
+          "--propagation",
+          "private",
+          "--",
+          "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+          "--exact",
+          "linux_bind_mounted_descendant_file_restore_boundary",
+          "--ignored",
+          "--nocapture"
+        ],
+        "exit_code": 0,
+        "receipt_counts": {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        },
+        "observed_positive_names": [
+          "linux_bind_mounted_descendant_file_restore_boundary"
+        ],
+        "observed_ignored_names": [],
+        "log_sha256": "6a4e7e28651c7c2b1c5866aceeccaa4a15c99c363f0d035d26552ed73e1c7bf4",
+        "receipt_log_match": true,
+        "raw_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0",
+            "0",
+            "30"
+          ]
+        ]
+      },
+      {
+        "case": "linux_bind_mounted_descendant_symlink_restore_boundary",
+        "command": [
+          "sudo",
+          "-n",
+          "unshare",
+          "--mount",
+          "--propagation",
+          "private",
+          "--",
+          "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+          "--exact",
+          "linux_bind_mounted_descendant_symlink_restore_boundary",
+          "--ignored",
+          "--nocapture"
+        ],
+        "exit_code": 0,
+        "receipt_counts": {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        },
+        "observed_positive_names": [
+          "linux_bind_mounted_descendant_symlink_restore_boundary"
+        ],
+        "observed_ignored_names": [],
+        "log_sha256": "440cf3d7e0e6eace8956a7f34d65489d87be9b68b0d67ae796d9df965585c3b7",
+        "receipt_log_match": true,
+        "raw_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0",
+            "0",
+            "30"
+          ]
+        ]
+      }
+    ],
+    "compiled_json_matches_embedded": true
+  },
+  "windows": {
+    "receipt_result": "failed-or-incomplete",
+    "planned_count": 19,
+    "execution_count": 19,
+    "cases_match_planned_order": true,
+    "accepted_command_count": 17,
+    "failed_command_count": 2,
+    "capture_exits": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "all_artifact_log_hashes_match": true,
+    "sum_passed": 196,
+    "sum_failed": 9,
+    "sum_ignored": 0,
+    "oracle_qualification": {
+      "scope": "Synthetic oracle qualification only; no product behavior evidence.",
+      "controls": [
+        {
+          "control": "positive",
+          "expected": true,
+          "observed": true
+        },
+        {
+          "control": "crlf-positive",
+          "expected": true,
+          "observed": true
+        },
+        {
+          "control": "missing",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "duplicate",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "unexpected",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "failed",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "ignored",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "zero-test",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "partial-log",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "duplicate-summary",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "failed-summary",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "nonzero-command",
+          "expected": false,
+          "observed": false
+        },
+        {
+          "control": "capture-error",
+          "expected": false,
+          "observed": false
+        }
+      ],
+      "accepted": true
+    },
+    "environment": {
+      "CARGO_TERM_COLOR": "never",
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0",
+      "LIBSQLITE3_SYS_USE_PKG_CONFIG": null,
+      "LIBSQLITE3_FLAGS": null,
+      "SQLITE3_LIB_DIR": null,
+      "SQLITE3_INCLUDE_DIR": null,
+      "SQLITE3_STATIC": null
+    },
+    "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance.",
+    "media_settlement_scope": "MSU-v1 native file-backed AgentDb commands exercise confirmed success/refusal, actual COMMIT acknowledgement loss, actual rollback authorizer denial, deferred COMMIT failure, exact connection retirement, one-shot identity-bound fault leases and zero unknown-success publication; local cleanup custody retains sealed media through abort/Drop. Tool error-class controls prove unknown does not invoke destructive build-error cleanup. These native cases do not execute the actual App, Session first-open recovery or generated Runner consumer; their separate Linux App receipt remains required. No arbitrary crash-point, live service, complete read-scope or final migration acceptance is claimed."
+  },
+  "macos": {
+    "job_id": 125734079336,
+    "status": "queued",
+    "conclusion": null,
+    "runner_id": 0,
+    "step_count": 0
+  },
+  "logs": {
+    "restore-job-log.log": {
+      "bytes": 91557,
+      "sha256": "ac08021e574e569a58c21c042b3cae222a3af923def580cc96c9fdfefd05f2f8",
+      "representation": "Unchanged UTF-8 bytes of connector-decoded GitHub job log including BOM and original line endings."
+    },
+    "windows-job-log.log": {
+      "bytes": 1281835,
+      "sha256": "44dd336b57476e793afa35134517b0fe888fd0d976eb583ddb5f0991dc7d4abc",
+      "representation": "Unchanged UTF-8 bytes of connector-decoded GitHub job log including BOM and original line endings."
+    },
+    "linux-restore-13205531160.zip": {
+      "artifact_id": 13205531160,
+      "bytes": 47233,
+      "sha256": "e3f38fdea40e2264349e23c6c6830d59192c01dfe1525aaa1c1f47bdcb9a4599",
+      "github_digest": "sha256:e3f38fdea40e2264349e23c6c6830d59192c01dfe1525aaa1c1f47bdcb9a4599",
+      "digest_match": true
+    },
+    "windows-media-13206046601.zip": {
+      "artifact_id": 13206046601,
+      "bytes": 149588,
+      "sha256": "184296dcafd2b230021ed8523d4e159cc34473d4436a5a9f5198c28c1bcac96f",
+      "github_digest": "sha256:184296dcafd2b230021ed8523d4e159cc34473d4436a5a9f5198c28c1bcac96f",
+      "digest_match": true
+    }
+  }
+}

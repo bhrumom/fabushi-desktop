@@ -1,0 +1,36 @@
+{
+  "format": "OCRM-SHARED-RECOVERY-REVIEW-DECISIONS-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 1,
+  "baseCommit": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "candidateTree": "406f8668a83a30a24c83b442b97d3a2b4d64927f",
+  "completeDiffSha256": "17280ae7b638e814a51ea05e25970abfc42481c495ac5c08e6a4b465f7922995",
+  "reviews": [
+    {
+      "worker": "shared_recovery_general_r1",
+      "actualModel": "configured GPT-6 Astra Pro",
+      "actualEffort": "xhigh",
+      "freshBlind": true,
+      "report": "r1-general-review.md",
+      "verdict": "APPROVE",
+      "findings": []
+    },
+    {
+      "worker": "shared_recovery_structure_r1",
+      "actualModel": "gpt-6.1-sol",
+      "actualEffort": "xhigh",
+      "freshBlind": true,
+      "report": "r1-structure-review.md",
+      "verdict": "APPROVE",
+      "findings": []
+    }
+  ],
+  "convergence": "source-only approvals converged with zero findings; no review-driven fix round needed",
+  "preFixDecisions": [
+    "decision-before-fix.json",
+    "decision-windows-crlf-before-fix.json"
+  ],
+  "runtimeVerification": "pending successor exact-H GitHub Actions; originals remain failed/passed at H74 only",
+  "globalAcceptance": "not accepted; all eight flags false"
+}

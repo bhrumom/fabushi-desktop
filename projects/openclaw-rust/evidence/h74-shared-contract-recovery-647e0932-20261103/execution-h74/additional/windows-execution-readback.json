@@ -1,0 +1,659 @@
+[
+  {
+    "case": "media-settlement-owner",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--lib",
+      "extensions::session::agent_db::media_settlement_tests::",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 101,
+    "capture_exit": 0,
+    "oracle_accepted": false,
+    "raw_summaries": [
+      [
+        "FAILED",
+        "11",
+        "2",
+        "0",
+        "0",
+        "706"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [
+      "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner",
+      "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication"
+    ],
+    "required_missing": [
+      "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication",
+      "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner"
+    ],
+    "observed_positive_count": 11,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "outgoing-media-custody",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--lib",
+      "attachment_paths::tests::",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "5",
+        "0",
+        "0",
+        "0",
+        "714"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 5,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "transaction-commit-owners",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "openclaw_sessions_and_config_contract",
+      "commit",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 101,
+    "capture_exit": 0,
+    "oracle_accepted": false,
+    "raw_summaries": [
+      [
+        "FAILED",
+        "20",
+        "7",
+        "0",
+        "0",
+        "40"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [
+      "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source",
+      "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+      "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+      "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+      "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+      "test_agent_db_has_no_direct_commit_error_propagation",
+      "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup"
+    ],
+    "required_missing": [
+      "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+      "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+      "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+      "test_agent_db_has_no_direct_commit_error_propagation",
+      "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup",
+      "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+      "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source"
+    ],
+    "observed_positive_count": 20,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "cleanup-owner",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--lib",
+      "extensions::attachments::media_store::cleanup::tests::",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "8",
+        "0",
+        "0",
+        "0",
+        "711"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 8,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "cleanup-consumers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "openclaw_media_store_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "16",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 16,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "html-policy",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "openclaw_html_provenance_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "9",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 9,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "host-read-format",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "openclaw_channel_and_local_roots_contract",
+      "test_ocrm_host_read_media_policy_format_admission",
+      "--",
+      "--exact",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "1",
+        "0",
+        "0",
+        "0",
+        "6"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 1,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "file-url-admission",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--lib",
+      "extensions::attachments::web_media::file_url_admission_tests::",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "6",
+        "0",
+        "0",
+        "0",
+        "713"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 6,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "explicit-html-consumers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "openclaw_web_media_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "26",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 26,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "image-probe-consumers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "openclaw_image_ops_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "16",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 16,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "bounded-reader-owner",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--lib",
+      "extensions::attachments::media_reference::bounded_read_tests::",
+      "--",
+      "--test-threads=1",
+      "--show-output"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "8",
+        "0",
+        "0",
+        "0",
+        "711"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 8,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "bounded-reader-public",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "openclaw_media_reference_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "17",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 17,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "bounded-reader-box-consumer",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "attachments_service_contract",
+      "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+      "--",
+      "--exact",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "1",
+        "0",
+        "0",
+        "0",
+        "13"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 1,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "bounded-reader-image-consumer",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "attachments_service_contract",
+      "image_reads_and_persistence_preserve_content_addressed_dimensions",
+      "--",
+      "--exact",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "1",
+        "0",
+        "0",
+        "0",
+        "13"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 1,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "bounded-reader-channel-consumers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "channel_attachment_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "8",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 8,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "local-file-url-owner",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "local_media_file_url_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "11",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 11,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "file-context-consumers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "openclaw_media_file_context_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "10",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 10,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "send-message-consumers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "send_message_tool_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "19",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 19,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  },
+  {
+    "case": "agent-management-consumers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "sand_agent_management_tools_contract",
+      "--",
+      "--test-threads=1"
+    ],
+    "cargo_exit": 0,
+    "capture_exit": 0,
+    "oracle_accepted": true,
+    "raw_summaries": [
+      [
+        "ok",
+        "3",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "log_sha256_match": true,
+    "failed_names": [],
+    "required_missing": [],
+    "observed_positive_count": 3,
+    "original_receipt_positive_names_match": true,
+    "nonunique_observed_positive_names": []
+  }
+]

@@ -1,0 +1,72 @@
+{
+  "format": "OCRM-SHARED-CONTRACT-RECOVERY-FROZEN-SCOPE-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "repositoryRoot": "/workspace/scratch/425c55809bda/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "baseCommit": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "baseTree": "cbc9418ee7572f44d59e067e450a67f6c0bc22a0",
+  "startingLocalHead": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "scopeMode": "six explicit paths reconstructed from exact remote base; no real-index or mutable-worktree edits included",
+  "includedPreexistingUncommitted": "none",
+  "candidateTree": "406f8668a83a30a24c83b442b97d3a2b4d64927f",
+  "diff": "r1-complete.patch",
+  "diffSha256": "17280ae7b638e814a51ea05e25970abfc42481c495ac5c08e6a4b465f7922995",
+  "files": [
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "status": "M",
+      "baseBlob": "a4f62bdd60e624b630b0e735bb42e020e8f82a35",
+      "candidateBlob": "6905d89a058a59f09a2ec3f5b3b4afc6f751919d"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "M",
+      "baseBlob": "2f0d7d43f54c9abedebbe25f40f21acd20a19c30",
+      "candidateBlob": "99fd980c1f8bee47327efc49e59e0d5544dcf46f"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "M",
+      "baseBlob": "d62c6816905709d9dfed939a3581633488d9921c",
+      "candidateBlob": "bd1a56a6990168c384bb553c269a3fc1b695a14a"
+    },
+    {
+      "path": "source/host/tests/openclaw_chat_cron_node_contract.rs",
+      "status": "M",
+      "baseBlob": "b6a107dda12c867e57e7cd6ff38d245308f723ea",
+      "candidateBlob": "2bde1d3f9ab87f53e00079140a414ad492ac2ab6"
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "status": "M",
+      "baseBlob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+      "candidateBlob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d"
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "status": "M",
+      "baseBlob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+      "candidateBlob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa"
+    }
+  ],
+  "fixedU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixedUTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "reviewPlan": {
+    "generalSecurity": {
+      "effort": "xhigh",
+      "model": "configured",
+      "freshBlind": true
+    },
+    "structureReusePerformance": {
+      "effort": "xhigh",
+      "model": "gpt-6.1-sol",
+      "freshBlind": true
+    }
+  },
+  "verification": "No executable validation performed locally. OriginalH74source/media failures are preserved; new tree requires successor exact-H Actions.",
+  "acceptance": "No global flag or scoped verification promoted.",
+  "snapshotAcquisition": "First Git diff attempt stopped on an uncached base blob; it was not reviewed. Exact H74/4f base bytes were cached by their independently API-confirmed Git blob identities, then complete six-path binary/full-index diff was acquired successfully. Candidate tree unchanged."
+}

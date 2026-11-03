@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: onp_real_notice_only_uses_locked_source_and_common_mapping
+ok 1 - onp_real_notice_only_uses_locked_source_and_common_mapping
+  ---
+  duration_ms: 42.204947
+  type: 'test'
+  ...
+# Subtest: onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts
+ok 2 - onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts
+  ---
+  duration_ms: 45.836329
+  type: 'test'
+  ...
+# Subtest: onp_default_mode_retains_all_required_runtime_artifacts
+ok 3 - onp_default_mode_retains_all_required_runtime_artifacts
+  ---
+  duration_ms: 309.647319
+  type: 'test'
+  ...
+# Subtest: onp_default_mode_accepts_complete_controlled_runtime_and_notice
+ok 4 - onp_default_mode_accepts_complete_controlled_runtime_and_notice
+  ---
+  duration_ms: 47.288521
+  type: 'test'
+  ...
+# Subtest: onp_missing_source_notice_is_refused_without_repair
+ok 5 - onp_missing_source_notice_is_refused_without_repair
+  ---
+  duration_ms: 41.704391
+  type: 'test'
+  ...
+# Subtest: onp_changed_source_bytes_are_refused_without_normalization
+ok 6 - onp_changed_source_bytes_are_refused_without_normalization
+  ---
+  duration_ms: 172.820674
+  type: 'test'
+  ...
+# Subtest: onp_non_file_source_notice_is_refused
+ok 7 - onp_non_file_source_notice_is_refused
+  ---
+  duration_ms: 84.910776
+  type: 'test'
+  ...
+# Subtest: onp_missing_malformed_and_invalid_lock_identity_are_refused
+ok 8 - onp_missing_malformed_and_invalid_lock_identity_are_refused
+  ---
+  duration_ms: 582.059078
+  type: 'test'
+  ...
+# Subtest: onp_root_license_identity_cannot_follow_discovery_candidate
+ok 9 - onp_root_license_identity_cannot_follow_discovery_candidate
+  ---
+  duration_ms: 84.45899
+  type: 'test'
+  ...
+# Subtest: onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused
+ok 10 - onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused
+  ---
+  duration_ms: 470.077726
+  type: 'test'
+  ...
+# Subtest: onp_platform_only_mapping_cannot_replace_the_common_mapping
+ok 11 - onp_platform_only_mapping_cannot_replace_the_common_mapping
+  ---
+  duration_ms: 41.819054
+  type: 'test'
+  ...
+# Subtest: onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination
+ok 12 - onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination
+  ---
+  duration_ms: 82.976717
+  type: 'test'
+  ...
+# Subtest: onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused
+ok 13 - onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused
+  ---
+  duration_ms: 220.067085
+  type: 'test'
+  ...
+# Subtest: onp_packaged_resources_requires_an_existing_directory
+ok 14 - onp_packaged_resources_requires_an_existing_directory
+  ---
+  duration_ms: 85.123912
+  type: 'test'
+  ...
+# Subtest: onp_unknown_conflicting_and_incomplete_cli_options_are_refused
+ok 15 - onp_unknown_conflicting_and_incomplete_cli_options_are_refused
+  ---
+  duration_ms: 512.899521
+  type: 'test'
+  ...
+# Subtest: onp_default_mode_retains_preload_and_coordinator_contracts
+ok 16 - onp_default_mode_retains_preload_and_coordinator_contracts
+  ---
+  duration_ms: 440.287798
+  type: 'test'
+  ...
+# Subtest: onp_default_mode_retains_forbidden_product_code_and_resources
+ok 17 - onp_default_mode_retains_forbidden_product_code_and_resources
+  ---
+  duration_ms: 274.088583
+  type: 'test'
+  ...
+# Subtest: onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs
+ok 18 - onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs
+  ---
+  duration_ms: 128.895378
+  type: 'test'
+  ...
+# Subtest: onp_competing_resource_writers_are_refused_across_common_and_platform_sets
+ok 19 - onp_competing_resource_writers_are_refused_across_common_and_platform_sets
+  ---
+  duration_ms: 3458.701996
+  type: 'test'
+  ...
+# Subtest: onp_disjoint_resource_mappings_preserve_all_platforms
+ok 20 - onp_disjoint_resource_mappings_preserve_all_platforms
+  ---
+  duration_ms: 85.892947
+  type: 'test'
+  ...
+# Subtest: onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf
+ok 21 - onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf
+  ---
+  duration_ms: 148.43526
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7436.609652

@@ -1,0 +1,38 @@
+{
+  "format": "OCRM-SHARED-RECOVERY-INTEGRATION-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewedBase": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "publicationParent": "37ffd42410d37013512e8efbf3bda5b549f3a4db",
+  "publicationParentTree": "dc9af82ac4a14937d92e4c230c1cbb1e7585afab",
+  "incoming": "Exact GitHub compare shows one incoming commit: five independent mapping review/evidence files and inventory/index.json. The incoming index blob6905d89a058a59f09a2ec3f5b3b4afc6f751919d is byte-identical to the independently reviewed frozen candidate. Retain it and all incoming evidence unchanged. This publication changes only the other five source paths plus task evidence; it does not claim the already committed mapping delta as a new own change.",
+  "sixReviewedSourceBlobs": [
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "sha": "6905d89a058a59f09a2ec3f5b3b4afc6f751919d"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "99fd980c1f8bee47327efc49e59e0d5544dcf46f"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "bd1a56a6990168c384bb553c269a3fc1b695a14a"
+    },
+    {
+      "path": "source/host/tests/openclaw_chat_cron_node_contract.rs",
+      "sha": "2bde1d3f9ab87f53e00079140a414ad492ac2ab6"
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "sha": "87186bc4b246d88a5ce51ebda0623b76f4425d3d"
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "sha": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa"
+    }
+  ],
+  "validationSelection": "Existing push Actions: source materialization/integrity and negatives; media DB13 and commit-oracle27 on Linux/Windows; affected Host cron source contract; existing App shipping/test feature proof and CJI5/MSU/LFA actual-owner controls. Reuse existing workflows/cache, no local validation or test-name skipping.",
+  "subjectCarrierRule": "H74 original evidence is historical. New carrier's source approval is limited to the frozen six-path reviewed content. No historical receipt transfers to the carrier. Source workflow may CAS-materialize a generated successor; that successor is a new subject requiring its own existing dispatched results.",
+  "remaining": "Whole source/dependency/LFS/legal coverage, every other product responsibility, exact current-H App/CJI/MSU execution, real provider/channel/plugin/node/device, UI/security/performance/soak, all platforms/packages, upgrades/rollback and independent final ACCEPT remain open."
+}

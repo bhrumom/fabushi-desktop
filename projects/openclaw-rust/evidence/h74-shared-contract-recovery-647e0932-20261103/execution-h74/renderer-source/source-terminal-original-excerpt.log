@@ -1,0 +1,47 @@
+2026-11-03T04:52:30.7201054Z ##[group]Run set -euo pipefail
+2026-11-03T04:52:30.7201322Z [36;1mset -euo pipefail[0m
+2026-11-03T04:52:30.7201676Z [36;1mpython3 -m pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'[0m
+2026-11-03T04:52:30.7202148Z [36;1mpython3 projects/openclaw-rust/scripts/test_inventory_materialization.py[0m
+2026-11-03T04:52:30.7202540Z [36;1m# Refuse malformed committed history before any generated write.[0m
+2026-11-03T04:52:30.7202960Z [36;1mpython3 projects/openclaw-rust/scripts/verify_audit_integrity.py --before-expansion[0m
+2026-11-03T04:52:30.7203496Z [36;1mpython3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json[0m
+2026-11-03T04:52:30.7203982Z [36;1m# Rebuild the source-derived shard manifest against this exact inventory[0m
+2026-11-03T04:52:30.7204380Z [36;1m# after canonical ledger reconciliation, then let validate_p0.py verify it.[0m
+2026-11-03T04:52:30.7204956Z [36;1mpython3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json[0m
+2026-11-03T04:52:30.7205542Z [36;1mpython3 projects/openclaw-rust/scripts/validate_p0.py ocrm-evidence --negative-probes[0m
+2026-11-03T04:52:30.7205984Z [36;1mpython3 projects/openclaw-rust/scripts/verify_audit_integrity.py[0m
+2026-11-03T04:52:30.7228271Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:30.7228530Z env:
+2026-11-03T04:52:30.7228701Z   UPSTREAM_REPO: openclaw/openclaw
+2026-11-03T04:52:30.7228945Z   SUBJECT_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:30.7229198Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:30.7229427Z   UPSTREAM_COMMIT: 1440bb1771372334bea23d7642bb52deb7db1845
+2026-11-03T04:52:30.7229709Z   UPSTREAM_TREE: 90c8aab39972da11cfad220361781d49e1bc6700
+2026-11-03T04:52:30.7229946Z ##[endgroup]
+2026-11-03T04:52:30.9823053Z Defaulting to user installation because normal site-packages is not writeable
+2026-11-03T04:52:31.3146824Z Collecting jsonschema==4.25.1
+2026-11-03T04:52:31.3308547Z   Downloading jsonschema-4.25.1-py3-none-any.whl.metadata (7.6 kB)
+2026-11-03T04:52:31.3352280Z Requirement already satisfied: attrs>=22.2.0 in /usr/lib/python3/dist-packages (from jsonschema==4.25.1) (25.4.0)
+2026-11-03T04:52:31.3371018Z Requirement already satisfied: jsonschema-specifications>=2023.03.6 in /usr/lib/python3/dist-packages (from jsonschema==4.25.1) (2023.12.1)
+2026-11-03T04:52:31.3372336Z Requirement already satisfied: referencing>=0.28.4 in /usr/lib/python3/dist-packages (from jsonschema==4.25.1) (0.36.2)
+2026-11-03T04:52:31.3373274Z Requirement already satisfied: rpds-py>=0.7.1 in /usr/lib/python3/dist-packages (from jsonschema==4.25.1) (0.27.1)
+2026-11-03T04:52:31.3453327Z Downloading jsonschema-4.25.1-py3-none-any.whl (90 kB)
+2026-11-03T04:52:31.4744240Z Installing collected packages: jsonschema
+2026-11-03T04:52:31.5298388Z Successfully installed jsonschema-4.25.1
+2026-11-03T04:52:35.9920004Z .....................
+2026-11-03T04:52:35.9920493Z ----------------------------------------------------------------------
+2026-11-03T04:52:35.9921040Z Ran 21 tests in 4.372s
+2026-11-03T04:52:35.9921220Z 
+2026-11-03T04:52:35.9921311Z OK
+2026-11-03T04:52:44.7913417Z Traceback (most recent call last):
+2026-11-03T04:52:44.7914711Z   File "/home/runner/work/fabushi-desktop/fabushi-desktop/projects/openclaw-rust/scripts/verify_audit_integrity.py", line 126, in <module>
+2026-11-03T04:52:44.7915414Z     main()
+2026-11-03T04:52:44.7915635Z     ~~~~^^
+2026-11-03T04:52:44.7916376Z   File "/home/runner/work/fabushi-desktop/fabushi-desktop/projects/openclaw-rust/scripts/verify_audit_integrity.py", line 100, in main
+2026-11-03T04:52:44.7917228Z     pending = validate_source_responsibility_links(
+2026-11-03T04:52:44.7917824Z         entries, responsibility_by_id, before_expansion=args.before_expansion,
+2026-11-03T04:52:44.7918367Z         pending_additions=additions)
+2026-11-03T04:52:44.7919765Z   File "/home/runner/work/fabushi-desktop/fabushi-desktop/projects/openclaw-rust/scripts/source_review.py", line 94, in validate_source_responsibility_links
+2026-11-03T04:52:44.7920999Z     raise AssertionError("Missing reverse source/responsibility link: " + rid)
+2026-11-03T04:52:44.7921830Z AssertionError: Missing reverse source/responsibility link: OCRM-RESP-MEDIA-FINAL-CUSTODY-001
+2026-11-03T04:52:45.1856276Z ##[error]Process completed with exit code 1.

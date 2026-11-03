@@ -1,0 +1,1043 @@
+﻿2026-11-03T04:51:44.6951429Z Current runner version: '2.338.2'
+2026-11-03T04:51:44.6979245Z ##[group]Runner Image Provisioner
+2026-11-03T04:51:44.6980225Z Hosted Compute Agent
+2026-11-03T04:51:44.6980873Z Version: 20261021.618
+2026-11-03T04:51:44.6981479Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-11-03T04:51:44.6982500Z Build Date: 2026-10-21T00:45:21Z
+2026-11-03T04:51:44.6983225Z Worker ID: {92131955-cbaf-4e82-b5ff-c18e4a25051e}
+2026-11-03T04:51:44.6983992Z Region: westus
+2026-11-03T04:51:44.6984652Z Cloud: Azure
+2026-11-03T04:51:44.6985175Z ##[endgroup]
+2026-11-03T04:51:44.6986779Z ##[group]Operating System
+2026-11-03T04:51:44.6987436Z Ubuntu
+2026-11-03T04:51:44.6988032Z 24.04.5
+2026-11-03T04:51:44.6988612Z LTS
+2026-11-03T04:51:44.6989133Z ##[endgroup]
+2026-11-03T04:51:44.6989752Z ##[group]Runner Image
+2026-11-03T04:51:44.6990372Z Image: ubuntu-24.04
+2026-11-03T04:51:44.6990932Z Version: 20261025.353.1
+2026-11-03T04:51:44.6992553Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-03T04:51:44.6994254Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-11-03T04:51:44.6995259Z ##[endgroup]
+2026-11-03T04:51:44.6996476Z ##[group]GITHUB_TOKEN Permissions
+2026-11-03T04:51:44.6998382Z Contents: read
+2026-11-03T04:51:44.6999116Z Metadata: read
+2026-11-03T04:51:44.6999713Z ##[endgroup]
+2026-11-03T04:51:44.7001825Z Secret source: Actions
+2026-11-03T04:51:44.7003415Z Cache mode: write
+2026-11-03T04:51:44.7004155Z Prepare workflow directory
+2026-11-03T04:51:44.7659880Z Prepare all required actions
+2026-11-03T04:51:44.7714110Z Getting action download info
+2026-11-03T04:51:45.1177791Z Download action repository 'actions/checkout@v6' (SHA:d23441a48e516b6c34aea4fa41551a30e30af803)
+2026-11-03T04:51:45.2078439Z Download action repository 'dtolnay/rust-toolchain@stable' (SHA:b725eda525362e7cf34af9a7243cac1e3f01a7ec)
+2026-11-03T04:51:45.4257662Z Download action repository 'Swatinem/rust-cache@v2' (SHA:d1527c8f67ef9af357290475d4af4b0fab8f12e0)
+2026-11-03T04:51:45.8327385Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-11-03T04:51:46.0899505Z Complete job name: OCRM installation key restore boundary / Linux
+2026-11-03T04:51:46.1755186Z ##[group]Run actions/checkout@v6
+2026-11-03T04:51:46.1756144Z with:
+2026-11-03T04:51:46.1756655Z   ref: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:46.1757289Z   fetch-depth: 1
+2026-11-03T04:51:46.1757782Z   persist-credentials: false
+2026-11-03T04:51:46.1758348Z   repository: bhrumom/fabushi-desktop
+2026-11-03T04:51:46.1762862Z   token: ***
+2026-11-03T04:51:46.1763343Z   ssh-strict: true
+2026-11-03T04:51:46.1763808Z   ssh-user: git
+2026-11-03T04:51:46.1764274Z   clean: true
+2026-11-03T04:51:46.1764755Z   sparse-checkout-cone-mode: true
+2026-11-03T04:51:46.1765314Z   fetch-tags: false
+2026-11-03T04:51:46.1765803Z   show-progress: true
+2026-11-03T04:51:46.1766298Z   lfs: false
+2026-11-03T04:51:46.1766748Z   submodules: false
+2026-11-03T04:51:46.1767263Z   set-safe-directory: true
+2026-11-03T04:51:46.1767806Z   allow-unsafe-pr-checkout: false
+2026-11-03T04:51:46.1768688Z env:
+2026-11-03T04:51:46.1769277Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:46.1770034Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:51:46.1770840Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:51:46.1771709Z ##[endgroup]
+2026-11-03T04:51:46.4773672Z Syncing repository: bhrumom/fabushi-desktop
+2026-11-03T04:51:46.4776528Z ##[group]Getting Git version info
+2026-11-03T04:51:46.4778063Z Working directory is '/home/runner/work/fabushi-desktop/fabushi-desktop'
+2026-11-03T04:51:46.4779349Z [command]/usr/bin/git version
+2026-11-03T04:51:46.4879697Z git version 2.56.0
+2026-11-03T04:51:46.4907966Z ##[endgroup]
+2026-11-03T04:51:46.4924552Z Temporarily overriding HOME='/home/runner/work/_temp/982526d8-443b-42aa-b483-a54670c2a855' before making global git config changes
+2026-11-03T04:51:46.4926994Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-03T04:51:46.4931045Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T04:51:46.4986455Z Deleting the contents of '/home/runner/work/fabushi-desktop/fabushi-desktop'
+2026-11-03T04:51:46.4990355Z ##[group]Determining repository object format
+2026-11-03T04:51:46.4993503Z ##[endgroup]
+2026-11-03T04:51:46.4994737Z ##[group]Initializing the repository
+2026-11-03T04:51:46.4999215Z [command]/usr/bin/git init /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T04:51:46.5123504Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-03T04:51:46.5125311Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-03T04:51:46.5126398Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-03T04:51:46.5127236Z hint: call:
+2026-11-03T04:51:46.5127684Z hint:
+2026-11-03T04:51:46.5128299Z hint: 	git config --global init.defaultBranch <name>
+2026-11-03T04:51:46.5128973Z hint:
+2026-11-03T04:51:46.5129943Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-03T04:51:46.5131015Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-03T04:51:46.5131838Z hint:
+2026-11-03T04:51:46.5132297Z hint: 	git branch -m <name>
+2026-11-03T04:51:46.5133413Z hint:
+2026-11-03T04:51:46.5134223Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-03T04:51:46.5141145Z Initialized empty Git repository in /home/runner/work/fabushi-desktop/fabushi-desktop/.git/
+2026-11-03T04:51:46.5154723Z [command]/usr/bin/git remote add origin https://github.com/bhrumom/fabushi-desktop
+2026-11-03T04:51:46.5208447Z ##[endgroup]
+2026-11-03T04:51:46.5317872Z ##[group]Disabling automatic garbage collection
+2026-11-03T04:51:46.5319304Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-03T04:51:46.5321976Z ##[endgroup]
+2026-11-03T04:51:46.5323654Z ##[group]Setting up auth
+2026-11-03T04:51:46.5324555Z Removing SSH command configuration
+2026-11-03T04:51:46.5326026Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-03T04:51:46.5330278Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-03T04:51:46.5717795Z Removing HTTP extra header
+2026-11-03T04:51:46.5725401Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-03T04:51:46.5773650Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-03T04:51:46.6015707Z Removing includeIf entries pointing to credentials config files
+2026-11-03T04:51:46.6022253Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-03T04:51:46.6068522Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-03T04:51:46.6312776Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-03T04:51:46.6365714Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git.path /home/runner/work/_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:46.6410895Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:46.6455542Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:46.6505358Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:46.6544221Z ##[endgroup]
+2026-11-03T04:51:46.6545912Z ##[group]Fetching the repository
+2026-11-03T04:51:46.6553844Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:52.9367275Z From https://github.com/bhrumom/fabushi-desktop
+2026-11-03T04:51:52.9370245Z  * branch            74f11d3d31c6245ac5886dc0181460b2d4349744 -> FETCH_HEAD
+2026-11-03T04:51:52.9381537Z [command]/usr/bin/git rev-parse --verify --quiet 74f11d3d31c6245ac5886dc0181460b2d4349744^{object}
+2026-11-03T04:51:52.9421110Z 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:52.9432082Z ##[endgroup]
+2026-11-03T04:51:52.9433761Z ##[group]Determining the checkout info
+2026-11-03T04:51:52.9435067Z ##[endgroup]
+2026-11-03T04:51:52.9444386Z [command]/usr/bin/git sparse-checkout disable
+2026-11-03T04:51:52.9496361Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-03T04:51:52.9537982Z ##[group]Checking out the ref
+2026-11-03T04:51:52.9541331Z [command]/usr/bin/git checkout --progress --force 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:53.7088760Z Note: switching to '74f11d3d31c6245ac5886dc0181460b2d4349744'.
+2026-11-03T04:51:53.7089333Z 
+2026-11-03T04:51:53.7089746Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-03T04:51:53.7090660Z changes and commit them, and you can discard any commits you make in this
+2026-11-03T04:51:53.7091537Z state without impacting any branches by switching back to a branch.
+2026-11-03T04:51:53.7092021Z 
+2026-11-03T04:51:53.7092604Z If you want to create a new branch to retain commits you create, you may
+2026-11-03T04:51:53.7093368Z do so (now or later) by using -c with the switch command. Example:
+2026-11-03T04:51:53.7093913Z 
+2026-11-03T04:51:53.7094104Z   git switch -c <new-branch-name>
+2026-11-03T04:51:53.7094463Z 
+2026-11-03T04:51:53.7094706Z Or undo this operation with:
+2026-11-03T04:51:53.7095359Z 
+2026-11-03T04:51:53.7095530Z   git switch -
+2026-11-03T04:51:53.7095746Z 
+2026-11-03T04:51:53.7096123Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-03T04:51:53.7096655Z 
+2026-11-03T04:51:53.7097033Z HEAD is now at 74f11d3 fix(tests): restore actual App media contract compilation
+2026-11-03T04:51:53.7135621Z ##[endgroup]
+2026-11-03T04:51:53.7190667Z [command]/usr/bin/git log -1 --format=%H
+2026-11-03T04:51:53.7226032Z 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:53.7235981Z ##[group]Removing auth
+2026-11-03T04:51:53.7236498Z Removing SSH command configuration
+2026-11-03T04:51:53.7240629Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-03T04:51:53.7284321Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-03T04:51:53.7547973Z Removing HTTP extra header
+2026-11-03T04:51:53.7554432Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-03T04:51:53.7602116Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-03T04:51:53.7859268Z Removing includeIf entries pointing to credentials config files
+2026-11-03T04:51:53.7864556Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-03T04:51:53.7903231Z includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git.path
+2026-11-03T04:51:53.7904405Z includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git/worktrees/*.path
+2026-11-03T04:51:53.7906063Z includeif.gitdir:/github/workspace/.git.path
+2026-11-03T04:51:53.7907097Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-03T04:51:53.7917437Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git.path
+2026-11-03T04:51:53.7953436Z /home/runner/work/_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:53.7964778Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git.path /home/runner/work/_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:53.8010732Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git/worktrees/*.path
+2026-11-03T04:51:53.8043204Z /home/runner/work/_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:53.8055791Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:53.8104053Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-03T04:51:53.8144186Z /github/runner_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:53.8151212Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:53.8196393Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-03T04:51:53.8228956Z /github/runner_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:53.8237870Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config
+2026-11-03T04:51:53.8286006Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-03T04:51:53.8537668Z Removing credentials config '/home/runner/work/_temp/git-credentials-0d7a166f-9dc8-4a5c-a68a-c64f722389c4.config'
+2026-11-03T04:51:53.8546424Z ##[endgroup]
+2026-11-03T04:51:53.8759454Z ##[group]Run set -euo pipefail
+2026-11-03T04:51:53.8759857Z [36;1mset -euo pipefail[0m
+2026-11-03T04:51:53.8760158Z [36;1mactual="$(git rev-parse HEAD)"[0m
+2026-11-03T04:51:53.8760479Z [36;1mtest "$actual" = "$FABUSHI_TARGET_SHA"[0m
+2026-11-03T04:51:53.8760830Z [36;1mif [ -n "$EXPECTED_DISPATCH_SHA" ]; then[0m
+2026-11-03T04:51:53.8761198Z [36;1m  [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]][0m
+2026-11-03T04:51:53.8761759Z [36;1m  test "$actual" = "$EXPECTED_DISPATCH_SHA" || { echo "Dispatch ref moved away from frozen subject"; exit 1; }[0m
+2026-11-03T04:51:53.8762258Z [36;1mfi[0m
+2026-11-03T04:51:53.8762992Z [36;1mexport RESTORE_EVIDENCE_DIR="$RUNNER_TEMP/ocrm-config-restore-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"[0m
+2026-11-03T04:51:53.8763625Z [36;1mprintf 'RESTORE_EVIDENCE_DIR=%s\n' "$RESTORE_EVIDENCE_DIR" >> "$GITHUB_ENV"[0m
+2026-11-03T04:51:53.8764047Z [36;1mmkdir -p "$RESTORE_EVIDENCE_DIR"[0m
+2026-11-03T04:51:53.8764332Z [36;1mpython3 - <<'PY'[0m
+2026-11-03T04:51:53.8764699Z [36;1mimport json, os, subprocess[0m
+2026-11-03T04:51:53.8765015Z [36;1mfrom pathlib import Path[0m
+2026-11-03T04:51:53.8765502Z [36;1mupstream=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())["upstream"][0m
+2026-11-03T04:51:53.8765983Z [36;1mbinding={[0m
+2026-11-03T04:51:53.8766296Z [36;1m    "contract": "OCRM-CONFIG-PUBLIC-SECRET-v1:CS06-ROOT/DELETE",[0m
+2026-11-03T04:51:53.8766857Z [36;1m    "subject_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),[0m
+2026-11-03T04:51:53.8767526Z [36;1m    "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),[0m
+2026-11-03T04:51:53.8768352Z [36;1m    "upstream": {key: upstream[key] for key in ("repository", "commit", "tree")},[0m
+2026-11-03T04:51:53.8768803Z [36;1m    "run_id": os.environ["GITHUB_RUN_ID"],[0m
+2026-11-03T04:51:53.8769153Z [36;1m    "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],[0m
+2026-11-03T04:51:53.8769508Z [36;1m    "runner_os": os.environ["RUNNER_OS"],[0m
+2026-11-03T04:51:53.8769831Z [36;1m    "independent_acceptance": "pending",[0m
+2026-11-03T04:51:53.8770114Z [36;1m}[0m
+2026-11-03T04:51:53.8770427Z [36;1massert binding["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"][0m
+2026-11-03T04:51:53.8771040Z [36;1mPath(os.environ["RESTORE_EVIDENCE_DIR"], "subject.json").write_text(json.dumps(binding, indent=2)+"\n")[0m
+2026-11-03T04:51:53.8771539Z [36;1mPY[0m
+2026-11-03T04:51:53.8796296Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:51:53.8796664Z env:
+2026-11-03T04:51:53.8796938Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:53.8797328Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:51:53.8797734Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:51:53.8798161Z ##[endgroup]
+2026-11-03T04:51:53.9453905Z ##[group]Run dtolnay/rust-toolchain@stable
+2026-11-03T04:51:53.9454261Z with:
+2026-11-03T04:51:53.9454465Z   toolchain: 1.97.1
+2026-11-03T04:51:53.9454674Z env:
+2026-11-03T04:51:53.9454943Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:53.9455283Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:51:53.9455678Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:51:53.9456256Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:51:53.9456666Z ##[endgroup]
+2026-11-03T04:51:53.9521428Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+2026-11-03T04:51:53.9553842Z ##[group]Run if [[ -z $toolchain ]]; then
+2026-11-03T04:51:53.9554249Z [36;1mif [[ -z $toolchain ]]; then[0m
+2026-11-03T04:51:53.9554800Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+2026-11-03T04:51:53.9555398Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+2026-11-03T04:51:53.9555698Z [36;1m  exit 1[0m
+2026-11-03T04:51:53.9556034Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+2026-11-03T04:51:53.9556447Z [36;1m  if [[ Linux == macOS ]]; then[0m
+2026-11-03T04:51:53.9556975Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+2026-11-03T04:51:53.9557489Z [36;1m  else[0m
+2026-11-03T04:51:53.9557908Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+2026-11-03T04:51:53.9558389Z [36;1m  fi[0m
+2026-11-03T04:51:53.9558702Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+2026-11-03T04:51:53.9559245Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+2026-11-03T04:51:53.9559717Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+2026-11-03T04:51:53.9560245Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+2026-11-03T04:51:53.9560742Z [36;1melse[0m
+2026-11-03T04:51:53.9560950Z [36;1m  delimiter=EOF[0m
+2026-11-03T04:51:53.9561258Z [36;1m  while [[ $toolchain == *$delimiter* ]]; do delimiter+=_; done[0m
+2026-11-03T04:51:53.9561769Z [36;1m  printf 'toolchain<<%s\n%s\n%s\n' "$delimiter" "$toolchain" "$delimiter" >> $GITHUB_OUTPUT[0m
+2026-11-03T04:51:53.9562192Z [36;1mfi[0m
+2026-11-03T04:51:53.9583310Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:51:53.9583655Z env:
+2026-11-03T04:51:53.9583923Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:53.9584440Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:51:53.9584852Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:51:53.9585442Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:51:53.9585845Z   toolchain: 1.97.1
+2026-11-03T04:51:53.9586057Z ##[endgroup]
+2026-11-03T04:51:53.9661695Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=13]
+2026-11-03T04:51:53.9666528Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+2026-11-03T04:51:53.9735554Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+2026-11-03T04:51:53.9736072Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+2026-11-03T04:51:53.9756044Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:51:53.9756397Z env:
+2026-11-03T04:51:53.9756669Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:53.9757033Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:51:53.9757442Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:51:53.9758229Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:51:53.9758645Z ##[endgroup]
+2026-11-03T04:51:53.9807865Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=14]
+2026-11-03T04:51:53.9810146Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+2026-11-03T04:51:53.9837617Z ##[group]Run if ! command -v rustup &>/dev/null; then
+2026-11-03T04:51:53.9837996Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+2026-11-03T04:51:53.9838762Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+2026-11-03T04:51:53.9839496Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+2026-11-03T04:51:53.9839803Z [36;1mfi[0m
+2026-11-03T04:51:53.9859344Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:51:53.9859698Z env:
+2026-11-03T04:51:53.9859975Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:53.9860315Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:51:53.9860722Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:51:53.9861280Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:51:53.9861691Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:51:53.9861946Z ##[endgroup]
+2026-11-03T04:51:53.9910109Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=9]
+2026-11-03T04:51:53.9912735Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+2026-11-03T04:51:53.9918347Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-11-03T04:51:53.9931297Z ##[start-action display=rustup toolchain install 1.97.1;id=__dtolnay_rust-toolchain.__run_4]
+2026-11-03T04:51:53.9979584Z ##[group]Run set -f  # split targets and components on commas and whitespace, without glob expansion
+2026-11-03T04:51:53.9980319Z [36;1mset -f  # split targets and components on commas and whitespace, without glob expansion[0m
+2026-11-03T04:51:53.9980765Z [36;1mflags=()[0m
+2026-11-03T04:51:53.9981057Z [36;1mfor t in ${targets//,/ }; do flags+=(--target "$t"); done[0m
+2026-11-03T04:51:53.9981493Z [36;1mfor c in ${components//,/ }; do flags+=(--component "$c"); done[0m
+2026-11-03T04:51:53.9982011Z [36;1mif [[ $toolchain == nightly && -n $components ]]; then flags+=(--allow-downgrade); fi[0m
+2026-11-03T04:51:53.9982752Z [36;1mlog=$(mktemp)[0m
+2026-11-03T04:51:53.9983009Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+2026-11-03T04:51:53.9983276Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+2026-11-03T04:51:53.9983889Z [36;1m  if rustup toolchain install "$toolchain" "${flags[@]}" --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+2026-11-03T04:51:53.9984748Z [36;1m    break[0m
+2026-11-03T04:51:53.9984961Z [36;1m  else[0m
+2026-11-03T04:51:53.9985171Z [36;1m    status=$?[0m
+2026-11-03T04:51:53.9985387Z [36;1m  fi[0m
+2026-11-03T04:51:53.9985691Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+2026-11-03T04:51:53.9986271Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+2026-11-03T04:51:53.9986754Z [36;1m    exit "$status"[0m
+2026-11-03T04:51:53.9986985Z [36;1m  fi[0m
+2026-11-03T04:51:53.9987349Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+2026-11-03T04:51:53.9987805Z [36;1m  sleep 30[0m
+2026-11-03T04:51:53.9988027Z [36;1mdone[0m
+2026-11-03T04:51:54.0008099Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:51:54.0008476Z env:
+2026-11-03T04:51:54.0008755Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:51:54.0009105Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:51:54.0009688Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:51:54.0010279Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:51:54.0010715Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:51:54.0010965Z   toolchain: 1.97.1
+2026-11-03T04:51:54.0011165Z   targets: 
+2026-11-03T04:51:54.0011351Z   components: 
+2026-11-03T04:51:54.0011569Z   RUSTUP_PERMIT_COPY_RENAME: 1
+2026-11-03T04:51:54.0011810Z ##[endgroup]
+2026-11-03T04:51:54.0613173Z info: syncing channel updates for 1.97.1-x86_64-unknown-linux-gnu
+2026-11-03T04:51:54.1939733Z info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+2026-11-03T04:51:54.1943415Z info: downloading 3 components
+2026-11-03T04:52:02.1035389Z 
+2026-11-03T04:52:02.1110982Z   1.97.1-x86_64-unknown-linux-gnu installed - rustc 1.97.1 (8bab26f4f 2026-07-14)
+2026-11-03T04:52:02.1111588Z 
+2026-11-03T04:52:02.1234072Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=8130]
+2026-11-03T04:52:02.1239739Z ##[start-action display=rustup default 1.97.1;id=__dtolnay_rust-toolchain.__run_5]
+2026-11-03T04:52:02.1257945Z ##[group]Run rustup default "$toolchain" --force-non-host
+2026-11-03T04:52:02.1258651Z [36;1mrustup default "$toolchain" --force-non-host[0m
+2026-11-03T04:52:02.1278596Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:02.1278922Z env:
+2026-11-03T04:52:02.1279186Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:02.1279530Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:02.1279922Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.1280492Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:02.1280913Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:02.1281156Z   toolchain: 1.97.1
+2026-11-03T04:52:02.1281356Z ##[endgroup]
+2026-11-03T04:52:02.1365559Z info: using existing install for 1.97.1-x86_64-unknown-linux-gnu
+2026-11-03T04:52:02.1373089Z info: default toolchain set to 1.97.1-x86_64-unknown-linux-gnu
+2026-11-03T04:52:02.1373639Z 
+2026-11-03T04:52:02.1442919Z   1.97.1-x86_64-unknown-linux-gnu unchanged - rustc 1.97.1 (8bab26f4f 2026-07-14)
+2026-11-03T04:52:02.1443406Z 
+2026-11-03T04:52:02.1461033Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=22]
+2026-11-03T04:52:02.1465074Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+2026-11-03T04:52:02.1482948Z ##[group]Run DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+2026-11-03T04:52:02.1483836Z [36;1mDATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+2026-11-03T04:52:02.1484706Z [36;1mHASH=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+2026-11-03T04:52:02.1485254Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+2026-11-03T04:52:02.1504365Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:02.1504706Z env:
+2026-11-03T04:52:02.1504965Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:02.1505304Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:02.1505693Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.1506257Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:02.1506670Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:02.1506916Z   toolchain: 1.97.1
+2026-11-03T04:52:02.1507118Z ##[endgroup]
+2026-11-03T04:52:02.1813561Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=34]
+2026-11-03T04:52:02.1816253Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+2026-11-03T04:52:02.1834048Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+2026-11-03T04:52:02.1834604Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+2026-11-03T04:52:02.1834956Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+2026-11-03T04:52:02.1835245Z [36;1mfi[0m
+2026-11-03T04:52:02.1854333Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:02.1854677Z env:
+2026-11-03T04:52:02.1854936Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:02.1855272Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:02.1855662Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.1856215Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:02.1856617Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:02.1856874Z ##[endgroup]
+2026-11-03T04:52:02.1899970Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=8]
+2026-11-03T04:52:02.1901967Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+2026-11-03T04:52:02.1935796Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+2026-11-03T04:52:02.1936221Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+2026-11-03T04:52:02.1936614Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+2026-11-03T04:52:02.1936964Z [36;1mfi[0m
+2026-11-03T04:52:02.1954817Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:02.1955146Z env:
+2026-11-03T04:52:02.1955401Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:02.1955742Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:02.1956135Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.1956693Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:02.1957109Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:02.1957356Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:52:02.1957563Z ##[endgroup]
+2026-11-03T04:52:02.2000543Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=9]
+2026-11-03T04:52:02.2003757Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+2026-11-03T04:52:02.2020488Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+2026-11-03T04:52:02.2021020Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+2026-11-03T04:52:02.2021729Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+2026-11-03T04:52:02.2022774Z [36;1m  if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+2026-11-03T04:52:02.2023385Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+2026-11-03T04:52:02.2024090Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+2026-11-03T04:52:02.2024611Z [36;1m  elif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+2026-11-03T04:52:02.2025184Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+2026-11-03T04:52:02.2025699Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+2026-11-03T04:52:02.2026041Z [36;1m  fi[0m
+2026-11-03T04:52:02.2026227Z [36;1mfi[0m
+2026-11-03T04:52:02.2043762Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:02.2044100Z env:
+2026-11-03T04:52:02.2044355Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:02.2044696Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:02.2045084Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.2045643Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:02.2046044Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:02.2046286Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:52:02.2046639Z   CARGO_TERM_COLOR: always
+2026-11-03T04:52:02.2046867Z   toolchain: 1.97.1
+2026-11-03T04:52:02.2047060Z ##[endgroup]
+2026-11-03T04:52:02.2328492Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=32]
+2026-11-03T04:52:02.2332013Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+2026-11-03T04:52:02.2350426Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+2026-11-03T04:52:02.2351182Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+2026-11-03T04:52:02.2351809Z [36;1mif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+2026-11-03T04:52:02.2352577Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+2026-11-03T04:52:02.2352916Z [36;1mfi[0m
+2026-11-03T04:52:02.2372004Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:02.2372616Z env:
+2026-11-03T04:52:02.2373031Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:02.2373383Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:02.2373783Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.2374352Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:02.2374775Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:02.2375025Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:52:02.2375249Z   CARGO_TERM_COLOR: always
+2026-11-03T04:52:02.2375477Z   toolchain: 1.97.1
+2026-11-03T04:52:02.2375680Z ##[endgroup]
+2026-11-03T04:52:02.2540029Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=20]
+2026-11-03T04:52:02.2544669Z ##[start-action display=rustc +1.97.1 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+2026-11-03T04:52:02.2562291Z ##[group]Run rustc +"$toolchain" --version --verbose
+2026-11-03T04:52:02.2563006Z [36;1mrustc +"$toolchain" --version --verbose[0m
+2026-11-03T04:52:02.2581579Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:02.2581918Z env:
+2026-11-03T04:52:02.2582180Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:02.2582813Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:02.2583214Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.2583774Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:02.2584182Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:02.2584428Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:52:02.2584643Z   CARGO_TERM_COLOR: always
+2026-11-03T04:52:02.2584861Z   toolchain: 1.97.1
+2026-11-03T04:52:02.2585256Z ##[endgroup]
+2026-11-03T04:52:02.2731403Z rustc 1.97.1 (8bab26f4f 2026-07-14)
+2026-11-03T04:52:02.2732001Z binary: rustc
+2026-11-03T04:52:02.2732828Z commit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452
+2026-11-03T04:52:02.2733556Z commit-date: 2026-07-14
+2026-11-03T04:52:02.2733920Z host: x86_64-unknown-linux-gnu
+2026-11-03T04:52:02.2734251Z release: 1.97.1
+2026-11-03T04:52:02.2734539Z LLVM version: 22.1.6
+2026-11-03T04:52:02.2749261Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=20]
+2026-11-03T04:52:02.2878806Z ##[group]Run Swatinem/rust-cache@v2
+2026-11-03T04:52:02.2879092Z with:
+2026-11-03T04:52:02.2879306Z   workspaces: source/host -> target
+2026-11-03T04:52:02.2879670Z   shared-key: desktop-restored-rust-1.97.1
+2026-11-03T04:52:02.2879952Z   prefix-key: v0-rust
+2026-11-03T04:52:02.2880166Z   add-job-id-key: true
+2026-11-03T04:52:02.2880402Z   add-rust-environment-hash-key: true
+2026-11-03T04:52:02.2880669Z   cache-targets: true
+2026-11-03T04:52:02.2880893Z   cache-all-crates: false
+2026-11-03T04:52:02.2881127Z   cache-workspace-crates: false
+2026-11-03T04:52:02.2881372Z   save-if: true
+2026-11-03T04:52:02.2881567Z   cache-provider: github
+2026-11-03T04:52:02.2881784Z   cache-bin: true
+2026-11-03T04:52:02.2881980Z   lookup-only: false
+2026-11-03T04:52:02.2882180Z   cmd-format: {0}
+2026-11-03T04:52:02.2882689Z env:
+2026-11-03T04:52:02.2882962Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:02.2883303Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:02.2883715Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.2884277Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:02.2884675Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:02.2884917Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:52:02.2885130Z   CARGO_TERM_COLOR: always
+2026-11-03T04:52:02.2885347Z ##[endgroup]
+2026-11-03T04:52:02.7933403Z ##[group]Cache Configuration
+2026-11-03T04:52:02.7953223Z Cache Provider:
+2026-11-03T04:52:02.7953810Z     github
+2026-11-03T04:52:02.7954132Z Workspaces:
+2026-11-03T04:52:02.7954648Z     /home/runner/work/fabushi-desktop/fabushi-desktop/source/host
+2026-11-03T04:52:02.7955156Z Cache Paths:
+2026-11-03T04:52:02.7955364Z     /home/runner/.cargo/bin
+2026-11-03T04:52:02.7955614Z     /home/runner/.cargo/.crates.toml
+2026-11-03T04:52:02.7955898Z     /home/runner/.cargo/.crates2.json
+2026-11-03T04:52:02.7956166Z     /home/runner/.cargo/registry
+2026-11-03T04:52:02.7956433Z     /home/runner/.cargo/git
+2026-11-03T04:52:02.7956777Z     /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:02.7957147Z Restore Key:
+2026-11-03T04:52:02.7957432Z     v0-rust-desktop-restored-rust-1.97.1-Linux-x64-49c20528
+2026-11-03T04:52:02.7957762Z Cache Key:
+2026-11-03T04:52:02.7958066Z     v0-rust-desktop-restored-rust-1.97.1-Linux-x64-49c20528-f753d4c7
+2026-11-03T04:52:02.7958431Z .. Prefix:
+2026-11-03T04:52:02.7958676Z   - v0-rust-desktop-restored-rust-1.97.1-Linux-x64
+2026-11-03T04:52:02.7959000Z .. Environment considered:
+2026-11-03T04:52:02.7959224Z   - Rust Versions:
+2026-11-03T04:52:02.7959554Z     - 1.97.1 x86_64-unknown-linux-gnu 8bab26f4f68e0e26f0bb7960be334d5b520ea452
+2026-11-03T04:52:02.7960030Z     - 1.99.1 x86_64-unknown-linux-gnu 58cf8f9c35b355199727627d07ae34a4e2846d67
+2026-11-03T04:52:02.7960391Z   - CARGO_HOME
+2026-11-03T04:52:02.7960591Z   - CARGO_INCREMENTAL
+2026-11-03T04:52:02.7960803Z   - CARGO_TARGET_DIR
+2026-11-03T04:52:02.7961009Z   - CARGO_TERM_COLOR
+2026-11-03T04:52:02.7961285Z .. Lockfiles considered:
+2026-11-03T04:52:02.7961930Z   - /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/Cargo.lock
+2026-11-03T04:52:02.7963103Z   - /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/Cargo.toml
+2026-11-03T04:52:02.7964084Z ##[endgroup]
+2026-11-03T04:52:02.7964299Z 
+2026-11-03T04:52:02.7964463Z ... Restoring cache ...
+2026-11-03T04:52:03.0479306Z Cache hit for restore-key: v0-rust-desktop-restored-rust-1.97.1-Linux-x64-49c20528-3d2f809d
+2026-11-03T04:52:04.3133372Z Received 12582912 of 607750245 (2.1%), 12.0 MBs/sec
+2026-11-03T04:52:05.3158544Z Received 134217728 of 607750245 (22.1%), 63.9 MBs/sec
+2026-11-03T04:52:06.3162536Z Received 281018368 of 607750245 (46.2%), 89.2 MBs/sec
+2026-11-03T04:52:07.3230223Z Received 461373440 of 607750245 (75.9%), 109.9 MBs/sec
+2026-11-03T04:52:08.1967664Z Received 607750245 of 607750245 (100.0%), 118.7 MBs/sec
+2026-11-03T04:52:08.1968554Z Cache Size: ~580 MB (607750245 B)
+2026-11-03T04:52:08.2077428Z [command]/usr/bin/tar -xf /home/runner/work/_temp/c2781a69-6321-482c-bd44-6eff26dccf02/cache.tzst -P -C /home/runner/work/fabushi-desktop/fabushi-desktop --use-compress-program unzstd
+2026-11-03T04:52:12.4114727Z Cache restored successfully
+2026-11-03T04:52:13.1424504Z Restored from cache key "v0-rust-desktop-restored-rust-1.97.1-Linux-x64-49c20528-3d2f809d" full match: false.
+2026-11-03T04:52:13.4420330Z ##[group]Run set -euo pipefail
+2026-11-03T04:52:13.4420753Z [36;1mset -euo pipefail[0m
+2026-11-03T04:52:13.4421054Z [36;1msudo apt-get update[0m
+2026-11-03T04:52:13.4421864Z [36;1msudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev[0m
+2026-11-03T04:52:13.4442470Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:13.4442835Z env:
+2026-11-03T04:52:13.4443112Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:13.4443463Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:13.4443863Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:13.4444443Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:13.4444854Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:13.4445105Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:52:13.4445366Z   CARGO_TERM_COLOR: always
+2026-11-03T04:52:13.4445598Z   CACHE_ON_FAILURE: false
+2026-11-03T04:52:13.4445827Z ##[endgroup]
+2026-11-03T04:52:13.8051420Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-11-03T04:52:13.8378820Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-11-03T04:52:13.8399812Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-11-03T04:52:13.8424246Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-11-03T04:52:13.8425504Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-11-03T04:52:13.8484945Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-11-03T04:52:13.9827155Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [617 kB]
+2026-11-03T04:52:13.9954756Z Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [685 kB]
+2026-11-03T04:52:14.0343255Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1408 kB]
+2026-11-03T04:52:14.0409066Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [311 kB]
+2026-11-03T04:52:14.0433528Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1707 kB]
+2026-11-03T04:52:14.0522753Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [343 kB]
+2026-11-03T04:52:14.0573679Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1813 kB]
+2026-11-03T04:52:14.0646738Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [412 kB]
+2026-11-03T04:52:14.0672945Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [14.3 kB]
+2026-11-03T04:52:14.1523591Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1153 kB]
+2026-11-03T04:52:14.1585492Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [232 kB]
+2026-11-03T04:52:14.1602915Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1224 kB]
+2026-11-03T04:52:14.2143688Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [246 kB]
+2026-11-03T04:52:14.2161277Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1721 kB]
+2026-11-03T04:52:14.2236298Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [394 kB]
+2026-11-03T04:52:14.2259026Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse Translation-en [12.4 kB]
+2026-11-03T04:52:17.4901769Z Fetched 12.7 MB in 1s (9846 kB/s)
+2026-11-03T04:52:18.5767835Z Reading package lists...
+2026-11-03T04:52:18.6148293Z Reading package lists...
+2026-11-03T04:52:18.8371137Z Building dependency tree...
+2026-11-03T04:52:18.8379257Z Reading state information...
+2026-11-03T04:52:18.9869472Z The following additional packages will be installed:
+2026-11-03T04:52:18.9870993Z   libdrm-nouveau2 libdrm-radeon1 libegl-mesa0 libegl1 libgl-dev libgles-dev
+2026-11-03T04:52:18.9872011Z   libgles1 libgles2 libglvnd-core-dev libglvnd-dev libglx-dev libopengl-dev
+2026-11-03T04:52:18.9873162Z   libopengl0 libpciaccess-dev libpipewire-0.3-0t64 libpthread-stubs0-dev
+2026-11-03T04:52:18.9874025Z   libspa-0.2-dev libspa-0.2-modules libwayland-bin libwayland-server0
+2026-11-03T04:52:18.9875290Z   libwebrtc-audio-processing1 libx11-dev libxau-dev libxcb1-dev libxdmcp-dev
+2026-11-03T04:52:18.9876079Z   x11proto-dev xorg-sgml-doctools xtrans-dev
+2026-11-03T04:52:18.9881491Z Suggested packages:
+2026-11-03T04:52:18.9881979Z   pipewire pipewire-doc libwayland-doc libx11-doc libxcb-doc
+2026-11-03T04:52:18.9882620Z Recommended packages:
+2026-11-03T04:52:18.9882882Z   libpipewire-0.3-common
+2026-11-03T04:52:19.0180508Z The following NEW packages will be installed:
+2026-11-03T04:52:19.0181343Z   libdrm-dev libdrm-nouveau2 libdrm-radeon1 libegl-dev libegl-mesa0 libegl1
+2026-11-03T04:52:19.0182000Z   libegl1-mesa-dev libgbm-dev libgl-dev libgles-dev libgles1 libgles2
+2026-11-03T04:52:19.0183092Z   libglvnd-core-dev libglvnd-dev libglx-dev libopengl-dev libopengl0
+2026-11-03T04:52:19.0203304Z   libpciaccess-dev libpipewire-0.3-0t64 libpipewire-0.3-dev
+2026-11-03T04:52:19.0204190Z   libpthread-stubs0-dev libspa-0.2-dev libspa-0.2-modules libwayland-bin
+2026-11-03T04:52:19.0205138Z   libwayland-dev libwayland-server0 libwebrtc-audio-processing1 libx11-dev
+2026-11-03T04:52:19.0206038Z   libxau-dev libxcb1-dev libxdmcp-dev libxkbcommon-dev x11proto-dev
+2026-11-03T04:52:19.0206715Z   xorg-sgml-doctools xtrans-dev
+2026-11-03T04:52:19.0408074Z 0 upgraded, 35 newly installed, 0 to remove and 6 not upgraded.
+2026-11-03T04:52:19.0408706Z Need to get 3883 kB of archives.
+2026-11-03T04:52:19.0409083Z After this operation, 16.9 MB of additional disk space will be used.
+2026-11-03T04:52:19.0409527Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-11-03T04:52:19.1778401Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libdrm-radeon1 amd64 2.4.125-1ubuntu0.1~24.04.2 [20.8 kB]
+2026-11-03T04:52:19.3612266Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libdrm-nouveau2 amd64 2.4.125-1ubuntu0.1~24.04.2 [17.6 kB]
+2026-11-03T04:52:19.4921909Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libpciaccess-dev amd64 0.17-3ubuntu0.24.04.3 [22.0 kB]
+2026-11-03T04:52:19.6011536Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libdrm-dev amd64 2.4.125-1ubuntu0.1~24.04.2 [314 kB]
+2026-11-03T04:52:19.7440390Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libegl-mesa0 amd64 25.2.8-0ubuntu0.24.04.4 [117 kB]
+2026-11-03T04:52:19.8388975Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libegl1 amd64 1.7.0-1build1 [28.7 kB]
+2026-11-03T04:52:19.9522065Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xorg-sgml-doctools all 1:1.11-1.1 [10.9 kB]
+2026-11-03T04:52:20.0442718Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 x11proto-dev all 2023.2-1 [602 kB]
+2026-11-03T04:52:20.5004917Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libxau-dev amd64 1:1.0.9-1build6 [9570 B]
+2026-11-03T04:52:20.5619981Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libxdmcp-dev amd64 1:1.1.3-0ubuntu6 [26.5 kB]
+2026-11-03T04:52:20.6271059Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xtrans-dev all 1.4.0-1 [68.9 kB]
+2026-11-03T04:52:20.7013977Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libpthread-stubs0-dev amd64 0.4-1build3 [4746 B]
+2026-11-03T04:52:20.7621191Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libxcb1-dev amd64 1.15-1ubuntu2 [85.8 kB]
+2026-11-03T04:52:20.8397501Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libx11-dev amd64 2:1.8.7-1ubuntu0.1 [732 kB]
+2026-11-03T04:52:21.4014264Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libglx-dev amd64 1.7.0-1build1 [14.2 kB]
+2026-11-03T04:52:21.4631258Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgl-dev amd64 1.7.0-1build1 [102 kB]
+2026-11-03T04:52:21.5274224Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libegl-dev amd64 1.7.0-1build1 [18.2 kB]
+2026-11-03T04:52:21.5890046Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libglvnd-core-dev amd64 1.7.0-1build1 [13.6 kB]
+2026-11-03T04:52:21.6508321Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgles1 amd64 1.7.0-1build1 [11.6 kB]
+2026-11-03T04:52:21.7125290Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgles2 amd64 1.7.0-1build1 [17.1 kB]
+2026-11-03T04:52:21.7743970Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgles-dev amd64 1.7.0-1build1 [50.5 kB]
+2026-11-03T04:52:21.8369995Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libopengl0 amd64 1.7.0-1build1 [32.8 kB]
+2026-11-03T04:52:21.8991511Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libopengl-dev amd64 1.7.0-1build1 [3454 B]
+2026-11-03T04:52:21.9607582Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libglvnd-dev amd64 1.7.0-1build1 [3198 B]
+2026-11-03T04:52:22.0224210Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libegl1-mesa-dev amd64 25.2.8-0ubuntu0.24.04.4 [26.8 kB]
+2026-11-03T04:52:22.0840687Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgbm-dev amd64 25.2.8-0ubuntu0.24.04.4 [12.7 kB]
+2026-11-03T04:52:22.1457599Z Get:28 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libwebrtc-audio-processing1 amd64 0.3.1-0ubuntu6 [290 kB]
+2026-11-03T04:52:22.2186636Z Get:29 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libspa-0.2-modules amd64 1.0.5-1ubuntu3.3 [628 kB]
+2026-11-03T04:52:22.3497714Z Get:30 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libpipewire-0.3-0t64 amd64 1.0.5-1ubuntu3.3 [252 kB]
+2026-11-03T04:52:22.4207517Z Get:31 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libspa-0.2-dev amd64 1.0.5-1ubuntu3.3 [109 kB]
+2026-11-03T04:52:22.4861311Z Get:32 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libpipewire-0.3-dev amd64 1.0.5-1ubuntu3.3 [53.3 kB]
+2026-11-03T04:52:22.5495900Z Get:33 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libwayland-server0 amd64 1.22.0-2.1build1 [33.9 kB]
+2026-11-03T04:52:22.6118412Z Get:34 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libxkbcommon-dev amd64 1.6.0-1build1 [56.3 kB]
+2026-11-03T04:52:22.6752880Z Get:35 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libwayland-bin amd64 1.22.0-2.1build1 [20.6 kB]
+2026-11-03T04:52:22.7375332Z Get:36 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libwayland-dev amd64 1.22.0-2.1build1 [71.3 kB]
+2026-11-03T04:52:23.0398539Z Fetched 3883 kB in 4s (1046 kB/s)
+2026-11-03T04:52:23.0705672Z Selecting previously unselected package libdrm-radeon1:amd64.
+2026-11-03T04:52:23.1041161Z (Reading database ... 
+2026-11-03T04:52:23.1042019Z (Reading database ... 5%
+2026-11-03T04:52:23.1042960Z (Reading database ... 10%
+2026-11-03T04:52:23.1043685Z (Reading database ... 15%
+2026-11-03T04:52:23.1044097Z (Reading database ... 20%
+2026-11-03T04:52:23.1044651Z (Reading database ... 25%
+2026-11-03T04:52:23.1045129Z (Reading database ... 30%
+2026-11-03T04:52:23.1045516Z (Reading database ... 35%
+2026-11-03T04:52:23.1045879Z (Reading database ... 40%
+2026-11-03T04:52:23.1046128Z (Reading database ... 45%
+2026-11-03T04:52:23.1046377Z (Reading database ... 50%
+2026-11-03T04:52:23.1115815Z (Reading database ... 55%
+2026-11-03T04:52:23.2358425Z (Reading database ... 60%
+2026-11-03T04:52:23.4041507Z (Reading database ... 65%
+2026-11-03T04:52:23.6443618Z (Reading database ... 70%
+2026-11-03T04:52:23.8362374Z (Reading database ... 75%
+2026-11-03T04:52:23.9524259Z (Reading database ... 80%
+2026-11-03T04:52:24.0430904Z (Reading database ... 85%
+2026-11-03T04:52:24.1073056Z (Reading database ... 90%
+2026-11-03T04:52:24.2263192Z (Reading database ... 95%
+2026-11-03T04:52:24.2264109Z (Reading database ... 100%
+2026-11-03T04:52:24.2264816Z (Reading database ... 215504 files and directories currently installed.)
+2026-11-03T04:52:24.2306881Z Preparing to unpack .../00-libdrm-radeon1_2.4.125-1ubuntu0.1~24.04.2_amd64.deb ...
+2026-11-03T04:52:24.2345200Z Unpacking libdrm-radeon1:amd64 (2.4.125-1ubuntu0.1~24.04.2) ...
+2026-11-03T04:52:24.2609750Z Selecting previously unselected package libdrm-nouveau2:amd64.
+2026-11-03T04:52:24.2751806Z Preparing to unpack .../01-libdrm-nouveau2_2.4.125-1ubuntu0.1~24.04.2_amd64.deb ...
+2026-11-03T04:52:24.2761279Z Unpacking libdrm-nouveau2:amd64 (2.4.125-1ubuntu0.1~24.04.2) ...
+2026-11-03T04:52:24.3026668Z Selecting previously unselected package libpciaccess-dev:amd64.
+2026-11-03T04:52:24.3169350Z Preparing to unpack .../02-libpciaccess-dev_0.17-3ubuntu0.24.04.3_amd64.deb ...
+2026-11-03T04:52:24.3179535Z Unpacking libpciaccess-dev:amd64 (0.17-3ubuntu0.24.04.3) ...
+2026-11-03T04:52:24.3427935Z Selecting previously unselected package libdrm-dev:amd64.
+2026-11-03T04:52:24.3570562Z Preparing to unpack .../03-libdrm-dev_2.4.125-1ubuntu0.1~24.04.2_amd64.deb ...
+2026-11-03T04:52:24.3578066Z Unpacking libdrm-dev:amd64 (2.4.125-1ubuntu0.1~24.04.2) ...
+2026-11-03T04:52:24.3977402Z Selecting previously unselected package libegl-mesa0:amd64.
+2026-11-03T04:52:24.4118285Z Preparing to unpack .../04-libegl-mesa0_25.2.8-0ubuntu0.24.04.4_amd64.deb ...
+2026-11-03T04:52:24.4128016Z Unpacking libegl-mesa0:amd64 (25.2.8-0ubuntu0.24.04.4) ...
+2026-11-03T04:52:24.4389979Z Selecting previously unselected package libegl1:amd64.
+2026-11-03T04:52:24.4529835Z Preparing to unpack .../05-libegl1_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:24.4539054Z Unpacking libegl1:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:24.4778839Z Selecting previously unselected package xorg-sgml-doctools.
+2026-11-03T04:52:24.4919394Z Preparing to unpack .../06-xorg-sgml-doctools_1%3a1.11-1.1_all.deb ...
+2026-11-03T04:52:24.4927727Z Unpacking xorg-sgml-doctools (1:1.11-1.1) ...
+2026-11-03T04:52:24.5189551Z Selecting previously unselected package x11proto-dev.
+2026-11-03T04:52:24.5329706Z Preparing to unpack .../07-x11proto-dev_2023.2-1_all.deb ...
+2026-11-03T04:52:24.5338643Z Unpacking x11proto-dev (2023.2-1) ...
+2026-11-03T04:52:24.5870216Z Selecting previously unselected package libxau-dev:amd64.
+2026-11-03T04:52:24.6011047Z Preparing to unpack .../08-libxau-dev_1%3a1.0.9-1build6_amd64.deb ...
+2026-11-03T04:52:24.6020121Z Unpacking libxau-dev:amd64 (1:1.0.9-1build6) ...
+2026-11-03T04:52:24.6274450Z Selecting previously unselected package libxdmcp-dev:amd64.
+2026-11-03T04:52:24.6415902Z Preparing to unpack .../09-libxdmcp-dev_1%3a1.1.3-0ubuntu6_amd64.deb ...
+2026-11-03T04:52:24.6424969Z Unpacking libxdmcp-dev:amd64 (1:1.1.3-0ubuntu6) ...
+2026-11-03T04:52:24.6655959Z Selecting previously unselected package xtrans-dev.
+2026-11-03T04:52:24.6797791Z Preparing to unpack .../10-xtrans-dev_1.4.0-1_all.deb ...
+2026-11-03T04:52:24.6805782Z Unpacking xtrans-dev (1.4.0-1) ...
+2026-11-03T04:52:24.7078963Z Selecting previously unselected package libpthread-stubs0-dev:amd64.
+2026-11-03T04:52:24.7219075Z Preparing to unpack .../11-libpthread-stubs0-dev_0.4-1build3_amd64.deb ...
+2026-11-03T04:52:24.7226346Z Unpacking libpthread-stubs0-dev:amd64 (0.4-1build3) ...
+2026-11-03T04:52:24.7450369Z Selecting previously unselected package libxcb1-dev:amd64.
+2026-11-03T04:52:24.7594685Z Preparing to unpack .../12-libxcb1-dev_1.15-1ubuntu2_amd64.deb ...
+2026-11-03T04:52:24.7604106Z Unpacking libxcb1-dev:amd64 (1.15-1ubuntu2) ...
+2026-11-03T04:52:24.7861081Z Selecting previously unselected package libx11-dev:amd64.
+2026-11-03T04:52:24.8000816Z Preparing to unpack .../13-libx11-dev_2%3a1.8.7-1ubuntu0.1_amd64.deb ...
+2026-11-03T04:52:24.8009068Z Unpacking libx11-dev:amd64 (2:1.8.7-1ubuntu0.1) ...
+2026-11-03T04:52:24.8339837Z Selecting previously unselected package libglx-dev:amd64.
+2026-11-03T04:52:24.8481487Z Preparing to unpack .../14-libglx-dev_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:24.8490827Z Unpacking libglx-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:24.8725328Z Selecting previously unselected package libgl-dev:amd64.
+2026-11-03T04:52:24.8865168Z Preparing to unpack .../15-libgl-dev_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:24.8872772Z Unpacking libgl-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:24.9143472Z Selecting previously unselected package libegl-dev:amd64.
+2026-11-03T04:52:24.9284978Z Preparing to unpack .../16-libegl-dev_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:24.9292913Z Unpacking libegl-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:24.9528030Z Selecting previously unselected package libglvnd-core-dev:amd64.
+2026-11-03T04:52:24.9668758Z Preparing to unpack .../17-libglvnd-core-dev_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:24.9689809Z Unpacking libglvnd-core-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:24.9934964Z Selecting previously unselected package libgles1:amd64.
+2026-11-03T04:52:25.0078727Z Preparing to unpack .../18-libgles1_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:25.0088774Z Unpacking libgles1:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.0348076Z Selecting previously unselected package libgles2:amd64.
+2026-11-03T04:52:25.0496563Z Preparing to unpack .../19-libgles2_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:25.0505367Z Unpacking libgles2:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.0763865Z Selecting previously unselected package libgles-dev:amd64.
+2026-11-03T04:52:25.0913389Z Preparing to unpack .../20-libgles-dev_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:25.0922639Z Unpacking libgles-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.1211696Z Selecting previously unselected package libopengl0:amd64.
+2026-11-03T04:52:25.1355346Z Preparing to unpack .../21-libopengl0_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:25.1364935Z Unpacking libopengl0:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.1609813Z Selecting previously unselected package libopengl-dev:amd64.
+2026-11-03T04:52:25.1752736Z Preparing to unpack .../22-libopengl-dev_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:25.1764511Z Unpacking libopengl-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.2000886Z Selecting previously unselected package libglvnd-dev:amd64.
+2026-11-03T04:52:25.2144176Z Preparing to unpack .../23-libglvnd-dev_1.7.0-1build1_amd64.deb ...
+2026-11-03T04:52:25.2155085Z Unpacking libglvnd-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.2389627Z Selecting previously unselected package libegl1-mesa-dev:amd64.
+2026-11-03T04:52:25.2533961Z Preparing to unpack .../24-libegl1-mesa-dev_25.2.8-0ubuntu0.24.04.4_amd64.deb ...
+2026-11-03T04:52:25.2543280Z Unpacking libegl1-mesa-dev:amd64 (25.2.8-0ubuntu0.24.04.4) ...
+2026-11-03T04:52:25.2794574Z Selecting previously unselected package libgbm-dev:amd64.
+2026-11-03T04:52:25.2938412Z Preparing to unpack .../25-libgbm-dev_25.2.8-0ubuntu0.24.04.4_amd64.deb ...
+2026-11-03T04:52:25.2948471Z Unpacking libgbm-dev:amd64 (25.2.8-0ubuntu0.24.04.4) ...
+2026-11-03T04:52:25.3204952Z Selecting previously unselected package libwebrtc-audio-processing1:amd64.
+2026-11-03T04:52:25.3348055Z Preparing to unpack .../26-libwebrtc-audio-processing1_0.3.1-0ubuntu6_amd64.deb ...
+2026-11-03T04:52:25.3362691Z Unpacking libwebrtc-audio-processing1:amd64 (0.3.1-0ubuntu6) ...
+2026-11-03T04:52:25.3618800Z Selecting previously unselected package libspa-0.2-modules:amd64.
+2026-11-03T04:52:25.3758745Z Preparing to unpack .../27-libspa-0.2-modules_1.0.5-1ubuntu3.3_amd64.deb ...
+2026-11-03T04:52:25.3768051Z Unpacking libspa-0.2-modules:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-03T04:52:25.4130323Z Selecting previously unselected package libpipewire-0.3-0t64:amd64.
+2026-11-03T04:52:25.4273476Z Preparing to unpack .../28-libpipewire-0.3-0t64_1.0.5-1ubuntu3.3_amd64.deb ...
+2026-11-03T04:52:25.4282148Z Unpacking libpipewire-0.3-0t64:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-03T04:52:25.4568556Z Selecting previously unselected package libspa-0.2-dev:amd64.
+2026-11-03T04:52:25.4708356Z Preparing to unpack .../29-libspa-0.2-dev_1.0.5-1ubuntu3.3_amd64.deb ...
+2026-11-03T04:52:25.4717085Z Unpacking libspa-0.2-dev:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-03T04:52:25.5164537Z Selecting previously unselected package libpipewire-0.3-dev:amd64.
+2026-11-03T04:52:25.5304602Z Preparing to unpack .../30-libpipewire-0.3-dev_1.0.5-1ubuntu3.3_amd64.deb ...
+2026-11-03T04:52:25.5314321Z Unpacking libpipewire-0.3-dev:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-03T04:52:25.5638418Z Selecting previously unselected package libwayland-server0:amd64.
+2026-11-03T04:52:25.5780936Z Preparing to unpack .../31-libwayland-server0_1.22.0-2.1build1_amd64.deb ...
+2026-11-03T04:52:25.5793209Z Unpacking libwayland-server0:amd64 (1.22.0-2.1build1) ...
+2026-11-03T04:52:25.6027838Z Selecting previously unselected package libxkbcommon-dev:amd64.
+2026-11-03T04:52:25.6169433Z Preparing to unpack .../32-libxkbcommon-dev_1.6.0-1build1_amd64.deb ...
+2026-11-03T04:52:25.6179051Z Unpacking libxkbcommon-dev:amd64 (1.6.0-1build1) ...
+2026-11-03T04:52:25.6430197Z Selecting previously unselected package libwayland-bin.
+2026-11-03T04:52:25.6576935Z Preparing to unpack .../33-libwayland-bin_1.22.0-2.1build1_amd64.deb ...
+2026-11-03T04:52:25.6587940Z Unpacking libwayland-bin (1.22.0-2.1build1) ...
+2026-11-03T04:52:25.6834708Z Selecting previously unselected package libwayland-dev:amd64.
+2026-11-03T04:52:25.6980615Z Preparing to unpack .../34-libwayland-dev_1.22.0-2.1build1_amd64.deb ...
+2026-11-03T04:52:25.6990593Z Unpacking libwayland-dev:amd64 (1.22.0-2.1build1) ...
+2026-11-03T04:52:25.7554406Z Setting up libwayland-server0:amd64 (1.22.0-2.1build1) ...
+2026-11-03T04:52:25.7579172Z Setting up libdrm-nouveau2:amd64 (2.4.125-1ubuntu0.1~24.04.2) ...
+2026-11-03T04:52:25.7596980Z Setting up libpciaccess-dev:amd64 (0.17-3ubuntu0.24.04.3) ...
+2026-11-03T04:52:25.7614709Z Setting up libglvnd-core-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.7632773Z Setting up libdrm-radeon1:amd64 (2.4.125-1ubuntu0.1~24.04.2) ...
+2026-11-03T04:52:25.7649929Z Setting up libxkbcommon-dev:amd64 (1.6.0-1build1) ...
+2026-11-03T04:52:25.7668898Z Setting up libwebrtc-audio-processing1:amd64 (0.3.1-0ubuntu6) ...
+2026-11-03T04:52:25.7688073Z Setting up libpthread-stubs0-dev:amd64 (0.4-1build3) ...
+2026-11-03T04:52:25.7705197Z Setting up libgbm-dev:amd64 (25.2.8-0ubuntu0.24.04.4) ...
+2026-11-03T04:52:25.7724637Z Setting up libopengl0:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.7742862Z Setting up xtrans-dev (1.4.0-1) ...
+2026-11-03T04:52:25.7761978Z Setting up libwayland-bin (1.22.0-2.1build1) ...
+2026-11-03T04:52:25.7779456Z Setting up libegl-mesa0:amd64 (25.2.8-0ubuntu0.24.04.4) ...
+2026-11-03T04:52:25.7797370Z Setting up libgles2:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.7818811Z Setting up libspa-0.2-modules:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-03T04:52:25.7841260Z Setting up libgles1:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.7860297Z Setting up libegl1:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.7883097Z Setting up xorg-sgml-doctools (1:1.11-1.1) ...
+2026-11-03T04:52:25.7901960Z Setting up libopengl-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.7920047Z Setting up libspa-0.2-dev:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-03T04:52:25.7937216Z Setting up libpipewire-0.3-0t64:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-03T04:52:25.7954895Z Setting up libdrm-dev:amd64 (2.4.125-1ubuntu0.1~24.04.2) ...
+2026-11-03T04:52:25.7973456Z Setting up libwayland-dev:amd64 (1.22.0-2.1build1) ...
+2026-11-03T04:52:25.7993812Z Setting up libpipewire-0.3-dev:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-03T04:52:25.8073754Z Processing triggers for sgml-base (1.31) ...
+2026-11-03T04:52:25.8199239Z Setting up x11proto-dev (2023.2-1) ...
+2026-11-03T04:52:25.8237241Z Setting up libxau-dev:amd64 (1:1.0.9-1build6) ...
+2026-11-03T04:52:25.8261637Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+2026-11-03T04:52:25.8628549Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-11-03T04:52:25.8656705Z Not building database; man-db/auto-update is not 'true'.
+2026-11-03T04:52:25.8668756Z Setting up libxdmcp-dev:amd64 (1:1.1.3-0ubuntu6) ...
+2026-11-03T04:52:25.8705419Z Setting up libxcb1-dev:amd64 (1.15-1ubuntu2) ...
+2026-11-03T04:52:25.8729663Z Setting up libx11-dev:amd64 (2:1.8.7-1ubuntu0.1) ...
+2026-11-03T04:52:25.8755446Z Setting up libglx-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.8781564Z Setting up libgl-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.8808872Z Setting up libegl-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.8836824Z Setting up libgles-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.8862106Z Setting up libglvnd-dev:amd64 (1.7.0-1build1) ...
+2026-11-03T04:52:25.8884948Z Setting up libegl1-mesa-dev:amd64 (25.2.8-0ubuntu0.24.04.4) ...
+2026-11-03T04:52:26.5862712Z 
+2026-11-03T04:52:26.5863242Z Running kernel seems to be up-to-date.
+2026-11-03T04:52:26.5863898Z 
+2026-11-03T04:52:26.5864057Z No services need to be restarted.
+2026-11-03T04:52:26.5864288Z 
+2026-11-03T04:52:26.5873274Z No containers need to be restarted.
+2026-11-03T04:52:26.5873630Z 
+2026-11-03T04:52:26.5873797Z No user sessions are running outdated binaries.
+2026-11-03T04:52:26.5874075Z 
+2026-11-03T04:52:26.5874322Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-11-03T04:52:27.5684232Z ##[group]Run set -euo pipefail
+2026-11-03T04:52:27.5684660Z [36;1mset -euo pipefail[0m
+2026-11-03T04:52:27.5684918Z [36;1mtest "$(id -u)" -ne 0[0m
+2026-11-03T04:52:27.5685274Z [36;1mcargo test --locked --manifest-path source/host/Cargo.toml \[0m
+2026-11-03T04:52:27.5685847Z [36;1m  --test box_store_download_frozen_parity_contract --no-run --message-format=json \[0m
+2026-11-03T04:52:27.5686363Z [36;1m  > "$RESTORE_EVIDENCE_DIR/compiler-artifacts.jsonl"[0m
+2026-11-03T04:52:27.5686751Z [36;1mgit diff --exit-code -- source/host/Cargo.lock[0m
+2026-11-03T04:52:27.5687074Z [36;1mpython3 - <<'PY'[0m
+2026-11-03T04:52:27.5687340Z [36;1mimport hashlib, json, os, subprocess[0m
+2026-11-03T04:52:27.5687654Z [36;1mfrom pathlib import Path[0m
+2026-11-03T04:52:27.5687967Z [36;1mroot=Path(os.environ["RESTORE_EVIDENCE_DIR"])[0m
+2026-11-03T04:52:27.5688286Z [36;1mcandidates=set()[0m
+2026-11-03T04:52:27.5688685Z [36;1mfor line in (root/"compiler-artifacts.jsonl").read_text().splitlines():[0m
+2026-11-03T04:52:27.5689110Z [36;1m    if not line.startswith("{"):[0m
+2026-11-03T04:52:27.5689394Z [36;1m        continue[0m
+2026-11-03T04:52:27.5689634Z [36;1m    item=json.loads(line)[0m
+2026-11-03T04:52:27.5689943Z [36;1m    if (item.get("reason") == "compiler-artifact"[0m
+2026-11-03T04:52:27.5690431Z [36;1m            and item.get("target", {}).get("name") == "box_store_download_frozen_parity_contract"[0m
+2026-11-03T04:52:27.5690961Z [36;1m            and item.get("target", {}).get("kind") == ["test"][0m
+2026-11-03T04:52:27.5691367Z [36;1m            and item.get("profile", {}).get("test") is True[0m
+2026-11-03T04:52:27.5691723Z [36;1m            and item.get("executable")):[0m
+2026-11-03T04:52:27.5692046Z [36;1m        candidates.add(item["executable"])[0m
+2026-11-03T04:52:27.5692821Z [36;1massert len(candidates) == 1, "Expected exactly one actual restore contract executable"[0m
+2026-11-03T04:52:27.5693344Z [36;1mbinary=Path(candidates.pop()).resolve(strict=True)[0m
+2026-11-03T04:52:27.5693788Z [36;1mtarget=Path(os.environ["CARGO_TARGET_DIR"]).resolve(strict=True)[0m
+2026-11-03T04:52:27.5694591Z [36;1massert binary.is_file() and binary.is_relative_to(target), "Unexpected compiler executable boundary"[0m
+2026-11-03T04:52:27.5695218Z [36;1msha256=lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()[0m
+2026-11-03T04:52:27.5695614Z [36;1mcompiled={[0m
+2026-11-03T04:52:27.5696283Z [36;1m    "command": ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml", "--test", "box_store_download_frozen_parity_contract", "--no-run", "--message-format=json"],[0m
+2026-11-03T04:52:27.5697001Z [36;1m    "exit_code": 0,[0m
+2026-11-03T04:52:27.5697250Z [36;1m    "executable": str(binary),[0m
+2026-11-03T04:52:27.5697543Z [36;1m    "executable_sha256": sha256(binary),[0m
+2026-11-03T04:52:27.5697897Z [36;1m    "manifest_sha256": sha256("source/host/Cargo.toml"),[0m
+2026-11-03T04:52:27.5698293Z [36;1m    "lock_sha256": sha256("source/host/Cargo.lock"),[0m
+2026-11-03T04:52:27.5698732Z [36;1m    "compiler_artifacts_sha256": sha256(root/"compiler-artifacts.jsonl"),[0m
+2026-11-03T04:52:27.5699232Z [36;1m    "rustc": subprocess.check_output(["rustc", "-Vv"], text=True),[0m
+2026-11-03T04:52:27.5699706Z [36;1m    "cargo": subprocess.check_output(["cargo", "-V"], text=True).strip(),[0m
+2026-11-03T04:52:27.5700125Z [36;1m    "compiler_uid": os.geteuid(),[0m
+2026-11-03T04:52:27.5700390Z [36;1m}[0m
+2026-11-03T04:52:27.5700704Z [36;1m(root/"compiled.json").write_text(json.dumps(compiled, indent=2)+"\n")[0m
+2026-11-03T04:52:27.5701086Z [36;1mPY[0m
+2026-11-03T04:52:27.5720476Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:52:27.5720820Z env:
+2026-11-03T04:52:27.5721084Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:52:27.5721428Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:52:27.5721827Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:52:27.5722858Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:52:27.5723327Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:52:27.5723586Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:52:27.5723817Z   CARGO_TERM_COLOR: always
+2026-11-03T04:52:27.5724049Z   CACHE_ON_FAILURE: false
+2026-11-03T04:52:27.5724270Z ##[endgroup]
+2026-11-03T04:52:27.6277392Z [1m[92m    Updating[0m crates.io index
+2026-11-03T04:52:29.3927707Z [1m[92m   Compiling[0m mahayana-host-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/host)
+2026-11-03T04:52:29.3929621Z [1m[92m   Compiling[0m mahayana-host-protocol v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-host-protocol)
+2026-11-03T04:52:29.4030928Z [1m[92m   Compiling[0m fabushi-messaging-core v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/native/mahayana-messaging)
+2026-11-03T04:52:33.7396350Z [1m[92m   Compiling[0m mahayana-computer v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer)
+2026-11-03T04:54:00.5300237Z [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 1m 32s
+2026-11-03T04:54:01.2265539Z ##[group]Run set -euo pipefail
+2026-11-03T04:54:01.2265956Z [36;1mset -euo pipefail[0m
+2026-11-03T04:54:01.2266218Z [36;1mpython3 - <<'PY'[0m
+2026-11-03T04:54:01.2266508Z [36;1mimport hashlib, json, os, re, subprocess[0m
+2026-11-03T04:54:01.2266831Z [36;1mfrom pathlib import Path[0m
+2026-11-03T04:54:01.2267148Z [36;1mroot=Path(os.environ["RESTORE_EVIDENCE_DIR"])[0m
+2026-11-03T04:54:01.2267553Z [36;1mcompiled=json.loads((root/"compiled.json").read_text())[0m
+2026-11-03T04:54:01.2267943Z [36;1mbinary=Path(compiled["executable"])[0m
+2026-11-03T04:54:01.2268367Z [36;1massert os.geteuid() != 0, "Ordinary permission oracles must not run as root"[0m
+2026-11-03T04:54:01.2268964Z [36;1massert hashlib.sha256(binary.read_bytes()).hexdigest() == compiled["executable_sha256"][0m
+2026-11-03T04:54:01.2269503Z [36;1mcases=[("ordinary", [str(binary), "--nocapture"], None)][0m
+2026-11-03T04:54:01.2270045Z [36;1mfor name in ([0m
+2026-11-03T04:54:01.2270396Z [36;1m    "linux_bind_mounted_descendant_file_restore_boundary",[0m
+2026-11-03T04:54:01.2270843Z [36;1m    "linux_bind_mounted_descendant_symlink_restore_boundary",[0m
+2026-11-03T04:54:01.2271238Z [36;1m):[0m
+2026-11-03T04:54:01.2271625Z [36;1m    cases.append((name, ["sudo", "-n", "unshare", "--mount", "--propagation", "private", "--",[0m
+2026-11-03T04:54:01.2272174Z [36;1m        str(binary), "--exact", name, "--ignored", "--nocapture"], name))[0m
+2026-11-03T04:54:01.2272739Z [36;1mresults=[][0m
+2026-11-03T04:54:01.2272982Z [36;1mfor label, command, exact in cases:[0m
+2026-11-03T04:54:01.2273281Z [36;1m    log=root/(label+".log")[0m
+2026-11-03T04:54:01.2273609Z [36;1m    print("Executing "+json.dumps(command), flush=True)[0m
+2026-11-03T04:54:01.2273965Z [36;1m    with log.open("wb") as output:[0m
+2026-11-03T04:54:01.2274448Z [36;1m        completed=subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)[0m
+2026-11-03T04:54:01.2274933Z [36;1m    raw=log.read_bytes()[0m
+2026-11-03T04:54:01.2275237Z [36;1m    text=raw.decode("utf-8", errors="replace")[0m
+2026-11-03T04:54:01.2275554Z [36;1m    print(text, flush=True)[0m
+2026-11-03T04:54:01.2276006Z [36;1m    summaries=re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)[0m
+2026-11-03T04:54:01.2276565Z [36;1m    counts=tuple(map(int, summaries[-1])) if summaries else None[0m
+2026-11-03T04:54:01.2277133Z [36;1m    accepted=completed.returncode == 0 and counts is not None and counts[0] > 0 and counts[1] == 0[0m
+2026-11-03T04:54:01.2277608Z [36;1m    if exact is not None:[0m
+2026-11-03T04:54:01.2278008Z [36;1m        accepted=accepted and counts == (1, 0, 0) and f"test {exact} ... ok" in text[0m
+2026-11-03T04:54:01.2278428Z [36;1m    results.append({[0m
+2026-11-03T04:54:01.2278804Z [36;1m        "case": label, "command": command, "exit_code": completed.returncode,[0m
+2026-11-03T04:54:01.2279246Z [36;1m        "passed": counts[0] if counts else None,[0m
+2026-11-03T04:54:01.2279602Z [36;1m        "failed": counts[1] if counts else None,[0m
+2026-11-03T04:54:01.2279946Z [36;1m        "ignored": counts[2] if counts else None,[0m
+2026-11-03T04:54:01.2280278Z [36;1m        "oracle_accepted": accepted,[0m
+2026-11-03T04:54:01.2280664Z [36;1m        "log": log.name, "log_sha256": hashlib.sha256(raw).hexdigest(),[0m
+2026-11-03T04:54:01.2281023Z [36;1m    })[0m
+2026-11-03T04:54:01.2281225Z [36;1m    receipt={[0m
+2026-11-03T04:54:01.2281511Z [36;1m        **json.loads((root/"subject.json").read_text()),[0m
+2026-11-03T04:54:01.2281900Z [36;1m        "compiled": compiled, "executions": results,[0m
+2026-11-03T04:54:01.2282680Z [36;1m        "result": "passed" if len(results) == len(cases) and all(item["oracle_accepted"] for item in results) else "failed-or-incomplete",[0m
+2026-11-03T04:54:01.2284439Z [36;1m        "scope": "Ordinary restore contracts plus real private-namespace bind-mounted descendant file/symlink replacements, using synthetic installation keys and owned fixtures. Missing privileges fail execution. This is not exclusion of concurrent external namespace mutation or full backup/client compatibility acceptance.",[0m
+2026-11-03T04:54:01.2285717Z [36;1m    }[0m
+2026-11-03T04:54:01.2286058Z [36;1m    (root/"execution.json").write_text(json.dumps(receipt, indent=2)+"\n")[0m
+2026-11-03T04:54:01.2286596Z [36;1mraise SystemExit(0 if all(item["oracle_accepted"] for item in results) else 1)[0m
+2026-11-03T04:54:01.2287007Z [36;1mPY[0m
+2026-11-03T04:54:01.2306388Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:54:01.2306743Z env:
+2026-11-03T04:54:01.2307014Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:54:01.2307363Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:54:01.2307776Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:54:01.2308366Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:54:01.2308929Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:54:01.2309190Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:54:01.2309417Z   CARGO_TERM_COLOR: always
+2026-11-03T04:54:01.2309646Z   CACHE_ON_FAILURE: false
+2026-11-03T04:54:01.2309870Z ##[endgroup]
+2026-11-03T04:54:01.8553506Z Executing ["/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f", "--nocapture"]
+2026-11-03T04:54:03.0158326Z 
+2026-11-03T04:54:03.0158771Z running 31 tests
+2026-11-03T04:54:03.0159313Z test actual_installation_key_and_staging_native_aliases_refuse_local_hit_changes ... ok
+2026-11-03T04:54:03.0160169Z test byte_budget_admits_an_oversized_item_when_idle ... ok
+2026-11-03T04:54:03.0160973Z test actual_installation_root_refuses_key_staging_and_ancestor_imports_without_effects ... ok
+2026-11-03T04:54:03.0161910Z test all_local_pack_members_skip_pack_download_and_are_counted_by_bulk_phase ... ok
+2026-11-03T04:54:03.0162801Z test distinct_same_content_and_unrelated_hardlinks_remain_ordinary_local_hits ... ok
+2026-11-03T04:54:03.0163358Z test actual_installation_neighbors_and_unrelated_matching_names_restore ... ok
+2026-11-03T04:54:03.0163910Z test empty_installation_cannot_import_a_foreign_key_or_create_restore_directories ... ok
+2026-11-03T04:54:03.0164636Z test existing_and_manifest_symlink_aliases_cannot_route_restore_into_key_paths ... ok
+2026-11-03T04:54:03.0165193Z test critical_files_precede_bulk_and_prefetch_failure_falls_back_to_blob_reads ... ok
+2026-11-03T04:54:03.0165724Z test file_and_symlink_ancestors_cannot_remove_an_installed_revision_key ... ok
+2026-11-03T04:54:03.0166218Z test hardlinked_local_hit_cannot_change_installed_key_metadata ... ok
+2026-11-03T04:54:03.0166900Z test linux_bind_mounted_descendant_file_restore_boundary ... ignored, requires Linux Actions private mount namespace and CAP_SYS_ADMIN
+2026-11-03T04:54:03.0167790Z test linux_bind_mounted_descendant_symlink_restore_boundary ... ignored, requires Linux Actions private mount namespace and CAP_SYS_ADMIN
+2026-11-03T04:54:03.0168535Z test duplicate_large_blob_streams_once_then_copies_from_the_verified_local_file ... ok
+2026-11-03T04:54:03.0169103Z test ordinary_directory_symlink_replacement_preserves_installation_material ... ok
+2026-11-03T04:54:03.0169683Z test incoming_key_and_publication_artifacts_refuse_the_entire_restore_without_mutation ... ok
+2026-11-03T04:54:03.0170234Z test duplicate_small_blob_is_fetched_once_and_local_hits_are_reused ... ok
+2026-11-03T04:54:03.0170741Z test ordinary_directory_file_replacement_preserves_installation_material ... ok
+2026-11-03T04:54:03.0171274Z test protected_portable_namespace_case_aliases_are_refused_before_restore ... ok
+2026-11-03T04:54:03.0171802Z test ordinary_restore_preserves_key_and_allows_unrelated_matching_basenames ... ok
+2026-11-03T04:54:03.0172525Z test pack_restore_reports_each_restored_path_and_skips_loose_blobs ... ok
+2026-11-03T04:54:03.0173140Z test recursive_removal_unreadable_identity_refuses_without_effects ... ok
+2026-11-03T04:54:03.0173914Z test restore_cannot_detach_an_existing_symlink_to_the_installation_directory ... ok
+2026-11-03T04:54:03.0174415Z test recursive_removal_depth_limit_refuses_without_effects ... ok
+2026-11-03T04:54:03.0174938Z test recursive_replacement_refuses_descendant_key_and_staging_hardlinks_without_effects ... ok
+2026-11-03T04:54:03.0175559Z test symlink_restore_reports_all_frozen_steps_and_allows_absolute_targets_inside_root ... ok
+2026-11-03T04:54:03.0176122Z test symlink_target_checks_expand_existing_links_before_parent_components ... ok
+2026-11-03T04:54:03.0176644Z test unreadable_staging_identity_refuses_before_store_or_restore_effects ... ok
+2026-11-03T04:54:03.0177150Z test staging_identity_limit_admits_32_and_refuses_33_without_effects ... ok
+2026-11-03T04:54:03.0177672Z test staged_key_hardlinks_refuse_but_distinct_same_content_local_hits_restore ... ok
+2026-11-03T04:54:03.0178160Z test recursive_removal_entry_limit_refuses_without_effects ... ok
+2026-11-03T04:54:03.0178595Z 
+2026-11-03T04:54:03.0178862Z test result: ok. 29 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 1.16s
+2026-11-03T04:54:03.0179214Z 
+2026-11-03T04:54:03.0179218Z 
+2026-11-03T04:54:03.0180234Z Executing ["sudo", "-n", "unshare", "--mount", "--propagation", "private", "--", "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f", "--exact", "linux_bind_mounted_descendant_file_restore_boundary", "--ignored", "--nocapture"]
+2026-11-03T04:54:03.0487477Z 
+2026-11-03T04:54:03.0487990Z running 1 test
+2026-11-03T04:54:03.0488584Z test linux_bind_mounted_descendant_file_restore_boundary ... ok
+2026-11-03T04:54:03.0489028Z 
+2026-11-03T04:54:03.0489294Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.02s
+2026-11-03T04:54:03.0489655Z 
+2026-11-03T04:54:03.0489658Z 
+2026-11-03T04:54:03.0496261Z Executing ["sudo", "-n", "unshare", "--mount", "--propagation", "private", "--", "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f", "--exact", "linux_bind_mounted_descendant_symlink_restore_boundary", "--ignored", "--nocapture"]
+2026-11-03T04:54:03.0662981Z 
+2026-11-03T04:54:03.0663575Z running 1 test
+2026-11-03T04:54:03.0664001Z test linux_bind_mounted_descendant_symlink_restore_boundary ... ok
+2026-11-03T04:54:03.0664311Z 
+2026-11-03T04:54:03.0664606Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.01s
+2026-11-03T04:54:03.0664987Z 
+2026-11-03T04:54:03.0664991Z 
+2026-11-03T04:54:03.0792929Z ##[group]Run actions/upload-artifact@v4
+2026-11-03T04:54:03.0793305Z with:
+2026-11-03T04:54:03.0793731Z   name: ocrm-config-restore-linux-74f11d3d31c6245ac5886dc0181460b2d4349744-41580539491-1
+2026-11-03T04:54:03.0794322Z   path: /home/runner/work/_temp/ocrm-config-restore-41580539491-1/
+2026-11-03T04:54:03.0794705Z   if-no-files-found: error
+2026-11-03T04:54:03.0794965Z   retention-days: 90
+2026-11-03T04:54:03.0795193Z   compression-level: 6
+2026-11-03T04:54:03.0795409Z   overwrite: false
+2026-11-03T04:54:03.0795629Z   include-hidden-files: false
+2026-11-03T04:54:03.0795866Z env:
+2026-11-03T04:54:03.0796129Z   FABUSHI_TARGET_SHA: 74f11d3d31c6245ac5886dc0181460b2d4349744
+2026-11-03T04:54:03.0796475Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:54:03.0796877Z   CARGO_TARGET_DIR: /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:54:03.0797454Z   RESTORE_EVIDENCE_DIR: /home/runner/work/_temp/ocrm-config-restore-41580539491-1
+2026-11-03T04:54:03.0797900Z   CARGO_HOME: /home/runner/.cargo
+2026-11-03T04:54:03.0798155Z   CARGO_INCREMENTAL: 0
+2026-11-03T04:54:03.0798379Z   CARGO_TERM_COLOR: always
+2026-11-03T04:54:03.0798796Z   CACHE_ON_FAILURE: false
+2026-11-03T04:54:03.0799125Z ##[endgroup]
+2026-11-03T04:54:03.2538364Z (node:5469) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-03T04:54:03.2539671Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-03T04:54:03.2621748Z With the provided path, there will be 7 files uploaded
+2026-11-03T04:54:03.2623001Z Artifact name is valid!
+2026-11-03T04:54:03.2623439Z Root directory input is valid!
+2026-11-03T04:54:03.6594633Z Beginning upload of artifact content to blob storage
+2026-11-03T04:54:03.6972250Z (node:5469) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-03T04:54:04.1020461Z Uploaded bytes 47233
+2026-11-03T04:54:04.1793770Z Finished uploading artifact content to blob storage!
+2026-11-03T04:54:04.1795019Z SHA256 digest of uploaded artifact zip is e3f38fdea40e2264349e23c6c6830d59192c01dfe1525aaa1c1f47bdcb9a4599
+2026-11-03T04:54:04.1796016Z Finalizing artifact upload
+2026-11-03T04:54:04.6423128Z Artifact ocrm-config-restore-linux-74f11d3d31c6245ac5886dc0181460b2d4349744-41580539491-1.zip successfully finalized. Artifact ID 13205531160
+2026-11-03T04:54:04.6426256Z Artifact ocrm-config-restore-linux-74f11d3d31c6245ac5886dc0181460b2d4349744-41580539491-1 has been successfully uploaded! Final size is 47233 bytes. Artifact ID is 13205531160
+2026-11-03T04:54:04.6431355Z Artifact download URL: https://github.com/bhrumom/fabushi-desktop/actions/runs/41580539491/artifacts/13205531160
+2026-11-03T04:54:04.6635842Z Post job cleanup.
+2026-11-03T04:54:04.7915150Z ##[group]Cache Configuration
+2026-11-03T04:54:04.7916434Z Cache Provider:
+2026-11-03T04:54:04.7916830Z     github
+2026-11-03T04:54:04.7917197Z Workspaces:
+2026-11-03T04:54:04.7917726Z     /home/runner/work/fabushi-desktop/fabushi-desktop/source/host
+2026-11-03T04:54:04.7918396Z Cache Paths:
+2026-11-03T04:54:04.7918773Z     /home/runner/.cargo/bin
+2026-11-03T04:54:04.7919216Z     /home/runner/.cargo/.crates.toml
+2026-11-03T04:54:04.7919725Z     /home/runner/.cargo/.crates2.json
+2026-11-03T04:54:04.7920293Z     /home/runner/.cargo/registry
+2026-11-03T04:54:04.7920776Z     /home/runner/.cargo/git
+2026-11-03T04:54:04.7921421Z     /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target
+2026-11-03T04:54:04.7922127Z Restore Key:
+2026-11-03T04:54:04.7922920Z     v0-rust-desktop-restored-rust-1.97.1-Linux-x64-49c20528
+2026-11-03T04:54:04.7923548Z Cache Key:
+2026-11-03T04:54:04.7924174Z     v0-rust-desktop-restored-rust-1.97.1-Linux-x64-49c20528-f753d4c7
+2026-11-03T04:54:04.7924846Z .. Prefix:
+2026-11-03T04:54:04.7925320Z   - v0-rust-desktop-restored-rust-1.97.1-Linux-x64
+2026-11-03T04:54:04.7925913Z .. Environment considered:
+2026-11-03T04:54:04.7926319Z   - Rust Versions:
+2026-11-03T04:54:04.7926893Z     - 1.97.1 x86_64-unknown-linux-gnu 8bab26f4f68e0e26f0bb7960be334d5b520ea452
+2026-11-03T04:54:04.7927738Z     - 1.99.1 x86_64-unknown-linux-gnu 58cf8f9c35b355199727627d07ae34a4e2846d67
+2026-11-03T04:54:04.7928371Z   - CARGO_HOME
+2026-11-03T04:54:04.7928756Z   - CARGO_INCREMENTAL
+2026-11-03T04:54:04.7929158Z   - CARGO_TARGET_DIR
+2026-11-03T04:54:04.7929547Z   - CARGO_TERM_COLOR
+2026-11-03T04:54:04.7929954Z .. Lockfiles considered:
+2026-11-03T04:54:04.7930618Z   - /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/Cargo.lock
+2026-11-03T04:54:04.7931582Z   - /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/Cargo.toml
+2026-11-03T04:54:04.7932885Z ##[endgroup]
+2026-11-03T04:54:04.7933111Z 
+2026-11-03T04:54:06.5448182Z ... Cleaning /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target ...
+2026-11-03T04:54:06.7931892Z ... Cleaning cargo registry (cache-all-crates: false) ...
+2026-11-03T04:54:08.1195617Z ... Cleaning cargo/bin ...
+2026-11-03T04:54:08.1227101Z ... Cleaning cargo git cache ...
+2026-11-03T04:54:08.1231948Z ... Saving cache ...
+2026-11-03T04:54:08.1426738Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/fabushi-desktop/fabushi-desktop --files-from manifest.txt --use-compress-program zstdmt
+2026-11-03T04:54:14.4604123Z Sent 0 of 607792279 (0.0%), 0.0 MBs/sec
+2026-11-03T04:54:15.4573997Z Sent 335544320 of 607792279 (55.2%), 159.9 MBs/sec
+2026-11-03T04:54:16.4583196Z Sent 540683415 of 607792279 (89.0%), 171.8 MBs/sec
+2026-11-03T04:54:16.8025410Z Sent 607792279 of 607792279 (100.0%), 173.2 MBs/sec
+2026-11-03T04:54:17.1543303Z Post job cleanup.
+2026-11-03T04:54:17.2444795Z [command]/usr/bin/git version
+2026-11-03T04:54:17.2526188Z git version 2.56.0
+2026-11-03T04:54:17.2572716Z Temporarily overriding HOME='/home/runner/work/_temp/f2633c41-3fc5-4b9d-becd-a67e77668c00' before making global git config changes
+2026-11-03T04:54:17.2574098Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-03T04:54:17.2578215Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T04:54:17.2633379Z Removing SSH command configuration
+2026-11-03T04:54:17.2638989Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-03T04:54:17.2684467Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-03T04:54:17.2965962Z Removing HTTP extra header
+2026-11-03T04:54:17.2971879Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-03T04:54:17.3014156Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-03T04:54:17.3304253Z Removing includeIf entries pointing to credentials config files
+2026-11-03T04:54:17.3314253Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-03T04:54:17.3364123Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-03T04:54:17.3806714Z Cleaning up orphan processes
+2026-11-03T04:54:17.4209997Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

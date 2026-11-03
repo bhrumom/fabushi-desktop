@@ -635,10 +635,10 @@ fn test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout
 #[test]
 fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
     let list_start = SHIPPING_HOST_MAIN
-        .find("fn call_openclaw_cron_list(")
+        .find("fn list_openclaw_cron_jobs(")
         .expect("shipping cron.list owner exists");
     let list_end = SHIPPING_HOST_MAIN[list_start..]
-        .find("\n    fn call_openclaw_cron_trigger(")
+        .find("\nfn trigger_openclaw_cron_job(")
         .map(|offset| list_start + offset)
         .expect("shipping cron.list function boundary exists");
     let list = &SHIPPING_HOST_MAIN[list_start..list_end];
@@ -651,18 +651,35 @@ fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
     assert!(!list.contains("if let Ok(records)"));
 
     let trigger_start = SHIPPING_HOST_MAIN
-        .find("fn call_openclaw_cron_trigger(")
+        .find("fn trigger_openclaw_cron_job(")
         .expect("shipping cron.trigger owner exists");
     let trigger_end = SHIPPING_HOST_MAIN[trigger_start..]
-        .find("\n    fn call_openclaw_node_register(")
+        .find("\nimpl UnifiedGatewayApi {")
         .map(|offset| trigger_start + offset)
         .expect("shipping cron.trigger function boundary exists");
     let trigger = &SHIPPING_HOST_MAIN[trigger_start..trigger_end];
     assert!(trigger.contains("previous_run_id"));
     assert!(trigger.contains("record.runs.first()"));
-    assert!(trigger.contains(".first()\n                    .filter"));
+    assert!(trigger.contains(".first()\n                .filter"));
     assert!(trigger.contains("\"action\": if finished"));
     assert!(trigger.contains("unwrap_or(\"accepted\")"));
     assert!(!trigger.contains("if let Ok(records)"));
     assert!(!trigger.contains("format!(\"run-{}\", uuid::Uuid::new_v4())"));
+
+    let list_wrapper_start = SHIPPING_HOST_MAIN
+        .find("fn call_openclaw_cron_list(")
+        .expect("shipping cron.list entry exists");
+    let trigger_wrapper_start = SHIPPING_HOST_MAIN[list_wrapper_start..]
+        .find("\n    fn call_openclaw_cron_trigger(")
+        .map(|offset| list_wrapper_start + offset)
+        .expect("shipping cron.trigger entry exists");
+    let trigger_wrapper_end = SHIPPING_HOST_MAIN[trigger_wrapper_start..]
+        .find("\n    fn call_openclaw_node_register(")
+        .map(|offset| trigger_wrapper_start + offset)
+        .expect("shipping cron.trigger entry boundary exists");
+    let list_wrapper = &SHIPPING_HOST_MAIN[list_wrapper_start..trigger_wrapper_start];
+    let trigger_wrapper = &SHIPPING_HOST_MAIN[trigger_wrapper_start..trigger_wrapper_end];
+    assert!(list_wrapper.contains("list_openclaw_cron_jobs(&store, args)"));
+    assert!(trigger_wrapper.contains("trigger_openclaw_cron_job(&store, args, |run_args|"));
+    assert!(trigger_wrapper.contains("self.call(\"runAgentAutomationNow\", run_args)"));
 }

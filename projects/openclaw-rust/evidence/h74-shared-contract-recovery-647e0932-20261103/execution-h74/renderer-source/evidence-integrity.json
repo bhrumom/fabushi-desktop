@@ -1,0 +1,156 @@
+{
+  "method": "Read and byte-hash original artifacts and exact frozen Git objects; no executable repository validation.",
+  "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "artifact_archive_digests": [
+    {
+      "artifact_id": 13206320377,
+      "name": "ocrm-plugin-edge-74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "path": "renderer-plugin-edge-13206320377.zip",
+      "bytes": 10476,
+      "sha256": "6bad6ca91105832529a1dde5d05132731acbff5883da97aa811a6e1d143e766e",
+      "github_digest": "sha256:6bad6ca91105832529a1dde5d05132731acbff5883da97aa811a6e1d143e766e",
+      "match": true
+    },
+    {
+      "artifact_id": 13205204882,
+      "name": "ocrm-mab-74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "path": "renderer-mab-13205204882.zip",
+      "bytes": 10833,
+      "sha256": "71e068a817540f58d9f6ca44f0a58a7766457856a822bcac5d9ce0f5dfa564a9",
+      "github_digest": "sha256:71e068a817540f58d9f6ca44f0a58a7766457856a822bcac5d9ce0f5dfa564a9",
+      "match": true
+    },
+    {
+      "artifact_id": 13205785701,
+      "name": "ocrm-openclaw-notice-74f11d3d31c6245ac5886dc0181460b2d4349744-41580539491-1",
+      "path": "renderer-notice-13205785701.zip",
+      "bytes": 3840,
+      "sha256": "6f59330ac0fb72e69124dafd6f285046632b3c61ce0665d73b52c509366acd68",
+      "github_digest": "sha256:6f59330ac0fb72e69124dafd6f285046632b3c61ce0665d73b52c509366acd68",
+      "match": true
+    }
+  ],
+  "receipts": [
+    {
+      "contract": "OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1",
+      "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+      "upstream": {
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "repository": "openclaw/openclaw",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41580539491",
+      "run_attempt": "1",
+      "scope": "Actual Host loader and SDK listing/materialization boundaries with controlled transport/cache inputs. Rust admission requires separately bound native evidence; this renderer receipt asserts no native-job result. Real marketplace/accounts, live revocation on persistence failure, all MCP permissions and final acceptance remain pending.",
+      "receipt_path": "plugin-edge-artifact/ocrm-plugin-edge.json",
+      "receipt_sha256": "aca3935f1780c29c6e26df67e2c68b771dbb0ea76640122287e85fd38e5b1ac9",
+      "artifact_TAP_matches_original_receipt": true
+    },
+    {
+      "contract": "MAB-v1",
+      "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+      "upstream": {
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "repository": "openclaw/openclaw",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41580539491",
+      "run_attempt": "1",
+      "scope": "Actual native account owner, MainData client/queue, production Coordinator and attachment binding with controlled Electron process/port/dialog carriers and real temporary-file I/O. Fixed capture guards admission, queued posting, reply acceptance and native continuations; ordinary account cleanup remains possible. Existing shipping esbuild bundles are compiled, not a full TypeScript strict typecheck. Real Electron/account/provider/device/platform, sand-media streaming, composer target admission and complete Rust migration acceptance remain open.",
+      "receipt_path": "mab-artifact/receipt.json",
+      "receipt_sha256": "7253583e0cd8427db008c7ef977c75101286ffb7d2655fb4c2b581294dfc93b1",
+      "artifact_TAP_matches_original_receipt": true
+    },
+    {
+      "contract": "ONP-v1",
+      "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41580539491",
+      "run_attempt": "1",
+      "scope": "Actual locked source notice and common electron-builder mapping plus the real checker CLI over owned byte-preserved fixtures. Negative controls cover source/lock/mapping/options, competing common/platform resource writers and packaged-resource validation; default runtime assertions are retained. Actual isolated Git autocrlf checkout consumes the tracked narrow attribute, with an independent no-attribute byte-conversion refusal control. Fixture Resources are not a signed installer or actual packaged artifact. Actual macOS/Windows/Linux packages, signing, complete recursive legal provenance and full migration acceptance remain open.",
+      "receipt_path": "notice-artifact/receipt.json",
+      "receipt_sha256": "22e04ace3f6c689e7ad39146300709a396081818b27d36fec92388705dfbd581",
+      "artifact_logs_match_original_receipt": {
+        "source-notice.log": true,
+        "notice-contract.log": true
+      }
+    }
+  ],
+  "raw_logs": {
+    "source-log.log": {
+      "bytes": 28920,
+      "sha256": "31f25cb8af36bfb77ebfbd4179ea5728774379f2cf70f7dddebf2e1f2fc9dd1c",
+      "representation": "Unmodified UTF-8 encoding of the GitHub connector decoded complete job-log content, preserving BOM and line endings."
+    },
+    "renderer-log.log": {
+      "bytes": 202722,
+      "sha256": "676554df0a6df0000d9c1e1bc40959209d034979894b03b835856804b4b55840",
+      "representation": "Unmodified UTF-8 encoding of the GitHub connector decoded complete job-log content, preserving BOM and line endings."
+    }
+  },
+  "global_flags": {
+    "ledger": {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "flags": {
+        "baseline_identity_accepted": false,
+        "ecosystem_compatibility_accepted": false,
+        "production_wiring_complete": false,
+        "release_accepted": false,
+        "responsibility_mapping_complete": false,
+        "rust_implementation_complete": false,
+        "source_closure_ready": false,
+        "ui_accepted": false
+      },
+      "sha256": "209f9a420e244a9caaee2fce903155b540a1d14c07434b829da4af9b11e1cfc2",
+      "git_blob": "2f0d7d43f54c9abedebbe25f40f21acd20a19c30",
+      "computed_git_blob": "2f0d7d43f54c9abedebbe25f40f21acd20a19c30"
+    },
+    "rtm": {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "flags": {
+        "baseline_identity_accepted": false,
+        "ecosystem_compatibility_accepted": false,
+        "production_wiring_complete": false,
+        "release_accepted": false,
+        "responsibility_mapping_complete": false,
+        "rust_implementation_complete": false,
+        "source_closure_ready": false,
+        "ui_accepted": false
+      },
+      "sha256": "129e56cd93b3b9b0ff48abad90f65277dd4295d2131a97784e4720b135a4b5e4",
+      "git_blob": "d62c6816905709d9dfed939a3581633488d9921c",
+      "computed_git_blob": "d62c6816905709d9dfed939a3581633488d9921c"
+    }
+  },
+  "scoped_command_captures": {
+    "production": {
+      "node.exit": "0\n",
+      "capture.exit": "0\n",
+      "errexit.entry": "1\n"
+    },
+    "controls/node-failure": {
+      "node.exit": "7\n",
+      "capture.exit": "0\n",
+      "wrapper.exit": "1\n",
+      "errexit.entry": "1\n",
+      "wrapper_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "receipt_log_match": true
+    },
+    "controls/capture-failure": {
+      "node.exit": "0\n",
+      "capture.exit": "1\n",
+      "wrapper.exit": "1\n",
+      "errexit.entry": "1\n",
+      "wrapper_log_sha256": "17fe1eef2a4435a5a4bd46b28d76c41ba071d67a5ee419ecfd7438616e5e99ff",
+      "receipt_log_match": true
+    }
+  }
+}

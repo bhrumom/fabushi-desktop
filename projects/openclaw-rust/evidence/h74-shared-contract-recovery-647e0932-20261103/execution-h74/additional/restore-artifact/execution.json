@@ -1,0 +1,102 @@
+{
+  "contract": "OCRM-CONFIG-PUBLIC-SECRET-v1:CS06-ROOT/DELETE",
+  "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": "41580539491",
+  "run_attempt": "1",
+  "runner_os": "Linux",
+  "independent_acceptance": "pending",
+  "compiled": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "box_store_download_frozen_parity_contract",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "executable": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+    "executable_sha256": "7e94797e865d7e4f1f94ecc8f3dbc3d6633e2e289ded004fdc53123099f0bf24",
+    "manifest_sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+    "lock_sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+    "compiler_artifacts_sha256": "02395e80a670f4016b312b3c1653d7c984d47362f2e651fe2069a5d3b91856f7",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "compiler_uid": 1001
+  },
+  "executions": [
+    {
+      "case": "ordinary",
+      "command": [
+        "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "passed": 29,
+      "failed": 0,
+      "ignored": 2,
+      "oracle_accepted": true,
+      "log": "ordinary.log",
+      "log_sha256": "cfd7359a1317f9d68dfb8597f8dba87071ff6b71a7240c0f98c4337d8c5b293a"
+    },
+    {
+      "case": "linux_bind_mounted_descendant_file_restore_boundary",
+      "command": [
+        "sudo",
+        "-n",
+        "unshare",
+        "--mount",
+        "--propagation",
+        "private",
+        "--",
+        "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+        "--exact",
+        "linux_bind_mounted_descendant_file_restore_boundary",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "oracle_accepted": true,
+      "log": "linux_bind_mounted_descendant_file_restore_boundary.log",
+      "log_sha256": "6a4e7e28651c7c2b1c5866aceeccaa4a15c99c363f0d035d26552ed73e1c7bf4"
+    },
+    {
+      "case": "linux_bind_mounted_descendant_symlink_restore_boundary",
+      "command": [
+        "sudo",
+        "-n",
+        "unshare",
+        "--mount",
+        "--propagation",
+        "private",
+        "--",
+        "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-968a460ffe08475f",
+        "--exact",
+        "linux_bind_mounted_descendant_symlink_restore_boundary",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "oracle_accepted": true,
+      "log": "linux_bind_mounted_descendant_symlink_restore_boundary.log",
+      "log_sha256": "440cf3d7e0e6eace8956a7f34d65489d87be9b68b0d67ae796d9df965585c3b7"
+    }
+  ],
+  "result": "passed",
+  "scope": "Ordinary restore contracts plus real private-namespace bind-mounted descendant file/symlink replacements, using synthetic installation keys and owned fixtures. Missing privileges fail execution. This is not exclusion of concurrent external namespace mutation or full backup/client compatibility acceptance."
+}

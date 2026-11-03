@@ -9186,8 +9186,8 @@ mod media_settlement_tests {
             assert_eq!(std::fs::read(&self.original).unwrap(), b"retained media original");
         }
 
-        fn assert_committed_storage(&self, entry: &Value) {
-            assert_eq!(self.rows(), vec![entry.clone(), json!({
+        fn expected_committed_entries(&self, entry: &Value) -> Vec<Value> {
+            vec![entry.clone(), json!({
                 "id": RECEIPT_ID,
                 "kind": "outgoing-media-settlement",
                 "sessionKey": self.admission.session_key,
@@ -9195,7 +9195,11 @@ mod media_settlement_tests {
                 "lifecycleRevision": self.admission.lifecycle_revision,
                 "mediaPaths": [self.original.to_string_lossy()],
                 "transcriptEntryIds": [SEND_ID],
-            })]);
+            })]
+        }
+
+        fn assert_committed_storage(&self, entry: &Value) {
+            assert_eq!(self.rows(), self.expected_committed_entries(entry));
             let mut released = self.admission.clone();
             released.admitted_media_work_id = None;
             released.admitted_media_paths.clear();
@@ -9359,7 +9363,10 @@ mod media_settlement_tests {
 
         for _ in 0..2 {
             let reopened = SandAgentDb::open_existing_agent(fixture.owner.db_path(), 0).unwrap();
-            assert_eq!(reopened.get_transcript_entries().unwrap(), vec![entry.clone()]);
+            assert_eq!(
+                reopened.get_transcript_entries().unwrap(),
+                fixture.expected_committed_entries(&entry),
+            );
             assert!(reopened.read_session_work_admission().unwrap().unwrap()
                 .admitted_media_work_id.is_none());
             reopened.close(false);
@@ -9574,7 +9581,10 @@ mod media_settlement_tests {
         assert!(fault.was_applied());
         fixture.assert_retired(1);
         assert!(!other.is_closed(), "unknown must retire only the invoking connection");
-        assert_eq!(other.get_transcript_entries().unwrap(), vec![entry.clone()]);
+        assert_eq!(
+            other.get_transcript_entries().unwrap(),
+            fixture.expected_committed_entries(&entry),
+        );
         fixture.assert_committed_storage(&entry);
         events.assert_none();
         other.close(false);

@@ -1,0 +1,901 @@
+TAP version 13
+# Subtest: a throwing problem reporter cannot prevent protocol settlement
+ok 1 - a throwing problem reporter cannot prevent protocol settlement
+  ---
+  duration_ms: 2.041168
+  type: 'test'
+  ...
+# [mahayana-coordinator-carrier] coordinator exited by signal SIGTERM
+# Subtest: MCP results retain their discriminants through native ports and the shipping Rust carrier
+ok 2 - MCP results retain their discriminants through native ports and the shipping Rust carrier
+  ---
+  duration_ms: 135.520222
+  type: 'test'
+  ...
+# Subtest: Host rejects an unavailable SDK source but returns an authoritative empty snapshot
+ok 3 - Host rejects an unavailable SDK source but returns an authoritative empty snapshot
+  ---
+  duration_ms: 24.850801
+  type: 'test'
+  ...
+# Subtest: Host rejects malformed raw listing shapes before materializing any entry
+ok 4 - Host rejects malformed raw listing shapes before materializing any entry
+  ---
+  duration_ms: 8.191431
+  type: 'test'
+  ...
+# Subtest: Host rejects malformed or duplicate enabled IDs before SDK filtering
+ok 5 - Host rejects malformed or duplicate enabled IDs before SDK filtering
+  ---
+  duration_ms: 6.143861
+  type: 'test'
+  ...
+# Subtest: Host captures enabled IDs before the real SDK omits inline content or nameless entries
+ok 6 - Host captures enabled IDs before the real SDK omits inline content or nameless entries
+  ---
+  duration_ms: 15.400799
+  type: 'test'
+  ...
+# Subtest: Host returns the actual SDK install path for a zero-skill plugin with dotted cache keys
+ok 7 - Host returns the actual SDK install path for a zero-skill plugin with dotted cache keys
+  ---
+  duration_ms: 16.679291
+  type: 'test'
+  ...
+# Subtest: Host late failed materialization preserves a zero-skill winner and a fresh cache hit
+ok 8 - Host late failed materialization preserves a zero-skill winner and a fresh cache hit
+  ---
+  duration_ms: 48.631365
+  type: 'test'
+  ...
+# Subtest: Host preserves opaque strings and bigint IDs above the safe-number range exactly
+ok 9 - Host preserves opaque strings and bigint IDs above the safe-number range exactly
+  ---
+  duration_ms: 1.80144
+  type: 'test'
+  ...
+# Subtest: local install permission failures never become remote authorization blocks
+ok 10 - local install permission failures never become remote authorization blocks
+  ---
+  duration_ms: 11.018053
+  type: 'test'
+  ...
+# Subtest: Host authorization failures use the canonical DB ID when the slug matches another plugin's DB ID
+ok 11 - Host authorization failures use the canonical DB ID when the slug matches another plugin's DB ID
+  ---
+  duration_ms: 11.270774
+  type: 'test'
+  ...
+# Subtest: Host staging cleanup failure preserves the canonical authorization denial
+ok 12 - Host staging cleanup failure preserves the canonical authorization denial
+  ---
+  duration_ms: 15.930407
+  type: 'test'
+  ...
+# Subtest: Host cleanup I/O failures preserve canonical remote denial and recovery
+ok 13 - Host cleanup I/O failures preserve canonical remote denial and recovery
+  ---
+  duration_ms: 37.380994
+  type: 'test'
+  ...
+# Subtest: Host cache-owned materialization failures cannot create authorization denials
+ok 14 - Host cache-owned materialization failures cannot create authorization denials
+  ---
+  duration_ms: 20.434428
+  type: 'test'
+  ...
+# Subtest: Host refuses an SDK auth denial without canonical identity instead of guessing from a slug or name
+ok 15 - Host refuses an SDK auth denial without canonical identity instead of guessing from a slug or name
+  ---
+  duration_ms: 3.996224
+  type: 'test'
+  ...
+# Subtest: remote Git clone authorization denial retains its canonical ID as an auth block
+ok 16 - remote Git clone authorization denial retains its canonical ID as an auth block
+  ---
+  duration_ms: 4.886083
+  type: 'test'
+  ...
+# Subtest: Host defers SDK pruning even after a complete successful materialization
+ok 17 - Host defers SDK pruning even after a complete successful materialization
+  ---
+  duration_ms: 8.730055
+  type: 'test'
+  ...
+# Subtest: one Host loader refreshes publisher identity for consecutive accounts
+ok 18 - one Host loader refreshes publisher identity for consecutive accounts
+  ---
+  duration_ms: 9.878307
+  type: 'test'
+  ...
+# Subtest: Host refuses an actual Sand account read superseded by logout and login
+    # Subtest: peek-before-logout-login
+    ok 1 - peek-before-logout-login
+      ---
+      duration_ms: 18.003244
+      type: 'test'
+      ...
+    # Subtest: login-before-peek
+    ok 2 - login-before-peek
+      ---
+      duration_ms: 11.786193
+      type: 'test'
+      ...
+    1..2
+ok 19 - Host refuses an actual Sand account read superseded by logout and login
+  ---
+  duration_ms: 30.580133
+  type: 'test'
+  ...
+# Subtest: a Host identity lookup failure or invalid ID cannot reuse a prior successful identity
+ok 20 - a Host identity lookup failure or invalid ID cannot reuse a prior successful identity
+  ---
+  duration_ms: 61.060983
+  type: 'test'
+  ...
+# Subtest: Host pins listing identity and Git credentials then refuses an account change during the pass
+ok 21 - Host pins listing identity and Git credentials then refuses an account change during the pass
+  ---
+  duration_ms: 7.657845
+  type: 'test'
+  ...
+# Subtest: Host rejects account departure and unreadable current account after materialization
+    # Subtest: departed
+    ok 1 - departed
+      ---
+      duration_ms: 6.330519
+      type: 'test'
+      ...
+    # Subtest: unreadable
+    ok 2 - unreadable
+      ---
+      duration_ms: 7.083556
+      type: 'test'
+      ...
+    1..2
+ok 22 - Host rejects account departure and unreadable current account after materialization
+  ---
+  duration_ms: 13.867661
+  type: 'test'
+  ...
+# Subtest: Host accepts same-account renewal without reusing or mixing the pass credential
+ok 23 - Host accepts same-account renewal without reusing or mixing the pass credential
+  ---
+  duration_ms: 1.49002
+  type: 'test'
+  ...
+# Subtest: Host does not equate different tokens with empty missing or ambiguous account subjects
+ok 24 - Host does not equate different tokens with empty missing or ambiguous account subjects
+  ---
+  duration_ms: 5.200351
+  type: 'test'
+  ...
+# Subtest: Host refuses a backend-context change before SDK credentials are consumed or after materialization
+ok 25 - Host refuses a backend-context change before SDK credentials are consumed or after materialization
+  ---
+  duration_ms: 7.577153
+  type: 'test'
+  ...
+# Subtest: Host refuses the previous Fabushi account while public browser login is pending
+ok 26 - Host refuses the previous Fabushi account while public browser login is pending
+  ---
+  duration_ms: 29.54293
+  type: 'test'
+  ...
+# Subtest: SDK distinguishes an unavailable source from an authoritative empty listing
+ok 27 - SDK distinguishes an unavailable source from an authoritative empty listing
+  ---
+  duration_ms: 29.015899
+  type: 'test'
+  ...
+# Subtest: SDK explicit false defers both pruning sites
+ok 28 - SDK explicit false defers both pruning sites
+  ---
+  duration_ms: 26.331438
+  type: 'test'
+  ...
+# Subtest: SDK omitted option preserves the default per-plugin prune
+ok 29 - SDK omitted option preserves the default per-plugin prune
+  ---
+  duration_ms: 10.139512
+  type: 'test'
+  ...
+# Subtest: SDK explicit true preserves both pruning sites
+ok 30 - SDK explicit true preserves both pruning sites
+  ---
+  duration_ms: 16.673064
+  type: 'test'
+  ...
+# Subtest: SDK missing-marketplace failures preserve the supplied canonical DB ID
+ok 31 - SDK missing-marketplace failures preserve the supplied canonical DB ID
+  ---
+  duration_ms: 1.464232
+  type: 'test'
+  ...
+# Subtest: SDK installation failure retains canonical identity and old files during a partial pass
+ok 32 - SDK installation failure retains canonical identity and old files during a partial pass
+  ---
+  duration_ms: 22.853252
+  type: 'test'
+  ...
+# Subtest: failed cache publication removes only its staging directory
+ok 33 - failed cache publication removes only its staging directory
+  ---
+  duration_ms: 7.970871
+  type: 'test'
+  ...
+# Subtest: filesystem EACCES during cache installation is an install failure, not clone authentication
+ok 34 - filesystem EACCES during cache installation is an install failure, not clone authentication
+  ---
+  duration_ms: 2.117349
+  type: 'test'
+  ...
+# Subtest: filesystem EPERM during cache installation is an install failure, not clone authentication
+ok 35 - filesystem EPERM during cache installation is an install failure, not clone authentication
+  ---
+  duration_ms: 3.73641
+  type: 'test'
+  ...
+# Subtest: filesystem EROFS during cache installation is an install failure, not clone authentication
+ok 36 - filesystem EROFS during cache installation is an install failure, not clone authentication
+  ---
+  duration_ms: 1.959094
+  type: 'test'
+  ...
+# Subtest: SDK cleanup I/O failures preserve the primary load category and raw causes
+ok 37 - SDK cleanup I/O failures preserve the primary load category and raw causes
+  ---
+  duration_ms: 100.359361
+  type: 'test'
+  ...
+# Subtest: an older failed install cannot remove a successor published cache directory
+ok 38 - an older failed install cannot remove a successor published cache directory
+  ---
+  duration_ms: 11.265364
+  type: 'test'
+  ...
+# Subtest: SDK version-resolution failures reach the Host with their canonical DB ID
+ok 39 - SDK version-resolution failures reach the Host with their canonical DB ID
+  ---
+  duration_ms: 1.799957
+  type: 'test'
+  ...
+# Subtest: SDK late failed materialization preserves the completed winner and a fresh cache hit
+ok 40 - SDK late failed materialization preserves the completed winner and a fresh cache hit
+  ---
+  duration_ms: 20.92291
+  type: 'test'
+  ...
+# Subtest: SDK concurrent successful materializations reuse the first completed directory
+ok 41 - SDK concurrent successful materializations reuse the first completed directory
+  ---
+  duration_ms: 21.714045
+  type: 'test'
+  ...
+# Subtest: SDK incomplete and non-directory cache targets are preserved without installation
+ok 42 - SDK incomplete and non-directory cache targets are preserved without installation
+  ---
+  duration_ms: 18.854371
+  type: 'test'
+  ...
+# Subtest: SDK a target appearing during materialization is preserved without publication
+ok 43 - SDK a target appearing during materialization is preserved without publication
+  ---
+  duration_ms: 6.553295
+  type: 'test'
+  ...
+# Subtest: SDK a failed materialization removes only its owned staging directory
+ok 44 - SDK a failed materialization removes only its owned staging directory
+  ---
+  duration_ms: 11.968106
+  type: 'test'
+  ...
+# Subtest: SDK marker and publication failures do not report a successful materialization
+ok 45 - SDK marker and publication failures do not report a successful materialization
+  ---
+  duration_ms: 9.697339
+  type: 'test'
+  ...
+# Subtest: default-model RPC retains provider and mirrors only the acknowledged Host model
+ok 46 - default-model RPC retains provider and mirrors only the acknowledged Host model
+  ---
+  duration_ms: 8.510525
+  type: 'test'
+  ...
+# Subtest: invalid provider bindings reach the Host unchanged and refusal preserves mirror bytes
+ok 47 - invalid provider bindings reach the Host unchanged and refusal preserves mirror bytes
+  ---
+  duration_ms: 3.723165
+  type: 'test'
+  ...
+# Subtest: explicit undefined provider is refused before JSON can turn it into a legacy default
+ok 48 - explicit undefined provider is refused before JSON can turn it into a legacy default
+  ---
+  duration_ms: 2.210444
+  type: 'test'
+  ...
+# Subtest: unavailable Host write or read leaves the last acknowledged default intact
+ok 49 - unavailable Host write or read leaves the last acknowledged default intact
+  ---
+  duration_ms: 2.804202
+  type: 'test'
+  ...
+# Subtest: Host reads preserve metadata and acknowledged absent or null defaults clear the mirror
+ok 50 - Host reads preserve metadata and acknowledged absent or null defaults clear the mirror
+  ---
+  duration_ms: 5.5323
+  type: 'test'
+  ...
+# Subtest: legacy unbound defaults and malformed base-shape behavior stay compatible
+ok 51 - legacy unbound defaults and malformed base-shape behavior stay compatible
+  ---
+  duration_ms: 3.426061
+  type: 'test'
+  ...
+# Subtest: existing fast migration retains provider and model metadata through reopening
+ok 52 - existing fast migration retains provider and model metadata through reopening
+  ---
+  duration_ms: 2.591604
+  type: 'test'
+  ...
+# Subtest: account transitions clear bound model mirrors without changing legacy retention
+ok 53 - account transitions clear bound model mirrors without changing legacy retention
+  ---
+  duration_ms: 4.196518
+  type: 'test'
+  ...
+# Subtest: Computer Use keeps its existing parser, override and clear behavior
+ok 54 - Computer Use keeps its existing parser, override and clear behavior
+  ---
+  duration_ms: 3.146198
+  type: 'test'
+  ...
+# Subtest: real appWindow transport and served trust refuse foreign or nested-frame model requests
+ok 55 - real appWindow transport and served trust refuse foreign or nested-frame model requests
+  ---
+  duration_ms: 1.733765
+  type: 'test'
+  ...
+# Subtest: router set waits for Host acknowledgement and mirrors its canonical provider
+ok 56 - router set waits for Host acknowledgement and mirrors its canonical provider
+  ---
+  duration_ms: 4.711709
+  type: 'test'
+  ...
+# Subtest: router preserves all five configured providers and reconciles reads with diagnostic fallbacks
+ok 57 - router preserves all five configured providers and reconciles reads with diagnostic fallbacks
+  ---
+  duration_ms: 13.788091
+  type: 'test'
+  ...
+# Subtest: router invalid requests and untrusted frames cause no Host or mirror effects
+ok 58 - router invalid requests and untrusted frames cause no Host or mirror effects
+  ---
+  duration_ms: 2.880283
+  type: 'test'
+  ...
+# Subtest: router refuses malformed Host replies without local fallback and permits later reconciliation
+ok 59 - router refuses malformed Host replies without local fallback and permits later reconciliation
+  ---
+  duration_ms: 25.139435
+  type: 'test'
+  ...
+# Subtest: router Host refusal releases a queued read and read rejection does not poison later calls
+ok 60 - router Host refusal releases a queued read and read rejection does not poison later calls
+  ---
+  duration_ms: 3.439476
+  type: 'test'
+  ...
+# Subtest: router unknown transport outcome can follow a Host commit and requires an explicit read
+ok 61 - router unknown transport outcome can follow a Host commit and requires an explicit read
+  ---
+  duration_ms: 3.284537
+  type: 'test'
+  ...
+# Subtest: router local persistence failure leaves the Host commit intact and a later get repairs the mirror
+ok 62 - router local persistence failure leaves the Host commit intact and a later get repairs the mirror
+  ---
+  duration_ms: 2.160791
+  type: 'test'
+  ...
+# Subtest: router orders a held get before set through mirror persistence
+ok 63 - router orders a held get before set through mirror persistence
+  ---
+  duration_ms: 1.971767
+  type: 'test'
+  ...
+# Subtest: router orders a held set before get through mirror persistence
+ok 64 - router orders a held set before get through mirror persistence
+  ---
+  duration_ms: 2.488372
+  type: 'test'
+  ...
+# Subtest: router serializes two sets so a late acknowledgement cannot overwrite the later mirror
+ok 65 - router serializes two sets so a late acknowledgement cannot overwrite the later mirror
+  ---
+  duration_ms: 1.680335
+  type: 'test'
+  ...
+# Subtest: a pending router IPC does not order unrelated methods or another MainEdge instance
+ok 66 - a pending router IPC does not order unrelated methods or another MainEdge instance
+  ---
+  duration_ms: 2.078547
+  type: 'test'
+  ...
+# Subtest: shipping MCP runtime forwards discovery failure through the dedicated callback
+ok 67 - shipping MCP runtime forwards discovery failure through the dedicated callback
+  ---
+  duration_ms: 3.988843
+  type: 'test'
+  ...
+# Subtest: shipping MCP runtime preserves connector-auth reports through the dedicated callback
+ok 68 - shipping MCP runtime preserves connector-auth reports through the dedicated callback
+  ---
+  duration_ms: 0.469235
+  type: 'test'
+  ...
+# Subtest: MC-01 concurrent ensures share the reserved construction and manager
+ok 69 - MC-01 concurrent ensures share the reserved construction and manager
+  ---
+  duration_ms: 0.693935
+  type: 'test'
+  ...
+# Subtest: MC-01 a synchronous factory reentry sees the already reserved promise
+ok 70 - MC-01 a synchronous factory reentry sees the already reserved promise
+  ---
+  duration_ms: 0.32151
+  type: 'test'
+  ...
+# Subtest: MC-01/03 reset before invocation refuses the old factory
+ok 71 - MC-01/03 reset before invocation refuses the old factory
+  ---
+  duration_ms: 0.834326
+  type: 'test'
+  ...
+# Subtest: MC-01/03 dispose before invocation refuses the old factory
+ok 72 - MC-01/03 dispose before invocation refuses the old factory
+  ---
+  duration_ms: 0.354481
+  type: 'test'
+  ...
+# Subtest: MC-02 late old success cannot adopt or erase replacement B
+ok 73 - MC-02 late old success cannot adopt or erase replacement B
+  ---
+  duration_ms: 0.585752
+  type: 'test'
+  ...
+# Subtest: MC-02 late old failure cannot adopt or erase replacement B
+ok 74 - MC-02 late old failure cannot adopt or erase replacement B
+  ---
+  duration_ms: 0.247492
+  type: 'test'
+  ...
+# Subtest: MC-02 current factory throw retires callbacks and allows a fresh retry
+ok 75 - MC-02 current factory throw retires callbacks and allows a fresh retry
+  ---
+  duration_ms: 0.71322
+  type: 'test'
+  ...
+# Subtest: MC-02 current factory reject retires callbacks and allows a fresh retry
+ok 76 - MC-02 current factory reject retires callbacks and allows a fresh retry
+  ---
+  duration_ms: 0.756562
+  type: 'test'
+  ...
+# Subtest: MC-03 disposal returns while a factory is pending and owns its late cleanup
+ok 77 - MC-03 disposal returns while a factory is pending and owns its late cleanup
+  ---
+  duration_ms: 0.548353
+  type: 'test'
+  ...
+# Subtest: MC-03 disposal shares observable cleanup before synchronous reentry
+ok 78 - MC-03 disposal shares observable cleanup before synchronous reentry
+  ---
+  duration_ms: 1.112656
+  type: 'test'
+  ...
+# Subtest: MC-02 reset detaches before a disposer reentrantly creates B
+ok 79 - MC-02 reset detaches before a disposer reentrantly creates B
+  ---
+  duration_ms: 0.448356
+  type: 'test'
+  ...
+# Subtest: MC-02/03 reset observes cleanup throw without erasing B
+ok 80 - MC-02/03 reset observes cleanup throw without erasing B
+  ---
+  duration_ms: 0.48825
+  type: 'test'
+  ...
+# Subtest: MC-02/03 reset observes cleanup reject without erasing B
+ok 81 - MC-02/03 reset observes cleanup reject without erasing B
+  ---
+  duration_ms: 0.31101
+  type: 'test'
+  ...
+# Subtest: MC-02/03 late retired-manager cleanup failure remains in the old rejection
+ok 82 - MC-02/03 late retired-manager cleanup failure remains in the old rejection
+  ---
+  duration_ms: 0.716557
+  type: 'test'
+  ...
+# Subtest: MC-04 reentrant root setup cannot publish a retired manager
+ok 83 - MC-04 reentrant root setup cannot publish a retired manager
+  ---
+  duration_ms: 0.543043
+  type: 'test'
+  ...
+# Subtest: MC-04 reentrant cleanup setup cannot publish a retired manager
+ok 84 - MC-04 reentrant cleanup setup cannot publish a retired manager
+  ---
+  duration_ms: 0.232484
+  type: 'test'
+  ...
+# Subtest: MC-04 reentrant observer setup cannot publish a retired manager
+ok 85 - MC-04 reentrant observer setup cannot publish a retired manager
+  ---
+  duration_ms: 0.264543
+  type: 'test'
+  ...
+# Subtest: MC-02 reset between setup and promise publication rejects the original waiter
+ok 86 - MC-02 reset between setup and promise publication rejects the original waiter
+  ---
+  duration_ms: 0.383475
+  type: 'test'
+  ...
+# Subtest: MC-02/04 setup failure retires callbacks, retains cleanup errors and permits retry
+ok 87 - MC-02/04 setup failure retires callbacks, retains cleanup errors and permits retry
+  ---
+  duration_ms: 0.662656
+  type: 'test'
+  ...
+# Subtest: MC-04 auth broadcast rechecks retirement during installation
+ok 88 - MC-04 auth broadcast rechecks retirement during installation
+  ---
+  duration_ms: 0.645905
+  type: 'test'
+  ...
+# Subtest: MC-04 auth broadcast rechecks retirement during completion
+ok 89 - MC-04 auth broadcast rechecks retirement during completion
+  ---
+  duration_ms: 0.26823
+  type: 'test'
+  ...
+# Subtest: MC-04 callbacks belong to the exact attempt while late scrub failures stay observable
+ok 90 - MC-04 callbacks belong to the exact attempt while late scrub failures stay observable
+  ---
+  duration_ms: 0.760178
+  type: 'test'
+  ...
+# Subtest: MC-05 token port refuses retirement at the entry boundary
+ok 91 - MC-05 token port refuses retirement at the entry boundary
+  ---
+  duration_ms: 0.765218
+  type: 'test'
+  ...
+# Subtest: MC-05 token port refuses retirement at the service boundary
+ok 92 - MC-05 token port refuses retirement at the service boundary
+  ---
+  duration_ms: 0.354271
+  type: 'test'
+  ...
+# Subtest: MC-05 token port refuses retirement at the token boundary
+ok 93 - MC-05 token port refuses retirement at the token boundary
+  ---
+  duration_ms: 0.398453
+  type: 'test'
+  ...
+# Subtest: MC-06 shipping adapter reset rejects pending routed operations before facade I/O
+ok 94 - MC-06 shipping adapter reset rejects pending routed operations before facade I/O
+  ---
+  duration_ms: 1.707405
+  type: 'test'
+  ...
+# Subtest: MC-06 shipping adapter dispose rejects pending routed operations before facade I/O
+ok 95 - MC-06 shipping adapter dispose rejects pending routed operations before facade I/O
+  ---
+  duration_ms: 6.751023
+  type: 'test'
+  ...
+# Subtest: MC-03 shipping adapter awaits and propagates manager teardown failure
+ok 96 - MC-03 shipping adapter awaits and propagates manager teardown failure
+  ---
+  duration_ms: 0.554875
+  type: 'test'
+  ...
+# Subtest: MB-02 current Box bridge ports preserve arguments and actual success or failure
+ok 97 - MB-02 current Box bridge ports preserve arguments and actual success or failure
+  ---
+  duration_ms: 0.90606
+  type: 'test'
+  ...
+# Subtest: MB-01 all captured Box ports refuse after reset
+ok 98 - MB-01 all captured Box ports refuse after reset
+  ---
+  duration_ms: 0.848753
+  type: 'test'
+  ...
+# Subtest: MB-01 all captured Box ports refuse after dispose
+ok 99 - MB-01 all captured Box ports refuse after dispose
+  ---
+  duration_ms: 0.282968
+  type: 'test'
+  ...
+# Subtest: MB-01 all captured Box ports refuse after construction failure
+ok 100 - MB-01 all captured Box ports refuse after construction failure
+  ---
+  duration_ms: 0.426516
+  type: 'test'
+  ...
+# Subtest: MB-03 already admitted Box requests keep their actual late success
+ok 101 - MB-03 already admitted Box requests keep their actual late success
+  ---
+  duration_ms: 0.654581
+  type: 'test'
+  ...
+# Subtest: MB-03 already admitted Box requests keep their actual late failure
+ok 102 - MB-03 already admitted Box requests keep their actual late failure
+  ---
+  duration_ms: 0.26305
+  type: 'test'
+  ...
+# Subtest: MB-04 shipping adapter reset refuses a facade paused before Box dispatch
+ok 103 - MB-04 shipping adapter reset refuses a facade paused before Box dispatch
+  ---
+  duration_ms: 0.545257
+  type: 'test'
+  ...
+# Subtest: MB-04 shipping adapter dispose refuses a facade paused before Box dispatch
+ok 104 - MB-04 shipping adapter dispose refuses a facade paused before Box dispatch
+  ---
+  duration_ms: 0.309829
+  type: 'test'
+  ...
+# Subtest: MCP account retirement preserves B permissions after late A success
+ok 105 - MCP account retirement preserves B permissions after late A success
+  ---
+  duration_ms: 14.652693
+  type: 'test'
+  ...
+# Subtest: MCP account retirement preserves B permissions after late A unavailable
+ok 106 - MCP account retirement preserves B permissions after late A unavailable
+  ---
+  duration_ms: 4.57847
+  type: 'test'
+  ...
+# Subtest: MCP account retirement drops an established cache and a held fresh resolution
+ok 107 - MCP account retirement drops an established cache and a held fresh resolution
+  ---
+  duration_ms: 1.696134
+  type: 'test'
+  ...
+# Subtest: MCP account retirement fences a held backend listing before tool-cache publication
+ok 108 - MCP account retirement fences a held backend listing before tool-cache publication
+  ---
+  duration_ms: 0.989886
+  type: 'test'
+  ...
+# Subtest: MCP account retirement during the scope callback cannot restore account projections
+ok 109 - MCP account retirement during the scope callback cannot restore account projections
+  ---
+  duration_ms: 0.859493
+  type: 'test'
+  ...
+# Subtest: MD-01/03/05 a cold current owner rechecks retained tools against persisted same-account disable
+ok 110 - MD-01/03/05 a cold current owner rechecks retained tools against persisted same-account disable
+  ---
+  duration_ms: 4.925678
+  type: 'test'
+  ...
+# Subtest: MD-02/03/06 Box preparation success preserves a disable committed before execution
+ok 111 - MD-02/03/06 Box preparation success preserves a disable committed before execution
+  ---
+  duration_ms: 2.83573
+  type: 'test'
+  ...
+# Subtest: MD-02/03/06 Box preparation failure preserves a disable committed before execution
+ok 112 - MD-02/03/06 Box preparation failure preserves a disable committed before execution
+  ---
+  duration_ms: 2.794673
+  type: 'test'
+  ...
+# Subtest: MD-03/06 cold missing identity retains unavailable outcome and permissions
+ok 113 - MD-03/06 cold missing identity retains unavailable outcome and permissions
+  ---
+  duration_ms: 1.960798
+  type: 'test'
+  ...
+# Subtest: MD-03/06 cold unavailable identity retains unavailable outcome and permissions
+ok 114 - MD-03/06 cold unavailable identity retains unavailable outcome and permissions
+  ---
+  duration_ms: 1.632475
+  type: 'test'
+  ...
+# Subtest: MD-04/06 admitted http keeps late success after disable
+ok 115 - MD-04/06 admitted http keeps late success after disable
+  ---
+  duration_ms: 1.809876
+  type: 'test'
+  ...
+# Subtest: MD-04/06 admitted http keeps late rejection after disable
+ok 116 - MD-04/06 admitted http keeps late rejection after disable
+  ---
+  duration_ms: 1.272714
+  type: 'test'
+  ...
+# Subtest: MD-04/06 admitted http keeps late success after reset
+ok 117 - MD-04/06 admitted http keeps late success after reset
+  ---
+  duration_ms: 1.284777
+  type: 'test'
+  ...
+# Subtest: MD-04/06 admitted http keeps late rejection after reset
+ok 118 - MD-04/06 admitted http keeps late rejection after reset
+  ---
+  duration_ms: 1.437832
+  type: 'test'
+  ...
+# Subtest: MD-04/06 admitted stdio keeps late success after disable
+ok 119 - MD-04/06 admitted stdio keeps late success after disable
+  ---
+  duration_ms: 2.156482
+  type: 'test'
+  ...
+# Subtest: MD-04/06 admitted stdio keeps late rejection after disable
+ok 120 - MD-04/06 admitted stdio keeps late rejection after disable
+  ---
+  duration_ms: 1.677118
+  type: 'test'
+  ...
+# Subtest: MD-04/06 admitted stdio keeps late success after reset
+ok 121 - MD-04/06 admitted stdio keeps late success after reset
+  ---
+  duration_ms: 2.232004
+  type: 'test'
+  ...
+# Subtest: MD-04/06 admitted stdio keeps late rejection after reset
+ok 122 - MD-04/06 admitted stdio keeps late rejection after reset
+  ---
+  duration_ms: 1.885497
+  type: 'test'
+  ...
+# Subtest: PS-DESKTOP-01/03/04 registered uninstall awaits one Rust intent and preserves its full response
+ok 123 - PS-DESKTOP-01/03/04 registered uninstall awaits one Rust intent and preserves its full response
+  ---
+  duration_ms: 3.408428
+  type: 'test'
+  ...
+# Subtest: PS-DESKTOP-04 settings failure after confirmation does not retry, fall back, or refresh again
+ok 124 - PS-DESKTOP-04 settings failure after confirmation does not retry, fall back, or refresh again
+  ---
+  duration_ms: 0.871025
+  type: 'test'
+  ...
+# Subtest: PS-DESKTOP-02/04 registered uninstall preserves not-removed without local mutation
+ok 125 - PS-DESKTOP-02/04 registered uninstall preserves not-removed without local mutation
+  ---
+  duration_ms: 0.739259
+  type: 'test'
+  ...
+# Subtest: PS-DESKTOP-02/04 registered uninstall preserves unknown-result without local mutation
+ok 126 - PS-DESKTOP-02/04 registered uninstall preserves unknown-result without local mutation
+  ---
+  duration_ms: 0.576956
+  type: 'test'
+  ...
+# Subtest: PS-DESKTOP-02/04 registered uninstall preserves invalid-args without local mutation
+ok 127 - PS-DESKTOP-02/04 registered uninstall preserves invalid-args without local mutation
+  ---
+  duration_ms: 0.529618
+  type: 'test'
+  ...
+# Subtest: PS-DESKTOP-02/04 registered uninstall preserves missing-leg without local mutation
+ok 128 - PS-DESKTOP-02/04 registered uninstall preserves missing-leg without local mutation
+  ---
+  duration_ms: 0.530309
+  type: 'test'
+  ...
+# Subtest: PS-DESKTOP-06 replacement Coordinator leg cannot replay an admitted uninstall
+ok 129 - PS-DESKTOP-06 replacement Coordinator leg cannot replay an admitted uninstall
+  ---
+  duration_ms: 0.799711
+  type: 'test'
+  ...
+# Subtest: MO-05 default official credential bridge refuses reset across the service await
+ok 130 - MO-05 default official credential bridge refuses reset across the service await
+  ---
+  duration_ms: 63.746662
+  type: 'test'
+  ...
+# Subtest: MO-05 default official credential bridge refuses reset across the token await
+ok 131 - MO-05 default official credential bridge refuses reset across the token await
+  ---
+  duration_ms: 4.831485
+  type: 'test'
+  ...
+# Subtest: MO-05 real official disposal cannot obtain credentials for cancel after reset
+ok 132 - MO-05 real official disposal cannot obtain credentials for cancel after reset
+  ---
+  duration_ms: 5.281933
+  type: 'test'
+  ...
+# Subtest: MO-05 real official disposal cannot obtain credentials for cancel after dispose
+ok 133 - MO-05 real official disposal cannot obtain credentials for cancel after dispose
+  ---
+  duration_ms: 3.28105
+  type: 'test'
+  ...
+# Subtest: MO-05 default official bridge retains current credential errors and unauthenticated message
+ok 134 - MO-05 default official bridge retains current credential errors and unauthenticated message
+  ---
+  duration_ms: 3.273226
+  type: 'test'
+  ...
+# Subtest: MO-06 actual official poll failure after reset cannot notify the replacement
+ok 135 - MO-06 actual official poll failure after reset cannot notify the replacement
+  ---
+  duration_ms: 5.628269
+  type: 'test'
+  ...
+# Subtest: MO-06 actual official poll ready after reset cannot notify the replacement
+ok 136 - MO-06 actual official poll ready after reset cannot notify the replacement
+  ---
+  duration_ms: 5.1422
+  type: 'test'
+  ...
+# Subtest: MO-06 actual official acknowledgment after reset keeps its admitted outcome without notifying B
+ok 137 - MO-06 actual official acknowledgment after reset keeps its admitted outcome without notifying B
+  ---
+  duration_ms: 7.937867
+  type: 'test'
+  ...
+# Subtest: MO-06 actual official disconnect cleanup success after reset cannot notify B
+ok 138 - MO-06 actual official disconnect cleanup success after reset cannot notify B
+  ---
+  duration_ms: 6.238387
+  type: 'test'
+  ...
+# Subtest: MO-06 actual official disconnect cleanup failure after reset cannot notify B
+ok 139 - MO-06 actual official disconnect cleanup failure after reset cannot notify B
+  ---
+  duration_ms: 12.443252
+  type: 'test'
+  ...
+# Subtest: MO-06 default official completion preserves zero-argument refresh and rechecks broadcast reset
+ok 140 - MO-06 default official completion preserves zero-argument refresh and rechecks broadcast reset
+  ---
+  duration_ms: 6.123223
+  type: 'test'
+  ...
+# Subtest: MO-07 default official mutation cannot write after its final scope await is retired
+ok 141 - MO-07 default official mutation cannot write after its final scope await is retired
+  ---
+  duration_ms: 4.276568
+  type: 'test'
+  ...
+# Subtest: MO-07 official pre-write admission refuses retirement after the final scope check fulfills
+ok 142 - MO-07 official pre-write admission refuses retirement after the final scope check fulfills
+  ---
+  duration_ms: 0.700406
+  type: 'test'
+  ...
+# Subtest: MO-07 default official already-admitted write retains its success after reset
+ok 143 - MO-07 default official already-admitted write retains its success after reset
+  ---
+  duration_ms: 4.349905
+  type: 'test'
+  ...
+# Subtest: MO-07 default official already-admitted write retains its failure after reset
+ok 144 - MO-07 default official already-admitted write retains its failure after reset
+  ---
+  duration_ms: 1.993449
+  type: 'test'
+  ...
+1..144
+# tests 148
+# suites 0
+# pass 148
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1147.618174

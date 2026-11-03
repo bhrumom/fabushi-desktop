@@ -1,0 +1,693 @@
+warning: unused import: `mahayana_host_protocol::ComputerAccessibilityNode`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:14:5
+   |
+14 | use mahayana_host_protocol::ComputerAccessibilityNode;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `mahayana_host_protocol::ComputerSemanticAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:18:5
+   |
+18 | use mahayana_host_protocol::ComputerSemanticAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `mahayana_host_protocol::ComputerWindowAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:21:5
+   |
+21 | use mahayana_host_protocol::ComputerWindowAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `mahayana-computer` (lib) generated 3 warnings (run `cargo fix --lib -p mahayana-computer` to apply 3 suggestions)
+warning: unused import: `AgentActivity`
+  --> src/extensions/transcript/production_runtime.rs:15:44
+   |
+15 | use crate::sand_activity::{ActivityUpdate, AgentActivity};
+   |                                            ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `DateTime`
+ --> src/extensions/transcript/automation_run_path.rs:5:14
+  |
+5 | use chrono::{DateTime, Local, TimeZone, Utc};
+  |              ^^^^^^^^
+
+warning: unused import: `ConversationStructureRefs`
+  --> src/extensions/session/session_conversation_state.rs:34:5
+   |
+34 |     ConversationStructureRefs, OutlineItem as RecoveryOutlineItem,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> src/extensions/box_store_sync/sand_box_store_v2_client.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `json`
+  --> src/extensions/box_store_sync/production.rs:16:18
+   |
+16 | use serde_json::{json, Map, Value};
+   |                  ^^^^
+
+warning: unused import: `BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES`
+  --> src/extensions/box_store_sync/production.rs:56:40
+   |
+56 |     plan_periodic_cycle, BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fmt`
+ --> src/extensions/box_lifecycle/production.rs:1:5
+  |
+1 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `run_codex_direct_responses_with_cancel`
+  --> src/extensions/inference/provider_session.rs:35:45
+   |
+35 |     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `DiskPressureReport`
+  --> src/extensions/forever_box/disk_pressure.rs:17:44
+   |
+17 |     DiskPressureLevel, DiskPressureLogger, DiskPressureReport, DiskPressureReporter,
+   |                                            ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `regex::Regex`
+  --> src/extensions/attachments/input_files.rs:13:5
+   |
+13 | use regex::Regex;
+   |     ^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/attachments/load_options.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `SaveMediaSourceError`
+  --> src/extensions/attachments/media_fetch.rs:22:5
+   |
+22 |     SaveMediaSourceError, SaveMediaSourceErrorCode,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `PathBuf` and `Path`
+ --> src/extensions/attachments/media_generation_service.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^  ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/extensions/attachments/media_probe.rs:1:5
+  |
+1 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fs::File`
+ --> src/extensions/attachments/media_probe.rs:2:5
+  |
+2 | use std::fs::File;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Read`
+ --> src/extensions/attachments/media_probe.rs:3:5
+  |
+3 | use std::io::Read;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::path::Path`
+ --> src/extensions/attachments/media_probe.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::sync::LazyLock`
+ --> src/extensions/attachments/media_probe.rs:5:5
+  |
+5 | use std::sync::LazyLock;
+  |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::time::Instant`
+ --> src/extensions/attachments/media_probe.rs:6:5
+  |
+6 | use std::time::Instant;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SeekFrom` and `Seek`
+ --> src/extensions/attachments/media_store.rs:3:27
+  |
+3 | use std::io::{self, Read, Seek, SeekFrom, Write};
+  |                           ^^^^  ^^^^^^^^
+
+warning: unused import: `Component`
+ --> src/extensions/attachments/media_store.rs:4:17
+  |
+4 | use std::path::{Component, Path, PathBuf};
+  |                 ^^^^^^^^^
+
+warning: unused imports: `Value` and `json`
+  --> src/extensions/attachments/media_store.rs:10:18
+   |
+10 | use serde_json::{Value, json};
+   |                  ^^^^^  ^^^^
+
+warning: unused import: `format_media_size`
+  --> src/extensions/attachments/media_store.rs:15:70
+   |
+15 |     MEDIA_FILE_MODE, SaveMediaSourceError, SaveMediaSourceErrorCode, format_media_size,
+   |                                                                      ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/attachments/media_understanding_service.rs:1:33
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `std::collections::HashSet`
+ --> src/extensions/attachments/parse_output.rs:8:5
+  |
+8 | use std::collections::HashSet;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+  --> src/extensions/attachments/remote_workspace_file.rs:10:17
+   |
+10 | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+
+warning: unused import: `ImageMetadata`
+  --> src/extensions/attachments/web_media.rs:20:35
+   |
+20 |     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
+   |                                   ^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/content_search/search_index_writer.rs:3:17
+  |
+3 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/plugin_sdk/api_baseline.rs:2:33
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `PathBuf`
+ --> src/extensions/plugin_sdk/api_baseline.rs:3:23
+  |
+3 | use std::path::{Path, PathBuf};
+  |                       ^^^^^^^
+
+warning: unused import: `Path`
+ --> src/extensions/plugin_sdk/archive_blob.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `json`
+ --> src/extensions/plugin_sdk/channel_entry.rs:2:18
+  |
+2 | use serde_json::{json, Value};
+  |                  ^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/extensions/plugin_sdk/channel_entry.rs:3:5
+  |
+3 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Engine as _` and `engine::general_purpose::STANDARD`
+ --> src/extensions/plugins/clawhub.rs:1:14
+  |
+1 | use base64::{engine::general_purpose::STANDARD, Engine as _};
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^
+
+warning: unused import: `Sha256`
+ --> src/extensions/plugins/clawhub.rs:3:20
+  |
+3 | use sha2::{Digest, Sha256};
+  |                    ^^^^^^
+
+warning: unused import: `HashMap`
+ --> src/extensions/plugins/commands.rs:2:24
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: unused import: `Arc`
+ --> src/extensions/plugins/commands.rs:4:17
+  |
+4 | use std::sync::{Arc, Condvar, Mutex};
+  |                 ^^^
+
+warning: unused import: `Arc`
+ --> src/extensions/plugins/computer_use.rs:3:17
+  |
+3 | use std::sync::{Arc, Mutex};
+  |                 ^^^
+
+warning: unused import: `HashSet`
+ --> src/extensions/plugins/config.rs:3:33
+  |
+3 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `Map`
+ --> src/runner/tools/sand_multitask_todo_tool.rs:5:18
+  |
+5 | use serde_json::{Map, Value, json};
+  |                  ^^^
+
+warning: unused import: `std::fmt`
+ --> src/box/box_transfer.rs:3:5
+  |
+3 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `Arc`
+ --> src/workflows/workflow_library.rs:5:17
+  |
+5 | use std::sync::{Arc, OnceLock};
+  |                 ^^^
+
+warning: unused import: `HashMap`
+ --> src/agents/agent_roster.rs:1:24
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: cannot test inner items
+   --> src/transcript_mirror/conversation_state_binary.rs:518:5
+    |
+518 |     #[test]
+    |     ^^^^^^^
+    |
+    = note: `#[warn(unnameable_test_items)]` on by default
+
+warning: cannot test inner items
+   --> src/transcript_mirror/conversation_state_binary.rs:536:5
+    |
+536 |     #[test]
+    |     ^^^^^^^
+
+warning: unused import: `ProductionAgentStoreWorkerBackend`
+ --> src/transcript_mirror/production_provider.rs:6:5
+  |
+6 |     ProductionAgentStoreWorkerBackend, TranscriptMirrorOffloadPool, WorkerBlobStore,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> src/device_pairing_owner.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `Digest`
+ --> src/extensions/plugins/clawhub.rs:3:12
+  |
+3 | use sha2::{Digest, Sha256};
+  |            ^^^^^^
+
+warning: unused import: `PermissionsExt`
+  --> src/extensions/snapshot/git_backup_manager.rs:14:54
+   |
+14 | use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
+   |                                                      ^^^^^^^^^^^^^^
+
+warning: unused variable: `session_key`
+   --> src/extensions/transcript/agent_to_agent_messaging.rs:302:44
+    |
+302 |         let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
+    |                                            ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_session_key`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+    --> src/extensions/transcript/production_runtime.rs:1592:13
+     |
+1592 |         let mut result = if suppress_stale_turn {
+     |             ----^^^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_echo_entry_id` is never read
+    --> src/extensions/transcript/production_runtime.rs:1396:59
+     |
+1396 |         let mut persisted_echo_entry_id: Option<String> = None;
+     |                                                           ^^^^ this value is reassigned later and never used
+...
+1438 |                             persisted_echo_entry_id =
+     |                             ----------------------- `persisted_echo_entry_id` is overwritten here before the previous value is read
+     |
+     = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_send_context` is never read
+    --> src/extensions/transcript/production_runtime.rs:1397:42
+     |
+1397 |         let mut persisted_send_context = PersistedSendContext::default();
+     |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+1437 |                             persisted_send_context = persisted.into();
+     |                             ---------------------- `persisted_send_context` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:2069:13
+     |
+2069 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:2694:13
+     |
+2694 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/extensions/session/agent_db.rs:5155:13
+     |
+5155 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/box_store_sync/box_copy_in.rs:948:25
+    |
+948 |                     let mut event = build_copy_in_watchdog_event(
+    |                         ----^^^^^
+    |                         |
+    |                         help: remove this `mut`
+
+warning: value assigned to `manifest_committed` is never read
+    --> src/extensions/box_store_sync/production.rs:1555:17
+     |
+1555 |                 manifest_committed = false;
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+  --> src/extensions/cloud_workers/store.rs:60:13
+   |
+60 |         let mut file = File::open(path).map_err(CloudWorkerStoreError::Read)?;
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+warning: value assigned to `held` is never read
+   --> src/extensions/telemetry/structured_log_telemetry.rs:312:29
+    |
+312 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `held` is never read
+   --> src/extensions/telemetry/structured_log_telemetry.rs:329:29
+    |
+329 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: unused variable: `current_ref`
+   --> src/extensions/inference/model_picker_service.rs:374:9
+    |
+374 |     let current_ref = format!("{}/{}", params.current_provider, params.current_model);
+    |         ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_current_ref`
+
+warning: value assigned to `should_sync` is never read
+   --> src/extensions/wallpaper/wallpaper_service.rs:149:9
+    |
+149 |           should_sync = false;
+    |           ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+185 | /         should_sync = wait_for_next(
+186 | |             &inner,
+187 | |             &receiver,
+188 | |             Duration::from_millis(remaining_ms),
+189 | |         );
+    | |_________- `should_sync` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_probe.rs:268:9
+    |
+268 |     let mut audio_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_probe.rs:279:9
+    |
+279 |     let mut video_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/attachments/media_store.rs:614:9
+    |
+614 |     let mut file = options.open(path)?;
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `ttl`
+  --> src/extensions/plugin_sdk/channel_runtime.rs:98:36
+   |
+98 |     pub fn claim(&self, key: &str, ttl: Duration) -> ReplayClaimResult {
+   |                                    ^^^ help: if this is intentional, prefix it with an underscore: `_ttl`
+
+warning: unused variable: `v`
+    --> src/extensions/plugins/capability_catalog.rs:2298:17
+     |
+2298 |         for (k, v) in configured_channels {
+     |                 ^ help: if this is intentional, prefix it with an underscore: `_v`
+
+warning: variable does not need to be mutable
+   --> src/extensions/snapshot/git_backup_manager.rs:764:9
+    |
+764 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/extensions/snapshot/git_backup_manager.rs:877:9
+    |
+877 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/runner/tools/send_message_schema.rs:221:21
+    |
+221 |                 let mut path = prefix.clone();
+    |                     ----^^^^
+    |                     |
+    |                     help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/runner/tools/communicate_tool.rs:126:9
+    |
+126 |     let mut payload = executing_payload(tool_name, activity);
+    |         ----^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `stderr`
+   --> src/box/box_windows.rs:173:53
+    |
+173 |         ShellExecutionOutcome::Success { exit_code, stderr }
+    |                                                     ^^^^^^ help: try ignoring the field: `stderr: _`
+
+warning: method `sync_baseline` is never used
+    --> src/extensions/transcript/automation_runtime.rs:1260:8
+     |
+ 494 | impl AutomationRuntime {
+     | ---------------------- method in this implementation
+...
+1260 |     fn sync_baseline(&self, agent_id: &str, definitions: &[AutomationRecord]) {
+     |        ^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `assert_agent_transcript_write_admission` is never used
+    --> src/extensions/session/production.rs:2500:8
+     |
+ 269 | impl ProductionSessionWorkers {
+     | ----------------------------- method in this implementation
+...
+2500 |     fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_download_owner` is never used
+   --> src/extensions/box_store_sync/box_copy_in.rs:550:4
+    |
+550 | fn apply_download_owner(path: &Path, owner: Option<(u32, u32)>) -> Result<(), String> {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_excluded` is never used
+    --> src/extensions/box_store_sync/production.rs:2783:4
+     |
+2783 | fn is_excluded(rel_path: &str, excludes: &[&str]) -> bool {
+     |    ^^^^^^^^^^^
+
+warning: constant `MAX_ENV_NAME_CHARS` is never used
+ --> src/extensions/cloud_workers/auxiliary.rs:6:7
+  |
+6 | const MAX_ENV_NAME_CHARS: usize = 128;
+  |       ^^^^^^^^^^^^^^^^^^
+
+warning: fields `windows_instance_name` and `windows_previous_profile_interval` are never read
+   --> src/extensions/telemetry/pressure_cpu_profiler.rs:320:5
+    |
+316 | struct ProductionCpuProfilerState {
+    |        -------------------------- fields in this struct
+...
+320 |     windows_instance_name: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+321 |     windows_previous_profile_interval: Option<u64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps` is never used
+    --> src/extensions/inference/provider_session.rs:1696:4
+     |
+1696 | fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text` is never used
+    --> src/extensions/inference/provider_session.rs:2688:4
+     |
+2688 | fn run_openrouter_provider_text(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text_with_lifecycle` is never used
+    --> src/extensions/inference/provider_session.rs:2702:4
+     |
+2702 | fn run_openrouter_provider_text_with_lifecycle(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `revocation_reason` is never read
+   --> src/extensions/mcp/installable_package/policy.rs:418:5
+    |
+409 | struct TrustKey {
+    |        -------- field in this struct
+...
+418 |     revocation_reason: String,
+    |     ^^^^^^^^^^^^^^^^^
+    |
+    = note: `TrustKey` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: method `as_str` is never used
+  --> src/extensions/node_host/secret_materializer.rs:35:19
+   |
+20 | impl NodeHostSecretInputRef {
+   | --------------------------- method in this implementation
+...
+35 |     pub(crate) fn as_str(&self) -> &str {
+   |                   ^^^^^^
+
+warning: function `sysconf_pages` is never used
+   --> src/host_system_info.rs:119:4
+    |
+119 | fn sysconf_pages(name: libc::c_int, label: &str) -> Result<u64, String> {
+    |    ^^^^^^^^^^^^^
+
+warning: function `hex_nibble` is never used
+   --> src/agent_isolation/conversation_blob_store.rs:392:4
+    |
+392 | fn hex_nibble(value: u8) -> Option<u8> {
+    |    ^^^^^^^^^^
+
+warning: function `recovery_fields_decode_token_details_and_turn_timing` is never used
+   --> src/transcript_mirror/conversation_state_binary.rs:519:8
+    |
+519 |     fn recovery_fields_decode_token_details_and_turn_timing() {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `stale_token_details_can_be_removed_without_reencoding_other_fields` is never used
+   --> src/transcript_mirror/conversation_state_binary.rs:537:8
+    |
+537 |     fn stale_token_details_can_be_removed_without_reencoding_other_fields() {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variant `Enum` is never constructed
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-6d7e1a4dbbebd760/out/agent_tool_json_schema.rs:5:47
+  |
+5 | enum AgentToolJsonMapValueKind { Scalar(u64), Enum(&'static [(i64, &'static str)]), Message(&'static str) }
+  |      -------------------------                ^^^^
+  |      |
+  |      variant in this enum
+  |
+  = note: `AgentToolJsonMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `optional` is never read
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-6d7e1a4dbbebd760/out/agent_tool_json_schema.rs:9:123
+  |
+9 | struct AgentToolJsonFieldDescriptor { number: u64, json_name: &'static str, kind: AgentToolJsonFieldKind, repeated: bool, optional: b...
+  |        ---------------------------- field in this struct                                                                  ^^^^^^^^
+  |
+  = note: `AgentToolJsonFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variant `Enum` is never constructed
+ --> src/cloud_agents/cloud_agent_trace_format.rs:8:5
+  |
+6 | enum CloudAgentProtoMapValueKind {
+  |      --------------------------- variant in this enum
+7 |     Scalar(u64),
+8 |     Enum,
+  |     ^^^^
+  |
+  = note: `CloudAgentProtoMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `proto_name` is never read
+  --> src/cloud_agents/cloud_agent_trace_format.rs:26:5
+   |
+24 | struct CloudAgentProtoFieldDescriptor {
+   |        ------------------------------ field in this struct
+25 |     number: u64,
+26 |     proto_name: &'static str,
+   |     ^^^^^^^^^^
+   |
+   = note: `CloudAgentProtoFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `db_path` is never read
+  --> src/device_pairing_owner.rs:17:5
+   |
+15 | pub struct DevicePairingOwner {
+   |            ------------------ field in this struct
+16 |     conn: Mutex<Connection>,
+17 |     db_path: Option<PathBuf>,
+   |     ^^^^^^^
+
+warning: `mahayana-host-runtime` (lib test) generated 94 warnings (run `cargo fix --lib -p mahayana-host-runtime --tests` to apply 64 suggestions)
+    Finished `test` profile [unoptimized] target(s) in 0.27s
+     Running unittests src/lib.rs (source/host/target/debug/deps/mahayana_host_runtime-13815aca64cdc4f6)
+
+running 5 tests
+test attachment_paths::tests::commit_prevents_cleanup_of_persisted_media ... ok
+test attachment_paths::tests::confirmed_refusal_restores_only_its_own_cleanup_authority ... ok
+test attachment_paths::tests::rollback_removes_every_uncommitted_path ... ok
+test attachment_paths::tests::sealed_custody_refuses_new_paths_without_reopening_retained_media ... ok
+test attachment_paths::tests::unknown_owner_settlement_retains_bytes_through_abort_and_drop ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 727 filtered out; finished in 0.00s
+

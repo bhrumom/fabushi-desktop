@@ -1,0 +1,863 @@
+{
+  "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "records": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "ea056ef0bb5d77f1aa680b649335b8ec141be1f8b27a69562af86e5ae16f7e44"
+        },
+        {
+          "receipt": "mab",
+          "sha256": "ea056ef0bb5d77f1aa680b649335b8ec141be1f8b27a69562af86e5ae16f7e44"
+        },
+        {
+          "receipt": "notice",
+          "sha256": "ea056ef0bb5d77f1aa680b649335b8ec141be1f8b27a69562af86e5ae16f7e44"
+        }
+      ],
+      "git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "bytes": 451308,
+      "sha256": "ea056ef0bb5d77f1aa680b649335b8ec141be1f8b27a69562af86e5ae16f7e44",
+      "computed_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "desktop/scripts/build-electron-runtime.mjs",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "04008955615fb4dbc62cb67b126c839376fefbb22d39ddd9b2ff899995246c11"
+        },
+        {
+          "receipt": "mab",
+          "sha256": "04008955615fb4dbc62cb67b126c839376fefbb22d39ddd9b2ff899995246c11"
+        }
+      ],
+      "git_blob": "8c5e5f1e35a3388a9032cbc72ef8ee6370119e1b",
+      "bytes": 4178,
+      "sha256": "04008955615fb4dbc62cb67b126c839376fefbb22d39ddd9b2ff899995246c11",
+      "computed_git_blob": "8c5e5f1e35a3388a9032cbc72ef8ee6370119e1b",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "frontend/src/recovered/contracts/desktop-bridge.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "41af68792eb28735150987159f76449e7f2c60716f44b2db34bd49e9d0ff0dee"
+        }
+      ],
+      "git_blob": "9b634d8d8e3d51a4e60424ebb55a17cb89432ca4",
+      "bytes": 20090,
+      "sha256": "41af68792eb28735150987159f76449e7f2c60716f44b2db34bd49e9d0ff0dee",
+      "computed_git_blob": "9b634d8d8e3d51a4e60424ebb55a17cb89432ca4",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "ef57f3e973584ab1135e3be96f01f7b79738417eeffa2479d5232f6294bc3ade"
+        }
+      ],
+      "git_blob": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+      "bytes": 6759,
+      "sha256": "ef57f3e973584ab1135e3be96f01f7b79738417eeffa2479d5232f6294bc3ade",
+      "computed_git_blob": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "fe741f8bb7de19e4e0f07d3826a36183a7ce0c368fc1d309c22ac41dde54e956"
+        }
+      ],
+      "git_blob": "6252635f8a7d1abeae26bc4913e3e4fb134d9e89",
+      "bytes": 19310,
+      "sha256": "fe741f8bb7de19e4e0f07d3826a36183a7ce0c368fc1d309c22ac41dde54e956",
+      "computed_git_blob": "6252635f8a7d1abeae26bc4913e3e4fb134d9e89",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "13f417e3cb4be84844534cfa87f6ed3f145688305798389d53cd8a8545f1feb8"
+        }
+      ],
+      "git_blob": "c99e744188d90d7b31448e45e9887148c835dda6",
+      "status": "captured-exact-blob-api",
+      "bytes": 85168,
+      "sha256": "13f417e3cb4be84844534cfa87f6ed3f145688305798389d53cd8a8545f1feb8",
+      "computed_git_blob": "c99e744188d90d7b31448e45e9887148c835dda6",
+      "git_identity_match": true,
+      "receipt_hashes_match": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e"
+        }
+      ],
+      "git_blob": "a50e82588d796974b19d8253c5b74351c35a44bf",
+      "bytes": 100962,
+      "sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e",
+      "computed_git_blob": "a50e82588d796974b19d8253c5b74351c35a44bf",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "ae11fb579731b7a36b519cee2d57364d22b41fc55be8ae5a69664ff9a1a45fb1"
+        }
+      ],
+      "git_blob": "90dcae53b6f1d26c89ce231e9e067e80799ee1c7",
+      "status": "captured-exact-blob-api",
+      "bytes": 28445,
+      "sha256": "ae11fb579731b7a36b519cee2d57364d22b41fc55be8ae5a69664ff9a1a45fb1",
+      "computed_git_blob": "90dcae53b6f1d26c89ce231e9e067e80799ee1c7",
+      "git_identity_match": true,
+      "receipt_hashes_match": true
+    },
+    {
+      "path": "source/electron-main/main-edge-model.contract.test.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "a7f363d839450f5ebe920e98258651b3fe7a2e50f0824bd03b5d32718908a957"
+        }
+      ],
+      "git_blob": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+      "bytes": 31517,
+      "sha256": "a7f363d839450f5ebe920e98258651b3fe7a2e50f0824bd03b5d32718908a957",
+      "computed_git_blob": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/main-edge.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "7094d4eb76a3bfc58a205ba228a69cfc0a2b666209b9ff5e1b292a090aaeac8d"
+        }
+      ],
+      "git_blob": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+      "bytes": 25510,
+      "sha256": "7094d4eb76a3bfc58a205ba228a69cfc0a2b666209b9ff5e1b292a090aaeac8d",
+      "computed_git_blob": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "6c992ca58be3569c3da5cc34c20c2b06ed905fb411b921a647dc45c5784ee0a2"
+        }
+      ],
+      "git_blob": "b8ff7fbdf1c8ff540fa4eaf1b9e798d12077d722",
+      "bytes": 54353,
+      "sha256": "6c992ca58be3569c3da5cc34c20c2b06ed905fb411b921a647dc45c5784ee0a2",
+      "computed_git_blob": "b8ff7fbdf1c8ff540fa4eaf1b9e798d12077d722",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "159abbd621508f406a9eeb3044fb1b1627304914d4adbd4169348e24d1fb5279"
+        }
+      ],
+      "git_blob": "d81e1da13c9b39f4e2943ab48e8b9073bb8dc987",
+      "bytes": 13965,
+      "sha256": "159abbd621508f406a9eeb3044fb1b1627304914d4adbd4169348e24d1fb5279",
+      "computed_git_blob": "d81e1da13c9b39f4e2943ab48e8b9073bb8dc987",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-desktop.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "c604a675c5bb1bd6cd196e3f8fecc123090da487accecb1d11c6e4a4b0343f43"
+        }
+      ],
+      "git_blob": "98d57679b13b215fafe02fa61860edb95c660197",
+      "bytes": 7987,
+      "sha256": "c604a675c5bb1bd6cd196e3f8fecc123090da487accecb1d11c6e4a4b0343f43",
+      "computed_git_blob": "98d57679b13b215fafe02fa61860edb95c660197",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "aacdcb91b8eaedb06aa006de31e2064f3b56e92afab6badbf7f42e41740bf320"
+        }
+      ],
+      "git_blob": "2a56f1e1ffb20ca3c65e5aaf57e3013dcbf4f427",
+      "status": "captured-exact-blob-api",
+      "bytes": 103894,
+      "sha256": "aacdcb91b8eaedb06aa006de31e2064f3b56e92afab6badbf7f42e41740bf320",
+      "computed_git_blob": "2a56f1e1ffb20ca3c65e5aaf57e3013dcbf4f427",
+      "git_identity_match": true,
+      "receipt_hashes_match": true
+    },
+    {
+      "path": "source/packages/cursor-plugins/cursor-marketplace.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "42649f4923d61e15918902261a08366a5413f1ce078e9cb8892527d85cd571b1"
+        }
+      ],
+      "git_blob": "6a2433588b5f17f3609e6ca85e4aa0f2a8612e21",
+      "bytes": 9690,
+      "sha256": "42649f4923d61e15918902261a08366a5413f1ce078e9cb8892527d85cd571b1",
+      "computed_git_blob": "6a2433588b5f17f3609e6ca85e4aa0f2a8612e21",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.contract.test.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "8c890da0e880969dde45729f188290c374f313047328a49c6db0e580db38ed22"
+        }
+      ],
+      "git_blob": "fa41d87a2e9f8b03ca7d8125309a96673d57482e",
+      "bytes": 30540,
+      "sha256": "8c890da0e880969dde45729f188290c374f313047328a49c6db0e580db38ed22",
+      "computed_git_blob": "fa41d87a2e9f8b03ca7d8125309a96673d57482e",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "81dd7008e559587d5ce140918e585e7769fe7efb131214b51ec52451b6b4c0f6"
+        }
+      ],
+      "git_blob": "f0028c8fbecc602828fb6ed48dce9fd77855102c",
+      "bytes": 29116,
+      "sha256": "81dd7008e559587d5ce140918e585e7769fe7efb131214b51ec52451b6b4c0f6",
+      "computed_git_blob": "f0028c8fbecc602828fb6ed48dce9fd77855102c",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/shared/agents/sand-agent-model.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "16e2a76f850140ca3ebd61c4ba82b91dea964b472bfc96b5dfa1ef1777cdc571"
+        }
+      ],
+      "git_blob": "884157ba4f04ae3c126fad9c3a6b317acc0d9452",
+      "bytes": 1657,
+      "sha256": "16e2a76f850140ca3ebd61c4ba82b91dea964b472bfc96b5dfa1ef1777cdc571",
+      "computed_git_blob": "884157ba4f04ae3c126fad9c3a6b317acc0d9452",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/shared/node/settings/sand-settings-store.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "3ac393ed1562585ca14ce296b71345db226036a768516a6b69c679791760308a"
+        }
+      ],
+      "git_blob": "f45786daa8f7851bf967877e86e04d0d76e6d166",
+      "bytes": 25451,
+      "sha256": "3ac393ed1562585ca14ce296b71345db226036a768516a6b69c679791760308a",
+      "computed_git_blob": "f45786daa8f7851bf967877e86e04d0d76e6d166",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/shared/rpc/coordinator-main.ts",
+      "expected": [
+        {
+          "receipt": "plugin-edge",
+          "sha256": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08"
+        },
+        {
+          "receipt": "mab",
+          "sha256": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08"
+        }
+      ],
+      "git_blob": "c82ace78bc4c1b264aa3d2818944f83ed4919cfe",
+      "bytes": 1555,
+      "sha256": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08",
+      "computed_git_blob": "c82ace78bc4c1b264aa3d2818944f83ed4919cfe",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "desktop/package-lock.json",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "b0acd325c8551edc95e6c637405671ce61e49358b7d72ae3360b8f84df1f083b"
+        }
+      ],
+      "git_blob": "1655189b893de0d2d09648bdd37a176cc90a5c8d",
+      "bytes": 267545,
+      "sha256": "b0acd325c8551edc95e6c637405671ce61e49358b7d72ae3360b8f84df1f083b",
+      "computed_git_blob": "1655189b893de0d2d09648bdd37a176cc90a5c8d",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "desktop/package.json",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "942aa4db49e1ddc1825df616510da868385a1b5d0126cca97e6c3516629b82b4"
+        },
+        {
+          "receipt": "notice",
+          "sha256": "942aa4db49e1ddc1825df616510da868385a1b5d0126cca97e6c3516629b82b4"
+        }
+      ],
+      "git_blob": "9710d828a446f0c8ab152f21cb259020e8d267ef",
+      "bytes": 6498,
+      "sha256": "942aa4db49e1ddc1825df616510da868385a1b5d0126cca97e6c3516629b82b4",
+      "computed_git_blob": "9710d828a446f0c8ab152f21cb259020e8d267ef",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/attachment-native-transport-binding.md",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "10c7a144579961bf3cc4eefc2ca60865441cad80ab209293033790014481f8d2"
+        }
+      ],
+      "git_blob": "0d760456e86499f1cd37376d362fc3cc8c882c1d",
+      "bytes": 21277,
+      "sha256": "10c7a144579961bf3cc4eefc2ca60865441cad80ab209293033790014481f8d2",
+      "computed_git_blob": "0d760456e86499f1cd37376d362fc3cc8c882c1d",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849"
+        },
+        {
+          "receipt": "notice",
+          "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849"
+        }
+      ],
+      "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "bytes": 3495,
+      "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+      "computed_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/adapters/attachment-gateway.contract.test.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "757aede9aa8c90ec14ec7c27f7328c9e84a3ee3beaff8e85b75b529c07135651"
+        }
+      ],
+      "git_blob": "6f2d7b506dc7c307ed1abdb3c84197f81b1f278c",
+      "bytes": 49624,
+      "sha256": "757aede9aa8c90ec14ec7c27f7328c9e84a3ee3beaff8e85b75b529c07135651",
+      "computed_git_blob": "6f2d7b506dc7c307ed1abdb3c84197f81b1f278c",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/adapters/attachment-gateway.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "3e80a13e45f7a3b6efc40545a21fa28f4ef461e5ba3fc8a16203efac2cd74bfe"
+        }
+      ],
+      "git_blob": "5e7b4dcc4b9a9f6c005d3b5b583f7a127a8f1db0",
+      "bytes": 9558,
+      "sha256": "3e80a13e45f7a3b6efc40545a21fa28f4ef461e5ba3fc8a16203efac2cd74bfe",
+      "computed_git_blob": "5e7b4dcc4b9a9f6c005d3b5b583f7a127a8f1db0",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/attachments/attachment-manager.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "445f2ebd6b0fb68776116ea8226ff42ce04ebd600ef2ffef55057b67c72a01f5"
+        }
+      ],
+      "git_blob": "0d055b7d65c49911deb18ff08af2caa1639d93f7",
+      "bytes": 2734,
+      "sha256": "445f2ebd6b0fb68776116ea8226ff42ce04ebd600ef2ffef55057b67c72a01f5",
+      "computed_git_blob": "0d055b7d65c49911deb18ff08af2caa1639d93f7",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/attachments/attachments.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "bcdffdc4bdc0d61d28ee6204758b8df384654f35ca2b50a0d21699d6af5493aa"
+        }
+      ],
+      "git_blob": "3bd1938937512042ff9059acad39b81ffd0f6560",
+      "bytes": 14733,
+      "sha256": "bcdffdc4bdc0d61d28ee6204758b8df384654f35ca2b50a0d21699d6af5493aa",
+      "computed_git_blob": "3bd1938937512042ff9059acad39b81ffd0f6560",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "5c12117e3ade5b086eabac4647ae20d2d85cb983f36f332dae5ef5d420a19a36"
+        }
+      ],
+      "git_blob": "4a5c7173e9af004833568de62fa9e964013c51f5",
+      "bytes": 24649,
+      "sha256": "5c12117e3ade5b086eabac4647ae20d2d85cb983f36f332dae5ef5d420a19a36",
+      "computed_git_blob": "4a5c7173e9af004833568de62fa9e964013c51f5",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-account-runtime.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "f59ccc395557006030c4142672f32f430c16af43b0ac085b2faf053000c3b484"
+        }
+      ],
+      "git_blob": "84e0e0ee6f83c0932a66ec4f89167b32e3f0e4ef",
+      "bytes": 18773,
+      "sha256": "f59ccc395557006030c4142672f32f430c16af43b0ac085b2faf053000c3b484",
+      "computed_git_blob": "84e0e0ee6f83c0932a66ec4f89167b32e3f0e4ef",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-control-server.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "ac8f9ef7ac201da2c1b0cd03b78d2820c95ffbbaf248db2ae9b79a9df4ba03ed"
+        }
+      ],
+      "git_blob": "9a5ca856b01731b5f4c8974f9284f5a7ad04832a",
+      "bytes": 5659,
+      "sha256": "ac8f9ef7ac201da2c1b0cd03b78d2820c95ffbbaf248db2ae9b79a9df4ba03ed",
+      "computed_git_blob": "9a5ca856b01731b5f4c8974f9284f5a7ad04832a",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-launcher.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "d16db923ce1b3fbb808b865870c5adc1e71396f8eca2858871040f56adf47c20"
+        }
+      ],
+      "git_blob": "1b6192d01594e691171c36397a63dda154b41565",
+      "bytes": 3965,
+      "sha256": "d16db923ce1b3fbb808b865870c5adc1e71396f8eca2858871040f56adf47c20",
+      "computed_git_blob": "1b6192d01594e691171c36397a63dda154b41565",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-main-legs.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "aabf401b2f8af21a3e24cb5938761fb7730a1341466241d60209567c08ebc1b4"
+        }
+      ],
+      "git_blob": "a443e465e15e24534f7c8e4c052d86512a1ec3ad",
+      "bytes": 5339,
+      "sha256": "aabf401b2f8af21a3e24cb5938761fb7730a1341466241d60209567c08ebc1b4",
+      "computed_git_blob": "a443e465e15e24534f7c8e4c052d86512a1ec3ad",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "82e0ccf693fc3b5b4f79ef633e6cac3a8f96c617d034ce2e66ee36c85503e0ed"
+        }
+      ],
+      "git_blob": "9a1a4edfe48d2814e9bdc2fe591d150eaa4f9d1c",
+      "bytes": 28627,
+      "sha256": "82e0ccf693fc3b5b4f79ef633e6cac3a8f96c617d034ce2e66ee36c85503e0ed",
+      "computed_git_blob": "9a1a4edfe48d2814e9bdc2fe591d150eaa4f9d1c",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-main-port-client.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "11d3e5fb4bbb1e8fa56693c7dfde859fd3a11c1aa274893d3839331842ef50ef"
+        }
+      ],
+      "git_blob": "6ecca9b0ffa148e4b102a9aa7cc82a9b9658bb25",
+      "bytes": 6441,
+      "sha256": "11d3e5fb4bbb1e8fa56693c7dfde859fd3a11c1aa274893d3839331842ef50ef",
+      "computed_git_blob": "6ecca9b0ffa148e4b102a9aa7cc82a9b9658bb25",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-resync.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "3b82133795d4b2660c310f3c9443ed2244e347d52fc1714d550b9c1a40883554"
+        }
+      ],
+      "git_blob": "3863ca3a3f933e611b4f58122ea6cd75274dd76c",
+      "bytes": 5321,
+      "sha256": "3b82133795d4b2660c310f3c9443ed2244e347d52fc1714d550b9c1a40883554",
+      "computed_git_blob": "3863ca3a3f933e611b4f58122ea6cd75274dd76c",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-runtime.test.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "1bf3a45775e26949a8743639495a64d49d26e5a018e6c0de02e92944404a75b5"
+        }
+      ],
+      "git_blob": "c16cb374169d9f9d340931b760154d5414604ae8",
+      "bytes": 3469,
+      "sha256": "1bf3a45775e26949a8743639495a64d49d26e5a018e6c0de02e92944404a75b5",
+      "computed_git_blob": "c16cb374169d9f9d340931b760154d5414604ae8",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-runtime.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "27553d8cb3197026473b6b77e91adbe9b039a892bed7ef85d14d0970c99322e6"
+        }
+      ],
+      "git_blob": "52af61f060b59b7f1f6675a6c9b2b7c93a7f4e13",
+      "bytes": 7780,
+      "sha256": "27553d8cb3197026473b6b77e91adbe9b039a892bed7ef85d14d0970c99322e6",
+      "computed_git_blob": "52af61f060b59b7f1f6675a6c9b2b7c93a7f4e13",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/coordinator/production-provider.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "76e1354e5eb56ade3456257e2a2ca9b0dd05e964d8dd81f3861f4d031e9f6828"
+        }
+      ],
+      "git_blob": "8436339d3e2bfdf05f1001f284dfadee72ecf8ef",
+      "bytes": 29904,
+      "sha256": "76e1354e5eb56ade3456257e2a2ca9b0dd05e964d8dd81f3861f4d031e9f6828",
+      "computed_git_blob": "8436339d3e2bfdf05f1001f284dfadee72ecf8ef",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/electron-main/main-production-services.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "16a210adf6097dbf0ac7aa260d52063fe7dc857f863749a171fb178c577722df"
+        }
+      ],
+      "git_blob": "d194b12a676ca93e992a3638e5d5dde286d03c53",
+      "bytes": 69381,
+      "sha256": "16a210adf6097dbf0ac7aa260d52063fe7dc857f863749a171fb178c577722df",
+      "computed_git_blob": "d194b12a676ca93e992a3638e5d5dde286d03c53",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/shared/node/sand-data-root.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "6168883b2e34391b7a214ca6c9b995811a83fd56791572888d5f1602971841e7"
+        }
+      ],
+      "git_blob": "53310a97346d7e11c42596d339f57bb51f6802a1",
+      "bytes": 2598,
+      "sha256": "6168883b2e34391b7a214ca6c9b995811a83fd56791572888d5f1602971841e7",
+      "computed_git_blob": "53310a97346d7e11c42596d339f57bb51f6802a1",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "source/shared/rpc/coordinator-port.ts",
+      "expected": [
+        {
+          "receipt": "mab",
+          "sha256": "0793794fe4f966964a27928d17c70d75f12d19ef95c06637ae3a75bb4de17634"
+        }
+      ],
+      "git_blob": "b79cce9ad413e5e0a775996f29ca7109a44ad208",
+      "bytes": 6817,
+      "sha256": "0793794fe4f966964a27928d17c70d75f12d19ef95c06637ae3a75bb4de17634",
+      "computed_git_blob": "b79cce9ad413e5e0a775996f29ca7109a44ad208",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": ".github/workflows/release-macos-main.yml",
+      "expected": [
+        {
+          "receipt": "notice",
+          "sha256": "255354819897d57d4e75a871373bfd51c3a39c7991bc16cec9e2590e87e6f89b"
+        }
+      ],
+      "git_blob": "aad3621bb5dd855105d5d180286a117e217177fc",
+      "bytes": 33198,
+      "sha256": "255354819897d57d4e75a871373bfd51c3a39c7991bc16cec9e2590e87e6f89b",
+      "computed_git_blob": "aad3621bb5dd855105d5d180286a117e217177fc",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/desktop-openclaw-notice.md",
+      "expected": [
+        {
+          "receipt": "notice",
+          "sha256": "44987d7643d7343fc4b1e2f4f5987da54386e30f6e4079a8151102bef44be56d"
+        }
+      ],
+      "git_blob": "6396b7d12451ac99bf87a7c9c3d0ebe41ae7a842",
+      "bytes": 8500,
+      "sha256": "44987d7643d7343fc4b1e2f4f5987da54386e30f6e4079a8151102bef44be56d",
+      "computed_git_blob": "6396b7d12451ac99bf87a7c9c3d0ebe41ae7a842",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "desktop/resources/licenses/openclaw/LICENSE",
+      "expected": [
+        {
+          "receipt": "notice",
+          "sha256": "9efd316ecf1c4c60f6fd5d26433142fff2b6794d7d328e9bc6179b29bf9c82a4"
+        }
+      ],
+      "git_blob": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
+      "bytes": 1076,
+      "sha256": "9efd316ecf1c4c60f6fd5d26433142fff2b6794d7d328e9bc6179b29bf9c82a4",
+      "computed_git_blob": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "desktop/resources/licenses/openclaw/.gitattributes",
+      "expected": [
+        {
+          "receipt": "notice",
+          "sha256": "c33e569edc1001d82ffbb5276646d85439c308f14b1b10c21b4c8a35b7d2fe82"
+        }
+      ],
+      "git_blob": "74c7a920b19e63d370b9c49e7ee1ea073027ca8f",
+      "bytes": 14,
+      "sha256": "c33e569edc1001d82ffbb5276646d85439c308f14b1b10c21b4c8a35b7d2fe82",
+      "computed_git_blob": "74c7a920b19e63d370b9c49e7ee1ea073027ca8f",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "desktop/scripts/check-electron-runtime-bundle.mjs",
+      "expected": [
+        {
+          "receipt": "notice",
+          "sha256": "38b4c700448f8a7dff225071033e8ce877a121fc9c549269c1bb697af9e0c75e"
+        }
+      ],
+      "git_blob": "737e5d9cdf4952e42e4cc6a26ca968d8f64c3838",
+      "bytes": 11447,
+      "sha256": "38b4c700448f8a7dff225071033e8ce877a121fc9c549269c1bb697af9e0c75e",
+      "computed_git_blob": "737e5d9cdf4952e42e4cc6a26ca968d8f64c3838",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "desktop/scripts/openclaw-notice.contract.test.mjs",
+      "expected": [
+        {
+          "receipt": "notice",
+          "sha256": "e41bd31afcd236a57dcf9cf1c6a6ee7146a43d6a123acad33bd63c4f77807641"
+        }
+      ],
+      "git_blob": "b5f1163996813583db1db27a0268b845f264fcf3",
+      "bytes": 26559,
+      "sha256": "e41bd31afcd236a57dcf9cf1c6a6ee7146a43d6a123acad33bd63c4f77807641",
+      "computed_git_blob": "b5f1163996813583db1db27a0268b845f264fcf3",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "AGENTS.md",
+      "expected": [],
+      "git_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+      "bytes": 54199,
+      "sha256": "3fb67d6b83f0f29436b9299d341b7b0171c712c2314fe995ec719221c2c19c87",
+      "computed_git_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+      "expected": [],
+      "git_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+      "bytes": 69579,
+      "sha256": "14883335898a9235e6b91d7715ff0762f3514112b4a2c5cb77f96aa89000206f",
+      "computed_git_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "docs/specs/openclaw-rust-equivalence-migration.md",
+      "expected": [],
+      "git_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+      "bytes": 91359,
+      "sha256": "33dc23ed293dbe3ed151800ee0acd1d2bc5d698165e910a3fd86c795bea89bb7",
+      "computed_git_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": ".github/workflows/ocrm-p0-authority.yml",
+      "expected": [],
+      "git_blob": "2d22dce2d6067e7f4c16c3c01ed95c58cd3354df",
+      "bytes": 45615,
+      "sha256": "15e7cd4e6402dd515bbd023c2b421162fb854e13c8744ba6abec8f7fc33fc86e",
+      "computed_git_blob": "2d22dce2d6067e7f4c16c3c01ed95c58cd3354df",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/source_review.py",
+      "expected": [],
+      "git_blob": "143e310f263d474a3a711a8b992013f5ded74b85",
+      "bytes": 20450,
+      "sha256": "a4d628822136b3a86c6f74a89041cb5b9b68935193ac74b2f975e3426476a097",
+      "computed_git_blob": "143e310f263d474a3a711a8b992013f5ded74b85",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/verify_audit_integrity.py",
+      "expected": [],
+      "git_blob": "d6001d6c9bab9860e8ba7e0f1434d48581c9c42d",
+      "bytes": 7378,
+      "sha256": "80a72f221ca0e51bad3a97e3ca9ad13b148d8b35a09c65f7f7991f393665f8c3",
+      "computed_git_blob": "d6001d6c9bab9860e8ba7e0f1434d48581c9c42d",
+      "git_identity_match": true,
+      "receipt_hashes_match": true,
+      "status": "captured"
+    }
+  ]
+}

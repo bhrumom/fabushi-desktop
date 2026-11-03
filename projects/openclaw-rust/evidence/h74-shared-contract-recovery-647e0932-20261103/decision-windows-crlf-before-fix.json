@@ -1,0 +1,21 @@
+{
+  "format": "OCRM-H74-SHARED-CONTRACT-RECOVERY-DECISION-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "preFix": true,
+  "parentDecision": "decision-before-fix.json",
+  "subject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "repairBase": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "decision": {
+    "id": "H74-WINDOWS-CRLF-ORACLE-INPUT",
+    "classification": "TEST_FLAW",
+    "decision": "FIX",
+    "evidence": "Windows runtime41580539491 job125734079542 artifact13206046601 reports20pass/7fail in commit group. Additional failure media_commit_oracle_rejects_missing_duplicate_or_conditional_owner panics at1945 actual media signature. Its multiline raw Rust literal is LF after compiler input normalization; include_str source retains Windows checkout CRLF. Original agent_db sha256276b6c58a5260c7c0c3fd1561d65249eba307827767c894e149ba0e4bcb9fdb9, normalized exact Git blob6c27e9bb9f665b1160457b9acc29dd5d64fba289. Literal search: LF signature once in Git bytes, zero in CRLF input, CRLF signature once there.",
+    "authority": "https://doc.rust-lang.org/stable/reference/input-format.html#crlf-normalization (root independently read; include_str/include_bytes exceptions explicit)",
+    "action": "Normalize CRLF to LF only at test oracle source-image boundary and actual-source fixtures before multiline mutations. Preserve non-line-ending bytes, existing semantic guards, all negative controls and exact input evidence. Add paired LF/CRLF acceptance and mutation-rejection controls within current named tests; retain strict positive case list and workflow unchanged.",
+    "paths": [
+      "source/host/tests/openclaw_sessions_and_config_contract.rs"
+    ],
+    "limits": "No production source normalization; no raw evidence or input identity rewriting; no local test/parser execution; new exact-H Linux and Windows evidence required."
+  }
+}

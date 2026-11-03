@@ -1,0 +1,50 @@
+{
+  "phase": {
+    "effort": "xhigh inherited",
+    "model": "configured, unchanged",
+    "scope": "authorized isolated test-only implementation; no local executable validation"
+  },
+  "repository": "bhrumom/fabushi-desktop",
+  "base_commit": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "base_tree": "cbc9418ee7572f44d59e067e450a67f6c0bc22a0",
+  "spec_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+  "decisions_read_before_edits": [
+    "decision-before-fix.json",
+    "decision-windows-crlf-before-fix.json"
+  ],
+  "files": [
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "base": {
+        "bytes": 426548,
+        "git_blob_sha": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+        "sha256": "9a8ad4aa952f11a3d7595eebf636f7d20c450381120416c00667b93ef0149c7b"
+      },
+      "candidate": {
+        "bytes": 426814,
+        "git_blob_sha": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+        "sha256": "1d1632094c80d6ba204f7c3a75db5eab0619628b25898449a1880e5ccca81900"
+      }
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "base": {
+        "bytes": 162305,
+        "git_blob_sha": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+        "sha256": "e61629a709e4154dda1297d3f5fa9fd13efc38c00d67c08edbc93fb70a27d32e"
+      },
+      "candidate": {
+        "bytes": 165965,
+        "git_blob_sha": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+        "sha256": "a12ea0167dd7e82d8c4982d9e9ac9741466b23e6c90236a4650056fb90cfa8fc"
+      }
+    }
+  ],
+  "agent_db_prefix_before_private_media_test_module_identical": true,
+  "diff": {
+    "path": "media-candidate.diff",
+    "bytes": 14640,
+    "sha256": "e098cba321192b43d1716fdb620e58ccbb0cb1c0f8c0a30b31b0a8a2015f256a"
+  },
+  "execution": "not run; Git/byte/source reading only; root owns review, publication and GitHub Actions verification"
+}

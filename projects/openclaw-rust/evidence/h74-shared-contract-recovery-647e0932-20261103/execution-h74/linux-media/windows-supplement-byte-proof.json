@@ -1,0 +1,51 @@
+{
+  "scope": "byte/line-ending and raw-log reading only; no oracle/parser/test execution",
+  "proof": [
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "git_blob_sha": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+      "windows_bytes": 436762,
+      "windows_sha256": "276b6c58a5260c7c0c3fd1561d65249eba307827767c894e149ba0e4bcb9fdb9",
+      "lf_to_crlf_bytes": 436762,
+      "lf_to_crlf_sha256": "276b6c58a5260c7c0c3fd1561d65249eba307827767c894e149ba0e4bcb9fdb9",
+      "byte_identity_matches_windows_receipt": true
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "git_blob_sha": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+      "windows_bytes": 165691,
+      "windows_sha256": "119cf6ef914b4342719f63cfc7a032c754152b0c6c04a0f9d031d665ef83d946",
+      "lf_to_crlf_bytes": 165691,
+      "lf_to_crlf_sha256": "119cf6ef914b4342719f63cfc7a032c754152b0c6c04a0f9d031d665ef83d946",
+      "byte_identity_matches_windows_receipt": true
+    }
+  ],
+  "logs": {
+    "linux": {
+      "sha256": "921b7317adf72cfad5ddd22b541f1e366a4d8beddc48214b913f642fbaaf1bc5",
+      "failed_names": [
+        "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source",
+        "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+        "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+        "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+        "test_agent_db_has_no_direct_commit_error_propagation",
+        "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup"
+      ]
+    },
+    "windows": {
+      "sha256": "2e25b24f4252140b8d4c9f063b62b9d596b62d2ed833fc3b2afef896fa922bf3",
+      "failed_names": [
+        "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source",
+        "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+        "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+        "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+        "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+        "test_agent_db_has_no_direct_commit_error_propagation",
+        "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup"
+      ]
+    }
+  },
+  "windows_only_failures": [
+    "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner"
+  ]
+}

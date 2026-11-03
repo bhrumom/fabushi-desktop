@@ -1,0 +1,10 @@
+{
+  "method": "Literal byte substring comparisons only; no Rust compiler, parser or test execution.",
+  "owner_git_blob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+  "test_git_blob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+  "signature_literal_text": "pub fn append_transcript_entries_and_release_media(\n        &self,\n        entries: &[serde_json::Value],\n        expected_session_key: &str,\n        expected_lifecycle_revision: &str,\n        media_work_id: &str,\n    ) -> Result<usize, AgentDbProjectionError>",
+  "LF_signature_occurrences_in_Git_source": 1,
+  "LF_signature_occurrences_in_Windows_receipt_proven_CRLF_source": 0,
+  "CRLF_signature_occurrences_in_Windows_receipt_proven_CRLF_source": 1,
+  "Windows_source_sha256": "276b6c58a5260c7c0c3fd1561d65249eba307827767c894e149ba0e4bcb9fdb9"
+}
