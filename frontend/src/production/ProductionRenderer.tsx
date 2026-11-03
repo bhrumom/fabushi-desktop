@@ -1149,6 +1149,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         humanConversationsRef.current = projected;
         setHumanConversations(projected);
         reconcileCompleteRosterSelection([...projected, ...agentsRef.current].sort((left, right) => right.updatedAt - left.updatedAt));
+        return projected.map(({ id, raw }) => ({
+          id,
+          name: typeof raw.title === "string" ? raw.title : "",
+        }));
       },
     });
   }, [client, isForwardAccountScopeCurrent, reconcileCompleteRosterSelection]);
