@@ -172,7 +172,7 @@ pub(super) fn probe_human_conversation_store(
         }
         return Err(error.into());
     }
-    if &header != b"SQLite format 3\\0" {
+    if &header != b"SQLite format 3\0" {
         return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
     }
 
