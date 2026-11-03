@@ -404,6 +404,350 @@ fn file_memory_store_append_directory_read_error_is_preserved() {
     }
 }
 
+
+#[test]
+fn memory_list_checked_preserves_missing_empty_order_and_limit() {
+    let fixture = AppendReadFixture::new("checked-list-controls");
+    let service = MemoryService::new(&fixture.root);
+    let store = service.store_for_agent("agent-a");
+    let missing = append_memory_tree(&fixture.root);
+    assert!(store.list_memories_checked(100).expect("absent optional inputs").is_empty());
+    assert!(service.list_checked("agent-a").expect("safe missing agent").is_empty());
+    assert_eq!(append_memory_tree(&fixture.root), missing, "reads create no directory");
+
+    let memory = store.get_location();
+    fs::create_dir_all(memory.join("log")).expect("empty memory directories");
+    fs::write(memory.join("profile.md"), "").expect("empty profile");
+    fs::write(memory.join("log/1970-01.md"), "").expect("empty log");
+    let empty = append_memory_tree(&fixture.root);
+    assert!(service.list_checked("agent-a").expect("readable empty inputs").is_empty());
+    assert_eq!(append_memory_tree(&fixture.root), empty);
+
+    fs::write(memory.join("profile.md"), concat!(
+        "# About the user\n<!-- keep comment -->\n",
+        "- (1970-01-02) Older profile\n",
+        "- (1970-01-03) First tied profile\n",
+        "- (1970-01-03)  Second   tied profile ☃  \n",
+        "- (bad-date) skipped\n- (1970-02-30) skipped\n- (1970-01-03) \n",
+    )).expect("profile parser controls");
+    fs::write(memory.join("log/1970-01.md"), concat!(
+        "- (1970-01-04) Earlier file first\n",
+        "- (1970-01-04) Earlier file second\n",
+        "- (1970-01-05) Newest log\n",
+    )).expect("first sorted log");
+    fs::write(memory.join("log/1970-02.md"), "- (1970-01-04) Later file tie\n")
+        .expect("second sorted log");
+    fs::write(memory.join("log/ignored.txt"), b"\xff\xfe").expect("ignored non-Markdown file");
+    fs::create_dir(memory.join("log/nested.md")).expect("ignored nonregular Markdown entry");
+    fs::write(memory.join("log/nested.md/private.bin"), b"\xff\xfe")
+        .expect("ignored directory contents");
+
+    let expected = [
+        ("Second tied profile ☃", 2, MemoryKind::Profile),
+        ("First tied profile", 2, MemoryKind::Profile),
+        ("Older profile", 1, MemoryKind::Profile),
+        ("Newest log", 4, MemoryKind::Log),
+        ("Later file tie", 3, MemoryKind::Log),
+        ("Earlier file second", 3, MemoryKind::Log),
+        ("Earlier file first", 3, MemoryKind::Log),
+    ].into_iter().map(|(content, day, kind)| {
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryRecord {
+            id: memory_id_for(content), content: content.into(), created_at: day * 86_400_000, kind,
+        }
+    }).collect::<Vec<_>>();
+    let before = append_memory_tree(&fixture.root);
+    assert_eq!(store.list_memories_checked(usize::MAX).expect("complete checked order"), expected);
+    assert_eq!(store.list_memories(usize::MAX), expected, "legacy projection remains identical");
+    assert_eq!(service.list_checked("agent-a").expect("service projection"), expected);
+    assert_eq!(store.list_memories_checked(2).expect("bounded projection"), expected[..2]);
+    assert!(store.list_memories_checked(0).expect("zero bound on healthy inputs").is_empty());
+    assert_eq!(append_memory_tree(&fixture.root), before);
+
+    fs::remove_file(memory.join("profile.md")).expect("fixture removes optional profile");
+    assert_eq!(service.list_checked("agent-a").expect("logs without profile"), expected[3..]);
+    fs::write(memory.join("profile.md"), "- (1970-01-02) Older profile\n")
+        .expect("restore only profile");
+    fs::remove_dir_all(memory.join("log")).expect("fixture removes optional log directory");
+    assert_eq!(service.list_checked("agent-a").expect("profile without logs"), expected[2..3]);
+}
+
+#[test]
+fn memory_list_checked_read_errors_preserve_bytes_reopen_and_repair() {
+    for (kind, relative, neighbor_kind) in [
+        (MemoryKind::Profile, "profile.md", MemoryKind::Log),
+        (MemoryKind::Log, "log/2026-09.md", MemoryKind::Profile),
+    ] {
+        let fixture = AppendReadFixture::new("checked-list-corrupt");
+        let service = MemoryService::new(&fixture.root);
+        let store = service.store_for_agent("agent-a");
+        let now = append_test_time();
+        store.add_memory("Private faulted fact ☃", now, kind)
+            .expect("seed selected file").expect("faulted fact");
+        let neighbor = store.add_memory("Private readable neighbor 界", now, neighbor_kind)
+            .expect("seed neighboring file").expect("neighbor fact");
+        service.store_for_agent("agent-b")
+            .add_memory("Unrelated agent sentinel", now, MemoryKind::Profile)
+            .expect("other agent").expect("other fact");
+        let metadata = FileMemoryStore::with_synthesis_metadata(store.get_location(), true);
+        metadata.mark_temporal_review(now).expect("unchanged synthesis metadata control");
+        let expected = store.list_memories_checked(100).expect("establish complete readable oracle");
+        assert_eq!(expected.len(), 2);
+        let healthy = append_memory_tree(&fixture.root);
+        let destination = store.get_location().join(relative);
+        let repaired = fs::read(&destination).expect("original complete bytes");
+        let mut corrupt = repaired.clone();
+        corrupt.extend_from_slice(b"<!-- corrupt suffix: \xff\xfe -->\n");
+        fs::write(&destination, &corrupt).expect("fixture-owned invalid UTF-8");
+        let original_error = fs::read_to_string(&destination).expect_err("real unreadable text");
+        assert_eq!(original_error.kind(), io::ErrorKind::InvalidData);
+        assert_eq!(fs::read(&destination).expect("raw corrupt bytes"), corrupt);
+        let before = append_memory_tree(&fixture.root);
+        assert_eq!(store.list_memories(100), vec![neighbor], "legacy best-effort caller unchanged");
+
+        let notifications = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&notifications);
+        let unsubscribe = service.subscribe(Arc::new(move || {
+            observed.fetch_add(1, Ordering::SeqCst);
+        }));
+        service.set_active_agent(Some("agent-a".into()));
+        assert_eq!(notifications.load(Ordering::SeqCst), 1, "synchronous observer is live");
+
+        for limit in [0, 1, 100, usize::MAX] {
+            let error = store.list_memories_checked(limit).expect_err("no partial checked list");
+            assert_eq!(error.kind(), original_error.kind());
+            assert_eq!(error.raw_os_error(), original_error.raw_os_error());
+            assert_eq!(append_memory_tree(&fixture.root), before);
+        }
+        assert_eq!(service.list_checked("agent-a").expect_err("service retains failure").kind(),
+            original_error.kind());
+        assert_eq!(notifications.load(Ordering::SeqCst), 1, "failed read emits nothing");
+        assert_eq!(service.active_agent_id().as_deref(), Some("agent-a"));
+
+        let reopened = MemoryService::new(&fixture.root);
+        assert_eq!(reopened.list_checked("agent-a").expect_err("reopen cannot repair bytes").kind(),
+            original_error.kind());
+        assert_eq!(append_memory_tree(&fixture.root), before);
+        assert_eq!(fs::read(&destination).expect("bytes after reopen"), corrupt);
+
+        fs::write(&destination, &repaired).expect("explicit fixture repair");
+        assert_eq!(store.list_memories_checked(100).expect("same store recovers"), expected);
+        assert_eq!(service.list_checked("agent-a").expect("same service recovers"), expected);
+        assert_eq!(reopened.list_checked("agent-a").expect("reopened service recovers"), expected);
+        assert_eq!(append_memory_tree(&fixture.root), healthy);
+        assert_eq!(notifications.load(Ordering::SeqCst), 1, "successful reads also emit nothing");
+        unsubscribe();
+    }
+}
+
+#[test]
+fn memory_list_checked_path_type_errors_preserve_obstacles_and_recover() {
+    for profile_obstacle in [true, false] {
+        let fixture = AppendReadFixture::new("checked-list-path-types");
+        let service = MemoryService::new(&fixture.root);
+        let store = service.store_for_agent("agent-a");
+        let now = append_test_time();
+        store.add_memory("Readable profile", now, MemoryKind::Profile).expect("profile");
+        store.add_memory("Readable log", now, MemoryKind::Log).expect("log");
+        let expected = service.list_checked("agent-a").expect("complete readable control");
+        assert_eq!(expected.len(), 2);
+        let healthy = append_memory_tree(&fixture.root);
+        let path = store.get_location().join(if profile_obstacle { "profile.md" } else { "log" });
+        let original = if profile_obstacle {
+            fs::read(&path).expect("profile bytes")
+        } else {
+            fs::read(path.join("2026-09.md")).expect("log bytes")
+        };
+        if profile_obstacle {
+            fs::remove_file(&path).expect("fixture removes profile");
+            fs::create_dir(&path).expect("directory occupying profile");
+            fs::write(path.join("sentinel.bin"), b"directory sentinel\x00\xff").expect("sentinel");
+        } else {
+            fs::remove_file(path.join("2026-09.md")).expect("fixture removes log");
+            fs::remove_dir(&path).expect("fixture removes empty log directory");
+            fs::write(&path, b"log directory obstacle\x00\xff").expect("file occupying log directory");
+        }
+        let obstacle = fs::symlink_metadata(&path).expect("actual obstacle type");
+        assert_eq!(obstacle.is_dir(), profile_obstacle);
+        assert_eq!(obstacle.is_file(), !profile_obstacle);
+        let original_error = if profile_obstacle {
+            assert_eq!(fs::read(path.join("sentinel.bin")).expect("raw directory sentinel"),
+                b"directory sentinel\x00\xff");
+            Some(fs::read_to_string(&path).expect_err("directory is not a readable profile"))
+        } else {
+            assert_eq!(fs::read(&path).expect("raw file obstacle"), b"log directory obstacle\x00\xff");
+            // Windows wildcard enumeration may succeed with zero entries here.
+            fs::read_dir(&path).and_then(|entries| entries.collect::<io::Result<Vec<_>>>()).err()
+        };
+        eprintln!("MGL path obstacle profile={profile_obstacle}: native error {:?}",
+            original_error.as_ref().map(|error| (error.kind(), error.raw_os_error())));
+        let before = append_memory_tree(&fixture.root);
+        assert_eq!(store.list_memories(100).len(), 1, "readable neighbor establishes partial legacy result");
+        let reopened = MemoryService::new(&fixture.root);
+        for owner in [&service, &reopened] {
+            let error = owner.list_checked("agent-a").expect_err("real path-type error propagates");
+            if profile_obstacle {
+                let original_error = original_error.as_ref().expect("profile read failed");
+                assert_eq!(error.kind(), original_error.kind());
+                assert_eq!(error.raw_os_error(), original_error.raw_os_error());
+            } else {
+                assert_eq!(error.kind(), io::ErrorKind::NotADirectory);
+            }
+            assert_eq!(append_memory_tree(&fixture.root), before);
+        }
+
+        if profile_obstacle {
+            fs::remove_file(path.join("sentinel.bin")).expect("remove owned sentinel");
+            fs::remove_dir(&path).expect("remove owned empty obstacle");
+            fs::write(&path, &original).expect("restore original profile");
+        } else {
+            fs::remove_file(&path).expect("remove owned log obstacle");
+            fs::create_dir(&path).expect("restore log directory");
+            fs::write(path.join("2026-09.md"), &original).expect("restore original log");
+        }
+        assert_eq!(service.list_checked("agent-a").expect("read after explicit repair"), expected);
+        assert_eq!(append_memory_tree(&fixture.root), healthy);
+    }
+}
+
+#[test]
+fn memory_list_checked_rejects_nondirectory_ancestors_without_repair() {
+    for relative in ["agent-a", "agent-a/memory"] {
+        let fixture = AppendReadFixture::new("checked-list-ancestor");
+        let service = MemoryService::new(&fixture.root);
+        let store = service.store_for_agent("agent-a");
+        store.add_memory("Ancestor-protected profile", append_test_time(), MemoryKind::Profile)
+            .expect("profile seed");
+        store.add_memory("Ancestor-protected log", append_test_time(), MemoryKind::Log)
+            .expect("log seed");
+        service.store_for_agent("agent-b")
+            .add_memory("Unrelated ancestor sentinel", append_test_time(), MemoryKind::Profile)
+            .expect("other agent seed");
+        let expected = service.list_checked("agent-a").expect("readable complete control");
+        assert_eq!(expected.len(), 2);
+        let healthy = append_memory_tree(&fixture.root);
+        let obstacle = fixture.root.join(relative);
+        let backup = fixture.root.join("fixture-owned-backup");
+        fs::rename(&obstacle, &backup).expect("fixture retains complete original directory");
+        fs::write(&obstacle, b"non-directory ancestor\x00\xff").expect("owned ancestor obstacle");
+        assert!(fs::symlink_metadata(&obstacle).expect("actual ancestor metadata").is_file());
+        assert_eq!(fs::read(&obstacle).expect("raw ancestor bytes"), b"non-directory ancestor\x00\xff");
+        let original_error = fs::read_to_string(store.get_location().join("profile.md"))
+            .expect_err("profile below a file cannot be read");
+        eprintln!("MGL ancestor {relative}: native error {:?} / {:?}",
+            original_error.kind(), original_error.raw_os_error());
+        let before = append_memory_tree(&fixture.root);
+        let reopened = MemoryService::new(&fixture.root);
+        for owner in [&service, &reopened] {
+            let error = owner.list_checked("agent-a").expect_err("ancestor is not absence");
+            assert_eq!(error.kind(), original_error.kind());
+            assert_eq!(error.raw_os_error(), original_error.raw_os_error());
+            assert_eq!(append_memory_tree(&fixture.root), before);
+        }
+        fs::remove_file(&obstacle).expect("remove only the owned obstacle");
+        fs::rename(&backup, &obstacle).expect("explicit fixture restoration");
+        assert_eq!(service.list_checked("agent-a").expect("same owner after repair"), expected);
+        assert_eq!(append_memory_tree(&fixture.root), healthy);
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn memory_list_checked_distinguishes_dangling_links_from_valid_directory_links() {
+    use std::os::unix::fs::symlink;
+
+    for relative in ["agent-a", "agent-a/memory", "agent-a/memory/profile.md", "agent-a/memory/log"] {
+        let fixture = AppendReadFixture::new("checked-list-links");
+        let service = MemoryService::new(&fixture.root);
+        let store = service.store_for_agent("agent-a");
+        store.add_memory("Linked profile control", append_test_time(), MemoryKind::Profile)
+            .expect("profile seed");
+        store.add_memory("Linked log control", append_test_time(), MemoryKind::Log)
+            .expect("log seed");
+        let expected = service.list_checked("agent-a").expect("readable complete control");
+        assert_eq!(expected.len(), 2);
+        let healthy = append_memory_tree(&fixture.root);
+        let path = fixture.root.join(relative);
+        let backup = fixture.root.join("fixture-owned-backup");
+        let missing_target = fixture.root.join("absent-link-target");
+        fs::rename(&path, &backup).expect("retain original file or directory");
+        let backup_before = append_memory_tree(&backup);
+        symlink(&missing_target, &path).expect("fixture-owned dangling link");
+        assert!(fs::symlink_metadata(&path).expect("existing dangling link metadata")
+            .file_type().is_symlink());
+        assert_eq!(fs::read_link(&path).expect("link target"), missing_target);
+        let original_error = if relative.ends_with("/log") {
+            fs::metadata(&path).expect_err("dangling log input metadata")
+        } else {
+            fs::read_to_string(store.get_location().join("profile.md"))
+                .expect_err("profile cannot traverse a dangling link")
+        };
+        assert_eq!(original_error.kind(), io::ErrorKind::NotFound);
+        let reopened = MemoryService::new(&fixture.root);
+        for owner in [&service, &reopened] {
+            let error = owner.list_checked("agent-a").expect_err("dangling link is not absent input");
+            assert_eq!(error.kind(), original_error.kind());
+            assert_eq!(error.raw_os_error(), original_error.raw_os_error());
+            assert_eq!(fs::read_link(&path).expect("unchanged dangling link"), missing_target);
+            assert_eq!(append_memory_tree(&backup), backup_before);
+            assert_eq!(fs::symlink_metadata(&missing_target).expect_err("no implicit target repair").kind(),
+                io::ErrorKind::NotFound);
+        }
+        fs::remove_file(&path).expect("remove only owned dangling link");
+        symlink(&backup, &path).expect("explicit repair to a valid existing file or directory");
+        assert_eq!(service.list_checked("agent-a").expect("valid links retain read behavior"), expected);
+        assert_eq!(fs::read_link(&path).expect("successful read preserves link"), backup);
+        assert_eq!(append_memory_tree(&backup), backup_before);
+        fs::remove_file(&path).expect("remove only owned repaired link");
+        fs::rename(&backup, &path).expect("restore original fixture layout");
+        assert_eq!(append_memory_tree(&fixture.root), healthy);
+    }
+
+    let fixture = AppendReadFixture::new("checked-list-directory-link-absence");
+    let target = fixture.root.join("empty-directory");
+    fs::create_dir(&target).expect("real empty target directory");
+    let link = fixture.root.join("linked-agent");
+    symlink(&target, &link).expect("valid directory ancestor link");
+    let service = MemoryService::new(&fixture.root);
+    assert!(service.list_checked("linked-agent").expect("absence below a real directory link").is_empty());
+    assert_eq!(fs::read_link(&link).expect("unchanged directory link"), target);
+    assert!(fs::read_dir(&target).expect("unmodified target").next().is_none());
+}
+
+#[test]
+fn memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit() {
+    let fixture = AppendReadFixture::new("checked-list-beyond-limit");
+    let service = MemoryService::new(&fixture.root);
+    let store = service.store_for_agent("agent-a");
+    let memory = store.get_location();
+    fs::create_dir_all(memory.join("log")).expect("memory directory");
+    fs::write(memory.join("profile.md"), (0..101)
+        .map(|index| format!("- (2026-09-24) Profile {index:03}\n")).collect::<String>())
+        .expect("more than the native bound of preferred facts");
+    let old_log = memory.join("log/1970-01.md");
+    let repaired = b"- (1970-01-02) Older fact beyond native bound\n";
+    fs::write(&old_log, repaired).expect("old readable log");
+    let expected = service.list_checked("agent-a").expect("healthy native bound");
+    assert_eq!(expected.len(), 100);
+    assert_eq!(expected[0].content, "Profile 100");
+    assert_eq!(expected[99].content, "Profile 001");
+    assert_eq!(store.list_memories_checked(usize::MAX).expect("all files").len(), 102);
+    let mut corrupt = repaired.to_vec();
+    corrupt.push(0xff);
+    fs::write(&old_log, &corrupt).expect("corrupt older selected log");
+    assert_eq!(fs::read(&old_log).expect("raw old bytes"), corrupt);
+    let before = append_memory_tree(&fixture.root);
+    assert_eq!(service.list("agent-a"), expected, "legacy bound hides this old failure");
+    assert_eq!(service.list_checked("agent-a").expect_err("must read beyond output bound").kind(),
+        io::ErrorKind::InvalidData);
+    assert_eq!(store.list_memories_checked(0).expect_err("zero bound still checks all files").kind(),
+        io::ErrorKind::InvalidData);
+    assert_eq!(MemoryService::new(&fixture.root).list_checked("agent-a")
+        .expect_err("reopened owner must still check all files").kind(), io::ErrorKind::InvalidData);
+    assert_eq!(append_memory_tree(&fixture.root), before);
+    fs::write(&old_log, repaired).expect("explicit old log repair");
+    assert_eq!(service.list_checked("agent-a").expect("complete read after repair"), expected);
+}
+
 #[test]
 fn exact_memory_recovery_preserves_synthesis_metadata() {
     let root = temp_root("exact-recovery");

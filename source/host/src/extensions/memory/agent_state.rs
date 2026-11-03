@@ -16,6 +16,7 @@ use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_f
 use crate::automations::automation::{AutomationRecord, AutomationSpec, describe_trigger};
 use crate::r#box::box_transfer::is_box_root_path;
 use crate::extensions::session::channel_store::{FileChannelStore, get_agent_channels_dir};
+use crate::storage::agent_paths::assert_valid_sand_agent_id;
 use crate::storage::folder_id::is_safe_folder_id;
 use crate::workflows::workflow_library::{WorkflowSpec, get_global_workflows_dir};
 use crate::workflows::workflow_store::FileWorkflowStore;
@@ -132,7 +133,7 @@ impl SandAgentState {
     ) -> Result<Self, String> {
         let sand_root = sand_root.into();
         let agent_id = agent_id.into();
-        if agent_id.trim() != agent_id || !is_safe_folder_id(&agent_id) {
+        if assert_valid_sand_agent_id(&agent_id).is_err() {
             return Err(format!("invalid agent id: {agent_id}"));
         }
         let agent_dir = sand_root.join("agents").join(&agent_id);

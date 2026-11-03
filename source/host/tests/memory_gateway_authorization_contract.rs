@@ -347,6 +347,19 @@ impl MemoryGateway {
         assert_eq!(self.state(), before, "read must preserve files, snapshot, journal and notifications");
     }
 
+    fn assert_checked_list_error(&self, authorization: Option<&str>, expected: &str) {
+        let before = self.state();
+        let response = self.invoke(
+            "getAgentMemories", self.args("getAgentMemories"), authorization, "", 500,
+        );
+        assert_eq!(response, json!({"error": expected}), "a failed read is never an array");
+        for private in [PROFILE, LOG, OTHER, OUTSIDE] {
+            assert!(!response.to_string().contains(private), "private fact disclosed in an error");
+        }
+        assert_eq!(self.state(), before,
+            "failed read must preserve raw bytes, frozen prompts, journals and notifications");
+    }
+
     fn assert_control_read(&self) {
         let expected = self.api.sessions.memory_service().list(&self.agent_id).into_iter().map(|record| {
             json!({
@@ -602,5 +615,247 @@ fn memory_gateway_preserves_projection_selectors_and_unrelated_routes() {
         }));
         assert_eq!(expected.len(), 100);
         fixture.assert_read(Some(&fixture.read_control.bearer), "", Value::Array(expected));
+    }
+}
+
+#[test]
+fn memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover() {
+    for configured in [true, false] {
+        for fault in ["profile-utf8", "log-utf8", "profile-directory", "log-file"] {
+            let mut fixture = MemoryGateway::new(configured);
+            let native = configured.then(|| format!("Bearer {NATIVE_TOKEN}"));
+            let node = issue_credential(&fixture.api.pairing, "fault-node", "node", &[]);
+            fixture.assert_read(native.as_deref(), "", fixture.initial_projection());
+            let memory = fixture.api.sessions.memory_service().store_for_agent(&fixture.agent_id)
+                .get_location();
+            let healthy = fixture.state();
+            let profile_fault = fault.starts_with("profile");
+            let selected = memory.join(if profile_fault { "profile.md" } else { "log/1970-01.md" });
+            let original = fs::read(&selected).expect("complete readable selected file");
+            let error = match fault {
+                "profile-utf8" | "log-utf8" => {
+                    let mut corrupt = original.clone();
+                    corrupt.extend_from_slice(b"<!-- invalid UTF-8: \xff\xfe -->\n");
+                    fs::write(&selected, &corrupt).expect("fixture-owned corruption");
+                    assert_eq!(fs::read(&selected).expect("raw corrupt bytes"), corrupt);
+                    let error = fs::read_to_string(&selected).expect_err("invalid UTF-8 control");
+                    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+                    error
+                }
+                "profile-directory" => {
+                    fs::remove_file(&selected).expect("remove owned profile");
+                    fs::create_dir(&selected).expect("directory occupying profile");
+                    let sentinel = selected.join("sentinel.bin");
+                    fs::write(&sentinel, b"owned profile obstacle\x00\xff").expect("sentinel");
+                    assert_eq!(fs::read(&sentinel).expect("raw sentinel"), b"owned profile obstacle\x00\xff");
+                    assert!(fs::symlink_metadata(&selected).expect("actual profile obstacle type").is_dir());
+                    fs::read_to_string(&selected).expect_err("directory is not a readable profile")
+                }
+                "log-file" => {
+                    fs::remove_file(&selected).expect("remove owned log");
+                    fs::remove_dir(memory.join("log")).expect("remove owned empty log directory");
+                    fs::write(memory.join("log"), b"owned log obstacle\x00\xff").expect("log obstacle");
+                    assert_eq!(fs::read(memory.join("log")).expect("raw obstacle"), b"owned log obstacle\x00\xff");
+                    assert!(fs::symlink_metadata(memory.join("log")).expect("actual log obstacle type").is_file());
+                    let native_error = fs::read_dir(memory.join("log"))
+                        .and_then(|entries| entries.collect::<std::io::Result<Vec<_>>>()).err();
+                    eprintln!("MGL HTTP log obstacle: native error {:?}",
+                        native_error.as_ref().map(|error| (error.kind(), error.raw_os_error())));
+                    let error = fixture.api.sessions.memory_service().list_checked(&fixture.agent_id)
+                        .expect_err("checked log metadata refuses an existing file");
+                    assert_eq!(error.kind(), std::io::ErrorKind::NotADirectory);
+                    error
+                }
+                _ => unreachable!("declared fixture fault"),
+            };
+            eprintln!("MGL HTTP {fault}: checked error {:?} / {:?}",
+                error.kind(), error.raw_os_error());
+            let before = fixture.state();
+            assert_eq!(before.agents[0].records.len(), 1,
+                "the healthy neighboring fact would produce a misleading partial success");
+            assert_eq!(before.agents[1], healthy.agents[1], "unrelated agent is healthy");
+            assert_eq!(before.agents[0].snapshot, healthy.agents[0].snapshot);
+            assert!(before.agents[0].snapshot.is_some(), "frozen prompt is a live oracle");
+            assert_eq!(before.agents[0].journal, healthy.agents[0].journal);
+            assert_eq!(before.notifications, healthy.notifications);
+
+            for authorization in [native.as_deref(), Some(fixture.read_control.bearer.as_str())] {
+                fixture.assert_checked_list_error(authorization, &error.to_string());
+            }
+            // Corrupt storage cannot turn an authorization refusal into owner dispatch.
+            for method in METHODS {
+                for body in [fixture.args(method).to_string(), "{".into()] {
+                    let calls = fixture.api.calls();
+                    let response = fixture.post(method, &body, Some(&node.bearer), "");
+                    assert_eq!(response.status, 403, "{}", response.raw);
+                    assert!(response.body["error"].as_str()
+                        .is_some_and(|value| value.contains("ROLE_MISMATCH")));
+                    for private in [PROFILE, LOG, OTHER, OUTSIDE] {
+                        assert!(!response.raw.contains(private), "private fact in denied response");
+                    }
+                    assert_eq!(fixture.api.calls(), calls, "denial precedes the real owner");
+                    assert_eq!(fixture.state(), before);
+                }
+            }
+
+            fixture.reopen();
+            assert_eq!(fixture.state(), before, "reopen preserves faulted bytes and unrelated state");
+            for authorization in [native.as_deref(), Some(fixture.read_control.bearer.as_str())] {
+                fixture.assert_checked_list_error(authorization, &error.to_string());
+            }
+            match fault {
+                "profile-directory" => {
+                    fs::remove_file(selected.join("sentinel.bin")).expect("remove only owned sentinel");
+                    fs::remove_dir(&selected).expect("remove only owned empty obstacle");
+                }
+                "log-file" => {
+                    fs::remove_file(memory.join("log")).expect("remove only owned obstacle");
+                    fs::create_dir(memory.join("log")).expect("restore owned log directory");
+                }
+                _ => {}
+            }
+            fs::write(&selected, &original).expect("explicit fixture repair to original bytes");
+            assert_eq!(fixture.state(), healthy, "only fixture repair changes the stored data");
+            for authorization in [native.as_deref(), Some(fixture.read_control.bearer.as_str())] {
+                fixture.assert_read(authorization, "", fixture.initial_projection());
+            }
+        }
+    }
+}
+
+#[test]
+fn memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit() {
+    for configured in [true, false] {
+        let mut fixture = MemoryGateway::new(configured);
+        let native = configured.then(|| format!("Bearer {NATIVE_TOKEN}"));
+        let memory = fixture.api.sessions.memory_service().store_for_agent(&fixture.agent_id)
+            .get_location();
+        fs::write(memory.join("log/1970-01.md"), (0..104)
+            .map(|index| format!("- (1970-01-04) Bounded fact {index:03} 界\n"))
+            .collect::<String>()).expect("more than a native result of newer facts");
+        let older = memory.join("log/1969-12.md");
+        let original = b"- (1969-12-31) Older private fact outside native projection\n";
+        fs::write(&older, original).expect("older readable log");
+        let mut expected = vec![fixture.initial_projection()[0].clone()];
+        expected.extend((5..104).rev().map(|index| {
+            let content = format!("Bounded fact {index:03} 界");
+            json!({"id": memory_id_for(&content), "content": content, "createdAt": 3 * DAY_MS, "kind": "log"})
+        }));
+        let expected = Value::Array(expected);
+        assert_eq!(expected.as_array().expect("expected projection").len(), 100);
+        fixture.assert_read(Some(&fixture.read_control.bearer), "", expected.clone());
+        let healthy = fixture.state();
+        assert_eq!(healthy.agents[0].records.len(), 106, "all selected records are observable");
+        let mut corrupt = original.to_vec();
+        corrupt.push(0xff);
+        fs::write(&older, &corrupt).expect("corrupt old selected log");
+        assert_eq!(fs::read(&older).expect("raw old log bytes"), corrupt);
+        let error = fs::read_to_string(&older).expect_err("invalid UTF-8 old log").to_string();
+        let before = fixture.state();
+        for authorization in [native.as_deref(), Some(fixture.read_control.bearer.as_str())] {
+            fixture.assert_checked_list_error(authorization, &error);
+        }
+        fixture.reopen();
+        assert_eq!(fixture.state(), before);
+        fixture.assert_checked_list_error(Some(&fixture.read_control.bearer), &error);
+        assert_eq!(fs::read(&older).expect("corrupt bytes survive owner reopen"), corrupt);
+        fs::write(&older, original).expect("explicit fixture repair of old log");
+        assert_eq!(fixture.state(), healthy);
+        for authorization in [native.as_deref(), Some(fixture.read_control.bearer.as_str())] {
+            fixture.assert_read(authorization, "", expected.clone());
+        }
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn memory_gateway_http_rejects_native_drive_relative_selector() {
+    use std::path::{Component, Prefix};
+
+    const CHILD_ROOT: &str = "FABUSHI_MEMORY_HTTP_NATIVE_PATH_CHILD_ROOT";
+    const TEST_NAME: &str = "memory_gateway_http_rejects_native_drive_relative_selector";
+    const MARKER: &str = "MEMORY_HTTP_NATIVE_PATH_CHILD_COMPLETED";
+    const SENTINEL: &str = "Windows HTTP drive-relative outside sentinel";
+    if let Some(root) = std::env::var_os(CHILD_ROOT) {
+        let root = PathBuf::from(root);
+        let cwd = std::env::current_dir().expect("child CWD");
+        assert_eq!(fs::canonicalize(&cwd).expect("actual child CWD"),
+            fs::canonicalize(&root).expect("owned child root"));
+        let drive = match cwd.components().next().expect("native Windows prefix") {
+            Component::Prefix(prefix) => match prefix.kind() {
+                Prefix::Disk(drive) | Prefix::VerbatimDisk(drive) => drive,
+                other => panic!("fixture requires a local drive, got {other:?}"),
+            },
+            other => panic!("fixture requires a native drive prefix, got {other:?}"),
+        };
+        let outside = FileMemoryStore::new(root.join("drive-relative-outside/memory"));
+        let sentinel = outside.add_memory(SENTINEL, DAY_MS, MemoryKind::Profile)
+            .expect("outside seed").expect("outside record");
+        let mut before = BTreeMap::new();
+        collect_files(&root, &outside.get_location(), &mut before);
+        for configured in [true, false] {
+            let fixture = MemoryGateway::new(configured);
+            let native = configured.then(|| format!("Bearer {NATIVE_TOKEN}"));
+            let state = fixture.state();
+            for drive in [char::from(drive).to_ascii_uppercase(), char::from(drive).to_ascii_lowercase()] {
+                let selector = format!("{drive}:drive-relative-outside");
+                let agents_root = fixture.root.0.join("agents");
+                let unsafe_join = agents_root.join(&selector).join("memory");
+                assert!(!unsafe_join.starts_with(&agents_root));
+                assert_eq!(FileMemoryStore::new(&unsafe_join).list_memories_checked(100)
+                    .expect("actual unsafe HTTP-owner join reads outside memory"), vec![sentinel.clone()]);
+                for authorization in [native.as_deref(), Some(fixture.read_control.bearer.as_str())] {
+                    let response = fixture.invoke("getAgentMemories", json!({"id": selector}),
+                        authorization, "", 500);
+                    assert_eq!(response, json!({"error": format!("Invalid Sand agent id: {selector}")}));
+                    assert!(!response.to_string().contains(SENTINEL), "outside content must not be disclosed");
+                    assert_eq!(fixture.state(), state);
+                    let mut after = BTreeMap::new();
+                    collect_files(&root, &outside.get_location(), &mut after);
+                    assert_eq!(after, before, "outside raw bytes are unchanged");
+                    fixture.assert_read(authorization, "", fixture.initial_projection());
+                }
+            }
+        }
+        println!("\n{MARKER}");
+        return;
+    }
+
+    let cwd = std::env::current_dir().expect("parent CWD");
+    let root = OwnedRoot::new();
+    let output = std::process::Command::new(std::env::current_exe().expect("current test executable"))
+        .args(["--exact", TEST_NAME, "--nocapture", "--test-threads=1"])
+        .current_dir(&root.0)
+        .env(CHILD_ROOT, &root.0)
+        .output().expect("execute the exact native-path child test");
+    assert!(output.status.success(), "native-path child failed:\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout).lines()
+        .filter(|line| *line == MARKER).count(), 1, "child must reach its terminal assertion marker");
+    drop(root);
+    assert_eq!(std::env::current_dir().expect("unchanged parent CWD"), cwd);
+}
+
+#[cfg(unix)]
+#[test]
+fn memory_gateway_http_preserves_literal_colon_agent_selector() {
+    for configured in [true, false] {
+        let fixture = MemoryGateway::new(configured);
+        let native = configured.then(|| format!("Bearer {NATIVE_TOKEN}"));
+        let store = fixture.api.sessions.memory_service().store_for_agent("C:outside");
+        let record = store.add_memory("Unix HTTP literal colon profile", DAY_MS, MemoryKind::Profile)
+            .expect("literal colon store").expect("literal colon record");
+        let bytes = fs::read(store.get_location().join("profile.md")).expect("literal colon raw bytes");
+        let expected = json!([
+            {"id": record.id, "content": record.content, "createdAt": DAY_MS, "kind": "profile"},
+        ]);
+        let before = fixture.state();
+        for authorization in [native.as_deref(), Some(fixture.read_control.bearer.as_str())] {
+            assert_eq!(fixture.invoke("getAgentMemories", json!({"id": " \tC:outside\n"}),
+                authorization, "", 200), expected);
+            assert_eq!(fs::read(store.get_location().join("profile.md")).expect("unchanged colon bytes"), bytes);
+            assert_eq!(fixture.state(), before);
+            fixture.assert_read(authorization, "", fixture.initial_projection());
+        }
     }
 }

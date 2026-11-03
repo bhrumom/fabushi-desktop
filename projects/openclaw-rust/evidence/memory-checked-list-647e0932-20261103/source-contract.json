@@ -1,0 +1,960 @@
+{
+  "schema": "ocrm-native-memory-checked-list-source-contract-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "MGL-v1/MGS-native-components",
+  "repository": "bhrumom/fabushi-desktop",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "authority": {
+    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "main_spec": "docs/specs/openclaw-rust-equivalence-migration.md",
+    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+    "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+    "spec": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+    "spec_blob": "c081c6d5701510b699bb734fcd5a11fb0f156638",
+    "spec_lines": [
+      138,
+      269
+    ],
+    "native_preservation": true,
+    "modules": [
+      "OCRM-M20",
+      "OCRM-M04",
+      "OCRM-M07"
+    ],
+    "rtm_rows": [
+      "OCRM-R13",
+      "OCRM-R24",
+      "OCRM-AC13",
+      "OCRM-AC17",
+      "OCRM-AC18",
+      "OCRM-AC24"
+    ],
+    "oracle_ids": [
+      "MGL-01",
+      "MGL-02",
+      "MGL-03",
+      "MGL-04",
+      "MGL-05",
+      "MGL-06",
+      "MGS-05",
+      "MGS-06",
+      "MGL-07"
+    ],
+    "spec_carrier": "e2b91700f145b9b13bb77cdf6f7981aafd433627"
+  },
+  "behavior": {
+    "entry": "Existing native getAgentMemories HTTP/Gateway command; required trimmed canonical Agent selector and existing current credential/scope/role admission. The same canonical native-component validator is consumed by Agent/Conversation path helpers and both actual SandAgentState constructors.",
+    "producer": "FileMemoryStore profile.md and selected regular .md files in the existing log directory.",
+    "unique_owner": "Existing HostMemoryExtension/ProductionSessionWorkers shared MemoryService; no additional service, state store, worker, permission source or runtime.",
+    "state": "Existing Agent memory files and unchanged synthesis metadata, frozen Session prompts, journals, unrelated Agents and listeners.",
+    "service": "MemoryService::list_checked calls FileMemoryStore::list_memories_checked(100). facts_checked reads every selected file before shared sort/projection/limit.",
+    "consumer": "TranscriptManager dispatch maps io::Error through its existing String result; shipping UnifiedGatewayApi maps it to GatewayCommandError::Internal. Healthy result remains [{id,content,createdAt,kind}].",
+    "side_effects": "Read path creates no files/directories, repairs no corruption, updates no metadata, starts no watcher/job and emits no notification. Existing mutation, synthesis and best-effort recall/list entrypoints remain.",
+    "cancellation": "Existing synchronous request lifetime; no new cancellation/worker ownership. A disconnected/erroring read has no durable write or acknowledgement to recover.",
+    "restart": "A new existing MemoryService/Session/Gateway owner sees the same failed bytes. Only explicit fixture/user repair changes the stored input; successful read then uses the same production owner.",
+    "errors": "A genuinely missing optional profile/log input is empty only after original NotFound and read-only exact/ancestor metadata prove absence. Existing file/dangling-link/unknown ancestors do not qualify; return the original operation error. Logs must be actual directories before enumeration; nondirectory metadata produces a content-free NotADirectory error. Once directory/type/file selection is observed, every subsequent enumeration/entry/type/selected-file read error propagates, including NotFound. No partial successful projection.",
+    "compatibility": "Existing parser skips comments, malformed fact lines and invalid dates. Profile-first, descending date, stable reverse insertion ties, record IDs, whitespace normalization, Markdown extension and nonregular-entry exclusions and 100-record projection are retained. Canonical IDs require exactly one native Normal component plus the prior generic/trim checks; Windows prefixes are refused, while Unix colon components remain valid. SandAgentState keeps its existing lowercase invalid-agent error and validates before path join/store construction."
+  },
+  "oracles": [
+    {
+      "id": "MGL-01",
+      "claim": "Only genuinely absent optional inputs remain empty without creating storage; original NotFound requires checked metadata absence proof, while existing obstacles and all other errors refuse the checked read.",
+      "tests": [
+        "memory_list_checked_preserves_missing_empty_order_and_limit",
+        "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+        "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+        "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit"
+      ]
+    },
+    {
+      "id": "MGL-02",
+      "claim": "Selected log errors cannot become success with omitted records; source propagation covers entry/type/disappearance, deterministic tests cover invalid UTF-8 and file/directory obstacles.",
+      "tests": [
+        "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+        "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+        "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover"
+      ],
+      "limits": "No nondeterministic enumeration-race or permission-mode fixture is represented as executed."
+    },
+    {
+      "id": "MGL-03",
+      "claim": "Complete input read precedes projection and limit; legacy parser/list/recall consumers preserve their original outputs.",
+      "tests": [
+        "memory_list_checked_preserves_missing_empty_order_and_limit",
+        "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+        "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+        "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+        "user_memory_store_aggregates_frozen_shards_and_recent_order",
+        "project_memory_store_reads_membership_shards_and_applies_global_cap",
+        "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering"
+      ]
+    },
+    {
+      "id": "MGL-04",
+      "claim": "Validated existing owner returns a real 500 error object, with no private fact content or partial array; native/paired/read and denial-before-owner controls remain.",
+      "tests": [
+        "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+        "memory_gateway_rejects_path_selectors_before_external_memory_read",
+        "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+        "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+        "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+        "memory_gateway_checked_list_manager_preserves_path_type_failures",
+        "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+        "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+        "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+        "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+        "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+        "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+        "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+        "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+        "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit"
+      ]
+    },
+    {
+      "id": "MGL-05",
+      "claim": "Failure, owner reopen and explicit repair preserve exact selected/unrelated bytes, prompt snapshot, journal and notifications; healthy reads emit nothing.",
+      "tests": [
+        "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+        "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+        "memory_gateway_checked_list_manager_preserves_path_type_failures",
+        "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+        "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners"
+      ]
+    },
+    {
+      "id": "MGL-06",
+      "claim": "Use actual existing Store/Service/Manager/Session and real TCP Gateway fixtures, retaining MGS/MGA and shared-owner regression assertions.",
+      "tests": [
+        {
+          "label": "memory-checked-list-store",
+          "names": [
+            "memory_fact_parser_matches_frozen_markdown_contract",
+            "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+            "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+            "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+            "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+            "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+            "file_memory_store_append_directory_read_error_is_preserved",
+            "memory_list_checked_preserves_missing_empty_order_and_limit",
+            "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+            "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+            "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+            "exact_memory_recovery_preserves_synthesis_metadata",
+            "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+            "memory_service_creates_real_agent_scoped_store",
+            "production_session_workers_can_share_host_memory_extension_owner",
+            "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+            "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+            "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+            "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+            "user_memory_store_aggregates_frozen_shards_and_recent_order",
+            "project_memory_store_reads_membership_shards_and_applies_global_cap",
+            "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+            "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering"
+          ]
+        },
+        {
+          "label": "memory-checked-list-manager",
+          "names": [
+            "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+            "memory_gateway_rejects_path_selectors_before_external_memory_read",
+            "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+            "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+            "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+            "memory_gateway_checked_list_manager_preserves_path_type_failures"
+          ]
+        },
+        {
+          "label": "memory-checked-list-http",
+          "names": [
+            "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+            "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+            "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+            "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+            "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+            "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+            "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+            "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+            "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit"
+          ]
+        }
+      ],
+      "limits": "HTTP adapter delegates to the same production Manager and actual Gateway/pairing owners; it does not boot the complete UnifiedGatewayApi. Shipping App compilation and source binding are separate evidence."
+    },
+    {
+      "id": "MGS-05",
+      "claim": "One native Normal Agent-ID component at the same canonical validator; reject Windows drive/root prefixes and preserve Unix literal colon/Unicode plus Session namespace grammar.",
+      "tests": [
+        "agent_paths_reject_traversal_and_whitespace",
+        "agent_paths_reject_native_windows_prefixes_and_roots",
+        "agent_paths_preserve_literal_colon_components",
+        "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+        "live_admission::both_state_constructors_keep_literal_colon_agent_paths",
+        "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling"
+      ]
+    },
+    {
+      "id": "MGS-06",
+      "claim": "Actual Manager/HTTP and both state constructors refuse Windows drive-relative IDs under a fixture-owned child CWD; qualified outside sentinels/legacy workflow bytes remain intact, valid operations recover.",
+      "tests": [
+        "memory_gateway_manager_rejects_native_drive_relative_selector",
+        "memory_gateway_http_rejects_native_drive_relative_selector",
+        "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration",
+        "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+        "memory_gateway_manager_preserves_literal_colon_agent_selector",
+        "memory_gateway_http_preserves_literal_colon_agent_selector"
+      ]
+    },
+    {
+      "id": "MGL-07",
+      "claim": "Existing file/dangling-link/type obstacles cannot masquerade optional missing input. Direct metadata/raw-byte and actual operation-error observations, original error preservation, explicit repair and owner reopen remain causal.",
+      "tests": [
+        "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+        "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links",
+        "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+        "memory_gateway_checked_list_manager_preserves_path_type_failures",
+        "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover"
+      ]
+    }
+  ],
+  "source_review": {
+    "kind": "native existing-capability preservation; no new upstream equivalence or reading credit",
+    "production_changes": [
+      {
+        "path": "source/host/src/extensions/memory/memory_service.rs",
+        "base_blob": "a8a084a38d3717686393847746468bc10b91b337",
+        "candidate_blob": "abcde0d5ba3f73dfb60dcd7607bee1eb55a868c4",
+        "review_depth": "Deep changed implementation, checked error/side-effect boundaries and actual existing producer/consumer chain"
+      },
+      {
+        "path": "source/host/src/extensions/transcript/transcript_manager.rs",
+        "base_blob": "caa2bf73398d4499d51d3152b494ff2d605b4e54",
+        "candidate_blob": "71e90fb820d492d7e9607f63311595aed076c29a",
+        "review_depth": "Deep changed implementation, checked error/side-effect boundaries and actual existing producer/consumer chain"
+      },
+      {
+        "path": "source/host/tests/memory_service_contract.rs",
+        "base_blob": "1a7379713165ff5e50528971756786382fec1c07",
+        "candidate_blob": "2171ce61768aff44ab2c2cc19eb8c1001d1505c6",
+        "review_depth": "Complete changed test delta with actual fixture/owner and native platform oracles; prior unchanged facts retained"
+      },
+      {
+        "path": "source/host/tests/transcript_manager_contract.rs",
+        "base_blob": "d9aa3eab2de2c8971688c2b5ae7db90db71ef6b5",
+        "candidate_blob": "a4f71a536beda9e2509653fe4b819d3da3d79eda",
+        "review_depth": "Complete changed test delta with actual fixture/owner and native platform oracles; prior unchanged facts retained"
+      },
+      {
+        "path": "source/host/tests/memory_gateway_authorization_contract.rs",
+        "base_blob": "1d5e5434a7e7576d68262d39c8d198885cb3beba",
+        "candidate_blob": "ad9cb9f3b6ab0f1bf8f330ac36f233bc5b7829a9",
+        "review_depth": "Complete changed test delta with actual fixture/owner and native platform oracles; prior unchanged facts retained"
+      },
+      {
+        "path": "source/host/src/storage/agent_paths.rs",
+        "base_blob": "5b023b86317d7f726945522d456ef1c2537c21b4",
+        "candidate_blob": "0d4c7f6fc0f8ec81c26aa529b4a3d3c22390c507",
+        "review_depth": "Deep changed implementation, checked error/side-effect boundaries and actual existing producer/consumer chain"
+      },
+      {
+        "path": "source/host/src/extensions/memory/agent_state.rs",
+        "base_blob": "5571649fa666753c3732e235523029027852cdd7",
+        "candidate_blob": "9b9b40967bc366ba425d2cb17ae1820d1b6eceda",
+        "review_depth": "Deep changed implementation, checked error/side-effect boundaries and actual existing producer/consumer chain"
+      },
+      {
+        "path": "source/host/tests/host_storage_contract.rs",
+        "base_blob": "efb525cfd19f0bf66515b3eac64e1019968a4869",
+        "candidate_blob": "9bd9ce45398ce1c993bacd9102ff0e76b6608219",
+        "review_depth": "Complete changed test delta with actual fixture/owner and native platform oracles; prior unchanged facts retained"
+      },
+      {
+        "path": "source/host/tests/agent_state_contract.rs",
+        "base_blob": "ba92e497b1e31cef4405958c259485635ace019d",
+        "candidate_blob": "e006bafd844737c3a778e4b3569198e17bd7657b",
+        "review_depth": "Complete changed test delta with actual fixture/owner and native platform oracles; prior unchanged facts retained"
+      },
+      {
+        "path": "source/host/tests/session_paths_contract.rs",
+        "base_blob": "0941afd83232a7ace463e8113478b3a3d86c1dc6",
+        "candidate_blob": "929c818bfd9222f4c8dfa05478ea157bc99d0a8c",
+        "review_depth": "Complete existing nine-case target read; root-resolution fixture now provides an asserted native absolute override on each platform, retaining its name and actual owner assertion."
+      }
+    ],
+    "adjacent_read_facts": [
+      {
+        "path": "source/host/app/src/main.rs",
+        "blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+        "lines": [
+          14411,
+          14415
+        ],
+        "depth": "production dispatch/error mapping, not whole-file read"
+      },
+      {
+        "path": "source/host/src/host_gateway_api.rs",
+        "blob": "127b340f120f931af778783aabcf338869fe0bc8",
+        "lines": [
+          179,
+          181
+        ],
+        "depth": "native method registration and existing owner binding"
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "blob": "4c88b00b2dfe563ba957bd0669f177a422a330a7",
+        "ranges": [
+          [
+            386,
+            453
+          ],
+          [
+            1049,
+            1060
+          ]
+        ],
+        "depth": "same MemoryService Arc constructor and accessor"
+      },
+      {
+        "path": "source/host/src/extensions/memory/extension.rs",
+        "blob": "c57cd1e66a31e7fb35f9208aed0f5f9f6a1447ca",
+        "depth": "complete current file; existing service/weak synthesis/lifecycle owner"
+      },
+      {
+        "path": "source/host/src/storage/agent_paths.rs",
+        "blob": "5b023b86317d7f726945522d456ef1c2537c21b4",
+        "depth": "complete current file; retained selector validation and adjacent path resolver"
+      },
+      {
+        "path": "source/host/src/storage/folder_id.rs",
+        "blob": "fcce62bdd4bf412e0bd5978bdac6108ae23cbd21",
+        "depth": "complete current file; portable-prefix review remains a separate open boundary"
+      },
+      {
+        "path": "source/host/src/watched_directory.rs",
+        "blob": "eb7bb0106966e9a8b5adb7205667ff81678dce80",
+        "ranges": [
+          [
+            1,
+            160
+          ]
+        ],
+        "depth": "constructor and explicit watcher start: construction alone has no filesystem creation"
+      },
+      {
+        "path": "source/host/src/extensions/memory/memory_service.rs",
+        "blob": "f70deaaff30056a5a3ce85e6643a13bf7f278013",
+        "ranges": [
+          [
+            210,
+            280
+          ],
+          [
+            699,
+            759
+          ],
+          [
+            900,
+            1088
+          ],
+          [
+            1145,
+            1272
+          ],
+          [
+            1496,
+            1545
+          ]
+        ],
+        "depth": "actual checked/best-effort input admission, shared parser/projection and recall/service consumers"
+      },
+      {
+        "path": "source/host/src/extensions/memory/agent_state.rs",
+        "blob": "9b9b40967bc366ba425d2cb17ae1820d1b6eceda",
+        "ranges": [
+          [
+            114,
+            149
+          ],
+          [
+            212,
+            245
+          ],
+          [
+            578,
+            588
+          ]
+        ],
+        "depth": "Changed constructor and adjacent memory scope/callback contract, not a claim of fresh whole-file reading",
+        "fact": "Both constructors delegate to canonical ID admission before owned store paths/factory. Existing Agent callbacks and User/Project same-ID shards remain."
+      },
+      {
+        "path": "source/host/src/host_runner_composition.rs",
+        "blob": "b75c24202ef15600a21e25180947a1432f44061c",
+        "ranges": [
+          [
+            130,
+            162
+          ],
+          [
+            298,
+            309
+          ]
+        ],
+        "depth": "Production construction/consumer contract read by native source worker",
+        "fact": "Shipping Runner composition builds and consumes actual SandAgentState with same Session callbacks."
+      },
+      {
+        "path": "source/host/src/runner/tools/sand_state_tool.rs",
+        "blob": "fe0bb0832669723d0df93b18f562d1a9e9970634",
+        "ranges": [
+          [
+            83,
+            116
+          ],
+          [
+            488,
+            510
+          ],
+          [
+            631,
+            635
+          ]
+        ],
+        "depth": "Actual state writer and memory operation dispatch contract read by native source worker",
+        "fact": "Actual update_state Agent/User/Project memory operations reach the same state owner."
+      },
+      {
+        "path": "source/host/src/extensions/session/session_paths.rs",
+        "blob": "5106195df91ef40620dc92b4e72cbf2c94db0557",
+        "ranges": [
+          [
+            85,
+            113
+          ]
+        ],
+        "depth": "Shared validator callers and reserved namespace contract read",
+        "fact": "Agent Session and native conversation path consumers reuse canonical validation; preserved specialized .conversations namespace contract."
+      },
+      {
+        "path": "source/host/src/workflows/workflow_store.rs",
+        "blob": "dd3945c0b454eea446397e033632fac93e60a17d",
+        "ranges": [
+          [
+            105,
+            146
+          ],
+          [
+            755,
+            796
+          ]
+        ],
+        "depth": "Constructor/legacy migration side-effect contract read by native source worker",
+        "fact": "Default construction invokes legacy migration, so invalid-ID refusal must precede factory invocation; Windows regression child CWD remains inside fixture."
+      },
+      {
+        "path": "source/host/src/host_paths.rs",
+        "blob": "844be87e4a278bca99bc4968bbf85b6d751983b9",
+        "depth": "complete file",
+        "fact": "resolve_sand_data_root_override admits only Path::is_absolute values; get_sand_root_dir_with chooses that same root before user-data-dir and variant fallback. The selected Session-path fixture must supply a native absolute path."
+      }
+    ],
+    "ledger_relationship": "OCRM remains the only inventory/ledger/RTM. This native preservation supplement is linked to the six existing RTM rows without inventing an upstream Memory equivalence row. Existing OCRM-RESP-GW-DISPATCH-REGISTRY-001 and MGA method/role/pairing/revocation responsibilities remain adjacent dependencies; their status and source histories are unchanged.",
+    "excluded_credit": [
+      "OCRM-RESP-MEM-FORGET-ATOMIC-001",
+      "OCRM-RESP-MEMORY-ROOT-PROVENANCE-001",
+      "OCRM-RESP-MEMORY-DREAMING-001",
+      "OCRM-RESP-MEMORY-EVENT-STORE-001",
+      "OCRM-RESP-PLUGIN-SDK-SESSION-MEMORY-001",
+      "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+    ],
+    "dependencies": {
+      "change": "No manifest/lock/feature/download/generator change.",
+      "actual_contract_review": [
+        {
+          "repository": "rust-lang/rust",
+          "commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "path": "library/std/src/path.rs",
+          "blob": "222bf77996c7f102e93c6714f4d91d7d679ec18f",
+          "lines": [
+            1298,
+            1372
+          ],
+          "fact": "Native prefix replacement in push/join; a drive-relative path need not be absolute."
+        },
+        {
+          "repository": "rust-lang/rust",
+          "commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "path": "library/std/src/sys/fs/windows.rs",
+          "blob": "e0b02670264d964b89e7ba54d6fd36505f9ed1cd",
+          "lines": [
+            1235,
+            1293
+          ],
+          "fact": "Wildcard enumeration can report FILE_NOT_FOUND as an empty iterator; metadata/type admission is required."
+        },
+        {
+          "repository": "rust-lang/rust",
+          "commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "path": "library/std/src/sys/io/error/windows.rs",
+          "blob": "3c2f41a90781314cbb4f7dc71baefc98387fc29e",
+          "lines": [
+            16,
+            53
+          ],
+          "fact": "PATH_NOT_FOUND is NotFound, while ERROR_DIRECTORY is NotADirectory; raw error kind alone is not portable absence proof."
+        }
+      ],
+      "credit": "Contract review only; not full dependency reading or new fixed-U credit. Full recursive dependency/generated/LFS/resource/legal closure remains open."
+    },
+    "historical_reads": "Existing upstream observations, category/risk dispositions and literal unread counts are preserved; contract or disposition review is not converted into a whole-file read."
+  },
+  "validation": {
+    "environment": "GitHub Actions only",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "job": "custody-recovery",
+    "workflow_scope": "ocrm-memory-checked-list",
+    "capture_scope": "memory-checked-list",
+    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15",
+      "windows-2025"
+    ],
+    "selected_named_cases": {
+      "Linux": 66,
+      "macOS": 66,
+      "Windows": 65
+    },
+    "selected_groups": 7,
+    "compile": "Linux/macOS retain shipping App --locked --profile ci and complete Host --locked --tests graph. Windows compiles the seven selected actual Host test targets; Windows shipping App remains explicitly not-executed/unaccepted. No selected Memory command requires the Box daemon or private Box test producer.",
+    "selection_controls": 36,
+    "box_selection_controls": 5,
+    "result_oracle": "Seven exact commands per native platform with immutable expected names, one complete summary each, exact pass count, zero failed/ignored/measured and command/capture success; filtered-out cases permitted only for Manager memory_gateway_ and host_storage agent_paths_ selectors. Windows child paths must complete actual owned-process assertions; no ignored helper cases.",
+    "source_binding": [
+      "projects/openclaw-rust/upstream.lock.json",
+      "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+      "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+      "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json",
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "source/host/Cargo.toml",
+      "source/host/Cargo.lock",
+      "source/host/app/Cargo.toml",
+      "source/host/app/Cargo.lock",
+      "source/host/app/src/main.rs",
+      "source/host/src/host_gateway_api.rs",
+      "source/host/src/gateway_server.rs",
+      "source/host/src/gateway_command_error.rs",
+      "source/host/src/device_pairing_owner.rs",
+      "source/host/src/extensions/session/production.rs",
+      "source/host/src/extensions/memory/memory_service.rs",
+      "source/host/src/extensions/transcript/transcript_manager.rs",
+      "source/host/tests/memory_service_contract.rs",
+      "source/host/tests/transcript_manager_contract.rs",
+      "source/host/tests/memory_gateway_authorization_contract.rs",
+      "source/host/src/extensions/memory/extension.rs",
+      "source/host/src/storage/agent_paths.rs",
+      "source/host/src/watched_directory.rs",
+      "source/host/src/storage/folder_id.rs",
+      "source/host/src/extensions/memory/agent_state.rs",
+      "source/host/src/host_runner_composition.rs",
+      "source/host/src/runner/tools/sand_state_tool.rs",
+      "source/host/src/extensions/session/session_paths.rs",
+      "source/host/tests/host_storage_contract.rs",
+      "source/host/tests/agent_state_contract.rs",
+      "source/host/tests/session_paths_contract.rs",
+      "source/host/tests/memory_extension_contract.rs",
+      "source/host/src/workflows/workflow_store.rs"
+    ],
+    "retained": "All inherited full-plan command groups and requirements remain. The existing integration and namespace groups gain applicable current-platform required names, and three explicit native owner groups are added to the portable full plan. Scoped execution does not execute unrelated groups. Historical failed DJC check remains non-passing and retained.",
+    "source_review": "pending complete immutable 14-path candidate and fresh focused GENERAL/STRUCTURE review",
+    "execution": "not-run",
+    "platform_groups": {
+      "unix": [
+        {
+          "label": "memory-checked-list-store",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "memory_service_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "memory_fact_parser_matches_frozen_markdown_contract",
+            "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+            "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+            "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+            "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+            "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+            "file_memory_store_append_directory_read_error_is_preserved",
+            "memory_list_checked_preserves_missing_empty_order_and_limit",
+            "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+            "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+            "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+            "exact_memory_recovery_preserves_synthesis_metadata",
+            "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+            "memory_service_creates_real_agent_scoped_store",
+            "production_session_workers_can_share_host_memory_extension_owner",
+            "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+            "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+            "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+            "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+            "user_memory_store_aggregates_frozen_shards_and_recent_order",
+            "project_memory_store_reads_membership_shards_and_applies_global_cap",
+            "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+            "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+            "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+            "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links"
+          ]
+        },
+        {
+          "label": "memory-checked-list-manager",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "transcript_manager_contract",
+            "memory_gateway_",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+            "memory_gateway_rejects_path_selectors_before_external_memory_read",
+            "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+            "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+            "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+            "memory_gateway_checked_list_manager_preserves_path_type_failures",
+            "memory_gateway_manager_preserves_literal_colon_agent_selector"
+          ]
+        },
+        {
+          "label": "memory-checked-list-http",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "memory_gateway_authorization_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+            "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+            "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+            "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+            "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+            "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+            "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+            "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+            "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+            "memory_gateway_http_preserves_literal_colon_agent_selector"
+          ]
+        },
+        {
+          "label": "memory-checked-list-agent-paths",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "host_storage_contract",
+            "agent_paths_",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "agent_paths_reject_traversal_and_whitespace",
+            "agent_paths_preserve_literal_colon_components"
+          ]
+        },
+        {
+          "label": "memory-checked-list-agent-state",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "agent_state_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "routes_memory_to_agent_user_and_joined_project_shards",
+            "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+            "owns_profile_settings_channel_and_avatar_mutations",
+            "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+            "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+            "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+            "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+            "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+            "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+            "live_admission::both_state_constructors_keep_literal_colon_agent_paths"
+          ]
+        },
+        {
+          "label": "memory-checked-list-session-paths",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "session_paths_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+            "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+            "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+            "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+            "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+            "stat_if_exists_matches_the_frozen_missing_file_contract",
+            "public_session_commands_reject_harness_owned_namespace",
+            "public_session_route_resolves_one_canonical_boundary",
+            "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys"
+          ]
+        },
+        {
+          "label": "memory-checked-list-extension",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "memory_extension_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "memory_extension_owns_one_agent_scoped_service",
+            "memory_extension_replacement_and_disable_keep_one_background_owner",
+            "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root"
+          ]
+        }
+      ],
+      "windows": [
+        {
+          "label": "memory-checked-list-store",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "memory_service_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "memory_fact_parser_matches_frozen_markdown_contract",
+            "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+            "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+            "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+            "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+            "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+            "file_memory_store_append_directory_read_error_is_preserved",
+            "memory_list_checked_preserves_missing_empty_order_and_limit",
+            "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+            "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+            "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+            "exact_memory_recovery_preserves_synthesis_metadata",
+            "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+            "memory_service_creates_real_agent_scoped_store",
+            "production_session_workers_can_share_host_memory_extension_owner",
+            "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+            "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+            "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+            "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+            "user_memory_store_aggregates_frozen_shards_and_recent_order",
+            "project_memory_store_reads_membership_shards_and_applies_global_cap",
+            "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+            "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+            "memory_list_checked_rejects_nondirectory_ancestors_without_repair"
+          ]
+        },
+        {
+          "label": "memory-checked-list-manager",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "transcript_manager_contract",
+            "memory_gateway_",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+            "memory_gateway_rejects_path_selectors_before_external_memory_read",
+            "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+            "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+            "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+            "memory_gateway_checked_list_manager_preserves_path_type_failures",
+            "memory_gateway_manager_rejects_native_drive_relative_selector"
+          ]
+        },
+        {
+          "label": "memory-checked-list-http",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "memory_gateway_authorization_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+            "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+            "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+            "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+            "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+            "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+            "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+            "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+            "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+            "memory_gateway_http_rejects_native_drive_relative_selector"
+          ]
+        },
+        {
+          "label": "memory-checked-list-agent-paths",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "host_storage_contract",
+            "agent_paths_",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "agent_paths_reject_traversal_and_whitespace",
+            "agent_paths_reject_native_windows_prefixes_and_roots"
+          ]
+        },
+        {
+          "label": "memory-checked-list-agent-state",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "agent_state_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "routes_memory_to_agent_user_and_joined_project_shards",
+            "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+            "owns_profile_settings_channel_and_avatar_mutations",
+            "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+            "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+            "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+            "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+            "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+            "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+            "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration"
+          ]
+        },
+        {
+          "label": "memory-checked-list-session-paths",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "session_paths_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+            "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+            "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+            "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+            "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+            "stat_if_exists_matches_the_frozen_missing_file_contract",
+            "public_session_commands_reject_harness_owned_namespace",
+            "public_session_route_resolves_one_canonical_boundary",
+            "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys"
+          ]
+        },
+        {
+          "label": "memory-checked-list-extension",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "memory_extension_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "required_names": [
+            "memory_extension_owns_one_agent_scoped_service",
+            "memory_extension_replacement_and_disable_keep_one_background_owner",
+            "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root"
+          ]
+        }
+      ]
+    },
+    "windows_checkout": "Use core.autocrlf=false only on the disposable Windows Actions runner before checkout, retaining strict before/after source byte equivalence to H; reuse existing Windows Host cache."
+  },
+  "open_work": [
+    "Actual Windows native oracles are authored and selected but not executed yet. Windows shipping App signal_hook iterator incompatibility, device names/trailing-dot alias policy and native link-capability cases remain separate open platform requirements.",
+    "Atomic multi-file snapshots, external filesystem races, symlink confinement and hostile directory replacement.",
+    "Strict prompt/synthesis reads and source-derived episode concurrency/reconciliation outside checked native listing.",
+    "Actual full App lifecycle and any rendered Memory UI, live providers/channels/plugins/nodes/devices.",
+    "Supported platform packages/signing, performance/soak, upgrade/rollback, complete source closure and all G01-G12/AC01-AC24 with independent ACCEPT."
+  ],
+  "acceptance": {
+    "full_unit_verified": false,
+    "real_ecosystem_accepted": false,
+    "shipping_accepted": false,
+    "source_read_history_promoted": false,
+    "global_flags_promoted": false
+  }
+}

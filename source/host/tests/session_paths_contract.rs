@@ -104,13 +104,18 @@ fn transcript_path_uses_the_same_sand_root_resolution_as_the_host() {
     let home = Path::new("/home/tester");
     let cwd = Path::new("/workspace");
     let argv = vec!["mahayana-app-host".to_string()];
+    #[cfg(windows)]
+    let data_root = Path::new(r"C:\var\lib\fabushi");
+    #[cfg(not(windows))]
+    let data_root = Path::new("/var/lib/fabushi");
+    assert!(data_root.is_absolute(), "native absolute override fixture");
     let environment = BTreeMap::from([(
         "SAND_DATA_ROOT".to_string(),
-        "/var/lib/fabushi".to_string(),
+        data_root.to_str().expect("UTF-8 fixture path").to_string(),
     )]);
     assert_eq!(
         get_sand_transcripts_dir_with(home, &argv, &environment, cwd),
-        Path::new("/var/lib/fabushi").join("agent-transcripts")
+        data_root.join("agent-transcripts")
     );
 }
 

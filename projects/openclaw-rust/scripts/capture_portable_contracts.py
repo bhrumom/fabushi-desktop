@@ -1,6 +1,6 @@
 import hashlib, json, os, pathlib, re, subprocess
 validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
-if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery"):
+if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list"):
     raise ValueError("Unknown portable contract scope")
 root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
     else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
@@ -364,7 +364,43 @@ plugin_admission_lock_inputs = [
     "source/host/tests/legacy_live_references_contract.rs",
     "source/host/tests/skill_publish_contract.rs"
 ]
-inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs))
+memory_checked_list_inputs = [
+    "projects/openclaw-rust/upstream.lock.json",
+    "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+    "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+    "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json",
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "source/host/Cargo.toml",
+    "source/host/Cargo.lock",
+    "source/host/app/Cargo.toml",
+    "source/host/app/Cargo.lock",
+    "source/host/app/src/main.rs",
+    "source/host/src/host_gateway_api.rs",
+    "source/host/src/gateway_server.rs",
+    "source/host/src/gateway_command_error.rs",
+    "source/host/src/device_pairing_owner.rs",
+    "source/host/src/extensions/session/production.rs",
+    "source/host/src/extensions/memory/memory_service.rs",
+    "source/host/src/extensions/transcript/transcript_manager.rs",
+    "source/host/tests/memory_service_contract.rs",
+    "source/host/tests/transcript_manager_contract.rs",
+    "source/host/tests/memory_gateway_authorization_contract.rs",
+    "source/host/src/extensions/memory/extension.rs",
+    "source/host/src/storage/agent_paths.rs",
+    "source/host/src/watched_directory.rs",
+    "source/host/src/storage/folder_id.rs",
+    "source/host/src/extensions/memory/agent_state.rs",
+    "source/host/src/host_runner_composition.rs",
+    "source/host/src/runner/tools/sand_state_tool.rs",
+    "source/host/src/extensions/session/session_paths.rs",
+    "source/host/tests/host_storage_contract.rs",
+    "source/host/tests/agent_state_contract.rs",
+    "source/host/tests/session_paths_contract.rs",
+    "source/host/tests/memory_extension_contract.rs",
+    "source/host/src/workflows/workflow_store.rs"
+]
+inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs))
 base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
 integration = base + ["--no-fail-fast"]
 for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
@@ -478,6 +514,28 @@ required_integration = [
     "channel_failure_wiring_oracle_rejects_raw_take_and_bypassed_token_admission",
     "channel_failure_wiring_oracle_requires_checked_completion_before_finish",
     "channel_failure_wiring_oracle_requires_captured_generation_and_shipping_observer",
+    # MGL preserves the existing complete read and legacy consumers.
+    "memory_fact_parser_matches_frozen_markdown_contract",
+    "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+    "memory_list_checked_preserves_missing_empty_order_and_limit",
+    "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+    "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+    "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+    "exact_memory_recovery_preserves_synthesis_metadata",
+    "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+    "memory_service_creates_real_agent_scoped_store",
+    "production_session_workers_can_share_host_memory_extension_owner",
+    "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+    "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+    "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+    "user_memory_store_aggregates_frozen_shards_and_recent_order",
+    "project_memory_store_reads_membership_shards_and_applies_global_cap",
+    "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+    "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+    "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+    "memory_gateway_checked_list_manager_preserves_path_type_failures",
+    "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+    "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
 ]
 store_filter = "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests"
 required_store = [store_filter + "::" + name for name in (
@@ -1293,7 +1351,423 @@ cases = [
 
 # CRF-v1 and BGC-v1 select from the retained full plan without deleting contracts.
 # A scoped success is distinct from whole-contract acceptance.
+# Native expectations are source-declared, never learned from observed test output.
+memory_checked_list_native_platform = "windows" if os.name == "nt" else "unix"
+if os.environ["RUNNER_OS"] not in (("Windows",) if os.name == "nt" else ("Linux", "macOS")):
+    raise ValueError("Memory native platform disagrees with the actual runner")
+memory_checked_list_platform_cases = {
+    "unix": [
+        [
+            "memory-checked-list-store",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "memory_service_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "memory_fact_parser_matches_frozen_markdown_contract",
+                "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+                "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+                "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+                "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+                "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+                "file_memory_store_append_directory_read_error_is_preserved",
+                "memory_list_checked_preserves_missing_empty_order_and_limit",
+                "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+                "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+                "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+                "exact_memory_recovery_preserves_synthesis_metadata",
+                "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+                "memory_service_creates_real_agent_scoped_store",
+                "production_session_workers_can_share_host_memory_extension_owner",
+                "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+                "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+                "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+                "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+                "user_memory_store_aggregates_frozen_shards_and_recent_order",
+                "project_memory_store_reads_membership_shards_and_applies_global_cap",
+                "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+                "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+                "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+                "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links"
+            ]
+        ],
+        [
+            "memory-checked-list-manager",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "transcript_manager_contract",
+                "memory_gateway_",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+                "memory_gateway_rejects_path_selectors_before_external_memory_read",
+                "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+                "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+                "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+                "memory_gateway_checked_list_manager_preserves_path_type_failures",
+                "memory_gateway_manager_preserves_literal_colon_agent_selector"
+            ]
+        ],
+        [
+            "memory-checked-list-http",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "memory_gateway_authorization_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+                "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+                "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+                "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+                "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+                "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+                "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+                "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+                "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+                "memory_gateway_http_preserves_literal_colon_agent_selector"
+            ]
+        ],
+        [
+            "memory-checked-list-agent-paths",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "host_storage_contract",
+                "agent_paths_",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "agent_paths_reject_traversal_and_whitespace",
+                "agent_paths_preserve_literal_colon_components"
+            ]
+        ],
+        [
+            "memory-checked-list-agent-state",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "agent_state_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "routes_memory_to_agent_user_and_joined_project_shards",
+                "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+                "owns_profile_settings_channel_and_avatar_mutations",
+                "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+                "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+                "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+                "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+                "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+                "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+                "live_admission::both_state_constructors_keep_literal_colon_agent_paths"
+            ]
+        ],
+        [
+            "memory-checked-list-session-paths",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "session_paths_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+                "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+                "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+                "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+                "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+                "stat_if_exists_matches_the_frozen_missing_file_contract",
+                "public_session_commands_reject_harness_owned_namespace",
+                "public_session_route_resolves_one_canonical_boundary",
+                "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys"
+            ]
+        ],
+        [
+            "memory-checked-list-extension",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "memory_extension_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "memory_extension_owns_one_agent_scoped_service",
+                "memory_extension_replacement_and_disable_keep_one_background_owner",
+                "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root"
+            ]
+        ]
+    ],
+    "windows": [
+        [
+            "memory-checked-list-store",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "memory_service_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "memory_fact_parser_matches_frozen_markdown_contract",
+                "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+                "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+                "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+                "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+                "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+                "file_memory_store_append_directory_read_error_is_preserved",
+                "memory_list_checked_preserves_missing_empty_order_and_limit",
+                "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+                "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+                "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+                "exact_memory_recovery_preserves_synthesis_metadata",
+                "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+                "memory_service_creates_real_agent_scoped_store",
+                "production_session_workers_can_share_host_memory_extension_owner",
+                "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+                "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+                "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+                "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+                "user_memory_store_aggregates_frozen_shards_and_recent_order",
+                "project_memory_store_reads_membership_shards_and_applies_global_cap",
+                "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+                "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+                "memory_list_checked_rejects_nondirectory_ancestors_without_repair"
+            ]
+        ],
+        [
+            "memory-checked-list-manager",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "transcript_manager_contract",
+                "memory_gateway_",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+                "memory_gateway_rejects_path_selectors_before_external_memory_read",
+                "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+                "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+                "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+                "memory_gateway_checked_list_manager_preserves_path_type_failures",
+                "memory_gateway_manager_rejects_native_drive_relative_selector"
+            ]
+        ],
+        [
+            "memory-checked-list-http",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "memory_gateway_authorization_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+                "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+                "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+                "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+                "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+                "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+                "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+                "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+                "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+                "memory_gateway_http_rejects_native_drive_relative_selector"
+            ]
+        ],
+        [
+            "memory-checked-list-agent-paths",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "host_storage_contract",
+                "agent_paths_",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "agent_paths_reject_traversal_and_whitespace",
+                "agent_paths_reject_native_windows_prefixes_and_roots"
+            ]
+        ],
+        [
+            "memory-checked-list-agent-state",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "agent_state_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "routes_memory_to_agent_user_and_joined_project_shards",
+                "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+                "owns_profile_settings_channel_and_avatar_mutations",
+                "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+                "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+                "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+                "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+                "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+                "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+                "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration"
+            ]
+        ],
+        [
+            "memory-checked-list-session-paths",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "session_paths_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+                "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+                "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+                "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+                "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+                "stat_if_exists_matches_the_frozen_missing_file_contract",
+                "public_session_commands_reject_harness_owned_namespace",
+                "public_session_route_resolves_one_canonical_boundary",
+                "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys"
+            ]
+        ],
+        [
+            "memory-checked-list-extension",
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "memory_extension_contract",
+                "--",
+                "--test-threads=1"
+            ],
+            [
+                "memory_extension_owns_one_agent_scoped_service",
+                "memory_extension_replacement_and_disable_keep_one_background_owner",
+                "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root"
+            ]
+        ]
+    ]
+}
+memory_checked_list_expected_counts = {"unix":66,"windows":65}
+memory_checked_list_parents = {
+    "memory-checked-list-store": "integration",
+    "memory-checked-list-manager": "integration",
+    "memory-checked-list-http": "integration",
+    "memory-checked-list-agent-paths": "memory-checked-list-agent-paths",
+    "memory-checked-list-agent-state": "memory-checked-list-agent-state",
+    "memory-checked-list-session-paths": "session-owner-namespace",
+    "memory-checked-list-extension": "memory-checked-list-extension"
+}
+
+def memory_checked_list_plan(platform):
+    if platform not in memory_checked_list_platform_cases:
+        raise ValueError("Unsupported Memory native platform")
+    selected = memory_checked_list_platform_cases[platform]
+    if (len(selected) != 7 or len({row[0] for row in selected}) != 7
+        or sum(len(row[2]) for row in selected) != memory_checked_list_expected_counts[platform]
+        or len({name for row in selected for name in row[2]}) != memory_checked_list_expected_counts[platform]):
+        raise ValueError("Memory native plan is incomplete or duplicated")
+    return [(label, list(command), list(required)) for label, command, required in selected]
+
+memory_checked_list_cases = memory_checked_list_plan(memory_checked_list_native_platform)
+memory_checked_list_required = {label: tuple(required)
+    for label, _, required in memory_checked_list_cases}
+memory_checked_list_filtered_labels = {"memory-checked-list-manager", "memory-checked-list-agent-paths"}
+
+# Keep all inherited full-plan contracts. Native ID owners not previously in
+# this portable plan gain explicit groups; existing targets gain required names.
+for label, command, required in memory_checked_list_cases:
+    parent = memory_checked_list_parents[label]
+    if parent == label:
+        if any(existing[0] == label for existing in cases):
+            raise ValueError("Duplicate Memory native full-plan group")
+        cases.append((label, command, required))
+    else:
+        matches = [existing for existing in cases if existing[0] == parent]
+        if len(matches) != 1:
+            raise ValueError("Memory native scope lost its full-plan parent")
+        for name in required:
+            if name not in matches[0][2]:
+                matches[0][2].append(name)
 full_cases = list(cases)
+memory_checked_list_parent_contracts = {
+    label: (tuple(command), tuple(required))
+    for label, command, required in full_cases
+    if label in set(memory_checked_list_parents.values())
+}
+
 custody_box_labels = (
     "box-response-manager", "box-response-codec", "box-response-runner-bridge",
     "box-response-spill", "box-response-prompt-glue", "box-response-manager-exhaustion",
@@ -1331,11 +1805,24 @@ custody_desktop_names = (
 djc_qualified_name = "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
 
 def select_portable_cases(scope, declared):
-    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery"):
+    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list"):
         raise ValueError("Unknown portable contract scope")
     indexed = {label: (label, command, required) for label, command, required in declared}
     if len(indexed) != len(declared):
         raise ValueError("Duplicate portable case label")
+    if scope == "memory-checked-list":
+        selected = memory_checked_list_plan(memory_checked_list_native_platform)
+        for parent, expected in memory_checked_list_parent_contracts.items():
+            if parent not in indexed:
+                raise ValueError("Memory checked listing lost a full-plan parent")
+            _, command, required = indexed[parent]
+            if tuple(command) != expected[0] or tuple(required) != expected[1]:
+                raise ValueError("Memory checked listing full-plan command or names drifted")
+        for label, _, required in selected:
+            parent_required = indexed[memory_checked_list_parents[label]][2]
+            if any(parent_required.count(name) != 1 for name in required):
+                raise ValueError("Memory checked listing requires its exact full-plan names")
+        return selected
     if scope == "full":
         return list(declared)
     if scope == "background-custody-recovery":
@@ -1486,7 +1973,68 @@ for control, declared, expected in background_recovery_variants:
         {"case": control, "expected": expected, "actual": actual})
     assert actual == expected, f"BGC recovery selection oracle failed: {control}"
 
+memory_checked_list_selection_controls = []
+memory_checked_list_variants = [("qualified-memory-list", full_cases, True),
+    ("duplicate-parent-label", full_cases + [full_cases[0]], False)]
+for source_parent in memory_checked_list_parent_contracts:
+    memory_checked_list_variants.extend([
+        (f"missing-parent:{source_parent}",
+            [case for case in full_cases if case[0] != source_parent], False),
+        (f"changed-parent-command:{source_parent}",
+            [(label, command + ["--foreign"], required)
+                if label == source_parent else (label, command, required)
+                for label, command, required in full_cases], False),
+    ])
+for label, _, names in memory_checked_list_cases:
+    name = names[-1]
+    source_parent = memory_checked_list_parents[label]
+    memory_checked_list_variants.extend([
+        (f"missing-positive:{label}", [(parent, command, [item for item in required if item != name])
+            if parent == source_parent else (parent, command, required)
+            for parent, command, required in full_cases], False),
+        (f"duplicate-positive:{label}", [(parent, command, required + [name])
+            if parent == source_parent else (parent, command, required)
+            for parent, command, required in full_cases], False),
+        (f"foreign-positive:{label}", [(parent, command,
+            ["foreign::unrelated" if item == name else item for item in required])
+            if parent == source_parent else (parent, command, required)
+            for parent, command, required in full_cases], False),
+    ])
+for control, declared, expected in memory_checked_list_variants:
+    try:
+        selected = select_portable_cases("memory-checked-list", declared)
+        actual = (selected == memory_checked_list_cases and len(selected) == 7)
+    except ValueError:
+        actual = False
+    memory_checked_list_selection_controls.append(
+        {"case": control, "expected": expected, "actual": actual})
+    assert actual == expected, f"MGL selection oracle failed: {control}"
+for platform, expected in [("unix", True), ("windows", True), ("foreign", False)]:
+    try:
+        selected = memory_checked_list_plan(platform)
+        names = {name for _, _, required in selected for name in required}
+        actual = (len(selected) == 7
+            and len(names) == memory_checked_list_expected_counts[platform]
+            and ("memory_gateway_manager_rejects_native_drive_relative_selector" in names) == (platform == "windows")
+            and ("memory_gateway_http_rejects_native_drive_relative_selector" in names) == (platform == "windows")
+            and ("memory_gateway_manager_preserves_literal_colon_agent_selector" in names) == (platform == "unix")
+            and ("memory_gateway_http_preserves_literal_colon_agent_selector" in names) == (platform == "unix"))
+    except ValueError:
+        actual = False
+    memory_checked_list_selection_controls.append(
+        {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
+    assert actual == expected, f"MGL platform plan failed: {platform}"
+for selected_scope, expected in [("full", True), ("custody-recovery", True),
+    ("background-custody", True), ("background-custody-recovery", True),
+    ("memory-checked-list", False)]:
+    actual = any(label.startswith("box-response-")
+        for label, _, _ in select_portable_cases(selected_scope, full_cases))
+    selection_controls.append({"case": "box-producer-required-" + selected_scope,
+        "expected": expected, "actual": actual})
+    assert actual == expected, "Selected scope changed the Box producer compilation boundary"
+
 cases = select_portable_cases(validation_scope, full_cases)
+box_producer_required = any(label.startswith("box-response-") for label, _, _ in cases)
 
 def successful_test_names(output):
     # libtest decorates an expected-panic success without changing its name.
@@ -1656,7 +2204,19 @@ box_response_inputs_before = source_bindings(box_response_inputs)
 assert all(item["matches_head_bytes"] for item in box_response_inputs_before.values()), "BXR source input differs from exact H"
 
 
+memory_checked_list_inputs_before = source_bindings(memory_checked_list_inputs)
+assert all(item["matches_head_bytes"] for item in memory_checked_list_inputs_before.values()), "MGL source input differs from exact H"
+
 receipt = {
+    "memory_checked_list_contract": "MGL-v1/MGS-native-components",
+    "memory_checked_list_native_platform": memory_checked_list_native_platform,
+    "memory_checked_list_expected_positive_count": memory_checked_list_expected_counts[memory_checked_list_native_platform],
+    "memory_checked_list_selected_here": validation_scope in ("full", "memory-checked-list"),
+    "memory_checked_list_required_names": {label: list(required)
+        for label, required in memory_checked_list_required.items()},
+    "memory_checked_list_selection_controls": memory_checked_list_selection_controls,
+    "memory_checked_list_inputs_before": memory_checked_list_inputs_before,
+    "box_producer_required_by_selection": box_producer_required,
     "validation_scope": validation_scope,
     "scope_selection_controls": selection_controls,
     "selected_result_oracle_controls": selected_result_controls,
@@ -1743,9 +2303,34 @@ if validation_scope == "background-custody-recovery":
         "the remaining BGC/full-plan groups, real ecosystems, durable restart or packages. "
         "Requirement metadata elsewhere in this receipt is not execution.")
 
+if validation_scope == "memory-checked-list":
+    receipt["scope"] = ("MGL-v1: native getAgentMemories through existing Gateway authorization, "
+        "TranscriptManager, Session MemoryService and file store. Deterministic selected-file "
+        "UTF-8/path-type refusal, complete-before-limit reads, unchanged bytes/prompts/journals/"
+        "notifications, actual owner reopen and explicit repair, plus retained MGS/MGA/legacy "
+        "parser and shared Memory owner controls, native Agent-ID components through the same "
+        "SandAgentState/Session path consumers, owned Windows drive-relative child fixtures "
+        "or Unix colon compatibility, and checked optional-input absence. HTTP fixture uses the actual Gateway and "
+        "production delegate but does not boot the full shipping App. Unselected Box/model/"
+        "channel/node contracts, concurrent multi-file snapshots, symlink confinement, strict "
+        "prompt/synthesis reads, devices, Windows packages and full acceptance remain open. "
+        "Requirement metadata elsewhere in this receipt is not execution.")
+
 # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
 # the complete Host test graph once; this is a compile gate, not test evidence.
 constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
+if validation_scope == "memory-checked-list" and os.name == "nt":
+    # Windows adds these actual native consumers; unrelated all-target and App
+    # compatibility is an explicit separate gate, not a passing compile claim.
+    constructor_command = constructor_command[:-1]
+    for _, command, _ in memory_checked_list_cases:
+        target = command[command.index("--test") + 1]
+        constructor_command.extend(["--test", target])
+    receipt["shipping_host_verification"] = {
+        "result": "not-executed", "accepted": False,
+        "reason": "Windows App uses signal_hook::iterator, which is unavailable on Windows; lifecycle-preserving repair and actual shipping verification remain required.",
+        "scope": "This exact-H Windows job compiles and executes the selected Host library/native HTTP contracts only.",
+    }
 constructor_log = root / "mcp-origin-constructor-check.log"
 constructor_check = {"command": constructor_command, "cargo_exit": None, "capture_exit": 0,
     "log": constructor_log.name, "result": "failed-or-incomplete", "execution_error": None}
@@ -1785,18 +2370,20 @@ daemon_build = {"command": daemon_command, "cargo_exit": None, "capture_exit": 0
 receipt["box_response_daemon_build"] = daemon_build
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 daemon_raw = b""
-try:
-    with daemon_log.open("wb") as output:
-        daemon_build["cargo_exit"] = subprocess.run(daemon_command,
-            stdout=output, stderr=subprocess.STDOUT, check=False).returncode
-    daemon_raw = daemon_log.read_bytes()
-except OSError as error:
-    daemon_build["capture_exit"] = 1
-    daemon_build["execution_error"] = str(error)
+daemon_build["required_by_selection"] = box_producer_required
+if box_producer_required:
+    try:
+        with daemon_log.open("wb") as output:
+            daemon_build["cargo_exit"] = subprocess.run(daemon_command,
+                stdout=output, stderr=subprocess.STDOUT, check=False).returncode
+        daemon_raw = daemon_log.read_bytes()
+    except OSError as error:
+        daemon_build["capture_exit"] = 1
+        daemon_build["execution_error"] = str(error)
 daemon_build["log_sha256"] = hashlib.sha256(daemon_raw).hexdigest()
 daemon_passed = (daemon_build["cargo_exit"] == 0 and daemon_build["capture_exit"] == 0
     and box_daemon_lock.is_file() and daemon_binary.is_file())
-if box_daemon_lock.is_file():
+if box_producer_required and box_daemon_lock.is_file():
     resolved_lock = box_daemon_lock.read_bytes()
     (root / "box-response-daemon-resolved.Cargo.lock").write_bytes(resolved_lock)
     daemon_build["resolved_lock"] = {
@@ -1809,7 +2396,7 @@ if daemon_passed:
     daemon_bytes = daemon_binary.read_bytes()
     daemon_build["binary_sha256_before_cases"] = hashlib.sha256(daemon_bytes).hexdigest()
     daemon_build["binary_bytes"] = len(daemon_bytes)
-daemon_build["result"] = "compiled-and-bound" if daemon_passed else "failed-or-incomplete"
+daemon_build["result"] = ("compiled-and-bound" if daemon_passed else "failed-or-incomplete") if box_producer_required else "not-selected"
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(daemon_raw.decode("utf-8", errors="replace"), flush=True)
 print(json.dumps({"box_response_daemon_build": daemon_build}), flush=True)
@@ -1904,32 +2491,36 @@ capture_build = {
 receipt["box_shell_capture_test_build"] = capture_build
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 capture_raw, capture_binary, capture_passed = b"", None, False
-try:
-    if not box_daemon_lock_tracked:
-        raise ValueError("SC producer requires a tracked exact-H Cargo.lock")
-    capture_build["lock_sha256_before_build"] = hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest()
-    with capture_log.open("wb") as output:
-        capture_build["cargo_exit"] = subprocess.run(capture_command,
-            stdout=output, stderr=subprocess.STDOUT, check=False).returncode
-    capture_raw = capture_log.read_bytes()
-    capture_build["lock_sha256_after_build"] = hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest()
-    if capture_build["cargo_exit"] != 0:
-        raise ValueError("SC library test build failed")
-    if capture_build["lock_sha256_after_build"] != capture_build["lock_sha256_before_build"]:
-        raise ValueError("SC library test build changed its frozen Cargo.lock")
-    capture_binary, artifact = select_shell_capture_test_artifact(capture_raw)
-    if not capture_binary.is_file() or not os.access(capture_binary, os.X_OK):
-        raise ValueError("SC library test artifact is missing or not executable")
-    capture_bytes = capture_binary.read_bytes()
-    capture_build.update({
-        "binary": str(capture_binary), "binary_bytes": len(capture_bytes),
-        "binary_sha256_before_cases": hashlib.sha256(capture_bytes).hexdigest(),
-        "compiler_artifact": artifact, "result": "compiled-and-bound",
-    })
-    capture_passed = True
-except (OSError, ValueError) as error:
-    capture_build["capture_exit"] = 1
-    capture_build["execution_error"] = str(error)
+capture_build["required_by_selection"] = box_producer_required
+if box_producer_required:
+    try:
+        if not box_daemon_lock_tracked:
+            raise ValueError("SC producer requires a tracked exact-H Cargo.lock")
+        capture_build["lock_sha256_before_build"] = hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest()
+        with capture_log.open("wb") as output:
+            capture_build["cargo_exit"] = subprocess.run(capture_command,
+                stdout=output, stderr=subprocess.STDOUT, check=False).returncode
+        capture_raw = capture_log.read_bytes()
+        capture_build["lock_sha256_after_build"] = hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest()
+        if capture_build["cargo_exit"] != 0:
+            raise ValueError("SC library test build failed")
+        if capture_build["lock_sha256_after_build"] != capture_build["lock_sha256_before_build"]:
+            raise ValueError("SC library test build changed its frozen Cargo.lock")
+        capture_binary, artifact = select_shell_capture_test_artifact(capture_raw)
+        if not capture_binary.is_file() or not os.access(capture_binary, os.X_OK):
+            raise ValueError("SC library test artifact is missing or not executable")
+        capture_bytes = capture_binary.read_bytes()
+        capture_build.update({
+            "binary": str(capture_binary), "binary_bytes": len(capture_bytes),
+            "binary_sha256_before_cases": hashlib.sha256(capture_bytes).hexdigest(),
+            "compiler_artifact": artifact, "result": "compiled-and-bound",
+        })
+        capture_passed = True
+    except (OSError, ValueError) as error:
+        capture_build["capture_exit"] = 1
+        capture_build["execution_error"] = str(error)
+else:
+    capture_build["result"] = "not-selected"
 capture_build["log_sha256"] = hashlib.sha256(capture_raw).hexdigest()
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(capture_raw.decode("utf-8", errors="replace"), flush=True)
@@ -1969,6 +2560,8 @@ for label, command, required in cases:
     except OSError as error:
         capture_exit, execution_error = 1, str(error)
     text = raw.decode("utf-8", errors="replace")
+    if label in memory_checked_list_required:
+        text = text.replace("\r\n", "\n")
     print(text, flush=True)
     raw_passed = successful_test_names(text)
     passed = box_response_observed_names(text) if label.startswith("box-response-") else raw_passed
@@ -1996,6 +2589,12 @@ for label, command, required in cases:
             and counts[0][0] == len(passed) and len(passed) >= len(required))
     if validation_scope == "custody-recovery" and not label.startswith("box-response-"):
         accepted = exact_target_results_accepted(cargo_exit, capture_exit, required, text, True)
+    if label in memory_checked_list_required:
+        accepted = exact_target_results_accepted(cargo_exit, capture_exit, required, text,
+            label in memory_checked_list_filtered_labels)
+        complete_counts = [tuple(map(int, count)) for count in re.findall(
+            r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
+            text, re.MULTILINE)]
     if label.startswith("box-response-"):
         accepted = box_response_results_accepted(label, cargo_exit, capture_exit, required, text)
         complete_counts = [tuple(map(int, count)) for count in re.findall(
@@ -2057,9 +2656,16 @@ capture_unchanged = (capture_passed
     and capture_build["binary_sha256_after_cases"] == capture_build["binary_sha256_before_cases"]
     and capture_build["lock_sha256_after_cases"] == capture_build["lock_sha256_before_build"])
 receipt["box_shell_capture_test_producer_unchanged"] = capture_unchanged
+memory_checked_list_inputs_after = source_bindings(memory_checked_list_inputs)
+memory_checked_list_sources_unchanged = (
+    memory_checked_list_inputs_after == memory_checked_list_inputs_before
+    and all(item["matches_head_bytes"] for item in memory_checked_list_inputs_after.values()))
+receipt["memory_checked_list_inputs_after"] = memory_checked_list_inputs_after
+receipt["memory_checked_list_sources_unchanged"] = memory_checked_list_sources_unchanged
 accepted = ((palette_exported if palette_required else True) and len(receipt["executions"]) == len(cases)
     and all(case["oracle_accepted"] for case in receipt["executions"])
-    and box_response_sources_unchanged and daemon_unchanged and capture_unchanged and local_exec_outcome_sources_unchanged
+    and box_response_sources_unchanged and (not box_producer_required or (daemon_unchanged and capture_unchanged))
+    and memory_checked_list_sources_unchanged and local_exec_outcome_sources_unchanged
     and plugin_admission_lock_sources_unchanged and custody_recovery_sources_unchanged)
 receipt["result"] = ("passed-scoped-only" if validation_scope != "full" else "passed") if accepted else "failed-or-incomplete"
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")

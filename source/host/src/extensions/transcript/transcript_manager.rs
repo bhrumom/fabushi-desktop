@@ -711,7 +711,8 @@ impl TranscriptManager {
                 Ok(Value::Array(
                     self.session_workers
                         .memory_service()
-                        .list(agent_id)
+                        .list_checked(agent_id)
+                        .map_err(|error| error.to_string())?
                         .into_iter()
                         .map(|memory| {
                             json!({

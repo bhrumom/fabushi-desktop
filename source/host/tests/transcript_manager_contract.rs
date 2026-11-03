@@ -639,6 +639,23 @@ impl MemoryGatewaySelectorFixture {
         assert_eq!(self.read(json!({"id": Self::AGENT_ID})).expect("valid memory read"), self.expected);
         self.assert_unchanged();
     }
+
+    fn assert_checked_list_error(&self, expected: &str) {
+        let error = self.read(json!({"id": format!(" \t{}\n", Self::AGENT_ID)}))
+            .expect_err("a storage error must not become a partial Gateway array");
+        assert_eq!(error, expected);
+        for private in [
+            "Existing profile ☃", "Existing log ☃",
+            "External sentinel must never enter an agent reply",
+        ] {
+            assert!(!error.contains(private), "read errors must not include memory content");
+        }
+        assert_eq!(self.read(json!({"id": " ../outside "})).expect_err("canonical selector"),
+            "Invalid Sand agent id: ../outside");
+        assert_eq!(self.read(json!({})).expect_err("required selector"),
+            "getAgentMemories requires id");
+        self.assert_unchanged();
+    }
 }
 
 impl Drop for MemoryGatewaySelectorFixture {
@@ -669,6 +686,85 @@ fn memory_gateway_rejects_path_selectors_before_external_memory_read() {
         assert_eq!(error, format!("Invalid Sand agent id: {}", selector.trim()));
         fixture.assert_valid_read();
     }
+}
+
+#[cfg(windows)]
+#[test]
+fn memory_gateway_manager_rejects_native_drive_relative_selector() {
+    use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, MemoryKind};
+    use std::path::{Component, PathBuf, Prefix};
+
+    const CHILD_ROOT: &str = "FABUSHI_MEMORY_MANAGER_NATIVE_PATH_CHILD_ROOT";
+    const TEST_NAME: &str = "memory_gateway_manager_rejects_native_drive_relative_selector";
+    const MARKER: &str = "MEMORY_MANAGER_NATIVE_PATH_CHILD_COMPLETED";
+    const SENTINEL: &str = "Windows drive-relative outside memory sentinel";
+    if let Some(root) = std::env::var_os(CHILD_ROOT) {
+        let root = PathBuf::from(root);
+        let cwd = std::env::current_dir().expect("child CWD");
+        assert_eq!(fs::canonicalize(&cwd).expect("actual child CWD"),
+            fs::canonicalize(&root).expect("owned child root"));
+        let drive = match cwd.components().next().expect("native Windows prefix") {
+            Component::Prefix(prefix) => match prefix.kind() {
+                Prefix::Disk(drive) | Prefix::VerbatimDisk(drive) => drive,
+                other => panic!("fixture requires a local drive, got {other:?}"),
+            },
+            other => panic!("fixture requires a native drive prefix, got {other:?}"),
+        };
+        let fixture = MemoryGatewaySelectorFixture::new();
+        let outside = FileMemoryStore::new(root.join("drive-relative-outside/memory"));
+        let sentinel = outside.add_memory(SENTINEL, MemoryGatewaySelectorFixture::DAY_MS, MemoryKind::Profile)
+            .expect("outside seed").expect("outside record");
+        let before = memory_gateway_selector_files(&outside.get_location());
+        for drive in [char::from(drive).to_ascii_uppercase(), char::from(drive).to_ascii_lowercase()] {
+            let selector = format!("{drive}:drive-relative-outside");
+            let unsafe_join = fixture.root.join("agents").join(&selector).join("memory");
+            assert!(!unsafe_join.starts_with(fixture.root.join("agents")));
+            assert_eq!(FileMemoryStore::new(&unsafe_join).list_memories_checked(100)
+                .expect("actual unsafe joined path must read the outside sentinel"), vec![sentinel.clone()]);
+            let error = fixture.read(json!({"id": selector})).expect_err("native prefixed ID must be refused");
+            assert_eq!(error, format!("Invalid Sand agent id: {selector}"));
+            assert!(!error.contains(SENTINEL), "outside memory must not enter the error");
+            assert_eq!(memory_gateway_selector_files(&outside.get_location()), before);
+            fixture.assert_valid_read();
+        }
+        drop(fixture);
+        println!("\n{MARKER}");
+        return;
+    }
+
+    let cwd = std::env::current_dir().expect("parent CWD");
+    let root = temp_root();
+    fs::create_dir(&root).expect("parent owns child CWD");
+    let result = std::process::Command::new(std::env::current_exe().expect("current test executable"))
+        .args(["--exact", TEST_NAME, "--nocapture", "--test-threads=1"])
+        .current_dir(&root)
+        .env(CHILD_ROOT, &root)
+        .output();
+    let cleanup = fs::remove_dir_all(&root);
+    let output = result.expect("execute the exact native-path child test");
+    assert!(output.status.success(), "native-path child failed:\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout).lines()
+        .filter(|line| *line == MARKER).count(), 1, "child must reach its terminal assertion marker");
+    cleanup.expect("parent removes child CWD only after child exit");
+    assert_eq!(std::env::current_dir().expect("unchanged parent CWD"), cwd);
+}
+
+#[cfg(unix)]
+#[test]
+fn memory_gateway_manager_preserves_literal_colon_agent_selector() {
+    use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
+
+    let mut fixture = MemoryGatewaySelectorFixture::new();
+    let record = fixture.manager.session_workers().memory_service().store_for_agent("C:outside")
+        .add_memory("Unix literal colon profile", MemoryGatewaySelectorFixture::DAY_MS, MemoryKind::Profile)
+        .expect("literal colon store").expect("literal colon record");
+    fixture.before = memory_gateway_selector_files(&fixture.root);
+    assert_eq!(fixture.read(json!({"id": " \tC:outside\n"})).expect("one normal Unix component"), json!([
+        {"id": record.id, "content": record.content,
+            "createdAt": MemoryGatewaySelectorFixture::DAY_MS, "kind": "profile"},
+    ]));
+    fixture.assert_valid_read();
 }
 
 #[test]
@@ -725,6 +821,94 @@ fn memory_gateway_preserves_projection_order_and_hundred_record_limit() {
     fixture.expected = Value::Array(expected);
     fixture.before = memory_gateway_selector_files(&fixture.root);
     fixture.assert_valid_read();
+}
+
+#[test]
+fn memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair() {
+    for relative in ["profile.md", "log/1970-01.md"] {
+        let mut fixture = MemoryGatewaySelectorFixture::new();
+        let memory = fixture.root.join("agents")
+            .join(MemoryGatewaySelectorFixture::AGENT_ID).join("memory");
+        let destination = memory.join(relative);
+        let repaired = fs::read(&destination).expect("original readable bytes");
+        let healthy = fixture.before.clone();
+        let mut corrupt = repaired.clone();
+        corrupt.extend_from_slice(b"<!-- invalid UTF-8: \xff\xfe -->\n");
+        fs::write(&destination, &corrupt).expect("fixture-owned corruption");
+        assert_eq!(fs::read(&destination).expect("raw corrupt bytes"), corrupt);
+        let original_error = fs::read_to_string(&destination).expect_err("invalid UTF-8 fixture");
+        assert_eq!(original_error.kind(), std::io::ErrorKind::InvalidData);
+        fixture.before = memory_gateway_selector_files(&fixture.root);
+        assert_eq!(fixture.manager.session_workers().memory_service()
+            .list(MemoryGatewaySelectorFixture::AGENT_ID).len(), 1,
+            "the old best-effort result would silently omit a real fact");
+
+        fixture.assert_checked_list_error(&original_error.to_string());
+        assert_eq!(fs::read(&destination).expect("raw bytes after refused read"), corrupt);
+
+        fs::write(&destination, &repaired).expect("explicit fixture repair");
+        fixture.before = healthy;
+        fixture.assert_valid_read();
+    }
+}
+
+#[test]
+fn memory_gateway_checked_list_manager_preserves_path_type_failures() {
+    for profile_obstacle in [true, false] {
+        let mut fixture = MemoryGatewaySelectorFixture::new();
+        let memory = fixture.root.join("agents")
+            .join(MemoryGatewaySelectorFixture::AGENT_ID).join("memory");
+        let destination = memory.join(if profile_obstacle { "profile.md" } else { "log" });
+        let original = fs::read(if profile_obstacle {
+            destination.clone()
+        } else {
+            destination.join("1970-01.md")
+        }).expect("original readable bytes");
+        let healthy = fixture.before.clone();
+        if profile_obstacle {
+            fs::remove_file(&destination).expect("remove fixture profile");
+            fs::create_dir(&destination).expect("profile directory obstacle");
+            fs::write(destination.join("sentinel.bin"), b"owned obstacle\x00\xff").expect("sentinel");
+        } else {
+            fs::remove_file(destination.join("1970-01.md")).expect("remove fixture log");
+            fs::remove_dir(&destination).expect("remove fixture log directory");
+            fs::write(&destination, b"owned log obstacle\x00\xff").expect("file at log directory");
+        }
+        let obstacle = fs::symlink_metadata(&destination).expect("actual obstacle type");
+        assert_eq!(obstacle.is_dir(), profile_obstacle);
+        assert_eq!(obstacle.is_file(), !profile_obstacle);
+        let native_error = if profile_obstacle {
+            Some(fs::read_to_string(&destination).expect_err("real profile read failure"))
+        } else {
+            fs::read_dir(&destination)
+                .and_then(|entries| entries.collect::<std::io::Result<Vec<_>>>()).err()
+        };
+        eprintln!("MGL manager obstacle profile={profile_obstacle}: native error {:?}",
+            native_error.as_ref().map(|error| (error.kind(), error.raw_os_error())));
+        let error = fixture.manager.session_workers().memory_service()
+            .list_checked(MemoryGatewaySelectorFixture::AGENT_ID).expect_err("checked store refuses type obstacle");
+        if profile_obstacle {
+            let native_error = native_error.expect("profile read failed");
+            assert_eq!(error.kind(), native_error.kind());
+            assert_eq!(error.raw_os_error(), native_error.raw_os_error());
+        } else {
+            assert_eq!(error.kind(), std::io::ErrorKind::NotADirectory);
+        }
+        fixture.before = memory_gateway_selector_files(&fixture.root);
+        fixture.assert_checked_list_error(&error.to_string());
+
+        if profile_obstacle {
+            fs::remove_file(destination.join("sentinel.bin")).expect("remove owned sentinel");
+            fs::remove_dir(&destination).expect("remove owned empty directory");
+            fs::write(&destination, &original).expect("restore profile");
+        } else {
+            fs::remove_file(&destination).expect("remove owned log obstacle");
+            fs::create_dir(&destination).expect("restore log directory");
+            fs::write(destination.join("1970-01.md"), &original).expect("restore log");
+        }
+        fixture.before = healthy;
+        fixture.assert_valid_read();
+    }
 }
 
 #[test]

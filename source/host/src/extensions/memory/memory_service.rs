@@ -242,20 +242,12 @@ impl FileMemoryStore {
     }
 
     pub fn list_memories(&self, limit: usize) -> Vec<MemoryRecord> {
-        let mut facts = self.facts();
-        facts.sort_by(|a, b| {
-            let a_profile = usize::from(a.record.kind == MemoryKind::Profile);
-            let b_profile = usize::from(b.record.kind == MemoryKind::Profile);
-            b_profile
-                .cmp(&a_profile)
-                .then_with(|| b.record.created_at.cmp(&a.record.created_at))
-                .then_with(|| b.order.cmp(&a.order))
-        });
-        facts
-            .into_iter()
-            .take(limit)
-            .map(|fact| fact.record)
-            .collect()
+        list_records_from_facts(self.facts(), limit)
+    }
+
+    /// Read every selected file before projecting a complete, bounded result.
+    pub fn list_memories_checked(&self, limit: usize) -> io::Result<Vec<MemoryRecord>> {
+        Ok(list_records_from_facts(self.facts_checked()?, limit))
     }
 
     pub fn snapshot_for_recovery(&self, records: &[MemoryRecord]) -> Vec<MemoryRecoveryRecord> {
@@ -705,6 +697,54 @@ impl FileMemoryStore {
             Err(error) => return Err(error),
         };
         Ok((path, raw))
+    }
+
+    fn facts_checked(&self) -> io::Result<Vec<StoredMemoryFact>> {
+        let mut facts = Vec::new();
+        match fs::read_to_string(&self.profile_file) {
+            Ok(raw) => {
+                append_facts_from_text(&mut facts, &self.profile_file, MemoryKind::Profile, &raw);
+            }
+            Err(error)
+                if error.kind() == io::ErrorKind::NotFound
+                    && optional_memory_input_is_absent(&self.profile_file) => {}
+            Err(error) => return Err(error),
+        }
+
+        let log_metadata = match fs::metadata(&self.log_dir) {
+            Ok(metadata) => metadata,
+            Err(error)
+                if error.kind() == io::ErrorKind::NotFound
+                    && optional_memory_input_is_absent(&self.log_dir) => return Ok(facts),
+            Err(error) => return Err(error),
+        };
+        if !log_metadata.is_dir() {
+            return Err(io::Error::new(
+                io::ErrorKind::NotADirectory,
+                "memory log input is not a directory",
+            ));
+        }
+        // Windows enumeration can otherwise report an existing file as empty.
+        // Once a directory was observed, disappearance is an incomplete read.
+        let entries = fs::read_dir(&self.log_dir)?;
+        let mut log_paths = Vec::new();
+        for entry in entries {
+            let entry = entry?;
+            if !entry.file_type()?.is_file() {
+                continue;
+            }
+            let path = entry.path();
+            if path.extension().and_then(|value| value.to_str()) == Some("md") {
+                log_paths.push(path);
+            }
+        }
+        log_paths.sort();
+        for path in log_paths {
+            // Once selected, even a disappearing log is an incomplete read.
+            let raw = fs::read_to_string(&path)?;
+            append_facts_from_text(&mut facts, &path, MemoryKind::Log, &raw);
+        }
+        Ok(facts)
     }
 
     fn facts(&self) -> Vec<StoredMemoryFact> {
@@ -1225,6 +1265,10 @@ impl MemoryService {
         self.store_for_agent(agent_id).list_memories(100)
     }
 
+    pub fn list_checked(&self, agent_id: &str) -> io::Result<Vec<MemoryRecord>> {
+        self.store_for_agent(agent_id).list_memories_checked(100)
+    }
+
     pub fn remove(&self, agent_id: &str, id: &str) -> io::Result<bool> {
         let removed = self.store_for_agent(agent_id).remove_memory(id)?;
         if removed {
@@ -1462,10 +1506,66 @@ pub fn agent_memory_has_content(agent_dir: impl AsRef<Path>) -> bool {
         })
 }
 
+// NotFound can also describe a non-directory ancestor on some platforms.
+// Establish absence beneath the nearest existing directory without creating it.
+fn optional_memory_input_is_absent(path: &Path) -> bool {
+    let mut current = path;
+    let mut is_input = true;
+    loop {
+        let probe = if current.as_os_str().is_empty() {
+            Path::new(".")
+        } else {
+            current
+        };
+        match fs::symlink_metadata(probe) {
+            Ok(metadata) => {
+                if is_input {
+                    return false;
+                }
+                return metadata.is_dir()
+                    || (metadata.file_type().is_symlink()
+                        && fs::metadata(probe).is_ok_and(|target| target.is_dir()));
+            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(_) => return false,
+        }
+        let Some(parent) = current.parent() else {
+            return false;
+        };
+        current = parent;
+        is_input = false;
+    }
+}
+
+fn list_records_from_facts(mut facts: Vec<StoredMemoryFact>, limit: usize) -> Vec<MemoryRecord> {
+    facts.sort_by(|a, b| {
+        let a_profile = usize::from(a.record.kind == MemoryKind::Profile);
+        let b_profile = usize::from(b.record.kind == MemoryKind::Profile);
+        b_profile
+            .cmp(&a_profile)
+            .then_with(|| b.record.created_at.cmp(&a.record.created_at))
+            .then_with(|| b.order.cmp(&a.order))
+    });
+    facts
+        .into_iter()
+        .take(limit)
+        .map(|fact| fact.record)
+        .collect()
+}
+
 fn append_facts_from_file(output: &mut Vec<StoredMemoryFact>, path: &Path, kind: MemoryKind) {
     let Ok(raw) = fs::read_to_string(path) else {
         return;
     };
+    append_facts_from_text(output, path, kind, &raw);
+}
+
+fn append_facts_from_text(
+    output: &mut Vec<StoredMemoryFact>,
+    path: &Path,
+    kind: MemoryKind,
+    raw: &str,
+) {
     for (line, text) in raw.split('\n').enumerate() {
         let Some(fact) = parse_fact_line(text, kind) else {
             continue;

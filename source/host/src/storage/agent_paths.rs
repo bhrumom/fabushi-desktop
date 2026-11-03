@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, env, path::{Path, PathBuf}};
+use std::{collections::BTreeMap, env, path::{Component, Path, PathBuf}};
 
 use crate::{host_paths::get_sand_root_dir_with, storage::folder_id::is_safe_folder_id};
 
@@ -15,7 +15,11 @@ pub fn get_sand_agents_root_dir(home_dir: Option<&Path>) -> PathBuf {
 }
 
 pub fn assert_valid_sand_agent_id(agent_id: &str) -> Result<(), SandInvalidAgentIdError> {
-    if !is_safe_folder_id(agent_id) || agent_id.trim() != agent_id {
+    let mut components = Path::new(agent_id).components();
+    if !is_safe_folder_id(agent_id)
+        || agent_id.trim() != agent_id
+        || !matches!((components.next(), components.next()), (Some(Component::Normal(_)), None))
+    {
         return Err(SandInvalidAgentIdError(agent_id.to_owned()));
     }
     Ok(())

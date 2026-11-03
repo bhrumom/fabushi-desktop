@@ -252,21 +252,123 @@ mod live_admission {
         let _ = fs::remove_dir_all(root);
     }
 
+    fn assert_both_state_constructors_reject(root: &std::path::Path, index: usize, id: &str) {
+        let invalid_root = root.join(format!("invalid-{index}"));
+        let expected = format!("invalid agent id: {id}");
+        assert!(!invalid_root.exists());
+        assert_eq!(SandAgentState::new(&invalid_root, id).err(), Some(expected.clone()),
+            "default constructor accepted {id:?} or changed its error");
+        assert!(!invalid_root.exists());
+        let caller_root = root.join(format!("caller-{index}"));
+        let supplied = FileWorkflowStore::new(caller_root.join("agents/valid"), caller_root.join("workflows"));
+        assert_eq!(SandAgentState::new_with_workflow_store(&invalid_root, id, supplied).err(), Some(expected),
+            "supplied-store constructor accepted {id:?} or changed its error");
+        assert!(!invalid_root.exists(), "invalid owned root was created for {id:?}");
+    }
+
+    fn assert_both_state_constructors_keep_memory_paths(ids: &[&str]) {
+        let root = temp_root("native-agent-components");
+        for (index, id) in ids.iter().copied().enumerate() {
+            for supplied in [false, true] {
+                let sand_root = root.join(format!("state-{index}-{supplied}"));
+                let agent_dir = sand_root.join("agents").join(id);
+                let state = if supplied {
+                    SandAgentState::new_with_workflow_store(
+                        &sand_root, id, FileWorkflowStore::new(&agent_dir, sand_root.join("workflows")),
+                    )
+                } else {
+                    SandAgentState::new(&sand_root, id)
+                }.unwrap();
+                assert_eq!(state.agent_dir(), agent_dir.as_path());
+                assert!(state.write_memory(
+                    "Native component profile", MemoryTier::Profile, MemoryScope::Agent, None,
+                ).ok);
+                let rows = FileMemoryStore::new(get_agent_memory_dir(&agent_dir)).list_memories(10);
+                assert_eq!(rows.len(), 1);
+                assert_eq!(rows[0].content, "Native component profile");
+            }
+        }
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn both_state_constructors_keep_valid_unicode_agent_paths() {
+        assert_both_state_constructors_keep_memory_paths(&["agent-1", "agent-雪-☃"]);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn both_state_constructors_keep_literal_colon_agent_paths() {
+        assert_both_state_constructors_keep_memory_paths(&[
+            "C:", "C:outside", "c:outside", "C:.", "C:..", "name:part",
+        ]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn both_state_constructors_reject_native_windows_prefixes_without_migration() {
+        const CHILD_ROOT: &str = "FABUSHI_STATE_NATIVE_COMPONENT_FIXTURE";
+        const CHILD_SUCCESS: &str = "native-state-component-child-completed";
+        let Some(root) = std::env::var_os(CHILD_ROOT).map(std::path::PathBuf::from) else {
+            let root = temp_root("windows-native-component");
+            let working = root.join("working");
+            fs::create_dir_all(&working).unwrap();
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration",
+                    "--nocapture",
+                ])
+                .env(CHILD_ROOT, &root)
+                .current_dir(&working)
+                .output();
+            let _ = fs::remove_dir_all(&root);
+            let output = output.expect("run constructor contract in an owned Windows working directory");
+            assert!(output.status.success(), "constructor child failed:\n{}\n{}",
+                String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+            assert!(String::from_utf8_lossy(&output.stdout).contains(CHILD_SUCCESS),
+                "constructor child did not execute every native-component case");
+            return;
+        };
+
+        // Every drive-relative target, including drive:.., stays in the fixture
+        // if a regression allows the default workflow-store migration to run.
+        let working = root.join("working");
+        assert_eq!(fs::canonicalize(std::env::current_dir().unwrap()).unwrap(), fs::canonicalize(&working).unwrap());
+        let drive = match root.components().next() {
+            Some(std::path::Component::Prefix(prefix)) => match prefix.kind() {
+                std::path::Prefix::Disk(drive) | std::path::Prefix::VerbatimDisk(drive) => char::from(drive),
+                other => panic!("owned Windows fixture must use a disk prefix, got {other:?}"),
+            },
+            other => panic!("owned Windows fixture must have a disk prefix, got {other:?}"),
+        };
+        let ids = [
+            format!("{drive}:"),
+            format!("{drive}:outside"),
+            format!("{}:outside", drive.to_ascii_lowercase()),
+            format!("{drive}:."),
+            format!("{drive}:.."),
+        ];
+        for (index, id) in ids.iter().enumerate() {
+            let legacy = std::path::Path::new(id).join("workflows").join(format!("untouched-native-{index}"));
+            fs::create_dir_all(&legacy).unwrap();
+            let legacy_file = legacy.join(LEGACY_WORKFLOW_FILENAME);
+            let raw = format!("---\nname: Untouched native {index}\n---\nDO_NOT_MIGRATE_NATIVE_{index}\n");
+            fs::write(&legacy_file, &raw).unwrap();
+            assert_both_state_constructors_reject(&root, index, id);
+            assert_eq!(fs::read_to_string(&legacy_file).unwrap(), raw,
+                "invalid native component must be refused before workflow migration");
+        }
+        println!("{CHILD_SUCCESS}");
+    }
+
     #[test]
     fn both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration() {
         let root = temp_root("supplied-store-invalid-id");
         for (index, id) in ["", " agent", "agent ", "../escape", "a/b", "a\\b", ".", "..", "a\0b"]
             .into_iter().enumerate()
         {
-            let invalid_root = root.join(format!("invalid-{index}"));
-            assert!(!invalid_root.exists());
-            assert!(SandAgentState::new(&invalid_root, id).is_err(), "default accepted {id:?}");
-            assert!(!invalid_root.exists());
-            let caller_root = root.join(format!("caller-{index}"));
-            let supplied = FileWorkflowStore::new(caller_root.join("agents/valid"), caller_root.join("workflows"));
-            assert!(SandAgentState::new_with_workflow_store(&invalid_root, id, supplied).is_err(),
-                "supplied-store constructor accepted {id:?}");
-            assert!(!invalid_root.exists(), "invalid owned root was created for {id:?}");
+            assert_both_state_constructors_reject(&root, index, id);
         }
         let invalid_root = root.join("invalid-with-migration-source");
         let legacy = invalid_root.join("agents/ invalid /workflows/untouched-invalid");

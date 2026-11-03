@@ -50,10 +50,40 @@ fn notify_drain_gate_matches_notify_floor_and_safety_poll_semantics() {
 
 #[test]
 fn agent_paths_reject_traversal_and_whitespace() {
-    assert!(assert_valid_sand_agent_id("agent-1").is_ok());
-    for bad in ["../x", " x", "x ", "a/b", "."] { assert!(assert_valid_sand_agent_id(bad).is_err()); }
-    let dir = resolve_sand_agent_dir("agent-1", Some(Path::new("/tmp/home"))).unwrap();
-    assert_eq!(dir.file_name().unwrap(), "agent-1");
+    for id in ["agent-1", "agent-雪-☃"] {
+        assert!(assert_valid_sand_agent_id(id).is_ok(), "valid agent id {id:?}");
+        let dir = resolve_sand_agent_dir(id, Some(Path::new("/tmp/home"))).unwrap();
+        assert_eq!(dir.file_name().unwrap(), id);
+    }
+    for id in ["", "../x", " x", "x ", "a/b", "a\\b", ".", "..", "a\0b"] {
+        let expected = format!("Invalid Sand agent id: {id}");
+        assert_eq!(assert_valid_sand_agent_id(id).unwrap_err().to_string(), expected);
+        assert_eq!(resolve_sand_agent_dir(id, Some(Path::new("/tmp/home"))).unwrap_err().to_string(), expected);
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn agent_paths_reject_native_windows_prefixes_and_roots() {
+    for id in [
+        "C:", "C:outside", "c:outside", "C:.", "C:..",
+        r"C:\outside", r"\outside", r"\\server\share",
+        r"\\?\C:\outside", r"\\.\C:\outside",
+    ] {
+        let expected = format!("Invalid Sand agent id: {id}");
+        assert_eq!(assert_valid_sand_agent_id(id).unwrap_err().to_string(), expected);
+        assert_eq!(resolve_sand_agent_dir(id, Some(Path::new(r"C:\owned-home"))).unwrap_err().to_string(), expected);
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn agent_paths_preserve_literal_colon_components() {
+    for id in ["C:", "C:outside", "c:outside", "C:.", "C:..", "name:part"] {
+        assert!(assert_valid_sand_agent_id(id).is_ok(), "valid native component {id:?}");
+        let dir = resolve_sand_agent_dir(id, Some(Path::new("/tmp/home"))).unwrap();
+        assert_eq!(dir.file_name().unwrap(), id);
+    }
 }
 
 #[test]

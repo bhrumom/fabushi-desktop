@@ -1,0 +1,88 @@
+{
+  "schema": "ocrm-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "batch": "memory-checked-list",
+  "round": 2,
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "base": {
+    "commit": "e2b91700f145b9b13bb77cdf6f7981aafd433627",
+    "tree": "31505eccdce32a9fddd5ef9942033362c5da44f2"
+  },
+  "candidate": {
+    "commit": "f1e86d9eb3e0a7479d45e1735f3d7d96a4c46907",
+    "tree": "8f357a751682bedec2ab7964968e26e817efc023",
+    "paths": 14
+  },
+  "packet": {
+    "commit": "1b881055e2d7d67fce15ab448079e6efc539e603",
+    "scope_blob": "e9ecf8ff49782d2479370f10c3f02c45efa89c86",
+    "complete_diff_blob": "e86e3103d17c066c989303c05e9289988344b3d8",
+    "fix_delta_blob": "f3d507bd66452c0e64a8c8e92785bf103e2e9fa7"
+  },
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "agent": "/root/mgl_r2_general",
+      "requested_effort": "xhigh",
+      "model": "configured parent model",
+      "verdict": "approved-focused-source",
+      "blocking_findings": [],
+      "actual_depth": "Complete two-path delta, complete14-path diff context, complete native Session/Host root owners and nine-case test, affected Memory/Manager/App chain plus actual CI source bindings/selection/oracles."
+    },
+    {
+      "lens": "STRUCTURE",
+      "agent": "/root/mgl_r2_structure",
+      "requested_effort": "xhigh",
+      "model": "gpt-6.1-sol",
+      "verdict": "approved-focused-source",
+      "blocking_findings": [],
+      "actual_depth": "Complete two-path delta and complete native Session/Host root owners/test, source-contract document and affected CI source bindings/selection/oracles; complete14-path manifest/diff retained as context, not a new deep reading claim for every unchanged R1 hunk."
+    }
+  ],
+  "finding_lifecycle": [
+    {
+      "id": "MGL-R1-G1",
+      "first_seen_candidate": "ec49fed9e3ccec083d421a9f89c079da62641b69",
+      "decision": "FIX",
+      "decision_commit": "4976268b5915f34b785659ef3cee06cad270a32e",
+      "decision_blob": "0691f251e317225d0295aef9c22fe7c23934ff72",
+      "state": "resolved-source-awaiting-execution",
+      "candidate_blob": "929c818bfd9222f4c8dfa05478ea157bc99d0a8c",
+      "resolution": "Same Session root-resolution test now qualifies a native absolute override on each platform and retains its causal owner equality assertion. No production resolver, selected case, expected total or negative admission policy was weakened.",
+      "required_execution": "All nine Session-path target cases within exact-H seven-group native campaign."
+    }
+  ],
+  "source_convergence": true,
+  "execution": {
+    "status": "not-run",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "scope": "ocrm-memory-checked-list",
+    "job": "custody-recovery",
+    "expected_platforms": [
+      "Linux",
+      "macOS",
+      "Windows"
+    ],
+    "groups": 7,
+    "expected_positive_cases": {
+      "Linux": 66,
+      "macOS": 66,
+      "Windows": 65
+    },
+    "source_authority_workflow": ".github/workflows/ocrm-p0-authority.yml",
+    "shipping_app": "Linux/macOS compile required; Windows App not executed or accepted",
+    "local_or_htch_validation": false
+  },
+  "limits": [
+    "Static convergence does not prove runtime behavior.",
+    "No upstream review-credit or eight global completion-flag promotion.",
+    "Windows App/package lifecycle, symlink confinement, concurrent external writers, real rendered UI and full Memory/fusion equivalence remain open.",
+    "Original failed DJC and prior BGC historical evidence retain their original subject identities.",
+    "RMD candidate remains unapplied; denied opaque-revision payload is excluded."
+  ],
+  "report_provenance": "Independent task-conversation reports synthesized here; no invented full-report blobs."
+}
