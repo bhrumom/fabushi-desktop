@@ -1,0 +1,42 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "contract": "CWB-v1",
+  "base_commit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+  "base_tree": "17ddcd3b19126ece3cadb722ea7b9bbdc5dcb561",
+  "candidate_tree": "6600a9f11eac7f2bd11d4e1bc6ca099c1a941561",
+  "reviewed_source_snapshot_tree": "f1a1b24d1dde0c27b7edf2de6ba77ec12d1b61dd",
+  "patch_sha256": "f0b7660944737bd3f4c440834fd6423662cf5268d3a957ffdd3023b52be10767",
+  "targets": [
+    {
+      "path": "source/host/app/src/main.rs",
+      "before_blob": "c3b87212e096b245bbd70081ef3eb33ca1ccda07",
+      "after_blob": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+      "after_bytes": 989159,
+      "after_sha256": "87c1536d3a8bb6c4799c8c228bdc40290534903fd18664021387838a0194182c"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "before_blob": "4e6844496f267050e4236494de424de28630ccc8",
+      "after_blob": "1a96a0e3f9e33a95a4c8f4ada0bf332bd003c477",
+      "after_bytes": 1403406,
+      "after_sha256": "97a789fdfda442f2c68ccaf24cf83448758862fae3d30fbeb7c31f3497c28433"
+    }
+  ],
+  "purpose": "Only stage the two exact reviewed source blobs through the existing bounded staging mechanism. Isolated temporary paths preserve the concurrently active RSP carrier; no product validation, ref change or permission expansion.",
+  "other_carrier_preserved": [
+    {
+      "path": ".github/ocrm-reviewed-objects/manifest.json",
+      "blob": "f466401cba7ccfa42027d6a025b441a822823c44"
+    },
+    {
+      "path": ".github/ocrm-reviewed-objects/object.patch",
+      "blob": "e2046f00d225f2f4bbff33f2490ca0fc53977750"
+    },
+    {
+      "path": ".github/workflows/ocrm-stage-reviewed-objects.yml",
+      "blob": "c06c7d2aaf20f0d479525114cd2a8fa018bde53f"
+    }
+  ]
+}
