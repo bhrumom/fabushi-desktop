@@ -464,3 +464,35 @@ test("UI-NMR-FIND-PAGE-FAILURE-001 finding an unloaded match stops after one fai
   await f.expectRows(ids(1, 64));
   assert.equal(await f.error().count(), 0);
 });
+
+test("UI-NMR-RESELECT-ACTIVE-PAGE-001 reselecting the active loaded Human conversation preserves its in-flight older page", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t);
+  await f.loadInitial();
+  const older = await f.request(TAIL, { conversationId: A, beforeSeq: 41, beforeCursor: ALPHA_41 });
+  const pendingBefore = (await f.call("requests")).filter((request) =>
+    request.method === TAIL && request.args.conversationId === A && request.args.beforeSeq === 41
+  );
+  assert.deepEqual(pendingBefore.map((request) => request.id), [older.id]);
+
+  await f.page.getByRole("button", { name: "Alpha", exact: true }).click();
+  await f.frames();
+
+  const olderAfterReselect = (await f.call("requests")).filter((request) =>
+    request.method === TAIL && request.args.conversationId === A && request.args.beforeSeq === 41
+  );
+  assert.deepEqual(
+    olderAfterReselect.map((request) => request.id),
+    [older.id],
+    "reselecting the already active Human conversation must not cancel and reissue its older page",
+  );
+  assert.equal(
+    await f.count(TAIL, { conversationId: A, beforeSeq: null }),
+    1,
+    "reselecting the active conversation must not issue another initial tail",
+  );
+
+  await f.scroll(10_000);
+  await f.resolveRequest(older, historyPage(messages(21, 40), 21, ALPHA_21));
+  await f.expectRows(ids(21, 64));
+});
+
