@@ -1,0 +1,1351 @@
+{
+  "schema": "ocrm-memory-fixture-lifecycle-terminal-assessment-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "subject_commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+  "subject_tree": "695bb9e61cb064f81ac62572d182b51b48e6c5e6",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "verdict": "passed-scoped-only",
+  "scope": "memory-fixture-lifecycle/MGL-08",
+  "source_review": {
+    "candidate": "056db10924bf22d23168331879046a7c847b1991",
+    "tree": "9f4ba60aeccad7acaa7d8796e061a8898b2815a8",
+    "scope_blob": "32c8b03dc124ab339fab2d38466a513dfaff5133",
+    "convergence_blob": "844e2390aa009be6f72808a385d3b5ddba144681",
+    "general": "APPROVED",
+    "structure": "APPROVED"
+  },
+  "runtime": {
+    "run": 41658719094,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "scope_count_per_platform": 17,
+    "groups_per_platform": 2,
+    "shipping_app_executed": false,
+    "box_producers_executed": false,
+    "platforms": [
+      {
+        "os": "Linux",
+        "job": 125995926606,
+        "subject_commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+        "subject_tree": "695bb9e61cb064f81ac62572d182b51b48e6c5e6",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run": "41658719094",
+        "attempt": "1",
+        "result": "passed-scoped-only",
+        "selected_groups": 2,
+        "total_named": 17,
+        "raw_named_equal": true,
+        "raw_names": [
+          "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+          "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+          "memory_gateway_checked_list_manager_preserves_path_type_failures",
+          "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+          "memory_gateway_manager_preserves_literal_colon_agent_selector",
+          "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+          "memory_gateway_rejects_path_selectors_before_external_memory_read",
+          "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+          "live_admission::both_state_constructors_keep_literal_colon_agent_paths",
+          "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+          "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+          "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+          "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+          "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+          "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+          "owns_profile_settings_channel_and_avatar_mutations",
+          "routes_memory_to_agent_user_and_joined_project_shards"
+        ],
+        "summaries": [
+          {
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered": 10,
+            "seconds": 0.11
+          },
+          {
+            "passed": 10,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered": 0,
+            "seconds": 0.19
+          }
+        ],
+        "cases": [
+          {
+            "label": "memory-checked-list-manager",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "transcript_manager_contract",
+              "memory_gateway_",
+              "--",
+              "--test-threads=1"
+            ],
+            "command_exit": 0,
+            "capture_exit": 0,
+            "required_count": 7,
+            "observed_count": 7,
+            "unique_count": 7,
+            "complete_summaries": [
+              [
+                7,
+                0,
+                0,
+                0,
+                10
+              ]
+            ],
+            "log": "memory-checked-list-manager.log",
+            "log_sha256": "ebd1abd59fe2df540079e82c11d197e54cb49721c52cf7bde741537a5a47cf0d",
+            "names_equal": true,
+            "command_equal": true,
+            "oracle_accepted": true
+          },
+          {
+            "label": "memory-checked-list-agent-state",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "agent_state_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "command_exit": 0,
+            "capture_exit": 0,
+            "required_count": 10,
+            "observed_count": 10,
+            "unique_count": 10,
+            "complete_summaries": [
+              [
+                10,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "memory-checked-list-agent-state.log",
+            "log_sha256": "4cd9fb6d242cd5b1a55f22164ef0737345ab546190c8d645b46d9d678b71229b",
+            "names_equal": true,
+            "command_equal": true,
+            "oracle_accepted": true
+          }
+        ],
+        "compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "transcript_manager_contract",
+            "--test",
+            "agent_state_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "d5f9099942b3c53fd1980ec8d7ebab2394d93b64199ae6572363e08c076fd6bf"
+        },
+        "source_bindings": [
+          {
+            "scope": "custody_recovery",
+            "count": 10,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "plugin_admission_lock",
+            "count": 21,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "local_exec_outcome",
+            "count": 41,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "box_response",
+            "count": 57,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "memory_checked_list",
+            "count": 35,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          }
+        ],
+        "memory_bindings_equal": true,
+        "controls": {
+          "fixture": 36,
+          "fixture_all_match": true,
+          "ordinary": 36,
+          "ordinary_all_match": true,
+          "native": [
+            {
+              "case": "generated-recursive-member",
+              "native_spelling": "source/packages/proto/generated/agent/v1/agent_pb.ts",
+              "repository_key": "source/packages/proto/generated/agent/v1/agent_pb.ts",
+              "expected": "bound-exact-bytes-once",
+              "actual": "bound-exact-bytes-once",
+              "binding": {
+                "git_blob": "3cd3d020e69b54d1a6df27c0f967afe7e9fc942c",
+                "sha256": "6980a2db178657af12739183fa40ec8c6a67ddf79c61e7d940686b09ef8eeaea",
+                "bytes": 461627,
+                "matches_head_bytes": true
+              }
+            },
+            {
+              "case": "tracked-daemon-lock",
+              "native_spelling": "source/box-exec-daemon/Cargo.lock",
+              "repository_key": "source/box-exec-daemon/Cargo.lock",
+              "expected": "bound-exact-bytes-once",
+              "actual": "bound-exact-bytes-once",
+              "binding": {
+                "git_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+                "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+                "bytes": 15520,
+                "matches_head_bytes": true
+              }
+            }
+          ]
+        },
+        "shipping": {
+          "result": "not-executed",
+          "accepted": false,
+          "reason": "Only two test fixtures changed. Refresh their exact target graphs; retained production compilation is historical, not a new shipping result."
+        },
+        "box_producer_required": false,
+        "box_builds": [
+          "not-selected",
+          "not-selected"
+        ],
+        "historical": {
+          "subject_commit": "511bcebf08738c59ec0313a425a591a327d9cd20",
+          "run_id": "41648714149",
+          "run_attempt": 1,
+          "job_id": "125960843306",
+          "required_names": {
+            "memory-checked-list-store": [
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "memory_service_creates_real_agent_scoped_store",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links"
+            ],
+            "memory-checked-list-http": [
+              "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+              "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+              "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+              "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+              "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+              "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+              "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+              "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+              "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+              "memory_gateway_http_preserves_literal_colon_agent_selector"
+            ],
+            "memory-checked-list-agent-paths": [
+              "agent_paths_reject_traversal_and_whitespace",
+              "agent_paths_preserve_literal_colon_components"
+            ],
+            "memory-checked-list-session-paths": [
+              "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+              "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+              "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+              "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+              "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+              "stat_if_exists_matches_the_frozen_missing_file_contract",
+              "public_session_commands_reject_harness_owned_namespace",
+              "public_session_route_resolves_one_canonical_boundary",
+              "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys"
+            ],
+            "memory-checked-list-extension": [
+              "memory_extension_owns_one_agent_scoped_service",
+              "memory_extension_replacement_and_disable_keep_one_background_owner",
+              "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root"
+            ]
+          },
+          "role": "Historical positives only; not executed or revalidated at this subject.",
+          "assessment": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
+          "prior_windows_failures_retained": true
+        },
+        "raw_log": {
+          "bytes": 574107,
+          "sha256": "6d5d0cb7b243554a66163d9e1ce778ad50888624a97a01976af4b77c5ea57573"
+        },
+        "memory_bindings_equal_to_common": true,
+        "command_log_reconstruction": {
+          "reviewer": "/root/mgl_fixture_actions_observer",
+          "technique": "Decoded GitHub log timestamp framing removed; Windows console CRLF framing removed. Pure-JS SHA-256 matches captured raw command hashes.",
+          "commands": [
+            {
+              "file": "mcp-origin-constructor-check.log",
+              "bytes": 28527,
+              "sha256": "d5f9099942b3c53fd1980ec8d7ebab2394d93b64199ae6572363e08c076fd6bf"
+            },
+            {
+              "file": "memory-checked-list-manager.log",
+              "bytes": 29303,
+              "sha256": "ebd1abd59fe2df540079e82c11d197e54cb49721c52cf7bde741537a5a47cf0d"
+            },
+            {
+              "file": "memory-checked-list-agent-state.log",
+              "bytes": 29211,
+              "sha256": "4cd9fb6d242cd5b1a55f22164ef0737345ab546190c8d645b46d9d678b71229b"
+            }
+          ]
+        }
+      },
+      {
+        "os": "macOS",
+        "job": 125995926595,
+        "subject_commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+        "subject_tree": "695bb9e61cb064f81ac62572d182b51b48e6c5e6",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run": "41658719094",
+        "attempt": "1",
+        "result": "passed-scoped-only",
+        "selected_groups": 2,
+        "total_named": 17,
+        "raw_named_equal": true,
+        "raw_names": [
+          "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+          "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+          "memory_gateway_checked_list_manager_preserves_path_type_failures",
+          "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+          "memory_gateway_manager_preserves_literal_colon_agent_selector",
+          "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+          "memory_gateway_rejects_path_selectors_before_external_memory_read",
+          "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+          "live_admission::both_state_constructors_keep_literal_colon_agent_paths",
+          "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+          "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+          "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+          "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+          "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+          "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+          "owns_profile_settings_channel_and_avatar_mutations",
+          "routes_memory_to_agent_user_and_joined_project_shards"
+        ],
+        "summaries": [
+          {
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered": 10,
+            "seconds": 0.14
+          },
+          {
+            "passed": 10,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered": 0,
+            "seconds": 0.31
+          }
+        ],
+        "cases": [
+          {
+            "label": "memory-checked-list-manager",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "transcript_manager_contract",
+              "memory_gateway_",
+              "--",
+              "--test-threads=1"
+            ],
+            "command_exit": 0,
+            "capture_exit": 0,
+            "required_count": 7,
+            "observed_count": 7,
+            "unique_count": 7,
+            "complete_summaries": [
+              [
+                7,
+                0,
+                0,
+                0,
+                10
+              ]
+            ],
+            "log": "memory-checked-list-manager.log",
+            "log_sha256": "18d03de462196e61e6738c8e3dd4c1617ecbd4b2028a079fe35e39b286c8460b",
+            "names_equal": true,
+            "command_equal": true,
+            "oracle_accepted": true
+          },
+          {
+            "label": "memory-checked-list-agent-state",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "agent_state_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "command_exit": 0,
+            "capture_exit": 0,
+            "required_count": 10,
+            "observed_count": 10,
+            "unique_count": 10,
+            "complete_summaries": [
+              [
+                10,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "memory-checked-list-agent-state.log",
+            "log_sha256": "a21e4b010f9a07c4d14d03f0d21e9577de4741270615ab3e930d10ee5f3b918e",
+            "names_equal": true,
+            "command_equal": true,
+            "oracle_accepted": true
+          }
+        ],
+        "compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "transcript_manager_contract",
+            "--test",
+            "agent_state_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "5d6bb4f3780a7035c810e0f8fcf928861302a9c1bb52e8e39b26aae3040ca8f1"
+        },
+        "source_bindings": [
+          {
+            "scope": "custody_recovery",
+            "count": 10,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "plugin_admission_lock",
+            "count": 21,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "local_exec_outcome",
+            "count": 41,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "box_response",
+            "count": 57,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "memory_checked_list",
+            "count": 35,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          }
+        ],
+        "memory_bindings_equal": true,
+        "controls": {
+          "fixture": 36,
+          "fixture_all_match": true,
+          "ordinary": 36,
+          "ordinary_all_match": true,
+          "native": [
+            {
+              "case": "generated-recursive-member",
+              "native_spelling": "source/packages/proto/generated/agent/v1/agent_pb.ts",
+              "repository_key": "source/packages/proto/generated/agent/v1/agent_pb.ts",
+              "expected": "bound-exact-bytes-once",
+              "actual": "bound-exact-bytes-once",
+              "binding": {
+                "git_blob": "3cd3d020e69b54d1a6df27c0f967afe7e9fc942c",
+                "sha256": "6980a2db178657af12739183fa40ec8c6a67ddf79c61e7d940686b09ef8eeaea",
+                "bytes": 461627,
+                "matches_head_bytes": true
+              }
+            },
+            {
+              "case": "tracked-daemon-lock",
+              "native_spelling": "source/box-exec-daemon/Cargo.lock",
+              "repository_key": "source/box-exec-daemon/Cargo.lock",
+              "expected": "bound-exact-bytes-once",
+              "actual": "bound-exact-bytes-once",
+              "binding": {
+                "git_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+                "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+                "bytes": 15520,
+                "matches_head_bytes": true
+              }
+            }
+          ]
+        },
+        "shipping": {
+          "result": "not-executed",
+          "accepted": false,
+          "reason": "Only two test fixtures changed. Refresh their exact target graphs; retained production compilation is historical, not a new shipping result."
+        },
+        "box_producer_required": false,
+        "box_builds": [
+          "not-selected",
+          "not-selected"
+        ],
+        "historical": {
+          "subject_commit": "511bcebf08738c59ec0313a425a591a327d9cd20",
+          "run_id": "41648714149",
+          "run_attempt": 1,
+          "job_id": "125960843500",
+          "required_names": {
+            "memory-checked-list-store": [
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "memory_service_creates_real_agent_scoped_store",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links"
+            ],
+            "memory-checked-list-http": [
+              "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+              "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+              "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+              "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+              "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+              "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+              "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+              "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+              "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+              "memory_gateway_http_preserves_literal_colon_agent_selector"
+            ],
+            "memory-checked-list-agent-paths": [
+              "agent_paths_reject_traversal_and_whitespace",
+              "agent_paths_preserve_literal_colon_components"
+            ],
+            "memory-checked-list-session-paths": [
+              "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+              "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+              "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+              "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+              "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+              "stat_if_exists_matches_the_frozen_missing_file_contract",
+              "public_session_commands_reject_harness_owned_namespace",
+              "public_session_route_resolves_one_canonical_boundary",
+              "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys"
+            ],
+            "memory-checked-list-extension": [
+              "memory_extension_owns_one_agent_scoped_service",
+              "memory_extension_replacement_and_disable_keep_one_background_owner",
+              "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root"
+            ]
+          },
+          "role": "Historical positives only; not executed or revalidated at this subject.",
+          "assessment": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
+          "prior_windows_failures_retained": true
+        },
+        "raw_log": {
+          "bytes": 547423,
+          "sha256": "366f8bb292bcf22509ed510f616f01dac8e711dcc06cdf4d66cc9546344c28ae"
+        },
+        "memory_bindings_equal_to_common": true,
+        "command_log_reconstruction": {
+          "reviewer": "/root/mgl_fixture_actions_observer",
+          "technique": "Decoded GitHub log timestamp framing removed; Windows console CRLF framing removed. Pure-JS SHA-256 matches captured raw command hashes.",
+          "commands": [
+            {
+              "file": "mcp-origin-constructor-check.log",
+              "bytes": 27197,
+              "sha256": "5d6bb4f3780a7035c810e0f8fcf928861302a9c1bb52e8e39b26aae3040ca8f1"
+            },
+            {
+              "file": "memory-checked-list-manager.log",
+              "bytes": 27973,
+              "sha256": "18d03de462196e61e6738c8e3dd4c1617ecbd4b2028a079fe35e39b286c8460b"
+            },
+            {
+              "file": "memory-checked-list-agent-state.log",
+              "bytes": 27878,
+              "sha256": "a21e4b010f9a07c4d14d03f0d21e9577de4741270615ab3e930d10ee5f3b918e"
+            }
+          ]
+        }
+      },
+      {
+        "os": "Windows",
+        "job": 125995925902,
+        "subject_commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+        "subject_tree": "695bb9e61cb064f81ac62572d182b51b48e6c5e6",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run": "41658719094",
+        "attempt": "1",
+        "result": "passed-scoped-only",
+        "selected_groups": 2,
+        "total_named": 17,
+        "raw_named_equal": true,
+        "raw_names": [
+          "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+          "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+          "memory_gateway_checked_list_manager_preserves_path_type_failures",
+          "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+          "memory_gateway_manager_rejects_native_drive_relative_selector",
+          "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+          "memory_gateway_rejects_path_selectors_before_external_memory_read",
+          "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+          "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+          "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+          "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration",
+          "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+          "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+          "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+          "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+          "owns_profile_settings_channel_and_avatar_mutations",
+          "routes_memory_to_agent_user_and_joined_project_shards"
+        ],
+        "summaries": [
+          {
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered": 10,
+            "seconds": 1.1
+          },
+          {
+            "passed": 10,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered": 0,
+            "seconds": 1.19
+          }
+        ],
+        "cases": [
+          {
+            "label": "memory-checked-list-manager",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "transcript_manager_contract",
+              "memory_gateway_",
+              "--",
+              "--test-threads=1"
+            ],
+            "command_exit": 0,
+            "capture_exit": 0,
+            "required_count": 7,
+            "observed_count": 7,
+            "unique_count": 7,
+            "complete_summaries": [
+              [
+                7,
+                0,
+                0,
+                0,
+                10
+              ]
+            ],
+            "log": "memory-checked-list-manager.log",
+            "log_sha256": "9c3e9978eaac3a00c29a9cb02632556c4aa5f77a27d6aa559a8ed59564c6ab8e",
+            "names_equal": true,
+            "command_equal": true,
+            "oracle_accepted": true
+          },
+          {
+            "label": "memory-checked-list-agent-state",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "agent_state_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "command_exit": 0,
+            "capture_exit": 0,
+            "required_count": 10,
+            "observed_count": 10,
+            "unique_count": 10,
+            "complete_summaries": [
+              [
+                10,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "memory-checked-list-agent-state.log",
+            "log_sha256": "f1a4172421a10377d1eb79df0836bee802d21db8cb2311347d1ccc6035798256",
+            "names_equal": true,
+            "command_equal": true,
+            "oracle_accepted": true
+          }
+        ],
+        "compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "transcript_manager_contract",
+            "--test",
+            "agent_state_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "77fa79c29b7fd9fef366dd485527d871708d7ac3d1383561928b4def6845f803"
+        },
+        "source_bindings": [
+          {
+            "scope": "custody_recovery",
+            "count": 10,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "plugin_admission_lock",
+            "count": 21,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "local_exec_outcome",
+            "count": 41,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "box_response",
+            "count": 57,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          },
+          {
+            "scope": "memory_checked_list",
+            "count": 35,
+            "equal": true,
+            "claimed_unchanged": true,
+            "all_match": true
+          }
+        ],
+        "memory_bindings_equal": true,
+        "controls": {
+          "fixture": 36,
+          "fixture_all_match": true,
+          "ordinary": 36,
+          "ordinary_all_match": true,
+          "native": [
+            {
+              "case": "generated-recursive-member",
+              "native_spelling": "source\\packages\\proto\\generated\\agent\\v1\\agent_pb.ts",
+              "repository_key": "source/packages/proto/generated/agent/v1/agent_pb.ts",
+              "expected": "bound-exact-bytes-once",
+              "actual": "bound-exact-bytes-once",
+              "binding": {
+                "git_blob": "3cd3d020e69b54d1a6df27c0f967afe7e9fc942c",
+                "sha256": "6980a2db178657af12739183fa40ec8c6a67ddf79c61e7d940686b09ef8eeaea",
+                "bytes": 461627,
+                "matches_head_bytes": true
+              }
+            },
+            {
+              "case": "generated-recursive-member-backslash-refusal",
+              "native_spelling": "source\\packages\\proto\\generated\\agent\\v1\\agent_pb.ts",
+              "expected": "rejected",
+              "actual": "rejected",
+              "git_exit": 128
+            },
+            {
+              "case": "tracked-daemon-lock",
+              "native_spelling": "source\\box-exec-daemon\\Cargo.lock",
+              "repository_key": "source/box-exec-daemon/Cargo.lock",
+              "expected": "bound-exact-bytes-once",
+              "actual": "bound-exact-bytes-once",
+              "binding": {
+                "git_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+                "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+                "bytes": 15520,
+                "matches_head_bytes": true
+              }
+            },
+            {
+              "case": "tracked-daemon-lock-backslash-refusal",
+              "native_spelling": "source\\box-exec-daemon\\Cargo.lock",
+              "expected": "rejected",
+              "actual": "rejected",
+              "git_exit": 128
+            }
+          ]
+        },
+        "shipping": {
+          "result": "not-executed",
+          "accepted": false,
+          "reason": "Only two test fixtures changed. Refresh their exact target graphs; retained production compilation is historical, not a new shipping result."
+        },
+        "box_producer_required": false,
+        "box_builds": [
+          "not-selected",
+          "not-selected"
+        ],
+        "historical": {
+          "subject_commit": "6266a77e72159b92e72c84ef8f0423caf1416a78",
+          "run_id": "41652461179",
+          "run_attempt": 1,
+          "job_id": "125973925583",
+          "required_names": {
+            "memory-checked-list-store": [
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "memory_service_creates_real_agent_scoped_store",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair"
+            ],
+            "memory-checked-list-http": [
+              "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+              "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+              "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+              "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+              "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+              "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+              "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+              "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+              "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+              "memory_gateway_http_rejects_native_drive_relative_selector"
+            ],
+            "memory-checked-list-agent-paths": [
+              "agent_paths_reject_traversal_and_whitespace",
+              "agent_paths_reject_native_windows_prefixes_and_roots"
+            ],
+            "memory-checked-list-session-paths": [
+              "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+              "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+              "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+              "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+              "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+              "stat_if_exists_matches_the_frozen_missing_file_contract",
+              "public_session_commands_reject_harness_owned_namespace",
+              "public_session_route_resolves_one_canonical_boundary",
+              "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys"
+            ],
+            "memory-checked-list-extension": [
+              "memory_extension_owns_one_agent_scoped_service",
+              "memory_extension_replacement_and_disable_keep_one_background_owner",
+              "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root"
+            ]
+          },
+          "role": "Historical positives only; not executed or revalidated at this subject.",
+          "assessment": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
+          "prior_windows_failures_retained": true
+        },
+        "raw_log": {
+          "bytes": 621948,
+          "sha256": "3a00177edcf058a953aead88a49e08b71b0899687ba9cab55aef20ce7b3371ff"
+        },
+        "memory_bindings_equal_to_common": true,
+        "command_log_reconstruction": {
+          "reviewer": "/root/mgl_fixture_actions_observer",
+          "technique": "Decoded GitHub log timestamp framing removed; Windows console CRLF framing removed. Pure-JS SHA-256 matches captured raw command hashes.",
+          "commands": [
+            {
+              "file": "mcp-origin-constructor-check.log",
+              "bytes": 48177,
+              "sha256": "77fa79c29b7fd9fef366dd485527d871708d7ac3d1383561928b4def6845f803"
+            },
+            {
+              "file": "memory-checked-list-manager.log",
+              "bytes": 37384,
+              "sha256": "9c3e9978eaac3a00c29a9cb02632556c4aa5f77a27d6aa559a8ed59564c6ab8e"
+            },
+            {
+              "file": "memory-checked-list-agent-state.log",
+              "bytes": 30484,
+              "sha256": "f1a4172421a10377d1eb79df0836bee802d21db8cb2311347d1ccc6035798256"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "scoped_source_bindings": {
+    "projects/openclaw-rust/upstream.lock.json": {
+      "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+      "bytes": 3495,
+      "matches_head_bytes": true
+    },
+    "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md": {
+      "git_blob": "4d654dadff225fb1a2329b2ce2302583fc657391",
+      "sha256": "016a51b391a15c9bc3593160f7d9170f6ab09358198458efdc05e94fe4ed548b",
+      "bytes": 27970,
+      "matches_head_bytes": true
+    },
+    "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md": {
+      "git_blob": "fc5984bfbbad3febfbda0fc05f377836b1613f04",
+      "sha256": "3385475c7424f643c23e5bac1068c6cff24968cefb18982c3e0103da808e33c3",
+      "bytes": 22652,
+      "matches_head_bytes": true
+    },
+    "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json": {
+      "git_blob": "410c00aee0046c8689d7b61a2fd4b3dbdb36a6d3",
+      "sha256": "d0a194eea8e77dd1dd0e0045cd14b0cc038bc77e14cc983391e9436cbae4f87c",
+      "bytes": 53404,
+      "matches_head_bytes": true
+    },
+    ".github/workflows/rust-desktop-runtime.yml": {
+      "git_blob": "7afb89051bed8f84df5465a7771f289510de257a",
+      "sha256": "89aeb309c456fe5e73007506fd51a4d7cb24dd240a29df513ad6457ce73c7859",
+      "bytes": 480942,
+      "matches_head_bytes": true
+    },
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+      "git_blob": "dc247fba2ad33dac654de6205d273f71fe7fd8da",
+      "sha256": "d11e83c2f3c705af38ab39cce3539b7c10003bffe343f835b24b478196bb2d4b",
+      "bytes": 223929,
+      "matches_head_bytes": true
+    },
+    "source/host/Cargo.toml": {
+      "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+      "bytes": 1899,
+      "matches_head_bytes": true
+    },
+    "source/host/Cargo.lock": {
+      "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+      "bytes": 119989,
+      "matches_head_bytes": true
+    },
+    "source/host/app/Cargo.toml": {
+      "git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "sha256": "3c16c8f1be109308612041e0543a935ea4b7748ed33279e061a44ba975e7846b",
+      "bytes": 864,
+      "matches_head_bytes": true
+    },
+    "source/host/app/Cargo.lock": {
+      "git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "sha256": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+      "bytes": 158355,
+      "matches_head_bytes": true
+    },
+    "source/host/app/src/main.rs": {
+      "git_blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+      "sha256": "ee4fbd723f07691452a6970eb7577270ad5d9a5d26bacb86cfeda6709af7bb37",
+      "bytes": 1008894,
+      "matches_head_bytes": true
+    },
+    "source/host/src/host_gateway_api.rs": {
+      "git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+      "bytes": 12641,
+      "matches_head_bytes": true
+    },
+    "source/host/src/gateway_server.rs": {
+      "git_blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+      "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a",
+      "bytes": 97871,
+      "matches_head_bytes": true
+    },
+    "source/host/src/gateway_command_error.rs": {
+      "git_blob": "799a47b3f741f9e9bb224d481cb08a241113529d",
+      "sha256": "879b40b479dd6ab66acb8150e06888b4c95ca66eee7cd1428e1286acee3fc43d",
+      "bytes": 6296,
+      "matches_head_bytes": true
+    },
+    "source/host/src/device_pairing_owner.rs": {
+      "git_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+      "sha256": "719a84fe502691e1a14008167f3652174b9a7fe7bd3975ed34067b5351885073",
+      "bytes": 103155,
+      "matches_head_bytes": true
+    },
+    "source/host/src/extensions/session/production.rs": {
+      "git_blob": "4c88b00b2dfe563ba957bd0669f177a422a330a7",
+      "sha256": "577a8a46990d805754fa300d79cc113b0d17a24aa84d6b68ea03b251f81cd6ee",
+      "bytes": 290933,
+      "matches_head_bytes": true
+    },
+    "source/host/src/extensions/session/call_session.rs": {
+      "git_blob": "f97f628ec14618ab2788bdf5b5c301f7a00c81f6",
+      "sha256": "a3102155fde1df2d82b01b64fbeaedf8d833d228f316c41778e24df290b2ed2b",
+      "bytes": 21746,
+      "matches_head_bytes": true
+    },
+    "source/host/src/extensions/memory/memory_service.rs": {
+      "git_blob": "abcde0d5ba3f73dfb60dcd7607bee1eb55a868c4",
+      "sha256": "ff6b01d4d03c4b4bd80632ef362d36660db768025d60211fbda0727faeffcfe9",
+      "bytes": 55223,
+      "matches_head_bytes": true
+    },
+    "source/host/src/extensions/transcript/transcript_manager.rs": {
+      "git_blob": "71e90fb820d492d7e9607f63311595aed076c29a",
+      "sha256": "2c9a67d22d93173a499b25f5bff6fa68b4baade5e35b720f9e03194f4bdc50f7",
+      "bytes": 33985,
+      "matches_head_bytes": true
+    },
+    "source/host/tests/memory_service_contract.rs": {
+      "git_blob": "2171ce61768aff44ab2c2cc19eb8c1001d1505c6",
+      "sha256": "da79afd9e850e72a4df9e10193897dc243312127bec02d81298cf968bf2e3dbb",
+      "bytes": 61374,
+      "matches_head_bytes": true
+    },
+    "source/host/tests/transcript_manager_contract.rs": {
+      "git_blob": "3c101cdc79e57d5a792d3d7ed3989fadf614a091",
+      "sha256": "d5fa777100981657e9b433808c2ef35a52551969022e0a8fee77a27bcfbb6007",
+      "bytes": 75735,
+      "matches_head_bytes": true
+    },
+    "source/host/tests/memory_gateway_authorization_contract.rs": {
+      "git_blob": "ad9cb9f3b6ab0f1bf8f330ac36f233bc5b7829a9",
+      "sha256": "0d6a5903f3ea9115e9b12f0c03cc240e0996ecd650bd94ed2e381bdb10058d53",
+      "bytes": 44655,
+      "matches_head_bytes": true
+    },
+    "source/host/src/extensions/memory/extension.rs": {
+      "git_blob": "c57cd1e66a31e7fb35f9208aed0f5f9f6a1447ca",
+      "sha256": "ceef3a80ccf829d2440633f2ec3c0e2a457db9d91baf80bc2f3d093a2c21b0a5",
+      "bytes": 2851,
+      "matches_head_bytes": true
+    },
+    "source/host/src/storage/agent_paths.rs": {
+      "git_blob": "0d4c7f6fc0f8ec81c26aa529b4a3d3c22390c507",
+      "sha256": "770c44c4e6c226f0d68ddbf5f567b6d0661cd2928bc1d83f52cce3bef0f5378e",
+      "bytes": 1753,
+      "matches_head_bytes": true
+    },
+    "source/host/src/watched_directory.rs": {
+      "git_blob": "eb7bb0106966e9a8b5adb7205667ff81678dce80",
+      "sha256": "32f4bba78fe5f240ec3945ca3d1c2cf324ad7ad905c9d2f05ad84a7053baa0fd",
+      "bytes": 6498,
+      "matches_head_bytes": true
+    },
+    "source/host/src/storage/folder_id.rs": {
+      "git_blob": "fcce62bdd4bf412e0bd5978bdac6108ae23cbd21",
+      "sha256": "903c6fb755ff11d4cf3723bcd4fe57dcaff88dfe8c3db9164add6f9182a6b9ef",
+      "bytes": 1433,
+      "matches_head_bytes": true
+    },
+    "source/host/src/extensions/memory/agent_state.rs": {
+      "git_blob": "9b9b40967bc366ba425d2cb17ae1820d1b6eceda",
+      "sha256": "459167d7b21f48f8837c1c7b86de6e6855fcc1a02cfac5219d1944984b18a9db",
+      "bytes": 29442,
+      "matches_head_bytes": true
+    },
+    "source/host/src/host_runner_composition.rs": {
+      "git_blob": "b75c24202ef15600a21e25180947a1432f44061c",
+      "sha256": "1f44718d1c5dff2a4ca904153567899a5d94ed564ea003cdc8b3b69f8dc52239",
+      "bytes": 34033,
+      "matches_head_bytes": true
+    },
+    "source/host/src/runner/tools/sand_state_tool.rs": {
+      "git_blob": "fe0bb0832669723d0df93b18f562d1a9e9970634",
+      "sha256": "f52edd95716b1f37404663ceeca4cdd8d607adc6578afd67789bb5ed42cde42a",
+      "bytes": 24803,
+      "matches_head_bytes": true
+    },
+    "source/host/src/extensions/session/session_paths.rs": {
+      "git_blob": "5106195df91ef40620dc92b4e72cbf2c94db0557",
+      "sha256": "ddb7d0bc19534be1dc4fecf1a68a945d664d68d12fb608681451121447158784",
+      "bytes": 12049,
+      "matches_head_bytes": true
+    },
+    "source/host/tests/host_storage_contract.rs": {
+      "git_blob": "9bd9ce45398ce1c993bacd9102ff0e76b6608219",
+      "sha256": "f8a24b73b6be162dbb7d642a5303cd64a9e10c3246bec3a0ef5251d4a3885e10",
+      "bytes": 21868,
+      "matches_head_bytes": true
+    },
+    "source/host/tests/agent_state_contract.rs": {
+      "git_blob": "50349ee51834af3234511a8ae30c37209491f145",
+      "sha256": "4bcc7aa9b865bb73291dd9616fdab4d9d920f6298f3f33524120be8ced3e6725",
+      "bytes": 37909,
+      "matches_head_bytes": true
+    },
+    "source/host/tests/session_paths_contract.rs": {
+      "git_blob": "929c818bfd9222f4c8dfa05478ea157bc99d0a8c",
+      "sha256": "179e708faa416879eca9f50b5b1bd16c274c21e0cccbdd91d8f0b7ce5de5e844",
+      "bytes": 7504,
+      "matches_head_bytes": true
+    },
+    "source/host/tests/memory_extension_contract.rs": {
+      "git_blob": "6d7ab8055180f1a6099766f557a02531614a2c92",
+      "sha256": "176a9a6cfc3790b68b62361fa12c0577d1a93a011febaf15f012159410dd08f3",
+      "bytes": 2400,
+      "matches_head_bytes": true
+    },
+    "source/host/src/workflows/workflow_store.rs": {
+      "git_blob": "dd3945c0b454eea446397e033632fac93e60a17d",
+      "sha256": "e83f0209d2b5e3d0896e96c8ae228e6ffd8cb104299514c6570ababe349bbdce",
+      "bytes": 31459,
+      "matches_head_bytes": true
+    }
+  },
+  "scoped_source_binding_count": 35,
+  "before_after_and_cross_platform_equal": true,
+  "oracle_reachability": {
+    "manager_fixture_blob": "3c101cdc79e57d5a792d3d7ed3989fadf614a091",
+    "agent_state_fixture_blob": "50349ee51834af3234511a8ae30c37209491f145",
+    "basis": "Exact current-source assertions plus successful named executions, not independently printed child markers.",
+    "manager": [
+      "Both profile and monthly-log corruption iterations reach refusal/bytes/repair/strict destruction.",
+      "Both profile-directory and log-file obstacle iterations reach refusal/bytes/repair/strict destruction.",
+      "Unsubscribe, take/dispose/drop manager, require Weak Session expiry, then successful strict deletion.",
+      "Native child terminates successfully with exactly one post-drop marker, unchanged parentCWD and strict parent cleanup."
+    ],
+    "agent_state": [
+      "Actual directory basename exactly whitespace selector and exact sentinel bytes qualified before both real constructors.",
+      "Both constructors refuse, original sentinel unchanged, no migration destination and strict canonical cleanup.",
+      "Native-prefix child and retained valid/migration/Runner controls pass."
+    ]
+  },
+  "source_authority": {
+    "run": 41658718982,
+    "attempt": 1,
+    "job": 125995922880,
+    "persistence_job": 125997181287,
+    "status": "completed",
+    "conclusion": "success",
+    "source_review_tests": 33,
+    "inventory_tests": 21,
+    "negative_probes": {
+      "count": 4,
+      "results": "rejected",
+      "cases": [
+        "duplicate source path",
+        "unread denominator tamper",
+        "unbacked accepted verdict",
+        "orphan responsibility"
+      ],
+      "qualification": "Four named negative probes, not a separately logged unittest suite."
+    },
+    "paths": 62130,
+    "mapped": 888,
+    "unread_or_partial": 62067,
+    "pending_forward_links": 0,
+    "shards": 61,
+    "new_persisted_source_content": false,
+    "log": {
+      "bytes": 31566,
+      "sha256": "e89fbcd84fd2886a959bee241f6c28960415c959880640d972f60b3ca93ff8a4"
+    },
+    "persistence_log": {
+      "bytes": 18170,
+      "sha256": "cbea0a451534e758aa763ed55d7cd9c0c704b56b0452ac65f7d4a432e4aff81e"
+    },
+    "closure_ready": false
+  },
+  "artifacts": [
+    {
+      "id": 13242100065,
+      "name": "ocrm-memory-fixture-lifecycle-Windows-fb1e42d704a8b98b663d70f2b14568485d73a9b6-41658719094-1",
+      "bytes": 166184,
+      "digest": "sha256:380240e5de4d01471a17b6ac00ffe1c499631b039036306d98c2a651028cb4f8",
+      "expires_at": "2027-02-01T14:56:46Z",
+      "expired_at_observation": false,
+      "subject_commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+      "observation": "GitHub metadata and upload digest; ZIP body not downloaded by root."
+    },
+    {
+      "id": 13241451044,
+      "name": "ocrm-memory-fixture-lifecycle-macOS-fb1e42d704a8b98b663d70f2b14568485d73a9b6-41658719094-1",
+      "bytes": 146574,
+      "digest": "sha256:5fb844bd2b70971ca5f02612d8b932290771c09eb8c155d22be0ea40f970d778",
+      "expires_at": "2027-02-01T14:56:46Z",
+      "expired_at_observation": false,
+      "subject_commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+      "observation": "GitHub metadata and upload digest; ZIP body not downloaded by root."
+    },
+    {
+      "id": 13240039822,
+      "name": "ocrm-memory-fixture-lifecycle-Linux-fb1e42d704a8b98b663d70f2b14568485d73a9b6-41658719094-1",
+      "bytes": 147451,
+      "digest": "sha256:fc7ea43e03b1ff0c3e87011359f1660a7801bfb6c530b314465ac150eaef96ff",
+      "expires_at": "2027-02-01T14:56:46Z",
+      "expired_at_observation": false,
+      "subject_commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+      "observation": "GitHub metadata and upload digest; ZIP body not downloaded by root."
+    },
+    {
+      "id": 13241161916,
+      "name": "ocrm-p0-authority-fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+      "bytes": 4951972,
+      "digest": "sha256:361f2cae9ecab2ae8d76b14b6e949b2708d2541f5ff985c2143d7b0a710dc840",
+      "expires_at": "2026-12-03T14:58:48Z",
+      "expired_at_observation": false,
+      "subject_commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+      "observation": "GitHub metadata and upload digest; ZIP body not downloaded by root."
+    }
+  ],
+  "independent_observer": {
+    "agent": "/root/mgl_fixture_actions_observer",
+    "model": "configured-parent (inherited)",
+    "effort": "xhigh (applied)",
+    "terminal": "completed",
+    "verdict": "passed-scoped-only",
+    "read_only": true,
+    "named_results_and_raw_command_hashes": "Independently reconstructed and counted all three OS logs; all nine command-log digests match receipts.",
+    "root_cross_check": "Root independently re-read terminal APIs, all runtime/source/persistence logs and artifact metadata; counted17exact namesperOS and checked commands, summaries, source maps and full decoded job-log digests."
+  },
+  "history": {
+    "original_production_subject": "511bcebf08738c59ec0313a425a591a327d9cd20",
+    "native_binding_subject": "6266a77e72159b92e72c84ef8f0423caf1416a78",
+    "original_windows_failures_retained": true,
+    "ordinary_full_counts": {
+      "Linux": 66,
+      "macOS": 66,
+      "Windows": 65
+    },
+    "unexecuted_five_groups": "Preserved under H511 Linux/macOS49names and H6266Windows48names; newH executes17only.",
+    "assessment": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
+  },
+  "acceptance": {
+    "scoped_MGL08_verified": true,
+    "full_unit_verified": false,
+    "real_ecosystem_accepted": false,
+    "shipping_accepted": false,
+    "global_flags_promoted": false
+  },
+  "remaining": [
+    "Windows actual shipping Host lifecycle and platform packages/signing/upgrade/rollback.",
+    "Other Memory responsibilities including atomic snapshots, link confinement, reserved-device/trailing-dot policy and active external-writer recovery.",
+    "DJC retained reader observation, blocked model-default-reset source upload, real ecosystem/device/UI/performance/soak regressions.",
+    "Full source closure, all applicable G01-G12/AC01-AC24 and independent ACCEPT."
+  ]
+}

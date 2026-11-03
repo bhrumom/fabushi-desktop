@@ -1,0 +1,1526 @@
+diff --git a/source/host/tests/device_pairing_join_admission_contract.rs b/source/host/tests/device_pairing_join_admission_contract.rs
+index 92967b7dd7e69d8b5686b93075db347eb3a023a5..fdadc78e956ec70a31d09d305fd0d3c77cc58d60 100644
+--- a/source/host/tests/device_pairing_join_admission_contract.rs
++++ b/source/host/tests/device_pairing_join_admission_contract.rs
+@@ -505,7 +505,24 @@
+         }
+         eprintln!("DJC owned-child harness controls passed; these are not SQL refusal evidence");
+     }
+-    supervise_join_child(case, "actual").accept(JoinChildOutcome::Completed);
++    let report = supervise_join_child(case, "actual");
++    if matches!(case,
++        "join_storage_commit_refusal_never_publishes_payload"
++            | "join_reader_observation_notifies_before_diagnostic_release"
++            | "join_reader_observation_cannot_notify_before_operation_return"
++    ) && report.terminal && report.ready && report.outcome == JoinChildOutcome::Completed
++    {
++        let records = collect_join_reader_records(case, &report).unwrap_or_else(|failure| {
++            panic!("DJC reader records rejected; evidence retained at {}: {failure}\n{}",
++                report.root.display(), report.details);
++        });
++        // Only qualified structured records survive accepted child cleanup.
++        // Nested libtest names/summaries stay in the owned raw output files.
++        for record in records {
++            eprintln!("{record}");
++        }
++    }
++    report.accept(JoinChildOutcome::Completed);
+ }
+ 
+ fn join_phase(started: Instant, phase: &str) {
+@@ -522,6 +539,318 @@
+     eprintln!("DJC phase=owner-returned; elapsed_ms={}; result_class={class}", started.elapsed().as_millis());
+ }
+ 
++// DJC-09 observes only the retained reader case and its two instrument controls.
++// All offsets share this child case's Instant origin; none are SQL durations.
++const JOIN_READER_TRACE_PREFIX: &str = "DJC_READER_TRACE ";
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
++#[serde(rename_all = "kebab-case")]
++enum JoinReaderSendOutcome { Sent, Disconnected }
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
++#[serde(rename_all = "kebab-case")]
++enum JoinReaderReceiveOutcome { Received, Timeout, Disconnected }
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
++#[serde(rename_all = "kebab-case")]
++enum JoinReaderTryOutcome { Empty, Received, Disconnected }
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
++#[serde(rename_all = "kebab-case")]
++enum JoinReaderResultClass { Payload, Miss, InternalError, OtherError }
++
++#[derive(Clone, serde::Serialize, serde::Deserialize)]
++#[serde(deny_unknown_fields)]
++struct JoinReaderCallRecord {
++    entered_ns: Option<u64>,
++    returned_ns: Option<u64>,
++    send_entered_ns: Option<u64>,
++    send_completed_ns: Option<u64>,
++    send_outcome: JoinReaderSendOutcome,
++    diagnostic_entered_ns: Option<u64>,
++    diagnostic_returned_ns: Option<u64>,
++    diagnostic_succeeded: bool,
++    result_class: JoinReaderResultClass,
++}
++
++#[derive(Clone, serde::Serialize, serde::Deserialize)]
++#[serde(deny_unknown_fields)]
++struct JoinReaderObservationRecord {
++    call: Option<JoinReaderCallRecord>,
++    wait_entered_ns: Option<u64>,
++    wait_returned_ns: Option<u64>,
++    wait_outcome: JoinReaderReceiveOutcome,
++    join_completed_ns: Option<u64>,
++    worker_returned: bool,
++}
++
++#[derive(serde::Serialize, serde::Deserialize)]
++#[serde(deny_unknown_fields)]
++struct JoinReaderReleaseRecord {
++    entered_ns: Option<u64>,
++    rollback_returned_ns: Option<u64>,
++    rollback_succeeded: bool,
++    close_entered_ns: Option<u64>,
++    close_returned_ns: Option<u64>,
++    close_succeeded: Option<bool>,
++}
++
++#[derive(serde::Serialize, serde::Deserialize)]
++#[serde(deny_unknown_fields)]
++struct JoinReaderDiagnosticControlRecord {
++    ready_returned_ns: Option<u64>,
++    ready_outcome: JoinReaderReceiveOutcome,
++    release_entered_ns: Option<u64>,
++    release_completed_ns: Option<u64>,
++    release_outcome: JoinReaderSendOutcome,
++}
++
++#[derive(serde::Serialize, serde::Deserialize)]
++#[serde(deny_unknown_fields)]
++struct JoinReaderOperationControlRecord {
++    ready_returned_ns: Option<u64>,
++    ready_outcome: JoinReaderReceiveOutcome,
++    check_entered_ns: Option<u64>,
++    check_returned_ns: Option<u64>,
++    before_release: JoinReaderTryOutcome,
++    release_entered_ns: Option<u64>,
++    release_completed_ns: Option<u64>,
++    release_outcome: JoinReaderSendOutcome,
++}
++
++#[derive(serde::Serialize, serde::Deserialize)]
++#[serde(rename_all = "kebab-case")]
++enum JoinReaderRecord {
++    Observation(JoinReaderObservationRecord),
++    ReaderRelease(JoinReaderReleaseRecord),
++    DiagnosticControl(JoinReaderDiagnosticControlRecord),
++    OperationControl(JoinReaderOperationControlRecord),
++}
++
++#[derive(serde::Serialize, serde::Deserialize)]
++#[serde(deny_unknown_fields)]
++struct JoinReaderTrace {
++    case: String,
++    invocation_nonce: String,
++    child_pid: u32,
++    mode: String,
++    instrument_control: bool,
++    clock: String,
++    record: JoinReaderRecord,
++}
++
++fn join_reader_offset(started: Instant, at: Instant) -> Option<u64> {
++    at.checked_duration_since(started).and_then(|elapsed| elapsed.as_nanos().try_into().ok())
++}
++
++fn join_reader_receive_outcome(result: &Result<(), mpsc::RecvTimeoutError>) -> JoinReaderReceiveOutcome {
++    match result {
++        Ok(()) => JoinReaderReceiveOutcome::Received,
++        Err(mpsc::RecvTimeoutError::Timeout) => JoinReaderReceiveOutcome::Timeout,
++        Err(mpsc::RecvTimeoutError::Disconnected) => JoinReaderReceiveOutcome::Disconnected,
++    }
++}
++
++fn join_reader_send_outcome(result: &Result<(), mpsc::SendError<()>>) -> JoinReaderSendOutcome {
++    if result.is_ok() { JoinReaderSendOutcome::Sent } else { JoinReaderSendOutcome::Disconnected }
++}
++
++fn observe_join_reader_call(
++    started: Instant,
++    completion: mpsc::Sender<()>,
++    operation: impl FnOnce() -> Result<Option<Value>, GatewayCommandError>,
++    diagnostic: impl FnOnce(&Result<Option<Value>, GatewayCommandError>) -> Result<(), &'static str>,
++) -> (Result<Option<Value>, GatewayCommandError>, JoinReaderCallRecord) {
++    let entered = Instant::now();
++    let result = operation();
++    let returned = Instant::now();
++    let send_entered = Instant::now();
++    let sent = completion.send(());
++    let send_completed = Instant::now();
++    // Nothing formats or logs between the operation return and notification.
++    let diagnostic_entered = Instant::now();
++    let diagnosed = diagnostic(&result);
++    let diagnostic_returned = Instant::now();
++    let result_class = match &result {
++        Ok(Some(_)) => JoinReaderResultClass::Payload,
++        Ok(None) => JoinReaderResultClass::Miss,
++        Err(GatewayCommandError::Internal(_)) => JoinReaderResultClass::InternalError,
++        Err(_) => JoinReaderResultClass::OtherError,
++    };
++    (result, JoinReaderCallRecord {
++        entered_ns: join_reader_offset(started, entered),
++        returned_ns: join_reader_offset(started, returned),
++        send_entered_ns: join_reader_offset(started, send_entered),
++        send_completed_ns: join_reader_offset(started, send_completed),
++        send_outcome: join_reader_send_outcome(&sent),
++        diagnostic_entered_ns: join_reader_offset(started, diagnostic_entered),
++        diagnostic_returned_ns: join_reader_offset(started, diagnostic_returned),
++        diagnostic_succeeded: diagnosed.is_ok(),
++        result_class,
++    })
++}
++
++fn emit_join_reader_record(case: &str, instrument_control: bool, record: JoinReaderRecord) {
++    let trace = JoinReaderTrace {
++        case: case.to_owned(),
++        invocation_nonce: std::env::var(JOIN_CHILD_TOKEN).expect("owned reader invocation nonce"),
++        child_pid: std::process::id(),
++        mode: std::env::var(JOIN_CHILD_MODE).expect("owned reader invocation mode"),
++        instrument_control,
++        clock: "child-case-start".to_owned(),
++        record,
++    };
++    eprintln!("{JOIN_READER_TRACE_PREFIX}{}", serde_json::to_string(&trace)
++        .expect("serialize credential-free reader boundary record"));
++}
++
++fn join_reader_ordered(values: &[Option<u64>]) -> bool {
++    let mut previous = None;
++    for value in values {
++        let Some(value) = *value else { return false; };
++        if previous.is_some_and(|previous| value < previous) {
++            return false;
++        }
++        previous = Some(value);
++    }
++    true
++}
++
++fn join_reader_boundaries_ordered(observation: &JoinReaderObservationRecord) -> bool {
++    let Some(call) = &observation.call else { return false; };
++    observation.worker_returned
++        && join_reader_ordered(&[
++            call.entered_ns, call.returned_ns, call.send_entered_ns, call.send_completed_ns,
++            call.diagnostic_entered_ns, call.diagnostic_returned_ns, observation.join_completed_ns,
++        ])
++        && join_reader_ordered(&[
++            observation.wait_entered_ns, observation.wait_returned_ns, observation.join_completed_ns,
++        ])
++        // A receiver can return before the sender resumes after send(). Do not
++        // impose a false send-completed-before-receive-returned ordering.
++        && (observation.wait_outcome != JoinReaderReceiveOutcome::Received
++            || (call.send_outcome == JoinReaderSendOutcome::Sent
++                && join_reader_ordered(&[call.send_entered_ns, observation.wait_returned_ns])))
++}
++
++fn join_reader_successful_observation(observation: &JoinReaderObservationRecord) -> bool {
++    join_reader_boundaries_ordered(observation)
++        && observation.wait_outcome == JoinReaderReceiveOutcome::Received
++        && observation.call.as_ref().is_some_and(|call|
++            call.send_outcome == JoinReaderSendOutcome::Sent && call.diagnostic_succeeded)
++}
++
++fn join_reader_diagnostic_control_ordered(
++    observation: &JoinReaderObservationRecord,
++    control: &JoinReaderDiagnosticControlRecord,
++) -> bool {
++    let Some(call) = &observation.call else { return false; };
++    join_reader_successful_observation(observation)
++        && call.result_class == JoinReaderResultClass::Miss
++        && control.ready_outcome == JoinReaderReceiveOutcome::Received
++        && control.release_outcome == JoinReaderSendOutcome::Sent
++        && join_reader_ordered(&[
++            call.diagnostic_entered_ns, control.ready_returned_ns,
++            observation.wait_entered_ns, observation.wait_returned_ns,
++            control.release_entered_ns, control.release_completed_ns, observation.join_completed_ns,
++        ])
++        && join_reader_ordered(&[control.release_entered_ns, call.diagnostic_returned_ns])
++}
++
++fn join_reader_operation_control_ordered(
++    observation: &JoinReaderObservationRecord,
++    control: &JoinReaderOperationControlRecord,
++) -> bool {
++    let Some(call) = &observation.call else { return false; };
++    join_reader_successful_observation(observation)
++        && call.result_class == JoinReaderResultClass::Miss
++        && control.ready_outcome == JoinReaderReceiveOutcome::Received
++        && control.before_release == JoinReaderTryOutcome::Empty
++        && control.release_outcome == JoinReaderSendOutcome::Sent
++        && join_reader_ordered(&[
++            call.entered_ns, control.ready_returned_ns,
++            control.check_entered_ns, control.check_returned_ns,
++            control.release_entered_ns, control.release_completed_ns,
++            observation.wait_entered_ns, observation.wait_returned_ns, observation.join_completed_ns,
++        ])
++        // The operation may return before the releasing sender resumes.
++        && join_reader_ordered(&[control.release_entered_ns, call.returned_ns])
++}
++
++fn collect_join_reader_records(case: &str, report: &JoinChildReport) -> Result<Vec<String>, String> {
++    if !report.terminal || !report.ready || report.outcome != JoinChildOutcome::Completed {
++        return Err("reader records require the same accepted terminal child receipt".into());
++    }
++    let ready = fs::read_to_string(report.root.join("ready"))
++        .map_err(|_| "read retained reader ready receipt")?;
++    let complete = fs::read_to_string(report.root.join("complete"))
++        .map_err(|_| "read retained reader completion receipt")?;
++    let identity = ready.split('\n').collect::<Vec<_>>();
++    if ready != complete || identity.len() != 5 || identity[0].is_empty()
++        || identity[2] != case || identity[3] != "actual" || !identity[4].is_empty()
++    {
++        return Err("reader records do not match the retained invocation receipts".into());
++    }
++    let pid: u32 = identity[1].parse().map_err(|_| "invalid retained reader child PID")?;
++    let instrument_control = case != "join_storage_commit_refusal_never_publishes_payload";
++    let stderr = fs::read_to_string(report.root.join("stderr"))
++        .map_err(|_| "read terminal reader child stderr")?;
++    let mut lines = Vec::new();
++    let mut records = Vec::new();
++    for line in stderr.lines() {
++        let Some(raw) = line.strip_prefix(JOIN_READER_TRACE_PREFIX) else {
++            if line.contains("DJC_READER_") {
++                return Err("malformed reader trace prefix".into());
++            }
++            continue;
++        };
++        // Derived records reject unknown and duplicate object fields; the
++        // required boundary values and outcomes are checked below.
++        let trace: JoinReaderTrace = serde_json::from_str(raw)
++            .map_err(|_| "malformed reader boundary record")?;
++        if trace.case != case || trace.invocation_nonce != identity[0] || trace.child_pid != pid
++            || trace.mode != "actual" || trace.instrument_control != instrument_control
++            || trace.clock != "child-case-start"
++        {
++            return Err("reader record identity or kind differs from its accepted child".into());
++        }
++        lines.push(line.to_owned());
++        records.push(trace.record);
++    }
++    if records.len() != 2 {
++        return Err("missing or duplicate reader boundary/control records".into());
++    }
++    let valid = match (case, &records[0], &records[1]) {
++        ("join_storage_commit_refusal_never_publishes_payload",
++            JoinReaderRecord::Observation(observation), JoinReaderRecord::ReaderRelease(release)) =>
++        {
++            join_reader_successful_observation(observation)
++                && observation.call.as_ref().is_some_and(|call|
++                    call.result_class == JoinReaderResultClass::InternalError)
++                && release.rollback_succeeded && release.close_succeeded == Some(true)
++                && join_reader_ordered(&[
++                    observation.join_completed_ns, release.entered_ns, release.rollback_returned_ns,
++                    release.close_entered_ns, release.close_returned_ns,
++                ])
++        }
++        ("join_reader_observation_notifies_before_diagnostic_release",
++            JoinReaderRecord::Observation(observation), JoinReaderRecord::DiagnosticControl(control)) =>
++        {
++            join_reader_diagnostic_control_ordered(observation, control)
++        }
++        ("join_reader_observation_cannot_notify_before_operation_return",
++            JoinReaderRecord::Observation(observation), JoinReaderRecord::OperationControl(control)) =>
++        {
++            join_reader_operation_control_ordered(observation, control)
++        }
++        _ => false,
++    };
++    if !valid {
++        return Err("mismatched or inconsistent reader boundary/control records".into());
++    }
++    Ok(lines)
++}
++
+ fn wait_for_uncommitted_write(
+     journal: &Path,
+     completion: &mpsc::Receiver<()>,
+@@ -588,8 +917,131 @@
+ }
+ 
+ #[test]
++fn join_reader_observation_notifies_before_diagnostic_release() {
++    isolated_join_case("join_reader_observation_notifies_before_diagnostic_release", |_root| {
++        const CASE: &str = "join_reader_observation_notifies_before_diagnostic_release";
++        let started = Instant::now();
++        thread::scope(|scope| {
++            let (sender, receiver) = mpsc::channel();
++            let (diagnostic_entered, diagnostic_ready) = mpsc::channel();
++            let (release_diagnostic, diagnostic_release) = mpsc::channel();
++            let worker = scope.spawn(move || observe_join_reader_call(
++                started, sender, || Ok(None), move |_| {
++                    diagnostic_entered.send(()).map_err(|_| "diagnostic readiness disconnected")?;
++                    diagnostic_release.recv_timeout(Duration::from_secs(8))
++                        .map_err(|_| "bounded diagnostic release failed")
++                },
++            ));
++            let ready = diagnostic_ready.recv_timeout(Duration::from_secs(8));
++            let ready_returned = Instant::now();
++            let wait_entered = Instant::now();
++            let waited = receiver.recv_timeout(Duration::from_secs(8));
++            let wait_returned = Instant::now();
++            // Always release/drop the gate and join before any assertion. A
++            // failed observation cannot strand the bounded diagnostic receiver.
++            let release_entered = Instant::now();
++            let released = release_diagnostic.send(());
++            let release_completed = Instant::now();
++            drop(release_diagnostic);
++            let joined = worker.join();
++            let join_completed = Instant::now();
++            let observation = JoinReaderObservationRecord {
++                call: joined.as_ref().ok().map(|(_, call)| call.clone()),
++                wait_entered_ns: join_reader_offset(started, wait_entered),
++                wait_returned_ns: join_reader_offset(started, wait_returned),
++                wait_outcome: join_reader_receive_outcome(&waited),
++                join_completed_ns: join_reader_offset(started, join_completed),
++                worker_returned: joined.is_ok(),
++            };
++            let control = JoinReaderDiagnosticControlRecord {
++                ready_returned_ns: join_reader_offset(started, ready_returned),
++                ready_outcome: join_reader_receive_outcome(&ready),
++                release_entered_ns: join_reader_offset(started, release_entered),
++                release_completed_ns: join_reader_offset(started, release_completed),
++                release_outcome: join_reader_send_outcome(&released),
++            };
++            let ordered = join_reader_diagnostic_control_ordered(&observation, &control);
++            emit_join_reader_record(CASE, true, JoinReaderRecord::Observation(observation));
++            emit_join_reader_record(CASE, true, JoinReaderRecord::DiagnosticControl(control));
++            let (result, _) = joined.expect("join bounded diagnostic observation control");
++            assert!(matches!(result, Ok(None)), "observation control must return its sentinel");
++            assert!(ordered, "completion must arrive while post-return diagnostics remain unreleased");
++        });
++    });
++}
++
++#[test]
++fn join_reader_observation_cannot_notify_before_operation_return() {
++    isolated_join_case("join_reader_observation_cannot_notify_before_operation_return", |_root| {
++        const CASE: &str = "join_reader_observation_cannot_notify_before_operation_return";
++        let started = Instant::now();
++        thread::scope(|scope| {
++            let (sender, receiver) = mpsc::channel();
++            let (operation_entered, operation_ready) = mpsc::channel();
++            let (release_operation, operation_release) = mpsc::channel();
++            let worker = scope.spawn(move || observe_join_reader_call(
++                started, sender, move || {
++                    operation_entered.send(()).map_err(|_| GatewayCommandError::Internal(
++                        "observation control operation readiness disconnected".into(),
++                    ))?;
++                    operation_release.recv_timeout(Duration::from_secs(8)).map_err(|_| GatewayCommandError::Internal(
++                        "bounded observation control operation release failed".into(),
++                    ))?;
++                    Ok(None)
++                }, |_| Ok(()),
++            ));
++            let ready = operation_ready.recv_timeout(Duration::from_secs(8));
++            let ready_returned = Instant::now();
++            let check_entered = Instant::now();
++            let before_release = receiver.try_recv();
++            let check_returned = Instant::now();
++            // No assertion precedes release and retirement, even if an invalid
++            // early notification was consumed by the negative observation.
++            let release_entered = Instant::now();
++            let released = release_operation.send(());
++            let release_completed = Instant::now();
++            drop(release_operation);
++            let wait_entered = Instant::now();
++            let waited = receiver.recv_timeout(Duration::from_secs(8));
++            let wait_returned = Instant::now();
++            let joined = worker.join();
++            let join_completed = Instant::now();
++            let observation = JoinReaderObservationRecord {
++                call: joined.as_ref().ok().map(|(_, call)| call.clone()),
++                wait_entered_ns: join_reader_offset(started, wait_entered),
++                wait_returned_ns: join_reader_offset(started, wait_returned),
++                wait_outcome: join_reader_receive_outcome(&waited),
++                join_completed_ns: join_reader_offset(started, join_completed),
++                worker_returned: joined.is_ok(),
++            };
++            let control = JoinReaderOperationControlRecord {
++                ready_returned_ns: join_reader_offset(started, ready_returned),
++                ready_outcome: join_reader_receive_outcome(&ready),
++                check_entered_ns: join_reader_offset(started, check_entered),
++                check_returned_ns: join_reader_offset(started, check_returned),
++                before_release: match before_release {
++                    Err(mpsc::TryRecvError::Empty) => JoinReaderTryOutcome::Empty,
++                    Ok(()) => JoinReaderTryOutcome::Received,
++                    Err(mpsc::TryRecvError::Disconnected) => JoinReaderTryOutcome::Disconnected,
++                },
++                release_entered_ns: join_reader_offset(started, release_entered),
++                release_completed_ns: join_reader_offset(started, release_completed),
++                release_outcome: join_reader_send_outcome(&released),
++            };
++            let ordered = join_reader_operation_control_ordered(&observation, &control);
++            emit_join_reader_record(CASE, true, JoinReaderRecord::Observation(observation));
++            emit_join_reader_record(CASE, true, JoinReaderRecord::OperationControl(control));
++            let (result, _) = joined.expect("join bounded operation observation control");
++            assert!(matches!(result, Ok(None)), "released observation control must return its sentinel");
++            assert!(ordered, "an operation held before return cannot notify completion");
++        });
++    });
++}
++
++#[test]
+ fn join_storage_commit_refusal_never_publishes_payload() {
+     isolated_join_case("join_storage_commit_refusal_never_publishes_payload", |root| {
++        const CASE: &str = "join_storage_commit_refusal_never_publishes_payload";
+         let started = Instant::now();
+         let mut fixture = Fixture::in_owned_root(root.join("commit-refusal"));
+         let code = fixture.register(&payload());
+@@ -609,10 +1061,13 @@
+             let code = &code;
+             let worker = scope.spawn(move || {
+                 join_phase(started, "owner-call-started");
+-                let result = owner.redeem_device_pairing_join_code(code);
+-                join_result_phase(started, &result);
+-                let _ = sender.send(());
+-                result
++                observe_join_reader_call(started, sender,
++                    || owner.redeem_device_pairing_join_code(code),
++                    |result| {
++                        join_result_phase(started, result);
++                        Ok(())
++                    },
++                )
+             });
+             match wait_for_uncommitted_write(&journal, &receiver) {
+                 Ok(()) => join_phase(started, "journaled-write-observed"),
+@@ -621,7 +1076,10 @@
+                     observation_failures.push(failure);
+                 }
+             }
+-            match receiver.recv_timeout(Duration::from_secs(8)) {
++            let wait_entered = Instant::now();
++            let waited = receiver.recv_timeout(Duration::from_secs(8));
++            let wait_returned = Instant::now();
++            match &waited {
+                 Ok(()) => join_phase(started, "completion-notification-received"),
+                 Err(mpsc::RecvTimeoutError::Timeout) => {
+                     join_phase(started, "original-8s-observation-expired");
+@@ -634,7 +1092,28 @@
+             }
+             // Joining does not release the reader fence. The parent process
+             // owns the 120s diagnostic deadline and 5s stop/reap boundary.
+-            worker.join().expect("join the owned actual redemption worker")
++            let joined = worker.join();
++            let join_completed = Instant::now();
++            let observation = JoinReaderObservationRecord {
++                call: joined.as_ref().ok().map(|(_, call)| call.clone()),
++                wait_entered_ns: join_reader_offset(started, wait_entered),
++                wait_returned_ns: join_reader_offset(started, wait_returned),
++                wait_outcome: join_reader_receive_outcome(&waited),
++                join_completed_ns: join_reader_offset(started, join_completed),
++                worker_returned: joined.is_ok(),
++            };
++            emit_join_reader_record(CASE, false, JoinReaderRecord::Observation(observation.clone()));
++            let (result, call) = joined.expect("join the owned actual redemption worker");
++            if !join_reader_boundaries_ordered(&observation) {
++                observation_failures.push("missing or inconsistent reader completion boundaries");
++            }
++            if call.send_outcome != JoinReaderSendOutcome::Sent {
++                observation_failures.push("owner completion send disconnected");
++            }
++            if !call.diagnostic_succeeded {
++                observation_failures.push("owner post-return diagnostic failed");
++            }
++            result
+         });
+         let error = match refusal {
+             Err(error) => error,
+@@ -643,8 +1122,30 @@
+         };
+         assert_storage_error(error, &code);
+         join_phase(started, "storage-error-status-and-redaction-checked");
+-        blocker.execute_batch("ROLLBACK").expect("release only fixture's read fence");
+-        blocker.close().expect("close fixture reader");
++        let release_entered = Instant::now();
++        let rolled_back = blocker.execute_batch("ROLLBACK");
++        let rollback_returned = Instant::now();
++        if rolled_back.is_err() {
++            emit_join_reader_record(CASE, false, JoinReaderRecord::ReaderRelease(JoinReaderReleaseRecord {
++                entered_ns: join_reader_offset(started, release_entered),
++                rollback_returned_ns: join_reader_offset(started, rollback_returned),
++                rollback_succeeded: false,
++                close_entered_ns: None, close_returned_ns: None, close_succeeded: None,
++            }));
++        }
++        rolled_back.expect("release only fixture's read fence");
++        let close_entered = Instant::now();
++        let closed = blocker.close();
++        let close_returned = Instant::now();
++        emit_join_reader_record(CASE, false, JoinReaderRecord::ReaderRelease(JoinReaderReleaseRecord {
++            entered_ns: join_reader_offset(started, release_entered),
++            rollback_returned_ns: join_reader_offset(started, rollback_returned),
++            rollback_succeeded: true,
++            close_entered_ns: join_reader_offset(started, close_entered),
++            close_returned_ns: join_reader_offset(started, close_returned),
++            close_succeeded: Some(closed.is_ok()),
++        }));
++        closed.expect("close fixture reader");
+         join_phase(started, "reader-fence-explicitly-released");
+         assert_eq!(fixture.observe(&code), before, "known refused commit rolled back its marker");
+         join_phase(started, "refused-row-preservation-checked");
+
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index dc247fba2ad33dac654de6205d273f71fe7fd8da..0a53c7f781189b145e67b2c64b56d8dd9f3ac34a 100644
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -1,6 +1,6 @@
+ import hashlib, json, os, pathlib, re, subprocess
+ validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
+-if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle"):
++if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation"):
+     raise ValueError("Unknown portable contract scope")
+ root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
+     else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
+@@ -401,7 +401,22 @@
+     "source/host/tests/memory_extension_contract.rs",
+     "source/host/src/workflows/workflow_store.rs"
+ ]
+-inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs))
++djc_reader_observation_inputs = [
++    "projects/openclaw-rust/upstream.lock.json",
++    "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
++    "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++    ".github/workflows/rust-desktop-runtime.yml",
++    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
++    "source/host/Cargo.toml",
++    "source/host/Cargo.lock",
++    "source/host/src/device_pairing_owner.rs",
++    "source/host/src/gateway_command_error.rs",
++    "source/host/src/gateway_server.rs",
++    "source/host/src/host_gateway_api.rs",
++    "source/host/app/src/main.rs",
++    "source/host/tests/device_pairing_join_admission_contract.rs"
++]
++inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs) | set(djc_reader_observation_inputs))
+ base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
+ integration = base + ["--no-fail-fast"]
+ for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
+@@ -980,6 +995,8 @@
+         "join_concurrent_file_owners_publish_one_payload",
+         "join_gateway_reports_storage_failure_and_preserves_public_recovery",
+         "join_deferred_commit_refusal_is_qualified_and_preserves_recovery",
++        "join_reader_observation_notifies_before_diagnostic_release",
++        "join_reader_observation_cannot_notify_before_operation_return",
+     ]),
+     ('device-join-limit-state', base + ['--lib', 'gateway_server::join_rate_limit_tests::', '--', '--test-threads=1'], [
+         'gateway_server::join_rate_limit_tests::join_limit_defaults_window_lockout_and_retry_boundaries',
+@@ -1817,13 +1834,43 @@
+     "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
+ )
+ djc_qualified_name = "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
++djc_reader_observation_names = (
++    "join_storage_commit_refusal_never_publishes_payload",
++    "join_reader_observation_notifies_before_diagnostic_release",
++    "join_reader_observation_cannot_notify_before_operation_return",
++)
++djc_reader_observation_cases = [
++    ("djc-reader-observation-" + suffix,
++        base + ["--test", "device_pairing_join_admission_contract", name,
++            "--", "--exact", "--test-threads=1", "--show-output"], [name])
++    for suffix, name in zip(("owner", "diagnostic-control", "operation-control"),
++        djc_reader_observation_names)
++]
++djc_reader_observation_labels = {label for label, _, _ in djc_reader_observation_cases}
++djc_reader_parent_contract = next(
++    (tuple(command), tuple(required)) for label, command, required in full_cases
++    if label == "device-pairing-join")
++
+ 
+ def select_portable_cases(scope, declared):
+-    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle"):
++    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation"):
+         raise ValueError("Unknown portable contract scope")
+     indexed = {label: (label, command, required) for label, command, required in declared}
+     if len(indexed) != len(declared):
+         raise ValueError("Duplicate portable case label")
++    if scope == "djc-reader-observation":
++        if "device-pairing-join" not in indexed:
++            raise ValueError("DJC reader observation lost its complete parent target")
++        _, command, required = indexed["device-pairing-join"]
++        if ((tuple(command), tuple(required)) != djc_reader_parent_contract
++            or len(required) != 11 or len(set(required)) != 11
++            or any(required.count(name) != 1 for name in djc_reader_observation_names)):
++            raise ValueError("DJC reader parent command or names drifted")
++        if (len(djc_reader_observation_cases) != 3
++            or len(djc_reader_observation_labels) != 3):
++            raise ValueError("DJC reader observation requires three distinct exact commands")
++        return [(label, list(command), list(required))
++            for label, command, required in djc_reader_observation_cases]
+     if scope in ("memory-checked-list", "memory-fixture-lifecycle"):
+         selected = (memory_fixture_lifecycle_plan(memory_checked_list_native_platform)
+             if scope == "memory-fixture-lifecycle"
+@@ -2068,13 +2115,41 @@
+ 
+ for selected_scope, expected in [("full", True), ("custody-recovery", True),
+     ("background-custody", True), ("background-custody-recovery", True),
+-    ("memory-checked-list", False), ("memory-fixture-lifecycle", False)]:
++    ("memory-checked-list", False), ("memory-fixture-lifecycle", False),
++    ("djc-reader-observation", False)]:
+     actual = any(label.startswith("box-response-")
+         for label, _, _ in select_portable_cases(selected_scope, full_cases))
+     selection_controls.append({"case": "box-producer-required-" + selected_scope,
+         "expected": expected, "actual": actual})
+     assert actual == expected, "Selected scope changed the Box producer compilation boundary"
+ 
++djc_reader_selection_controls = []
++djc_reader_variants = [
++    ("qualified-reader-plan", full_cases, True),
++    ("duplicate-parent-label", full_cases + [full_cases[0]], False),
++    ("missing-reader-parent", [case for case in full_cases if case[0] != "device-pairing-join"], False),
++    ("changed-reader-command", [(label, command + ["--foreign"], required)
++        if label == "device-pairing-join" else (label, command, required)
++        for label, command, required in full_cases], False),
++]
++for name in djc_reader_parent_contract[1]:
++    djc_reader_variants.extend([
++        ("missing-positive:" + name, [(label, command, [item for item in required if item != name])
++            if label == "device-pairing-join" else (label, command, required)
++            for label, command, required in full_cases], False),
++        ("duplicate-positive:" + name, [(label, command, required + [name])
++            if label == "device-pairing-join" else (label, command, required)
++            for label, command, required in full_cases], False),
++    ])
++for control, declared, expected in djc_reader_variants:
++    try:
++        selected = select_portable_cases("djc-reader-observation", declared)
++        actual = selected == djc_reader_observation_cases
++    except ValueError:
++        actual = False
++    djc_reader_selection_controls.append({"case": control, "expected": expected, "actual": actual})
++    assert actual == expected, f"DJC reader selection oracle failed: {control}"
++
+ cases = select_portable_cases(validation_scope, full_cases)
+ box_producer_required = any(label.startswith("box-response-") for label, _, _ in cases)
+ 
+@@ -2203,6 +2278,152 @@
+     selected_result_controls.append({"case": control, "expected": expected, "actual": actual})
+     assert actual == expected, f"CRF result oracle failed: {control}"
+ 
++
++# The Rust child qualifies every boundary against its actual invocation receipt.
++# Recheck the transported records as data before accepting a successful command.
++def djc_reader_unique_object(pairs):
++    result = {}
++    for key, value in pairs:
++        if key in result:
++            raise ValueError("duplicate DJC trace JSON field")
++        result[key] = value
++    return result
++
++def djc_reader_trace_records(output):
++    records, errors = [], []
++    for line in output.replace("\r\n", "\n").splitlines():
++        if line.startswith("DJC_READER_TRACE "):
++            try:
++                records.append(json.loads(line[len("DJC_READER_TRACE "):],
++                    object_pairs_hook=djc_reader_unique_object))
++            except ValueError:
++                errors.append("malformed-or-duplicated-json")
++        elif "DJC_READER_TRACE" in line:
++            errors.append("malformed-trace-prefix")
++    return records, errors
++
++def djc_reader_trace_accepted(name, records, errors):
++    if errors or name not in djc_reader_observation_names or len(records) != 2:
++        return False
++    envelope = {"case", "invocation_nonce", "child_pid", "mode", "instrument_control", "clock", "record"}
++    expected_kind = dict(zip(djc_reader_observation_names,
++        ("reader-release", "diagnostic-control", "operation-control")))[name]
++    control = name != djc_reader_observation_names[0]
++    for row in records:
++        if (not isinstance(row, dict) or set(row) != envelope or row["case"] != name
++            or not isinstance(row["invocation_nonce"], str) or not row["invocation_nonce"]
++            or type(row["child_pid"]) is not int or row["child_pid"] <= 0
++            or row["mode"] != "actual" or row["instrument_control"] is not control
++            or row["clock"] != "child-case-start" or not isinstance(row["record"], dict)):
++            return False
++    if any(records[0][key] != records[1][key] for key in envelope - {"record"}):
++        return False
++    if set(records[0]["record"]) != {"observation"} or set(records[1]["record"]) != {expected_kind}:
++        return False
++    observation, secondary = records[0]["record"]["observation"], records[1]["record"][expected_kind]
++    if (not isinstance(observation, dict)
++        or set(observation) != {"call", "wait_entered_ns", "wait_returned_ns", "wait_outcome", "join_completed_ns", "worker_returned"}
++        or not isinstance(observation["call"], dict) or not isinstance(secondary, dict)):
++        return False
++    call = observation["call"]
++    if (set(call) != {"entered_ns", "returned_ns", "send_entered_ns", "send_completed_ns", "send_outcome",
++            "diagnostic_entered_ns", "diagnostic_returned_ns", "diagnostic_succeeded", "result_class"}
++        or observation["worker_returned"] is not True or observation["wait_outcome"] != "received"
++        or call["send_outcome"] != "sent" or call["diagnostic_succeeded"] is not True
++        or call["result_class"] != ("miss" if control else "internal-error")):
++        return False
++    def ordered(*values):
++        return all(type(value) is int and value >= 0 for value in values) and list(values) == sorted(values)
++    if (not ordered(call["entered_ns"], call["returned_ns"], call["send_entered_ns"],
++            call["send_completed_ns"], call["diagnostic_entered_ns"],
++            call["diagnostic_returned_ns"], observation["join_completed_ns"])
++        or not ordered(observation["wait_entered_ns"], observation["wait_returned_ns"], observation["join_completed_ns"])
++        or not ordered(call["send_entered_ns"], observation["wait_returned_ns"])):
++        return False
++    if expected_kind == "reader-release":
++        return (set(secondary) == {"entered_ns", "rollback_returned_ns", "rollback_succeeded",
++                "close_entered_ns", "close_returned_ns", "close_succeeded"}
++            and secondary["rollback_succeeded"] is True and secondary["close_succeeded"] is True
++            and ordered(observation["join_completed_ns"], secondary["entered_ns"],
++                secondary["rollback_returned_ns"], secondary["close_entered_ns"], secondary["close_returned_ns"]))
++    if expected_kind == "diagnostic-control":
++        return (set(secondary) == {"ready_returned_ns", "ready_outcome", "release_entered_ns", "release_completed_ns", "release_outcome"}
++            and secondary["ready_outcome"] == "received" and secondary["release_outcome"] == "sent"
++            and ordered(call["diagnostic_entered_ns"], secondary["ready_returned_ns"],
++                observation["wait_entered_ns"], observation["wait_returned_ns"], secondary["release_entered_ns"],
++                secondary["release_completed_ns"], observation["join_completed_ns"])
++            and ordered(secondary["release_entered_ns"], call["diagnostic_returned_ns"]))
++    return (set(secondary) == {"ready_returned_ns", "ready_outcome", "check_entered_ns", "check_returned_ns",
++            "before_release", "release_entered_ns", "release_completed_ns", "release_outcome"}
++        and secondary["ready_outcome"] == "received" and secondary["before_release"] == "empty"
++        and secondary["release_outcome"] == "sent"
++        and ordered(call["entered_ns"], secondary["ready_returned_ns"], secondary["check_entered_ns"],
++            secondary["check_returned_ns"], secondary["release_entered_ns"], secondary["release_completed_ns"],
++            observation["wait_entered_ns"], observation["wait_returned_ns"], observation["join_completed_ns"])
++        and ordered(secondary["release_entered_ns"], call["returned_ns"]))
++
++# These synthetic data controls qualify capture, never product/SQLite behavior.
++djc_reader_trace_controls = []
++for index, name in enumerate(djc_reader_observation_names):
++    call = dict(entered_ns=1, returned_ns=2, send_entered_ns=3, send_completed_ns=4,
++        send_outcome="sent", diagnostic_entered_ns=5, diagnostic_returned_ns=6,
++        diagnostic_succeeded=True, result_class="internal-error" if index == 0 else "miss")
++    observation = dict(call=call, wait_entered_ns=0, wait_returned_ns=7,
++        wait_outcome="received", join_completed_ns=8, worker_returned=True)
++    if index == 0:
++        kind = "reader-release"
++        secondary = dict(entered_ns=9, rollback_returned_ns=10, rollback_succeeded=True,
++            close_entered_ns=11, close_returned_ns=12, close_succeeded=True)
++    elif index == 1:
++        kind = "diagnostic-control"
++        call["diagnostic_returned_ns"] = 11
++        observation.update(wait_entered_ns=7, wait_returned_ns=9, join_completed_ns=14)
++        secondary = dict(ready_returned_ns=6, ready_outcome="received",
++            release_entered_ns=10, release_completed_ns=12, release_outcome="sent")
++    else:
++        kind = "operation-control"
++        call.update(returned_ns=8, send_entered_ns=9, send_completed_ns=10,
++            diagnostic_entered_ns=11, diagnostic_returned_ns=13)
++        observation.update(wait_entered_ns=7, wait_returned_ns=12, join_completed_ns=15)
++        secondary = dict(ready_returned_ns=2, ready_outcome="received", check_entered_ns=3,
++            check_returned_ns=4, before_release="empty", release_entered_ns=5,
++            release_completed_ns=6, release_outcome="sent")
++    rows = [dict(case=name, invocation_nonce="instrument-only-nonce", child_pid=1,
++        mode="actual", instrument_control=index != 0, clock="child-case-start", record=record)
++        for record in ({"observation": observation}, {kind: secondary})]
++    encode = lambda values: "".join("DJC_READER_TRACE " + json.dumps(row) + "\n" for row in values)
++    variants = [("qualified-" + kind, encode(rows), True),
++        ("missing-" + kind, encode(rows[:1]), False),
++        ("duplicate-" + kind, encode(rows + rows[1:]), False)]
++    changed = json.loads(json.dumps(rows))
++    changed[1]["child_pid"] += 1
++    variants.append(("mismatched-child-" + kind, encode(changed), False))
++    changed = json.loads(json.dumps(rows))
++    changed[0]["record"]["observation"]["call"]["returned_ns"] = None
++    variants.append(("missing-boundary-" + kind, encode(changed), False))
++    changed = json.loads(json.dumps(rows))
++    changed[0]["record"]["observation"]["wait_outcome"] = "timeout"
++    variants.append(("failed-observation-" + kind, encode(changed), False))
++    changed = json.loads(json.dumps(rows))
++    changed[0]["record"]["observation"]["call"]["returned_ns"] = 100
++    variants.append(("invalid-order-" + kind, encode(changed), False))
++    changed = json.loads(json.dumps(rows))
++    changed[0]["record"]["observation"]["call"]["entered_ns"] = True
++    variants.append(("boolean-boundary-" + kind, encode(changed), False))
++    changed = json.loads(json.dumps(rows))
++    changed[0]["foreign"] = True
++    variants.append(("unknown-field-" + kind, encode(changed), False))
++    duplicate_json = encode(rows).replace('"case":', '"case": "foreign", "case":', 1)
++    variants.append(("duplicate-json-field-" + kind, duplicate_json, False))
++    variants.append(("foreign-case-" + kind, encode(rows).replace(name, "foreign::case"), False))
++    variants.append(("malformed-prefix-" + kind, encode(rows).replace("DJC_READER_TRACE ", "xDJC_READER_TRACE ", 1), False))
++    for control_name, output, expected in variants:
++        records, errors = djc_reader_trace_records(output)
++        actual = djc_reader_trace_accepted(name, records, errors)
++        djc_reader_trace_controls.append({"case": control_name, "expected": expected, "actual": actual})
++        assert actual == expected, f"DJC reader transport oracle failed: {control_name}"
++
++
+ box_daemon_lock = pathlib.Path("source/box-exec-daemon/Cargo.lock")
+ box_daemon_lock_tracked = subprocess.run(
+     ["git", "cat-file", "-e", f"{head}:source/box-exec-daemon/Cargo.lock"],
+@@ -2284,7 +2505,15 @@
+ memory_checked_list_inputs_before = source_bindings(memory_checked_list_inputs)
+ assert all(item["matches_head_bytes"] for item in memory_checked_list_inputs_before.values()), "MGL source input differs from exact H"
+ 
++djc_reader_inputs_before = source_bindings(djc_reader_observation_inputs)
++assert all(item["matches_head_bytes"] for item in djc_reader_inputs_before.values()), "DJC reader source input differs from exact H"
++
+ receipt = {
++    "djc_reader_observation_contract": "DJC-09",
++    "djc_reader_observation_selected_here": validation_scope == "djc-reader-observation",
++    "djc_reader_selection_controls": djc_reader_selection_controls,
++    "djc_reader_trace_controls": djc_reader_trace_controls,
++    "djc_reader_inputs_before": djc_reader_inputs_before,
+     "native_source_identity_controls": native_source_identity_controls,
+     "memory_checked_list_contract": "MGL-v1/MGS-native-components",
+     "memory_checked_list_native_platform": memory_checked_list_native_platform,
+@@ -2313,7 +2542,7 @@
+         "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+         "run": "41618863245", "attempt": 1, "job": "125859112570",
+         "state": "historical-eight-second-observation-failed; unchanged assertion retained",
+-        "selected_here": validation_scope == "full",
++        "selected_here": validation_scope in ("full", "djc-reader-observation"),
+         "qualification": "DJC-07 success does not resolve this lock timing failure",
+     }],
+     "plugin_admission_lock_contract": "PS-LOCK-RECONCILE-v2",
+@@ -2425,10 +2654,32 @@
+         "reason": "Only two test fixtures changed. Refresh their exact target graphs; retained production compilation is historical, not a new shipping result.",
+     }
+ 
++if validation_scope == "djc-reader-observation":
++    receipt["scope"] = ("DJC-09 reader observation only: three exact cases, original 8s assertion, "
++        "real public file owner and two deterministic observation-order controls. "
++        "Child records are qualified and forwarded under the same actual invocation receipts; "
++        "call/notification/receive boundaries are not private SQL durations or latency guarantees. "
++        "Original H6d8/e383 failures and the other eight historical positives remain under their subjects; "
++        "this receipt does not execute or accept the complete target, shipping App or real devices.")
++    receipt["djc_reader_required_names"] = list(djc_reader_observation_names)
++    receipt["djc_reader_original_full_target_count"] = 11
++    receipt["djc_reader_retained_failed_subject"] = {
++        "subject_commit": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
++        "run_id": "41642220354", "run_attempt": 1, "job_id": "125938337174",
++        "result": "8-passed-1-failed; historical original observation remains failed",
++        "assessment": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++    }
++    receipt["shipping_host_verification"] = {
++        "result": "not-executed", "accepted": False,
++        "reason": "Only the retained reader fixture/observation instrument changes; compile its exact integration target.",
++    }
++
+ # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
+ # the complete Host test graph once; this is a compile gate, not test evidence.
+ constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
+-if validation_scope == "memory-fixture-lifecycle":
++if validation_scope == "djc-reader-observation":
++    constructor_command = constructor_command[:-1] + ["--test", "device_pairing_join_admission_contract"]
++elif validation_scope == "memory-fixture-lifecycle":
+     constructor_command = constructor_command[:-1]
+     for _, command, _ in cases:
+         constructor_command.extend(["--test", command[command.index("--test") + 1]])
+@@ -2708,6 +2959,15 @@
+         complete_counts = [tuple(map(int, count)) for count in re.findall(
+             r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
+             text, re.MULTILINE)]
++    djc_trace_records, djc_trace_errors, djc_trace_accepted = [], [], None
++    if label in djc_reader_observation_labels:
++        djc_trace_records, djc_trace_errors = djc_reader_trace_records(text)
++        djc_trace_accepted = djc_reader_trace_accepted(required[0], djc_trace_records, djc_trace_errors)
++        accepted = (exact_target_results_accepted(cargo_exit, capture_exit, required, text, True)
++            and djc_trace_accepted)
++        complete_counts = [tuple(map(int, count)) for count in re.findall(
++            r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
++            text, re.MULTILINE)]
+     if label.startswith("box-response-"):
+         accepted = box_response_results_accepted(label, cargo_exit, capture_exit, required, text)
+         complete_counts = [tuple(map(int, count)) for count in re.findall(
+@@ -2716,6 +2976,9 @@
+     receipt["executions"].append({
+         "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,
+         "child_environment_overrides": child_environment_overrides,
++        "djc_reader_trace_records": djc_trace_records,
++        "djc_reader_trace_errors": djc_trace_errors,
++        "djc_reader_trace_accepted": djc_trace_accepted,
+         "observed_raw_passed_test_names": raw_passed,
+         "execution_error": execution_error, "required_positive_names": required,
+         "missing_or_nonunique_positive_results": missing, "observed_passed_test_names": passed,
+@@ -2775,7 +3038,13 @@
+     and all(item["matches_head_bytes"] for item in memory_checked_list_inputs_after.values()))
+ receipt["memory_checked_list_inputs_after"] = memory_checked_list_inputs_after
+ receipt["memory_checked_list_sources_unchanged"] = memory_checked_list_sources_unchanged
+-accepted = ((palette_exported if palette_required else True) and len(receipt["executions"]) == len(cases)
++djc_reader_inputs_after = source_bindings(djc_reader_observation_inputs)
++djc_reader_sources_unchanged = (djc_reader_inputs_after == djc_reader_inputs_before
++    and all(item["matches_head_bytes"] for item in djc_reader_inputs_after.values()))
++receipt["djc_reader_inputs_after"] = djc_reader_inputs_after
++receipt["djc_reader_sources_unchanged"] = djc_reader_sources_unchanged
++accepted = (djc_reader_sources_unchanged
++    and (palette_exported if palette_required else True) and len(receipt["executions"]) == len(cases)
+     and all(case["oracle_accepted"] for case in receipt["executions"])
+     and box_response_sources_unchanged and (not box_producer_required or (daemon_unchanged and capture_unchanged))
+     and memory_checked_list_sources_unchanged and local_exec_outcome_sources_unchanged
+
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 7afb89051bed8f84df5465a7771f289510de257a..d72e5591ecb27a29439e55d778ada74a343279bc 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -22,6 +22,7 @@
+           - ocrm-memory-checked-list
+           - ocrm-memory-native-binding
+           - ocrm-memory-fixture-lifecycle
++          - ocrm-djc-reader-observation
+           - ocrm-local-exec-runtime
+           - ocrm-local-exec-capture
+   push:
+@@ -82,7 +83,7 @@
+ 
+ jobs:
+   rust-host:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: macos-15
+     timeout-minutes: 90
+     steps:
+@@ -1468,6 +1469,8 @@
+               "join_concurrent_file_owners_publish_one_payload",
+               "join_gateway_reports_storage_failure_and_preserves_public_recovery",
+               "join_deferred_commit_refusal_is_qualified_and_preserves_recovery",
++              "join_reader_observation_notifies_before_diagnostic_release",
++              "join_reader_observation_cannot_notify_before_operation_return",
+           ]
+           passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
+           missing = [name for name in required if passed.count(name) != 1]
+@@ -3020,7 +3023,7 @@
+           retention-days: 90
+ 
+   config-restore-linux:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: OCRM installation key restore boundary / Linux
+     runs-on: ubuntu-24.04
+     timeout-minutes: 45
+@@ -3181,7 +3184,7 @@
+           retention-days: 90
+ 
+   sqlite-native-path:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: ubuntu-24.04
+     # LDB adds two native domains and normal Host/Coordinator builds; existing
+     # product observation deadlines and failure assertions remain unchanged.
+@@ -4483,7 +4486,7 @@
+           retention-days: 90
+ 
+   media-store-windows:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: OCRM media cleanup / Windows
+     runs-on: windows-2025
+     timeout-minutes: 45
+@@ -4530,7 +4533,7 @@
+           retention-days: 90
+ 
+   pressure-profiler-platform:
+-    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: Pressure profiler / ${{ matrix.os }}
+     runs-on: ${{ matrix.os }}
+     timeout-minutes: 45
+@@ -4586,7 +4589,7 @@
+           -- --exact --nocapture
+ 
+   platform-worker:
+-    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 45
+     steps:
+@@ -4626,7 +4629,7 @@
+         run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+ 
+   renderer:
+-    if: ${{ !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):'))) }}
++    if: ${{ !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):'))) }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 30
+     env:
+@@ -5554,7 +5557,7 @@
+ 
+ 
+   custody-recovery:
+-    if: ${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) }}
++    if: ${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) }}
+     name: OCRM selected native contracts / ${{ matrix.os }}
+     runs-on: ${{ matrix.os }}
+     timeout-minutes: 60
+@@ -5568,9 +5571,9 @@
+       CARGO_PROFILE_DEV_DEBUG: '0'
+       CARGO_PROFILE_TEST_DEBUG: '0'
+       CARGO_INCREMENTAL: '0'
+-      OCRM_PORTABLE_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}
+-      OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/unselected-palette.json
+-      TMPDIR: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/owned-tmp
++      OCRM_PORTABLE_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}
++      OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/unselected-palette.json
++      TMPDIR: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/owned-tmp
+       PYTHONUTF8: '1'
+     steps:
+       - name: Preserve exact tracked bytes on the disposable Windows runner
+@@ -5615,7 +5618,7 @@
+           sudo apt-get update
+           sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+       - name: Compile the exact shipping Host for the selected recovery
+-        if: ${{ runner.os != 'Windows' && env.OCRM_PORTABLE_SCOPE != 'memory-fixture-lifecycle' }}
++        if: ${{ runner.os != 'Windows' && env.OCRM_PORTABLE_SCOPE != 'memory-fixture-lifecycle' && env.OCRM_PORTABLE_SCOPE != 'djc-reader-observation' }}
+         id: shipping_host
+         shell: bash
+         run: |
+
+diff --git a/projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json b/projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a5419de64cde66ed1d948f6f2fa0909f1b284144
+--- /dev/null
++++ b/projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json
+@@ -0,0 +1,240 @@
++{
++  "schema": "ocrm-djc-reader-observation-source-contract-v1",
++  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
++  "contract": "DJC-09",
++  "repository": "bhrumom/fabushi-desktop",
++  "upstream": {
++    "repository": "openclaw/openclaw",
++    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
++    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
++    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
++  },
++  "authority": {
++    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
++    "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
++    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
++    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
++    "modules": [
++      "OCRM-M03",
++      "OCRM-M04",
++      "OCRM-M13"
++    ],
++    "spec": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
++    "spec_blob": "df026c824762d0bb12a8b686ffca40179743937f",
++    "spec_carrier": "22d5b012c853a0d37a64fd1cefc4d4d6f6343612",
++    "rtm_rows": [
++      "OCRM-R03",
++      "OCRM-R04",
++      "OCRM-R13",
++      "OCRM-R14",
++      "OCRM-AC11",
++      "OCRM-AC14",
++      "OCRM-AC17",
++      "OCRM-AC18",
++      "OCRM-AC24"
++    ],
++    "oracle_ids": [
++      "DJC-09"
++    ],
++    "adjacent_responsibility": "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
++    "responsibility_state_changed": false,
++    "native_preservation": true
++  },
++  "scope": {
++    "type": "causal recovery of actual owner observation; no product implementation change",
++    "production_owner": "source/host/src/device_pairing_owner.rs::DevicePairingOwner::redeem_device_pairing_join_code",
++    "owner_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
++    "user_capability": "Existing file-backed join redemption refuses storage failure without publishing payload, preserves the row after known refusal, then supports explicit repair/reopen and single use. This batch preserves those assertions and improves their completion observation.",
++    "entry": "Three exact cases in the existing Host integration target; not a new Gateway/runtime entrypoint.",
++    "producer": "Real public owner invocation plus fixture-only in-memory monotonic observation records; deterministic instrument-order controls are separately labeled.",
++    "state": "Existing device-pairing.db and its real held-reader transaction; no new product data, schema or durable owner.",
++    "consumer": "Owned child supervisor verifies the same nonce/PID/case completion receipt and qualifies two structured records before cleanup; parent --show-output carries records into the same strict Actions capture.",
++    "side_effects": "Only exclusively owned fixture files/processes. No production timeout, retry, private connection accessor or test hook.",
++    "failure_and_retirement": "Original recv_timeout(8s), final observation failure, every row/status/redaction/recovery assertion,120s child supervision and5s owned stop/reap remain. Failure retains raw child diagnostics. Gate release/drop and worker join precede control assertions.",
++    "limits": "Timestamps include descheduling and cannot identify private SQL statement duration or establish an eight-second public guarantee. No new real-device or complete-target acceptance."
++  },
++  "implementation": {
++    "test_path": "source/host/tests/device_pairing_join_admission_contract.rs",
++    "base_blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
++    "candidate_blob": "fdadc78e956ec70a31d09d305fd0d3c77cc58d60",
++    "source_base": "711c1d12267c9962292eada78369c6f0d05849e7",
++    "later_spec_carrier": "22d5b012c853a0d37a64fd1cefc4d4d6f6343612",
++    "changes": [
++      "Observe adjacent public call/send/wait/join and explicit reader release boundaries in the retained case.",
++      "Send completion before post-result diagnostics; same helper drives two bounded handshake controls.",
++      "Qualify and project exactly two typed structured records for these three actual cases before owned successful cleanup; other eight bodies unchanged.",
++      "Preserve full target requirements and add both new controls; scoped capture executes only three exact names."
++    ]
++  },
++  "review": {
++    "kind": "Deep review of changed fixture/observation/lifetime and adjacent real owner contracts; dependency-contract review only.",
++    "sources": [
++      {
++        "path": "source/host/tests/device_pairing_join_admission_contract.rs",
++        "blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
++        "depth": "Complete existing test and affected ownership/observation chain read by author; root read full changed code and adjacent harness/owner contracts."
++      },
++      {
++        "path": "source/host/src/device_pairing_owner.rs",
++        "blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
++        "depth": "Actual synchronous transaction/commit/error projection and public caller contract reviewed; no new whole-upstream reading credit."
++      },
++      {
++        "path": "source/host/src/gateway_command_error.rs",
++        "blob": "799a47b3f741f9e9bb224d481cb08a241113529d",
++        "depth": "Existing Internal500/redaction contract retained."
++      }
++    ],
++    "dependency": {
++      "repository": "rusqlite/rusqlite",
++      "commit": "2a1790a69107cd03dae85d501dcbdb11c5b32ef3",
++      "version": "0.39.0",
++      "sqlite_sys": "0.37.0 bundled",
++      "paths": [
++        "src/busy.rs",
++        "src/inner_connection.rs",
++        "src/transaction.rs"
++      ],
++      "review": "Independent source assessor verified default5000ms busy sleep budget and consuming-commit rollback behavior; it is not an operation-wide wall deadline. No dependency changes."
++    },
++    "independent_review": "pending complete immutable candidate GENERAL/STRUCTURE review",
++    "source_read_history_promoted": false
++  },
++  "trace": {
++    "prefix": "DJC_READER_TRACE ",
++    "envelope": [
++      "case",
++      "invocation_nonce",
++      "child_pid",
++      "mode",
++      "instrument_control",
++      "clock",
++      "record"
++    ],
++    "clock": "child-case-start",
++    "unit": "nanoseconds",
++    "record_sequence": {
++      "join_storage_commit_refusal_never_publishes_payload": [
++        "observation",
++        "reader-release"
++      ],
++      "join_reader_observation_notifies_before_diagnostic_release": [
++        "observation",
++        "diagnostic-control"
++      ],
++      "join_reader_observation_cannot_notify_before_operation_return": [
++        "observation",
++        "operation-control"
++      ]
++    },
++    "ordering": "Preserve actual partial order; receive may return before send completion, and operation/diagnostic return may precede releasing sender resumption.",
++    "secrets": "No payload, shortcode, SQL or raw DB error in structured records."
++  },
++  "validation": {
++    "environment": "GitHub Actions only",
++    "workflow": ".github/workflows/rust-desktop-runtime.yml",
++    "workflow_scope": "ocrm-djc-reader-observation",
++    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
++    "capture_scope": "djc-reader-observation",
++    "platforms": [
++      "ubuntu-24.04",
++      "macos-15"
++    ],
++    "selected_names": [
++      "join_storage_commit_refusal_never_publishes_payload",
++      "join_reader_observation_notifies_before_diagnostic_release",
++      "join_reader_observation_cannot_notify_before_operation_return"
++    ],
++    "selected_groups": 3,
++    "selected_named_count": 3,
++    "ordinary_target_required_count": 11,
++    "command_pattern": [
++      "cargo",
++      "test",
++      "--locked",
++      "--manifest-path",
++      "source/host/Cargo.toml",
++      "--test",
++      "device_pairing_join_admission_contract",
++      "EXACT_NAME",
++      "--",
++      "--exact",
++      "--test-threads=1",
++      "--show-output"
++    ],
++    "compile": [
++      "cargo",
++      "check",
++      "--locked",
++      "--manifest-path",
++      "source/host/Cargo.toml",
++      "--test",
++      "device_pairing_join_admission_contract"
++    ],
++    "selection_controls": 26,
++    "trace_transport_controls": 36,
++    "box_selection_controls": 7,
++    "result_oracle": "Each exact command needs exactly its one positive, one summary, zero failed/ignored/measured, both exits0, and two identity-bound typed timing records. Parent-qualified records are rechecked as transport data; missing/duplicate/malformed/mismatched/inconsistent records fail. Synthetic capture controls are not product evidence.",
++    "source_binding": [
++      "projects/openclaw-rust/upstream.lock.json",
++      "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
++      "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++      ".github/workflows/rust-desktop-runtime.yml",
++      "projects/openclaw-rust/scripts/capture_portable_contracts.py",
++      "source/host/Cargo.toml",
++      "source/host/Cargo.lock",
++      "source/host/src/device_pairing_owner.rs",
++      "source/host/src/gateway_command_error.rs",
++      "source/host/src/gateway_server.rs",
++      "source/host/src/host_gateway_api.rs",
++      "source/host/app/src/main.rs",
++      "source/host/tests/device_pairing_join_admission_contract.rs"
++    ],
++    "shipping_compile": false,
++    "box_producer": false,
++    "execution": "not-run",
++    "campaign_budget": "One changed-instrument focused campaign after fresh source review and retained independent assessments. A further failure is assessed causally before any new action; no unchanged rerun."
++  },
++  "history": {
++    "assessment": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++    "assessment_blob": "11a7659fe85aa65d44b5b1c169d7ed1b3d572e8d",
++    "original_log": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
++    "log_blob": "dc192acb664886b233e3bb2dbb1ace8fa01a5b69",
++    "log_sha256": "47b78cb8103f0d9d5d25e7d3eed12c65c826138ad5401390e8d4dcf407b55bc8",
++    "log_bytes": 43473,
++    "failed_subjects": [
++      {
++        "commit": "6d8c241b609948c4266e1e40c8f559795b317473",
++        "run": 41618863245,
++        "job": 125859112570
++      },
++      {
++        "commit": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
++        "tree": "4887f541b94d5adcbfddc2dff8a48d8d922a307d",
++        "run": 41642220354,
++        "job": 125938337174,
++        "passed": 8,
++        "failed": 1
++      }
++    ],
++    "transport_carrier": {
++      "commit": "6278f9a4dc85051c9d4b9416ab33f8e525151821",
++      "run": 41654535799,
++      "collector_job": 125981212876,
++      "conclusion": "success",
++      "product_validation": false
++    },
++    "qualification": "Unchanged eight whole-case positives retain their original identities; DJC07 positive and successful transport do not replace the original timed failure."
++  },
++  "acceptance": {
++    "full_unit_verified": false,
++    "real_devices_accepted": false,
++    "shipping_accepted": false,
++    "global_flags_promoted": false
++  },
++  "open_work": [
++    "Actual new three-case source/compile/runtime results.",
++    "Resolution of retained lock observation if new direct instrument still fails.",
++    "Full source closure and actual setup issuer/UI/schema/companion-node behavior, unknown commit/crash handling, all supported platforms/packages and final G01-G12/AC01-AC24/independent ACCEPT."
++  ]
++}
+
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index cfa7a9da48c4d049af12d21b7eeeb17ab17a86c0..3422c11400b60393f0f68d9e0e2dfb55715d22d4 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -63,13 +63,18 @@
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R03",
+       "kind": "requirement",
+       "not_applicable_reason": null,
+-      "oracle_ids": [],
++      "oracle_ids": [
++        "DJC-09"
++      ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [],
+       "reviewer": null
+@@ -184,7 +189,10 @@
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+         "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+-        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R04",
+@@ -241,7 +249,8 @@
+         "BGC05",
+         "BGC06",
+         "BGC07",
+-        "BGC08"
++        "BGC08",
++        "DJC-09"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -957,7 +966,10 @@
+         "source/host/tests/session_paths_contract.rs",
+         "source/host/tests/memory_extension_contract.rs",
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
+-        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R13",
+@@ -995,7 +1007,8 @@
+         "MGS-05",
+         "MGS-06",
+         "MGL-07",
+-        "MGL-08"
++        "MGL-08",
++        "DJC-09"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -1066,7 +1079,10 @@
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R14",
+@@ -1086,7 +1102,8 @@
+         "OCRM-MODEL-IDENTITY-O06",
+         "OCRM-MODEL-IDENTITY-O07",
+         "CMI-O1",
+-        "CMI-O2"
++        "CMI-O2",
++        "DJC-09"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -2466,7 +2483,10 @@
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+-        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC11",
+@@ -2487,7 +2507,8 @@
+         "OCRM-DEVICE-PAIRING-O03",
+         "OCRM-DEVICE-PAIRING-O04",
+         "OCRM-DEVICE-PAIRING-O05",
+-        "OCRM-DEVICE-PAIRING-O06"
++        "OCRM-DEVICE-PAIRING-O06",
++        "DJC-09"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -2637,7 +2658,10 @@
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC14",
+@@ -2648,7 +2672,8 @@
+         "OCRM-CHANNEL-O02",
+         "OCRM-CHANNEL-O08",
+         "OCRM-CHANNEL-O11",
+-        "OCRM-CHANNEL-O12"
++        "OCRM-CHANNEL-O12",
++        "DJC-09"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -2834,7 +2859,10 @@
+         "source/host/tests/session_paths_contract.rs",
+         "source/host/tests/memory_extension_contract.rs",
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
+-        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC17",
+@@ -2884,7 +2912,8 @@
+         "MGS-05",
+         "MGS-06",
+         "MGL-07",
+-        "MGL-08"
++        "MGL-08",
++        "DJC-09"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -2967,7 +2996,10 @@
+         "source/host/tests/session_paths_contract.rs",
+         "source/host/tests/memory_extension_contract.rs",
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
+-        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC18",
+@@ -2999,7 +3031,8 @@
+         "MGS-05",
+         "MGS-06",
+         "MGL-07",
+-        "MGL-08"
++        "MGL-08",
++        "DJC-09"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -3458,7 +3491,10 @@
+         "source/host/tests/session_paths_contract.rs",
+         "source/host/tests/memory_extension_contract.rs",
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
+-        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+@@ -3550,7 +3586,8 @@
+         "MGS-05",
+         "MGS-06",
+         "MGL-07",
+-        "MGL-08"
++        "MGL-08",
++        "DJC-09"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [

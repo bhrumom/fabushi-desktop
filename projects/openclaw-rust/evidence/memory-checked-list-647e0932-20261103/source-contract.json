@@ -255,7 +255,7 @@
           "live_admission::both_state_constructors_keep_literal_colon_agent_paths"
         ]
       },
-      "execution": "pending new focused Actions subject; historical failed groups remain failed"
+      "execution": "17 selected names passed perOS at Hfb1/41658719094; original failures remain historical."
     }
   ],
   "source_review": {
@@ -582,7 +582,27 @@
       ],
       "credit": "Contract review only; not full dependency reading or new fixed-U credit. Full recursive dependency/generated/LFS/resource/legal closure remains open."
     },
-    "historical_reads": "Existing upstream observations, category/risk dispositions and literal unread counts are preserved; contract or disposition review is not converted into a whole-file read."
+    "historical_reads": "Existing upstream observations, category/risk dispositions and literal unread counts are preserved; contract or disposition review is not converted into a whole-file read.",
+    "production_changes_scope": {
+      "subject_commit": "511bcebf08738c59ec0313a425a591a327d9cd20",
+      "role": "Historical original production batch candidate identities retained below; not current fixture blob identities."
+    },
+    "fixture_recovery_changes": [
+      {
+        "path": "source/host/tests/transcript_manager_contract.rs",
+        "base_blob": "a4f71a536beda9e2509653fe4b819d3da3d79eda",
+        "candidate_blob": "3c101cdc79e57d5a792d3d7ed3989fadf614a091",
+        "applied_subject": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+        "review_depth": "Changed implementation and real owner lifetime/native consumers deeply reviewed; GENERAL/STRUCTURE approved immutable056dbscope."
+      },
+      {
+        "path": "source/host/tests/agent_state_contract.rs",
+        "base_blob": "e006bafd844737c3a778e4b3569198e17bd7657b",
+        "candidate_blob": "50349ee51834af3234511a8ae30c37209491f145",
+        "applied_subject": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+        "review_depth": "Changed implementation and real owner lifetime/native consumers deeply reviewed; GENERAL/STRUCTURE approved immutable056dbscope."
+      }
+    ]
   },
   "validation": {
     "environment": "GitHub Actions only",
@@ -644,8 +664,8 @@
       "source/host/src/workflows/workflow_store.rs"
     ],
     "retained": "All inherited full-plan command groups and requirements remain. The existing integration and namespace groups gain applicable current-platform required names, and three explicit native owner groups are added to the portable full plan. Scoped execution does not execute unrelated groups. Historical failed DJC check remains non-passing and retained.",
-    "source_review": "H511 complete frozen 14-path scope converged in independent GENERAL/STRUCTURE review. MGL-08 two-fixture/shared selection recovery requires its own complete immutable review before execution.",
-    "execution": "H511 Linux/macOS: 66 selected names each passed; Windows failed before Cargo. H6266 Windows: 58 names passed, 7 failed; two incomplete groups retained. No full MGL acceptance.",
+    "source_review": "Original H511 production batch and later MGL08 six-path candidate converged independently. MGL08candidate056db10924bf22d23168331879046a7c847b1991 applied with identical source blobs at Hfb1.",
+    "execution": "H511 Linux/macOS66each passed, original Windows pre-Cargo failure retained. H6266Windows58passed/7failed retained. Hfb1MGL08 manager7+AgentState10 passed on all3OS; no fresh full-target or shipping acceptance.",
     "platform_groups": {
       "unix": [
         {
@@ -1038,12 +1058,21 @@
       },
       "source_bindings": 35,
       "carry_forward": "Five unchanged groups: H511 Linux/macOS 49 names each; H6266 Windows 48 names. Preserve original run/job/subject and failures. New receipt executes 17 names only and is never a full-candidate result.",
-      "execution": "not-run",
-      "stop_condition": "Any further failure requires causal assessment; no unchanged replay or lowered oracle."
+      "execution": "passed-scoped-only",
+      "stop_condition": "Any further failure requires causal assessment; no unchanged replay or lowered oracle.",
+      "evidence_subject": {
+        "commit": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+        "tree": "695bb9e61cb064f81ac62572d182b51b48e6c5e6",
+        "runtime_run": 41658719094,
+        "source_run": 41658718982,
+        "source_contract_blob_at_execution": "410c00aee0046c8689d7b61a2fd4b3dbdb36a6d3",
+        "assessment": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h-fb1e42-terminal-assessment.json",
+        "carrier_qualification": "This file records the earlier exact execution subject; metadata carrier commits are not new executions."
+      }
     }
   },
   "open_work": [
-    "Windows store/HTTP/Agent-path/Session-path/extension scoped groups passed at H6266. Manager/AgentState terminal cleanup/sentinel failures remain pending MGL-08 recovery on all three platforms. Windows shipping App signal handling, reserved-device/trailing-dot policy and native link-capability cases remain open.",
+    "MGL08 fixture recovery passed17namedcasesperOS at Hfb1; five other groups retain H511/H6266 historical results. Windows shipping App/native lifecycle, reserved-device/trailing-dot policy and native link-capability cases remain open.",
     "Atomic multi-file snapshots, external filesystem races, symlink confinement and hostile directory replacement.",
     "Strict prompt/synthesis reads and source-derived episode concurrency/reconciliation outside checked native listing.",
     "Actual full App lifecycle and any rendered Memory UI, live providers/channels/plugins/nodes/devices.",
