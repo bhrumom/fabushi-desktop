@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
@@ -598,9 +598,107 @@ pub struct BoxExecDaemonOptions {
 }
 
 struct BackgroundProcess {
-    stdin: Arc<Mutex<ChildStdin>>,
+    // The outer lock only clones or closes this owner's reference. Pipe I/O
+    // holds the inner lock after the registry and outer locks are released.
+    stdin: Mutex<Option<Arc<Mutex<ChildStdin>>>>,
     terminal_path: PathBuf,
-    pid: u32,
+    writer: Arc<Mutex<File>>,
+    state: Mutex<BackgroundState>,
+    stop_requested: AtomicBool,
+    active_input: AtomicUsize,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum BackgroundPhase {
+    Setup,
+    Admitting,
+    Running,
+    Recovery,
+    Settled,
+}
+
+struct BackgroundState {
+    resources: StreamResources,
+    controller: Option<JoinHandle<()>>,
+    phase: BackgroundPhase,
+    admitted: bool,
+    failure: Option<&'static str>,
+    footer_written: bool,
+    footer_failed: bool,
+    started: Instant,
+    started_at_ms: i64,
+    hard_timeout_ms: Option<u64>,
+    termination_started: Option<Instant>,
+    force_sent: bool,
+    #[cfg(test)]
+    controller_fault: Option<BackgroundControllerFault>,
+    #[cfg(test)]
+    controller_exit_requested: bool,
+    #[cfg(test)]
+    probe: Option<Arc<CaptureProbe>>,
+    #[cfg(test)]
+    wait_fault_fired: bool,
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum BackgroundControllerFault {
+    Create,
+    Send,
+    PanicBeforeCreate,
+    PanicAfterReap,
+    ExitAfterReap,
+}
+
+struct BackgroundRequest<'a> {
+    runtime: &'a BoxExecRuntime,
+    shell_id: u32,
+    process: Arc<BackgroundProcess>,
+    armed: bool,
+}
+
+impl BackgroundRequest<'_> {
+    fn fail(&mut self, phase: &'static str) -> ShellExecutionUnknown {
+        self.armed = false;
+        self.runtime.cleanup_failed_background(self.shell_id, &self.process, phase);
+        let unresolved = self.process.state.lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()).phase != BackgroundPhase::Settled;
+        let mut error = ShellExecutionUnknown::background(phase);
+        error.cleanup_unresolved = unresolved;
+        error
+    }
+}
+
+impl Drop for BackgroundRequest<'_> {
+    fn drop(&mut self) {
+        if self.armed {
+            self.runtime.cleanup_failed_background(
+                self.shell_id, &self.process, "background setup abandoned",
+            );
+        }
+    }
+}
+
+struct BackgroundInput(Arc<BackgroundProcess>);
+
+impl Drop for BackgroundInput {
+    fn drop(&mut self) {
+        self.0.active_input.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+
+struct CreatedTerminal {
+    path: PathBuf,
+    file: Option<File>,
+}
+
+impl Drop for CreatedTerminal {
+    fn drop(&mut self) {
+        if self.file.is_some() {
+            drop(self.file.take());
+            let _ = fs::remove_file(&self.path);
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -621,11 +719,13 @@ struct ProcessOutcome {
 pub struct ShellExecutionUnknown {
     phase: &'static str,
     cleanup_unresolved: bool,
+    background: bool,
 }
 
 impl std::fmt::Display for ShellExecutionUnknown {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "foreground shell outcome unknown: {}", self.phase)?;
+        write!(formatter, "{} shell outcome unknown: {}",
+            if self.background { "background" } else { "foreground" }, self.phase)?;
         if self.cleanup_unresolved {
             formatter.write_str("; owned child cleanup unresolved")?;
         }
@@ -637,7 +737,11 @@ impl std::error::Error for ShellExecutionUnknown {}
 
 impl ShellExecutionUnknown {
     fn new(phase: &'static str) -> Self {
-        Self { phase, cleanup_unresolved: false }
+        Self { phase, cleanup_unresolved: false, background: false }
+    }
+
+    fn background(phase: &'static str) -> Self {
+        Self { phase, cleanup_unresolved: false, background: true }
     }
 }
 
@@ -740,9 +844,10 @@ impl CapturedChild {
 }
 
 struct StreamRecovery {
-    stdout_worker: Option<JoinHandle<()>>,
-    stderr_worker: Option<JoinHandle<()>>,
+    stdout_worker: Option<JoinHandle<Result<(), ShellExecutionUnknown>>>,
+    stderr_worker: Option<JoinHandle<Result<(), ShellExecutionUnknown>>>,
     cleanup_paths: Vec<PathBuf>,
+    failure: Arc<Mutex<Option<&'static str>>>,
 }
 
 struct StreamResources {
@@ -921,7 +1026,13 @@ pub struct BoxExecRuntime {
         Mutex<Option<mpsc::Sender<(ForegroundId, Arc<Mutex<CapturedChild>>)>>>,
     #[cfg(test)]
     capture_probe: Mutex<Option<Arc<CaptureProbe>>>,
-    background: Arc<Mutex<HashMap<u32, BackgroundProcess>>>,
+    #[cfg(test)]
+    background_setup_gate: Mutex<Option<mpsc::Receiver<()>>>,
+    #[cfg(test)]
+    background_controller_fault: Mutex<Option<BackgroundControllerFault>>,
+    #[cfg(test)]
+    background_controller_gate: Mutex<Option<mpsc::Receiver<()>>>,
+    background: Arc<Mutex<HashMap<u32, Arc<BackgroundProcess>>>>,
     next_shell_id: AtomicU32,
     stopping: AtomicBool,
 }
@@ -950,6 +1061,12 @@ impl BoxExecRuntime {
             stream_recovery_observer: Mutex::new(None),
             #[cfg(test)]
             capture_probe: Mutex::new(None),
+            #[cfg(test)]
+            background_setup_gate: Mutex::new(None),
+            #[cfg(test)]
+            background_controller_fault: Mutex::new(None),
+            #[cfg(test)]
+            background_controller_gate: Mutex::new(None),
             background: Arc::new(Mutex::new(HashMap::new())),
             next_shell_id: AtomicU32::new(1),
             stopping: AtomicBool::new(false),
@@ -1050,6 +1167,7 @@ impl BoxExecRuntime {
     }
 
     pub fn read(&self, args: &ReadArgs) -> ReadResult {
+        self.observe_background_recoveries();
         let outcome = (|| -> Result<ReadSuccess, ReadFailure> {
             let target = self
                 .resolve_path(&args.path)
@@ -1255,6 +1373,7 @@ impl BoxExecRuntime {
     where
         F: FnMut(ExecStreamElement) -> Result<(), String>,
     {
+        self.observe_background_recoveries();
         self.observe_retained_stream_recoveries();
         let cwd = self.resolve_path(&args.working_directory)?;
         emit(client_message(
@@ -1286,6 +1405,7 @@ impl BoxExecRuntime {
                     state: CapturedChild::new(child),
                     recovery: StreamRecovery {
                         stdout_worker: None, stderr_worker: None, cleanup_paths: Vec::new(),
+                        failure: Arc::new(Mutex::new(None)),
                     },
                 }),
             };
@@ -1300,13 +1420,6 @@ impl BoxExecRuntime {
         }
         // Only this request owns/reaps this Child. Registry PID data is never
         // signal authority, including when a test presents a reused number.
-        let stdout = request.resources().state.child.stdout
-            .take()
-            .ok_or_else(|| "shell stream stdout was unavailable".to_string())?;
-        let stderr = request.resources().state.child.stderr
-            .take()
-            .ok_or_else(|| "shell stream stderr was unavailable".to_string())?;
-
         fs::create_dir_all(&self.terminals_directory).map_err(|error| error.to_string())?;
         let (stream_spool_path, stream_spool) =
             self.create_stream_spool(request.registration_id)?;
@@ -1314,18 +1427,15 @@ impl BoxExecRuntime {
         let stream_spool_writer = Arc::new(Mutex::new(stream_spool));
 
         let (events_tx, events_rx) = mpsc::channel::<ShellPipeEvent>();
-        request.resources().recovery.stdout_worker = Some(spawn_stream_pipe(
-            stdout,
-            events_tx.clone(),
-            false,
-            Arc::clone(&stream_spool_writer),
-        ));
-        request.resources().recovery.stderr_worker = Some(spawn_stream_pipe(
-            stderr,
-            events_tx.clone(),
-            true,
-            Arc::clone(&stream_spool_writer),
-        ));
+        let control = self.stream_capture_control(request.resources().state.child.id());
+        start_stream_reader(
+            request.resources(), Some(events_tx.clone()), false,
+            Arc::clone(&stream_spool_writer), control.clone(),
+        ).map_err(|error| error.to_string())?;
+        start_stream_reader(
+            request.resources(), Some(events_tx.clone()), true,
+            Arc::clone(&stream_spool_writer), control,
+        ).map_err(|error| error.to_string())?;
         drop(events_tx);
 
         let timeout_ms = (args.timeout > 0).then_some(args.timeout as u64);
@@ -1537,31 +1647,23 @@ impl BoxExecRuntime {
         stream_spool_writer: Arc<Mutex<File>>,
         stream_spool_path: PathBuf,
     ) -> Result<ShellStreamBackgrounded, String> {
-        let shell_id = self.next_shell_id.fetch_add(1, Ordering::Relaxed);
-        if shell_id == 0 {
-            return Err("background shell id space exhausted".into());
-        }
+        let shell_id = self.allocate_shell_id()?;
         let pid = request.resources().state.child.id();
-        let stdin = request.resources().state.child.stdin.take()
-            .ok_or_else(|| "shell stream stdin was unavailable during background handoff".to_string())?;
+        if request.resources().state.child.stdin.is_none() {
+            return Err("shell stream stdin was unavailable during background handoff".into());
+        }
         let terminal_path = self.terminals_directory.join(format!("{shell_id}.txt"));
         let background_args = BackgroundShellSpawnArgs {
             command: args.command.clone(),
             working_directory: args.working_directory.clone(),
             tool_call_id: args.tool_call_id.clone(),
         };
-        let started_at_ms = started_at.timestamp_millis();
-
         {
-            let mut current_writer = stream_spool_writer
-                .lock()
+            let mut current_writer = stream_spool_writer.lock()
                 .map_err(|_| "shell stream output writer is poisoned".to_string())?;
             current_writer.flush().map_err(|error| error.to_string())?;
             let spooled = fs::read(&stream_spool_path).map_err(|error| error.to_string())?;
-            let mut terminal = OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(&terminal_path)
+            let mut terminal = OpenOptions::new().create_new(true).write(true).open(&terminal_path)
                 .map_err(|error| error.to_string())?;
             request.resources().recovery.cleanup_paths.push(terminal_path.clone());
             terminal.write_all(
@@ -1569,229 +1671,373 @@ impl BoxExecRuntime {
             ).map_err(|error| error.to_string())?;
             terminal.write_all(&spooled).map_err(|error| error.to_string())?;
             terminal.flush().map_err(|error| error.to_string())?;
-            // Keep writing through the file this request actually created.
             *current_writer = terminal;
         }
         request.resources().remove_created_file(&stream_spool_path);
-
-        // Keep the request guard armed until the background receiver exists
-        // and the exact registry transition can commit. A thread creation
-        // failure must not drop a closure containing the only Child/readers.
-        let processes = Arc::clone(&self.background);
-        let footer_writer = Arc::clone(&stream_spool_writer);
-        let hard_timeout_ms = args.hard_timeout.filter(|timeout| *timeout > 0)
-            .map(|timeout| timeout as u64);
-        let (handoff_tx, handoff_rx) = mpsc::channel::<StreamResources>();
-        let mut foreground = self.foreground_processes.lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut background = self.background.lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if self.stopping.load(Ordering::Acquire) {
-            return Err("box exec daemon is stopping".into());
+        let mut background_request = {
+            let mut foreground = self.foreground_processes.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let mut background = self.background.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if self.stopping.load(Ordering::Acquire) {
+                return Err("box exec daemon is stopping".into());
+            }
+            if background.contains_key(&shell_id) {
+                return Err("background shell identity is already registered".into());
+            }
+            let resources = request.resources.take().expect("owned handoff resources");
+            let process = self.background_process(
+                resources, terminal_path, stream_spool_writer,
+                started, started_at.timestamp_millis(),
+                args.hard_timeout.filter(|timeout| *timeout > 0).map(|timeout| timeout as u64),
+            );
+            let guard = BackgroundRequest {
+                runtime: self, shell_id, process: Arc::clone(&process), armed: true,
+            };
+            background.insert(shell_id, process);
+            foreground.remove(&request.registration_id);
+            guard
+        };
+        if let Err(error) = self.admit_background(shell_id, &background_request.process) {
+            return Err(background_request.fail(error.phase).to_string());
         }
-        if background.contains_key(&shell_id) {
-            return Err(format!("background shell id {shell_id} is already registered"));
-        }
-        let background_worker = thread::Builder::new().name("box-stream-background".into())
-            .spawn(move || {
-                let Ok(mut resources) = handoff_rx.recv() else { return; };
-                // Admission holds this mutex until both registry changes are
-                // committed. Do not reap/remove before the entry is visible.
-                drop(processes.lock().unwrap_or_else(|poisoned| poisoned.into_inner()));
-                let child = &mut resources.state.child;
-                let status = if let Some(hard_timeout_ms) = hard_timeout_ms {
-                    loop {
-                        match child.try_wait() {
-                            Ok(Some(status)) => break Some(status),
-                            Ok(None) => {}
-                            Err(_) => break child.wait().ok(),
-                        }
-                        if started.elapsed() >= Duration::from_millis(hard_timeout_ms) {
-                            kill_process_group(pid);
-                            break child.wait().ok();
-                        }
-                        thread::sleep(Duration::from_millis(10));
-                    }
-                } else {
-                    child.wait().ok()
-                };
-                if let Some(worker) = resources.recovery.stdout_worker.take() {
-                    let _ = worker.join();
-                }
-                if let Some(worker) = resources.recovery.stderr_worker.take() {
-                    let _ = worker.join();
-                }
-                let code = status.and_then(|status| status.code()).unwrap_or(1);
-                if let Ok(mut writer) = footer_writer.lock() {
-                    let _ = writer.write_all(terminal_footer(code, started_at_ms).as_bytes());
-                    let _ = writer.flush();
-                }
-                if let Ok(mut processes) = processes.lock() {
-                    processes.remove(&shell_id);
-                }
-            }).map_err(|_| "background stream worker creation failed".to_string())?;
-        let resources = request.resources.take().expect("owned handoff resources");
-        if let Err(mpsc::SendError(resources)) = handoff_tx.send(resources) {
-            request.resources = Some(resources);
-            drop(background);
-            drop(foreground);
-            let _ = background_worker.join();
-            return Err("background stream handoff was not received".into());
-        }
-        background.insert(shell_id, BackgroundProcess {
-            stdin: Arc::new(Mutex::new(stdin)), terminal_path: terminal_path.clone(), pid,
-        });
-        foreground.remove(&request.registration_id);
-        drop(background);
-        drop(foreground);
-        drop(background_worker);
-
+        background_request.armed = false;
         Ok(ShellStreamBackgrounded {
-            shell_id,
-            command: args.command.clone(),
-            working_directory: args.working_directory.clone(),
-            pid: Some(pid),
-            ms_to_wait: Some(args.timeout),
-            reason: Some(SHELL_BACKGROUND_REASON_TIMEOUT),
+            shell_id, command: args.command.clone(),
+            working_directory: args.working_directory.clone(), pid: Some(pid),
+            ms_to_wait: Some(args.timeout), reason: Some(SHELL_BACKGROUND_REASON_TIMEOUT),
         })
     }
 
     pub fn spawn_background(
         &self,
         args: &BackgroundShellSpawnArgs,
-    ) -> BackgroundShellSpawnResult {
-        let result = (|| -> Result<BackgroundShellSpawnSuccess, String> {
-            let cwd = self.resolve_path(&args.working_directory)?;
-            fs::create_dir_all(&self.terminals_directory)
-                .map_err(|error| error.to_string())?;
-            let shell_id = self.next_shell_id.fetch_add(1, Ordering::Relaxed);
-            let terminal_path = self
-                .terminals_directory
-                .join(format!("{shell_id}.txt"));
-            let started_at = Utc::now();
-            let started_ms = started_at.timestamp_millis();
-            let mut child = self.spawn_shell(&args.command, &cwd)?;
+    ) -> Result<BackgroundShellSpawnResult, ShellExecutionUnknown> {
+        self.observe_background_recoveries();
+        let known_error = |error: String| BackgroundShellSpawnResult {
+            result: Some(background_shell_spawn_result::Result::Error(BackgroundShellSpawnError {
+                command: args.command.clone(), working_directory: args.working_directory.clone(), error,
+            })),
+        };
+        let cwd = match self.resolve_path(&args.working_directory) {
+            Ok(cwd) => cwd,
+            Err(error) => return Ok(known_error(error)),
+        };
+        #[cfg(test)]
+        let setup_gate = self.background_setup_gate.lock().unwrap().take();
+        let started_at = Utc::now();
+        let started = Instant::now();
+        let (mut request, pid) = {
+            let mut background = self.background.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            if self.stopping.load(Ordering::Acquire) {
+                return Ok(known_error("box exec daemon is stopping".into()));
+            }
+            let shell_id = match self.allocate_shell_id() {
+                Ok(id) => id,
+                Err(error) => return Ok(known_error(error)),
+            };
+            if let Err(error) = fs::create_dir_all(&self.terminals_directory) {
+                return Ok(known_error(error.to_string()));
+            }
+            let path = self.terminals_directory.join(format!("{shell_id}.txt"));
+            let file = match OpenOptions::new().write(true).create_new(true).open(&path) {
+                Ok(file) => file,
+                Err(error) => return Ok(known_error(error.to_string())),
+            };
+            let mut terminal = CreatedTerminal { path: path.clone(), file: Some(file) };
+            let child = match self.spawn_shell(&args.command, &cwd) {
+                Ok(child) => child,
+                Err(error) => return Ok(known_error(error)),
+            };
+            // No post-spawn fallible operation precedes actual guarded custody.
             let pid = child.id();
-            let stdin = child
-                .stdin
-                .take()
-                .ok_or_else(|| "background shell stdin was unavailable".to_string())?;
-            let stdout = child
-                .stdout
-                .take()
-                .ok_or_else(|| "background shell stdout was unavailable".to_string())?;
-            let stderr = child
-                .stderr
-                .take()
-                .ok_or_else(|| "background shell stderr was unavailable".to_string())?;
-            fs::write(
-                &terminal_path,
-                terminal_frontmatter(args, Some(pid), started_at),
-            )
-            .map_err(|error| error.to_string())?;
-            let writer = Arc::new(Mutex::new(
-                OpenOptions::new()
-                    .append(true)
-                    .open(&terminal_path)
-                    .map_err(|error| error.to_string())?,
-            ));
-            let stdout_worker = spawn_output_copy(stdout, Arc::clone(&writer));
-            let stderr_worker = spawn_output_copy(stderr, Arc::clone(&writer));
-            self.background
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .insert(
-                    shell_id,
-                    BackgroundProcess {
-                        stdin: Arc::new(Mutex::new(stdin)),
-                        terminal_path: terminal_path.clone(),
-                        pid,
-                    },
-                );
-            let processes = Arc::clone(&self.background);
-            let footer_writer = Arc::clone(&writer);
-            thread::spawn(move || {
-                let status = child.wait();
-                let _ = stdout_worker.join();
-                let _ = stderr_worker.join();
-                let code = status
-                    .ok()
-                    .and_then(|status| status.code())
-                    .unwrap_or(1);
-                if let Ok(mut writer) = footer_writer.lock() {
-                    let _ = writer.write_all(
-                        terminal_footer(code, started_ms).as_bytes(),
-                    );
-                    let _ = writer.flush();
-                }
-                if let Ok(mut processes) = processes.lock() {
-                    processes.remove(&shell_id);
-                }
-            });
-            Ok(BackgroundShellSpawnSuccess {
-                shell_id,
-                command: args.command.clone(),
-                working_directory: args.working_directory.clone(),
-                pid: Some(pid),
-            })
+            let resources = StreamResources {
+                state: CapturedChild::new(child),
+                recovery: StreamRecovery {
+                    stdout_worker: None, stderr_worker: None,
+                    cleanup_paths: vec![path.clone()],
+                    failure: Arc::new(Mutex::new(None)),
+                },
+            };
+            let writer = Arc::new(Mutex::new(terminal.file.take().expect("owned created terminal")));
+            let process = self.background_process(
+                resources, path, writer, started, started_at.timestamp_millis(), None,
+            );
+            let request = BackgroundRequest {
+                runtime: self, shell_id, process: Arc::clone(&process), armed: true,
+            };
+            background.insert(shell_id, process);
+            (request, pid)
+        };
+        let setup = (|| -> Result<(), ShellExecutionUnknown> {
+            #[cfg(test)]
+            if let Some(gate) = setup_gate {
+                gate.recv_timeout(Duration::from_secs(10))
+                    .map_err(|_| ShellExecutionUnknown::background("test background setup gate not released"))?;
+            }
+            {
+                let mut writer = request.process.writer.lock()
+                    .map_err(|_| ShellExecutionUnknown::background("background output writer poisoned"))?;
+                writer.write_all(terminal_frontmatter(args, Some(pid), started_at).as_bytes())
+                    .and_then(|_| writer.flush())
+                    .map_err(|_| ShellExecutionUnknown::background("background terminal setup failed"))?;
+            }
+            let control = self.stream_capture_control(pid);
+            {
+                let mut state = request.process.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                start_stream_reader(
+                    &mut state.resources, None, false, Arc::clone(&request.process.writer), control.clone(),
+                )?;
+            }
+            #[cfg(test)]
+            if self.wait_for_background_probe(CaptureFaultKind::BackgroundSetup)? {
+                return Err(ShellExecutionUnknown::background("background capture setup failed"));
+            }
+            {
+                let mut state = request.process.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                start_stream_reader(
+                    &mut state.resources, None, true, Arc::clone(&request.process.writer), control,
+                )?;
+            }
+            self.admit_background(request.shell_id, &request.process)
         })();
-        match result {
-            Ok(success) => BackgroundShellSpawnResult {
-                result: Some(background_shell_spawn_result::Result::Success(success)),
-            },
-            Err(error) => BackgroundShellSpawnResult {
-                result: Some(background_shell_spawn_result::Result::Error(
-                    BackgroundShellSpawnError {
-                        command: args.command.clone(),
-                        working_directory: args.working_directory.clone(),
-                        error,
-                    },
-                )),
-            },
+        if let Err(error) = setup {
+            return Err(request.fail(error.phase));
+        }
+        request.armed = false;
+        Ok(BackgroundShellSpawnResult {
+            result: Some(background_shell_spawn_result::Result::Success(BackgroundShellSpawnSuccess {
+                shell_id: request.shell_id, command: args.command.clone(),
+                working_directory: args.working_directory.clone(), pid: Some(pid),
+            })),
+        })
+    }
+
+
+    fn allocate_shell_id(&self) -> Result<u32, String> {
+        self.next_shell_id.fetch_update(Ordering::Relaxed, Ordering::Relaxed,
+            |next| (next != 0).then(|| next.checked_add(1)).flatten())
+            .map_err(|_| "background shell id space exhausted".to_string())
+    }
+
+    fn stream_capture_control(&self, pid: u32) -> CaptureControl {
+        #[cfg(not(test))]
+        let _ = pid;
+        CaptureControl {
+            cancelled: Arc::new(AtomicBool::new(false)),
+            #[cfg(test)]
+            probe: self.capture_probe.lock().expect("capture probe").clone(),
+            #[cfg(test)]
+            pid,
+        }
+    }
+
+    fn background_process(
+        &self,
+        mut resources: StreamResources,
+        terminal_path: PathBuf,
+        writer: Arc<Mutex<File>>,
+        started: Instant,
+        started_at_ms: i64,
+        hard_timeout_ms: Option<u64>,
+    ) -> Arc<BackgroundProcess> {
+        let stdin = resources.state.child.stdin.take().map(|stdin| Arc::new(Mutex::new(stdin)));
+        Arc::new(BackgroundProcess {
+            stdin: Mutex::new(stdin), terminal_path, writer,
+            state: Mutex::new(BackgroundState {
+                resources, controller: None, phase: BackgroundPhase::Setup,
+                admitted: false, failure: None, footer_written: false, footer_failed: false,
+                started, started_at_ms, hard_timeout_ms, termination_started: None, force_sent: false,
+                #[cfg(test)]
+                controller_fault: self.background_controller_fault.lock().unwrap().take(),
+                #[cfg(test)]
+                controller_exit_requested: false,
+                #[cfg(test)]
+                probe: self.capture_probe.lock().unwrap().clone(),
+                #[cfg(test)]
+                wait_fault_fired: false,
+            }),
+            stop_requested: AtomicBool::new(false),
+            active_input: AtomicUsize::new(0),
+        })
+    }
+
+    #[cfg(test)]
+    fn wait_for_background_probe(&self, kind: CaptureFaultKind) -> Result<bool, ShellExecutionUnknown> {
+        let probe = self.capture_probe.lock().unwrap().clone();
+        let Some(probe) = probe.filter(|probe| probe.kind == kind) else { return Ok(false); };
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while !probe.observed.load(Ordering::Acquire) {
+            if Instant::now() >= deadline {
+                return Err(ShellExecutionUnknown::background("test background prefix was not observed"));
+            }
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        Ok(true)
+    }
+
+    fn admit_background(
+        &self,
+        shell_id: u32,
+        process: &Arc<BackgroundProcess>,
+    ) -> Result<(), ShellExecutionUnknown> {
+        {
+            let mut state = process.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            if state.phase != BackgroundPhase::Setup || state.controller.is_some() {
+                return Err(ShellExecutionUnknown::background("background admission already started"));
+            }
+            // Only this caller can admit the entry. Observers cannot finalize
+            // Setup/Admitting, and the controller waits for start_rx. Thus the
+            // final map -> state lock below cannot oppose a running state -> map
+            // completion. Repeated admission is refused before taking the map.
+            state.phase = BackgroundPhase::Admitting;
+        }
+        #[cfg(test)]
+        {
+            let gate = self.background_controller_gate.lock().unwrap().take();
+            if let Some(gate) = gate {
+                gate.recv_timeout(Duration::from_secs(10))
+                    .map_err(|_| ShellExecutionUnknown::background("test background controller gate not released"))?;
+            }
+            if self.wait_for_background_probe(CaptureFaultKind::BackgroundController)? {
+                return Err(ShellExecutionUnknown::background("background controller creation failed"));
+            }
+            let fault = process.state.lock().unwrap().controller_fault;
+            if fault == Some(BackgroundControllerFault::Create) {
+                return Err(ShellExecutionUnknown::background("background controller creation failed"));
+            }
+            if fault == Some(BackgroundControllerFault::PanicBeforeCreate) {
+                panic!("controlled background setup unwind after actual reader start");
+            }
+        }
+        let (start_tx, start_rx) = mpsc::channel();
+        let processes = Arc::clone(&self.background);
+        let worker_process = Arc::clone(process);
+        #[cfg(test)]
+        let refuse_send = process.state.lock().unwrap().controller_fault
+            == Some(BackgroundControllerFault::Send);
+        #[cfg(test)]
+        let (refused_tx, refused_rx) = mpsc::channel();
+        let controller = thread::Builder::new().name("box-background-controller".into())
+            .spawn(move || {
+                #[cfg(test)]
+                if refuse_send {
+                    drop(start_rx);
+                    let _ = refused_tx.send(());
+                    return;
+                }
+                if start_rx.recv().is_err() { return; }
+                run_background_controller(processes, shell_id, worker_process);
+            }).map_err(|_| ShellExecutionUnknown::background("background controller creation failed"))?;
+        process.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+            .controller = Some(controller);
+        #[cfg(test)]
+        if refuse_send {
+            refused_rx.recv_timeout(Duration::from_secs(3))
+                .map_err(|_| ShellExecutionUnknown::background("test controller refusal was not observed"))?;
+        }
+        let processes = self.background.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if self.stopping.load(Ordering::Acquire)
+            || !matches!(processes.get(&shell_id), Some(current) if Arc::ptr_eq(current, process))
+        {
+            return Err(ShellExecutionUnknown::background("background admission closed"));
+        }
+        let mut state = process.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        observe_background_readers(&mut state);
+        if let Some(phase) = state.failure {
+            return Err(ShellExecutionUnknown::background(phase));
+        }
+        if process.stdin.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).is_none()
+            || state.resources.state.child.stdout.is_some()
+            || state.resources.state.child.stderr.is_some()
+        {
+            return Err(ShellExecutionUnknown::background("background capture setup failed"));
+        }
+        state.phase = BackgroundPhase::Running;
+        start_tx.send(())
+            .map_err(|_| ShellExecutionUnknown::background("background controller admission failed"))?;
+        state.admitted = true;
+        // A successfully admitted terminal is the persistent result. Transient
+        // spools, if any, retain their separate cleanup claims.
+        state.resources.recovery.cleanup_paths.retain(|path| path != &process.terminal_path);
+        Ok(())
+    }
+
+    fn observe_background_recoveries(&self) {
+        let processes = self.background.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+            .iter().map(|(id, process)| (*id, Arc::clone(process))).collect::<Vec<_>>();
+        for (shell_id, process) in processes {
+            let recoverable = match process.state.try_lock() {
+                Ok(state) => state.phase == BackgroundPhase::Recovery
+                    || state.controller.as_ref().is_some_and(|worker| worker.is_finished()),
+                Err(std::sync::TryLockError::Poisoned(poisoned)) => {
+                    let state = poisoned.into_inner();
+                    state.phase == BackgroundPhase::Recovery
+                        || state.controller.as_ref().is_some_and(|worker| worker.is_finished())
+                }
+                Err(std::sync::TryLockError::WouldBlock) => false,
+            };
+            if recoverable {
+                drive_background(&self.background, shell_id, &process, false);
+            }
+        }
+    }
+
+    fn cleanup_failed_background(
+        &self,
+        shell_id: u32,
+        process: &Arc<BackgroundProcess>,
+        phase: &'static str,
+    ) {
+        {
+            let mut state = process.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            if state.phase == BackgroundPhase::Settled { return; }
+            state.failure.get_or_insert(phase);
+            state.phase = BackgroundPhase::Recovery;
+        }
+        process.stop_requested.store(true, Ordering::Release);
+        let deadline = Instant::now() + FOREGROUND_CLEANUP_LIMIT;
+        loop {
+            if drive_background(&self.background, shell_id, process, false) { return; }
+            if Instant::now() >= deadline { return; }
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
         }
     }
 
     pub fn write_stdin(&self, args: &WriteShellStdinArgs) -> WriteShellStdinResult {
-        let mut processes = self
-            .background
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let Some(process) = processes.get_mut(&args.shell_id) else {
-            return WriteShellStdinResult {
-                result: Some(write_shell_stdin_result::Result::Error(
-                    WriteShellStdinError {
-                        error: format!("Shell {} is not running", args.shell_id),
-                    },
-                )),
-            };
+        self.observe_background_recoveries();
+        let error_result = |error: String| WriteShellStdinResult {
+            result: Some(write_shell_stdin_result::Result::Error(WriteShellStdinError { error })),
         };
-        let before = fs::metadata(&process.terminal_path)
-            .map(|metadata| metadata.len().min(u32::MAX as u64) as u32)
-            .unwrap_or_default();
-        let write_result = process
-            .stdin
-            .lock()
+        let (stdin, terminal_path, _input) = {
+            let processes = self.background.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            let Some(process) = processes.get(&args.shell_id) else {
+                return error_result(format!("Shell {} is not running", args.shell_id));
+            };
+            let input = process.stdin.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            let Some(stdin) = input.as_ref() else {
+                return error_result(format!("Shell {} has no input pipe", args.shell_id));
+            };
+            process.active_input.fetch_add(1, Ordering::AcqRel);
+            (
+                Arc::clone(stdin), process.terminal_path.clone(), BackgroundInput(Arc::clone(process)),
+            )
+        };
+        // No registry or process-state lock is held during filesystem or pipe
+        // I/O. The counted exact invocation prevents premature final removal.
+        let before = fs::metadata(&terminal_path)
+            .map(|metadata| metadata.len().min(u32::MAX as u64) as u32).unwrap_or_default();
+        let result = stdin.lock()
             .map_err(|_| "background shell stdin is poisoned".to_string())
-            .and_then(|mut stdin| {
-                stdin
-                    .write_all(args.chars.as_bytes())
-                    .and_then(|_| stdin.flush())
-                    .map_err(|error| error.to_string())
-            });
-        match write_result {
+            .and_then(|mut stdin| stdin.write_all(args.chars.as_bytes())
+                .and_then(|_| stdin.flush()).map_err(|error| error.to_string()));
+        match result {
             Ok(()) => WriteShellStdinResult {
-                result: Some(write_shell_stdin_result::Result::Success(
-                    WriteShellStdinSuccess {
-                        shell_id: args.shell_id,
-                        terminal_file_length_before_input_written: before,
-                    },
-                )),
+                result: Some(write_shell_stdin_result::Result::Success(WriteShellStdinSuccess {
+                    shell_id: args.shell_id, terminal_file_length_before_input_written: before,
+                })),
             },
-            Err(error) => WriteShellStdinResult {
-                result: Some(write_shell_stdin_result::Result::Error(
-                    WriteShellStdinError { error },
-                )),
-            },
+            Err(error) => error_result(error),
         }
     }
 
@@ -1865,14 +2111,12 @@ impl BoxExecRuntime {
                 }
             }
             Some(exec_server_message::Message::BackgroundShellSpawnArgs(args)) => {
-                emit(client_message(
-                    id,
-                    &exec_id,
-                    exec_client_message::Message::BackgroundShellSpawnResult(
-                        self.spawn_background(&args),
-                    ),
-                    None,
-                ))?;
+                match self.spawn_background(&args) {
+                    Ok(result) => emit(client_message(
+                        id, &exec_id, exec_client_message::Message::BackgroundShellSpawnResult(result), None,
+                    ))?,
+                    Err(error) => emit(thrown(id, error.to_string(), "BOX_EXEC_DAEMON_ERROR"))?,
+                }
             }
             Some(exec_server_message::Message::WriteShellStdinArgs(args)) => {
                 emit(client_message(
@@ -1905,20 +2149,24 @@ impl BoxExecRuntime {
 
     pub fn stop(&self) -> Result<(), String> {
         self.stopping.store(true, Ordering::Release);
-        let background = self
-            .background
-            .lock()
-            .map(|processes| {
-                processes.values().map(|process| process.pid).collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-        for pid in background {
-            kill_process_group(pid);
-        }
         let mut unresolved = false;
         let mut attempted = Vec::new();
         let deadline = Instant::now() + FOREGROUND_CLEANUP_LIMIT;
         loop {
+            let background = self.background.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .values().cloned().collect::<Vec<_>>();
+            for process in background {
+                process.stop_requested.store(true, Ordering::Release);
+                match process.state.try_lock() {
+                    Ok(mut state) => advance_background_termination(&mut state),
+                    Err(std::sync::TryLockError::Poisoned(poisoned)) =>
+                        advance_background_termination(&mut poisoned.into_inner()),
+                    Err(std::sync::TryLockError::WouldBlock) => {}
+                }
+                close_background_input(&process);
+            }
+            self.observe_background_recoveries();
             let foreground = self.foreground_processes.lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
                 .iter().map(|(id, (_, process))| (*id, process.clone())).collect::<Vec<_>>();
@@ -1942,7 +2190,8 @@ impl BoxExecRuntime {
             }
             let pending = !self.foreground_processes.lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .is_empty();
+                .is_empty()
+                || !self.background.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).is_empty();
             if !pending {
                 return if unresolved {
                     Err("foreground child cleanup was not fully observed".into())
@@ -1951,7 +2200,7 @@ impl BoxExecRuntime {
                 };
             }
             if Instant::now() >= deadline {
-                return Err("foreground child cleanup remains unresolved".into());
+                return Err("owned shell cleanup remains unresolved".into());
             }
             thread::sleep(FOREGROUND_POLL_INTERVAL);
         }
@@ -2058,6 +2307,7 @@ impl BoxExecRuntime {
         timeout_ms: Option<u64>,
         abort: &AtomicBool,
     ) -> Result<ProcessOutcome, ProcessFailure> {
+        self.observe_background_recoveries();
         self.observe_retained_stream_recoveries();
         #[cfg(test)]
         let capture_observation_gate = self.capture_observation_gate.lock()
@@ -2745,28 +2995,204 @@ fn terminal_footer(exit_code: i32, started_at_ms: i64) -> String {
     )
 }
 
-fn spawn_output_copy<R>(
-    mut reader: R,
-    writer: Arc<Mutex<File>>,
-) -> JoinHandle<()>
-where
-    R: Read + Send + 'static,
-{
-    thread::spawn(move || {
-        let mut buffer = [0_u8; 4096];
-        loop {
-            let Ok(count) = reader.read(&mut buffer) else {
-                break;
-            };
-            if count == 0 {
-                break;
-            }
-            if let Ok(mut writer) = writer.lock() {
-                let _ = writer.write_all(&buffer[..count]);
-                let _ = writer.flush();
+
+fn close_background_input(process: &BackgroundProcess) -> bool {
+    let mut input = match process.stdin.try_lock() {
+        Ok(input) => input,
+        Err(std::sync::TryLockError::Poisoned(poisoned)) => poisoned.into_inner(),
+        Err(std::sync::TryLockError::WouldBlock) => return false,
+    };
+    // Existing input calls retain their own counted Arc. Closing this owner's
+    // reference cannot detach an in-flight write or close another invocation.
+    drop(input.take());
+    true
+}
+
+fn advance_background_termination(state: &mut BackgroundState) {
+    if state.phase == BackgroundPhase::Settled { return; }
+    if state.termination_started.is_none() {
+        state.termination_started = Some(Instant::now());
+        if state.resources.state.signal(false).is_err() {
+            state.failure.get_or_insert("background child termination failed");
+        }
+    }
+    if !state.force_sent && state.termination_started.is_some_and(|started|
+        started.elapsed() >= FOREGROUND_TERM_GRACE)
+    {
+        state.force_sent = true;
+        if state.resources.state.signal(true).is_err() {
+            state.failure.get_or_insert("background child termination failed");
+        }
+    }
+}
+
+fn observe_background_readers(state: &mut BackgroundState) {
+    let failure = *state.resources.recovery.failure.lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(phase) = failure {
+        state.failure.get_or_insert(phase);
+    }
+    let recovery = &mut state.resources.recovery;
+    for worker in [&mut recovery.stdout_worker, &mut recovery.stderr_worker] {
+        if worker.as_ref().is_some_and(|worker| worker.is_finished()) {
+            match worker.take().expect("finished background reader").join() {
+                Ok(Ok(())) => {}
+                Ok(Err(error)) => { state.failure.get_or_insert(error.phase); }
+                Err(_) => { state.failure.get_or_insert("background capture worker lost"); }
             }
         }
-    })
+    }
+}
+
+fn terminal_error_footer(phase: &'static str, started_at_ms: i64) -> String {
+    let ended = Utc::now();
+    format!(
+        "\n---\nerror: {phase}\nelapsed_ms: {}\nended_at: {}\n---\n",
+        ended.timestamp_millis().saturating_sub(started_at_ms),
+        ended.to_rfc3339_opts(SecondsFormat::Millis, true),
+    )
+}
+
+// Only the live controller, or an observer that has observed its termination,
+// may drive completion. Every effect precedes the final exact registry removal.
+fn drive_background(
+    processes: &Arc<Mutex<HashMap<u32, Arc<BackgroundProcess>>>>,
+    shell_id: u32,
+    process: &Arc<BackgroundProcess>,
+    controller: bool,
+) -> bool {
+    let mut state = match process.state.try_lock() {
+        Ok(state) => state,
+        Err(std::sync::TryLockError::Poisoned(poisoned)) => poisoned.into_inner(),
+        Err(std::sync::TryLockError::WouldBlock) => return false,
+    };
+    if state.phase == BackgroundPhase::Settled { return true; }
+    if matches!(state.phase, BackgroundPhase::Setup | BackgroundPhase::Admitting) { return false; }
+    if !controller {
+        if state.controller.as_ref().is_some_and(|worker| !worker.is_finished()) {
+            return false;
+        }
+        if let Some(worker) = state.controller.take() {
+            if worker.join().is_err() {
+                state.failure.get_or_insert("background controller lost");
+            } else {
+                state.failure.get_or_insert("background controller exited before completion");
+            }
+            state.phase = BackgroundPhase::Recovery;
+        }
+    }
+    observe_background_readers(&mut state);
+    #[cfg(test)]
+    if !state.wait_fault_fired && state.probe.as_ref().is_some_and(|probe| probe.wait_fault_ready()) {
+        state.wait_fault_fired = true;
+        state.failure.get_or_insert("background child wait failed");
+    }
+    match state.resources.state.poll() {
+        Ok(_) => {}
+        Err(_) => { state.failure.get_or_insert("background child wait failed"); }
+    }
+    #[cfg(test)]
+    if controller && state.resources.state.status.is_some() {
+        match state.controller_fault.take() {
+            Some(BackgroundControllerFault::PanicAfterReap) =>
+                panic!("controlled background controller loss after actual reap"),
+            Some(BackgroundControllerFault::ExitAfterReap) => {
+                // The controller wrapper returns without committing terminal.
+                state.controller_exit_requested = true;
+                return false;
+            }
+            fault => { state.controller_fault = fault; }
+        }
+    }
+    let deadline_elapsed = state.hard_timeout_ms.is_some_and(|timeout|
+        state.started.elapsed() >= Duration::from_millis(timeout));
+    if process.stop_requested.load(Ordering::Acquire) || deadline_elapsed || state.failure.is_some() {
+        advance_background_termination(&mut state);
+        close_background_input(process);
+    }
+    if state.resources.state.status.is_none() { return false; }
+    if !close_background_input(process) { return false; }
+    // Any pipe whose reader was never started remains owned through reap.
+    drop(state.resources.state.child.stdin.take());
+    drop(state.resources.state.child.stdout.take());
+    drop(state.resources.state.child.stderr.take());
+    if state.resources.recovery.stdout_worker.is_some()
+        || state.resources.recovery.stderr_worker.is_some()
+    {
+        return false;
+    }
+    state.resources.state.capture_complete = true;
+    if state.footer_failed { return false; }
+    if state.admitted && !state.footer_written {
+        let mut writer = match process.writer.try_lock() {
+            Ok(writer) => writer,
+            Err(std::sync::TryLockError::Poisoned(poisoned)) => {
+                state.failure.get_or_insert("background output writer poisoned");
+                poisoned.into_inner()
+            }
+            Err(std::sync::TryLockError::WouldBlock) => return false,
+        };
+        let status = state.resources.state.status.expect("observed background reap");
+        let footer = match (state.failure, status.code()) {
+            (None, Some(code)) => terminal_footer(code, state.started_at_ms),
+            (failure, _) => terminal_error_footer(
+                failure.unwrap_or("background child exited without a numeric status"),
+                state.started_at_ms,
+            ),
+        };
+        if writer.write_all(footer.as_bytes()).and_then(|_| writer.flush()).is_err() {
+            state.footer_failed = true;
+            state.failure.get_or_insert("background footer write failed");
+            return false;
+        }
+        state.footer_written = true;
+    }
+    // Only unpublished terminals and still-owned temporary spools are listed.
+    // Successful unlink retires its claim before another runtime can reuse it.
+    for path in state.resources.recovery.cleanup_paths.clone() {
+        state.resources.remove_created_file(&path);
+    }
+    if !state.resources.recovery.cleanup_paths.is_empty() {
+        state.failure.get_or_insert("background owned-file cleanup failed");
+        return false;
+    }
+    let mut processes = processes.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    if process.active_input.load(Ordering::Acquire) != 0 { return false; }
+    if matches!(processes.get(&shell_id), Some(current) if Arc::ptr_eq(current, process)) {
+        state.phase = BackgroundPhase::Settled;
+        processes.remove(&shell_id);
+        // After this operation terminal: release settled handles and return.
+        // No writer, signal, wait, or recovery action may follow.
+        return true;
+    }
+    false
+}
+
+fn run_background_controller(
+    processes: Arc<Mutex<HashMap<u32, Arc<BackgroundProcess>>>>,
+    shell_id: u32,
+    process: Arc<BackgroundProcess>,
+) {
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        loop {
+            if drive_background(&processes, shell_id, &process, true) { return; }
+            {
+                let state = process.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                if state.footer_failed { return; }
+                #[cfg(test)]
+                if state.controller_exit_requested { return; }
+            }
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+    }));
+    if outcome.is_err() {
+        let mut state = process.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.phase != BackgroundPhase::Settled {
+            state.failure.get_or_insert("background controller lost");
+            state.phase = BackgroundPhase::Recovery;
+            process.stop_requested.store(true, Ordering::Release);
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -2866,6 +3292,8 @@ enum CaptureFaultKind {
     Read,
     Worker,
     Wait,
+    BackgroundSetup,
+    BackgroundController,
 }
 
 #[cfg(test)]
@@ -2888,6 +3316,8 @@ impl CaptureProbe {
             "stderr-worker" => ("stderr", CaptureFaultKind::Worker),
             "stdout-wait" => ("stdout", CaptureFaultKind::Wait),
             "stderr-wait" => ("stderr", CaptureFaultKind::Wait),
+            "background-setup" => ("stdout", CaptureFaultKind::BackgroundSetup),
+            "background-controller" => ("stdout", CaptureFaultKind::BackgroundController),
             _ => panic!("unsupported cfg(test) capture fault"),
         };
         Some(Self {
@@ -2925,7 +3355,8 @@ impl CaptureProbe {
             match self.kind {
                 CaptureFaultKind::Read => return Err(std::io::Error::other("cfg(test) capture read loss")),
                 CaptureFaultKind::Worker => panic!("cfg(test) capture worker loss after real prefix"),
-                CaptureFaultKind::Wait => {}
+                CaptureFaultKind::Wait | CaptureFaultKind::BackgroundSetup
+                    | CaptureFaultKind::BackgroundController => {}
             }
         }
         Ok(())
@@ -2936,44 +3367,116 @@ impl CaptureProbe {
     }
 }
 
+fn record_stream_failure(failure: &Mutex<Option<&'static str>>, phase: &'static str) {
+    failure.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).get_or_insert(phase);
+}
+
+fn start_stream_reader(
+    resources: &mut StreamResources,
+    events: Option<mpsc::Sender<ShellPipeEvent>>,
+    stderr: bool,
+    writer: Arc<Mutex<File>>,
+    control: CaptureControl,
+) -> Result<(), ShellExecutionUnknown> {
+    let failure = Arc::clone(&resources.recovery.failure);
+    let worker = if stderr {
+        prepare_capture_pipe(resources.state.child.stderr.as_ref()
+            .ok_or_else(|| ShellExecutionUnknown::new("stderr pipe unavailable"))?)?;
+        spawn_stream_pipe(&mut resources.state.child.stderr, events, true, writer, control, failure)?
+    } else {
+        prepare_capture_pipe(resources.state.child.stdout.as_ref()
+            .ok_or_else(|| ShellExecutionUnknown::new("stdout pipe unavailable"))?)?;
+        spawn_stream_pipe(&mut resources.state.child.stdout, events, false, writer, control, failure)?
+    };
+    if stderr {
+        resources.recovery.stderr_worker = Some(worker);
+    } else {
+        resources.recovery.stdout_worker = Some(worker);
+    }
+    Ok(())
+}
+
 fn spawn_stream_pipe<R>(
-    mut reader: R,
-    sender: mpsc::Sender<ShellPipeEvent>,
+    reader: &mut Option<R>,
+    sender: Option<mpsc::Sender<ShellPipeEvent>>,
     stderr: bool,
     output_writer: Arc<Mutex<File>>,
-) -> JoinHandle<()>
+    control: CaptureControl,
+    failure: Arc<Mutex<Option<&'static str>>>,
+) -> Result<JoinHandle<Result<(), ShellExecutionUnknown>>, ShellExecutionUnknown>
 where
     R: Read + Send + 'static,
 {
-    thread::spawn(move || {
+    if reader.is_none() {
+        return Err(ShellExecutionUnknown::new("stream pipe unavailable"));
+    }
+    // Thread creation never captures the only pipe. Its original owner retains
+    // the pipe until a receiver exists, and receives it back on send refusal.
+    let (pipe_tx, pipe_rx) = mpsc::channel::<R>();
+    let stream = if stderr { "stderr" } else { "stdout" };
+    let worker = thread::Builder::new().name(format!("box-stream-{stream}")).spawn(move || {
+        let mut reader = pipe_rx.recv()
+            .map_err(|_| ShellExecutionUnknown::new("stream pipe admission failed"))?;
         let mut buffer = [0_u8; 8192];
+        #[cfg(test)]
+        let mut observed = Vec::new();
         loop {
-            match reader.read(&mut buffer) {
-                Ok(0) => break,
+            match read_capture_chunk(&mut reader, &mut buffer, &control, stream) {
+                Ok(0) => {
+                    let failure = *failure.lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    return failure.map_or(Ok(()), |phase| Err(ShellExecutionUnknown::new(phase)));
+                }
                 Ok(count) => {
-                    let bytes = buffer[..count].to_vec();
+                    let bytes = &buffer[..count];
                     {
-                        let mut writer = output_writer
-                            .lock()
-                            .unwrap_or_else(|poisoned| poisoned.into_inner());
-                        let _ = writer.write_all(&bytes);
-                        let _ = writer.flush();
+                        let mut writer = match output_writer.lock() {
+                            Ok(writer) => writer,
+                            Err(poisoned) => {
+                                record_stream_failure(&failure, "stream output writer poisoned");
+                                poisoned.into_inner()
+                            }
+                        };
+                        if writer.write_all(bytes).and_then(|_| writer.flush()).is_err() {
+                            // Keep draining the actual pipe. This sticky failure
+                            // forbids a background success footer or clean handoff.
+                            record_stream_failure(&failure, "stream output write failed");
+                        }
                     }
-                    let event = if stderr {
-                        ShellPipeEvent::Stderr(bytes)
-                    } else {
-                        ShellPipeEvent::Stdout(bytes)
-                    };
-                    // The ShellStream receiver intentionally disappears after a timed
-                    // background handoff. Keep draining the same child into the
-                    // canonical terminal writer instead of terminating the pipe worker.
-                    let _ = sender.send(event);
+                    #[cfg(test)]
+                    if let Some(probe) = control.probe.as_ref() {
+                        observed.extend_from_slice(bytes);
+                        probe.after_read(stream, &observed, control.pid)?;
+                    }
+                    if let Some(sender) = sender.as_ref() {
+                        let event = if stderr {
+                            ShellPipeEvent::Stderr(bytes.to_vec())
+                        } else {
+                            ShellPipeEvent::Stdout(bytes.to_vec())
+                        };
+                        // Timed handoff removes the stream receiver; file
+                        // capture remains owned until its actual EOF.
+                        let _ = sender.send(event);
+                    }
                 }
                 Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
-                Err(_) => break,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    thread::sleep(FOREGROUND_POLL_INTERVAL);
+                }
+                Err(_) => {
+                    let phase = if stderr { "stderr read failed" } else { "stdout read failed" };
+                    record_stream_failure(&failure, phase);
+                    return Err(ShellExecutionUnknown::new(phase));
+                }
             }
         }
-    })
+    }).map_err(|_| ShellExecutionUnknown::new("stream reader creation failed"))?;
+    if let Err(mpsc::SendError(pipe)) = pipe_tx.send(reader.take().expect("owned stream pipe")) {
+        *reader = Some(pipe);
+        let _ = worker.join();
+        return Err(ShellExecutionUnknown::new("stream pipe admission failed"));
+    }
+    Ok(worker)
 }
 
 fn path_within(root: &Path, target: &Path) -> bool {
@@ -2983,16 +3486,6 @@ fn path_within(root: &Path, target: &Path) -> bool {
 fn saturating_i32(value: u64) -> i32 {
     value.min(i32::MAX as u64) as i32
 }
-
-#[cfg(unix)]
-fn kill_process_group(pid: u32) {
-    unsafe {
-        libc::kill(-(pid as i32), libc::SIGTERM);
-    }
-}
-
-#[cfg(not(unix))]
-fn kill_process_group(_pid: u32) {}
 
 #[cfg(unix)]
 fn status_signal(status: &std::process::ExitStatus) -> String {
@@ -3070,8 +3563,11 @@ mod tests {
         handle.stop().expect("owned probe graceful stop");
         let remaining = handle.runtime.foreground_processes.lock().expect("foreground registry").len();
         assert_eq!(remaining, 0, "probe retained unresolved foreground ownership");
+        let background_remaining = handle.runtime.background.lock().expect("background registry").len();
+        assert_eq!(background_remaining, 0, "probe retained unresolved background ownership");
         publish_capture_probe_json(&root.join("stopped.json"), &serde_json::json!({
             "pid": pid, "clean": true, "foregroundCount": remaining,
+            "backgroundCount": background_remaining,
         })).expect("probe stop receipt");
     }
 
@@ -4420,6 +4916,784 @@ mod tests {
         assert_eq!(bytes, b"complete");
     }
 
+
+    fn background_args(command: &str) -> BackgroundShellSpawnArgs {
+        BackgroundShellSpawnArgs {
+            command: command.into(), working_directory: "/workspace".into(),
+            tool_call_id: "background-custody".into(),
+        }
+    }
+
+    fn background_request(command: &str) -> ExecServerMessage {
+        ExecServerMessage {
+            id: 82, exec_id: "background-custody".into(),
+            message: Some(exec_server_message::Message::BackgroundShellSpawnArgs(background_args(command))),
+        }
+    }
+
+    fn background_success(result: Result<BackgroundShellSpawnResult, ShellExecutionUnknown>)
+        -> BackgroundShellSpawnSuccess
+    {
+        match result.expect("observed background admission").result {
+            Some(background_shell_spawn_result::Result::Success(success)) => success,
+            other => panic!("expected background success, got {other:?}"),
+        }
+    }
+
+    fn background_owner(runtime: &BoxExecRuntime, shell_id: u32) -> Arc<BackgroundProcess> {
+        runtime.background.lock().unwrap().get(&shell_id).cloned().expect("actual background owner")
+    }
+
+    fn wait_background_removed(runtime: &BoxExecRuntime, shell_id: u32) {
+        let deadline = Instant::now() + Duration::from_secs(4);
+        while runtime.background.lock().unwrap().contains_key(&shell_id) {
+            assert!(Instant::now() < deadline, "actual controller did not remove its completed invocation");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+    }
+
+    fn wait_file_bytes(path: &Path, expected: &[u8]) {
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while fs::read(path).unwrap_or_default() != expected {
+            assert!(Instant::now() < deadline, "actual fixture bytes were not observed: {}", path.display());
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+    }
+
+    struct BackgroundFixture {
+        runtime: Arc<BoxExecRuntime>,
+        releases: Vec<PathBuf>,
+    }
+
+    impl BackgroundFixture {
+        fn new(runtime: &Arc<BoxExecRuntime>, releases: &[&str]) -> Self {
+            Self {
+                runtime: Arc::clone(runtime),
+                releases: releases.iter().map(|name| runtime.workspace_root.join(name)).collect(),
+            }
+        }
+    }
+
+    impl Drop for BackgroundFixture {
+        fn drop(&mut self) {
+            for path in &self.releases {
+                let _ = fs::write(path, b"release");
+            }
+            let _ = self.runtime.stop();
+        }
+    }
+
+    fn assert_background_throw(events: &[ExecStreamElement], phase: &str) {
+        assert_eq!(events.len(), 2, "entered background failure has only Throw and Close");
+        assert!(matches!(&events[0].element,
+            Some(exec_stream_element::Element::ExecClientControlMessage(
+                ExecClientControlMessage {
+                    message: Some(exec_client_control_message::Message::Throw(error)),
+                },
+            )) if error.id == 82
+                && error.error_code.as_deref() == Some("BOX_EXEC_DAEMON_ERROR")
+                && error.error.starts_with(&format!("background shell outcome unknown: {phase}"))
+                && !error.error.contains("SC_CAPTURE_PREFIX")
+                && !error.error.contains("effect-count")));
+        assert!(matches!(&events[1].element,
+            Some(exec_stream_element::Element::ExecClientControlMessage(
+                ExecClientControlMessage {
+                    message: Some(exec_client_control_message::Message::StreamClose(
+                        ExecClientStreamClose { id: 82 },
+                    )),
+                },
+            ))));
+    }
+
+    #[test]
+    fn background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion() {
+        for timed in [false, true] {
+            let (_root, runtime) = runtime();
+            let runtime = Arc::new(runtime);
+            let _cleanup = BackgroundFixture::new(&runtime, &[]);
+            let command = "printf 'effect\\n' > effect-count; printf '%s\\n' \"$$\" > child-pid; \
+                printf 'stdout-prefix\\n'; printf 'stderr-prefix\\n' >&2; \
+                IFS= read -r input; [ \"$input\" = finish ] || exit 91; \
+                printf 'stdout-tail\\n'; printf 'stderr-tail\\n' >&2";
+            let (shell_id, pid) = if timed {
+                let mut args = foreground_args(command);
+                args.timeout = 20;
+                args.timeout_behavior = TIMEOUT_BEHAVIOR_BACKGROUND;
+                let events = runtime.execute(stream_file_request(args));
+                let result = events.iter().find_map(|event| match &event.element {
+                    Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                        message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                            event: Some(shell_stream::Event::Backgrounded(result)),
+                        })), ..
+                    })) => Some(result),
+                    _ => None,
+                }).expect("actual timed handoff");
+                assert_eq!(result.reason, Some(SHELL_BACKGROUND_REASON_TIMEOUT));
+                (result.shell_id, result.pid.unwrap())
+            } else {
+                let result = background_success(runtime.spawn_background(&background_args(command)));
+                (result.shell_id, result.pid.unwrap())
+            };
+            assert_ne!(shell_id, 0);
+            let owner = background_owner(&runtime, shell_id);
+            let terminal = owner.terminal_path.clone();
+            let deadline = Instant::now() + Duration::from_secs(3);
+            loop {
+                let text = fs::read_to_string(&terminal).unwrap_or_default();
+                if text.contains("stdout-prefix\n") && text.contains("stderr-prefix\n") { break; }
+                assert!(Instant::now() < deadline, "actual stdout/stderr prefix not captured");
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            }
+            assert_eq!(fs::read(runtime.workspace_root.join("effect-count")).unwrap(), b"effect\n");
+            assert_eq!(fs::read_to_string(runtime.workspace_root.join("child-pid")).unwrap()
+                .trim().parse::<u32>().unwrap(), pid);
+            {
+                let mut state = owner.state.lock().unwrap();
+                assert_eq!(state.resources.state.child.id(), pid);
+                assert!(state.resources.state.poll().unwrap().is_none());
+                assert!(state.admitted);
+            }
+            assert!(!fs::read_to_string(&terminal).unwrap().contains("\nexit_code:"));
+            assert_eq!(runtime.admit_background(shell_id, &owner).unwrap_err().phase,
+                "background admission already started");
+            assert!(Arc::ptr_eq(&background_owner(&runtime, shell_id), &owner));
+            let input = runtime.write_stdin(&WriteShellStdinArgs { shell_id, chars: "finish\n".into() });
+            assert!(matches!(input.result, Some(write_shell_stdin_result::Result::Success(_))));
+            // No observer/admission call helps this assertion: the existing
+            // controller must commit its own actual operation terminal.
+            wait_background_removed(&runtime, shell_id);
+            let text = fs::read_to_string(&terminal).unwrap();
+            for line in ["stdout-prefix\n", "stderr-prefix\n", "stdout-tail\n", "stderr-tail\n"] {
+                assert_eq!(text.matches(line).count(), 1);
+            }
+            assert_eq!(text.matches("\nexit_code: 0\n").count(), 1);
+            assert!(text.ends_with("\n---\n"));
+            let mut state = owner.state.lock().unwrap();
+            assert!(state.phase == BackgroundPhase::Settled);
+            assert!(state.resources.state.status.is_some());
+            assert!(state.resources.state.capture_complete);
+            assert!(state.resources.recovery.stdout_worker.is_none());
+            assert!(state.resources.recovery.stderr_worker.is_none());
+            assert!(state.footer_written);
+            assert!(state.failure.is_none());
+            let signals = state.resources.state.signals_sent;
+            state.resources.state.signal(true).unwrap();
+            assert_eq!(state.resources.state.signals_sent, signals);
+        }
+    }
+
+    #[test]
+    fn background_custody_pre_spawn_refusals_preserve_files_and_nonreusable_ids() {
+        for symbolic in [false, true] {
+            let (_root, runtime) = runtime();
+            let target = runtime.workspace_root.join("foreign-target");
+            fs::write(&target, b"foreign sentinel\n").unwrap();
+            let terminal = runtime.terminals_directory.join("1.txt");
+            create_file_sentinel(&terminal, &target, symbolic);
+            let refused = runtime.spawn_background(&background_args("printf forbidden > refused-effect"))
+                .expect("occupied terminal is a known pre-spawn refusal");
+            assert!(matches!(refused.result, Some(background_shell_spawn_result::Result::Error(_))));
+            assert!(!runtime.workspace_root.join("refused-effect").exists());
+            assert!(runtime.background.lock().unwrap().is_empty());
+            assert_file_sentinel(&terminal, &target, symbolic);
+            let later = background_success(runtime.spawn_background(&background_args("printf later")));
+            assert_eq!(later.shell_id, 2, "an occupied identity is not reused");
+            wait_background_removed(&runtime, later.shell_id);
+            assert_file_sentinel(&terminal, &target, symbolic);
+            assert!(fs::read_to_string(runtime.terminals_directory.join("2.txt")).unwrap()
+                .contains("\nexit_code: 0\n"));
+            runtime.stop().unwrap();
+        }
+        let (_root, stopped) = runtime();
+        stopped.stop().unwrap();
+        let refused = stopped.spawn_background(&background_args("printf forbidden > after-stop")).unwrap();
+        assert!(matches!(refused.result, Some(background_shell_spawn_result::Result::Error(_))));
+        assert!(!stopped.workspace_root.join("after-stop").exists());
+        assert_eq!(fs::read_dir(&stopped.terminals_directory).unwrap().count(), 0);
+
+        let (_root, exhausted) = runtime();
+        exhausted.next_shell_id.store(u32::MAX - 1, Ordering::Relaxed);
+        let last = background_success(exhausted.spawn_background(&background_args(
+            "printf 'effect\\n' > final-id-effect",
+        )));
+        assert_eq!(last.shell_id, u32::MAX - 1);
+        wait_background_removed(&exhausted, last.shell_id);
+        for _ in 0..2 {
+            let refused = exhausted.spawn_background(&background_args("printf forbidden > after-exhaustion"))
+                .expect("ID exhaustion is known before spawn");
+            assert!(matches!(refused.result,
+                Some(background_shell_spawn_result::Result::Error(error))
+                    if error.error == "background shell id space exhausted"));
+        }
+        assert_eq!(exhausted.next_shell_id.load(Ordering::Relaxed), u32::MAX);
+        assert!(!exhausted.workspace_root.join("after-exhaustion").exists());
+        assert_eq!(fs::read(exhausted.workspace_root.join("final-id-effect")).unwrap(), b"effect\n");
+        exhausted.stop().unwrap();
+    }
+
+    #[test]
+    fn background_custody_setup_and_controller_refusals_retain_child_and_readers() {
+        for mode in ["background-setup", "background-controller", "controller-send"] {
+            let (root, runtime) = runtime();
+            let runtime = Arc::new(runtime);
+            let _cleanup = BackgroundFixture::new(&runtime, &["release-background-pipe"]);
+            if mode != "controller-send" {
+                *runtime.capture_probe.lock().unwrap() =
+                    CaptureProbe::new(mode, root.path().join("fault-observed.json")).map(Arc::new);
+            } else {
+                *runtime.background_controller_fault.lock().unwrap() = Some(BackgroundControllerFault::Send);
+            }
+            let (setup_tx, setup_rx) = mpsc::channel();
+            *runtime.background_setup_gate.lock().unwrap() = Some(setup_rx);
+            let (controller_tx, controller_rx) = mpsc::channel();
+            if mode == "controller-send" {
+                *runtime.background_controller_gate.lock().unwrap() = Some(controller_rx);
+            }
+            let worker_runtime = Arc::clone(&runtime);
+            let worker = thread::spawn(move || worker_runtime.execute(background_request(
+                "(trap '' TERM; printf ready > holder-ready; \
+                  while [ ! -f release-background-pipe ]; do sleep 0.01; done; \
+                  printf inherited-tail) & \
+                 while [ ! -f holder-ready ]; do sleep 0.01; done; \
+                 printf 'effect\\n' > effect-count; printf SC_CAPTURE_PREFIX; \
+                 printf ready > child-ready; while :; do sleep 1; done",
+            )));
+            wait_file_bytes(&runtime.workspace_root.join("child-ready"), b"ready");
+            let owner = background_owner(&runtime, 1);
+            let pid = {
+                let mut state = owner.state.lock().unwrap();
+                assert!(state.resources.state.poll().unwrap().is_none());
+                state.resources.state.child.id()
+            };
+            setup_tx.send(()).unwrap();
+            if mode == "controller-send" {
+                let deadline = Instant::now() + Duration::from_secs(3);
+                while !fs::read_to_string(&owner.terminal_path).unwrap_or_default().contains("SC_CAPTURE_PREFIX") {
+                    assert!(Instant::now() < deadline, "real prefix precedes actual channel refusal");
+                    thread::sleep(FOREGROUND_POLL_INTERVAL);
+                }
+                controller_tx.send(()).unwrap();
+            }
+            let started = Instant::now();
+            let events = worker.join().expect("entered background refusal returned");
+            assert!(started.elapsed() < Duration::from_secs(4));
+            let phase = match mode {
+                "background-setup" => "background capture setup failed",
+                "background-controller" => "background controller creation failed",
+                _ => "background controller admission failed",
+            };
+            assert_background_throw(&events, phase);
+            assert_eq!(fs::read(runtime.workspace_root.join("effect-count")).unwrap(), b"effect\n");
+            if mode != "controller-send" {
+                let observed: serde_json::Value = serde_json::from_slice(
+                    &fs::read(root.path().join("fault-observed.json")).unwrap(),
+                ).unwrap();
+                assert_eq!(observed["mode"], mode);
+                assert_eq!(observed["prefix"], "SC_CAPTURE_PREFIX");
+                assert_eq!(observed["childPid"], pid);
+                assert!(observed["bytesObserved"].as_u64().unwrap() >= 17);
+            }
+            {
+                let mut state = owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                assert!(state.resources.state.poll().unwrap().is_some());
+                assert!(state.resources.recovery.stdout_worker.is_some());
+                assert!(!state.resources.state.capture_complete);
+                assert!(!state.admitted);
+                let signals = state.resources.state.signals_sent;
+                state.resources.state.signal(true).unwrap();
+                assert_eq!(state.resources.state.signals_sent, signals);
+            }
+            assert!(runtime.background.lock().unwrap().contains_key(&1));
+            assert!(owner.terminal_path.exists());
+            fs::write(runtime.workspace_root.join("release-background-pipe"), b"release").unwrap();
+            let deadline = Instant::now() + Duration::from_secs(3);
+            loop {
+                let finished = {
+                    let state = owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                    state.resources.recovery.stdout_worker.as_ref().is_none_or(|worker| worker.is_finished())
+                        && state.resources.recovery.stderr_worker.as_ref().is_none_or(|worker| worker.is_finished())
+                };
+                if finished { break; }
+                assert!(Instant::now() < deadline, "released background readers did not reach EOF");
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            }
+            *runtime.capture_probe.lock().unwrap() = None;
+            let later = background_success(runtime.spawn_background(&background_args("printf recovered")));
+            wait_background_removed(&runtime, later.shell_id);
+            assert!(!runtime.background.lock().unwrap().contains_key(&1));
+            assert!(!owner.terminal_path.exists(), "only the unpublished owned terminal is removed");
+            assert!(!runtime.stopping.load(Ordering::Acquire));
+        }
+    }
+
+    #[test]
+    fn background_custody_stop_during_setup_retains_the_entered_request() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let _cleanup = BackgroundFixture::new(&runtime, &[]);
+        let (release, gate) = mpsc::channel();
+        *runtime.background_setup_gate.lock().unwrap() = Some(gate);
+        let worker_runtime = Arc::clone(&runtime);
+        let worker = thread::spawn(move || worker_runtime.execute(background_request(
+            "trap '' TERM; printf 'effect\\n' > effect-count; printf ready > term-ready; \
+             printf SC_CAPTURE_PREFIX; while :; do sleep 1; done",
+        )));
+        wait_file_bytes(&runtime.workspace_root.join("term-ready"), b"ready");
+        let owner = background_owner(&runtime, 1);
+        assert!(owner.state.lock().unwrap().resources.state.poll().unwrap().is_none());
+        let started = Instant::now();
+        assert!(runtime.stop().is_err(), "the real setup request remains unobserved");
+        assert!(started.elapsed() < Duration::from_secs(4));
+        {
+            let mut state = owner.state.lock().unwrap();
+            assert!(state.resources.state.poll().unwrap().is_some(), "stop reaps the actual entered child");
+            assert!(state.resources.state.signals_sent >= 2, "installed TERM-ignore requires force");
+            assert!(state.phase == BackgroundPhase::Setup);
+        }
+        assert!(runtime.background.lock().unwrap().contains_key(&1));
+        release.send(()).unwrap();
+        let events = worker.join().expect("entered setup caller returned");
+        assert_background_throw(&events, "background admission closed");
+        assert_eq!(fs::read(runtime.workspace_root.join("effect-count")).unwrap(), b"effect\n");
+        runtime.stop().expect("setup return and actual readers now observed");
+        assert!(runtime.background.lock().unwrap().is_empty());
+        assert!(!owner.terminal_path.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn background_custody_stop_and_hard_timeout_force_only_the_owned_unreaped_child() {
+        use std::os::unix::process::ExitStatusExt;
+        for hard_timeout in [false, true] {
+            let (_root, runtime) = runtime();
+            let runtime = Arc::new(runtime);
+            let _cleanup = BackgroundFixture::new(&runtime, &[]);
+            let command = "trap '' TERM; printf 'effect\\n' > effect-count; \
+                printf ready > term-ready; printf term-prefix; while :; do sleep 1; done";
+            let shell_id = if hard_timeout {
+                let mut args = foreground_args(command);
+                args.timeout = 20;
+                args.timeout_behavior = TIMEOUT_BEHAVIOR_BACKGROUND;
+                args.hard_timeout = Some(5_000);
+                runtime.execute(stream_file_request(args)).iter().find_map(|event| match &event.element {
+                    Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                        message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                            event: Some(shell_stream::Event::Backgrounded(result)),
+                        })), ..
+                    })) => Some(result.shell_id),
+                    _ => None,
+                }).expect("same child admitted through timed handoff")
+            } else {
+                background_success(runtime.spawn_background(&background_args(command))).shell_id
+            };
+            wait_file_bytes(&runtime.workspace_root.join("term-ready"), b"ready");
+            let owner = background_owner(&runtime, shell_id);
+            {
+                let mut state = owner.state.lock().unwrap();
+                assert!(state.resources.state.poll().unwrap().is_none(), "trap readiness precedes termination");
+                assert_eq!(state.resources.state.signals_sent, 0);
+            }
+            let started = Instant::now();
+            if hard_timeout {
+                let deadline = Instant::now() + Duration::from_secs(7);
+                while runtime.background.lock().unwrap().contains_key(&shell_id) {
+                    assert!(Instant::now() < deadline, "actual hard timeout did not force and reap");
+                    thread::sleep(FOREGROUND_POLL_INTERVAL);
+                }
+            } else {
+                runtime.stop().expect("bounded TERM/KILL, actual reap and output observation");
+                assert!(started.elapsed() < Duration::from_secs(4));
+            }
+            let mut state = owner.state.lock().unwrap();
+            let status = state.resources.state.poll().unwrap().expect("actual child reaped");
+            assert_eq!(status.signal(), Some(libc::SIGKILL));
+            assert!(state.resources.state.signals_sent >= 2);
+            assert!(state.phase == BackgroundPhase::Settled);
+            let signals = state.resources.state.signals_sent;
+            state.resources.state.signal(true).unwrap();
+            assert_eq!(state.resources.state.signals_sent, signals, "no cached PID may be signaled after reap");
+            drop(state);
+            let text = fs::read_to_string(&owner.terminal_path).unwrap();
+            assert!(text.contains("\nerror: background child exited without a numeric status\n"));
+            assert!(text.contains("\nended_at:"));
+            assert!(!text.contains("\nexit_code:"), "no synthetic exit 1 replaces the actual signal");
+            assert_eq!(fs::read(runtime.workspace_root.join("effect-count")).unwrap(), b"effect\n");
+            runtime.stop().expect("repeated stop only observes completed ownership");
+        }
+    }
+
+    #[test]
+    fn background_custody_reaped_child_keeps_readers_until_explicit_eof() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let _cleanup = BackgroundFixture::new(&runtime, &["release-inherited"]);
+        let result = background_success(runtime.spawn_background(&background_args(
+            "exec 3<&0; \
+             (trap '' TERM; printf ready > inherited-ready; IFS= read -r input <&3; \
+              printf eof > inherited-input-eof; \
+              while [ ! -f release-inherited ]; do sleep 0.01; done; printf inherited-tail) & \
+             exec 3<&-; while [ ! -f inherited-ready ]; do sleep 0.01; done; \
+             printf 'effect\\n' > effect-count; printf direct-prefix; exit 0",
+        )));
+        let owner = background_owner(&runtime, result.shell_id);
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            if owner.state.lock().unwrap().resources.state.poll().unwrap().is_some() { break; }
+            assert!(Instant::now() < deadline, "actual direct child did not reap");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        {
+            let state = owner.state.lock().unwrap();
+            assert!(state.resources.recovery.stdout_worker.is_some());
+            assert!(state.resources.recovery.stderr_worker.is_some());
+            assert!(!state.resources.state.capture_complete);
+            assert_eq!(state.resources.state.signals_sent, 0);
+        }
+        wait_file_bytes(&runtime.workspace_root.join("inherited-input-eof"), b"eof");
+        assert!(owner.stdin.lock().unwrap().is_none(),
+            "observed direct-child reap closes only the owner's stdin reference");
+        let started = Instant::now();
+        assert!(runtime.stop().is_err(), "actual inherited pipes prevent a clean stop");
+        assert!(started.elapsed() < Duration::from_secs(4));
+        assert!(runtime.background.lock().unwrap().contains_key(&result.shell_id));
+        assert!(!fs::read_to_string(&owner.terminal_path).unwrap().contains("\nexit_code:"));
+        assert_eq!(owner.state.lock().unwrap().resources.state.signals_sent, 0);
+        fs::write(runtime.workspace_root.join("release-inherited"), b"release").unwrap();
+        wait_background_removed(&runtime, result.shell_id);
+        let text = fs::read_to_string(&owner.terminal_path).unwrap();
+        assert!(text.contains("direct-prefix"));
+        assert!(text.contains("inherited-tail"));
+        assert!(text.contains("\nexit_code: 0\n"), "actual zero status and complete readers remain known");
+        let mut state = owner.state.lock().unwrap();
+        assert!(state.resources.state.capture_complete);
+        state.resources.state.signal(true).unwrap();
+        assert_eq!(state.resources.state.signals_sent, 0);
+        drop(state);
+        runtime.stop().expect("later actual EOF completed autonomous cleanup");
+    }
+
+    #[test]
+    fn background_custody_controller_loss_recovers_through_the_same_entry() {
+        for fault in [BackgroundControllerFault::PanicAfterReap, BackgroundControllerFault::ExitAfterReap] {
+            let (_root, runtime) = runtime();
+            let runtime = Arc::new(runtime);
+            let _cleanup = BackgroundFixture::new(&runtime, &["release-controller-child", "release-controller-pipe"]);
+            *runtime.background_controller_fault.lock().unwrap() = Some(fault);
+            let result = background_success(runtime.spawn_background(&background_args(
+                "(trap '' TERM; printf ready > controller-holder-ready; \
+                  while [ ! -f release-controller-pipe ]; do sleep 0.01; done; printf controller-tail) & \
+                 while [ ! -f controller-holder-ready ]; do sleep 0.01; done; \
+                 printf 'effect\\n' > effect-count; printf controller-prefix; \
+                 while [ ! -f release-controller-child ]; do sleep 0.01; done; exit 0",
+            )));
+            let owner = background_owner(&runtime, result.shell_id);
+            fs::write(runtime.workspace_root.join("release-controller-child"), b"release").unwrap();
+            let deadline = Instant::now() + Duration::from_secs(3);
+            loop {
+                let finished = owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .controller.as_ref().unwrap().is_finished();
+                if finished { break; }
+                assert!(Instant::now() < deadline, "controlled controller exit was not observed");
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            }
+            assert!(runtime.background.lock().unwrap().contains_key(&result.shell_id));
+            {
+                let state = owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                assert!(state.resources.state.status.is_some());
+                assert!(state.resources.recovery.stdout_worker.is_some());
+                assert!(state.resources.recovery.stderr_worker.is_some());
+                assert_eq!(state.resources.state.signals_sent, 0);
+            }
+            let read = ReadArgs {
+                path: format!("{BOX_TERMINAL_VIRTUAL_PREFIX}{}.txt", result.shell_id),
+                tool_call_id: "controller-observation".into(), offset: None, limit: None, encoding_hint: None,
+            };
+            assert!(matches!(runtime.read(&read).result, Some(read_result::Result::Success(_))));
+            {
+                let state = owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                assert!(state.controller.is_none(), "actual terminated JoinHandle was observed");
+                assert!(state.phase == BackgroundPhase::Recovery);
+                assert!(state.failure.is_some());
+                assert!(!state.resources.state.capture_complete);
+            }
+            assert!(runtime.stop().is_err(), "controller loss does not erase inherited reader ownership");
+            assert_eq!(owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+                .resources.state.signals_sent, 0);
+            fs::write(runtime.workspace_root.join("release-controller-pipe"), b"release").unwrap();
+            let deadline = Instant::now() + Duration::from_secs(3);
+            loop {
+                let finished = {
+                    let state = owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                    state.resources.recovery.stdout_worker.as_ref().unwrap().is_finished()
+                        && state.resources.recovery.stderr_worker.as_ref().unwrap().is_finished()
+                };
+                if finished { break; }
+                assert!(Instant::now() < deadline, "released actual readers did not reach EOF");
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            }
+            assert!(matches!(runtime.read(&read).result, Some(read_result::Result::Success(_))));
+            assert!(!runtime.background.lock().unwrap().contains_key(&result.shell_id));
+            let text = fs::read_to_string(&owner.terminal_path).unwrap();
+            assert!(text.contains("controller-prefix"));
+            assert!(text.contains("controller-tail"));
+            assert!(text.contains("\nerror: background controller "));
+            assert!(text.contains("\nended_at:"));
+            assert!(!text.contains("\nexit_code:"), "controller loss never becomes fabricated status");
+            assert_eq!(fs::read(runtime.workspace_root.join("effect-count")).unwrap(), b"effect\n");
+            runtime.stop().expect("same registry observed later real recovery");
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn background_custody_full_pipe_input_does_not_block_registry_or_stop() {
+        use std::os::fd::{AsRawFd, FromRawFd};
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let _cleanup = BackgroundFixture::new(&runtime, &["release-input"]);
+        let result = background_success(runtime.spawn_background(&background_args(
+            "printf ready > input-ready; while [ ! -f release-input ]; do sleep 0.01; done; exit 0",
+        )));
+        wait_file_bytes(&runtime.workspace_root.join("input-ready"), b"ready");
+        let owner = background_owner(&runtime, result.shell_id);
+        // Establish actual kernel backpressure before the API write. The child
+        // cannot consume input: its explicit release loop contains no read.
+        {
+            let input = owner.stdin.lock().unwrap().as_ref().cloned().unwrap();
+            let stdin = input.lock().unwrap();
+            let descriptor = stdin.as_raw_fd();
+            let flags = unsafe { libc::fcntl(descriptor, libc::F_GETFL) };
+            assert!(flags >= 0);
+            let duplicate = unsafe { libc::dup(descriptor) };
+            assert!(duplicate >= 0);
+            let mut filler = unsafe { File::from_raw_fd(duplicate) };
+            assert_eq!(unsafe { libc::fcntl(descriptor, libc::F_SETFL, flags | libc::O_NONBLOCK) }, 0);
+            let mut filled = 0;
+            let block = [b'x'; 4096];
+            for bytes in [block.as_slice(), &b"x"[..]] {
+                loop {
+                    match filler.write(bytes) {
+                        Ok(count) => { assert!(count > 0); filled += count; }
+                        Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => break,
+                        Err(error) => panic!("actual input pipe fill failed: {error}"),
+                    }
+                }
+            }
+            assert!(filled > 0);
+            assert_eq!(unsafe { libc::fcntl(descriptor, libc::F_SETFL, flags) }, 0);
+        }
+        let writer_runtime = Arc::clone(&runtime);
+        let shell_id = result.shell_id;
+        let writer = thread::spawn(move || writer_runtime.write_stdin(&WriteShellStdinArgs {
+            shell_id, chars: "z".into(),
+        }));
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while owner.active_input.load(Ordering::Acquire) != 1 {
+            assert!(Instant::now() < deadline, "actual input call did not enter");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        assert!(!writer.is_finished(), "a full pipe cannot complete before child release");
+
+        let sibling_runtime = Arc::clone(&runtime);
+        let (sibling_tx, sibling_rx) = mpsc::channel();
+        let sibling = thread::spawn(move || {
+            let result = sibling_runtime.spawn_background(&background_args("printf sibling"));
+            let _ = sibling_tx.send(result);
+        });
+        let admitted = sibling_rx.recv_timeout(Duration::from_secs(2));
+        if admitted.is_err() {
+            fs::write(runtime.workspace_root.join("release-input"), b"release").unwrap();
+        }
+        let sibling_result = background_success(admitted.expect("blocked input must release the registry"));
+        sibling.join().unwrap();
+        wait_background_removed(&runtime, sibling_result.shell_id);
+
+        let stopping_runtime = Arc::clone(&runtime);
+        let (stopped_tx, stopped_rx) = mpsc::channel();
+        let stopper = thread::spawn(move || {
+            let _ = stopped_tx.send(stopping_runtime.stop());
+        });
+        let stopped = stopped_rx.recv_timeout(Duration::from_secs(4));
+        if stopped.is_err() {
+            fs::write(runtime.workspace_root.join("release-input"), b"release").unwrap();
+        }
+        stopped.expect("blocked input must not deadlock stop").expect("owned child and input settled");
+        stopper.join().unwrap();
+        let written = writer.join().expect("actual blocked writer returned after child termination");
+        assert!(matches!(written.result, Some(write_shell_stdin_result::Result::Error(_))));
+        assert_eq!(owner.active_input.load(Ordering::Acquire), 0);
+        assert!(runtime.background.lock().unwrap().is_empty());
+        let state = owner.state.lock().unwrap();
+        assert!(state.resources.state.status.is_some());
+        assert!(state.phase == BackgroundPhase::Settled);
+    }
+
+    #[test]
+    fn background_custody_observed_read_wait_and_worker_failures_never_fabricate_exit() {
+        for mode in ["stdout-read", "stderr-read", "stdout-worker", "stderr-worker",
+            "stdout-wait", "stderr-wait"]
+        {
+            let (root, runtime) = runtime();
+            let runtime = Arc::new(runtime);
+            let _cleanup = BackgroundFixture::new(&runtime, &["release-fault-output"]);
+            *runtime.capture_probe.lock().unwrap() =
+                CaptureProbe::new(mode, root.path().join("background-fault.json")).map(Arc::new);
+            let redirect = if mode.starts_with("stderr") { " >&2" } else { "" };
+            let command = format!(
+                "printf 'effect\\n' > effect-count; \
+                 while [ ! -f release-fault-output ]; do sleep 0.01; done; \
+                 printf SC_CAPTURE_PREFIX{redirect}; while :; do sleep 1; done",
+            );
+            let result = background_success(runtime.spawn_background(&background_args(&command)));
+            let owner = background_owner(&runtime, result.shell_id);
+            assert!(!root.path().join("background-fault.json").exists(),
+                "valid admission precedes the explicitly released fault output");
+            fs::write(runtime.workspace_root.join("release-fault-output"), b"release").unwrap();
+            wait_background_removed(&runtime, result.shell_id);
+            let observed: serde_json::Value = serde_json::from_slice(
+                &fs::read(root.path().join("background-fault.json")).unwrap(),
+            ).unwrap();
+            assert_eq!(observed["mode"], mode);
+            assert_eq!(observed["prefix"], "SC_CAPTURE_PREFIX");
+            assert_eq!(observed["childPid"], result.pid.unwrap());
+            assert!(observed["bytesObserved"].as_u64().unwrap() >= 17);
+            let text = fs::read_to_string(&owner.terminal_path).unwrap();
+            assert!(text.contains("SC_CAPTURE_PREFIX"), "actual prefix remains diagnostic output");
+            assert!(text.contains("\nerror:"));
+            assert!(text.contains("\nended_at:"));
+            assert!(!text.contains("\nexit_code:"), "{mode} must not become exit 1 or success");
+            assert_eq!(fs::read(runtime.workspace_root.join("effect-count")).unwrap(), b"effect\n");
+            let state = owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            assert!(state.resources.state.status.is_some());
+            assert!(state.resources.state.capture_complete);
+            assert!(state.failure.is_some());
+            assert!(state.footer_written);
+            assert!(state.phase == BackgroundPhase::Settled);
+        }
+    }
+
+    #[test]
+    fn background_custody_failed_writer_and_footer_publication_remain_pending() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let _cleanup = BackgroundFixture::new(&runtime, &["release-unwritable"]);
+        let result = background_success(runtime.spawn_background(&background_args(
+            "printf 'effect\\n' > effect-count; \
+             while [ ! -f release-unwritable ]; do sleep 0.01; done; \
+             printf unwritable-output; while :; do sleep 1; done",
+        )));
+        let owner = background_owner(&runtime, result.shell_id);
+        // Replace only this fixture's actual writer with a read-only descriptor
+        // to the same owned file. The next real write, then footer write, fail.
+        *owner.writer.lock().unwrap() = File::open(&owner.terminal_path).unwrap();
+        fs::write(runtime.workspace_root.join("release-unwritable"), b"release").unwrap();
+        let deadline = Instant::now() + Duration::from_secs(4);
+        loop {
+            let failed = owner.state.lock().unwrap().footer_failed;
+            if failed { break; }
+            assert!(Instant::now() < deadline, "actual writer failure did not reach footer observation");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        {
+            let state = owner.state.lock().unwrap();
+            assert_eq!(*state.resources.recovery.failure.lock().unwrap(), Some("stream output write failed"));
+            assert!(state.resources.state.status.is_some());
+            assert!(state.resources.state.capture_complete);
+            assert!(state.footer_failed);
+            assert!(!state.footer_written);
+            assert!(state.phase != BackgroundPhase::Settled);
+        }
+        assert!(runtime.background.lock().unwrap().contains_key(&result.shell_id));
+        let text = fs::read_to_string(&owner.terminal_path).unwrap();
+        assert!(!text.contains("\nexit_code:"));
+        assert!(!text.contains("\nended_at:"), "failed publication is not a terminal receipt");
+        let started = Instant::now();
+        assert!(runtime.stop().is_err(), "unobserved terminal publication cannot claim clean completion");
+        assert!(started.elapsed() < Duration::from_secs(4));
+        assert!(runtime.background.lock().unwrap().contains_key(&result.shell_id));
+        assert_eq!(fs::read(runtime.workspace_root.join("effect-count")).unwrap(), b"effect\n");
+        let mut state = owner.state.lock().unwrap();
+        let signals = state.resources.state.signals_sent;
+        state.resources.state.signal(true).unwrap();
+        assert_eq!(state.resources.state.signals_sent, signals);
+    }
+
+    #[test]
+    fn background_custody_handoff_id_exhaustion_retains_entered_capture() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let _cleanup = BackgroundFixture::new(&runtime, &[]);
+        runtime.next_shell_id.store(u32::MAX, Ordering::Relaxed);
+        let mut held = HeldFileStream::new(&runtime, "exhausted-handoff", true);
+        held.resume();
+        let deadline = Instant::now() + Duration::from_secs(8);
+        while !held.worker.as_ref().unwrap().is_finished() {
+            assert!(Instant::now() < deadline, "timed handoff refusal did not observe entered cleanup");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        let events = held.finish();
+        assert_stream_file_result(&events, true);
+        assert!(events.iter().any(|event| matches!(&event.element,
+            Some(exec_stream_element::Element::ExecClientControlMessage(
+                ExecClientControlMessage {
+                    message: Some(exec_client_control_message::Message::Throw(error)),
+                },
+            )) if error.error == "background shell id space exhausted")));
+        assert_eq!(runtime.next_shell_id.load(Ordering::Relaxed), u32::MAX);
+        assert_eq!(fs::read(runtime.workspace_root.join("exhausted-handoff-effect")).unwrap(), b"effect\n");
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        assert!(runtime.background.lock().unwrap().is_empty());
+        assert_eq!(fs::read_dir(&runtime.terminals_directory).unwrap().count(), 0);
+        let events = runtime.execute(stream_file_request(foreground_args("printf foreground-still-works")));
+        assert_stream_file_result(&events, false);
+        assert_eq!(stream_file_stdout(&events), "foreground-still-works");
+    }
+
+    #[test]
+    fn background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let _cleanup = BackgroundFixture::new(&runtime, &[]);
+        *runtime.background_controller_fault.lock().unwrap() = Some(BackgroundControllerFault::PanicBeforeCreate);
+        let (release, gate) = mpsc::channel();
+        *runtime.background_controller_gate.lock().unwrap() = Some(gate);
+        let worker_runtime = Arc::clone(&runtime);
+        let worker = thread::spawn(move || {
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| worker_runtime.execute(background_request(
+                "trap '' TERM; printf 'effect\\n' > effect-count; printf SC_CAPTURE_PREFIX; \
+                 while :; do sleep 1; done",
+            ))))
+        });
+        let deadline = Instant::now() + Duration::from_secs(3);
+        let owner = loop {
+            let entry = runtime.background.lock().unwrap().get(&1).cloned();
+            if let Some(owner) = entry {
+                if fs::read_to_string(&owner.terminal_path).unwrap_or_default().contains("SC_CAPTURE_PREFIX") {
+                    break owner;
+                }
+            }
+            assert!(Instant::now() < deadline, "actual prefix must precede controlled setup unwind");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        };
+        assert_eq!(fs::read(runtime.workspace_root.join("effect-count")).unwrap(), b"effect\n");
+        release.send(()).unwrap();
+        let started = Instant::now();
+        assert!(worker.join().expect("unwind was caught by the fixture").is_err());
+        assert!(started.elapsed() < Duration::from_secs(4));
+        assert!(runtime.background.lock().unwrap().is_empty());
+        assert!(!owner.terminal_path.exists());
+        let mut state = owner.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        assert!(state.resources.state.status.is_some());
+        assert!(state.resources.state.capture_complete);
+        assert!(state.resources.recovery.stdout_worker.is_none());
+        assert!(state.resources.recovery.stderr_worker.is_none());
+        assert!(state.resources.state.signals_sent >= 2);
+        let signals = state.resources.state.signals_sent;
+        state.resources.state.signal(true).unwrap();
+        assert_eq!(state.resources.state.signals_sent, signals);
+    }
+
     #[test]
     fn binary_read_preserves_bytes_and_rejects_ranges_and_oversize() {
         let (_root,runtime)=runtime();let bytes=b"\x89PNG\r\n\x1a\n\x00\xff";
@@ -4583,7 +5857,7 @@ mod tests {
             command: "read line; printf 'got:%s\\n' \"$line\"".into(),
             working_directory: "/workspace".into(),
             tool_call_id: String::new(),
-        });
+        }).expect("background spawn and capture admission observed");
         let Some(background_shell_spawn_result::Result::Success(spawned)) =
             spawned.result
         else {

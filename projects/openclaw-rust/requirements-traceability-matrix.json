@@ -182,7 +182,9 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -231,7 +233,15 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -490,7 +500,9 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -542,7 +554,15 @@
         "MSI-04",
         "MSI-05",
         "MSI-06",
-        "MSI-07"
+        "MSI-07",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -678,7 +698,9 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -699,7 +721,15 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1190,7 +1220,9 @@
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
-        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R17",
@@ -1209,7 +1241,15 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1335,7 +1375,9 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R21",
@@ -1345,7 +1387,15 @@
         "OCRM-PLUGIN-O04",
         "OCRM-PLUGIN-O05",
         "OCRM-PLUGIN-O07",
-        "OCRM-SESSION-LIFECYCLE-DELETE-FENCE-O01"
+        "OCRM-SESSION-LIFECYCLE-DELETE-FENCE-O01",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1443,7 +1493,9 @@
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json",
-        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -1493,7 +1545,15 @@
         "SC04",
         "SC05",
         "SC06",
-        "SC07"
+        "SC07",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1617,7 +1677,9 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1691,7 +1753,15 @@
         "MSU-07",
         "MSU-08",
         "MSU-09",
-        "MSU-10"
+        "MSU-10",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -2088,7 +2158,9 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",
@@ -2140,7 +2212,15 @@
         "MSI-04",
         "MSI-05",
         "MSI-06",
-        "MSI-07"
+        "MSI-07",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2678,7 +2758,9 @@
         "source/host/src/extensions/memory/production_identity_tests.rs",
         "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
-        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2710,7 +2792,15 @@
         "MSI-04",
         "MSI-05",
         "MSI-06",
-        "MSI-07"
+        "MSI-07",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2915,7 +3005,9 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC21",
@@ -2924,7 +3016,15 @@
       "oracle_ids": [
         "OCRM-PLUGIN-O04",
         "OCRM-PLUGIN-O05",
-        "OCRM-PLUGIN-O07"
+        "OCRM-PLUGIN-O07",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -3030,7 +3130,9 @@
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json",
-        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -3080,7 +3182,15 @@
         "SC04",
         "SC05",
         "SC06",
-        "SC07"
+        "SC07",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -3227,7 +3337,9 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
@@ -3301,7 +3413,15 @@
         "MSU-07",
         "MSU-08",
         "MSU-09",
-        "MSU-10"
+        "MSU-10",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [

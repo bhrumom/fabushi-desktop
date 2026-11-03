@@ -229,7 +229,7 @@ fn box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion() {
 mod foreground_capture {
     use std::path::PathBuf;
     use std::process::{Child, Command, Stdio};
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex, mpsc};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::thread;
     use std::time::{Duration, Instant};
@@ -245,6 +245,13 @@ mod foreground_capture {
         ProviderSessionError, RoutedProviderCheckpoint, RoutedToolDefinition,
     };
     use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
+    use mahayana_host_runtime::runner::background_work::{
+        BackgroundShellBackgroundCompletion, BackgroundShellPendingWatch,
+        BackgroundShellWatchOutcome, RunnerBackgroundShellWatches,
+    };
+    use mahayana_host_runtime::runner::shell_terminal_watch::{
+        ShellTerminalPollRead, ShellWatchStatus, TerminalReadResult, poll_shell_terminal_file,
+    };
     use mahayana_host_runtime::runner::box_tool_access::{
         RUNNER_BOX_SHELL_TOOL_NAME, RunnerBoxToolBridge,
     };
@@ -386,6 +393,7 @@ mod foreground_capture {
             assert_eq!(stopped["pid"].as_u64(), Some(u64::from(self.child.id())));
             assert_eq!(stopped["clean"], true);
             assert_eq!(stopped["foregroundCount"], 0, "cleanup must retain or reap actual ownership");
+            assert_eq!(stopped["backgroundCount"], 0, "actual background ownership must also be observed");
             self.finished = true;
         }
     }
@@ -407,7 +415,11 @@ mod foreground_capture {
                     }
                 }
             }
-            let _ = fs::remove_dir_all(&self.root);
+            if self.finished && !thread::panicking() {
+                let _ = fs::remove_dir_all(&self.root);
+            } else {
+                eprintln!("retained actual Box capture fixture: {}", self.root.display());
+            }
         }
     }
 
@@ -445,10 +457,157 @@ mod foreground_capture {
         })
     }
 
+
+    // The callback performs the actual Host read and the production Runner
+    // terminal poll. Pending, read and settled callbacks collect observations only.
+    struct BackgroundWatchProbe {
+        bridge: Arc<RunnerBoxToolBridge>,
+        watches: Arc<RunnerBackgroundShellWatches>,
+        pending: Arc<Mutex<Vec<BackgroundShellPendingWatch>>>,
+        settled: mpsc::Receiver<BackgroundShellBackgroundCompletion>,
+        settled_count: Arc<AtomicUsize>,
+        reads: Arc<AtomicUsize>,
+        snapshot: Arc<Mutex<Option<(String, String)>>>,
+    }
+
+    impl BackgroundWatchProbe {
+        fn new(probe: &ProbeDaemon) -> Self {
+            let service = Arc::new(ForeverBoxService::new(
+                HostBox::new(ProductionBoxEnvironment::new(
+                    "127.0.0.1", probe.port, probe.auth.clone(),
+                )),
+                Arc::new(UnusedLifecycle), false, false, false,
+            ));
+            let read_port = ForeverBoxRunnerResourcePort::new(Arc::clone(&service), "sc-runner");
+            let pending = Arc::new(Mutex::new(Vec::new()));
+            let pending_observer = Arc::clone(&pending);
+            let (settled_tx, settled) = mpsc::channel();
+            let settled_count = Arc::new(AtomicUsize::new(0));
+            let settled_observer = Arc::clone(&settled_count);
+            let reads = Arc::new(AtomicUsize::new(0));
+            let read_observer = Arc::clone(&reads);
+            let snapshot = Arc::new(Mutex::new(None));
+            let snapshot_observer = Arc::clone(&snapshot);
+            let watches = Arc::new(RunnerBackgroundShellWatches::new(
+                Arc::new(move |agent_id, shell_id, cancelled| {
+                    assert_eq!(agent_id, "sc-runner");
+                    let started = Instant::now();
+                    poll_shell_terminal_file(
+                        0, 5,
+                        || {
+                            read_observer.fetch_add(1, Ordering::SeqCst);
+                            let read = read_port.read_background_shell_terminal(shell_id);
+                            if let ShellTerminalPollRead::Snapshot { output_path, result } = &read {
+                                let content = match result {
+                                    TerminalReadResult::SuccessText(content) => Some(content.clone()),
+                                    TerminalReadResult::SuccessData(bytes) => {
+                                        Some(String::from_utf8_lossy(bytes).into_owned())
+                                    }
+                                    _ => None,
+                                };
+                                if let Some(content) = content {
+                                    *snapshot_observer.lock().expect("actual read observation") =
+                                        Some((output_path.clone(), content));
+                                }
+                            }
+                            // Observe the real result without changing the bytes or settlement.
+                            read
+                        },
+                        || started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                        |millis| thread::sleep(Duration::from_millis(millis)),
+                        || cancelled.load(Ordering::Acquire),
+                    ).map(|outcome| BackgroundShellWatchOutcome {
+                        status: match outcome.status {
+                            ShellWatchStatus::Success => "success",
+                            ShellWatchStatus::Error => "error",
+                        }.into(),
+                        detail: outcome.detail,
+                        output_path: outcome.output_path,
+                    })
+                }),
+                Some(Arc::new(move |watch| {
+                    pending_observer.lock().expect("pending observations").push(watch.clone());
+                })),
+                Some(Arc::new(move |completion| {
+                    settled_observer.fetch_add(1, Ordering::SeqCst);
+                    let _ = settled_tx.send(completion);
+                })),
+                None,
+            ));
+            let port = ForeverBoxRunnerResourcePort::new(service, "sc-runner")
+                .with_background_shell_watches(Arc::clone(&watches));
+            let bridge = Arc::new(RunnerBoxToolBridge::new(
+                Arc::new(NoUpstream), Arc::new(port),
+            ));
+            Self { bridge, watches, pending, settled, settled_count, reads, snapshot }
+        }
+
+        fn assert_unarmed(&self) {
+            assert!(self.pending.lock().expect("pending observations").is_empty());
+            assert!(self.watches.pending_shell_rewatch_ids("sc-runner").is_empty());
+            assert!(!self.watches.has_running_background_shell_work());
+            assert_eq!(self.settled_count.load(Ordering::SeqCst), 0);
+            assert_eq!(self.reads.load(Ordering::SeqCst), 0,
+                "an unadmitted background result cannot start the real reader");
+            assert!(self.snapshot.lock().expect("actual read observation").is_none());
+            assert!(matches!(self.settled.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+
+        fn await_prefix(&self) -> (String, String) {
+            let deadline = Instant::now() + BOUND;
+            loop {
+                if let Some((path, content)) =
+                    self.snapshot.lock().expect("actual read observation").clone()
+                {
+                    let (_, output) = terminal_frontmatter_and_output(&content);
+                    if output.contains("BGC_STDOUT_PREFIX\n")
+                        && output.contains("BGC_STDERR_PREFIX\n")
+                    {
+                        return (path, content);
+                    }
+                }
+                assert_eq!(self.settled_count.load(Ordering::SeqCst), 0,
+                    "the actual watch cannot settle before explicit command release");
+                assert!(Instant::now() < deadline,
+                    "actual Host terminal read did not observe both command prefixes");
+                thread::sleep(Duration::from_millis(5));
+            }
+        }
+
+        fn await_settlement(&self, shell_id: &str) -> BackgroundShellBackgroundCompletion {
+            let completion = self.settled.recv_timeout(BOUND)
+                .expect("actual terminal reader must settle the actual Runner watch");
+            assert_eq!(completion.parent_agent_id, "sc-runner");
+            assert_eq!(completion.work_id, shell_id);
+            assert_eq!(self.settled_count.load(Ordering::SeqCst), 1);
+            assert!(self.reads.load(Ordering::SeqCst) > 0);
+            assert!(!self.watches.is_shell_watch_armed("sc-runner", shell_id));
+            assert!(!self.watches.has_running_background_shell_work());
+            assert!(self.watches.pending_shell_rewatch_ids("sc-runner").is_empty());
+            assert!(self.watches.async_task_snapshots("sc-runner").is_empty());
+            assert!(matches!(self.settled.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            completion
+        }
+    }
+
+    impl Drop for BackgroundWatchProbe {
+        fn drop(&mut self) {
+            self.watches.dispose_parent("sc-runner");
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    enum ProbeDispatch {
+        Foreground,
+        Background,
+        TimedBackground(u64),
+    }
+
     struct ProbeAttempt {
         bridge: Arc<RunnerBoxToolBridge>,
         command: String,
         directory: String,
+        dispatch: ProbeDispatch,
         expect_unknown: bool,
         attempts: usize,
         returned: Option<Result<Value, ProviderSessionError>>,
@@ -471,7 +630,12 @@ mod foreground_capture {
             let tool = self.bridge.list_tools()?.into_iter()
                 .find(|tool| tool.name == RUNNER_BOX_SHELL_TOOL_NAME)
                 .expect("actual registered Box Shell");
-            let args = json!({"command":self.command,"workingDirectory":self.directory});
+            let mut args = json!({"command":self.command,"workingDirectory":self.directory});
+            match self.dispatch {
+                ProbeDispatch::Foreground => {}
+                ProbeDispatch::Background => { args["is_background"] = json!(true); }
+                ProbeDispatch::TimedBackground(millis) => { args["block_until_ms"] = json!(millis); }
+            }
             let bridge = Arc::clone(&self.bridge);
             let result = execute_routed_tool_with_timeout_ms(
                 attempt, "Shell".into(), 10_000,
@@ -510,6 +674,14 @@ mod foreground_capture {
     fn run_probe(probe: &ProbeDaemon, command: String, directory: &str, unknown: bool)
         -> (ProbeAttempt, ToolEffectCustodySnapshot, PathBuf)
     {
+        run_probe_dispatch(probe, probe.bridge(), ProbeDispatch::Foreground,
+            command, directory, unknown)
+    }
+
+    fn run_probe_dispatch(
+        probe: &ProbeDaemon, bridge: Arc<RunnerBoxToolBridge>, dispatch: ProbeDispatch,
+        command: String, directory: &str, unknown: bool,
+    ) -> (ProbeAttempt, ToolEffectCustodySnapshot, PathBuf) {
         let policy = StreamAttemptPolicy {
             first_output_timeout: Duration::from_secs(20),
             max_attempts: 2,
@@ -526,7 +698,7 @@ mod foreground_capture {
             &probe.root, "sc-runner", "sc-stream",
         );
         let mut attempt = ProbeAttempt {
-            bridge: probe.bridge(), command, directory: directory.into(),
+            bridge, command, directory: directory.into(), dispatch,
             expect_unknown: unknown, attempts: 0, returned: None, custody: None,
             later_dispatches: Arc::new(AtomicUsize::new(0)), checkpoint_calls: 0,
         };
@@ -655,6 +827,231 @@ mod foreground_capture {
             if has_effect { probe.assert_one_effect(); }
             assert!(!probe.root.join("fault-observed.json").exists());
             probe.finish();
+        }
+    }
+
+    // Frontmatter repeats the command text. Only bytes after its closing
+    // separator can witness real output from the child.
+    fn terminal_frontmatter_and_output(content: &str) -> (&str, &str) {
+        content.strip_prefix("---\n").expect("actual terminal frontmatter")
+            .split_once("\n---\n").expect("actual terminal frontmatter delimiter")
+    }
+
+    #[test]
+    #[ignore = "requires the actual daemon test executable bound by exact-H Actions"]
+    fn box_background_custody_faults_reach_real_runner_without_replay_or_watch() {
+        for (mode, phase) in [
+            ("background-setup", "background capture setup failed"),
+            ("background-controller", "background controller creation failed"),
+        ] {
+            let mut probe = ProbeDaemon::start(mode);
+            let watch = BackgroundWatchProbe::new(&probe);
+            let command = format!(
+                "printf 'effect\\n' >> effect-count; printf '%s\\n' \"$$\" > child-pid; \
+                 printf {PREFIX}; sleep 30",
+            );
+            let (attempt, custody, checkpoint_directory) = run_probe_dispatch(
+                &probe, Arc::clone(&watch.bridge), ProbeDispatch::Background,
+                command.clone(), "/workspace", true,
+            );
+            let error = attempt.returned.unwrap().expect_err("entered background refusal");
+            assert!(matches!(&error, ProviderSessionError::ToolOutcomeUnknown(_)));
+            let message = error.to_string();
+            assert!(message.contains(&format!(
+                "Box background Shell failed: background shell outcome unknown: {phase}",
+            )), "matching actual producer Throw must reach the real guard: {message}");
+            assert!(!message.contains(PREFIX), "output payload is not an unknown phase");
+            assert!(!message.contains(&command), "command payload is not an unknown phase");
+            assert_eq!(custody.unknown_result,
+                Some(ToolEffectUnknownResult::DownstreamOutcomeUnknown));
+            assert!(!checkpoint_directory.exists());
+            watch.assert_unarmed();
+            probe.assert_one_effect();
+            let observed: Value = serde_json::from_slice(
+                &fs::read(probe.root.join("fault-observed.json"))
+                    .expect("real background prefix fault witness"),
+            ).expect("actual background fault witness");
+            assert_eq!(observed["mode"], mode);
+            assert_eq!(observed["prefix"], PREFIX);
+            assert_eq!(observed["stream"], "stdout");
+            assert!(observed["bytesObserved"].as_u64().expect("actual captured byte count")
+                >= PREFIX.len() as u64);
+            let pid: i32 = fs::read_to_string(probe.workspace().join("child-pid"))
+                .expect("actual background child PID").trim().parse()
+                .expect("numeric owned background child PID");
+            assert!(pid > 1);
+            assert_eq!(observed["childPid"].as_i64(), Some(i64::from(pid)));
+            probe.finish();
+            assert_eq!(unsafe { libc::kill(pid, 0) }, -1,
+                "clean actual shutdown must have observed the entered child reap");
+            assert_eq!(std::io::Error::last_os_error().raw_os_error(), Some(libc::ESRCH));
+            probe.assert_one_effect();
+            watch.assert_unarmed();
+            assert!(!checkpoint_directory.exists(), "stop cannot authorize unknown checkpoint I/O");
+        }
+    }
+
+    #[test]
+    #[ignore = "requires the actual daemon test executable bound by exact-H Actions"]
+    fn box_background_custody_pre_spawn_refusal_is_known_without_effect_or_watch() {
+        // Both public forms select the same ordinary background owner.
+        for dispatch in [ProbeDispatch::Background, ProbeDispatch::TimedBackground(0)] {
+            let mut probe = ProbeDaemon::start("none");
+            let watch = BackgroundWatchProbe::new(&probe);
+            let command = "printf 'effect\\n' >> effect-count; printf '%s\\n' \"$$\" > child-pid";
+            let (attempt, custody, checkpoint_directory) = run_probe_dispatch(
+                &probe, Arc::clone(&watch.bridge), dispatch,
+                command.into(), "/workspace/absent-cwd", false,
+            );
+            let value = attempt.returned.unwrap().expect("known pre-spawn refusal");
+            assert_eq!(value["kind"], "error");
+            assert_eq!(value["command"], command);
+            assert_eq!(value["workingDirectory"], "/workspace/absent-cwd");
+            assert!(value["error"].as_str().is_some_and(|error| !error.is_empty()),
+                "the actual background Error result retains its refusal");
+            assert_eq!(value.as_object().expect("known Error object").len(), 4);
+            assert_eq!(custody.unknown_result, None);
+            assert_eq!(custody.checkpoint_revision, 1);
+            assert!(checkpoint_directory.is_dir(), "known refusal is actually checkpointed");
+            assert!(!probe.workspace().join("effect-count").exists());
+            assert!(!probe.workspace().join("child-pid").exists());
+            assert!(!probe.root.join("fault-observed.json").exists());
+            watch.assert_unarmed();
+            probe.finish();
+            assert!(!probe.workspace().join("effect-count").exists());
+            watch.assert_unarmed();
+        }
+    }
+
+    fn assert_background_terminal_completion(dispatch: ProbeDispatch, exit_code: i32) {
+        let mut probe = ProbeDaemon::start("none");
+        let watch = BackgroundWatchProbe::new(&probe);
+        let release = probe.workspace().join("release-background");
+        let command = format!(
+            "printf 'effect\\n' >> effect-count; printf '%s\\n' \"$$\" > child-pid; \
+             printf 'BGC_STDOUT_PREFIX\\n'; printf 'BGC_STDERR_PREFIX\\n' >&2; \
+             while [ ! -f release-background ]; do sleep 0.01; done; \
+             printf 'BGC_STDOUT_TAIL\\n'; printf 'BGC_STDERR_TAIL\\n' >&2; exit {exit_code}",
+        );
+        let (attempt, custody, _) = run_probe_dispatch(
+            &probe, Arc::clone(&watch.bridge), dispatch, command.clone(), "/workspace", false,
+        );
+        let value = attempt.returned.unwrap().expect("actual background admission");
+        assert_eq!(value["kind"], "backgrounded");
+        assert_eq!(value["command"], command);
+        assert_eq!(value["workingDirectory"], "/workspace");
+        let shell_id = value["shellId"].as_u64().expect("actual nonzero background shell ID");
+        assert_ne!(shell_id, 0);
+        let shell_id = shell_id.to_string();
+        let pid = value["pid"].as_u64().expect("actual owned background child ID");
+        assert!(pid > 1);
+        if let ProbeDispatch::TimedBackground(millis) = dispatch {
+            assert!(millis > 0);
+            assert_eq!(value["blockUntilMs"].as_u64(), Some(millis));
+            assert_eq!(value["backgroundReason"], 1);
+            assert!(value["stdout"].is_string());
+            assert!(value["stderr"].is_string());
+        }
+        assert_eq!(custody.unknown_result, None);
+        assert_eq!(custody.checkpoint_revision, 1);
+
+        let (output_path, running) = watch.await_prefix();
+        let (frontmatter, output) = terminal_frontmatter_and_output(&running);
+        assert!(frontmatter.lines().any(|line| line == format!("pid: {pid}")));
+        assert!(frontmatter.lines().any(|line| line == "cwd: \"/workspace\""));
+        assert!(frontmatter.lines().any(|line| line == "status: running"));
+        assert!(frontmatter.lines().any(|line| line.starts_with("started_at: ")));
+        assert!(frontmatter.lines().any(|line| line == format!(
+            "command: {}", serde_json::to_string(&command).expect("actual command JSON"),
+        )));
+        assert!(output_path.ends_with(&format!("/{shell_id}.txt")));
+        assert!(!output.contains("BGC_STDOUT_TAIL"));
+        assert!(!output.contains("BGC_STDERR_TAIL"));
+        assert!(!output.contains("exit_code:"));
+        assert!(!output.contains("ended_at:"));
+        assert!(!release.exists(), "only this test releases the actual child");
+        probe.assert_one_effect();
+        assert_eq!(
+            fs::read_to_string(probe.workspace().join("child-pid"))
+                .expect("actual positive child PID").trim().parse::<u64>()
+                .expect("numeric positive child PID"),
+            pid,
+        );
+        let pending = watch.pending.lock().expect("pending observations").clone();
+        assert_eq!(pending.len(), 1, "one actual background result admits one watch");
+        assert_eq!(pending[0].parent_agent_id, "sc-runner");
+        assert_eq!(pending[0].work_id, shell_id);
+        assert_eq!(pending[0].title, command);
+        assert!(pending[0].marked_at_ms > 0.0);
+        assert_eq!(pending[0].quiet_origin, None);
+        assert!(watch.watches.is_shell_watch_armed("sc-runner", &shell_id));
+        assert!(watch.watches.has_running_background_shell_work());
+        assert_eq!(watch.watches.pending_shell_rewatch_ids("sc-runner"), vec![shell_id.clone()]);
+        let tasks = watch.watches.async_task_snapshots("sc-runner");
+        assert_eq!(tasks.len(), 1);
+        assert_eq!(tasks[0].id, shell_id);
+        assert_eq!(tasks[0].label, command);
+        assert!(watch.reads.load(Ordering::SeqCst) > 0);
+        assert_eq!(watch.settled_count.load(Ordering::SeqCst), 0);
+        assert!(matches!(watch.settled.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+        fs::OpenOptions::new().write(true).create_new(true).open(&release)
+            .expect("explicitly release only this owned background command");
+        let completion = watch.await_settlement(&shell_id);
+        assert_eq!(completion.title, command);
+        assert_eq!(completion.marked_at_ms, pending[0].marked_at_ms);
+        assert_eq!(completion.quiet_origin, None);
+        assert_eq!(completion.output_path.as_deref(), Some(output_path.as_str()));
+        if exit_code == 0 {
+            assert_eq!(completion.status, "success");
+            assert_eq!(completion.detail, None);
+        } else {
+            assert_eq!(completion.status, "error");
+            assert_eq!(completion.detail, Some(format!("exit_code={exit_code}")));
+        }
+        let (completed_path, completed) = watch.snapshot.lock()
+            .expect("actual completed Host read observation").clone()
+            .expect("the settling poll observed the actual terminal");
+        assert_eq!(completed_path, output_path);
+        let (completed_frontmatter, completed_output) = terminal_frontmatter_and_output(&completed);
+        assert_eq!(completed_frontmatter, frontmatter, "terminal identity is preserved");
+        let (body, footer) = completed_output.split_once("\n---\n")
+            .expect("actual completed output followed by footer");
+        for marker in ["BGC_STDOUT_PREFIX", "BGC_STDERR_PREFIX", "BGC_STDOUT_TAIL", "BGC_STDERR_TAIL"] {
+            assert_eq!(body.lines().filter(|line| *line == marker).count(), 1,
+                "actual Host read must preserve one complete {marker} line");
+        }
+        assert!(body.find("BGC_STDOUT_PREFIX").unwrap() < body.find("BGC_STDOUT_TAIL").unwrap());
+        assert!(body.find("BGC_STDERR_PREFIX").unwrap() < body.find("BGC_STDERR_TAIL").unwrap());
+        assert!(footer.lines().any(|line| line == format!("exit_code: {exit_code}")));
+        assert!(footer.lines().any(|line| line.starts_with("elapsed_ms: ")));
+        assert!(footer.lines().any(|line| line.starts_with("ended_at: ")));
+        assert!(footer.ends_with("\n---\n"), "the actual footer retains its final newline");
+        assert_eq!(footer.lines().filter(|line| line.starts_with("exit_code:")).count(), 1);
+        assert!(!footer.lines().any(|line| line.starts_with("error:")));
+        assert!(!probe.root.join("fault-observed.json").exists());
+        probe.assert_one_effect();
+        probe.finish();
+        probe.assert_one_effect();
+        assert_eq!(watch.pending.lock().expect("pending observations").len(), 1);
+        assert_eq!(watch.settled_count.load(Ordering::SeqCst), 1);
+        assert!(matches!(watch.settled.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        assert!(!watch.watches.has_running_background_shell_work());
+    }
+
+    #[test]
+    #[ignore = "requires the actual daemon test executable bound by exact-H Actions"]
+    fn box_background_custody_ordinary_terminal_waits_for_release_and_settles_once() {
+        for exit_code in [0, 7] {
+            assert_background_terminal_completion(ProbeDispatch::Background, exit_code);
+        }
+    }
+
+    #[test]
+    #[ignore = "requires the actual daemon test executable bound by exact-H Actions"]
+    fn box_background_custody_timed_handoff_terminal_waits_for_release_and_settles_once() {
+        for exit_code in [0, 7] {
+            assert_background_terminal_completion(ProbeDispatch::TimedBackground(100), exit_code);
         }
     }
 }

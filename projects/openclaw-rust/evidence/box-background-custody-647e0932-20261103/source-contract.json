@@ -1,0 +1,178 @@
+{
+  "schema": "ocrm-scoped-production-contract-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BGC-v1",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "original_review_base": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+  "included_prior_commit": "004b7562dbf8c58b8089e39e3439e545e4e9457d",
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+    "blob": "2872f428079705bf2aef12bef9b09adcac18e458",
+    "initial_commit": "9015f65b5e747f78778d17d2e34f9d25008b7705",
+    "controller_terminal_commit": "b1ccf4605d4b1c57fd36c69ba6bceb507f6a3fa1",
+    "footer_correction_commit": "80a3087e6fcdd818b03ad2ea2fc5cf0c405d2f12",
+    "requirements": [
+      "BGC01",
+      "BGC02",
+      "BGC03",
+      "BGC04",
+      "BGC05",
+      "BGC06",
+      "BGC07",
+      "BGC08"
+    ]
+  },
+  "responsibility_ids": [
+    "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
+    "OCRM-RESP-PROCESS-CUSTODY-EXECUTION-001",
+    "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001"
+  ],
+  "scope": "Existing Box background and timed-handoff execution custody plus actual Host/ForeverBox/Runner observation. Necessary existing-owner prerequisite; no full termination-controller, generated-origin grant or full responsibility acceptance.",
+  "chain": {
+    "entry": "Existing Box BackgroundShellSpawn and timed ShellStream handoff; generated Runner Shell selects is_background or block_until_ms.",
+    "producer_owner": "fabushi_box_exec_daemon::server::BoxExecRuntime; its existing background map retains actual Child, pipes/readers, terminal writer and controller state.",
+    "state": "Existing invocation identities and exclusively created terminal files; no new durable journal or permission authority.",
+    "service": "Existing authenticated production Box transport/accessor and ForeverBoxRunnerResourcePort.",
+    "consumer": "RunnerBoxToolBridge and production attempt/effect/checkpoint owner; RunnerBackgroundShellWatches -> actual poll_shell_terminal_file -> ForeverBox terminal Read.",
+    "failure": "Known pre-spawn Error remains checkpointable. Entered setup/controller failure remains typed unknown through matching Throw/Close, sticky real Runner custody, no replay and no checkpoint. Failure cannot fabricate exit1 or complete output.",
+    "cancel": "Existing Box stop/hard-timeout owns actual unreaped-child TERM/force and bounded observation. Runner watch cancellation remains observation cancellation, not process termination.",
+    "restart": "Only live-owner later observation/recovery is covered. Durable process-restart reconciliation and replay authority remain open; no new restart guarantee or schema.",
+    "oracle": "Real child effects/prefixes and explicit release; actual authenticated Host consumer, pending watch, original terminal bytes and one settlement; separately bound private fault executable."
+  },
+  "required_behaviors": {
+    "BGC01": "Known cwd/stopping/identity/exclusive-terminal refusal before ordinary spawn; preserve occupied regular/symlink bytes.",
+    "BGC02": "Actual entered resources remain owned through setup/transfer/controller failures and unwind.",
+    "BGC03": "Owned unreaped-child signaling, bounded force/reap, pending reader retention and exact invocation terminal/removal.",
+    "BGC04": "Matching typed post-entry uncertainty reaches real Runner and cannot replay, arm a watch or checkpoint.",
+    "BGC05": "Complete ordinary/timed prefix/tail/exit or explicit error observation, exact footer final bytes and actual existing parser/poll settlement.",
+    "BGC06": "Stdin I/O outside registry lock with exact invocation retention through an in-flight write.",
+    "BGC07": "Actual causal unit/consumer controls and all prior Box/foreground assertions retained.",
+    "BGC08": "Complete frozen source reviews and affected exact-H Actions; no local or htch validation."
+  },
+  "source_review": {
+    "read_facts": [
+      {
+        "path": "source/box-exec-daemon/src/server.rs",
+        "base_blob": "9e3e46179bbc25bf323bc886e9e33d1506792306",
+        "depth": "deep applicable production chain",
+        "scope": "Background spawn/handoff/stop/stdin; actual Child guard/recovery, stream reader and terminal write functions. Final BGC candidate must be independently reviewed."
+      },
+      {
+        "path": "source/host/src/extensions/forever_box/runner_tools.rs",
+        "blob": "0051f2ae387a036f5cfe78afb9b329b3efe47e48",
+        "depth": "deep applicable chain",
+        "scope": "Background request/result/error/watch admission and terminal Read, not whole-file full-read claim."
+      },
+      {
+        "path": "source/host/src/runner/background_work.rs",
+        "base_blob": "ff23459450b9ddad39e53c775be32245e0fa7b35",
+        "candidate_blob": "275261c1676f2eac5acdb8378280c5d8f0e69e07",
+        "depth": "deep changed function and adjacent chain",
+        "scope": "Footer parser, watch admission/settlement/cancellation; source-established final-LF bug corrected, no complete-file upstream read claim."
+      },
+      {
+        "path": "source/host/src/runner/shell_terminal_watch.rs",
+        "blob": "3de34d17610414a286d2a556daae6dff22ec145e",
+        "depth": "full target source",
+        "scope": "Actual terminal polling and completion/error/cancellation interpretation."
+      },
+      {
+        "path": "source/host/src/runner/box_tool_access.rs",
+        "blob": "35f217614fd832b3a482394cd70638f67d865efc",
+        "depth": "deep applicable chain",
+        "scope": "Actual Shell is_background/block_until_ms argument dispatch."
+      },
+      {
+        "path": "source/packages/local-exec/background-shell.ts",
+        "blob": "b7468894536d7e432e34bd52820dfc93956552a5",
+        "depth": "full current facade source",
+        "scope": "Factory/adopt/executor boundary only; imported lifecycle/policy internals remain unaccepted."
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "src/process/exec-termination.ts",
+        "blob": "8b799aea4cccb13dd5b76b4b25c49b4c025cf5d1",
+        "depth": "full pinned file",
+        "scope": "Identifies stronger process-tree/platform/reaper settlement obligations; imported implementations and full upstream controller parity remain open."
+      }
+    ],
+    "history": "Existing OCRM source identities, statuses and historical read facts are retained. Contract/disposition review is never upgraded to full source reading.",
+    "generated": "No public field/tag/schema changes. Existing generated BackgroundShell/ShellStream fields and consumers are reused; full original generator-source closure remains open.",
+    "dependency": {
+      "manifest": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+      "lock": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+      "lock_sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+      "change": "none",
+      "scope": "Reuse fixed standard process/thread/I/O and existing locked dependencies; no new resolution, feature or legal-closure claim."
+    }
+  },
+  "validation": {
+    "environment": "GitHub Actions only",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "job": "custody-recovery",
+    "workflow_scope": "ocrm-background-custody",
+    "capture_scope": "background-custody",
+    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "new_cases": {
+      "unit": [
+        "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion",
+        "server::tests::background_custody_pre_spawn_refusals_preserve_files_and_nonreusable_ids",
+        "server::tests::background_custody_setup_and_controller_refusals_retain_child_and_readers",
+        "server::tests::background_custody_stop_during_setup_retains_the_entered_request",
+        "server::tests::background_custody_stop_and_hard_timeout_force_only_the_owned_unreaped_child",
+        "server::tests::background_custody_reaped_child_keeps_readers_until_explicit_eof",
+        "server::tests::background_custody_controller_loss_recovers_through_the_same_entry",
+        "server::tests::background_custody_full_pipe_input_does_not_block_registry_or_stop",
+        "server::tests::background_custody_observed_read_wait_and_worker_failures_never_fabricate_exit",
+        "server::tests::background_custody_failed_writer_and_footer_publication_remain_pending",
+        "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+        "server::tests::background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup"
+      ],
+      "consumer": [
+        "foreground_capture::box_background_custody_faults_reach_real_runner_without_replay_or_watch",
+        "foreground_capture::box_background_custody_pre_spawn_refusal_is_known_without_effect_or_watch",
+        "foreground_capture::box_background_custody_ordinary_terminal_waits_for_release_and_settles_once",
+        "foreground_capture::box_background_custody_timed_handoff_terminal_waits_for_release_and_settles_once"
+      ],
+      "footer": [
+        "shell_terminal_footer_and_poll_interval_follow_frozen_rules",
+        "shell_terminal_footer_handles_canonical_producer_endings_and_actual_poll",
+        "shell_terminal_footer_preserves_last_footer_and_incomplete_snapshot_refusal"
+      ],
+      "retained_shell": [
+        "server::tests::shell_environment_and_background_stdin_match_daemon_contract",
+        "server::tests::shell_stream_emits_stdout_before_child_finishes",
+        "server::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry"
+      ]
+    },
+    "retained": "All existing Box77 and SC22 names remain selected as11 groups; append BG units,4actual Host consumers,3footer parser tests and3existing ordinary/stream/timed-shell controls as4more groups (15groups total). The original full plan and CRF16group104name selection remain available.",
+    "compile": "Shipping Host --locked --profile ci, existing Host --locked --tests graph, ordinary daemon --locked build and separately bound --locked --lib test executable.",
+    "artifact_boundary": "Actual shipping daemon and cfg(test) private operation-fault child have separate executable hashes; neither synthetic metadata nor the test process is a platform package.",
+    "source_review": "pending complete immutable BGC candidate and fresh GENERAL/STRUCTURE reviews",
+    "execution": "not-run",
+    "selected_groups": 15,
+    "selected_named_cases": 121
+  },
+  "open_work": [
+    "Normal active streamed TERM/drain completion outside background handoff",
+    "Complete raw-byte caps and generated HTML provenance producer/persistence/consumer",
+    "General hostile-directory replacement and terminal-text authentication",
+    "Arbitrary descendant-tree and full upstream termination-controller/platform equivalence",
+    "Durable process-restart reconciliation and replay authority",
+    "Watch-worker launch failure",
+    "Real accounts/services/devices, supported platform packages, signing, performance/soak and upgrade/rollback",
+    "Complete fixed-U source closure, all G01-G12/AC01-AC24 and independent final ACCEPT"
+  ],
+  "acceptance": {
+    "full_unit_verified": false,
+    "canonical_source_review_changed": false,
+    "global_flags_changed": false,
+    "real_ecosystem_accepted": false,
+    "shipping_accepted": false
+  }
+}

@@ -9974,13 +9974,20 @@
         "exec.termination_controller"
       ],
       "dependencies": [
-        "mahayana_host_runtime::extensions::local_exec"
+        "mahayana_host_runtime::extensions::local_exec",
+        "fabushi_box_exec_daemon::server::BoxExecRuntime (BGC-v1 existing Box background custody prerequisite only)"
       ],
       "evidence_refs": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
         "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
-        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+        "source/box-exec-daemon/src/server.rs",
+        "source/host/src/runner/background_work.rs",
+        "source/host/tests/box_exec_daemon_process_contract.rs",
+        "source/host/tests/background_work_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -9998,12 +10005,21 @@
       "invariants": [
         "Graceful signal sent first; force kill applied if process remains alive past killGraceMs",
         "Windows taskkill targets process tree /T to eliminate child workers",
-        "Cancel delivery or stream closure is not process termination evidence; LXO-v1 preserves the full grace/force-kill/process-tree consumer blocker"
+        "Cancel delivery or stream closure is not process termination evidence; LXO-v1 preserves the full grace/force-kill/process-tree consumer blocker",
+        "BGC-v1 keeps ordinary/timed background Child, reader/controller and terminal outcomes under the existing Box owner, with typed entered uncertainty and exact Runner terminal observation. This prerequisite does not establish full upstream process-tree/platform termination, generated-origin trust, durable restart or final responsibility acceptance."
       ],
       "migration_rollback": "Immediate SIGKILL fallback",
       "oracle_ids": [
         "OCRM-EXEC-O06",
-        "OCRM-EXEC-O07"
+        "OCRM-EXEC-O07",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "owner_decision": "Keep pending until the command-exec cancellation owner exposes upstream controller semantics",
       "postconditions": [
@@ -10054,7 +10070,29 @@
       },
       "tests": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
-        "source/host/tests/gateway_local_exec_sand_box_contract.rs::exec_manager_cancel_maps_to_real_child_termination_and_history"
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs::exec_manager_cancel_maps_to_real_child_termination_and_history",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_faults_reach_real_runner_without_replay_or_watch",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_pre_spawn_refusal_is_known_without_effect_or_watch",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_ordinary_terminal_waits_for_release_and_settles_once",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_timed_handoff_terminal_waits_for_release_and_settles_once",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_and_poll_interval_follow_frozen_rules",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_handles_canonical_producer_endings_and_actual_poll",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_preserves_last_footer_and_incomplete_snapshot_refusal",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_pre_spawn_refusals_preserve_files_and_nonreusable_ids",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_setup_and_controller_refusals_retain_child_and_readers",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_stop_during_setup_retains_the_entered_request",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_stop_and_hard_timeout_force_only_the_owned_unreaped_child",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_reaped_child_keeps_readers_until_explicit_eof",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_controller_loss_recovers_through_the_same_entry",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_full_pipe_input_does_not_block_registry_or_stop",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_observed_read_wait_and_worker_failures_never_fabricate_exit",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_failed_writer_and_footer_publication_remain_pending",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup",
+        "source/box-exec-daemon/src/server.rs::tests::shell_environment_and_background_stdin_match_daemon_contract",
+        "source/box-exec-daemon/src/server.rs::tests::shell_stream_emits_stdout_before_child_finishes",
+        "source/box-exec-daemon/src/server.rs::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry"
       ],
       "typed_contracts": [
         "GatewayLocalExecManager::cancel_operation"
@@ -19622,7 +19660,8 @@
         "mahayana_host_runtime::box::box_remote_accessor::BoxRemoteExecManager (BXR-v1.3 response identity and completion prerequisite only)",
         "mahayana_host_runtime::box::generated_production::ProductionBoxResourceAccessor (BXR-v1.3 typed post-write outcome prerequisite only)",
         "mahayana_host_runtime::runner::box_tool_access::RunnerBoxToolBridge (BXR-v1.3 unknown spill outcome preservation)",
-        "fabushi_box_exec_daemon::server::BoxExecRuntime (SC01-SC07 foreground outcome/capture custody prerequisite only)"
+        "fabushi_box_exec_daemon::server::BoxExecRuntime (SC01-SC07 foreground outcome/capture custody prerequisite only)",
+        "fabushi_box_exec_daemon::server::BoxExecRuntime (BGC-v1 existing Box background custody prerequisite only)"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_html_provenance_contract.rs",
@@ -19636,7 +19675,11 @@
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json",
         "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
         "source/box-exec-daemon/src/server.rs",
-        "source/host/tests/box_exec_daemon_process_contract.rs"
+        "source/host/tests/box_exec_daemon_process_contract.rs",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+        "source/host/src/runner/background_work.rs",
+        "source/host/tests/background_work_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -19658,7 +19701,8 @@
         "NotFound and NotADirectory establish missing-path selection; all other inspection errors retain the original provenance snapshot and confer no read authority",
         "SC02 foreground invocation identities never reuse a live or retired registration; a reaped Child with unobserved workers cannot be replaced or erased by a later Capture/Stream sharing numeric PID data. Bounded stop retains unresolved foreground identity; this is not background-controller acceptance.",
         "SC02 exceptional streamed exits retain actual Child and started reader handles under the same invocation. Completed resources are observed after bounded cleanup or at existing ordinary/stream request boundaries; recovery never requires shutdown merely to release completed registrations, never removes pending inherited-pipe custody, and never changes an unknown execution outcome into success.",
-        "SC02 stream spools and timed-handoff terminals are exclusively created before cleanup authority is recorded; legitimate runtimes sharing a directory cannot truncate/read/remove another invocation's output, and successful removal retires its cleanup claim before a later failure."
+        "SC02 stream spools and timed-handoff terminals are exclusively created before cleanup authority is recorded; legitimate runtimes sharing a directory cannot truncate/read/remove another invocation's output, and successful removal retires its cleanup claim before a later failure.",
+        "BGC-v1 keeps ordinary/timed background Child, reader/controller and terminal outcomes under the existing Box owner, with typed entered uncertainty and exact Runner terminal observation. This prerequisite does not establish full upstream process-tree/platform termination, generated-origin trust, durable restart or final responsibility acceptance."
       ],
       "migration_rollback": "Retain uninspectable marker snapshots and fail closed at independent read/trust admission; never enable an HTML text fallback to bypass provenance. HHP-v2 adds no schema or persisted-state migration.",
       "oracle_ids": [
@@ -19675,7 +19719,15 @@
         "SC04",
         "SC05",
         "SC06",
-        "SC07"
+        "SC07",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "owner_decision": "Incorporate outbound HTML provenance types and validation into host_read_media_policy module",
       "postconditions": [
@@ -19785,7 +19837,29 @@
         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_occupied_spool_symlinks_survive_failure_and_recovery",
         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_occupied_terminal_files_preserve_pending_reader_ownership",
         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_occupied_terminal_symlinks_preserve_pending_reader_ownership",
-        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_retired_spool_claim_cannot_remove_reused_candidate"
+        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_retired_spool_claim_cannot_remove_reused_candidate",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_faults_reach_real_runner_without_replay_or_watch",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_pre_spawn_refusal_is_known_without_effect_or_watch",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_ordinary_terminal_waits_for_release_and_settles_once",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_timed_handoff_terminal_waits_for_release_and_settles_once",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_and_poll_interval_follow_frozen_rules",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_handles_canonical_producer_endings_and_actual_poll",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_preserves_last_footer_and_incomplete_snapshot_refusal",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_pre_spawn_refusals_preserve_files_and_nonreusable_ids",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_setup_and_controller_refusals_retain_child_and_readers",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_stop_during_setup_retains_the_entered_request",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_stop_and_hard_timeout_force_only_the_owned_unreaped_child",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_reaped_child_keeps_readers_until_explicit_eof",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_controller_loss_recovers_through_the_same_entry",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_full_pipe_input_does_not_block_registry_or_stop",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_observed_read_wait_and_worker_failures_never_fabricate_exit",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_failed_writer_and_footer_publication_remain_pending",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup",
+        "source/box-exec-daemon/src/server.rs::tests::shell_environment_and_background_stdin_match_daemon_contract",
+        "source/box-exec-daemon/src/server.rs::tests::shell_stream_emits_stdout_before_child_finishes",
+        "source/box-exec-daemon/src/server.rs::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry"
       ],
       "typed_contracts": [
         "validate_provenance_row",
@@ -32428,11 +32502,18 @@
         "process.custody_execution"
       ],
       "dependencies": [
-        "mahayana_host_runtime::extensions::process::command_custody"
+        "mahayana_host_runtime::extensions::process::command_custody",
+        "fabushi_box_exec_daemon::server::BoxExecRuntime (BGC-v1 existing Box background custody prerequisite only)"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_process_plugin_contract.rs",
-        "projects/openclaw-rust/dossiers/process-plugin-scoped.md"
+        "projects/openclaw-rust/dossiers/process-plugin-scoped.md",
+        "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+        "source/box-exec-daemon/src/server.rs",
+        "source/host/src/runner/background_work.rs",
+        "source/host/tests/box_exec_daemon_process_contract.rs",
+        "source/host/tests/background_work_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -32456,11 +32537,20 @@
         "producer": "HostLocalExecExtension owns the shared CommandProcessCustody instance; the process oracle remains the behavioral source"
       },
       "invariants": [
-        "Lines exceeding max_bytes produce immediate overflow error; capacity exhaustion rejects command"
+        "Lines exceeding max_bytes produce immediate overflow error; capacity exhaustion rejects command",
+        "BGC-v1 keeps ordinary/timed background Child, reader/controller and terminal outcomes under the existing Box owner, with typed entered uncertainty and exact Runner terminal observation. This prerequisite does not establish full upstream process-tree/platform termination, generated-origin trust, durable restart or final responsibility acceptance."
       ],
       "migration_rollback": "Spawn child processes directly with standard library std::process without group management",
       "oracle_ids": [
-        "OCRM-PROCESS-CUSTODY-O01"
+        "OCRM-PROCESS-CUSTODY-O01",
+        "BGC01",
+        "BGC02",
+        "BGC03",
+        "BGC04",
+        "BGC05",
+        "BGC06",
+        "BGC07",
+        "BGC08"
       ],
       "owner_decision": "Native implementation across process extension modules",
       "postconditions": [
@@ -32553,7 +32643,29 @@
       },
       "tests": [
         "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_process_bounded_line_framer",
-        "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_process_custody_and_tree_reaper"
+        "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_process_custody_and_tree_reaper",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_faults_reach_real_runner_without_replay_or_watch",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_pre_spawn_refusal_is_known_without_effect_or_watch",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_ordinary_terminal_waits_for_release_and_settles_once",
+        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_background_custody_timed_handoff_terminal_waits_for_release_and_settles_once",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_and_poll_interval_follow_frozen_rules",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_handles_canonical_producer_endings_and_actual_poll",
+        "source/host/tests/background_work_contract.rs::shell_terminal_footer_preserves_last_footer_and_incomplete_snapshot_refusal",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_pre_spawn_refusals_preserve_files_and_nonreusable_ids",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_setup_and_controller_refusals_retain_child_and_readers",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_stop_during_setup_retains_the_entered_request",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_stop_and_hard_timeout_force_only_the_owned_unreaped_child",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_reaped_child_keeps_readers_until_explicit_eof",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_controller_loss_recovers_through_the_same_entry",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_full_pipe_input_does_not_block_registry_or_stop",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_observed_read_wait_and_worker_failures_never_fabricate_exit",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_failed_writer_and_footer_publication_remain_pending",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+        "source/box-exec-daemon/src/server.rs::tests::background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup",
+        "source/box-exec-daemon/src/server.rs::tests::shell_environment_and_background_stdin_match_daemon_contract",
+        "source/box-exec-daemon/src/server.rs::tests::shell_stream_emits_stdout_before_child_finishes",
+        "source/box-exec-daemon/src/server.rs::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry"
       ],
       "typed_contracts": [
         "BoundedLineFramer",

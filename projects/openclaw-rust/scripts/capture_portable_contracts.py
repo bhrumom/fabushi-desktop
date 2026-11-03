@@ -1,9 +1,9 @@
 import hashlib, json, os, pathlib, re, subprocess
 validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
-if validation_scope not in ("full", "custody-recovery"):
+if validation_scope not in ("full", "custody-recovery", "background-custody"):
     raise ValueError("Unknown portable contract scope")
-root = pathlib.Path(".evidence/custody-recovery" if validation_scope == "custody-recovery"
-    else ".evidence/sqlite-native-path/channel-pending-recovery")
+root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
+    else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
 root.mkdir(parents=True, exist_ok=True)
 head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
 assert head == os.environ["FABUSHI_TARGET_SHA"], "Exact CWR execution subject mismatch"
@@ -241,6 +241,11 @@ inputs = sorted(set(inputs) | {"source/host/build.rs", "source/host/tests/genera
 # BXR-v1.3 binds the actual Box owner, all changed consumers and the existing
 # daemon producer separately from unrelated portable-source coverage.
 box_response_inputs = [
+    "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+    "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+    "source/host/src/runner/background_work.rs",
+    "source/host/src/runner/shell_terminal_watch.rs",
+    "source/host/tests/background_work_contract.rs",
     "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
     "source/host/src/extensions/forever_box/host_box.rs",
     "source/host/src/extensions/forever_box/forever_box_service.rs",
@@ -1279,9 +1284,13 @@ cases = [
     ("box-response-shell-capture-unit", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::foreground_capture_", "--", "--test-threads=1"], ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed","server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn","server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias","server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture","server::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup","server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof","server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission","server::tests::foreground_capture_independent_runtimes_keep_distinct_spools_and_cleanup","server::tests::foreground_capture_occupied_spool_files_survive_failure_and_recovery","server::tests::foreground_capture_occupied_spool_symlinks_survive_failure_and_recovery","server::tests::foreground_capture_occupied_terminal_files_preserve_pending_reader_ownership","server::tests::foreground_capture_occupied_terminal_symlinks_preserve_pending_reader_ownership","server::tests::foreground_capture_retired_spool_claim_cannot_remove_reused_candidate"]),
     ("box-response-shell-capture-consumer", base + ["--test", "box_exec_daemon_process_contract", "box_foreground_capture_", "--", "--ignored", "--test-threads=1"], ["foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"]),
     ("box-response-shell-capture-disconnect", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::disconnect_aborts_foreground_shell_process_group", "--", "--exact", "--test-threads=1"], ["server::tests::disconnect_aborts_foreground_shell_process_group"]),
+    ("box-response-background-custody-unit", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::background_custody_", "--", "--test-threads=1"], ["server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion","server::tests::background_custody_pre_spawn_refusals_preserve_files_and_nonreusable_ids","server::tests::background_custody_setup_and_controller_refusals_retain_child_and_readers","server::tests::background_custody_stop_during_setup_retains_the_entered_request","server::tests::background_custody_stop_and_hard_timeout_force_only_the_owned_unreaped_child","server::tests::background_custody_reaped_child_keeps_readers_until_explicit_eof","server::tests::background_custody_controller_loss_recovers_through_the_same_entry","server::tests::background_custody_full_pipe_input_does_not_block_registry_or_stop","server::tests::background_custody_observed_read_wait_and_worker_failures_never_fabricate_exit","server::tests::background_custody_failed_writer_and_footer_publication_remain_pending","server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture","server::tests::background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup"]),
+    ("box-response-background-custody-consumer", base + ["--test", "box_exec_daemon_process_contract", "box_background_custody_", "--", "--ignored", "--test-threads=1"], ["foreground_capture::box_background_custody_faults_reach_real_runner_without_replay_or_watch","foreground_capture::box_background_custody_pre_spawn_refusal_is_known_without_effect_or_watch","foreground_capture::box_background_custody_ordinary_terminal_waits_for_release_and_settles_once","foreground_capture::box_background_custody_timed_handoff_terminal_waits_for_release_and_settles_once"]),
+    ("box-response-background-custody-footer", base + ["--test", "background_work_contract", "shell_terminal_footer_", "--", "--test-threads=1"], ["shell_terminal_footer_and_poll_interval_follow_frozen_rules","shell_terminal_footer_handles_canonical_producer_endings_and_actual_poll","shell_terminal_footer_preserves_last_footer_and_incomplete_snapshot_refusal"]),
+    ("box-response-background-custody-retained", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::shell_", "--", "--test-threads=1"], ["server::tests::shell_environment_and_background_stdin_match_daemon_contract","server::tests::shell_stream_emits_stdout_before_child_finishes","server::tests::shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry"]),
 ]
 
-# CRF-v1 selects from the retained full plan, never mutates its contract list.
+# CRF-v1 and BGC-v1 select from the retained full plan without deleting contracts.
 # A scoped success is distinct from whole-contract acceptance.
 full_cases = list(cases)
 custody_box_labels = (
@@ -1291,6 +1300,11 @@ custody_box_labels = (
     "box-response-shell-capture-unit", "box-response-shell-capture-consumer",
     "box-response-shell-capture-disconnect",
 )
+background_custody_labels = (*custody_box_labels,
+    "box-response-background-custody-unit", "box-response-background-custody-consumer",
+    "box-response-background-custody-footer", "box-response-background-custody-retained")
+background_custody_required = {label: tuple(required)
+    for label, _, required in full_cases if label in background_custody_labels}
 custody_desktop_names = (
     "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
     "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
@@ -1299,13 +1313,24 @@ custody_desktop_names = (
 djc_qualified_name = "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
 
 def select_portable_cases(scope, declared):
-    if scope not in ("full", "custody-recovery"):
+    if scope not in ("full", "custody-recovery", "background-custody"):
         raise ValueError("Unknown portable contract scope")
     indexed = {label: (label, command, required) for label, command, required in declared}
     if len(indexed) != len(declared):
         raise ValueError("Duplicate portable case label")
     if scope == "full":
         return list(declared)
+    if scope == "background-custody":
+        if any(label not in indexed for label in background_custody_labels):
+            raise ValueError("Background custody lost a declared command")
+        selected = [indexed[label] for label in background_custody_labels]
+        if len(selected) != 15 or len({case[0] for case in selected}) != 15:
+            raise ValueError("Background custody plan is incomplete or duplicated")
+        if any(not required or len(set(required)) != len(required)
+            or tuple(required) != background_custody_required[label]
+            for label, _, required in selected):
+            raise ValueError("Background custody needs the complete frozen test names")
+        return selected
     needed = (*custody_box_labels, "plugin-uninstall-service",
         "plugin-uninstall-relay-handoff", "device-pairing-join")
     if any(label not in indexed for label in needed):
@@ -1338,6 +1363,34 @@ selection_controls = []
 for control, scope, declared, expected in [
     ("full-preserved", "full", full_cases, True),
     ("qualified-focused", "custody-recovery", full_cases, True),
+    ("qualified-background", "background-custody", full_cases, True),
+    ("background-duplicate-label", "background-custody", full_cases + [full_cases[0]], False),
+    ("background-missing-unit", "background-custody",
+        [case for case in full_cases if case[0] != "box-response-background-custody-unit"], False),
+    ("background-missing-consumer", "background-custody",
+        [case for case in full_cases if case[0] != "box-response-background-custody-consumer"], False),
+    ("background-missing-footer", "background-custody",
+        [case for case in full_cases if case[0] != "box-response-background-custody-footer"], False),
+    ("background-missing-retained-shell", "background-custody",
+        [case for case in full_cases if case[0] != "box-response-background-custody-retained"], False),
+    ("background-missing-retained-shell-name", "background-custody",
+        [(label, command, required[1:] if label == "box-response-background-custody-retained" else required)
+            for label, command, required in full_cases], False),
+    ("background-missing-unit-name", "background-custody",
+        [(label, command, required[1:] if label == "box-response-background-custody-unit" else required)
+            for label, command, required in full_cases], False),
+    ("background-missing-consumer-name", "background-custody",
+        [(label, command, required[1:] if label == "box-response-background-custody-consumer" else required)
+            for label, command, required in full_cases], False),
+    ("background-missing-footer-name", "background-custody",
+        [(label, command, required[1:] if label == "box-response-background-custody-footer" else required)
+            for label, command, required in full_cases], False),
+    ("background-duplicate-required-name", "background-custody",
+        [(label, command, required + required if label == "box-response-background-custody-unit" else required)
+            for label, command, required in full_cases], False),
+    ("background-foreign-required-name", "background-custody",
+        [(label, command, ["foreign::unrelated"] if label == "box-response-background-custody-consumer" else required)
+            for label, command, required in full_cases], False),
     ("unknown-scope", "unqualified", full_cases, False),
     ("duplicate-label", "custody-recovery", full_cases + [full_cases[0]], False),
     ("missing-box-command", "custody-recovery",
@@ -1411,7 +1464,7 @@ for label, output, cargo_exit, capture_exit, expected in [
 # keyword module. Both legal libtest spellings map to one exact required name;
 # duplicate aliases, foreign owners and additional positives are rejected.
 box_response_exhaustion_name = "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
-box_response_filtered_cases = {"box-response-manager-exhaustion", "box-response-forever-box", "box-response-real-daemon", "box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect"}
+box_response_filtered_cases = {"box-response-manager-exhaustion", "box-response-forever-box", "box-response-real-daemon", "box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect", "box-response-background-custody-unit", "box-response-background-custody-consumer", "box-response-background-custody-footer", "box-response-background-custody-retained"}
 
 def box_response_observed_names(output):
     names = successful_test_names(output.replace("\r\n", "\n"))
@@ -1555,6 +1608,11 @@ receipt = {
     "local_exec_outcome_scope": "Actual registered generated Runner, production ExternalShell adapter, shared Host LocalExec and permission owner through real bridge delivery. Counted external effects, unknown post-entry outcomes, sticky custody, no uncertain checkpoint/replay, known refusal/Exit and fresh-owner journal controls use fixture-owned peers. Separate native three-platform and actual App/protocol receipts remain required; no physical device, external account, full process-tree, package or global acceptance.",
     "box_shell_capture_contract": "BXR-SHELL-CAPTURE-v1",
     "box_shell_capture_required_names": ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed","server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn","server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias","server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture","server::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup","server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof","server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission","server::tests::foreground_capture_independent_runtimes_keep_distinct_spools_and_cleanup","server::tests::foreground_capture_occupied_spool_files_survive_failure_and_recovery","server::tests::foreground_capture_occupied_spool_symlinks_survive_failure_and_recovery","server::tests::foreground_capture_occupied_terminal_files_preserve_pending_reader_ownership","server::tests::foreground_capture_occupied_terminal_symlinks_preserve_pending_reader_ownership","server::tests::foreground_capture_retired_spool_claim_cannot_remove_reused_candidate","foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed","server::tests::disconnect_aborts_foreground_shell_process_group"],
+    "box_background_custody_contract": "BGC-v1",
+    "box_background_custody_required_names": {label: list(background_custody_required[label])
+        for label in background_custody_labels if label.startswith("box-response-background-custody-")},
+    "box_background_custody_selected_here": validation_scope in ("full", "background-custody"),
+    "box_background_custody_scope": "Existing daemon background registry retains actual Child, readers, controller and file outcomes; ordinary/timed admission, bounded stop and no stale signaling, pre-spawn refusal and entered uncertainty, exact Host/ForeverBox/Runner custody and actual terminal-watch settlement. Canonical terminal final bytes are consumed without test rewriting. Private operation-fault producer remains separately identified from the shipping daemon. Normal active streamed shutdown, arbitrary descendant trees, terminal authenticity, durable restart, real services/devices, packages and full OCRM acceptance remain open.",
     "box_shell_capture_scope": "Actual daemon foreground capture distinguishes pre-spawn known refusal from entered read/wait/worker uncertainty for ordinary Shell and MiniSwe. Owned children and incomplete captures remain in the same registry under nonreusable invocation identities through bounded observed cleanup; exhaustion refuses before spawn and streamed stop/handoff preserves exact invocation custody. Exceptional stream returns/unwinds retain the real Child and started readers; completed recovery is observed after bounded cleanup or at ordinary/stream admission without requiring shutdown, while inherited-pipe custody remains pending until actual EOF; actual Throw/Close reaches Host, ForeverBox, Runner sticky custody, no replay and checkpoint refusal. Private cfg(test) operation faults are bound to a separately identified library test artifact; normal shipping daemon controls remain independent. Descendant-process closure, hostile ownership changes, raw HTML provenance, power loss, platform packages and real services remain unaccepted.",
     "box_response_contract": "BXR-v1.3",
     "box_response_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
@@ -1586,6 +1644,20 @@ receipt = {
     "executions": [], "result": "failed-or-incomplete",
     "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DVR-v1 retains complete owner26, HTTP8 and its original14 retained-stream cases for bound atomic whole-row removal, caller policy and redaction, exact proof retirement on every existing stream wake, real bridge provider cleanup and response admission, real quiet-heartbeat and native/MCP controls. DRT-v1 adds selected-role retirement through the same owner, explicit native/paired ceilings, fresh-marker rejection and six selected-role retained cases; whole-target counts and exact positive names remain mandatory. Original source-review/authority and actual App helper results remain separate; physical teardown, APNs and the upstream remove wire alias remain open. DTR-v1 executes the complete wire-rotation owner44 and HTTP14 targets plus all27 retained cases, preserving all previous names and assertions. It covers resulting-grant caps and explicit repair, exact identity-bound delivery, supported metadata, checked single-commit revision, current-proof races, node-only surfaces, response-loss/no-replay and successor controls. The large distinct-scope read-only HTTP request reaches the bound owner, is refused without durable mutation and preserves ordinary authorized rotation after reopen; shared canonicalization uses order-preserving set membership. Freshly issued literal scopes stay literal across adjacent management consumers; selected primary-only role materialization, decisive approval reads, rollback, reopen and later role withdrawal are required. External credential caches, issuer-generation policy, upstream WebSocket/node-surface compatibility and real devices remain open. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
 }
+# Bind the selected scope before the first durable partial receipt, including
+# compile failures; unselected requirement metadata is not execution evidence.
+if validation_scope == "custody-recovery":
+    receipt["scope"] = ("CRF-v1: selected Box producer/consumer/state controls, repaired actual Plugin "
+        "desktop/library custody oracles and DJC-07 qualified COMMIT refusal only. Historical DJC lock "
+        "timing remains unresolved; unrelated full-plan cases, real ecosystems, packages and full OCRM "
+        "acceptance are not inferred. Requirement metadata elsewhere in this receipt is not execution.")
+if validation_scope == "background-custody":
+    receipt["scope"] = ("BGC-v1: existing Box background resource custody, actual Host/ForeverBox/Runner "
+        "uncertainty and terminal-watch completion, canonical footer parser and retained Box/foreground "
+        "regressions only. Unselected full-plan cases, normal active streamed shutdown, complete upstream "
+        "termination equivalence, real ecosystems, durable restart and packages remain open. "
+        "Requirement metadata elsewhere in this receipt is not execution.")
+
 # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
 # the complete Host test graph once; this is a compile gate, not test evidence.
 constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
@@ -1789,7 +1861,7 @@ for label, command, required in cases:
         child_environment_overrides["SAND_DISABLE_LARGE_OUTPUT_SPILL"] = "0"
     if label == "box-response-real-daemon" and daemon_passed:
         child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_TEST_BIN"] = str(daemon_binary)
-    if label == "box-response-shell-capture-consumer" and capture_passed:
+    if label in ("box-response-shell-capture-consumer", "box-response-background-custody-consumer") and capture_passed:
         child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN"] = str(capture_binary)
     child_environment = dict(os.environ, **child_environment_overrides) if child_environment_overrides else None
     try:
@@ -1798,7 +1870,7 @@ for label, command, required in cases:
             execution_error = "BXR real daemon control blocked: the current build did not produce a bound executable"
             raw = (execution_error + "\n").encode("utf-8")
             log_path.write_bytes(raw)
-        elif label in ("box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect") and not capture_passed:
+        elif label in ("box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect", "box-response-background-custody-unit", "box-response-background-custody-consumer", "box-response-background-custody-retained") and not capture_passed:
             capture_exit = 1
             execution_error = "SC control blocked: the current library test build did not produce a bound executable"
             raw = (execution_error + "\n").encode("utf-8")
@@ -1904,12 +1976,7 @@ accepted = ((palette_exported if palette_required else True) and len(receipt["ex
     and all(case["oracle_accepted"] for case in receipt["executions"])
     and box_response_sources_unchanged and daemon_unchanged and capture_unchanged and local_exec_outcome_sources_unchanged
     and plugin_admission_lock_sources_unchanged and custody_recovery_sources_unchanged)
-if validation_scope == "custody-recovery":
-    receipt["scope"] = ("CRF-v1: selected Box producer/consumer/state controls, repaired actual Plugin "
-        "desktop/library custody oracles and DJC-07 qualified COMMIT refusal only. Historical DJC lock "
-        "timing remains unresolved; unrelated full-plan cases, real ecosystems, packages and full OCRM "
-        "acceptance are not inferred. Requirement metadata elsewhere in this receipt is not execution.")
-receipt["result"] = ("passed-scoped-only" if validation_scope == "custody-recovery" else "passed") if accepted else "failed-or-incomplete"
+receipt["result"] = ("passed-scoped-only" if validation_scope != "full" else "passed") if accepted else "failed-or-incomplete"
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(json.dumps(receipt, indent=2), flush=True)
 raise SystemExit(0 if accepted else 1)
