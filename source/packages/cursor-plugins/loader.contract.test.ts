@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test, { type TestContext } from "node:test";
 
 import type { BackendPluginEntry } from "./backend-marketplace-client.js";
@@ -197,7 +197,106 @@ test("SDK installation failure retains canonical identity and old files during a
   }), false);
 });
 
-test("filesystem EACCES during cache installation is an install failure, not clone authentication", async (t) => {
+test("failed cache publication removes only its staging directory", async (t) => {
+  const cache = await cacheFixture(t);
+  const plugin = entry();
+  const targetDir = cache.getCacheDir({
+    marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version,
+  });
+  await mkdir(targetDir, { recursive: true });
+  await writeFile(join(targetDir, "preserve.txt"), "existing target must survive");
+  const result = await loadFromMarketplaceSource({
+    client: {
+      async listEnabledPlugins() { return { plugins: [plugin] }; },
+      async installPlugin(_entry, stagingDir) {
+        await writeSkill(stagingDir, "staged-skill");
+      },
+    },
+    userId: "fixture-user",
+    cacheManager: cache,
+    pruneOldVersions: false,
+  });
+  assert.equal(result.failures.length, 1);
+  assert.match(result.failures[0]?.errorMessage ?? "", /exist|directory|not empty/i);
+  assert.equal(await readFile(join(targetDir, "preserve.txt"), "utf8"), "existing target must survive");
+  assert.deepEqual(await readdir(dirname(targetDir)), [plugin.pluginId]);
+});
+
+
+  const cache = await cacheFixture(t);
+  const plugin = entry();
+  const filesystemError = Object.assign(new Error("permission denied while publishing plugin cache"), { code: "EACCES" });
+  const result = await loadFromMarketplaceSource({
+    client: {
+      async listEnabledPlugins() { return { plugins: [plugin] }; },
+      async installPlugin() { throw filesystemError; },
+    },
+    userId: "fixture-user",
+    cacheManager: cache,
+    pruneOldVersions: false,
+  });
+  assert.equal(result.failures.length, 1);
+  assert.equal(result.failures[0]?.errorType, "install");
+  assert.match(result.failures[0]?.errorMessage ?? "", /permission denied/i);
+  assert.equal(await cache.isCached({
+    marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version,
+  }), false);
+});
+
+test("an older failed install cannot remove a successor published cache directory", async (t) => {
+  const cache = await cacheFixture(t);
+  const plugin = entry();
+  const olderEntered = Promise.withResolvers<void>();
+  const releaseOlder = Promise.withResolvers<void>();
+  const older: MarketplaceLoaderClient = {
+    async listEnabledPlugins() { return { plugins: [plugin] }; },
+    async installPlugin(_entry, targetDir) {
+      olderEntered.resolve();
+      await releaseOlder.promise;
+      await writeSkill(targetDir, "older-partial");
+      throw new Error("older install failed after timeout");
+    },
+  };
+  const newer: MarketplaceLoaderClient = {
+    async listEnabledPlugins() { return { plugins: [plugin] }; },
+    async installPlugin(_entry, targetDir) { await writeSkill(targetDir, "successor-skill"); },
+  };
+  const olderPass = loadFromMarketplaceSource({ client: older, userId: "fixture-user", cacheManager: cache, pruneOldVersions: false });
+  await olderEntered.promise;
+  const newerPass = await loadFromMarketplaceSource({ client: newer, userId: "fixture-user", cacheManager: cache, pruneOldVersions: false });
+  assert.equal(newerPass.failures.length, 0);
+  assert.equal(newerPass.plugins[0]?.skills[0]?.name, "successor-skill");
+  releaseOlder.resolve();
+  const olderResult = await olderPass;
+  assert.equal(olderResult.failures.length, 1);
+  assert.equal(await cache.isCached({ marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version }), true);
+  const published = cache.getCacheDir({ marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version });
+  assert.match(await readFile(join(published, "SKILL.md"), "utf8"), /successor-skill instructions/);
+});
+
+test("SDK version-resolution failures reach the Host with their canonical DB ID", async (t) => {
+  const cache = await cacheFixture(t);
+  const failure = {
+    pluginName: "7", pluginId: "7", pluginDbId: "41", marketplaceName: "cursor-public",
+    errorMessage: "Repository not found", errorType: "clone" as const,
+  };
+  const result = await loadFromMarketplaceSource({
+    client: {
+      async listEnabledPlugins() { return { plugins: [], listFailures: [failure] }; },
+      async installPlugin() { assert.fail("unresolved versions cannot be installed"); },
+    },
+    userId: "fixture-user",
+    cacheManager: cache,
+    pruneOldVersions: false,
+  });
+
+  assert.equal(result.sourceUnavailable, false);
+  assert.deepEqual(result.failures, [failure]);
+  assert.equal(result.plugins[0]?.identifier.sourceInfo.pluginDbId, "41");
+  assert.equal(result.plugins[0]?.loadError, failure.errorMessage);
+  assert.deepEqual(cache.prunes, []);
+});
+
   const cache = await cacheFixture(t);
   const plugin = entry();
   const filesystemError = Object.assign(new Error("permission denied while publishing plugin cache"), { code: "EACCES" });
