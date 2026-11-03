@@ -1,0 +1,123 @@
+{
+  "schema": "ocrm-frozen-source-review-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BXR-SHELL-CAPTURE-v1",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "original_base": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "subject_commit": "152467880098cd87581ca279be4d2bc872a7620b",
+  "subject_tree": "8fe5821505d342518628d56aa2920cc7b895284c",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "paths": [
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "sha": "c586ea57bec0bd0513a5f21f4532b98c08fbaf7b"
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "sha": "23941b650376d23c07c67064f49c083bf7db8689"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "sha": "4084e2cc84a2a2957e2a7829dad185ad1ef55f09"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "3c947cf0ce6f87a441104a414023f7e8fbfdf293"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "2f247e19440928eeeaf7cec5fa9fef6c47bd16a8"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+      "sha": "56f2b90582c2de7b1fe8e04efd7bd397e9a25f35"
+    },
+    {
+      "path": "docs/specs/g11-box-browser-wire-completion.md",
+      "sha": "f495d1a04dcf39453f0a6da5b7a2bce310e7dd44"
+    }
+  ],
+  "diff": {
+    "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/full.diff",
+    "blob": "deed9b45d7e6c168d93692a0da44a5b70dbadfc6",
+    "bytes": 113214,
+    "sha256": "8a4be2e05320890e074b44ea8fa80f87ea17d929212b3d31e930f2955ff32bf6",
+    "files": [
+      {
+        "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+        "sha": "56f2b90582c2de7b1fe8e04efd7bd397e9a25f35",
+        "additions": 247,
+        "deletions": 0,
+        "observedAdditions": 247,
+        "observedDeletions": 0,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "sha": "3c947cf0ce6f87a441104a414023f7e8fbfdf293",
+        "additions": 25,
+        "deletions": 5,
+        "observedAdditions": 25,
+        "observedDeletions": 5,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "sha": "2f247e19440928eeeaf7cec5fa9fef6c47bd16a8",
+        "additions": 20,
+        "deletions": 4,
+        "observedAdditions": 20,
+        "observedDeletions": 4,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "sha": "4084e2cc84a2a2957e2a7829dad185ad1ef55f09",
+        "additions": 152,
+        "deletions": 2,
+        "observedAdditions": 152,
+        "observedDeletions": 2,
+        "complete": true
+      },
+      {
+        "path": "source/box-exec-daemon/src/server.rs",
+        "sha": "c586ea57bec0bd0513a5f21f4532b98c08fbaf7b",
+        "additions": 839,
+        "deletions": 118,
+        "observedAdditions": 839,
+        "observedDeletions": 118,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+        "sha": "23941b650376d23c07c67064f49c083bf7db8689",
+        "additions": 435,
+        "deletions": 0,
+        "observedAdditions": 435,
+        "observedDeletions": 0,
+        "complete": true
+      }
+    ]
+  },
+  "unchanged_authority": "docs/specs/g11-box-browser-wire-completion.md is unchanged at the base and included for complete SC01-SC07 and existing BXR contract review.",
+  "excluded_evidence_only_paths": [
+    "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-r1/full.diff",
+    "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-r1/scope.json",
+    "projects/openclaw-rust/evidence/media-ci-recovery-647e0932-20261103/h14-macos-terminal-assessment.json",
+    "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/fix-delta.diff",
+    "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/full.diff",
+    "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/scope.json"
+  ],
+  "scope_note": "Complete seven-path candidate scope includes six changed files and the unchanged authority. Every API changed-file patch addition/deletion count matches its file statistics. Excluded paths are incoming evidence carriers only; no production implementation is omitted from this batch scope. Existing prior Box/Plugin/LocalExec functionality remains inherited. Exact-H execution and all-scope acceptance remain pending.",
+  "review_requirements": [
+    "Read complete diff and all changed functions/test oracles plus actual dependency/consumer contracts as risk requires, not isolated snippets.",
+    "Review ordinary feature-off daemon production build separately from the cfg(test) producer consumed by actual Host/ForeverBox/Runner tests.",
+    "Report concrete MUST_FIX and NON_BLOCKING separately with exact source anchors and honest read depth. No local/htch or other executable validation.",
+    "Fresh GENERAL and STRUCTURE reviews precede the combined affected Actions campaign; source approval is not runtime, package or full OCRM acceptance."
+  ]
+}
