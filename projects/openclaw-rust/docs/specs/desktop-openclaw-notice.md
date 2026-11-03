@@ -107,3 +107,29 @@ required review evidence is admitted. No global flag is raised by this batch.
 Real macOS/MAS/Linux/Windows installers, signature/notarization, installation,
 recursive third-party notices/SBOM and final legal/platform/upgrade acceptance
 remain open until actual corresponding exact-H artifacts are inspected.
+
+## Exact-H fixture recovery — ONP-CI-R1-F1
+
+Runtime run `41556679647`, renderer job `125657166726`, subject
+`6ec3a6609a47fac44933ebbbd00f5f4b0a539e3b`, executed the actual notice
+checker and all 21 test cases. The source notice command passed; TAP reports
+20 passed and one failed. `onp_non_file_source_notice_is_refused` stopped at
+its fixture `rmdir` with `ENOTEMPTY` before the parent-directory symlink
+negative reached the checker. The fixture now copies the narrow
+`.gitattributes`, but its parent replacement setup removes only `LICENSE`.
+
+Classify this as **TEST_FLAW / FIX** before editing: remove that exact copied
+attribute in the owned temporary fixture, then retain the existing nonrecursive
+empty-directory removal, symlink construction, real CLI refusal and unchanged
+filesystem snapshot assertions. Keep all 21 names, strict TAP totals, source
+byte identity, production checker, tracked attribute, package mapping and
+release checks unchanged. Do not delete or weaken a valid negative.
+
+Preserve artifact `13194223363` (SHA-256
+`580d26d52614b4e40307bd505ad8fdd9ccb07a5df3c073e88796ee79e5da28a3`)
+as the original failed evidence. Desktop build, Plugin Skills and MAB controls
+were skipped after the failed notice step and have no passing verdict on this
+H. Freeze the focused repair with the complete prior nine-path source scope,
+obtain fresh independent review and use Actions on the new exact H for the
+actual corrected negative and blocked consumers. No local reproduction or
+unchanged-subject rerun is authorized.

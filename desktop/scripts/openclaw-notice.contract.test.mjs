@@ -205,6 +205,7 @@ test("onp_non_file_source_notice_is_refused", (t) => {
   const otherDirectory = path.join(linked.root, "source-copy");
   write(path.join(otherDirectory, "LICENSE"), sourceBytes);
   fs.unlinkSync(linked.source);
+  fs.unlinkSync(linked.attributes);
   fs.rmdirSync(path.dirname(linked.source));
   fs.symlinkSync(otherDirectory, path.dirname(linked.source), "junction");
   refused(run(linked, ["--notice-only"]), /OpenClaw source notice directory.*not a real directory/);
