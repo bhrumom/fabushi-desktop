@@ -1,6 +1,6 @@
 import hashlib, json, os, pathlib, re, subprocess
 validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
-if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list"):
+if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle"):
     raise ValueError("Unknown portable contract scope")
 root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
     else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
@@ -381,6 +381,7 @@ memory_checked_list_inputs = [
     "source/host/src/gateway_command_error.rs",
     "source/host/src/device_pairing_owner.rs",
     "source/host/src/extensions/session/production.rs",
+    "source/host/src/extensions/session/call_session.rs",
     "source/host/src/extensions/memory/memory_service.rs",
     "source/host/src/extensions/transcript/transcript_manager.rs",
     "source/host/tests/memory_service_contract.rs",
@@ -1741,6 +1742,19 @@ def memory_checked_list_plan(platform):
         raise ValueError("Memory native plan is incomplete or duplicated")
     return [(label, list(command), list(required)) for label, command, required in selected]
 
+memory_fixture_lifecycle_labels = (
+    "memory-checked-list-manager", "memory-checked-list-agent-state",
+)
+
+def memory_fixture_lifecycle_plan(platform):
+    selected = [case for case in memory_checked_list_plan(platform)
+        if case[0] in memory_fixture_lifecycle_labels]
+    if ([case[0] for case in selected] != list(memory_fixture_lifecycle_labels)
+        or [len(case[2]) for case in selected] != [7, 10]
+        or len({name for _, _, names in selected for name in names}) != 17):
+        raise ValueError("Memory fixture recovery requires the two exact parent groups")
+    return selected
+
 memory_checked_list_cases = memory_checked_list_plan(memory_checked_list_native_platform)
 memory_checked_list_required = {label: tuple(required)
     for label, _, required in memory_checked_list_cases}
@@ -1805,13 +1819,15 @@ custody_desktop_names = (
 djc_qualified_name = "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
 
 def select_portable_cases(scope, declared):
-    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list"):
+    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle"):
         raise ValueError("Unknown portable contract scope")
     indexed = {label: (label, command, required) for label, command, required in declared}
     if len(indexed) != len(declared):
         raise ValueError("Duplicate portable case label")
-    if scope == "memory-checked-list":
-        selected = memory_checked_list_plan(memory_checked_list_native_platform)
+    if scope in ("memory-checked-list", "memory-fixture-lifecycle"):
+        selected = (memory_fixture_lifecycle_plan(memory_checked_list_native_platform)
+            if scope == "memory-fixture-lifecycle"
+            else memory_checked_list_plan(memory_checked_list_native_platform))
         for parent, expected in memory_checked_list_parent_contracts.items():
             if parent not in indexed:
                 raise ValueError("Memory checked listing lost a full-plan parent")
@@ -2024,9 +2040,35 @@ for platform, expected in [("unix", True), ("windows", True), ("foreign", False)
     memory_checked_list_selection_controls.append(
         {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
     assert actual == expected, f"MGL platform plan failed: {platform}"
+memory_fixture_lifecycle_selection_controls = []
+for control, declared, expected in memory_checked_list_variants:
+    try:
+        selected = select_portable_cases("memory-fixture-lifecycle", declared)
+        actual = (selected == memory_fixture_lifecycle_plan(memory_checked_list_native_platform)
+            and len(selected) == 2 and sum(len(row[2]) for row in selected) == 17)
+    except ValueError:
+        actual = False
+    memory_fixture_lifecycle_selection_controls.append(
+        {"case": control, "expected": expected, "actual": actual})
+    assert actual == expected, f"MGL fixture selection oracle failed: {control}"
+for platform, expected in [("unix", True), ("windows", True), ("foreign", False)]:
+    try:
+        selected = memory_fixture_lifecycle_plan(platform)
+        names = {name for _, _, required in selected for name in required}
+        actual = (len(selected) == 2 and len(names) == 17
+            and ("memory_gateway_manager_rejects_native_drive_relative_selector" in names) == (platform == "windows")
+            and ("memory_gateway_manager_preserves_literal_colon_agent_selector" in names) == (platform == "unix")
+            and ("live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration" in names) == (platform == "windows")
+            and ("live_admission::both_state_constructors_keep_literal_colon_agent_paths" in names) == (platform == "unix"))
+    except ValueError:
+        actual = False
+    memory_fixture_lifecycle_selection_controls.append(
+        {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
+    assert actual == expected, f"MGL fixture platform plan failed: {platform}"
+
 for selected_scope, expected in [("full", True), ("custody-recovery", True),
     ("background-custody", True), ("background-custody-recovery", True),
-    ("memory-checked-list", False)]:
+    ("memory-checked-list", False), ("memory-fixture-lifecycle", False)]:
     actual = any(label.startswith("box-response-")
         for label, _, _ in select_portable_cases(selected_scope, full_cases))
     selection_controls.append({"case": "box-producer-required-" + selected_scope,
@@ -2252,6 +2294,12 @@ receipt = {
         for label, required in memory_checked_list_required.items()},
     "memory_checked_list_selection_controls": memory_checked_list_selection_controls,
     "memory_checked_list_inputs_before": memory_checked_list_inputs_before,
+    "memory_fixture_lifecycle_contract": "MGL-08",
+    "memory_fixture_lifecycle_selected_here": validation_scope == "memory-fixture-lifecycle",
+    "memory_fixture_lifecycle_expected_positive_count": 17,
+    "memory_fixture_lifecycle_required_names": {label: list(required)
+        for label, _, required in memory_fixture_lifecycle_plan(memory_checked_list_native_platform)},
+    "memory_fixture_lifecycle_selection_controls": memory_fixture_lifecycle_selection_controls,
     "box_producer_required_by_selection": box_producer_required,
     "validation_scope": validation_scope,
     "scope_selection_controls": selection_controls,
@@ -2352,10 +2400,39 @@ if validation_scope == "memory-checked-list":
         "prompt/synthesis reads, devices, Windows packages and full acceptance remain open. "
         "Requirement metadata elsewhere in this receipt is not execution.")
 
+if validation_scope == "memory-fixture-lifecycle":
+    receipt["scope"] = ("MGL-08 fixture recovery: the existing Manager and AgentState groups only, "
+        "including strict owner-destruction-before-deletion, qualified exact whitespace migration "
+        "sentinel, original refusal/byte-preservation/recovery assertions and native path controls. "
+        "Seventeen named cases are selected on each platform. No unchanged store, HTTP, Agent-path, "
+        "Session-path or extension group is executed here; no shipping App or package acceptance.")
+    retained = {
+        "Linux": ("511bcebf08738c59ec0313a425a591a327d9cd20", "41648714149", "125960843306"),
+        "macOS": ("511bcebf08738c59ec0313a425a591a327d9cd20", "41648714149", "125960843500"),
+        "Windows": ("6266a77e72159b92e72c84ef8f0423caf1416a78", "41652461179", "125973925583"),
+    }[os.environ["RUNNER_OS"]]
+    receipt["memory_fixture_retained_history"] = {
+        "subject_commit": retained[0], "run_id": retained[1], "run_attempt": 1, "job_id": retained[2],
+        "required_names": {label: list(required) for label, _, required in memory_checked_list_cases
+            if label not in memory_fixture_lifecycle_labels},
+        "role": "Historical positives only; not executed or revalidated at this subject.",
+        "assessment": ("projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/"
+            + ("h6266-exhaustion-and-decisions.json" if os.name == "nt" else "h511bce-terminal-assessment.json")),
+        "prior_windows_failures_retained": True,
+    }
+    receipt["shipping_host_verification"] = {
+        "result": "not-executed", "accepted": False,
+        "reason": "Only two test fixtures changed. Refresh their exact target graphs; retained production compilation is historical, not a new shipping result.",
+    }
+
 # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
 # the complete Host test graph once; this is a compile gate, not test evidence.
 constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
-if validation_scope == "memory-checked-list" and os.name == "nt":
+if validation_scope == "memory-fixture-lifecycle":
+    constructor_command = constructor_command[:-1]
+    for _, command, _ in cases:
+        constructor_command.extend(["--test", command[command.index("--test") + 1]])
+elif validation_scope == "memory-checked-list" and os.name == "nt":
     # Windows adds these actual native consumers; unrelated all-target and App
     # compatibility is an explicit separate gate, not a passing compile claim.
     constructor_command = constructor_command[:-1]

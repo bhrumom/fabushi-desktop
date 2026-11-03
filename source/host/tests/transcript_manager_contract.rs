@@ -2,7 +2,7 @@ use std::fs;
 use std::future::{ready, Future};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, Mutex, Weak, mpsc};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -545,7 +545,8 @@ fn manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation() 
 // cannot masquerade as refusal by the production Gateway entry.
 struct MemoryGatewaySelectorFixture {
     root: std::path::PathBuf,
-    manager: TranscriptManager,
+    manager: Option<TranscriptManager>,
+    session_owner: Weak<ProductionSessionWorkers>,
     expected: Value,
     before: Vec<(std::path::PathBuf, Option<Vec<u8>>)>,
     notifications: Arc<AtomicU64>,
@@ -591,7 +592,8 @@ impl MemoryGatewaySelectorFixture {
         fs::create_dir(&root).expect("create exclusively owned memory selector fixture");
         let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
         let mut fixture = Self {
-            manager: TranscriptManager::new(&root, Arc::clone(&sessions)),
+            manager: Some(TranscriptManager::new(&root, Arc::clone(&sessions))),
+            session_owner: Arc::downgrade(&sessions),
             root,
             expected: Value::Null,
             before: Vec::new(),
@@ -623,8 +625,12 @@ impl MemoryGatewaySelectorFixture {
         fixture
     }
 
+    fn manager(&self) -> &TranscriptManager {
+        self.manager.as_ref().expect("live memory selector manager")
+    }
+
     fn read(&self, args: Value) -> Result<Value, String> {
-        self.manager.dispatch_memory_gateway_call("getAgentMemories", &args)
+        self.manager().dispatch_memory_gateway_call("getAgentMemories", &args)
             .expect("existing memory read command must remain registered")
     }
 
@@ -663,11 +669,19 @@ impl Drop for MemoryGatewaySelectorFixture {
         if let Some(unsubscribe) = self.unsubscribe.take() {
             unsubscribe();
         }
-        self.manager.dispose();
-        let cleanup = fs::remove_dir_all(&self.root);
-        if !thread::panicking() {
-            cleanup.expect("remove owned memory selector fixture");
+        if let Some(manager) = self.manager.take() {
+            manager.dispose();
+            drop(manager);
         }
+        // dispose() stops work, but the Session-owned CallSession SQLite handle
+        // closes only when all manager fields and their Session Arcs are dropped.
+        // Preserve a failing fixture without a second panic or premature deletion.
+        if thread::panicking() {
+            return;
+        }
+        assert!(self.session_owner.upgrade().is_none(),
+            "memory selector Session owner must be destroyed before fixture cleanup");
+        fs::remove_dir_all(&self.root).expect("remove owned memory selector fixture");
     }
 }
 
@@ -756,7 +770,7 @@ fn memory_gateway_manager_preserves_literal_colon_agent_selector() {
     use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
 
     let mut fixture = MemoryGatewaySelectorFixture::new();
-    let record = fixture.manager.session_workers().memory_service().store_for_agent("C:outside")
+    let record = fixture.manager().session_workers().memory_service().store_for_agent("C:outside")
         .add_memory("Unix literal colon profile", MemoryGatewaySelectorFixture::DAY_MS, MemoryKind::Profile)
         .expect("literal colon store").expect("literal colon record");
     fixture.before = memory_gateway_selector_files(&fixture.root);
@@ -785,7 +799,7 @@ fn memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts() {
         assert_eq!(fixture.read(json!({"id": missing})).expect("safe missing ID"), json!([]));
         fixture.assert_valid_read();
     }
-    assert!(fixture.manager.dispatch_memory_gateway_call(
+    assert!(fixture.manager().dispatch_memory_gateway_call(
         "getAgentMemories.extra", &json!({"id": "../outside"}),
     ).is_none(), "unknown methods keep the existing unhandled outcome");
     fixture.assert_valid_read();
@@ -839,7 +853,7 @@ fn memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair() {
         let original_error = fs::read_to_string(&destination).expect_err("invalid UTF-8 fixture");
         assert_eq!(original_error.kind(), std::io::ErrorKind::InvalidData);
         fixture.before = memory_gateway_selector_files(&fixture.root);
-        assert_eq!(fixture.manager.session_workers().memory_service()
+        assert_eq!(fixture.manager().session_workers().memory_service()
             .list(MemoryGatewaySelectorFixture::AGENT_ID).len(), 1,
             "the old best-effort result would silently omit a real fact");
 
@@ -885,7 +899,7 @@ fn memory_gateway_checked_list_manager_preserves_path_type_failures() {
         };
         eprintln!("MGL manager obstacle profile={profile_obstacle}: native error {:?}",
             native_error.as_ref().map(|error| (error.kind(), error.raw_os_error())));
-        let error = fixture.manager.session_workers().memory_service()
+        let error = fixture.manager().session_workers().memory_service()
             .list_checked(MemoryGatewaySelectorFixture::AGENT_ID).expect_err("checked store refuses type obstacle");
         if profile_obstacle {
             let native_error = native_error.expect("profile read failed");

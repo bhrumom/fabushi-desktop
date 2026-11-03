@@ -16,10 +16,10 @@
     "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
     "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
     "spec": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
-    "spec_blob": "c081c6d5701510b699bb734fcd5a11fb0f156638",
+    "spec_blob": "4d654dadff225fb1a2329b2ce2302583fc657391",
     "spec_lines": [
       138,
-      269
+      357
     ],
     "native_preservation": true,
     "modules": [
@@ -44,9 +44,10 @@
       "MGL-06",
       "MGS-05",
       "MGS-06",
-      "MGL-07"
+      "MGL-07",
+      "MGL-08"
     ],
-    "spec_carrier": "e2b91700f145b9b13bb77cdf6f7981aafd433627"
+    "spec_carrier": "d7e1bbae7b2c2426872f77c2015e20d75853d652"
   },
   "behavior": {
     "entry": "Existing native getAgentMemories HTTP/Gateway command; required trimmed canonical Agent selector and existing current credential/scope/role admission. The same canonical native-component validator is consumed by Agent/Conversation path helpers and both actual SandAgentState constructors.",
@@ -221,6 +222,40 @@
         "memory_gateway_checked_list_manager_preserves_path_type_failures",
         "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover"
       ]
+    },
+    {
+      "id": "MGL-08",
+      "claim": "The unchanged Memory refusal and recovery assertions reach terminal success after real fixture owners are destroyed before strict deletion; exact whitespace migration sentinel is qualified before both actual AgentState constructors. Required on all three selected platforms.",
+      "tests": [
+        "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+        "memory_gateway_rejects_path_selectors_before_external_memory_read",
+        "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+        "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+        "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+        "memory_gateway_checked_list_manager_preserves_path_type_failures",
+        "memory_gateway_manager_preserves_literal_colon_agent_selector",
+        "routes_memory_to_agent_user_and_joined_project_shards",
+        "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+        "owns_profile_settings_channel_and_avatar_mutations",
+        "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+        "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+        "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+        "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+        "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+        "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+        "live_admission::both_state_constructors_keep_literal_colon_agent_paths"
+      ],
+      "platform_specific_controls": {
+        "Windows": [
+          "memory_gateway_manager_rejects_native_drive_relative_selector",
+          "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration"
+        ],
+        "Unix": [
+          "memory_gateway_manager_preserves_literal_colon_agent_selector",
+          "live_admission::both_state_constructors_keep_literal_colon_agent_paths"
+        ]
+      },
+      "execution": "pending new focused Actions subject; historical failed groups remain failed"
     }
   ],
   "source_review": {
@@ -463,6 +498,18 @@
         "blob": "844be87e4a278bca99bc4968bbf85b6d751983b9",
         "depth": "complete file",
         "fact": "resolve_sand_data_root_override admits only Path::is_absolute values; get_sand_root_dir_with chooses that same root before user-data-dir and variant fallback. The selected Session-path fixture must supply a native absolute path."
+      },
+      {
+        "path": "source/host/src/extensions/session/call_session.rs",
+        "blob": "f97f628ec14618ab2788bdf5b5c301f7a00c81f6",
+        "ranges": [
+          [
+            77,
+            98
+          ]
+        ],
+        "depth": "Constructor/retained connection lifetime contract read; not whole-file reading",
+        "fact": "CallSessionStore retains Mutex<rusqlite::Connection> under agents/.call-sessions.db. Session disposal does not destroy this field while fixture-owned manager Arcs remain."
       }
     ],
     "ledger_relationship": "OCRM remains the only inventory/ledger/RTM. This native preservation supplement is linked to the six existing RTM rows without inventing an upstream Memory equivalence row. Existing OCRM-RESP-GW-DISPATCH-REGISTRY-001 and MGA method/role/pairing/revocation responsibilities remain adjacent dependencies; their status and source histories are unchanged.",
@@ -509,6 +556,28 @@
             53
           ],
           "fact": "PATH_NOT_FOUND is NotFound, while ERROR_DIRECTORY is NotADirectory; raw error kind alone is not portable absence proof."
+        },
+        {
+          "repository": "rust-lang/rust",
+          "commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "path": "library/std/src/fs.rs",
+          "blob": "0dd250acff8378dc1aa59f63d7e3a37e5b1369e3",
+          "lines": [
+            2949,
+            2965
+          ],
+          "fact": "canonicalize returns an absolute native path, extended-length on Windows; append individual components."
+        },
+        {
+          "repository": "rust-lang/rust",
+          "commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "path": "library/std/src/sys/path/windows.rs",
+          "blob": "1c7bf50d1907f8b0c69f7ca2e27bff527652cc04",
+          "lines": [
+            118,
+            132
+          ],
+          "fact": "Already-verbatim paths preserve the exact whitespace component; short DOS paths can pass through unchanged."
         }
       ],
       "credit": "Contract review only; not full dependency reading or new fixed-U credit. Full recursive dependency/generated/LFS/resource/legal closure remains open."
@@ -554,6 +623,7 @@
       "source/host/src/gateway_command_error.rs",
       "source/host/src/device_pairing_owner.rs",
       "source/host/src/extensions/session/production.rs",
+      "source/host/src/extensions/session/call_session.rs",
       "source/host/src/extensions/memory/memory_service.rs",
       "source/host/src/extensions/transcript/transcript_manager.rs",
       "source/host/tests/memory_service_contract.rs",
@@ -574,8 +644,8 @@
       "source/host/src/workflows/workflow_store.rs"
     ],
     "retained": "All inherited full-plan command groups and requirements remain. The existing integration and namespace groups gain applicable current-platform required names, and three explicit native owner groups are added to the portable full plan. Scoped execution does not execute unrelated groups. Historical failed DJC check remains non-passing and retained.",
-    "source_review": "pending complete immutable 14-path candidate and fresh focused GENERAL/STRUCTURE review",
-    "execution": "not-run",
+    "source_review": "H511 complete frozen 14-path scope converged in independent GENERAL/STRUCTURE review. MGL-08 two-fixture/shared selection recovery requires its own complete immutable review before execution.",
+    "execution": "H511 Linux/macOS: 66 selected names each passed; Windows failed before Cargo. H6266 Windows: 58 names passed, 7 failed; two incomplete groups retained. No full MGL acceptance.",
     "platform_groups": {
       "unix": [
         {
@@ -941,10 +1011,39 @@
         }
       ]
     },
-    "windows_checkout": "Use core.autocrlf=false only on the disposable Windows Actions runner before checkout, retaining strict before/after source byte equivalence to H; reuse existing Windows Host cache."
+    "windows_checkout": "Use core.autocrlf=false only on the disposable Windows Actions runner before checkout, retaining strict before/after source byte equivalence to H; reuse existing Windows Host cache.",
+    "fixture_recovery": {
+      "contract": "MGL-08",
+      "workflow_scope": "ocrm-memory-fixture-lifecycle",
+      "capture_scope": "memory-fixture-lifecycle",
+      "decision_commit": "d7e1bbae7b2c2426872f77c2015e20d75853d652",
+      "assessment": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
+      "selected_groups": [
+        "memory-checked-list-manager",
+        "memory-checked-list-agent-state"
+      ],
+      "selected_named_cases": {
+        "Linux": 17,
+        "macOS": 17,
+        "Windows": 17
+      },
+      "compile": "Only the two changed test targets, cargo check --locked --manifest-path source/host/Cargo.toml --test transcript_manager_contract --test agent_state_contract. No unchanged shipping App compilation.",
+      "selection_controls": 36,
+      "box_producer_required": false,
+      "box_selection_controls": 6,
+      "original_full_counts_preserved": {
+        "Linux": 66,
+        "macOS": 66,
+        "Windows": 65
+      },
+      "source_bindings": 35,
+      "carry_forward": "Five unchanged groups: H511 Linux/macOS 49 names each; H6266 Windows 48 names. Preserve original run/job/subject and failures. New receipt executes 17 names only and is never a full-candidate result.",
+      "execution": "not-run",
+      "stop_condition": "Any further failure requires causal assessment; no unchanged replay or lowered oracle."
+    }
   },
   "open_work": [
-    "Actual Windows native oracles are authored and selected but not executed yet. Windows shipping App signal_hook iterator incompatibility, device names/trailing-dot alias policy and native link-capability cases remain separate open platform requirements.",
+    "Windows store/HTTP/Agent-path/Session-path/extension scoped groups passed at H6266. Manager/AgentState terminal cleanup/sentinel failures remain pending MGL-08 recovery on all three platforms. Windows shipping App signal handling, reserved-device/trailing-dot policy and native link-capability cases remain open.",
     "Atomic multi-file snapshots, external filesystem races, symlink confinement and hostile directory replacement.",
     "Strict prompt/synthesis reads and source-derived episode concurrency/reconciliation outside checked native listing.",
     "Actual full App lifecycle and any rendered Memory UI, live providers/channels/plugins/nodes/devices.",

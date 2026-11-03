@@ -1,0 +1,126 @@
+{
+  "schema": "ocrm-source-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "MGL-08",
+  "repository": "bhrumom/fabushi-desktop",
+  "base_commit": "711c1d12267c9962292eada78369c6f0d05849e7",
+  "candidate_commit": "056db10924bf22d23168331879046a7c847b1991",
+  "candidate_tree": "9f4ba60aeccad7acaa7d8796e061a8898b2815a8",
+  "scope_blob": "32c8b03dc124ab339fab2d38466a513dfaff5133",
+  "complete_patch_blob": "c37f67d534b99745fff157896a123f469a91cc46",
+  "complete_patch_sha256": "d8f3dc43a0aa3bdaea3c9147e355f4620ae3467384b63c24ec634a3b1fa00387",
+  "rounds": 1,
+  "complete_scope": [
+    {
+      "path": "source/host/tests/transcript_manager_contract.rs",
+      "status": "modified",
+      "before_blob": "a4f71a536beda9e2509653fe4b819d3da3d79eda",
+      "after_blob": "3c101cdc79e57d5a792d3d7ed3989fadf614a091"
+    },
+    {
+      "path": "source/host/tests/agent_state_contract.rs",
+      "status": "modified",
+      "before_blob": "e006bafd844737c3a778e4b3569198e17bd7657b",
+      "after_blob": "50349ee51834af3234511a8ae30c37209491f145"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "modified",
+      "before_blob": "0768505f6cb4b52c6e0b2b9e14b66e844b64604e",
+      "after_blob": "dc247fba2ad33dac654de6205d273f71fe7fd8da"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "modified",
+      "before_blob": "60165b9589cf057c491b63ae08be49f031efd7e5",
+      "after_blob": "7afb89051bed8f84df5465a7771f289510de257a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/source-contract.json",
+      "status": "modified",
+      "before_blob": "8c4e86de0769a6f50bceec6f7be056ea801664d1",
+      "after_blob": "410c00aee0046c8689d7b61a2fd4b3dbdb36a6d3"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "modified",
+      "before_blob": "4966c264bf2b83fac44a3683d1a2f24cfece04af",
+      "after_blob": "cfa7a9da48c4d049af12d21b7eeeb17ab17a86c0"
+    }
+  ],
+  "reviews": [
+    {
+      "agent": "/root/mgl_fixture_r1_general",
+      "lens": "GENERAL",
+      "model": "configured-parent (inherited)",
+      "effort": "xhigh (applied)",
+      "fresh": true,
+      "blind": true,
+      "read_only": true,
+      "terminal": "completed",
+      "verdict": "APPROVED",
+      "findings": [],
+      "coverage": [
+        "Complete six-path diff and exact nontruncated base/candidate trees and identities",
+        "Manager/Session/CallSession destruction, all changed fixture consumers and retained native child controls",
+        "Native canonical whitespace sentinel and actual constructors/workflow migration boundaries",
+        "Both exact parent-derived groups, target-only compile, strict names/summaries/exits, native Git bytes and source-before/after",
+        "All changed workflow gates/three-OS matrix/no unrelated producer;480942byte workflow",
+        "Sole RTM and source contract preserve all flags/statuses and historical original subjects"
+      ],
+      "limits": "Source review only; no builds/tests/lint/dispatch/mutations, no runtime or full acceptance."
+    },
+    {
+      "agent": "/root/mgl_fixture_r1_structure",
+      "lens": "STRUCTURE",
+      "model": "gpt-6.1-sol (applied)",
+      "effort": "xhigh (applied)",
+      "fresh": true,
+      "blind": true,
+      "read_only": true,
+      "terminal": "completed",
+      "verdict": "APPROVED",
+      "findings": [],
+      "coverage": [
+        "Entire86749byte six-path diff; authority/spec/actual six candidate tree identities",
+        "Single owner destruction and weak witness with strict ordinary cleanup; no retry/API/extra owner",
+        "Exact canonical whitespace path and original invalid-root/migration/sentinel assertions",
+        "Existing platform plans, parent command/name drift gates,17selected/66-66-65ordinary requirements",
+        "Actual source binding and compile/Box selection/receipt consumers; nine workflow job guards",
+        "No newly introduced ownership/layer crossing, dependency, unnecessary build reach, stranded definition or duplicate semantic owner"
+      ],
+      "limits": "Source review only; no executable validation or repository mutation; Windows native result and all full acceptance gates remain open."
+    }
+  ],
+  "decisions": [],
+  "converged": true,
+  "source_approved": true,
+  "runtime": "not-run for this candidate",
+  "next_execution": {
+    "scope": "memory-fixture-lifecycle",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15",
+      "windows-2025"
+    ],
+    "selected_groups": 2,
+    "selected_named_cases_each": 17,
+    "compile_targets": [
+      "transcript_manager_contract",
+      "agent_state_contract"
+    ],
+    "unchanged_shipping_compile": false,
+    "box_build": false,
+    "retained_positive_subjects": [
+      "511bcebf08738c59ec0313a425a591a327d9cd20",
+      "6266a77e72159b92e72c84ef8f0423caf1416a78"
+    ],
+    "past_failures_preserved": true
+  },
+  "acceptance": {
+    "full_unit_verified": false,
+    "shipping_accepted": false,
+    "global_flags_promoted": false
+  }
+}

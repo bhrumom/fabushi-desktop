@@ -365,25 +365,39 @@ mod live_admission {
     #[test]
     fn both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration() {
         let root = temp_root("supplied-store-invalid-id");
+        fs::create_dir(&root).expect("create exclusively owned invalid-ID fixture");
+        let cleanup_root = fs::canonicalize(&root).expect("canonical owned cleanup root");
         for (index, id) in ["", " agent", "agent ", "../escape", "a/b", "a\\b", ".", "..", "a\0b"]
             .into_iter().enumerate()
         {
             assert_both_state_constructors_reject(&root, index, id);
         }
         let invalid_root = root.join("invalid-with-migration-source");
-        let legacy = invalid_root.join("agents/ invalid /workflows/untouched-invalid");
+        fs::create_dir(&invalid_root).expect("create exclusively owned migration root");
+        // Windows needs an existing canonical root to preserve the exact trailing
+        // space. Append native components separately under its verbatim spelling.
+        let invalid_root = fs::canonicalize(&invalid_root).expect("canonical migration root");
+        let agents = invalid_root.join("agents");
+        let legacy = agents.join(" invalid ").join("workflows").join("untouched-invalid");
         fs::create_dir_all(&legacy).unwrap();
+        let agent_names = fs::read_dir(&agents).expect("actual migration agent directory")
+            .map(|entry| entry.expect("actual migration agent entry").file_name())
+            .collect::<Vec<_>>();
+        assert_eq!(agent_names, vec![std::ffi::OsString::from(" invalid ")],
+            "the migration fixture must contain the exact whitespace-bearing component");
         let legacy_file = legacy.join(LEGACY_WORKFLOW_FILENAME);
         let raw = "---\nname: Untouched invalid\n---\nDO_NOT_MIGRATE\n";
         fs::write(&legacy_file, raw).unwrap();
+        assert_eq!(fs::read(&legacy_file).expect("qualified migration sentinel"), raw.as_bytes());
         let caller_root = root.join("independent-caller");
         let supplied = FileWorkflowStore::new(caller_root.join("agents/valid"), caller_root.join("workflows"));
         assert!(SandAgentState::new(&invalid_root, " invalid ").is_err());
         assert!(SandAgentState::new_with_workflow_store(&invalid_root, " invalid ", supplied).is_err());
         assert_eq!(fs::read_to_string(&legacy_file).unwrap(), raw,
             "invalid IDs must be refused before a default-store migration can move this file");
-        assert!(!invalid_root.join("workflows/untouched-invalid").exists());
-        let _ = fs::remove_dir_all(root);
+        let destination = invalid_root.join("workflows").join("untouched-invalid");
+        assert!(!destination.exists());
+        fs::remove_dir_all(&cleanup_root).expect("remove owned invalid-ID fixture");
     }
 
     #[test]
