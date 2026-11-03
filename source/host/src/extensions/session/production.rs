@@ -91,7 +91,7 @@ use crate::automations::automation::AutomationRecord;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
 use crate::extensions::mcp::plugin_skills::{
-    PluginSkillsAdmissionQuery, PluginSkillsAdmissionReader,
+    PluginSkillsAdmissionLease, PluginSkillsAdmissionQuery, PluginSkillsAdmissionReader,
 };
 use super::session_maintenance::{
     backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
@@ -248,6 +248,16 @@ impl PluginSkillsAdmissionQuery for SessionPluginSkillsAdmission {
         };
         // Do not enter the owner's query (or any delegate) under our slot lock.
         reader.is_some_and(|reader| reader.is_denied(plugin_id))
+    }
+
+    fn acquire(&self, plugin_id: &str) -> Result<Option<PluginSkillsAdmissionLease>, String> {
+        let reader = self.reader.lock()
+            .map_err(|_| "Session plugin skills admission reader is poisoned".to_string())?
+            .clone();
+        match reader {
+            Some(reader) => reader.acquire(plugin_id),
+            None => Ok(Some(PluginSkillsAdmissionLease::unbound())),
+        }
     }
 }
 

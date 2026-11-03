@@ -15,7 +15,7 @@ use crate::extensions::managed_setup::managed_skills_cache::{
     ManagedSkill, ManagedSkillsCache, get_managed_skill_file_path,
     get_managed_skills_cache_path, get_managed_skills_dir, read_managed_skills_cache,
 };
-use crate::extensions::mcp::plugin_skills::PluginSkillsAdmissionReader;
+use crate::extensions::mcp::plugin_skills::{PluginSkillsAdmissionLease, PluginSkillsAdmissionReader};
 use crate::extensions::mcp::plugin_skills_cache::{
     PluginSkillRecord, PluginSkillsCache, PluginSkillsSnapshot, get_plugin_skills_cache_path,
     get_plugin_skills_dir, read_plugin_skills_snapshot,
@@ -590,9 +590,15 @@ impl FileWorkflowStore {
             return Ok(None);
         };
         let encoded = serialize_workflow_file(spec, &parsed.data);
-        if self.plugin_is_denied(&record.plugin_id) {
-            return Ok(None);
-        }
+        // Hold the shared cross-process admission lease through the atomic
+        // file replacement so a concurrent revoke cannot pass the last check.
+        let _admission_lease: Option<PluginSkillsAdmissionLease> = match &self.plugin_skills_admission {
+            Some(reader) => match reader.acquire(&record.plugin_id)? {
+                Some(lease) => Some(lease),
+                None => return Ok(None),
+            },
+            None => None,
+        };
         self.plugin_skills_dir_watcher
             .write_file_atomic(&record.file_path, encoded.as_bytes())
             .map_err(|error| error.to_string())?;

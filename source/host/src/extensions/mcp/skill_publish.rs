@@ -12,7 +12,7 @@ use crate::workflows::workflow_library::{
     GlobalWorkflowLibrary, GlobalWorkflowRecord, LEGACY_WORKFLOW_FILENAME,
     get_global_workflows_dir, parse_workflow_file,
 };
-use super::plugin_skills::SandPluginSkillsService;
+use super::plugin_skills::{PluginSkillsAdmissionLease, SandPluginSkillsService};
 use super::plugin_skills_cache::{PluginSkillRecord, PluginSkillsCache};
 
 pub const PUBLISH_SKILL_RPC_TIMEOUT_MS: u64 = 60_000;
@@ -48,10 +48,19 @@ pub trait SkillPublishClient: Send + Sync {
 pub trait SkillPublishPluginSkills: Send + Sync {
     fn current_index(&self) -> Option<PluginSkillsCache>;
     fn sync(&self, trigger: &str) -> Result<Vec<PluginSkillRecord>, String>;
+    fn acquire_admission(&self, plugin_id: &str) -> Result<Option<PluginSkillsAdmissionLease>, String> {
+        if self.current_index().is_some_and(|index| index.auth_blocked.iter().any(|block| block.plugin_id == plugin_id)) {
+            return Ok(None);
+        }
+        Ok(Some(PluginSkillsAdmissionLease::unbound()))
+    }
 }
 impl SkillPublishPluginSkills for SandPluginSkillsService {
     fn current_index(&self) -> Option<PluginSkillsCache> { SandPluginSkillsService::current_index(self) }
     fn sync(&self, trigger: &str) -> Result<Vec<PluginSkillRecord>, String> { SandPluginSkillsService::sync(self, trigger) }
+    fn acquire_admission(&self, plugin_id: &str) -> Result<Option<PluginSkillsAdmissionLease>, String> {
+        self.admission_reader().acquire(plugin_id)
+    }
 }
 
 pub struct SandSkillPublishService {
@@ -118,7 +127,7 @@ impl SandSkillPublishService {
     }
 
     pub fn resync(&self, workflow_id: &str) -> Result<PublishSkillResult, String> {
-        let (record, team_id) = self.require_published_plugin_skill(workflow_id)?;
+        let (record, team_id, admission_lease) = self.require_published_plugin_skill(workflow_id)?;
         let parsed = read_skill_frontmatter(Path::new(&record.file_path))?;
         let name = if parsed.name.is_empty() { record.name.clone() } else { parsed.name };
         let plugin_name = require_manifest_name(Path::new(&record.install_path))?;
@@ -128,14 +137,16 @@ impl SandSkillPublishService {
             skill_dir, skill_relative_path: &relative_path, name: &name,
             description: &parsed.description, team_id, plugin_name: &plugin_name, display_name: Some(&name),
         })?;
+        drop(admission_lease);
         self.sync_best_effort();
         Ok(PublishSkillResult { published, promoted_workflow_id: None })
     }
 
     pub fn unpublish(&self, workflow_id: &str) -> Result<UnpublishSkillResult, String> {
-        let (record, team_id) = self.require_published_plugin_skill(workflow_id)?;
+        let (record, team_id, admission_lease) = self.require_published_plugin_skill(workflow_id)?;
         let restored_workflow_id = self.restore_to_library(&record)?;
         self.client.unpublish_plugin(&record.plugin_id, team_id, PUBLISH_SKILL_RPC_TIMEOUT_MS)?;
+        drop(admission_lease);
         self.sync_best_effort();
         Ok(UnpublishSkillResult { restored_workflow_id })
     }
@@ -198,15 +209,30 @@ impl SandSkillPublishService {
     fn require_library_record(&self, workflow_id: &str) -> Result<GlobalWorkflowRecord, String> {
         self.library.get(workflow_id).ok_or_else(|| "That skill no longer exists in your library.".to_string())
     }
-    fn require_published_plugin_skill(&self, workflow_id: &str) -> Result<(PluginSkillRecord, i32), String> {
-        let index = self.plugin_skills.current_index().ok_or_else(|| "That skill is no longer installed.".to_string())?;
-        let record = index.skills.into_iter().find(|candidate| candidate.id == workflow_id)
+    fn require_published_plugin_skill(
+        &self,
+        workflow_id: &str,
+    ) -> Result<(PluginSkillRecord, i32, PluginSkillsAdmissionLease), String> {
+        let initial = self.plugin_skills.current_index()
             .ok_or_else(|| "That skill is no longer installed.".to_string())?;
-        if record.publisher_user_id.is_none() || record.publisher_user_id != index.current_user_id {
+        let initial_record = initial.skills.into_iter()
+            .find(|candidate| candidate.id == workflow_id)
+            .ok_or_else(|| "That skill is no longer installed.".to_string())?;
+        let admission_lease = self.plugin_skills.acquire_admission(&initial_record.plugin_id)?
+            .ok_or_else(|| "That skill is no longer installed or its plugin access was revoked.".to_string())?;
+        let index = self.plugin_skills.current_index()
+            .ok_or_else(|| "That skill is no longer installed.".to_string())?;
+        let record = index.skills.into_iter()
+            .find(|candidate| candidate.id == workflow_id)
+            .ok_or_else(|| "That skill is no longer installed.".to_string())?;
+        if record.plugin_id != initial_record.plugin_id
+            || record.publisher_user_id.is_none()
+            || record.publisher_user_id != index.current_user_id
+        {
             return Err(format!("\"{}\" belongs to a plugin you did not publish.", record.name));
         }
         let team_id = record.marketplace_team_id.ok_or_else(|| format!("\"{}\" is not in a team marketplace, so there is nothing to sync it back to.", record.name))?;
-        Ok((record, i32::try_from(team_id).map_err(|_| "That skill's team id is not supported.".to_string())?))
+        Ok((record, i32::try_from(team_id).map_err(|_| "That skill's team id is not supported.".to_string())?, admission_lease))
     }
     fn sync_best_effort(&self) {
         if let Err(error) = self.plugin_skills.sync("install") {

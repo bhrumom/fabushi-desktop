@@ -22,8 +22,9 @@ use super::plugin_skills_cache::{
 mod uninstall_state;
 
 use uninstall_state::{
-    DurableUninstallImage, UninstallState, inspect_failed_auth_publication,
-    load_uninstall_image, persist_uninstall_image,
+    AdmissionFileLock, DurableUninstallImage, UninstallState,
+    inspect_failed_auth_publication_locked, load_uninstall_image,
+    persist_uninstall_image_locked,
 };
 
 const UNINSTALL_RECOVERY_UNAVAILABLE: &str = "plugin uninstall recovery state is unavailable";
@@ -372,12 +373,26 @@ pub trait PluginSkillsLoader: Send + Sync {
 /// their existing publisher/account rules.
 pub trait PluginSkillsAdmissionQuery: Send + Sync {
     fn is_denied(&self, plugin_id: &str) -> bool;
+    /// Hold a shared cross-process admission lease through a protected consumer
+    /// operation. None means denied; errors are fail-closed.
+    fn acquire(&self, plugin_id: &str) -> Result<Option<PluginSkillsAdmissionLease>, String>;
 }
 
 pub type PluginSkillsAdmissionReader = Arc<dyn PluginSkillsAdmissionQuery>;
 
+pub struct PluginSkillsAdmissionLease {
+    _lock: Option<AdmissionFileLock>,
+}
+
+impl PluginSkillsAdmissionLease {
+    pub(crate) fn unbound() -> Self {
+        Self { _lock: None }
+    }
+}
+
 #[derive(Default)]
 struct PluginSkillsLiveAdmission {
+    sand_root_dir: PathBuf,
     state: Mutex<PluginSkillsAdmissionState>,
 }
 
@@ -404,12 +419,15 @@ struct LiveRefreshCustody {
     owner: Arc<()>,
     operation_id: String,
     disposition: RefreshDisposition,
+    process_lock: Arc<AdmissionFileLock>,
 }
 
 struct RefreshPass {
     operation_id: String,
     uninstall_observation: Arc<()>,
     recovery_required: bool,
+    uninstall_facts: UninstallState,
+    process_lock: Arc<AdmissionFileLock>,
 }
 
 struct RefreshGuard<'a> {
@@ -425,17 +443,27 @@ impl Drop for RefreshGuard<'_> {
 
 impl PluginSkillsAdmissionQuery for PluginSkillsLiveAdmission {
     fn is_denied(&self, plugin_id: &str) -> bool {
-        self.state
-            .lock()
-            .map(|state| {
-                state.recovery_fault
-                    || state.recovery_required
-                    || state.denied.contains_key(plugin_id)
-                    || state.durable.state.auth_refusals.contains_key(plugin_id)
-                    || state.durable.state.confirmed.contains(plugin_id)
-                    || state.durable.state.pending.contains_key(plugin_id)
-            })
-            .unwrap_or(true)
+        self.acquire(plugin_id).map(|lease| lease.is_none()).unwrap_or(true)
+    }
+
+    fn acquire(&self, plugin_id: &str) -> Result<Option<PluginSkillsAdmissionLease>, String> {
+        let lock = AdmissionFileLock::shared(&self.sand_root_dir)?;
+        let durable = load_uninstall_image(&get_plugin_skills_dir(&self.sand_root_dir))?;
+        let live = self.state.lock()
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        let denied = live.recovery_fault
+            || live.recovery_required
+            || live.denied.contains_key(plugin_id)
+            || live.durable.state.auth_refusals.contains_key(plugin_id)
+            || durable.state.refresh_intent.is_some()
+            || durable.state.auth_refusals.contains_key(plugin_id)
+            || durable.state.confirmed.contains(plugin_id)
+            || durable.state.pending.contains_key(plugin_id);
+        if denied {
+            Ok(None)
+        } else {
+            Ok(Some(PluginSkillsAdmissionLease { _lock: Some(lock) }))
+        }
     }
 }
 
@@ -501,7 +529,9 @@ impl SandPluginSkillsService {
         // Construction may read durable state. Production composition prepares
         // this fresh candidate outside its binding lock and rechecks the owner
         // before installation; same-root successors preserve the live reader.
-        let state = match load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir)) {
+        let state = match AdmissionFileLock::shared(&sand_root_dir)
+            .and_then(|_lock| load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir)))
+        {
             Ok(durable) => PluginSkillsAdmissionState {
                 denied: durable.state.auth_refusals.clone(),
                 recovery_required: durable.state.refresh_intent.is_some(),
@@ -514,9 +544,12 @@ impl SandPluginSkillsService {
             },
         };
         Self::with_admission(
-            sand_root_dir,
+            sand_root_dir.clone(),
             loader,
-            Arc::new(PluginSkillsLiveAdmission { state: Mutex::new(state) }),
+            Arc::new(PluginSkillsLiveAdmission {
+                sand_root_dir,
+                state: Mutex::new(state),
+            }),
         )
     }
 
@@ -554,8 +587,9 @@ impl SandPluginSkillsService {
             .publication
             .lock()
             .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        let admission_lock = AdmissionFileLock::exclusive(&self.sand_root_dir)?;
         self.require_active_uninstall_owner()?;
-        let expected = self.uninstall_image()?;
+        let expected = self.load_uninstall_image_locked(&admission_lock)?;
         if expected.state.pending.contains_key(plugin_id) {
             return Err("plugin uninstall already has an unresolved intent".into());
         }
@@ -573,7 +607,7 @@ impl SandPluginSkillsService {
         };
         let mut next = expected.state.clone();
         next.pending.insert(intent.plugin_id.clone(), intent.operation_id.clone());
-        self.persist_uninstall_transition(&expected, &next)?;
+        self.persist_uninstall_transition_locked(&admission_lock, &expected, &next)?;
         Ok(intent)
     }
 
@@ -586,8 +620,9 @@ impl SandPluginSkillsService {
             .publication
             .lock()
             .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        let admission_lock = AdmissionFileLock::exclusive(&self.sand_root_dir)?;
         self.require_active_uninstall_owner()?;
-        let expected = self.uninstall_image()?;
+        let expected = self.load_uninstall_image_locked(&admission_lock)?;
         if expected.state.pending.get(&intent.plugin_id) != Some(&intent.operation_id) {
             return Err("plugin uninstall settlement does not match the current intent".into());
         }
@@ -598,7 +633,7 @@ impl SandPluginSkillsService {
         }
         // NotRemoved is a known reply, not proof of no effect. Both negative
         // settlements remove only this ticket, retaining any earlier refusal.
-        self.persist_uninstall_transition(&expected, &next)
+        self.persist_uninstall_transition_locked(&admission_lock, &expected, &next)
     }
 
     fn require_active_uninstall_owner(&self) -> Result<(), String> {
@@ -613,13 +648,34 @@ impl SandPluginSkillsService {
         Ok(())
     }
 
+    fn load_uninstall_image_locked(
+        &self,
+        _lock: &AdmissionFileLock,
+    ) -> Result<DurableUninstallImage, String> {
+        let durable = load_uninstall_image(&get_plugin_skills_dir(&self.sand_root_dir))?;
+        let mut live = self.admission.state.lock()
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        if live.recovery_fault {
+            return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
+        }
+        live.denied.extend(durable.state.auth_refusals.clone());
+        let locally_owned_refresh = live.refresh.as_ref().is_some_and(|refresh| {
+            durable.state.refresh_intent.as_ref() == Some(&refresh.operation_id)
+        });
+        live.recovery_required = durable.state.refresh_intent.is_some() && !locally_owned_refresh;
+        live.durable = durable.clone();
+        Ok(durable)
+    }
+
     fn uninstall_image(&self) -> Result<DurableUninstallImage, String> {
+        let _lock = AdmissionFileLock::shared(&self.sand_root_dir)?;
+        let durable = load_uninstall_image(&get_plugin_skills_dir(&self.sand_root_dir))?;
         let live = self.admission.state.lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
         if live.recovery_fault {
             return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
         }
-        Ok(live.durable.clone())
+        Ok(durable)
     }
 
     // Caller holds P, but no service-state/admission guard during filesystem
@@ -630,7 +686,17 @@ impl SandPluginSkillsService {
         expected: &DurableUninstallImage,
         next: &UninstallState,
     ) -> Result<(), String> {
-        let durable = match persist_uninstall_image(
+        let lock = AdmissionFileLock::exclusive(&self.sand_root_dir)?;
+        self.persist_uninstall_transition_locked(&lock, expected, next)
+    }
+
+    fn persist_uninstall_transition_locked(
+        &self,
+        _lock: &AdmissionFileLock,
+        expected: &DurableUninstallImage,
+        next: &UninstallState,
+    ) -> Result<(), String> {
+        let durable = match persist_uninstall_image_locked(
             &get_plugin_skills_dir(&self.sand_root_dir), expected, next,
         ) {
             Ok(durable) => durable,
@@ -660,8 +726,18 @@ impl SandPluginSkillsService {
         expected: &DurableUninstallImage,
         next: &UninstallState,
     ) -> Result<(), String> {
+        let lock = AdmissionFileLock::exclusive(&self.sand_root_dir)?;
+        self.persist_auth_transition_locked(&lock, expected, next)
+    }
+
+    fn persist_auth_transition_locked(
+        &self,
+        _lock: &AdmissionFileLock,
+        expected: &DurableUninstallImage,
+        next: &UninstallState,
+    ) -> Result<(), String> {
         let directory = get_plugin_skills_dir(&self.sand_root_dir);
-        match persist_uninstall_image(&directory, expected, next) {
+        match persist_uninstall_image_locked(&directory, expected, next) {
             Ok(durable) => {
                 self.admission.state.lock()
                     .map_err(|_| "plugin skills live admission poisoned".to_string())?
@@ -669,7 +745,7 @@ impl SandPluginSkillsService {
                 Ok(())
             }
             Err(_) => {
-                let observed = inspect_failed_auth_publication(&directory, expected, next);
+                let observed = inspect_failed_auth_publication_locked(&directory, expected, next);
                 let mut live = self.admission.state.lock()
                     .map_err(|_| "plugin skills live admission poisoned".to_string())?;
                 match observed {
@@ -685,6 +761,17 @@ impl SandPluginSkillsService {
     }
 
     fn begin_refresh(&self) -> Result<Option<RefreshPass>, String> {
+        let process_lock = match AdmissionFileLock::try_refresh(&self.sand_root_dir)? {
+            Some(lock) => Arc::new(lock),
+            None => {
+                let live = self.admission.state.lock()
+                    .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+                match live.refresh.as_ref().filter(|refresh| refresh.disposition == RefreshDisposition::Fenced) {
+                    Some(refresh) => Arc::clone(&refresh.process_lock),
+                    None => return Err("plugin skills refresh is already active in another process".into()),
+                }
+            }
+        };
         let _publication = self.publication.lock()
             .map_err(|_| "plugin skills publication poisoned".to_string())?;
         if self.state.lock()
@@ -692,18 +779,17 @@ impl SandPluginSkillsService {
         {
             return Ok(None);
         }
-        let (expected, retained, recovery_required) = {
+        let admission_lock = AdmissionFileLock::exclusive(&self.sand_root_dir)?;
+        let expected = self.load_uninstall_image_locked(&admission_lock)?;
+        let (retained, recovery_required) = {
             let live = self.admission.state.lock()
                 .map_err(|_| "plugin skills live admission poisoned".to_string())?;
-            if live.recovery_fault {
-                return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
-            }
             if live.refresh.as_ref().is_some_and(|refresh| {
                 refresh.disposition != RefreshDisposition::Fenced
             }) {
                 return Err("plugin skills refresh custody is already active".into());
             }
-            (live.durable.clone(), live.denied.clone(), live.recovery_required)
+            (live.denied.clone(), live.recovery_required)
         };
         let operation_id = loop {
             let candidate = uuid::Uuid::new_v4().to_string();
@@ -716,18 +802,21 @@ impl SandPluginSkillsService {
         let mut next = expected.state.clone();
         next.auth_refusals.extend(retained);
         next.refresh_intent = Some(operation_id.clone());
-        self.persist_auth_transition(&expected, &next)?;
+        self.persist_auth_transition_locked(&admission_lock, &expected, &next)?;
         let mut live = self.admission.state.lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
         live.refresh = Some(LiveRefreshCustody {
             owner: Arc::clone(&self.refresh_owner),
             operation_id: operation_id.clone(),
             disposition: RefreshDisposition::AwaitingResult,
+            process_lock: Arc::clone(&process_lock),
         });
         Ok(Some(RefreshPass {
             operation_id,
             uninstall_observation: Arc::clone(&live.uninstall_observation),
             recovery_required,
+            uninstall_facts: expected.state.clone(),
+            process_lock,
         }))
     }
 
@@ -759,6 +848,7 @@ impl SandPluginSkillsService {
         };
         let _publication = publication;
         let Ok(mut live) = self.admission.state.lock() else { return; };
+        let intent_pending = live.durable.state.refresh_intent.as_ref() == Some(&pass.operation_id);
         let Some(refresh) = live.refresh.as_mut() else { return; };
         if !self.owns_refresh(refresh, pass) || refresh.disposition == RefreshDisposition::Fenced {
             return;
@@ -769,7 +859,7 @@ impl SandPluginSkillsService {
             live.recovery_fault = true;
             live.uninstall_observation = Arc::new(());
         }
-        if outcome_unknown {
+        if outcome_unknown || intent_pending {
             live.recovery_required = true;
         }
     }
@@ -784,7 +874,9 @@ impl SandPluginSkillsService {
             // P after a successor can own the shared reader and image.
             return Ok(());
         }
-        let expected = {
+        let admission_lock = AdmissionFileLock::exclusive(&self.sand_root_dir)?;
+        let expected = self.load_uninstall_image_locked(&admission_lock)?;
+        {
             let mut live = self.admission.state.lock()
                 .map_err(|_| "plugin skills live admission poisoned".to_string())?;
             if live.recovery_fault {
@@ -795,27 +887,30 @@ impl SandPluginSkillsService {
                 return Err("plugin skills refresh custody changed".into());
             }
             if refresh.disposition == RefreshDisposition::KnownResult {
-                // An accepted aggregate's failed write must not be retried or
-                // relabeled as an unadmitted result by generic error cleanup.
+                // The loader result was accepted, but its cache publication did
+                // not complete. Keep the durable intent so every process denies
+                // consumers until a fresh owner recovers the same account.
+                live.recovery_required = true;
                 return Ok(());
             }
             refresh.disposition = RefreshDisposition::Fenced;
-            if live.recovery_required {
+            if pass.recovery_required {
+                live.recovery_required = true;
                 return Ok(());
             }
-            if live.durable.state.refresh_intent.as_ref() != Some(&pass.operation_id) {
-                return Err("plugin skills refresh custody changed".into());
-            }
-            live.durable.clone()
-        };
+        }
+        if expected.state.refresh_intent.as_ref() != Some(&pass.operation_id) {
+            return Err("plugin skills refresh custody changed".into());
+        }
         let mut next = expected.state.clone();
         next.refresh_intent = None;
-        self.persist_auth_transition(&expected, &next)?;
+        self.persist_auth_transition_locked(&admission_lock, &expected, &next)?;
         let mut live = self.admission.state.lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
         if live.refresh.as_ref().is_some_and(|refresh| self.owns_refresh(refresh, pass)) {
             live.refresh = None;
         }
+        live.recovery_required = false;
         Ok(())
     }
 
@@ -1002,15 +1097,24 @@ impl SandPluginSkillsService {
             return Ok(None);
         }
         // The complete loader aggregate was validated before reaching this
-        // boundary. Never hold ServiceState while reading or changing admission.
+        // boundary. Serialize its auth facts against cross-process uninstall
+        // and keep refresh_intent until the cache snapshot itself is committed.
         self.require_current_uninstall_observation(&pass.uninstall_observation)?;
-        let (expected, retained) = {
+        let admission_lock = AdmissionFileLock::exclusive(&self.sand_root_dir)?;
+        let expected = self.load_uninstall_image_locked(&admission_lock)?;
+        if expected.state.confirmed != pass.uninstall_facts.confirmed
+            || expected.state.pending != pass.uninstall_facts.pending
+            || expected.state.refresh_intent.as_ref() != Some(&pass.operation_id)
+        {
+            return Err("plugin skills sync superseded by a cross-process admission change".into());
+        }
+        let retained = {
             let mut live = self.admission.state.lock()
                 .map_err(|_| "plugin skills live admission poisoned".to_string())?;
             if !live.refresh.as_ref().is_some_and(|refresh| {
                 self.owns_refresh(refresh, pass)
                     && refresh.disposition == RefreshDisposition::AwaitingResult
-            }) || live.durable.state.refresh_intent.as_ref() != Some(&pass.operation_id) {
+            }) {
                 return Err("plugin skills refresh custody changed".into());
             }
             for block in blocks {
@@ -1018,21 +1122,15 @@ impl SandPluginSkillsService {
             }
             live.refresh.as_mut().expect("checked refresh custody").disposition =
                 RefreshDisposition::KnownResult;
-            (live.durable.clone(), live.denied.clone())
+            live.denied.clone()
         };
         #[cfg(test)]
         sync_tests::pause_at(&self.test_hooks.before_auth_outcome);
         let mut next = expected.state.clone();
-        next.auth_refusals.extend(retained);
-        if !pass.recovery_required {
-            next.refresh_intent = None;
-        }
-        self.persist_auth_transition(&expected, &next)?;
-        let mut live = self.admission.state.lock()
+        next.auth_refusals.extend(retained.clone());
+        self.persist_auth_transition_locked(&admission_lock, &expected, &next)?;
+        let live = self.admission.state.lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
-        if !pass.recovery_required {
-            live.refresh = None;
-        }
         Ok(Some((
             live.denied.values().cloned().collect(),
             live.durable.state.confirmed.iter()
@@ -1062,18 +1160,25 @@ impl SandPluginSkillsService {
         {
             return Ok(None);
         }
-        // Observations use this same publication lock. Check before rename,
-        // then keep admission unlocked during filesystem work and readback.
+        // Hold the cross-process writer lock from the final custody check through
+        // cache rename, strict readback and durable release. An uninstall in a
+        // different process therefore linearizes wholly before or after publish.
         self.require_current_uninstall_observation(&pass.uninstall_observation)?;
+        let admission_lock = AdmissionFileLock::exclusive(&self.sand_root_dir)?;
+        let expected = self.load_uninstall_image_locked(&admission_lock)?;
+        if expected.state.confirmed != pass.uninstall_facts.confirmed
+            || expected.state.pending != pass.uninstall_facts.pending
+            || expected.state.refresh_intent.as_ref() != Some(&pass.operation_id)
+        {
+            return Err("plugin skills sync superseded by a cross-process admission change".into());
+        }
         staged.publish()?;
         #[cfg(test)]
         sync_tests::pause_at(&self.test_hooks.after_rename);
         let committed = read_plugin_skills_snapshot(get_plugin_skills_dir(&self.sand_root_dir))
             .ok_or_else(|| "could not read committed plugin skills snapshot".to_string())?;
         // The cache has crossed its file/directory barriers and strict readback.
-        // Durable refusal release follows it, never precedes it. No admission
-        // guard spans the journal write or its read-before-replace check.
-        let expected = self.uninstall_image()?;
+        // Durable refusal release follows it, never precedes it.
         let mut next = expected.state.clone();
         for id in successful_ids {
             if !denied_ids.contains(id) {
@@ -1083,18 +1188,16 @@ impl SandPluginSkillsService {
                 }
             }
         }
-        if pass.recovery_required {
-            if next.refresh_intent.as_ref() != Some(&pass.operation_id) {
-                return Err("plugin skills refresh custody changed".into());
-            }
-            next.refresh_intent = None;
+        if next.refresh_intent.as_ref() != Some(&pass.operation_id) {
+            return Err("plugin skills refresh custody changed".into());
         }
+        next.refresh_intent = None;
         let durable_release = next != expected.state;
         if durable_release {
             if next.confirmed != expected.state.confirmed {
-                self.persist_uninstall_transition(&expected, &next)?;
+                self.persist_uninstall_transition_locked(&admission_lock, &expected, &next)?;
             } else {
-                self.persist_auth_transition(&expected, &next)?;
+                self.persist_auth_transition_locked(&admission_lock, &expected, &next)?;
             }
         }
         let mut live = self
@@ -1110,11 +1213,9 @@ impl SandPluginSkillsService {
                 released_live_refusal |= live.denied.remove(id).is_some();
             }
         }
-        if pass.recovery_required {
-            live.recovery_required = false;
-            if live.refresh.as_ref().is_some_and(|refresh| self.owns_refresh(refresh, pass)) {
-                live.refresh = None;
-            }
+        live.recovery_required = false;
+        if live.refresh.as_ref().is_some_and(|refresh| self.owns_refresh(refresh, pass)) {
+            live.refresh = None;
         }
         let committed_observation = Arc::clone(&live.uninstall_observation);
         // Reporting describes this publication's admitted identities, even if

@@ -24,6 +24,85 @@ const INVALID_STATE: &str = "plugin uninstall state is unavailable";
 const CHANGED_STATE: &str = "plugin uninstall state changed";
 const WRITE_FAILED: &str = "could not persist plugin uninstall state";
 const PUBLICATION_UNKNOWN: &str = "plugin uninstall state publication outcome is unknown";
+const ADMISSION_LOCK_FILE: &str = ".plugin-skills-admission.lock";
+const REFRESH_LOCK_FILE: &str = ".plugin-skills-refresh.lock";
+const LOCK_UNAVAILABLE: &str = "plugin skills admission lock is unavailable";
+const REFRESH_LOCK_UNAVAILABLE: &str = "plugin skills refresh lock is unavailable";
+
+/// Cross-process lock files live beside the existing Plugin Skills state.
+/// The admission lock serializes durable state and consumers; the separate
+/// refresh lock is a recoverable process lease held only by an active refresh.
+pub(super) struct AdmissionFileLock {
+    _file: File,
+}
+
+impl AdmissionFileLock {
+    pub(super) fn shared(sand_root: &Path) -> Result<Self, String> {
+        let file = open_lock_file(sand_root, ADMISSION_LOCK_FILE)?;
+        fs2::FileExt::lock_shared(&file).map_err(|_| LOCK_UNAVAILABLE.to_string())?;
+        Ok(Self { _file: file })
+    }
+
+    pub(super) fn exclusive(sand_root: &Path) -> Result<Self, String> {
+        let file = open_lock_file(sand_root, ADMISSION_LOCK_FILE)?;
+        fs2::FileExt::lock_exclusive(&file).map_err(|_| LOCK_UNAVAILABLE.to_string())?;
+        Ok(Self { _file: file })
+    }
+
+    pub(super) fn try_refresh(sand_root: &Path) -> Result<Option<Self>, String> {
+        let file = open_lock_file(sand_root, REFRESH_LOCK_FILE)
+            .map_err(|_| REFRESH_LOCK_UNAVAILABLE.to_string())?;
+        match fs2::FileExt::try_lock_exclusive(&file) {
+            Ok(()) => Ok(Some(Self { _file: file })),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(None),
+            Err(_) => Err(REFRESH_LOCK_UNAVAILABLE.into()),
+        }
+    }
+}
+
+fn open_lock_file(sand_root: &Path, name: &str) -> Result<File, String> {
+    if !sand_root.is_dir() {
+        return Err(LOCK_UNAVAILABLE.into());
+    }
+    let path = sand_root.join(name);
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600).custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.custom_flags(0x0020_0000); // FILE_FLAG_OPEN_REPARSE_POINT
+    }
+    let file = options.open(&path).map_err(|_| LOCK_UNAVAILABLE.to_string())?;
+    let path_metadata = fs::symlink_metadata(&path).map_err(|_| LOCK_UNAVAILABLE.to_string())?;
+    let opened_metadata = file.metadata().map_err(|_| LOCK_UNAVAILABLE.to_string())?;
+    if !path_metadata.file_type().is_file() || !opened_metadata.file_type().is_file() {
+        return Err(LOCK_UNAVAILABLE.into());
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if path_metadata.dev() != opened_metadata.dev()
+            || path_metadata.ino() != opened_metadata.ino()
+        {
+            return Err(LOCK_UNAVAILABLE.into());
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        if path_metadata.file_attributes() & 0x0400 != 0
+            || opened_metadata.file_attributes() & 0x0400 != 0
+        {
+            return Err(LOCK_UNAVAILABLE.into());
+        }
+    }
+    Ok(file)
+}
 
 #[derive(Clone, Default, PartialEq, Eq)]
 pub(super) struct UninstallState {
@@ -281,6 +360,16 @@ pub(super) fn persist_uninstall_image(
     expected: &DurableUninstallImage,
     next: &UninstallState,
 ) -> Result<DurableUninstallImage, String> {
+    let sand_root = cache_dir.parent().ok_or_else(|| LOCK_UNAVAILABLE.to_string())?;
+    let _lock = AdmissionFileLock::exclusive(sand_root)?;
+    persist_uninstall_image_locked(cache_dir, expected, next)
+}
+
+pub(super) fn persist_uninstall_image_locked(
+    cache_dir: &Path,
+    expected: &DurableUninstallImage,
+    next: &UninstallState,
+) -> Result<DurableUninstallImage, String> {
     require_unchanged(cache_dir, expected)?;
     let image_bytes = encode_state(next)?;
     ensure_directory_durable(cache_dir)?;
@@ -315,6 +404,16 @@ pub(super) fn persist_uninstall_image(
 /// durability, but both distinguish known negative admission from foreign or
 /// unreadable state. The caller retains adverse live facts on every error.
 pub(super) fn inspect_failed_auth_publication(
+    cache_dir: &Path,
+    expected: &DurableUninstallImage,
+    next: &UninstallState,
+) -> Result<DurableUninstallImage, String> {
+    let sand_root = cache_dir.parent().ok_or_else(|| LOCK_UNAVAILABLE.to_string())?;
+    let _lock = AdmissionFileLock::shared(sand_root)?;
+    inspect_failed_auth_publication_locked(cache_dir, expected, next)
+}
+
+pub(super) fn inspect_failed_auth_publication_locked(
     cache_dir: &Path,
     expected: &DurableUninstallImage,
     next: &UninstallState,
