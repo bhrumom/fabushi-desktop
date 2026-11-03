@@ -249,3 +249,26 @@ nonlegacy nonces with source claims cannot use this fallback. Existing
 remains an exact Host/HTTP/SQLite/kill/restart negative and positive control.
 At first new-H execution, 79/80 Human passed; this one genuine pre-journal
 compatibility case was an implementation regression, not a flawed oracle.
+
+## HRR-12: Current-request retry notice lifetime (2026-11-03 bounded continuation)
+
+The current Human Resend control remains owned by ProductionRenderer, Coordinator
+and the existing Session/Transcript. A failed retry may display a composer notice,
+but it is not a global, unscoped error: retain the original durable nonce and
+message, and bind the presentation to the account generation, account slot,
+conversation selection generation and the retry attempt that produced it.
+Navigating away and returning, replacing an account, or unmounting must not
+resurrect a previous retry notice. A fresh retry retires only the previous
+owned notice; a confirmed same-intent settlement also retires it. A newer
+unrelated composer notice, even one with identical text, must not be cleared
+by a late retry completion. Keep draft, attachment and Host-admitted work.
+
+The transferred Coordinator port may be replaced synchronously by a local
+scope predicate after readiness; recheck the exact serving port and readiness
+generation after the predicate, before registering/posting the request. A
+refused local frame is not Host admission and must preserve the original
+retry identities. Required exact-H GitHub Actions gates: the real Coordinator
+controlled-port contract, actual Chromium Renderer retry/selection checks,
+renderer compile and strict semantic architecture binding, plus retained
+Session/Transcript and native shipping checks. No local/htch execution, no
+release or independent ACCEPT inferred from authored tests.

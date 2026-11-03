@@ -189,16 +189,26 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     if (method === "retryHumanMessage" && parseCoordinatorHumanMessageRetryRequest(args) == null) {
       throw new Error("retryHumanMessage requires original Human conversation and nonce identities");
     }
-    await currentReady;
+    const awaitedReady = currentReady;
+    await awaitedReady;
+    // A live scope callback can synchronously replace the transferred port.
+    // The readiness promise and port must both still be the ones admitted:
+    // a new (even already-ready) generation did not receive this request.
+    if (disposed || port == null || !serving || currentReady !== awaitedReady) {
+      throw new Error(`coordinator is unavailable for ${method}`);
+    }
+    const admittedPort = port;
     // Waiting for the port is not Host admission. The original presentation
     // and account may have retired during that wait, including an A-B-A return.
     // Once this frame is posted, its durable Host work and reply are preserved.
     if (isCurrent != null && isCurrent() !== true) throw new Error("Coordinator request scope expired before admission");
-    if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
+    if (disposed || port !== admittedPort || !serving || currentReady !== awaitedReady) {
+      throw new Error(`coordinator port changed before admission for ${method}`);
+    }
     const requestId = `r-${++nextRequestId}`;
     const response = new Promise<unknown>((resolve, reject) => pending.set(requestId, { method, resolve, reject }));
     try {
-      port.postMessage({ kind: "request", requestId, method, args });
+      admittedPort.postMessage({ kind: "request", requestId, method, args });
     } catch (error) {
       // A port that was ready can still be replaced before its request frame
       // is serialized. No Host request exists; discard its correlation slot.

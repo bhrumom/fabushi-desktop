@@ -899,3 +899,45 @@ test('HRR-10 a failed transferred request frame preserves one local Human retry 
   await expect(page.locator('[contenteditable="true"]')).toHaveText('Independent unsent draft after port failure');
   await milestone(page, info, 'human-port-post-failure-same-nonce-recovered');
 });
+
+test('HRR-12 a displayed Human retry failure retires after conversation A-B-A without altering drafts or durable messages', async ({ page }, info) => {
+  const nonce = 'notice-selection-scope';
+  const failed = await beginHumanRetry(page, nonce);
+  await page.locator('[contenteditable="true"]').fill('Draft remains independent of retry notice');
+  await page.evaluate(() => window.nativeMessageFixture.rejectHumanRetry(0));
+  await expect(page.getByText(/^Human retry unavailable:/)).toBeVisible();
+  await page.getByRole('button', { name: 'Bob', exact: true }).click();
+  await expect(messageRow(page, 'b1')).toBeVisible();
+  await expect(page.getByText(/^Human retry unavailable:/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(page.getByText(/^Human retry unavailable:/)).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Draft remains independent of retry notice');
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+  await page.evaluate(() => window.nativeMessageFixture.settleHumanRetry(1));
+  await expect(messageRow(page, 'human-server-message:901')).toContainText('Original pending Human text');
+  await expect(page.getByText(/^Human retry unavailable:/)).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Draft remains independent of retry notice');
+  expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toEqual([]);
+  await milestone(page, info, 'human-retry-notice-selection-lifetime');
+});
+
+test('HRR-12 a second same-intent retry clears the visible failure before its new Host receipt', async ({ page }, info) => {
+  const failed = await beginHumanRetry(page, 'notice-retry-replacement');
+  await page.locator('[contenteditable="true"]').fill('New draft before second attempt');
+  await page.evaluate(() => window.nativeMessageFixture.rejectHumanRetry(0));
+  await expect(page.getByText(/^Human retry unavailable:/)).toBeVisible();
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+  await expect(page.getByText(/^Human retry unavailable:/)).toHaveCount(0);
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await page.evaluate(() => window.nativeMessageFixture.settleHumanRetry(1));
+  await expect(messageRow(page, 'human-server-message:901')).toContainText('Original pending Human text');
+  await expect(page.getByText(/^Human retry unavailable:/)).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('New draft before second attempt');
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'retryHumanMessage').map((r) => r.args.clientNonce))).toEqual([
+    'notice-retry-replacement', 'notice-retry-replacement',
+  ]);
+  await milestone(page, info, 'human-retry-notice-replaced');
+});

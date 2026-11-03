@@ -891,7 +891,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [entriesByAgent, setEntriesByAgent] = useState<Record<string, ConversationTranscriptEntry[]>>({});
   const [transcriptLoadError, setTranscriptLoadError] = useState<TranscriptLoadErrorState | null>(null);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNoticeState] = useState<string | null>(null);
+  // Only the retry that displayed a composer notice may later retire it.
+  // Ordinary notices supersede ownership even when their text is identical.
+  const retryNoticeOwnerRef = useRef<{
+    token: symbol; message: string; accountGeneration: number; accountSlot: string | null;
+    agentId: string; selectionGeneration: number;
+  } | null>(null);
+  const setNotice = useCallback<typeof setNoticeState>((next) => {
+    retryNoticeOwnerRef.current = null;
+    setNoticeState(next);
+  }, []);
   const [composerClearGeneration, setComposerClearGeneration] = useState(0);
   const [overlay, setOverlay] = useState<AuxiliaryOverlay>(null);
   const [workspaceRoute, setWorkspaceRoute] = useState<WorkspaceRoute>(null);
@@ -3752,9 +3762,33 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (!isCurrent() || !authorId || entry.authorId !== authorId
         || !originalNonce || entry.role !== "user" || entry.authorKind !== "human"
         || entry.id !== `human-message:${originalNonce}` && entry.id !== `pending-${originalNonce}`) return;
-      const reportRetryNotice = (message: string) => setNotice((current) => isCurrent() ? message : current);
       const retryKey = `${accountGeneration}:${accountSlot}:${agentId}:${originalNonce}`;
       if (humanRetryInFlightRef.current.has(retryKey)) return;
+      const noticeToken = Symbol("human-retry-notice");
+      const clearRetryNotice = () => {
+        const owned = retryNoticeOwnerRef.current;
+        if (owned == null || owned.token !== noticeToken) return;
+        retryNoticeOwnerRef.current = null;
+        setNoticeState((current) => current === owned.message ? null : current);
+      };
+      const reportRetryNotice = (message: string) => {
+        if (!isCurrent()) return;
+        retryNoticeOwnerRef.current = {
+          token: noticeToken, message, accountGeneration, accountSlot, agentId, selectionGeneration,
+        };
+        setNoticeState((current) => isCurrent() && retryNoticeOwnerRef.current?.token === noticeToken
+          ? message : current);
+      };
+      // A fresh retry retires only its own previous failure, not an unrelated
+      // composer notice with the same copy or a different message's failure.
+      const previousNotice = retryNoticeOwnerRef.current;
+      if (previousNotice?.accountGeneration === accountGeneration
+        && previousNotice.accountSlot === accountSlot
+        && previousNotice.agentId === agentId
+        && previousNotice.selectionGeneration === selectionGeneration) {
+        retryNoticeOwnerRef.current = null;
+        setNoticeState((current) => current === previousNotice.message ? null : current);
+      }
       humanRetryInFlightRef.current.add(retryKey);
       try {
         const queued = composerSubmissionQueue.snapshot().find((candidate) =>
@@ -3774,6 +3808,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             // view retired; a retired account must never dispatch its queue.
             if (isAccountCurrent()) composerSubmissionQueue.flush();
             reportRetryNotice("Human message retry did not settle; original draft and nonce are retained");
+          } else if (isCurrent()) {
+            clearRetryNotice();
           }
           return;
         }
@@ -3804,6 +3840,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         acknowledgementController.reconcileEcho({
           accountSlot, agentId, nonce: originalNonce, echoedNonce: originalNonce,
         });
+        clearRetryNotice();
       } catch (error) {
         reportRetryNotice(error instanceof Error
           ? `Human retry unavailable: ${error.message}`
@@ -4438,7 +4475,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={retryNoticeOwnerRef.current != null && (
+              retryNoticeOwnerRef.current.accountGeneration !== accountScopeGenerationRef.current
+              || retryNoticeOwnerRef.current.accountSlot !== acknowledgementScopeRef.current.accountSlot
+              || retryNoticeOwnerRef.current.agentId !== activeAgent.id
+              || retryNoticeOwnerRef.current.selectionGeneration !== openAgentRequestGenerationRef.current
+            ) ? null : notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>

@@ -685,3 +685,29 @@ test("Human send admission records only a posted frame; a refused port preserves
   port.succeed(request, settled);
   assert.deepEqual(await retry, settled, "a late unknown reply cannot replace the surviving intent");
 });
+
+test("Coordinator rejects a request whose admission predicate replaces an already-ready port", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const oldPort = h.providePort();
+  oldPort.ready();
+  await h.client.ready;
+  const args = { conversationId: "human:local:peer", clientNonce: "original" };
+  let replacement!: ControlledPort;
+  let checks = 0;
+  const interrupted = observed(h.client.call("retryHumanMessage", args, () => {
+    checks += 1;
+    replacement = h.providePort();
+    replacement.ready();
+    return true;
+  }));
+  await assert.rejects(interrupted, /coordinator port changed before admission/);
+  assert.equal(checks, 1);
+  assert.equal(oldPort.requests.length, 0, "a replaced generation must not receive a request");
+  assert.equal(replacement.requests.length, 0, "an already-ready replacement did not admit this stale request");
+  const fresh = observed(h.client.call("retryHumanMessage", args, () => true));
+  await nextTurn();
+  const request = onlyRequest(replacement);
+  replacement.succeed(request, settledHumanRetry());
+  assert.deepEqual(await fresh, settledHumanRetry());
+  assert.equal(replacement.requests.length, 1);
+});

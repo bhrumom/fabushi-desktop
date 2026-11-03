@@ -798,8 +798,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/coordinator-client.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/coordinator-admission.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-admission-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/coordinator-admission.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-admission.log
-          grep -Fx '# tests 19' artifacts/native-message-ui/coordinator-admission.log
-          grep -Fx '# pass 19' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# tests 20' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# pass 20' artifacts/native-message-ui/coordinator-admission.log
           grep -Fx '# fail 0' artifacts/native-message-ui/coordinator-admission.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/coordinator-admission.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/coordinator-admission.log
@@ -855,20 +855,20 @@ jobs:
           import fs from 'node:fs';
           import assert from 'node:assert/strict';
           const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/production-renderer.json', 'utf8'));
-          assert.equal(report.stats.expected, 26);
+          assert.equal(report.stats.expected, 28);
           for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
           assert.deepEqual(report.errors, []);
           const cases = [];
           const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
           for (const suite of report.suites) walk(suite);
-          assert.equal(cases.length, 26);
+          assert.equal(cases.length, 28);
           for (const item of cases) {
             assert.equal(item.expectedStatus, 'passed');
             assert.equal(item.results.length, 1);
             assert.equal(item.results[0].status, 'passed');
             assert.equal(item.results[0].retry, 0);
           }
-          console.log('actual ProductionRenderer: 26 passed, 0 failed, 0 skipped, 0 retries');
+          console.log('actual ProductionRenderer: 28 passed, 0 failed, 0 skipped, 0 retries');
           NODE
       - name: Actual ProductionRenderer Transcript cache and continuation behaviors
         shell: bash
