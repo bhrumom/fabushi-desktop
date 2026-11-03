@@ -1,10 +1,10 @@
-import { lstat, mkdir, readFile, readdir, realpath, rm, stat } from "node:fs/promises";
-import { basename, extname, join, resolve } from "node:path";
+import { lstat, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
+import { basename, dirname, extname, join, resolve } from "node:path";
 import grayMatter from "gray-matter";
 import { detectHooksSchema, transformClaudeHooksToConfig, type CursorHooksConfig } from "../hooks/claude-code-mapper.js";
 import { validateHooksConfig } from "../hooks/validators/hooksConfig.js";
 import { PluginComponentDiscovery, type PluginComponentDescriptor, type PluginFileFetcher } from "./component-discovery.js";
-import { DefaultPluginCacheManager } from "./cursor-marketplace.js";
+import { DefaultPluginCacheManager, PLUGIN_CACHE_SENTINEL } from "./cursor-marketplace.js";
 import { isPathSafe, parsePluginManifest, PLUGIN_MANIFEST_PATHS, type PluginManifest, type PluginVariableSchema } from "./manifest-parser.js";
 import { resolvePluginMcpConfigPaths, resolvePluginMcpConfigWithManifestLookup, type McpParserOptions, type ResolvedMcpConfig } from "./mcp-parser.js";
 import { expandPluginVariables } from "./plugin-variables.js";
@@ -123,7 +123,7 @@ export async function loadFromMarketplaceSource(options: MarketplaceLoadOptions)
       const cacheKey = `${slug}/${entry.pluginId}`; let record = versionsByKey.get(cacheKey); if (!record) { record = { slug, pluginId: entry.pluginId, versions: [] }; versionsByKey.set(cacheKey, record); } record.versions.push(entry.version);
       const cacheArgs = { marketplaceSlug: slug, pluginId: entry.pluginId, version: entry.version }; let installPath: string;
       if (await cacheManager.isCached(cacheArgs)) { installPath = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Found cached plugin: ${entry.pluginId} at ${installPath}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); }
-      else { const targetDir = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Plugin missing from cache, installing: ${entry.pluginId} at ${targetDir}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); await mkdir(targetDir, { recursive: true }); try { await client.installPlugin(entry, targetDir); await cacheManager.markCacheComplete(cacheArgs); } catch (error) { try { await rm(targetDir, { recursive: true, force: true }); } catch {} throw error; } installPath = targetDir; }
+      else { const targetDir = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Plugin missing from cache, installing: ${entry.pluginId} at ${targetDir}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); await mkdir(dirname(targetDir), { recursive: true }); const stagingDir = await mkdtemp(join(dirname(targetDir), `.${basename(targetDir)}.install-`)); try { await client.installPlugin(entry, stagingDir); await writeFile(join(stagingDir, PLUGIN_CACHE_SENTINEL), ""); await rename(stagingDir, targetDir); } catch (error) { try { await rm(stagingDir, { recursive: true, force: true }); } catch {} throw error; } installPath = targetDir; }
       const marketplaceName = entry.marketplace?.name, sourceType = marketplaceName !== undefined && marketplaceName !== "cursor-public" && marketplaceName.length > 0 ? "cursor-third-party" : "cursor-first-party", sourceInfo: MarketplacePluginSourceInfo = { name: entry.name, version: entry.version, pluginDbId: entry.pluginDbId, configuredVariables: entry.configuredVariables, marketplace: marketplaceName, marketplaceDbId: entry.marketplaceDbId, isTeamRequired: entry.isTeamRequired };
       plugins.push(await loadCursorPluginFromPath(installPath, sourceType, sourceInfo, { log: pluginLogger })); if (pruneOldVersions !== false) try { await cacheManager.pruneOldVersions({ marketplaceSlug: slug, pluginId: entry.pluginId, keepVersions: [entry.version] }); } catch {}
     } catch (error) {
