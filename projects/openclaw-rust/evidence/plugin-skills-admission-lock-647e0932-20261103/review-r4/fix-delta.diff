@@ -1,0 +1,383 @@
+diff --git a/projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json
+--- a/projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json
+@@ -123,12 +123,19 @@
+     ],
+     "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance. R2 adds a complete foreign-process uninstall cycle while the paused owner performs no intermediate read, authoritative corruption/restoration controls, actual workflow publication interleavings and actual cleanup-I/O fault with reentrant owner callbacks. These are source-authored until exact-H Actions returns evidence. Constructor controls now use actual EX and real I/O faults to distinguish an unowned observation from authoritative corruption, plus the actual first image/marker publisher under EX and a genuinely absent root with no constructor writes. Ordinary repaired reads retain unknown until explicit successful sync; no claim to execute every OS scheduling interleaving.",
+     "prior_failure": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-    "exact_candidate_execution": "pending R3 complete-scope source review and frozen exact-H Actions",
++    "exact_candidate_execution": "Actual H6d8c241b609948c4266e1e40c8f559795b317473 run41618863245/a1 Linux job125859112028 fails three retained desktop service custody tests and the separate library relay handoff case on old v2 image expectations. These two selected Plugin groups remain failed. All21 newly required Plugin admission names were observed individually once, without upgrading either rejected group or full-unit acceptance. Corrected v3 lifecycle oracles require fresh focused source review and new frozen-H Actions.",
+     "reuse_note": "The existing skill_publish_contract target is also selected in the Linux plugin-uninstall-service command; its four retained public publish/restore oracles run alongside the actual-owner lease regression. No second capture owner.",
+-    "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh."
++    "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh.",
++    "retained_desktop_custody_names": [
++      "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
++      "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
++      "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
++      "extensions::mcp::coordinator_relay::lifecycle_tests::desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff"
++    ],
++    "retained_desktop_custody_oracle": "Complete status/image/marker and unchanged-byte snapshots remain. Explicit nullable canonical v3 observation is checked through seed, reservation, exact settlement, refresh-only transitions, confirmed-fact release and stale/closed-service replies. Existing capture already requires these three names and binds the actual test file; no command or assertion is removed. The real same-root library handoff also retains its actual reader identity, confirmed/pending/current-denial and unaffected admission checks, canonical observation rotation, and exact journal bytes after late replies or retired-owner calls. Existing capture already binds this production file and requires the selected library name."
+   },
+   "acceptance": {
+-    "scoped_authority": "AR-LOCK-R2 source contract and root FIX decisions saved before implementation; fresh integrated candidate review required",
++    "scoped_authority": "AR-LOCK-R2/R3 source authority and R3 source convergence retained at their exact subjects. Executed desktop consumer oracle mismatch is repaired under the existing LR2-01 authority after durable FIX; recovery review and current exact-H validation remain pending.",
+     "full_unit_verified": false,
+     "canonical_source_review_changed": false,
+     "global_flags_changed": false,
+@@ -149,6 +156,33 @@
+       "source_contract_blob": "155f4dff0f6fe7c7f9f1f3210296beac7bf81a6a",
+       "disposition": "R2 complete source review identifies an unlocked constructor observation promoted to permanent fault. Root confirms the actual source path and records FIX before correction; no executable verification.",
+       "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
++    },
++    {
++      "contract": "PS-LOCK-RECONCILE-v2",
++      "source_subject": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
++      "source_contract_blob": "ce649cd09cefb4c2bec99f8c2d0b94a266645e7a",
++      "disposition": "R3 focused source review converged; complete original scope retained and seven-path proper delta reviewed. Executable evidence pending.",
++      "convergence": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/convergence.json"
++    },
++    {
++      "contract": "PS-LOCK-RECONCILE-v2",
++      "execution_subject": "6d8c241b609948c4266e1e40c8f559795b317473",
++      "run_id": 41618863245,
++      "run_attempt": 1,
++      "job_id": 125859112028,
++      "disposition": "TEST_FLAW in retained adjacent desktop custody oracle: hardcoded v2 after specified v3 writer upgrade. FIX saved before source correction; no unchanged-H rerun or source/runtime acceptance.",
++      "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-6d8c241/recovery-decisions.json",
++      "decision_commit": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e"
++    },
++    {
++      "contract": "PS-LOCK-RECONCILE-v2",
++      "execution_subject": "6d8c241b609948c4266e1e40c8f559795b317473",
++      "run_id": 41618863245,
++      "run_attempt": 1,
++      "job_id": 125859112028,
++      "disposition": "The completed portable log identifies a second old-v2 oracle in the retained library relay handoff. FIX saved before this test-only correction; source/runtime acceptance still pending.",
++      "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-6d8c241/recovery-decisions.json",
++      "decision_commit": "9d52b064c7f691e444613cd28a85dabe1d0e757b"
+     }
+   ],
+   "private_image_migration": {
+@@ -163,5 +197,24 @@
+     "legacy": "Read v1/v2 without rewriting or inventing an observation. Explicit writes use v3 and preserve all existing custody.",
+     "rollback": "Retained non-null identity loss to legacy/null faults. Old strict readers reject v3; rollback requires a compatible reader and cannot clear or downgrade custody.",
+     "marker": "Existing marker 1\\n and file/directory durability barriers remain unchanged."
++  },
++  "oracle_recovery": {
++    "original_review_base": "9864d1c02e7e67881d644800963abc807b3abaab",
++    "previous_review_subject": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
++    "implementation_base": "9d52b064c7f691e444613cd28a85dabe1d0e757b",
++    "scope": "Add the two actual executed consumer test paths to the retained original fourteen-path review context. Production functions/schema/permission state remain at their prior identities; coordinator_relay.rs changes only its cfg(test) lifecycle oracle. Complete current scope and proper prior-reviewed-candidate delta accompany recovery review.",
++    "state": "authored; source review and exact-H Actions pending",
++    "edited_tests": [
++      {
++        "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
++        "old_blob": "71144e4e578a51fd2281dcb6b743e5c7a11d569e",
++        "new_blob": "a54a3a6e3e6b5a010f3564abb37cd6c996dc9752"
++      },
++      {
++        "path": "source/host/src/extensions/mcp/coordinator_relay.rs",
++        "old_blob": "d3eb405218a8bb2a86875b404a6719ecb95de8bd",
++        "new_blob": "939e1d588dc7d3f740e88ae4ec6232a49d8ea51e"
++      }
++    ]
+   }
+ }
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -1665,7 +1665,8 @@
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "source/host/app/src/tests/local_exec_outcome_tests.rs",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -1701,9 +1702,10 @@
+         "This row does not claim a remote Gateway caller, reconnect scheduler, remote manifest publication or physical worker executor",
+         "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller",
+         "Actual local system.run reports EXECUTION_OUTCOME_UNKNOWN with stable operation/result identity when no authoritative Exit or durable settlement is available; known refusal stays EXECUTION_ERROR",
+-        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
++        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
++        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
+       ],
+-      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed",
++      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
+       "oracle_ids": [],
+       "owner_decision": "Record local producer/state/consumer wiring separately from the full NodeHost transport and worker responsibility",
+       "postconditions": [
+@@ -9754,7 +9756,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -9785,9 +9788,10 @@
+         "Environment variables are stripped of non-allowlisted credentials",
+         "Distinct permission facades from one Host extension share one lazy operation owner and one ordered journal publication transaction",
+         "A refused or duplicate invocation cannot mutate another operation; identity and agent checks precede owner-scoped cancellation",
+-        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
++        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
++        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
+       ],
+-      "migration_rollback": "Disable sandboxed tool execution in runner config",
++      "migration_rollback": "Disable sandboxed tool execution in runner config; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
+       "oracle_ids": [
+         "OCRM-EXEC-O01",
+         "OCRM-EXEC-O02"
+@@ -19639,7 +19643,8 @@
+         "Trusted generated HTML markers strictly enforce kind=trusted-generated-html and version=1",
+         "Host read media admission validates exact SHA256 and byte size against recorded provenance",
+         "Pruning filters rows referencing missing files, symbolic links, or hardlinks (nlink != 1)",
+-        "NotFound and NotADirectory establish missing-path selection; all other inspection errors retain the original provenance snapshot and confer no read authority"
++        "NotFound and NotADirectory establish missing-path selection; all other inspection errors retain the original provenance snapshot and confer no read authority",
++        "SC02 foreground invocation identities never reuse a live or retired registration; a reaped Child with unobserved workers cannot be replaced or erased by a later Capture/Stream sharing numeric PID data. Bounded stop retains unresolved foreground identity; this is not background-controller acceptance."
+       ],
+       "migration_rollback": "Retain uninspectable marker snapshots and fail closed at independent read/trust admission; never enable an HTML text fallback to bypass provenance. HHP-v2 adds no schema or persisted-state migration.",
+       "oracle_ids": [
+@@ -19753,7 +19758,11 @@
+         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_interrupted_read_retries_without_losing_bytes",
+         "source/box-exec-daemon/src/server.rs::tests::disconnect_aborts_foreground_shell_process_group",
+         "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay",
+-        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"
++        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_handoff_retains_reused_pid_capture"
+       ],
+       "typed_contracts": [
+         "validate_provenance_row",
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -1136,7 +1136,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R16",
+@@ -2340,7 +2341,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC11",
+@@ -2572,7 +2574,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC16",
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -1270,7 +1270,7 @@
+     ("box-response-real-daemon", base + ["--test","box_exec_daemon_process_contract","box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion","--","--exact","--ignored","--test-threads=1"], [
+         "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+ ]),
+-    ("box-response-shell-capture-unit", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::foreground_capture_", "--", "--test-threads=1"], ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes"]),
++    ("box-response-shell-capture-unit", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::foreground_capture_", "--", "--test-threads=1"], ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed","server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn","server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias","server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture"]),
+     ("box-response-shell-capture-consumer", base + ["--test", "box_exec_daemon_process_contract", "box_foreground_capture_", "--", "--ignored", "--test-threads=1"], ["foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"]),
+     ("box-response-shell-capture-disconnect", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::disconnect_aborts_foreground_shell_process_group", "--", "--exact", "--test-threads=1"], ["server::tests::disconnect_aborts_foreground_shell_process_group"]),
+ ]
+@@ -1409,8 +1409,8 @@ def source_bindings(paths):
+     "local_exec_outcome_required_runner_names": ["production_generated_runner_retains_unknown_external_shell_effects","production_generated_runner_preserves_known_external_shell_outcomes","production_external_shell_adapter_types_uncertain_results_and_errors"],
+     "local_exec_outcome_scope": "Actual registered generated Runner, production ExternalShell adapter, shared Host LocalExec and permission owner through real bridge delivery. Counted external effects, unknown post-entry outcomes, sticky custody, no uncertain checkpoint/replay, known refusal/Exit and fresh-owner journal controls use fixture-owned peers. Separate native three-platform and actual App/protocol receipts remain required; no physical device, external account, full process-tree, package or global acceptance.",
+     "box_shell_capture_contract": "BXR-SHELL-CAPTURE-v1",
+-    "box_shell_capture_required_names": ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed","server::tests::disconnect_aborts_foreground_shell_process_group"],
+-    "box_shell_capture_scope": "Actual daemon foreground capture distinguishes pre-spawn known refusal from entered read/wait/worker uncertainty for ordinary Shell and MiniSwe. Owned children remain in the existing registry through bounded observed cleanup; actual Throw/Close reaches Host, ForeverBox, Runner sticky custody, no replay and checkpoint refusal. Private cfg(test) operation faults are bound to a separately identified library test artifact; normal shipping daemon controls remain independent. Descendant-process closure, hostile ownership changes, raw HTML provenance, power loss, platform packages and real services remain unaccepted.",
++    "box_shell_capture_required_names": ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed","server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn","server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias","server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture","foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed","server::tests::disconnect_aborts_foreground_shell_process_group"],
++    "box_shell_capture_scope": "Actual daemon foreground capture distinguishes pre-spawn known refusal from entered read/wait/worker uncertainty for ordinary Shell and MiniSwe. Owned children and incomplete captures remain in the same registry under nonreusable invocation identities through bounded observed cleanup; exhaustion refuses before spawn and streamed stop/handoff preserves exact invocation custody; actual Throw/Close reaches Host, ForeverBox, Runner sticky custody, no replay and checkpoint refusal. Private cfg(test) operation faults are bound to a separately identified library test artifact; normal shipping daemon controls remain independent. Descendant-process closure, hostile ownership changes, raw HTML provenance, power loss, platform packages and real services remain unaccepted.",
+     "box_response_contract": "BXR-v1.3",
+     "box_response_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
+     "box_response_inputs_before": box_response_inputs_before,
+diff --git a/source/host/src/extensions/mcp/coordinator_relay.rs b/source/host/src/extensions/mcp/coordinator_relay.rs
+--- a/source/host/src/extensions/mcp/coordinator_relay.rs
++++ b/source/host/src/extensions/mcp/coordinator_relay.rs
+@@ -948,6 +948,16 @@ mod lifecycle_tests {
+             assert!(result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err().contains("requires servers"));
+             worker.join().unwrap();
+             assert!(retained.get("plugin-41-retained").is_none());
++            let journal_path = cache_dir.join("uninstall-state.json");
++            let confirmed: Value = serde_json::from_slice(&fs::read(&journal_path).unwrap()).unwrap();
++            let confirmed_observation = confirmed["uninstallObservation"].as_str().unwrap().to_string();
++            assert_eq!(uuid::Uuid::parse_str(&confirmed_observation).unwrap().to_string(),
++                confirmed_observation, "the real settlement emits a canonical observation");
++            assert_eq!(confirmed, json!({
++                "formatVersion":3, "confirmedPluginIds":["41"], "pending":[],
++                "authRefusals":[], "refreshIntent":null,
++                "uninstallObservation":confirmed_observation.clone(),
++            }));
+ 
+             // This distinct operation genuinely enters the old backend before
+             // handoff. Its durable pending fact must survive a late receipt.
+@@ -963,11 +973,16 @@ mod lifecycle_tests {
+             assert_eq!(pending[0]["pluginId"], "43");
+             let operation_id = pending[0]["operationId"].as_str().unwrap();
+             assert_eq!(uuid::Uuid::parse_str(operation_id).unwrap().to_string(), operation_id);
+-            let journal_path = cache_dir.join("uninstall-state.json");
+             let journal = fs::read(&journal_path).unwrap();
+-            assert_eq!(serde_json::from_slice::<Value>(&journal).unwrap(), json!({
+-                "formatVersion":2, "confirmedPluginIds":["41"], "pending":pending,
++            let decoded: Value = serde_json::from_slice(&journal).unwrap();
++            let observation = decoded["uninstallObservation"].as_str().unwrap();
++            assert_eq!(uuid::Uuid::parse_str(observation).unwrap().to_string(), observation);
++            assert_ne!(observation, confirmed_observation,
++                "the next real reservation rotates the earlier settlement observation");
++            assert_eq!(decoded, json!({
++                "formatVersion":3, "confirmedPluginIds":["41"], "pending":pending,
+                 "authRefusals":[], "refreshIntent":null,
++                "uninstallObservation":observation,
+             }));
+             assert_eq!(fs::read(cache_dir.join("uninstall-state.version")).unwrap(), b"1\n");
+             assert!(retained.get("plugin-43-retained").is_none());
+diff --git a/source/host/tests/mcp_coordinator_relay_contract.rs b/source/host/tests/mcp_coordinator_relay_contract.rs
+--- a/source/host/tests/mcp_coordinator_relay_contract.rs
++++ b/source/host/tests/mcp_coordinator_relay_contract.rs
+@@ -646,6 +646,7 @@ mod desktop_service_contracts {
+         status: Value,
+         image: Vec<u8>,
+         marker: Vec<u8>,
++        uninstall_observation: Option<String>,
+     }
+ 
+     impl RealService {
+@@ -731,14 +732,31 @@ mod desktop_service_contracts {
+             });
+             let directory = get_plugin_skills_dir(&self.root.0);
+             let image = fs::read(directory.join("uninstall-state.json")).unwrap();
+-            assert_eq!(serde_json::from_slice::<Value>(&image).unwrap(), json!({
+-                "formatVersion":2, "confirmedPluginIds":confirmed, "pending":pending_rows,
++            let decoded: Value = serde_json::from_slice(&image).unwrap();
++            let uninstall_observation = match decoded.get("uninstallObservation")
++                .expect("v3 requires an explicit nullable uninstall observation")
++            {
++                Value::Null => None,
++                Value::String(observation) => {
++                    assert_eq!(uuid::Uuid::parse_str(observation).unwrap().to_string(),
++                        *observation, "uninstall observation must be a canonical UUID");
++                    Some(observation.clone())
++                }
++                _ => panic!("uninstall observation must be null or a canonical UUID"),
++            };
++            if !confirmed.is_empty() || !pending.is_empty() {
++                assert!(uninstall_observation.is_some(),
++                    "actual uninstall reservation and settlement establish an observation");
++            }
++            assert_eq!(decoded, json!({
++                "formatVersion":3, "confirmedPluginIds":confirmed, "pending":pending_rows,
+                 "authRefusals":[], "refreshIntent":refresh.map(|id| json!({"operationId":id})),
++                "uninstallObservation":uninstall_observation.clone(),
+             }));
+             let marker = fs::read(directory.join("uninstall-state.version")).unwrap();
+             assert_eq!(marker, b"1\n");
+             assert!(!self.skills.admission_reader().is_denied("unrelated-plugin-control"));
+-            UninstallCustodySnapshot { status, image, marker }
++            UninstallCustodySnapshot { status, image, marker, uninstall_observation }
+         }
+ 
+         fn seed(&self) {
+@@ -747,6 +765,8 @@ mod desktop_service_contracts {
+             let request = self.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+             self.resolve(&request, self.payload.clone());
+             assert_eq!(finish(worker, result).unwrap().len(), 1);
++            assert_eq!(self.assert_uninstall_custody(&[], &[]).uninstall_observation, None,
++                "initial refresh must not invent an uninstall observation");
+         }
+     }
+ 
+@@ -926,6 +946,9 @@ mod desktop_service_contracts {
+         let (old_worker, old_result) = spawn_operation(move || skills.sync("held-before-uninstall"));
+         let old_load = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+         let old_refresh = fixture.refresh_operation_id();
++        assert_eq!(fixture.assert_uninstall_custody_with_refresh(
++            &[], &[], Some(&old_refresh),
++        ).uninstall_observation, None, "refresh intent alone does not create an observation");
+ 
+         let service = Arc::clone(&fixture.service);
+         let (worker, result) = spawn_operation(move || {
+@@ -935,10 +958,14 @@ mod desktop_service_contracts {
+         fixture.resolve(&catalog, json!([]));
+         let uninstall = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
+         let intent = fixture.pending_uninstall("41");
+-        fixture.assert_uninstall_custody_with_refresh(&[], &[&intent], Some(&old_refresh));
++        let pending = fixture.assert_uninstall_custody_with_refresh(
++            &[], &[&intent], Some(&old_refresh),
++        );
+         fixture.resolve(&uninstall, json!({"removed":true,"state":null}));
+         assert!(finish(worker, result).unwrap_err().contains("requires servers"));
+         let confirmed = fixture.assert_uninstall_custody_with_refresh(&["41"], &[], Some(&old_refresh));
++        assert_ne!(confirmed.uninstall_observation, pending.uninstall_observation,
++            "exact uninstall settlement rotates the reservation observation");
+         assert!(fixture.skills.admission_reader().is_denied("41"));
+         assert!(fixture.skills.current().is_empty());
+         assert_eq!(fixture.relay.pending_count(), 1);
+@@ -956,6 +983,8 @@ mod desktop_service_contracts {
+         let settled = fixture.assert_uninstall_custody(&["41"], &[]);
+         assert_eq!(settled.status, confirmed.status);
+         assert_eq!(settled.marker, confirmed.marker);
++        assert_eq!(settled.uninstall_observation, confirmed.uninstall_observation,
++            "retiring the stale refresh intent preserves uninstall custody");
+         assert_eq!(fixture.relay.pending_count(), 0);
+         assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+ 
+@@ -968,11 +997,17 @@ mod desktop_service_contracts {
+         let refreshing = fixture.assert_uninstall_custody_with_refresh(&["41"], &[], Some(&fresh_refresh));
+         assert_eq!(refreshing.status, settled.status);
+         assert_eq!(refreshing.marker, settled.marker);
++        assert_eq!(refreshing.uninstall_observation, settled.uninstall_observation,
++            "a fresh refresh intent does not itself release the confirmed fact");
+         fixture.resolve(&fresh, fixture.payload.clone());
+         assert_eq!(finish(worker, result).unwrap().len(), 1);
+         assert!(!fixture.skills.admission_reader().is_denied("41"));
+         assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
+-        fixture.assert_uninstall_custody(&[], &[]);
++        let released = fixture.assert_uninstall_custody(&[], &[]);
++        assert!(released.uninstall_observation.is_some(),
++            "release retains a durable causal identity after the sets become empty");
++        assert_ne!(released.uninstall_observation, confirmed.uninstall_observation,
++            "fresh confirmed-fact release rotates the observation");
+     }
+ 
+     #[test]
+@@ -1014,6 +1049,8 @@ mod desktop_service_contracts {
+         let current_intent = current.pending_uninstall("41");
+         let current_pending = current.assert_uninstall_custody(&[], &[&current_intent]);
+         assert_ne!(current_intent.operation_id, old_intent.operation_id);
++        assert_ne!(current_pending.uninstall_observation, old_pending.uninstall_observation,
++            "independent real reservations have distinct causal observations");
+         // Both relays have served seed, catalog and uninstall in that order;
+         // a sequence-only request identity would collide on this real waiter.
+         assert!(old_request["payload"]["requestId"].as_str().unwrap().ends_with("-3"));
+@@ -1041,7 +1078,10 @@ mod desktop_service_contracts {
+         current.resolve(&request, json!({"removed":true,"state":null}));
+         assert!(finish(worker, result).unwrap_err().contains("requires servers"));
+         assert!(current.skills.admission_reader().is_denied("41"));
+-        current.assert_uninstall_custody(&["41"], &[]);
++        let current_confirmed = current.assert_uninstall_custody(&["41"], &[]);
++        assert_ne!(current_confirmed.uninstall_observation,
++            current_pending.uninstall_observation,
++            "only the matching current reply rotates its settlement observation");
+         assert!(old.skills.admission_reader().is_denied("41"));
+         assert_eq!(old.assert_uninstall_custody(&[], &[&old_intent]), old_pending);
+         assert_eq!(fs::read(old.cache_path()).unwrap(), old_before);

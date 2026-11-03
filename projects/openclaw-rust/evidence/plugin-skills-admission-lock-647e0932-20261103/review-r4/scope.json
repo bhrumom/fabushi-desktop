@@ -1,0 +1,383 @@
+{
+  "schema": "ocrm-frozen-source-review-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 4,
+  "contract": "PS-LOCK-RECONCILE-v2",
+  "repository": "bhrumom/fabushi-desktop",
+  "subject": {
+    "commit": "d29be0b93225943851c6054016686d571f8d9e2a",
+    "tree": "16a9b18517874fa7d82e562729bbe4782bd99d79",
+    "role": "actual integrated immutable source candidate; corrected oracles not yet executed"
+  },
+  "original_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "previous_source_candidate": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "sha": "77a99b596b43333e2f9ef5bff5b1395025032247"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+      "sha": "7eae3a88862fffbebf0f92b243a61bcf298f3e68"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "fc050c02a7cd51ed6ba32f1551ac3b36598d1174"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "073e031c67647c06a848f6ade737b8fca5b1399b"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "sha": "da49d33dff3c272a3e330b8c129f0f9a73e4864a"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "sha": "5abfe49ac6f73e0dec5988a7c90359d35bb2118d"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+      "sha": "8b8a03ccde91dfbf5a20ca141d84a073ab9c19b5"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+      "sha": "683dea3a140a1b5a9b266ca3e3500d49e1905f35"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/skill_publish.rs",
+      "sha": "d93b54fb169ae09dd6db809dd125f665be5f3545"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "sha": "4c88b00b2dfe563ba957bd0669f177a422a330a7"
+    },
+    {
+      "path": "source/host/src/workflows/workflow_store.rs",
+      "sha": "dd3945c0b454eea446397e033632fac93e60a17d"
+    },
+    {
+      "path": "source/host/tests/mcp_service_contract.rs",
+      "sha": "2fa0aba1e0fa7ac3c3e67c8b392fe43197f0a14a"
+    },
+    {
+      "path": "source/host/tests/workflow_store_contract.rs",
+      "sha": "7d927e0dc69d9183d84dcdec7a31469ae062f74e"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+      "sha": "80807849a210630af4617ac5db6ab41b0b134230"
+    },
+    {
+      "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+      "sha": "a54a3a6e3e6b5a010f3564abb37cd6c996dc9752"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/coordinator_relay.rs",
+      "sha": "939e1d588dc7d3f740e88ae4ec6232a49d8ea51e"
+    }
+  ],
+  "diffs": [
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r4/full.diff",
+      "blob": "fec62e54326254def9301405dc869ba7ea77f551",
+      "bytes": 310194,
+      "sha256": "751b7ae32374f891d227438a9cb109ade579a527483766f30c4c18b9c2e88bc7",
+      "base": "9864d1c02e7e67881d644800963abc807b3abaab",
+      "carrier": "4c2d07c20e96dd6cfd6e4a254b7f750e21732779",
+      "files": [
+        {
+          "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+          "sha": "77a99b596b43333e2f9ef5bff5b1395025032247",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 137,
+          "deletions": 0,
+          "observedAdditions": 137,
+          "observedDeletions": 0,
+          "complete": true
+        },
+        {
+          "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+          "sha": "7eae3a88862fffbebf0f92b243a61bcf298f3e68",
+          "status": "added",
+          "previous_filename": null,
+          "additions": 220,
+          "deletions": 0,
+          "observedAdditions": 220,
+          "observedDeletions": 0,
+          "complete": true
+        },
+        {
+          "path": "projects/openclaw-rust/parity-ledger.json",
+          "sha": "fc050c02a7cd51ed6ba32f1551ac3b36598d1174",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 126,
+          "deletions": 30,
+          "observedAdditions": 126,
+          "observedDeletions": 30,
+          "complete": true
+        },
+        {
+          "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "sha": "073e031c67647c06a848f6ade737b8fca5b1399b",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 86,
+          "deletions": 17,
+          "observedAdditions": 86,
+          "observedDeletions": 17,
+          "complete": true
+        },
+        {
+          "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+          "sha": "da49d33dff3c272a3e330b8c129f0f9a73e4864a",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 281,
+          "deletions": 9,
+          "observedAdditions": 281,
+          "observedDeletions": 9,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/extensions/mcp/coordinator_relay.rs",
+          "sha": "939e1d588dc7d3f740e88ae4ec6232a49d8ea51e",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 18,
+          "deletions": 3,
+          "observedAdditions": 18,
+          "observedDeletions": 3,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+          "sha": "5abfe49ac6f73e0dec5988a7c90359d35bb2118d",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 367,
+          "deletions": 103,
+          "observedAdditions": 367,
+          "observedDeletions": 103,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+          "sha": "683dea3a140a1b5a9b266ca3e3500d49e1905f35",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 722,
+          "deletions": 4,
+          "observedAdditions": 722,
+          "observedDeletions": 4,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+          "sha": "80807849a210630af4617ac5db6ab41b0b134230",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 7,
+          "deletions": 1,
+          "observedAdditions": 7,
+          "observedDeletions": 1,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+          "sha": "8b8a03ccde91dfbf5a20ca141d84a073ab9c19b5",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 488,
+          "deletions": 9,
+          "observedAdditions": 488,
+          "observedDeletions": 9,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/extensions/mcp/skill_publish.rs",
+          "sha": "d93b54fb169ae09dd6db809dd125f665be5f3545",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 254,
+          "deletions": 14,
+          "observedAdditions": 254,
+          "observedDeletions": 14,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "sha": "4c88b00b2dfe563ba957bd0669f177a422a330a7",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 19,
+          "deletions": 1,
+          "observedAdditions": 19,
+          "observedDeletions": 1,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/workflows/workflow_store.rs",
+          "sha": "dd3945c0b454eea446397e033632fac93e60a17d",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 20,
+          "deletions": 5,
+          "observedAdditions": 20,
+          "observedDeletions": 5,
+          "complete": true
+        },
+        {
+          "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+          "sha": "a54a3a6e3e6b5a010f3564abb37cd6c996dc9752",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 46,
+          "deletions": 6,
+          "observedAdditions": 46,
+          "observedDeletions": 6,
+          "complete": true
+        },
+        {
+          "path": "source/host/tests/mcp_service_contract.rs",
+          "sha": "2fa0aba1e0fa7ac3c3e67c8b392fe43197f0a14a",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 515,
+          "deletions": 10,
+          "observedAdditions": 515,
+          "observedDeletions": 10,
+          "complete": true
+        },
+        {
+          "path": "source/host/tests/workflow_store_contract.rs",
+          "sha": "7d927e0dc69d9183d84dcdec7a31469ae062f74e",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 148,
+          "deletions": 0,
+          "observedAdditions": 148,
+          "observedDeletions": 0,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r4/fix-delta.diff",
+      "blob": "6cf3ab16fc6f2576e4395f0ad86e5745279ebace",
+      "bytes": 37569,
+      "sha256": "27bdc34ac3573252f3f627a9b0e84368ceef4906355e86e719b42f6acab15f46",
+      "base": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+      "carrier": "a544d965c113dcad0456e4208f3633017c1dad07",
+      "files": [
+        {
+          "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+          "sha": "7eae3a88862fffbebf0f92b243a61bcf298f3e68",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 56,
+          "deletions": 3,
+          "observedAdditions": 56,
+          "observedDeletions": 3,
+          "complete": true
+        },
+        {
+          "path": "projects/openclaw-rust/parity-ledger.json",
+          "sha": "fc050c02a7cd51ed6ba32f1551ac3b36598d1174",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 17,
+          "deletions": 8,
+          "observedAdditions": 17,
+          "observedDeletions": 8,
+          "complete": true
+        },
+        {
+          "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "sha": "073e031c67647c06a848f6ade737b8fca5b1399b",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 6,
+          "deletions": 3,
+          "observedAdditions": 6,
+          "observedDeletions": 3,
+          "complete": true
+        },
+        {
+          "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+          "sha": "da49d33dff3c272a3e330b8c129f0f9a73e4864a",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 3,
+          "deletions": 3,
+          "observedAdditions": 3,
+          "observedDeletions": 3,
+          "complete": true
+        },
+        {
+          "path": "source/host/src/extensions/mcp/coordinator_relay.rs",
+          "sha": "939e1d588dc7d3f740e88ae4ec6232a49d8ea51e",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 18,
+          "deletions": 3,
+          "observedAdditions": 18,
+          "observedDeletions": 3,
+          "complete": true
+        },
+        {
+          "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+          "sha": "a54a3a6e3e6b5a010f3564abb37cd6c996dc9752",
+          "status": "modified",
+          "previous_filename": null,
+          "additions": 46,
+          "deletions": 6,
+          "observedAdditions": 46,
+          "observedDeletions": 6,
+          "complete": true
+        }
+      ]
+    }
+  ],
+  "diff_carriers": {
+    "full": {
+      "sha": "4c2d07c20e96dd6cfd6e4a254b7f750e21732779",
+      "tree": "e309df46b8b4e8250880f02cf486940ee5b2a393",
+      "parent": "9864d1c02e7e67881d644800963abc807b3abaab",
+      "sourceSubject": "d29be0b93225943851c6054016686d571f8d9e2a",
+      "role": "isolated scope diff carrier only; not execution or shipping subject"
+    },
+    "fix_delta": {
+      "sha": "a544d965c113dcad0456e4208f3633017c1dad07",
+      "tree": "588ddfcf66c4f848d67b7ef932a69e2c5d392281",
+      "parent": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+      "sourceSubject": "d29be0b93225943851c6054016686d571f8d9e2a",
+      "role": "isolated scope diff carrier only; not execution or shipping subject"
+    }
+  },
+  "scope_additions": [
+    {
+      "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+      "reason": "Executed retained desktop service custody oracle requires the already specified v3 causal observation contract."
+    },
+    {
+      "path": "source/host/src/extensions/mcp/coordinator_relay.rs",
+      "reason": "Executed retained same-root reader handoff oracle requires that same contract; change is within cfg(test) lifecycle_tests only."
+    }
+  ],
+  "scope_note": "Retain the original fourteen-path scope and add the two concretely failed existing consumer tests. The proper delta from the previous reviewed source has six changed paths; the complete original-base diff has sixteen. Shared capture/ledger/RTM also retain independent SC identity and LXR custody amendments; review their complete hunks for preservation, without claiming this Plugin review accepts those independent product batches. Repository changes outside these sixteen paths are not represented as evidence-only or accepted by this scope. Every API patch's observed addition/deletion count matches its statistics; all changed files are text, with no omitted binary/rename patch.",
+  "requirements": [
+    "Read complete focused delta and retain full sixteen-path original-scope context; inspect the complete edited helpers/tests and actual v3 owner/serializer/consumer/capture boundaries as risk requires.",
+    "Keep complete image/status/marker and stale-byte assertions. Judge causal observation null/presence/canonical UUID, reservation/settlement/release rotation and refresh/handoff/stale stability; do not accept a field copied into expected JSON without actual lifecycle assertions.",
+    "Review fixture lifetime/error effects and retention of all selected test names. Existing capture already binds both edited files and requires the four affected tests.",
+    "Fresh blind GENERAL and STRUCTURE: no prior review reports or arbitration decisions. Treat historical metadata as source lineage rather than a verdict. Report MUST_FIX and NON_BLOCKING separately with exact anchors and truthful read depth.",
+    "No local/htch, compiler, parser, generator or test execution. Source review is not exact-H runtime, real ecosystem, platform/package or full migration acceptance."
+  ]
+}
