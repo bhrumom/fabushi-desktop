@@ -237,6 +237,7 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         "file://C:",
         "file:///C:",
         "file:///C|",
+        "file:///C|/",
         "file:///C%3A",
         "file:///C%3a",
         "FiLe://localhost/C:",
@@ -249,8 +250,10 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         }
     }
     #[cfg(windows)]
-    for reference in ["file:///C:/", "file://C:/", "file:///C|/", "file:///C%3A/"] {
-        assert_eq!(file_url_to_path(reference).expect("rooted drive remains valid"), PathBuf::from(r"C:\"));
+    for reference in ["file:///C:/", "file://C:/", "file:/C|/", "file:///C%3A/"] {
+        let path = file_url_to_path(reference)
+            .unwrap_or_else(|error| panic!("rooted drive {reference:?} must remain valid: {error:?}"));
+        assert_eq!(path, PathBuf::from(r"C:\"), "rooted drive {reference:?}");
     }
 }
 

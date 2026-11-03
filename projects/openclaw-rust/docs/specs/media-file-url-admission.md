@@ -169,3 +169,22 @@ and existing capability/identity/transport obligations remain applicable
 followup work. Neither this correction nor BR's generic reader promotes the
 complete FUA/media row or any global acceptance flag. Every native execution
 and exact current-H input/log/exit observation remains required in Actions.
+
+## Native Windows rooted-drive oracle correction — FUA-WIN-ORACLE-01
+
+At e19 runtime `41571103928`, Windows job `125703932910` executed the
+web-media target with 22 passed and one failed test. The rooted-drive loop
+incorrectly expected `file:///C|/` to normalize under locked `url` 2.5.8.
+Its empty-host parsing leaves the pipe drive unchanged and native conversion
+refuses it; FUA-02 requires preserving that refusal. The original log did not
+print the loop value, so this cause is an exact-source inference from the
+checksum-bound parser/converter, not a per-iteration runtime observation.
+
+Keep that spelling as an explicit Windows `invalid-file-url` negative. Retain
+all existing refusal assertions and the three valid colon/encoded-colon root
+positives; use the supported `file:/C|/` spelling to preserve the normalization
+positive and include each fixture value in failure diagnostics. Keep the same
+test name, complete selected count and strict capture. Production admission,
+fallback removal, dependency locks, BR/HHP/IPB and all broader compatibility
+obligations remain unchanged. The corrected exact-H Windows result is required;
+source inference alone is not a passing result or a permanent scope exemption.
