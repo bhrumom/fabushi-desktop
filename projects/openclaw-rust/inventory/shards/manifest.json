@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+  "canonical_inventory_sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -295,12 +295,12 @@
       "uncompressed_sha256": "aef9f807b270a2f16ebdaf3e03ebcadea01e5c438435947f2b8f389ed360ddaa"
     },
     {
-      "compressed_sha256": "836261857bf189bcb4584d552f0cb4f67fffb9b5f36ff9aabea067bc1240c480",
+      "compressed_sha256": "c8449e3582be9772fccf5a087f846209558e76b7b213ff5b14a8c3cb7068812d",
       "count": 1024,
       "first_path": "src/flows/doctor-model-reference-check.ts",
       "last_path": "src/gateway/mcp-http.runtime.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0036.jsonl.gz",
-      "uncompressed_sha256": "8dd58c1716949ef1a254bef832256a2e200dc6dec800934d63524758e4d175c1"
+      "uncompressed_sha256": "f3b79712e63f8c0c9600441ab8fa9093a43bc4fdbc1fd53066742fbf82e1c8fc"
     },
     {
       "compressed_sha256": "228f27d44fb7e9aeace21132ab7a77a66e8c883bfb1a629bd845f258a9cd48b1",
@@ -351,20 +351,20 @@
       "uncompressed_sha256": "c93e2e4d446e9b3e2b55d2273e7f2547b3eee67adfdbaafba85b83340b035fa1"
     },
     {
-      "compressed_sha256": "2b142113fa92ec877cd1f1f01c2e3879f24244adf39faa2a93d54bd401b7e85b",
+      "compressed_sha256": "c6aeeb5d1bd26528b907d6e83c1bc22e39cfec70d3795aa1a74b4fa36e199399",
       "count": 1024,
       "first_path": "src/infra/resolve-system-bin.ts",
       "last_path": "src/infra/update-immutable-install-schema.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0043.jsonl.gz",
-      "uncompressed_sha256": "40a0bcfebcae84bf67e1f8c5811714878f6aecffacfe114e35b369e83122efa6"
+      "uncompressed_sha256": "4eb679472b004c735c116330de3cb30837ed9ee4cead30f095914090d5e802c4"
     },
     {
-      "compressed_sha256": "c679e7f417903b4f84268789014f396a26fb798946221955bfb97c30ee3b3edf",
+      "compressed_sha256": "914859f70a4a8c3e0a4b5edb44f73b0834cd3c6c22cbf462dbd258520e1b1919",
       "count": 1024,
       "first_path": "src/infra/update-immutable-install.adoption.test.ts",
       "last_path": "src/meeting-bot/transcripts-bridge.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0044.jsonl.gz",
-      "uncompressed_sha256": "80f291a85dd3387589d8b323b9b9e373f2c16d5a1e6299c6cc67690fefebbe55"
+      "uncompressed_sha256": "262d3f697406cfec0ec9389dd64d7217c0921879cdf2c77914ec6c68446a133d"
     },
     {
       "compressed_sha256": "6330233ebcb1b3e48c381070e5f5eb01b343839f8a10894e6911656330c428ed",
