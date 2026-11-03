@@ -1,0 +1,87 @@
+{
+  "format_version": 3,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "reviewed_base": "6d42fa7d64d6059ae010891a20d41dfacc51f246",
+  "input_blob": "3bf47d8f7504bb179896c502a16329d9f0f80645",
+  "authored_ui_cases": 23,
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+      },
+      "normalize": {
+        "fabushi_target_paths": [],
+        "fabushi_target_symbols": []
+      },
+      "append": {
+        "requirement_ids": [
+          "NMR-UI-ENTRY-REFRESH-01a",
+          "NMR-UI-ENTRY-REFRESH-01b",
+          "NMR-UI-ENTRY-REFRESH-01c",
+          "NMR-UI-ENTRY-REFRESH-01d"
+        ],
+        "oracle_ids": [
+          "NMR-AC-UI-ENTRY-REFRESH-01"
+        ],
+        "fabushi_target_paths": [
+          "frontend/src/production/ProductionRenderer.tsx",
+          "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+          "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+          "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+          "frontend/src/production/ProductionRenderer.transcript.fixture.tsx",
+          "frontend/src/recovered/features/conversation/workspace/model.ts"
+        ],
+        "fabushi_target_symbols": [
+          "ProductionRenderer",
+          "MessageActionAnchor",
+          "TranscriptAttachmentGallery",
+          "createSpreadsheetViewerProvider",
+          "transcriptAttachmentIdentity"
+        ],
+        "production_entrypoints": [
+          "frontend/src/production/ProductionRenderer.tsx#ProductionRenderer",
+          "frontend/src/recovered/features/conversation/workspace/transcript.tsx#MessageActionAnchor",
+          "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx#TranscriptAttachmentGallery"
+        ],
+        "command_event_contracts": [
+          "NMR-UI-ENTRY-REFRESH-01: admitted current Human entry updates refresh existing search and retire ineligible action/resource surfaces. Keep original account/chat/query/update and entry/resource identity; late replies and old callbacks are inert. No remote revision/tombstone/deletion inference or second cache."
+        ],
+        "integration_case_ids": [
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_requeries_search_and_discards_older_results",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_retires_action_menus_without_hook_order_errors",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_retires_removed_pdf_and_late_resource_reads",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_retires_spreadsheet_mount_when_source_changes"
+        ],
+        "ui_functional_case_ids": [
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_requeries_search_and_discards_older_results",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_retires_action_menus_without_hook_order_errors",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_retires_removed_pdf_and_late_resource_reads",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_retires_spreadsheet_mount_when_source_changes"
+        ],
+        "test_fixture_ids": [
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+          "frontend/src/production/ProductionRenderer.transcript.fixture.tsx"
+        ],
+        "fault_recovery_case_ids": [
+          "NMR-UI-ENTRY-REFRESH-01: same-row content/attachment removal, held search/bytes, unrelated updates, reorder, another-row same path, account/chat replacement, fresh reopen and preserved draft under actual existing Renderer consumers."
+        ],
+        "production_evidence": [
+          "Exact6d42fa7d64d6059ae010891a20d41dfacc51f246 has actual Host/Transcript update wiring, but nonempty Human search is not invalidated; MessageActionAnchor can return before hooks; gallery and spreadsheet retain removed resource state. This scoped batch reuses the existing controllers/provider instead of adding an owner."
+        ],
+        "test_evidence": [
+          "NMR-AC-UI-ENTRY-REFRESH-01 requires original8 plus4 exact real Renderer behavior cases (12); total UI209=Node173+projection13+author23, zero failures/skips/retries. Human81/reconciliation125, owner40, actualMac2+2 and all existing gates remain. These pending obligations are not execution evidence."
+        ],
+        "test_execution_evidence": [
+          "Prerequisite exact6d42fa7d64d6059ae010891a20d41dfacc51f246/run41563429938: job125679139806 passed125 includingHuman81; UI125679140092 passed205 retry0; owner125679140064 passed40; Electron125679140130 passed100 plus actual compile. Source41563429876 passed161Node/37Python/schema0 and unaccepted candidate. OriginalUI failure1de remains retained. The new UI source requires containing-H execution; macOS/shipping at this prep remain separate nonterminal gates."
+        ]
+      },
+      "note": "\nNMR-UI-ENTRY-REFRESH-01 closes current entry-update consumer lifetimes in the existing Renderer, action anchor, gallery and spreadsheet provider. Original8 renderer cases remain;4 actual behavior cases and containing-H UI209 are required. Canonical revision/tombstone, old-message discovery, outbound mutation, backend deployment, complete source/legal and independent ACCEPT remain open."
+    }
+  ]
+}

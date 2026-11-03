@@ -2904,3 +2904,122 @@ the earlier failure and the exact artifact/read-only diagnostic evidence;
 if nondeterminism remains, inspect the next concrete failure boundary instead
 of repeating unchanged inputs to select a green result. This fixture repair
 does not grant visual/accessibility, performance/soak or independent ACCEPT.
+
+
+## NMR-UI-ENTRY-REFRESH-01 — Retire dependent UI state when an existing Human row changes
+
+Current exact6d42fa7d64d6059ae010891a20d41dfacc51f246 already routes admitted
+Host commits through the existing Transcript feed, projection and paged cache.
+An explicit Human content:"" and attachments:[] can clear the current row.
+This boundary does not infer deletion from an absent tail row, add remote
+revision/tombstone semantics, or replace the existing message owner.
+
+Current source inspection identifies independent consumers which retain old
+state after an actual same-row update. ProductionRenderer's nonempty Human
+search is not invalidated by entry updates. MessageActionAnchor returns before
+its hooks when the row becomes non-actionable. A mounted attachment gallery
+retains openPdf when that resource is removed but another remains. The separate
+spreadsheet mount is reset on account/chat changes but not when its source
+resource is removed. Fix these existing consumers as one bounded UI batch.
+
+### NMR-UI-ENTRY-REFRESH-01a — Current Human search follows committed updates
+
+Keep the existing searchHumanMessages RPC and find-in-chat controller. An
+accepted update for the active Human scope must invalidate outstanding search
+work and refresh a still-open nonempty query against the current Host state.
+Bind successful results and failures to the original account generation,
+conversation, query and update generation. A stale response or stale failure
+cannot repopulate cleared results or replace current feedback. Preserve the
+query, selected conversation, composer draft and current valid match/viewport
+where possible. Empty queries and ordinary Agent local search retain their
+existing behavior. Do not treat every render as an update or create a second
+search/timeline cache; stale-account and other-conversation events have no
+authority over the current search.
+
+### NMR-UI-ENTRY-REFRESH-01b — Action lifetime is stable across row changes
+
+MessageActionAnchor must call its hooks in a stable order when the same row
+changes from eligible to ineligible and back. Read-only views may still keep
+an existing permitted Copy action; do not newly disable it. When a surface is
+ineligible, retire its open ordinary/reaction menu and document listeners.
+Callbacks owned by the anchor must recheck current eligibility and mount
+lifetime; removed menu interactions cannot dispatch new actions. This does not
+claim arbitrary retained external reaction callbacks are cancelled or undo an
+already dispatched reaction RPC. Preserve its existing settlement fencing.
+Keep current children visible and preserve valid ordinary Agent/Human actions. Restoring eligible content must not reopen an
+old menu. A real mounted component test must inspect pageerror/console output
+as well as the visible menu and callback boundary; a pure merge test is
+insufficient.
+
+### NMR-UI-ENTRY-REFRESH-01c — Gallery resources retain their own identity
+
+Reuse TranscriptAttachmentGallery and its existing viewer owners. An open PDF
+or preview remains bound to the attachment which was actually opened, not a
+position which can silently select another resource after reordering/removal.
+Root owns one shared transcriptAttachmentIdentity helper in the existing
+workspace/model.ts. Compare the observable tuple path,name,mimeType,size,
+sourceKind,id; absent optional values normalize to null. Do not compare array
+position, object reference or layout-only width/height. Unobserved replacement
+of bytes under an identical tuple is outside this batch's provable boundary.
+If that resource is absent or its source identity changes in the current
+attachments, close the old viewer and invalidate its pending read/download
+callbacks. Preserve a viewer whose same resource still exists after unrelated
+row edits or attachment reorder. Replacing/removing one attachment while
+retaining another must be covered, since the gallery does not unmount in that
+case. All-attachment removal and later fresh opening of a valid resource must
+remain safe. Do not delete cached bytes, local files or remote resources.
+
+### NMR-UI-ENTRY-REFRESH-01d — Root spreadsheet mount follows its source row
+
+Bind the existing spreadsheetViewerMount to the original account/chat,
+transcript entry and attachment identity which opened it. Reuse the existing
+SpreadsheetViewerProvider close/reset and generation fences when that source
+is removed or replaced. A same-path attachment in another message cannot keep
+a retired source mount authorized. An unrelated row update or reorder must not
+close a still-valid source. Already pending read completion cannot resurrect
+a retired window; callbacks retained from a closed mount cannot issue new
+read/download operations. Preserve existing account/chat/unmount retirement,
+keyboard opening, focus behavior and unrelated Agent capabilities.
+
+### NMR-AC-UI-ENTRY-REFRESH-01 — Actual existing Renderer behavior evidence
+
+Extend the existing
+frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs and
+ProductionRenderer.transcript.fixture.tsx; keep their original8 cases and
+strict unexpected-boundary diagnostics. Add exactly these four top-level
+behavior cases, with nested controls included in those cases, not counted as
+additional executions:
+
+- human_entry_refresh_requeries_search_and_discards_older_results
+- human_entry_refresh_retires_action_menus_without_hook_order_errors
+- human_entry_refresh_retires_removed_pdf_and_late_resource_reads
+- human_entry_refresh_retires_spreadsheet_mount_when_source_changes
+
+Use the real ProductionRenderer, existing Coordinator port/Transcript events,
+actual menus/viewers/provider and controlled external byte/service boundaries.
+Use deterministic held requests and explicit completion; do not implement the
+new invalidation logic in the fixture. Include retained-resource/reorder and
+another-row same-path negative controls, account/chat isolation, late response,
+fresh reopening, preserved user draft and zero unexpected operation assertions.
+If original parser bundles are unavailable in this fixture, use the actual
+viewer's documented bounded-read result (such as too-large) for the fresh
+window/read/download lifetime control and state that parsing was not executed.
+Never substitute a fake parser or count such a control as file-rendering
+acceptance. Retained callback observations must use actual asynchronous viewer
+operations or the existing public provider contract, not React internals or a
+synthetic detached DOM click presented as an invoked callback.
+No production-only test API, new state owner, silent errors, timing relaxation
+or reduced artifact capture is permitted.
+
+The containing-H UI gate must execute209 cases: Node173
+(43+14+7+5+19+47+9+17+12), existing Renderer13 and author23, all passing with
+zero retries/skips. Retain Human81/reconciliation125, desktop owner40, actual
+Mac Plugins2/Human2 and all current shipping/source/compatibility gates.
+These are authored acceptance requirements until GitHub Actions executes the
+containing frozen H. Keep prior failures and diagnose any new failure by cause.
+
+This batch does not deliver remote edit/delete, canonical mutation revisions,
+arbitrary-old change discovery, definitive reaction-intent cancellation or
+active backend readiness. Forward dialog/reply tombstone policy belongs to
+that subsequent explicit canonical contract. Full source/legal, platform,
+service, Bot, quality and independent ACCEPT remain required.
