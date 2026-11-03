@@ -11,7 +11,7 @@
   "producer_implementation_base": "d1fd235e8bd46c2bb0099267bc45e2800dbd1168",
   "authority": {
     "path": "docs/specs/g11-box-browser-wire-completion.md",
-    "blob": "f495d1a04dcf39453f0a6da5b7a2bce310e7dd44",
+    "blob": "f839b1f51effaa62e2df3a1fb1bdaa23461fa6be",
     "preimplementation_commit": "d1fd235e8bd46c2bb0099267bc45e2800dbd1168",
     "ownership_clarification_commit": "d2187abaef74f979fb5bf85cd59e7d75700cba0a",
     "requirements": [
@@ -22,6 +22,24 @@
       "SC05",
       "SC06",
       "SC07"
+    ],
+    "initial_blob": "f495d1a04dcf39453f0a6da5b7a2bce310e7dd44",
+    "amendments": [
+      {
+        "commit": "f539f517c88a8a3c2ea1cdaf88648cc24a9e59b2",
+        "blob": "550fa629aa9e550ba63644b2598f99efd6068c82",
+        "contract": "SC02-R2 identity"
+      },
+      {
+        "commit": "ade72fa1b1f201c94767cff723fccc07055cb058",
+        "blob": "261151c609b4281df22e249615a3368bb1a5770a",
+        "contract": "SC02-R2 owned stream stop"
+      },
+      {
+        "commit": "96121a0234fcc65d20a1edc6352ef0f17eb39654",
+        "blob": "f839b1f51effaa62e2df3a1fb1bdaa23461fa6be",
+        "contract": "SC02-R2 exceptional stream ownership; source correction pending"
+      }
     ]
   },
   "responsibility_id": "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
@@ -197,7 +215,11 @@
         "server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child",
         "server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals",
         "server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging",
-        "server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes"
+        "server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes",
+        "server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
+        "server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
+        "server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
+        "server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture"
       ],
       "consumer": [
         "foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay",
@@ -219,9 +241,9 @@
       "consumer_env": "FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN",
       "scope": "Only cfg(test) artifact may expose the private owned fault probe; normal shipping binary is separately built and exercised."
     },
-    "retained": "All existing BXR 77 direct positives in eight cases and 14 actual downstream custody names remain required; three added cases require nine additional direct positives. Existing Plugin/LocalExec capture contracts remain intact.",
+    "retained": "All existing BXR 77 direct positives in eight cases and 14 actual downstream custody names remain required; three SC cases now require thirteen additional direct positives. Existing Plugin/LocalExec capture contracts remain intact.",
     "execution": "not-run",
-    "source_review": "R1 requires the registration-identity correction; fresh focused review with complete original scope and proper R1-to-R2 delta required.",
+    "source_review": "R1 findings and root pre-freeze identity/stream-stop FIX recorded. Identity source checkpoint96121a0234fcc65d20a1edc6352ef0f17eb39654 is not frozen or accepted; SC-PRE-R2-STREAM-EARLY-RETURN correction remains in progress before fresh R2 complete-context focused review and exact-H Actions.",
     "oracle_limits": "Owned real children and actual authenticated loopback producers/consumers with cfg(test) operation faults are controlled evidence, not live service/device/platform/package acceptance. The pre-aborted unit proves bounded observed abort, not trap readiness/escalation for that same abort. A controlled registration alias proves PID-independent custody without claiming actual OS PID wraparound."
   },
   "recovery": {
@@ -264,6 +286,18 @@
       "decision": "FIX",
       "source_candidate_blob": "c1649fb9588acd69a2791d989c7d8d6e2b6fed67",
       "state": "Recorded before source correction; exact owned resources must survive exceptional stream returns."
+    },
+    {
+      "identity_checkpoint": "96121a0234fcc65d20a1edc6352ef0f17eb39654",
+      "source_blob": "c1649fb9588acd69a2791d989c7d8d6e2b6fed67",
+      "new_required_names": [
+        "server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
+        "server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
+        "server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
+        "server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture"
+      ],
+      "disposition": "Partial production checkpoint with four actual invocation identity/exhaustion/stream/handoff oracles; not a converged candidate. Required exceptional stream ownership correction remains open.",
+      "execution": "not-run"
     }
   ]
 }
