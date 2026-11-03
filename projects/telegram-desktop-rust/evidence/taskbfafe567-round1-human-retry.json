@@ -178,5 +178,36 @@
   "prerequisite_followup": {
     "scope": "Same production bytes as81856d; repair actual reaction hover precondition and bind reviewed Renderer blob in existing semantic adaptation record. No count/gate reductions.",
     "qualification": "Next containing-H Actions required; retry consumer remains a separately authored, unpublished dependent batch."
+  },
+  "recovery_20261103": {
+    "base": "dfba89c9fd0bb7f25925a81681848ed2cfae53a6",
+    "branch": "checkpoint/tdrp-human-retry-bfafe567-r1",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "production_blobs": {
+      "source/host/src/extensions/session/production.rs": "5b5a98f03d9c5bc6ce9d52e3983e388e69c53ca1",
+      "frontend/src/production/ProductionRenderer.tsx": "8dcecde0bfa1c181288906e6559883d45cc77099",
+      "frontend/src/production/coordinator-client.ts": "39083fb477bf0ec81539cc88fde19a2d19b360bc"
+    },
+    "workflows": [
+      ".github/workflows/native-service-contracts.yml",
+      ".github/workflows/tdrp-source-review-contract.yml"
+    ],
+    "authored_test_counts": {
+      "shipping_human": 74,
+      "human_creation": 14,
+      "actual_renderer": 24
+    },
+    "execution": "not-run at authoring; exact new containing-H Actions required; no local executable validation",
+    "known_previous_failures": [
+      "exact dfba native-message-ui second Enter then Tab reaction focus failed; diagnostic event trace authored",
+      "exact dfba renderer semantic adaptations stale for four blobs; checked metadata updated, real checker not yet executed"
+    ],
+    "known_remaining_gaps": [
+      "Partial multi-attachment successful upload prefixes are not individually durable",
+      "Source authorization during concurrent history replay requires exact-nonce negative acceptance",
+      "Complete external/generated/legal source closure, real authenticated service, signed supported platforms, full Bot/security/a11y/performance/soak/upgrade/rollback and independent ACCEPT still open"
+    ],
+    "accepted": false,
+    "complete": false
   }
 }

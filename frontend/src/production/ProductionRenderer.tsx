@@ -113,7 +113,7 @@ import { createCommandPaletteFileProvider } from "./command-palette-search-provi
 import { commandPaletteLinksFromConversation, createCommandPaletteLinkMetadataProvider } from "./command-palette-link-provider";
 import { commandPaletteUpdateCommand } from "./command-palette-update-command";
 import { commandPaletteRootCommands, type CommandPaletteComputerUpdateAction, type CommandPaletteInfoSection } from "./command-palette-root-commands";
-import { CoordinatorCallError, createCoordinatorClient, type ProductionCoordinatorClient } from "./coordinator-client";
+import { CoordinatorCallError, createCoordinatorClient, parseCoordinatorHumanMessageRetryResponse, type ProductionCoordinatorClient } from "./coordinator-client";
 import { HumanCallControls } from "./human-call-media";
 import { UI_TEXT } from "./evidence";
 import { movePinnedAgent, partitionSidebarAgents } from "./sidebar-model";
@@ -970,7 +970,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const humanRetryInFlightRef = useRef(new Set<string>());
   const accountIdentityRef = useRef<string | null>(null);
   const accountScopeGenerationRef = useRef(0);
-  const submissionScopesRef = useRef(new Map<string, { generation: number; accountSlot: string | null }>());
+  const submissionScopesRef = useRef(new Map<string, {
+    generation: number;
+    accountSlot: string | null;
+    isHumanRetryCurrent?: () => boolean;
+  }>());
   const renderedAccountScopeGeneration = accountScopeGenerationRef.current;
   const accountObservationGenerationRef = useRef(0);
   const accountRef = useRef<CursorAuthStatus | null>(account);
@@ -1156,10 +1160,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const sendComposerPrompt = async (submission: ComposerSubmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
     const scope = submissionScopesRef.current.get(submission.nonce);
+    const retryAuthorId = accountRef.current?.kind === "logged-in" ? accountRef.current.authId : undefined;
     const isCurrent = () => scope != null && scope.generation === accountScopeGenerationRef.current
-      && accountRef.current?.kind === "logged-in";
+      && accountRef.current?.kind === "logged-in"
+      && (scope.isHumanRetryCurrent == null || scope.isHumanRetryCurrent());
     if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
+    if (humanConversation == null && scope?.isHumanRetryCurrent != null) {
+      throw new Error("Human retry needs its original conversation before dispatch");
+    }
     if (humanConversation != null) {
       const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
       // Commit once per original composer nonce. A failure while waiting for
@@ -1168,9 +1177,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const attachments = committed == null
         ? bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments)
         : [...committed];
+      // A committed native attachment stays reusable after leaving this view.
+      // Account replacement still prevents any stale account from repopulating
+      // its retired cache; selection expiry only retires UI/request admission.
+      if (scope?.generation === accountScopeGenerationRef.current && accountRef.current?.kind === "logged-in") {
+        committedHumanAttachmentsRef.current.set(submission.nonce, attachments);
+        for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
+      }
       if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
-      committedHumanAttachmentsRef.current.set(submission.nonce, attachments);
-      for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
       const result = await client.call("sendHumanMessage", {
         conversationId: submission.agentId,
         text: submission.prompt,
@@ -1184,6 +1198,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         return admitted;
       });
       if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
+      if (scope?.isHumanRetryCurrent != null) {
+        // Display projection supplies compatibility defaults. Only the raw
+        // canonical receipt may acknowledge an explicit Human retry.
+        const settlement = parseCoordinatorHumanMessageRetryResponse(result);
+        if (settlement == null || settlement.authorId !== retryAuthorId
+          || settlement.clientNonce !== submission.nonce) {
+          throw new Error("Human retry did not return a matching canonical settlement");
+        }
+      }
       const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
       if (authoritative != null) {
         setEntriesByAgent((current) => {
@@ -1279,16 +1302,24 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       send: async (submission) => {
         const scope = submissionScopesRef.current.get(submission.nonce);
         if (scope == null || scope.generation !== accountScopeGenerationRef.current
-          || accountRef.current?.kind !== "logged-in") {
+          || accountRef.current?.kind !== "logged-in"
+          || scope.isHumanRetryCurrent?.() === false) {
           throw new Error("Composer submission is outside its account scope");
         }
-        return resendSubmissionNoncesRef.current.has(submission.nonce)
+        return scope.isHumanRetryCurrent != null || resendSubmissionNoncesRef.current.has(submission.nonce)
           ? sendComposerPrompt(submission)
           : sendJournalApprovalLifecycle.sendPrompt(submission);
       },
     onPhase: (submission) => {
       const scope = submissionScopesRef.current.get(submission.nonce);
       if (scope == null || scope.generation !== accountScopeGenerationRef.current) return;
+      // An explicit Human retry keeps the failed row until its authoritative
+      // receipt. Its queue phase must not recover/clear a newer composer draft
+      // or resurrect a presentation lifetime that has already been left.
+      if (scope.isHumanRetryCurrent != null) {
+        if (submission.phase === "sent" || submission.phase === "cancelled") submissionScopesRef.current.delete(submission.nonce);
+        return;
+      }
       if (submission.phase === "pending") acknowledgementController.markDispatching(scope.accountSlot, submission.nonce);
       if (submission.phase === "sent") acknowledgementController.markAcceptedAwaitingEcho(scope.accountSlot, submission.nonce);
       if (submission.phase === "failed") acknowledgementController.markFailed(scope.accountSlot, submission.nonce, Date.now());
@@ -1316,7 +1347,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (submission.phase === "sent" || submission.phase === "cancelled") submissionScopesRef.current.delete(submission.nonce);
     },
     onFailure: (submission, error) => {
-      if (submissionScopesRef.current.get(submission.nonce)?.generation !== accountScopeGenerationRef.current) return;
+      const scope = submissionScopesRef.current.get(submission.nonce);
+      if (scope?.generation !== accountScopeGenerationRef.current || scope.isHumanRetryCurrent != null) return;
       composerDraftStore.recoverDraft(submission.agentId, {
         prompt: submission.prompt,
         attachments: [...submission.attachments]
@@ -3704,17 +3736,25 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const originalNonce = entry.clientNonce;
     const accountGeneration = accountScopeGenerationRef.current;
     const accountSlot = acknowledgementScopeRef.current.accountSlot;
-    const isCurrent = () => accountScopeGenerationRef.current === accountGeneration
+    const selectionGeneration = openAgentRequestGenerationRef.current;
+    const authorId = accountRef.current?.kind === "logged-in" ? accountRef.current.authId : undefined;
+    const isAccountCurrent = () => accountScopeGenerationRef.current === accountGeneration
       && acknowledgementScopeRef.current.accountSlot === accountSlot
-      && activeAgentIdRef.current === agentId
-      && accountRef.current?.kind === "logged-in";
+      && accountRef.current?.kind === "logged-in"
+      && accountRef.current.authId === authorId;
+    const isCurrent = () => isAccountCurrent()
+      && openAgentRequestGenerationRef.current === selectionGeneration
+      && selectionStore.get().currentAgentId === agentId
+      && activeAgentIdRef.current === agentId;
     // A temporarily missing Human roster must not downgrade a Human retry
     // to the Agent resend path (which intentionally mints a new nonce).
     const isHuman = entry.authorKind === "human"
       || humanConversationsRef.current.some((conversation) => conversation.id === agentId);
     if (isHuman) {
-      if (!originalNonce || entry.role !== "user" || entry.authorKind !== "human"
+      if (!isCurrent() || !authorId || entry.authorId !== authorId
+        || !originalNonce || entry.role !== "user" || entry.authorKind !== "human"
         || entry.id !== `human-message:${originalNonce}` && entry.id !== `pending-${originalNonce}`) return;
+      const reportRetryNotice = (message: string) => setNotice((current) => isCurrent() ? message : current);
       const retryKey = `${accountGeneration}:${accountSlot}:${agentId}:${originalNonce}`;
       if (humanRetryInFlightRef.current.has(retryKey)) return;
       humanRetryInFlightRef.current.add(retryKey);
@@ -3724,16 +3764,25 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         // Only a *known* failure before the actual Host request frame can use
         // renderer composer state. Ambiguous/accepted sends always retry in Host.
         if (queued != null && !hostAdmittedHumanSendNoncesRef.current.has(originalNonce)) {
+          submissionScopesRef.current.set(originalNonce, {
+            generation: accountGeneration, accountSlot, isHumanRetryCurrent: isCurrent,
+          });
           composerSubmissionQueue.discard(originalNonce);
           const next = composerSubmissionQueue.submit(queued);
           const phase = await next.completion;
-          if (phase !== "sent" && isCurrent()) setNotice("Human message retry did not settle; original draft and nonce are retained");
+          if (phase !== "sent") {
+            // Failure releases this queue lane but keeps its original failed
+            // record. Advance only queued successors, even when the retry's
+            // view retired; a retired account must never dispatch its queue.
+            if (isAccountCurrent()) composerSubmissionQueue.flush();
+            reportRetryNotice("Human message retry did not settle; original draft and nonce are retained");
+          }
           return;
         }
         if (entry.id !== `human-message:${originalNonce}`) {
           // No known local-only retry intent can be fabricated into a Host
           // request; a disconnected/unknown outcome is not safe to restage.
-          if (isCurrent()) setNotice("Human retry needs the original persisted message; refresh this conversation first");
+          reportRetryNotice("Human retry needs the original persisted message; refresh this conversation first");
           return;
         }
         const result = await client.call("retryHumanMessage", {
@@ -3744,6 +3793,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         const authoritative = projectTranscriptEntry(result, 0, humanConversation?.name ?? "", agentId);
         if (authoritative == null || authoritative.kind !== "message"
           || authoritative.authorKind !== "human" || authoritative.clientNonce !== originalNonce
+          || authoritative.authorId !== authorId
           || authoritative.delivery !== "sent") {
           throw new Error("retryHumanMessage did not return a matching canonical settlement");
         }
@@ -3757,7 +3807,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           accountSlot, agentId, nonce: originalNonce, echoedNonce: originalNonce,
         });
       } catch (error) {
-        if (isCurrent()) setNotice(error instanceof Error
+        reportRetryNotice(error instanceof Error
           ? `Human retry unavailable: ${error.message}`
           : `Human retry unavailable: ${String(error)}`);
       } finally {
@@ -3807,7 +3857,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (accountScopeGenerationRef.current !== retryAccountGeneration || activeAgentIdRef.current !== retrySubmission.agentId || acknowledgementScopeRef.current.accountSlot !== retryAccountSlot) return;
       composerDraftStore.clearRecovery(retrySubmission.agentId);
     });
-  }, [client, composerDraftStore, composerSubmissionQueue, sendJournalApprovalLifecycle, acknowledgementController]);
+  }, [client, composerDraftStore, composerSubmissionQueue, sendJournalApprovalLifecycle, acknowledgementController, selectionStore]);
 
   const cancelQueuedSend = useCallback((entry: TranscriptMessage) => {
     if (entry.clientNonce != null && composerSubmissionQueue.cancelQueued(entry.clientNonce)) {

@@ -246,7 +246,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 69 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 74 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
@@ -275,7 +275,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation.log
-          grep -Fq 'test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation.log
+          grep -Fq 'test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation.log
           cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_storage_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation-storage.log
           grep -Fq 'test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation-storage.log
       - name: Durable forwarding sharebox owner contract
@@ -848,20 +848,20 @@ jobs:
           import fs from 'node:fs';
           import assert from 'node:assert/strict';
           const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/production-renderer.json', 'utf8'));
-          assert.equal(report.stats.expected, 12);
+          assert.equal(report.stats.expected, 24);
           for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
           assert.deepEqual(report.errors, []);
           const cases = [];
           const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
           for (const suite of report.suites) walk(suite);
-          assert.equal(cases.length, 11);
+          assert.equal(cases.length, 24);
           for (const item of cases) {
             assert.equal(item.expectedStatus, 'passed');
             assert.equal(item.results.length, 1);
             assert.equal(item.results[0].status, 'passed');
             assert.equal(item.results[0].retry, 0);
           }
-          console.log('actual ProductionRenderer: 12 passed, 0 failed, 0 skipped, 0 retries');
+          console.log('actual ProductionRenderer: 24 passed, 0 failed, 0 skipped, 0 retries');
           NODE
       - name: Actual ProductionRenderer Transcript cache and continuation behaviors
         shell: bash

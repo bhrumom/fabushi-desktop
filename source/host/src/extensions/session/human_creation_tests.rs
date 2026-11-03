@@ -445,6 +445,139 @@ fn encoded_json(value: &Value) -> String {
     value.to_string().as_bytes().iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
+fn assert_canonical_pair_consumers_refuse(workers: &ProductionSessionWorkers, id: &str) {
+    assert!(workers.open_human_conversation_db_owner(id).is_err(), "ordinary owner admission");
+    assert!(workers.read_human_conversation_transcript(id).is_err(), "full transcript");
+    assert!(workers.read_human_conversation_transcript_tail(id, HumanTranscriptPageQuery {
+        before_seq: None, before_cursor: None, limit: 1,
+    }).is_err(), "bounded transcript");
+    assert!(workers.search_human_messages(id, "retained", 10).is_err(), "message search");
+    assert!(workers.search_human_recipients(id, "human-server-message:17", "", 10).is_err(),
+        "forward recipient selection");
+    assert!(workers.append_human_message(id, "must not be appended", "rebound-send", Some(30.0), None, &[])
+        .is_err(), "ordinary send");
+    assert!(workers.append_human_agent_message(id, "retained-agent", "rebound-result", "must not be appended", 30.0)
+        .is_err(), "Agent handoff result");
+    assert!(workers.sync_human_conversation(id).is_err(), "history synchronization");
+    assert!(workers.list_human_conversations().unwrap().iter().all(|row| row["id"] != id),
+        "invalid stores cannot be offered as destinations");
+}
+
+#[test]
+fn canonical_pair_admission_preserves_rebound_state_across_cached_fresh_and_restarted_consumers() {
+    for (label, replacement) in [
+        ("local-membership-retained", json!([LOCAL, "foreign-peer"])),
+        ("both-participants-replaced", json!(["foreign-local", "foreign-peer"])),
+        ("padded-identity", json!([LOCAL, format!(" {PEER}")])),
+    ] {
+        let root = test_root(label);
+        let workers = test_workers(&root);
+        let id = conversation_id(&workers.create_human_conversation(PEER, "Retained title").unwrap()).to_string();
+        let owner = workers.open_human_conversation_db_owner(&id).unwrap();
+        let path = owner.db_path().to_path_buf();
+        let original = owner.read_metadata().unwrap();
+        let retained = json!({"id":"human-server-message:17","kind":"message","role":"user",
+            "authorKind":"human","authorId":PEER,"remoteMessageId":"17","content":"retained message",
+            "timestampMs":17.0,"delivery":"sent"});
+        assert!(owner.append_transcript_entry(&retained).unwrap());
+        assert!(owner.write_kv("retained-sibling-state", "do-not-repair").unwrap());
+        let sibling = path.parent().unwrap().join("retained-resource.bin");
+        fs::write(&sibling, b"original resource bytes").unwrap();
+        let mut rebound = original.clone();
+        rebound["participantIds"] = replacement;
+        let injector = Connection::open(&path).unwrap();
+        write_metadata_json(&injector, &rebound);
+        drop(injector);
+        let saved = stored_rows(&path);
+
+        assert_canonical_pair_consumers_refuse(&workers, &id);
+        assert_eq!(stored_rows(&path), saved, "cached refusal preserves every row: {label}");
+        assert!(Arc::ptr_eq(&owner, &cached_owner(&workers, &id).unwrap()), "cached handle retained");
+        workers.shutdown();
+        drop((owner, workers));
+
+        let cold_bytes = directory_file_bytes(path.parent().unwrap());
+        for _ in 0..2 {
+            let reopened = test_workers(&root);
+            assert_canonical_pair_consumers_refuse(&reopened, &id);
+            assert_eq!(directory_file_bytes(path.parent().unwrap()), cold_bytes,
+                "cold pair refusal must precede writable open: {label}");
+            assert_eq!(stored_rows(&path), saved, "reopen refusal preserves every row: {label}");
+            assert_eq!(fs::read(&sibling).unwrap(), b"original resource bytes");
+            reopened.shutdown();
+            drop(reopened);
+        }
+
+        let injector = Connection::open(&path).unwrap();
+        write_metadata_json(&injector, &original);
+        drop(injector);
+        let restored = test_workers(&root);
+        assert_eq!(restored.read_human_conversation_transcript(&id).unwrap(), vec![retained.clone()]);
+        assert_eq!(restored.search_human_messages(&id, "retained", 10).unwrap(), vec![retained]);
+        assert_eq!(restored.append_human_agent_message(&id, "retained-agent", "restored-result", "resumed", 30.0)
+            .unwrap()["content"], "resumed", "restoration resumes the same durable conversation");
+        assert_eq!(fs::read(&sibling).unwrap(), b"original resource bytes");
+        restored.shutdown();
+        drop(restored);
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn canonical_pair_binding_checks_physical_directory_and_accepts_reversed_order_and_title_changes() {
+    let root = test_root("physical-pair-binding");
+    let workers = test_workers(&root);
+    let first = workers.create_human_conversation(PEER, "First").unwrap();
+    let second = workers.create_human_conversation("second-peer", "Second").unwrap();
+    let first_id = conversation_id(&first);
+    let second_id = conversation_id(&second);
+    let first_owner = workers.open_human_conversation_db_owner(first_id).unwrap();
+    let second_owner = workers.open_human_conversation_db_owner(second_id).unwrap();
+    let first_metadata = first_owner.read_metadata().unwrap();
+    let second_metadata = second_owner.read_metadata().unwrap();
+    let injector = Connection::open(second_owner.db_path()).unwrap();
+    write_metadata_json(&injector, &first_metadata);
+    let saved = stored_rows(second_owner.db_path());
+    // Both JSON identity and pair hash agree with first_id. The actual owner
+    // still belongs to second_id, so metadata must not self-attest its path.
+    assert!(ProductionSessionWorkers::read_human_conversation_metadata(&second_owner, first_id).is_err());
+    assert!(workers.open_human_conversation_db_owner(second_id).is_err());
+    assert_eq!(stored_rows(second_owner.db_path()), saved);
+    write_metadata_json(&injector, &second_metadata);
+    drop(injector);
+
+    let mut reversed = first_metadata.clone();
+    reversed["participantIds"] = json!([PEER, LOCAL]);
+    reversed["title"] = json!("A renamed presentation title");
+    let injector = Connection::open(first_owner.db_path()).unwrap();
+    write_metadata_json(&injector, &reversed);
+    drop(injector);
+    let saved = stored_rows(first_owner.db_path());
+    assert_eq!(ProductionSessionWorkers::read_human_conversation_metadata(&first_owner, first_id).unwrap(), reversed);
+    assert!(workers.read_human_conversation_transcript(first_id).unwrap().is_empty());
+    let summary = workers.create_human_conversation(PEER, "Must not replace title").unwrap();
+    assert_eq!(summary["id"], first_id);
+    assert_eq!(summary["title"], "A renamed presentation title");
+    assert_eq!(summary["participantIds"], json!([PEER, LOCAL]));
+    assert_eq!(stored_rows(first_owner.db_path()), saved);
+    for raw in ["🙂", "é0", "not-hex", "7b"] {
+        assert!(first_owner.write_kv("metadata", raw).unwrap());
+        let malformed = stored_rows(first_owner.db_path());
+        assert!(workers.read_human_conversation_transcript(first_id).is_err());
+        assert_eq!(stored_rows(first_owner.db_path()), malformed, "invalid encoding is retained: {raw}");
+    }
+    assert!(first_owner.write_kv("metadata", &encoded_json(&reversed)).unwrap());
+    workers.shutdown();
+    drop((first_owner, second_owner, workers));
+    let reopened = test_workers(&root);
+    let owner = reopened.open_human_conversation_db_owner(first_id).unwrap();
+    assert_eq!(owner.read_metadata().unwrap(), reversed);
+    assert_eq!(stored_rows(owner.db_path()), saved);
+    reopened.shutdown();
+    drop((owner, reopened));
+    fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn malformed_or_foreign_metadata_is_preserved_and_rejected_with_or_without_cached_owner() {
     let root = test_root("invalid-metadata");

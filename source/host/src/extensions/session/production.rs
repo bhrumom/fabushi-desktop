@@ -1949,8 +1949,13 @@ impl ProductionSessionWorkers {
 
     fn materialize_remote_human_attachment(
         &self,
+        owner: &SandAgentDb,
+        conversation_id: &str,
         attachment: &FabushiRemoteHumanAttachment,
+        forward_admission: Option<&dyn Fn() -> Result<(), String>>,
     ) -> Result<serde_json::Value, String> {
+        Self::read_human_conversation_metadata(owner, conversation_id)?;
+        if let Some(reauthorize) = forward_admission { reauthorize()?; }
         let resource_id = attachment.resource_id.trim();
         if resource_id.is_empty()
             || resource_id.len() > 128
@@ -1980,11 +1985,6 @@ impl ProductionSessionWorkers {
             .agents_root
             .join("human-message-resources")
             .join(resource_id);
-        fs::create_dir_all(&resource_root).map_err(|error| {
-            format!(
-                "remote Human attachment directory could not be created: {error}"
-            )
-        })?;
         let path = resource_root.join(name);
         let ready = fs::metadata(&path)
             .ok()
@@ -1996,6 +1996,13 @@ impl ProductionSessionWorkers {
             let bytes = client.download_direct_message_resource_for_user(
                 resource_id, attachment.size, self.local_human_id()?,
             )?;
+            // The resource response may arrive after a separate writer changed
+            // the conversation identity. Do not publish bytes for that store.
+            Self::read_human_conversation_metadata(owner, conversation_id)?;
+            if let Some(reauthorize) = forward_admission { reauthorize()?; }
+            fs::create_dir_all(&resource_root).map_err(|error| {
+                format!("remote Human attachment directory could not be created: {error}")
+            })?;
             let temporary_path = resource_root.join(".download.tmp");
             fs::write(&temporary_path, &bytes).map_err(|error| {
                 format!("remote Human attachment could not be staged: {error}")
@@ -2170,10 +2177,14 @@ impl ProductionSessionWorkers {
     fn materialize_remote_human_message(
         &self,
         owner: &SandAgentDb,
+        conversation_id: &str,
         remote: &FabushiRemoteHumanMessage,
+        forward_admission: &dyn Fn() -> Result<(), String>,
     ) -> Result<serde_json::Value, String> {
         let existing = owner.get_transcript_entries().map_err(|error| error.to_string())?;
-        self.materialize_remote_human_message_with_snapshot(owner, remote, &existing)
+        self.materialize_remote_human_message_with_snapshot(
+            owner, conversation_id, remote, &existing, Some(forward_admission),
+        )
     }
 
     // The caller owns the conversation mutation lane and updates this snapshot
@@ -2182,14 +2193,17 @@ impl ProductionSessionWorkers {
     fn materialize_remote_human_message_with_snapshot(
         &self,
         owner: &SandAgentDb,
+        conversation_id: &str,
         remote: &FabushiRemoteHumanMessage,
         existing: &[serde_json::Value],
+        forward_admission: Option<&dyn Fn() -> Result<(), String>>,
     ) -> Result<serde_json::Value, String> {
         let local_human_id = self.local_human_id()?;
         let remote_id = fabushi_message_identity_text(&remote.id)?;
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = Self::read_human_conversation_metadata(owner, conversation_id)?;
+        if let Some(reauthorize) = forward_admission { reauthorize()?; }
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
@@ -2261,10 +2275,14 @@ impl ProductionSessionWorkers {
             let attachments = remote
                 .attachments
                 .iter()
-                .map(|attachment| self.materialize_remote_human_attachment(attachment))
+                .map(|attachment| self.materialize_remote_human_attachment(
+                    owner, conversation_id, attachment, forward_admission,
+                ))
                 .collect::<Result<Vec<_>, _>>()?;
             object.insert("attachments".into(), serde_json::Value::Array(attachments));
         }
+        Self::read_human_conversation_metadata(owner, conversation_id)?;
+        if let Some(reauthorize) = forward_admission { reauthorize()?; }
         let peer_human_id = if sender_id == local_human_id {
             recipient_id.as_str()
         } else {
@@ -2402,9 +2420,9 @@ impl ProductionSessionWorkers {
             let request = context.get("requestId").and_then(serde_json::Value::as_str)
                 .filter(|value| !value.is_empty())
                 .ok_or_else(|| "persisted Human forward request is invalid".to_string())?;
-            // Use the same strict cached/cold source owner as batch recovery.
-            // Unreadable or malformed storage cannot prove legacy ownership.
-            let owner = self.open_human_conversation_db_owner(source)?;
+            // Journal ownership survives source authorization loss; this does
+            // not grant product read/send authority to the retained source.
+            let owner = self.open_retained_human_conversation_db_owner(source)?;
             if load_forward_batches(&owner, source)?.iter().any(|batch|
                 (batch.request_id == request && batch.account_id == author)
                     || batch.destinations.iter().any(|target|
@@ -2446,7 +2464,7 @@ impl ProductionSessionWorkers {
             let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
                 .map_err(|error| error.to_string())?;
             if !db_path.is_file() { continue; }
-            let owner = self.open_human_conversation_db_owner(&source_id)?;
+            let owner = self.open_retained_human_conversation_db_owner(&source_id)?;
             if load_forward_batches(&owner, &source_id)?.iter().any(|batch|
                 batch.destinations.iter().any(|target|
                     target.conversation_id == conversation_id && target.client_nonce == nonce
@@ -2539,7 +2557,7 @@ impl ProductionSessionWorkers {
         let serial = self.human_message_lock(conversation_id)?;
         let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
@@ -2550,8 +2568,8 @@ impl ProductionSessionWorkers {
         if client.identity()?.user_id != local_human_id {
             return Err("Fabushi native messaging credential changed Human account".into());
         }
-        let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
-        let (covered, complete) = match coverage.as_ref() {
+        let coverage = metadata.get("humanHistoryCoverage");
+        let (covered, complete) = match coverage {
             None | Some(serde_json::Value::Null) => (0, false),
             Some(checkpoint) => {
                 let after_id = checkpoint.get("afterId")
@@ -2573,7 +2591,7 @@ impl ProductionSessionWorkers {
                 }
             }
         };
-        self.replay_human_reaction_intent(&owner, &metadata, client)?;
+        self.replay_human_reaction_intent(&owner, conversation_id, client)?;
         let pending = owner.get_transcript_entries().map_err(|error| error.to_string())?
             .into_iter().filter(|entry| {
                 entry.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id.as_str())
@@ -2615,10 +2633,12 @@ impl ProductionSessionWorkers {
         let mut pages_used = 0;
         for _ in 0..MAX_GAP_PAGES {
             pages_used += 1;
+            Self::read_human_conversation_metadata(&owner, conversation_id)?;
             let page = client.list_direct_messages_after_for_user(&peer, &local_human_id, after, PAGE_LIMIT)?;
             if client.identity()?.user_id != local_human_id {
                 return Err("Fabushi native messaging credential changed Human account".into());
             }
+            Self::read_human_conversation_metadata(&owner, conversation_id)?;
             if page.len() > PAGE_LIMIT {
                 return Err("Fabushi Human history page exceeded the 200-message response budget".into());
             }
@@ -2648,9 +2668,10 @@ impl ProductionSessionWorkers {
                     rejected.get_or_insert(error);
                     continue;
                 }
-                let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
+                let settled = self.materialize_remote_human_message_with_snapshot(&owner, conversation_id, &remote, &snapshot, None)?;
                 Self::update_human_replay_snapshot(&mut snapshot, settled);
             }
+            Self::read_human_conversation_metadata(&owner, conversation_id)?;
             if rejected.is_none() { Self::store_human_coverage(&owner, last, is_last)?; }
             after = last;
             if is_last { reached_end = true; break; }
@@ -2658,7 +2679,9 @@ impl ProductionSessionWorkers {
         // A 32-page window is an absolute request budget, including the last
         // short or empty page. A latest-snapshot refresh may use only spare capacity.
         if reached_end && rejected.is_none() && pages_used < MAX_GAP_PAGES && after >= PAGE_LIMIT as u64 {
+            Self::read_human_conversation_metadata(&owner, conversation_id)?;
             let latest = client.list_direct_messages_for_user(&peer, &local_human_id, None, PAGE_LIMIT)?;
+            Self::read_human_conversation_metadata(&owner, conversation_id)?;
             let mut snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
             let known = snapshot.iter().filter_map(|entry| entry.get("remoteMessageId")
                 .and_then(serde_json::Value::as_str).map(str::to_string)).collect::<BTreeSet<_>>();
@@ -2666,7 +2689,7 @@ impl ProductionSessionWorkers {
                 let remote_id = fabushi_message_identity_text(&remote.id)?;
                 if !known.contains(remote_id.as_str()) { continue; }
                 self.validate_remote_human_message(&remote, &local_human_id, &peer, &snapshot)?;
-                let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
+                let settled = self.materialize_remote_human_message_with_snapshot(&owner, conversation_id, &remote, &snapshot, None)?;
                 Self::update_human_replay_snapshot(&mut snapshot, settled);
             }
         }
@@ -2707,6 +2730,17 @@ impl ProductionSessionWorkers {
         self.list_human_conversations()
     }
 
+    fn human_direct_conversation_id(first: &str, second: &str) -> String {
+        let mut participants = [first, second];
+        participants.sort();
+        let mut digest = Sha256::new();
+        for participant in participants {
+            digest.update((participant.len() as u64).to_be_bytes());
+            digest.update(participant.as_bytes());
+        }
+        format!("human-direct-{:x}", digest.finalize())
+    }
+
     pub fn create_human_conversation(
         &self,
         peer_human_id: &str,
@@ -2721,14 +2755,7 @@ impl ProductionSessionWorkers {
         if local_human_id == peer_human_id {
             return Err("human conversation participants must be distinct".into());
         }
-        let mut participant_ids = [local_human_id.to_string(), peer_human_id.to_string()];
-        participant_ids.sort();
-        let mut digest = Sha256::new();
-        for participant_id in &participant_ids {
-            digest.update((participant_id.len() as u64).to_be_bytes());
-            digest.update(participant_id.as_bytes());
-        }
-        let conversation_id = format!("human-direct-{:x}", digest.finalize());
+        let conversation_id = Self::human_direct_conversation_id(local_human_id, peer_human_id);
         let serial = self.human_message_lock(&conversation_id)?;
         #[cfg(test)]
         self.observe_human_creation(HumanCreationStage::BeforeLock, &conversation_id, None);
@@ -2823,7 +2850,7 @@ impl ProductionSessionWorkers {
         if !raw.trim().is_ascii() {
             return Err("existing Human conversation metadata encoding is invalid".into());
         }
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = SandAgentDb::decode_metadata(&raw).map_err(|error| error.to_string())?;
         if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human") {
             return Err(format!("Conversation is not a Human conversation: {conversation_id}"));
         }
@@ -2865,7 +2892,7 @@ impl ProductionSessionWorkers {
         }
     }
 
-    fn validate_human_conversation_metadata(
+    fn validate_retained_human_conversation_metadata(
         metadata: &serde_json::Value, conversation_id: &str,
     ) -> Result<(), String> {
         if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
@@ -2883,9 +2910,60 @@ impl ProductionSessionWorkers {
         Ok(())
     }
 
+    fn validate_human_conversation_metadata(
+        metadata: &serde_json::Value, conversation_id: &str,
+    ) -> Result<(), String> {
+        Self::validate_retained_human_conversation_metadata(metadata, conversation_id)?;
+        let ids = metadata["participantIds"].as_array().expect("qualified participant array");
+        let first = ids[0].as_str().expect("qualified first participant");
+        let second = ids[1].as_str().expect("qualified second participant");
+        if Self::human_direct_conversation_id(first, second) != conversation_id {
+            return Err("Human conversation participants conflict with its canonical identity".into());
+        }
+        Ok(())
+    }
+
+    fn read_retained_human_conversation_metadata(
+        owner: &SandAgentDb, conversation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        if owner.db_path().parent().and_then(Path::file_name).and_then(|id| id.to_str())
+            != Some(conversation_id)
+        {
+            return Err("Human conversation owner does not match its canonical directory".into());
+        }
+        let raw = owner.read_kv("metadata").map_err(|error| error.to_string())?
+            .ok_or_else(|| "Human conversation has no persisted identity".to_string())?;
+        let metadata = SandAgentDb::decode_metadata(&raw).map_err(|error| error.to_string())?;
+        Self::validate_retained_human_conversation_metadata(&metadata, conversation_id)?;
+        Ok(metadata)
+    }
+
+    fn read_human_conversation_metadata(
+        owner: &SandAgentDb, conversation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let metadata = Self::read_retained_human_conversation_metadata(owner, conversation_id)?;
+        Self::validate_human_conversation_metadata(&metadata, conversation_id)?;
+        Ok(metadata)
+    }
+
     pub fn open_human_conversation_db_owner(
         &self,
         conversation_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
+        self.open_human_conversation_db_owner_with_authority(conversation_id, true)
+    }
+
+    // A readable revoked source still owns its forward request reservation.
+    // This private path grants journal inspection/denial only, never product
+    // transcript, message, resource or destination authority.
+    fn open_retained_human_conversation_db_owner(
+        &self, conversation_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
+        self.open_human_conversation_db_owner_with_authority(conversation_id, false)
+    }
+
+    fn open_human_conversation_db_owner_with_authority(
+        &self, conversation_id: &str, product_authority: bool,
     ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
             .map_err(|error| error.to_string())?;
@@ -2902,21 +2980,31 @@ impl ProductionSessionWorkers {
             // the owner was cached. Cached handles cannot bypass the same
             // conversation identity check as a freshly opened source.
             drop(owners);
-            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            if owner.read_kv("metadata").map_err(|error| error.to_string())?.is_none() {
-                return Err("Human conversation has no persisted identity".into());
+            if owner.db_path() != db_path {
+                return Err("Human conversation cached owner belongs to a different database".into());
             }
-            Self::validate_human_conversation_metadata(&metadata, conversation_id)?;
+            if product_authority {
+                Self::read_human_conversation_metadata(&owner, conversation_id)?;
+            } else {
+                Self::read_retained_human_conversation_metadata(&owner, conversation_id)?;
+            }
             return Ok(owner);
         }
         let owner = Arc::new(
             SandAgentDb::open_validated_human_conversation_store(
                 &db_path, self.busy_timeout_ms, false,
-                |metadata| Self::validate_human_conversation_metadata(metadata, conversation_id),
+                |metadata| if product_authority {
+                    Self::validate_human_conversation_metadata(metadata, conversation_id)
+                } else {
+                    Self::validate_retained_human_conversation_metadata(metadata, conversation_id)
+                },
             ).map_err(|error| error.to_string())?,
         );
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        Self::validate_human_conversation_metadata(&metadata, conversation_id)?;
+        if product_authority {
+            Self::read_human_conversation_metadata(&owner, conversation_id)?;
+        } else {
+            Self::read_retained_human_conversation_metadata(&owner, conversation_id)?;
+        }
         owners.insert(key, Arc::clone(&owner));
         Ok(owner)
     }
@@ -2937,7 +3025,9 @@ impl ProductionSessionWorkers {
             let Ok(owner) = self.open_human_conversation_db_owner(&id) else {
                 continue;
             };
-            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+            let Ok(metadata) = Self::read_human_conversation_metadata(&owner, &id) else {
+                continue;
+            };
             if !self.metadata_has_local_human(&metadata)? {
                 continue;
             }
@@ -2977,7 +3067,7 @@ impl ProductionSessionWorkers {
         limit: usize,
     ) -> Result<Vec<serde_json::Value>, String> {
         let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
-        let source_metadata = source_owner.read_metadata().map_err(|error| error.to_string())?;
+        let source_metadata = Self::read_human_conversation_metadata(&source_owner, source_conversation_id)?;
         if !self.metadata_has_local_human(&source_metadata)? {
             return Err("local Human identity is not a participant in the source conversation".into());
         }
@@ -3111,7 +3201,7 @@ impl ProductionSessionWorkers {
             let db_path = get_native_conversation_db_path(&self.agents_root, &id)
                 .map_err(|error| error.to_string())?;
             if !db_path.is_file() { continue; }
-            let owner = self.open_human_conversation_db_owner(&id)?;
+            let owner = self.open_retained_human_conversation_db_owner(&id)?;
             for batch in load_forward_batches(&owner, &id)? {
                 if batch.account_id == account && batch.issuer == issuer && batch.request_id == request_id {
                     if matched.is_some() {
@@ -3127,14 +3217,16 @@ impl ProductionSessionWorkers {
     fn authorize_forward_source(
         &self, source_id: &str, source_entry_id: &str,
     ) -> Result<serde_json::Value, ForwardSourceFailure> {
-        let owner = self.open_human_conversation_db_owner(source_id)
+        let owner = self.open_retained_human_conversation_db_owner(source_id)
             .map_err(ForwardSourceFailure::Storage)?;
-        let metadata = owner.read_metadata().map_err(|error|
-            ForwardSourceFailure::Storage(error.to_string()))?;
+        let metadata = Self::read_retained_human_conversation_metadata(&owner, source_id)
+            .map_err(ForwardSourceFailure::Storage)?;
         if !self.metadata_has_local_human(&metadata).map_err(ForwardSourceFailure::Storage)? {
             return Err(ForwardSourceFailure::Policy(
                 "local Human identity is not a participant in the source conversation".into()));
         }
+        Self::validate_human_conversation_metadata(&metadata, source_id)
+            .map_err(ForwardSourceFailure::Policy)?;
         let entry = owner.get_transcript_entries()
             .map_err(|error| ForwardSourceFailure::Storage(error.to_string()))?
             .into_iter()
@@ -3185,7 +3277,7 @@ impl ProductionSessionWorkers {
             return Err("Fabushi native messaging credential changed Human account or issuer".into());
         }
         let (account, issuer) = scope;
-        let owner = self.open_human_conversation_db_owner(source_id)?;
+        let owner = self.open_retained_human_conversation_db_owner(source_id)?;
         let mut batch = load_forward_batches(&owner, source_id)?.into_iter().find(|item|
             item.account_id == *account && item.issuer == *issuer && item.request_id == request_id
         ).ok_or_else(|| "forwardHumanMessage durable request was not found".to_string())?;
@@ -3226,7 +3318,7 @@ impl ProductionSessionWorkers {
             let nonce = target.client_nonce.clone();
             let result = (|| -> Result<serde_json::Value, String> {
                 let destination_owner = self.open_human_conversation_db_owner(&destination_id)?;
-                let metadata = destination_owner.read_metadata().map_err(|error| error.to_string())?;
+                let metadata = Self::read_human_conversation_metadata(&destination_owner, &destination_id)?;
                 let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
                     .ok_or_else(|| "forward destination participants are invalid".to_string())?;
                 if participants.len() != 2 || !self.metadata_has_local_human(&metadata)? {
@@ -3287,7 +3379,7 @@ impl ProductionSessionWorkers {
             let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
                 .map_err(|error| error.to_string())?;
             if !db_path.is_file() { continue; }
-            let owner = self.open_human_conversation_db_owner(&source_id)?;
+            let owner = self.open_retained_human_conversation_db_owner(&source_id)?;
             for batch in load_forward_batches(&owner, &source_id)? {
                 if batch.account_id != *account || batch.issuer != *issuer
                     || batch.destinations.iter().all(|target| target.completed)
@@ -3506,7 +3598,7 @@ impl ProductionSessionWorkers {
             return Err("Fabushi native messaging credential changed Human account or issuer".into());
         }
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
@@ -3649,23 +3741,31 @@ impl ProductionSessionWorkers {
             None
         };
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
         // Reauthorize original forward intent after acquiring the destination's
         // mutation lock: the source or target may have been revoked while waiting.
-        // This includes text-only sends and previously uploaded resources.
-        if let Some(context) = forward_context.filter(|value|
+        // Capture its account/issuer once, then use that same authority after
+        // every service wait. No source lock is held across HTTP.
+        let admitted_forward_context = forward_context.filter(|value|
             value.get("batchVersion").and_then(serde_json::Value::as_u64) == Some(1)
-        ) {
+        );
+        let forward_scope = admitted_forward_context.map(|_| self.human_forward_scope()).transpose()?;
+        let reauthorize_forward = || -> Result<(), String> {
+            let Some(context) = admitted_forward_context else { return Ok(()); };
+            let scope = forward_scope.as_ref().expect("admitted forward scope");
+            if &self.human_forward_scope()? != scope {
+                return Err("Fabushi native messaging credential changed Human account or issuer".into());
+            }
             let source_id = context.get("sourceConversationId").and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "Human forward context lost its source".to_string())?;
             let source_entry = context.get("sourceEntryId").and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "Human forward context lost its entry".to_string())?;
             let request = context.get("requestId").and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "Human forward context lost its request".to_string())?;
-            let (account, issuer) = self.human_forward_scope()?;
+            let (account, issuer) = scope;
             let source_owner = self.open_human_conversation_db_owner(source_id)?;
             if !load_forward_batches(&source_owner, source_id)?.iter().any(|batch| {
-                batch.account_id == account && batch.issuer == issuer
+                batch.account_id == *account && batch.issuer == *issuer
                     && batch.request_id == request && batch.source_entry_id == source_entry
                     && batch.context == *context && batch.text == text
                     && batch.attachments == attachments
@@ -3677,7 +3777,12 @@ impl ProductionSessionWorkers {
             }
             self.authorize_forward_source(source_id, source_entry)
                 .map_err(|error| error.to_string())?;
-        }
+            if &self.human_forward_scope()? != scope {
+                return Err("Fabushi native messaging credential changed Human account or issuer".into());
+            }
+            Ok(())
+        };
+        reauthorize_forward()?;
         let is_participant = metadata
             .get("participantIds")
             .and_then(serde_json::Value::as_array)
@@ -3873,7 +3978,7 @@ impl ProductionSessionWorkers {
                             .and_then(serde_json::Value::as_str)
                             .ok_or_else(|| "Human forward request identity is missing".to_string())?;
                         let source_owner = self.open_human_conversation_db_owner(source_id)?;
-                        let (account, issuer) = self.human_forward_scope()?;
+                        let (account, issuer) = forward_scope.as_ref().expect("admitted forward scope");
                         if normalized_attachments.len() > 6 {
                             return Err("Human forward exceeds the six-attachment backend limit".into());
                         }
@@ -3884,7 +3989,7 @@ impl ProductionSessionWorkers {
                         let mut verified = Vec::with_capacity(normalized_attachments.len());
                         for (index, attachment) in normalized_attachments.iter().enumerate() {
                             verified.push(read_forward_attachment_bytes(
-                                &source_owner, &account, &issuer, request_id, index, attachment,
+                                &source_owner, account, issuer, request_id, index, attachment,
                             )?);
                         }
                         Some(verified.into_iter())
@@ -3892,6 +3997,8 @@ impl ProductionSessionWorkers {
                         None
                     };
                     for attachment in &normalized_attachments {
+                        Self::read_human_conversation_metadata(&owner, conversation_id)?;
+                        reauthorize_forward()?;
                         let path = attachment.get("path").and_then(serde_json::Value::as_str)
                             .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
                         let name = attachment.get("name").and_then(serde_json::Value::as_str)
@@ -3905,9 +4012,15 @@ impl ProductionSessionWorkers {
                         } else {
                             client.upload_direct_message_resource_for_user(std::path::Path::new(path), name, sender_id)?
                         };
+                        // An accepted upload grants no authority for the next
+                        // resource or message if its original source changed.
+                        Self::read_human_conversation_metadata(&owner, conversation_id)?;
+                        reauthorize_forward()?;
                         uploaded.push(resource);
                     }
                 }
+                Self::read_human_conversation_metadata(&owner, conversation_id)?;
+                reauthorize_forward()?;
                 if let Some(object) = pending_entry.as_object_mut() {
                     object.insert("delivery".into(), serde_json::json!("dispatching"));
                     object.remove("lastDispatchError");
@@ -3940,6 +4053,10 @@ impl ProductionSessionWorkers {
                     client, serial.as_ref(), held_conversation_guard,
                     &request_credential_fingerprint, &response,
                 )?;
+                // This includes transport-error/already-settled fast paths,
+                // which otherwise bypass remote materialization admission.
+                Self::read_human_conversation_metadata(&owner, conversation_id)?;
+                reauthorize_forward()?;
                 let durable = owner.get_transcript_entries().map_err(|error| error.to_string())?;
                 let settled = durable.iter().find(|entry| {
                     let remote_id = entry.get("remoteMessageId").and_then(serde_json::Value::as_str);
@@ -3999,7 +4116,7 @@ impl ProductionSessionWorkers {
                     Self::update_human_activity(&owner, timestamp)?;
                     return Ok(settled.clone());
                 }
-                self.materialize_remote_human_message(&owner, &remote)
+                self.materialize_remote_human_message(&owner, conversation_id, &remote, &reauthorize_forward)
             })();
             // A resource/preflight failure may return before the POST release.
             drop(staging_guard.take());
@@ -4106,7 +4223,7 @@ impl ProductionSessionWorkers {
         let serial = self.human_message_lock(conversation_id)?;
         let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
         let is_participant = metadata
             .get("participantIds")
             .and_then(serde_json::Value::as_array)
@@ -4202,11 +4319,11 @@ impl ProductionSessionWorkers {
     fn replay_human_reaction_intent(
         &self,
         owner: &SandAgentDb,
-        metadata: &serde_json::Value,
+        conversation_id: &str,
         client: &FabushiNativeMessagingClient,
     ) -> Result<Option<serde_json::Value>, String> {
-        let Some(intent) = owner.get_metadata("humanReactionIntent")
-            .map_err(|error| error.to_string())?.filter(|value| !value.is_null()) else {
+        let metadata = Self::read_human_conversation_metadata(owner, conversation_id)?;
+        let Some(intent) = metadata.get("humanReactionIntent").filter(|value| !value.is_null()) else {
             return Ok(None);
         };
         let get = |field: &str| intent.get(field).and_then(serde_json::Value::as_str)
@@ -4217,7 +4334,7 @@ impl ProductionSessionWorkers {
         let author = get("localHumanId")?;
         let active = intent.get("active").and_then(serde_json::Value::as_bool)
             .ok_or_else(|| "persisted Human reaction intent lacks desired state".to_string())?;
-        if author != self.local_human_id()? || !self.metadata_has_local_human(metadata)? {
+        if author != self.local_human_id()? || !self.metadata_has_local_human(&metadata)? {
             return Err("persisted Human reaction intent belongs to a different account".into());
         }
         if emoji.is_empty() || emoji != emoji.trim() || emoji.as_bytes().len() > 32 {
@@ -4228,7 +4345,7 @@ impl ProductionSessionWorkers {
         }).is_none() {
             return Err("persisted Human reaction intent contains invalid remote identity".into());
         }
-        let peer = self.peer_human_id_from_metadata(metadata)?;
+        let peer = self.peer_human_id_from_metadata(&metadata)?;
         let current = owner.get_transcript_entry_by_id(entry_id)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "persisted Human reaction target disappeared".to_string())?;
@@ -4237,6 +4354,7 @@ impl ProductionSessionWorkers {
             return Err("persisted Human reaction remote identity changed".into());
         }
         let remote = client.set_direct_message_reaction_for_user(remote_id, emoji, active, author)?;
+        Self::read_human_conversation_metadata(owner, conversation_id)?;
         Self::validate_remote_human_reactions(&remote)?;
         // HTTP success is not settlement: the service must confirm the requested
         // participant state. Keep the durable intent if a stale/misrouted reply
@@ -4292,20 +4410,21 @@ impl ProductionSessionWorkers {
         let serial = self.human_message_lock(conversation_id)?;
         let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
         let client = self.shipping_native_messaging()?
             .ok_or_else(|| "Fabushi Human reactions require the shipping messaging backend".to_string())?;
-        let prior = owner.get_metadata("humanReactionIntent").map_err(|error| error.to_string())?;
-        let same_intent = prior.as_ref().is_some_and(|intent| {
+        let prior = metadata.get("humanReactionIntent");
+        let same_intent = prior.is_some_and(|intent| {
             intent.get("entryId").and_then(serde_json::Value::as_str) == Some(entry_id)
                 && intent.get("emoji").and_then(serde_json::Value::as_str) == Some(emoji)
         });
-        if let Some(replayed) = self.replay_human_reaction_intent(&owner, &metadata, client)? {
+        if let Some(replayed) = self.replay_human_reaction_intent(&owner, conversation_id, client)? {
             if same_intent { return Ok(replayed); }
         }
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
         let current = owner.get_transcript_entry_by_id(entry_id)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "Human reaction target is not in this conversation".to_string())?;
@@ -4328,7 +4447,7 @@ impl ProductionSessionWorkers {
         })).map_err(|error| error.to_string())? {
             return Err("Human reaction intent could not be durably staged".into());
         }
-        self.replay_human_reaction_intent(&owner, &metadata, client)?
+        self.replay_human_reaction_intent(&owner, conversation_id, client)?
             .ok_or_else(|| "Human reaction intent disappeared before settlement".to_string())
     }
 
@@ -4380,7 +4499,7 @@ impl ProductionSessionWorkers {
         conversation_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
@@ -4395,7 +4514,7 @@ impl ProductionSessionWorkers {
         query: impl Into<HumanTranscriptPageQuery>,
     ) -> Result<HumanTranscriptPage, String> {
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }

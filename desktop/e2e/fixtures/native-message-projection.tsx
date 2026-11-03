@@ -28,6 +28,10 @@ const sendPositions = new Map<string, number>();
 let holdOlder = true;
 let holdInitial = new URLSearchParams(location.search).get('holdInitial') === '1';
 let holdNextSendRoster = false;
+let holdReady = false;
+let attachmentCommitMode: 'normal' | 'fail' | 'hold' = 'normal';
+const attachmentCommits: string[][] = [];
+const heldAttachmentCommits: Array<() => void> = [];
 let sequence = 0;
 const row = (id: string, text: string, patch: Record<string, unknown> = {}): Row => ({
   id, kind: 'message', role: 'user', authorKind: 'human', authorId: 'peer-a', content: text,
@@ -135,7 +139,7 @@ const coordinatorPort: CoordinatorPortBridge = {
       postMessage(frame) {
         const value = frame as Record<string, unknown>;
         if (value.kind === 'lifecycle' && value.phase === 'hello') {
-          queueMicrotask(() => sendFrame({ kind: 'lifecycle', phase: 'ready', protocolVersion: 1 }));
+          if (!holdReady) queueMicrotask(() => sendFrame({ kind: 'lifecycle', phase: 'ready', protocolVersion: 1 }));
         } else if (value.kind === 'request') queueMicrotask(() => receive(value as unknown as Request));
       },
       start() {}, close() {},
@@ -196,12 +200,21 @@ const bridge = optionalCapability('', {
   }),
   update: optionalCapability('', { getStatus: async () => disabledUpdate }),
   callMedia: optionalCapability('', { getPreferences: async () => ({ microphoneId: null, cameraId: null }) }),
-  commitStagedAttachments: async (attachments: unknown) => attachments,
+  stageAttachmentBytes: async (filename: string) => ({ ok: true, path: `/staged/${filename}` }),
+  commitStagedAttachments: async (paths: readonly string[]) => {
+    attachmentCommits.push([...paths]);
+    const mode = attachmentCommitMode;
+    attachmentCommitMode = 'normal';
+    if (mode === 'fail') throw new Error('Attachment commit failed before Host admission');
+    if (mode === 'hold') await new Promise<void>((resolve) => heldAttachmentCommits.push(resolve));
+    return paths.map((path) => path.replace('/staged/', '/committed/'));
+  },
 }) as DesktopBridge;
 
 const fixture = {
   requests,
   approvalClears,
+  attachmentCommits,
   pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, humanRetries: humanRetries.length, reactions: reactions.length, sendRosterRefreshes: sendRosterRefreshes.length }),
   stageFailedHuman(nonce: string) {
     const id = 'human:a';
@@ -223,6 +236,11 @@ const fixture = {
     if (pending == null) throw new Error('No Human retry to reject');
     sendFrame({ kind: 'reply', requestId: pending.request.requestId,
       outcome: { status: 'failed', failure: { code: 'fixture-retry', message: 'temporary retry refusal' } } });
+  },
+  replyHumanRetry(index: number, patch: Record<string, unknown> = {}) {
+    const pending = humanRetries[index];
+    if (pending == null) throw new Error('No Human retry reply');
+    reply({ ...pending, value: { ...clone(pending.value as Row), ...patch } });
   },
   settleHumanRetry(index: number) {
     const pending = humanRetries[index];
@@ -287,6 +305,19 @@ const fixture = {
     emit({ type: 'appended', agentId: id, entry });
   },
   settleSend(index = 0) { const pending = sends[index]; if (pending == null) throw new Error('No pending send'); reply(pending); },
+  replySend(index: number, patch: Record<string, unknown> = {}, omittedFields: string[] = []) {
+    const pending = sends[index];
+    if (pending == null) throw new Error('No pending send reply');
+    const value = { ...clone(pending.value as Row), ...patch };
+    for (const field of omittedFields) delete value[field];
+    reply({ ...pending, value });
+  },
+  rejectSend(index = 0) {
+    const pending = sends[index];
+    if (pending == null) throw new Error('No pending send to reject');
+    sendFrame({ kind: 'reply', requestId: pending.request.requestId,
+      outcome: { status: 'failed', failure: { code: 'fixture-send', message: 'temporary send refusal' } } });
+  },
   holdSendRosterRefresh() { holdNextSendRoster = true; },
   failSendRosterRefresh() {
     for (const pending of sendRosterRefreshes.splice(0)) sendFrame({
@@ -295,6 +326,13 @@ const fixture = {
     });
   },
   settleReaction(index = 0) { const pending = reactions[index]; if (pending == null) throw new Error('No pending reaction'); reply(pending); },
+  pauseReadiness() { holdReady = true; sendFrame({ kind: 'lifecycle', phase: 'shutdown' }); },
+  resumeReadiness() { holdReady = false; sendFrame({ kind: 'lifecycle', phase: 'ready', protocolVersion: 1 }); },
+  failNextAttachmentCommit() { attachmentCommitMode = 'fail'; },
+  holdNextAttachmentCommit() { attachmentCommitMode = 'hold'; },
+  heldAttachmentCommitCount: () => heldAttachmentCommits.length,
+  releaseAttachmentCommits() { for (const release of heldAttachmentCommits.splice(0)) release(); },
+  unmount() { root.unmount(); },
   disconnect() { sendFrame({ kind: 'event', family: 'coordinator-transport-state', payload: { state: 'down' } }); },
   reconnect() { sendFrame({ kind: 'event', family: 'coordinator-transport-state', payload: { state: 'connected' } }); },
   setAccount(authId: string | null) {
@@ -310,4 +348,5 @@ const fixture = {
 
 declare global { interface Window { nativeMessageFixture: typeof fixture; } }
 window.nativeMessageFixture = fixture;
-createRoot(document.getElementById('root')!).render(<ProductionRenderer bridge={bridge} coordinatorPort={coordinatorPort} />);
+const root = createRoot(document.getElementById('root')!);
+root.render(<ProductionRenderer bridge={bridge} coordinatorPort={coordinatorPort} />);

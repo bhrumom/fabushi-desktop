@@ -4792,8 +4792,21 @@ struct ForwardHttpFixture {
     thread: Option<thread::JoinHandle<()>>,
 }
 
+type ForwardResponsePause = (
+    &'static str,
+    std::sync::mpsc::Sender<()>,
+    std::sync::mpsc::Receiver<()>,
+);
+
 impl ForwardHttpFixture {
     fn start(hold_first_post: bool) -> Self {
+        Self::start_with_response_pause(hold_first_post, None)
+    }
+
+    fn start_with_response_pause(
+        hold_first_post: bool,
+        mut response_pause: Option<ForwardResponsePause>,
+    ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("forward listener");
         listener.set_nonblocking(true).expect("bounded forward listener");
         let url = format!("http://{}", listener.local_addr().expect("forward address"));
@@ -4923,6 +4936,12 @@ impl ForwardHttpFixture {
                         released.recv_timeout(std::time::Duration::from_secs(30))
                             .expect("first POST must be explicitly released");
                     }
+                }
+                if response_pause.as_ref().is_some_and(|(prefix, _, _)| request.starts_with(*prefix)) {
+                    let (_, reached, resume) = response_pause.take().expect("owned response pause");
+                    reached.send(()).expect("observe actual forward service boundary");
+                    resume.recv_timeout(std::time::Duration::from_secs(30))
+                        .expect("held forward response must be explicitly released");
                 }
                 let response = format!(
                     "HTTP/1.1 {status} OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -7004,7 +7023,13 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     // to prove restart cannot turn that readable source into permission to send.
     legacy_runtime.shutdown(); drop(legacy_target_owner); drop(legacy_owner); drop(legacy_runtime);
     let legacy_runtime = human_message_fixture_runtime(&legacy_root, &legacy_server.url);
-    let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
+    assert!(legacy_runtime.open_human_conversation_db_owner(legacy_source).is_err(),
+        "a retained revoked journal does not grant product conversation authority");
+    // Test-only storage observer/repairer. Production may inspect this journal
+    // privately, but cannot expose its rebound identity as a Human owner.
+    let legacy_owner = mahayana_host_runtime::extensions::session::agent_db::SandAgentDb::open_human_conversation_store(
+        forward_db_path(&legacy_root, legacy_source), 500,
+    ).expect("inspect retained legacy fixture without granting product authority");
     let legacy_target_owner = legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap();
     assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
     assert_eq!(legacy_owner.get_metadata("participantIds").unwrap(), Some(json!(["2", "9"])));
@@ -8599,4 +8624,529 @@ fn human_retry_raw_duplicate_and_foreign_author_refuse_without_replacing_durable
     drop(owner);
     drop(runtime);
     fs::remove_dir_all(root).unwrap();
+}
+
+// HRR-07: independently observe the actual stored rows, including fields the
+// presentation decoder omits. These are fixture inspectors, not product owners.
+type HumanIdentityStoredRows = (
+    Vec<(String, String)>,
+    Vec<(i64, String, String)>,
+    Vec<(String, Vec<u8>)>,
+);
+
+fn human_identity_stored_rows(path: &std::path::Path) -> HumanIdentityStoredRows {
+    let db = rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .expect("independent identity admission observer");
+    let kv = db.prepare("SELECT key, value FROM kv ORDER BY key").unwrap()
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?))).unwrap()
+        .collect::<Result<Vec<_>, _>>().unwrap();
+    let transcript = db.prepare("SELECT seq, id, entry FROM transcript_entries ORDER BY seq").unwrap()
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?))).unwrap()
+        .collect::<Result<Vec<_>, _>>().unwrap();
+    let blobs = db.prepare("SELECT id, data FROM blobs ORDER BY id").unwrap()
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?))).unwrap()
+        .collect::<Result<Vec<_>, _>>().unwrap();
+    (kv, transcript, blobs)
+}
+
+fn write_human_identity_metadata(path: &std::path::Path, metadata: &serde_json::Value) {
+    let raw: String = metadata.to_string().as_bytes().iter().map(|byte| format!("{byte:02x}")).collect();
+    let db = rusqlite::Connection::open(path).expect("independent metadata fault injector");
+    assert_eq!(db.execute("UPDATE kv SET value = ?1 WHERE key = 'metadata'", [&raw]).unwrap(), 1);
+}
+
+#[test]
+fn shipping_human_canonical_pair_admission_preserves_retry_and_refuses_network_until_restored() {
+    // The mutation bus is process-global; this pair must not overlap another
+    // parallel fixture that legitimately emits events for its own database.
+    const PEER: &str = "9100701";
+    const REMOTE_PEER: u64 = 9_100_701;
+    let root = temp_root("human-canonical-pair-admission");
+    let (url, stop, server) = spawn_human_no_request_fixture();
+    let mut runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation(PEER, "Original peer").unwrap()["id"]
+        .as_str().unwrap().to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+    let path = owner.db_path().to_path_buf();
+    let original = owner.read_metadata().unwrap();
+    let saved = fixture_saved_human_message(51, PEER, "retained canonical message");
+    let pending = json!({
+        "id":"human-message:pair-preserved-retry","kind":"message","role":"user",
+        "authorKind":"human","authorId":"1","clientNonce":"pair-preserved-retry",
+        "content":"retained outgoing intent","delivery":"pending","timestampMs":1000.0,
+        "composedAtMs":1000.0,"lastDispatchError":"original retained failure"
+    });
+    assert!(owner.append_transcript_entry(&saved).unwrap());
+    assert!(owner.append_transcript_entry(&pending).unwrap());
+    assert!(owner.write_kv("identity-sibling", "retain exact bytes").unwrap());
+    let resource = root.join("retained-upload.txt");
+    fs::write(&resource, b"retained upload bytes").unwrap();
+    drop(owner);
+    let events = Arc::new(std::sync::Mutex::new(Vec::<serde_json::Value>::new()));
+    let captured = Arc::clone(&events);
+    let event_id = id.clone();
+    let subscription = mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations(move |mutation| {
+        if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(event_id.as_str()) {
+            captured.lock().unwrap().push(serde_json::Value::Object(mutation.clone()));
+        }
+    });
+
+    for participants in [json!(["1", "3"]), json!(["3", "4"])] {
+        write_human_identity_metadata(&path, &original);
+        let cached = runtime.open_human_conversation_db_owner(&id).unwrap();
+        let mut rebound = original.clone();
+        rebound["participantIds"] = participants;
+        write_human_identity_metadata(&path, &rebound);
+        let before = human_identity_stored_rows(&path);
+        for lifetime in ["cached", "reopened"] {
+            for (method, args) in [
+                ("getHumanConversationTranscript", json!({"conversationId":id})),
+                ("getHumanConversationTranscriptTail", json!({"conversationId":id,"limit":1})),
+                ("searchHumanMessages", json!({"conversationId":id,"query":"retained"})),
+                ("searchHumanRecipients", json!({"sourceConversationId":id,"sourceEntryId":"human-server-message:51","query":""})),
+                ("sendHumanMessage", json!({"conversationId":id,"text":"forbidden text","clientNonce":"rebound-text"})),
+                ("sendHumanMessage", json!({"conversationId":id,"text":"","clientNonce":"rebound-resource",
+                    "attachments":[{"path":resource,"name":"retained-upload.txt"}]})),
+                ("retryHumanMessage", json!({"conversationId":id,"clientNonce":"pair-preserved-retry"})),
+                ("reactHumanMessage", json!({"conversationId":id,"entryId":"human-server-message:51","emoji":"👍"})),
+                ("syncHumanConversation", json!({"conversationId":id})),
+            ] {
+                let error = dispatch_production_session_gateway_call(&runtime, method, &args)
+                    .expect("registered Human gateway method").expect_err("rebound identity must refuse");
+                let SessionGatewayError::Internal(message) = error else {
+                    panic!("valid request did not reach persisted identity admission: {method}/{lifetime}");
+                };
+                assert!(message.contains("canonical identity"), "{method}/{lifetime}: {message}");
+                assert_eq!(human_identity_stored_rows(&path), before,
+                    "refusal preserves every raw row: {method}/{lifetime}");
+            }
+            assert!(runtime.append_human_agent_message(&id, "existing-agent", "rebound-result", "not authorized", 30.0).is_err());
+            assert!(dispatch(&runtime, "listHumanConversations", json!({})).as_array().unwrap().is_empty());
+            assert!(events.lock().unwrap().is_empty(), "refused calls do not mutate the transcript");
+            assert_eq!(human_identity_stored_rows(&path), before);
+            assert_eq!(fs::read(&resource).unwrap(), b"retained upload bytes");
+            runtime.shutdown();
+            drop(runtime);
+            runtime = human_message_fixture_runtime(&root, &url);
+        }
+        drop(cached);
+    }
+    runtime.shutdown();
+    drop(runtime);
+    stop.send(()).unwrap();
+    assert!(server.join().unwrap().is_empty(), "no message/resource/reaction/history request escapes admission");
+    assert!(!root.join("agents/human-message-resources").exists());
+
+    let mut restored_metadata = original;
+    restored_metadata["participantIds"] = json!([PEER, "1"]);
+    restored_metadata["title"] = json!("Renamed peer");
+    write_human_identity_metadata(&path, &restored_metadata);
+    let sent = fixture_remote_human_message(52, 1, REMOTE_PEER, "retained outgoing intent", Some("pair-preserved-retry"), json!([]));
+    let (restored_url, restored_server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(201, json!({"success":true,"message":sent.clone()})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[
+            fixture_remote_human_message(51, REMOTE_PEER, 1, "retained canonical message", None, json!([])), sent,
+        ]}})),
+    ]);
+    let restored = human_message_fixture_runtime(&root, &restored_url);
+    let result = dispatch(&restored, "retryHumanMessage", json!({"conversationId":id,"clientNonce":"pair-preserved-retry"}));
+    assert_eq!(result["id"], "human-server-message:52");
+    assert_eq!(result["clientNonce"], pending["clientNonce"]);
+    assert_eq!(result["content"], pending["content"]);
+    let rows = dispatch(&restored, "syncHumanConversation", json!({"conversationId":id}));
+    assert_eq!(rows.as_array().unwrap().len(), 2);
+    assert_eq!(dispatch(&restored, "listHumanConversations", json!({}))[0]["title"], "Renamed peer");
+    restored.shutdown(); drop(restored);
+    let reopened = human_message_fixture_runtime(&root, &restored_url);
+    assert_eq!(dispatch(&reopened, "getHumanConversationTranscript", json!({"conversationId":id})), rows);
+    assert_eq!(dispatch(&reopened, "retryHumanMessage", json!({"conversationId":id,"clientNonce":"pair-preserved-retry"})),
+        rows.as_array().unwrap().iter().find(|row| row["clientNonce"] == "pair-preserved-retry").unwrap().clone());
+    reopened.shutdown(); drop(reopened);
+    let requests = restored_server.join().unwrap();
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].starts_with("POST /api/social/messages "));
+    assert_eq!(fixture_request_json(&requests[0])["targetUserId"], PEER);
+    assert_eq!(fixture_request_json(&requests[0])["clientRequestId"], "pair-preserved-retry");
+    assert!(requests[1].starts_with("GET /api/social/messages?"));
+    subscription.unsubscribe();
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn shipping_human_canonical_pair_change_during_service_wait_preserves_intent_and_restarts() {
+    // Keep this observer's canonical pair distinct from the other event test
+    // and every ordinary 1/2 fixture running in the same test process.
+    const PEER: &str = "9100702";
+    const REMOTE_PEER: u64 = 9_100_702;
+    for kind in ["send", "history-resource", "history-empty", "reaction", "resource-download", "resource-upload"] {
+        let root = temp_root(&format!("human-pair-during-{kind}"));
+        fs::create_dir_all(&root).unwrap();
+        let upload_path = root.join("private.bin");
+        fs::write(&upload_path, [1_u8, 2, 3, 4]).unwrap();
+        let resource = json!({"resourceId":"pair-bound-resource","name":"private.bin","contentType":"application/octet-stream",
+            "size":4,"createdAt":"2026-10-05T01:00:00Z"});
+        let outbound = fixture_remote_human_message(53, 1, REMOTE_PEER, "retained outgoing intent", Some("pair-in-flight"),
+            if kind == "resource-upload" { json!([resource.clone()]) } else { json!([]) });
+        let incoming = fixture_remote_human_message(54, REMOTE_PEER, 1, "authorized after restoration", None, json!([]));
+        let incoming_resource = fixture_remote_human_message(54, REMOTE_PEER, 1, "authorized after restoration", None, json!([resource.clone()]));
+        let reaction_reply = json!({"success":true,"messageId":54,"reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]});
+        let (accepted, waiting) = std::sync::mpsc::channel();
+        let (release, released) = std::sync::mpsc::channel();
+        let mut responses = Vec::new();
+        if kind == "resource-download" {
+            responses.push(human_history_reply(vec![incoming_resource.clone()]));
+        }
+        let response = match kind {
+            "send" => HumanMessageFixtureReply::Json(201, json!({"success":true,"message":outbound.clone()})),
+            "history-resource" => human_history_reply(vec![incoming_resource.clone()]),
+            "history-empty" => human_history_reply(vec![]),
+            "reaction" => HumanMessageFixtureReply::Json(200, reaction_reply.clone()),
+            "resource-download" => HumanMessageFixtureReply::Bytes(200, vec![1, 2, 3, 4]),
+            "resource-upload" => HumanMessageFixtureReply::Json(201, json!({"success":true,"resource":resource.clone()})),
+            _ => unreachable!(),
+        };
+        responses.push(HumanMessageFixtureReply::Deferred(Box::new(response), accepted, released));
+        match kind {
+            "send" => responses.push(HumanMessageFixtureReply::Json(201, json!({"success":true,"deduplicated":true,"message":outbound}))),
+            "reaction" => responses.push(HumanMessageFixtureReply::Json(200, reaction_reply)),
+            "resource-download" => {
+                responses.push(human_history_reply(vec![incoming_resource]));
+                responses.push(HumanMessageFixtureReply::Bytes(200, vec![1, 2, 3, 4]));
+            }
+            "resource-upload" => {
+                responses.push(HumanMessageFixtureReply::Json(201, json!({"success":true,"resource":resource})));
+                responses.push(HumanMessageFixtureReply::Json(201, json!({"success":true,"message":outbound})));
+                responses.push(HumanMessageFixtureReply::Bytes(200, vec![1, 2, 3, 4]));
+            }
+            _ => responses.push(human_history_reply(vec![incoming])),
+        }
+        let (url, server) = spawn_human_message_fixture(responses);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation(PEER, "Original peer").unwrap()["id"].as_str().unwrap().to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        let path = owner.db_path().to_path_buf();
+        if kind == "reaction" {
+            assert!(owner.append_transcript_entry(&fixture_saved_human_message(54, PEER, "reaction target")).unwrap());
+        }
+        let request_runtime = Arc::clone(&runtime);
+        let request_id = id.clone();
+        let send_path = upload_path.clone();
+        let pending = thread::spawn(move || {
+            let (method, args) = match kind {
+                "send" | "resource-upload" => ("sendHumanMessage", json!({"conversationId":request_id,
+                    "text":"retained outgoing intent","clientNonce":"pair-in-flight",
+                    "attachments":if kind == "resource-upload" { json!([{"path":send_path,"name":"private.bin"}]) } else { json!([]) }})),
+                "reaction" => ("reactHumanMessage", json!({"conversationId":request_id,"entryId":"human-server-message:54","emoji":"👍"})),
+                _ => ("syncHumanConversation", json!({"conversationId":request_id})),
+            };
+            dispatch_production_session_gateway_call(&request_runtime, method, &args).expect("production gateway method")
+        });
+        let observed = waiting.recv_timeout(std::time::Duration::from_secs(15));
+        // Include any newly admitted reaction/outbox intent in the restoration
+        // snapshot. Restoration must not erase work staged before the service.
+        let admitted_metadata = owner.read_metadata().unwrap();
+        let mut rebound = admitted_metadata.clone();
+        rebound["participantIds"] = json!(["1", "3"]);
+        write_human_identity_metadata(&path, &rebound);
+        let retained = human_identity_stored_rows(&path);
+        let events = Arc::new(std::sync::Mutex::new(Vec::<serde_json::Value>::new()));
+        let captured = Arc::clone(&events);
+        let event_id = id.clone();
+        let subscription = mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations(move |mutation| {
+            if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(event_id.as_str()) {
+                captured.lock().unwrap().push(serde_json::Value::Object(mutation.clone()));
+            }
+        });
+        let released = release.send(());
+        let result = pending.join();
+        assert!(observed.is_ok(), "request reached the actual service: {kind}: {observed:?}");
+        assert!(released.is_ok(), "release owned response: {kind}: {released:?}");
+        let error = result.expect("owned request worker").expect_err("late response cannot settle a rebound pair");
+        let SessionGatewayError::Internal(message) = error else { panic!("expected identity refusal: {kind}"); };
+        assert!(message.contains("canonical identity"), "{kind}: {message}");
+        let refused = human_identity_stored_rows(&path);
+        assert_eq!(refused.0, retained.0, "late response cannot change metadata/coverage: {kind}");
+        assert_eq!(refused.2, retained.2, "late response cannot change blobs: {kind}");
+        if matches!(kind, "send" | "resource-upload") {
+            assert_eq!(refused.1.len(), 1);
+            assert_eq!((&refused.1[0].0, &refused.1[0].1), (&retained.1[0].0, &retained.1[0].1));
+            let mut expected: serde_json::Value = serde_json::from_str(&retained.1[0].2).unwrap();
+            let mut actual: serde_json::Value = serde_json::from_str(&refused.1[0].2).unwrap();
+            assert_eq!(actual["id"], "human-message:pair-in-flight");
+            assert_eq!(actual["delivery"], "pending");
+            assert!(actual.get("remoteMessageId").is_none());
+            assert!(actual.get("remoteDispatchAttachments").is_none());
+            for field in ["delivery", "lastDispatchError", "lastDispatchFailedAtMs"] {
+                expected.as_object_mut().unwrap().remove(field);
+                actual.as_object_mut().unwrap().remove(field);
+            }
+            assert_eq!(actual, expected, "only retained failure diagnostics may change: {kind}");
+            assert!(events.lock().unwrap().iter().all(|event| {
+                event.get("entries").and_then(serde_json::Value::as_array).is_none_or(|entries| {
+                    entries.iter().all(|entry| entry.get("remoteMessageId").is_none())
+                })
+            }), "no canonical success event after refusal: {kind}");
+        } else {
+            assert_eq!(refused.1, retained.1, "history/reaction cannot mutate retained transcript: {kind}");
+            assert!(events.lock().unwrap().is_empty(), "no successful mutation after identity loss: {kind}");
+        }
+        assert!(!root.join("agents/human-message-resources").exists(), "no bytes published after identity loss: {kind}");
+        assert_eq!(fs::read(&upload_path).unwrap(), vec![1, 2, 3, 4]);
+        subscription.unsubscribe();
+        write_human_identity_metadata(&path, &admitted_metadata);
+        runtime.shutdown(); drop((owner, runtime));
+        let restored = human_message_fixture_runtime(&root, &url);
+        let recovered = match kind {
+            "send" | "resource-upload" => dispatch(&restored, "retryHumanMessage", json!({"conversationId":id,"clientNonce":"pair-in-flight"})),
+            "reaction" => dispatch(&restored, "reactHumanMessage", json!({"conversationId":id,"entryId":"human-server-message:54","emoji":"👍"})),
+            _ => dispatch(&restored, "syncHumanConversation", json!({"conversationId":id}))[0].clone(),
+        };
+        assert_eq!(recovered["id"], if matches!(kind, "send" | "resource-upload") { "human-server-message:53" } else { "human-server-message:54" });
+        if kind == "reaction" {
+            assert_eq!(recovered["remoteReactions"][0]["reactedByMe"], true);
+        }
+        let rows = restored.read_human_conversation_transcript(&id).unwrap();
+        assert_eq!(rows, vec![recovered]);
+        restored.shutdown(); drop(restored);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reopened.read_human_conversation_transcript(&id).unwrap(), rows);
+        reopened.shutdown(); drop(reopened);
+        let requests = server.join().expect("bounded service/refusal/recovery fixture");
+        assert_eq!(requests.len(), if matches!(kind, "resource-download" | "resource-upload") { 4 } else { 2 }, "{kind}");
+        match kind {
+            "send" => {
+                assert!(requests.iter().all(|request| request.starts_with("POST /api/social/messages ")));
+                assert_eq!(fixture_request_json(&requests[0])["clientRequestId"], fixture_request_json(&requests[1])["clientRequestId"]);
+            }
+            "reaction" => assert!(requests.iter().all(|request| request.starts_with("POST /api/social/messages/54/reactions "))),
+            "resource-download" => {
+                assert!(requests[0].contains("&afterId=0"));
+                assert!(requests[1].starts_with("GET /api/social/message-resources/pair-bound-resource "));
+                assert!(requests[2].contains("&afterId=0"), "rejected page never advances coverage");
+                assert!(requests[3].starts_with("GET /api/social/message-resources/pair-bound-resource "));
+            }
+            "resource-upload" => {
+                assert!(requests[0].starts_with("POST /api/social/message-resources "));
+                assert!(requests[1].starts_with("POST /api/social/message-resources "));
+                assert!(requests[2].starts_with("POST /api/social/messages "));
+                assert_eq!(fixture_request_json(&requests[2])["clientRequestId"], "pair-in-flight");
+                assert!(requests[3].starts_with("GET /api/social/message-resources/pair-bound-resource "));
+            }
+            _ => assert!(requests.iter().all(|request| request.starts_with("GET /api/social/messages?") && request.contains("&afterId=0"))),
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn shipping_human_forward_rebound_pair_keeps_request_reserved_and_denies_without_dispatch() {
+    let root = temp_root("forward-rebound-canonical-pair");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post(); child.terminate(); server.release_first_post(); drop(child);
+    let mut runtime = human_message_fixture_runtime(&root, &server.url);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let first = args["destinationConversationIds"][0].as_str().unwrap();
+    let second = args["destinationConversationIds"][1].as_str().unwrap();
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let source_path = source_owner.db_path().to_path_buf();
+    let original = source_owner.read_metadata().unwrap();
+    let source_rows = source_owner.get_transcript_entries().unwrap();
+    let pending = runtime.read_human_conversation_transcript(first).unwrap();
+    let admitted = original["humanForwardBatches"][0].clone();
+    let mut rebound = original.clone();
+    // Local membership remains true; only canonical pair binding can reject
+    // this source and still retain the original request reservation.
+    rebound["participantIds"] = json!(["1", "9"]);
+    write_human_identity_metadata(&source_path, &rebound);
+    drop(source_owner);
+    for lifetime in ["cached", "reopened"] {
+        assert!(runtime.open_human_conversation_db_owner(source).is_err(), "{lifetime}");
+        let denied = forward_gateway_result(&runtime, &args).expect("retained source yields durable policy denial");
+        assert!(denied["destinations"].as_array().unwrap().iter().all(|target|
+            target["status"] == "failed" && target["error"].as_str().unwrap().contains("canonical identity")), "{lifetime}");
+        let journal = read_forward_metadata_from_disk(&root, source)["humanForwardBatches"][0].clone();
+        for field in ["version", "accountId", "issuer", "requestId", "sourceConversationId", "sourceEntryId", "text", "attachments", "context"] {
+            assert_eq!(journal[field], admitted[field], "immutable retained batch {field}/{lifetime}");
+        }
+        for (before, after) in admitted["destinations"].as_array().unwrap().iter().zip(journal["destinations"].as_array().unwrap()) {
+            assert_eq!(after["conversationId"], before["conversationId"]);
+            assert_eq!(after["clientNonce"], before["clientNonce"]);
+            assert_eq!(after["completed"], false);
+        }
+        let mut stolen = args.clone();
+        stolen["sourceConversationId"] = json!(second);
+        assert!(forward_gateway_result(&runtime, &stolen).is_err(), "rebound source still reserves request ID/{lifetime}");
+        runtime.sync_human_conversation(first).expect("readable source denial does not starve destination history");
+        assert_eq!(runtime.read_human_conversation_transcript(first).unwrap(), pending,
+            "generic outbox recovery cannot adopt denied source-owned intent/{lifetime}");
+        assert!(runtime.read_human_conversation_transcript(second).unwrap().is_empty());
+        assert_eq!(server.post_count(), 1, "no message after source pair loss/{lifetime}");
+        assert_eq!(server.resource_post_count(), 0, "no resource after source pair loss/{lifetime}");
+        runtime.shutdown(); drop(runtime);
+        runtime = human_message_fixture_runtime(&root, &server.url);
+    }
+    assert_eq!(server.history_count(), 2);
+    let mut restored = read_forward_metadata_from_disk(&root, source);
+    restored["participantIds"] = original["participantIds"].clone();
+    write_human_identity_metadata(&source_path, &restored);
+    assert_eq!(runtime.read_human_conversation_transcript(source).unwrap(), source_rows);
+    let result = forward_gateway_result(&runtime, &args).expect("original pair resumes retained batch");
+    assert!(result["destinations"].as_array().unwrap().iter().all(|target| target["status"] == "sent"));
+    assert_forward_settled(&runtime, &args);
+    assert_eq!(server.post_count(), 3, "accepted first nonce replays once and untouched second target sends once");
+    runtime.shutdown(); drop(runtime);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    assert_eq!(forward_gateway_result(&reopened, &args).unwrap(), result);
+    assert_eq!(server.post_count(), 3);
+    reopened.shutdown(); drop(reopened);
+    server.finish();
+    fs::remove_dir_all(root).unwrap();
+}
+
+fn assert_forward_source_pair_response_wait(label: &str, boundary: &'static str) {
+    let root = temp_root(label);
+    let files = forward_attachment_files(&root, 2);
+    let (accepted, waiting) = std::sync::mpsc::channel();
+    let (release, resume) = std::sync::mpsc::channel();
+    let server = ForwardHttpFixture::start_with_response_pause(false, Some((boundary, accepted, resume)));
+    let args = prepare_forward_attachment_process(&root, &server.url, &files);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let first = args["destinationConversationIds"][0].as_str().unwrap();
+    let second = args["destinationConversationIds"][1].as_str().unwrap();
+    let at_upload = boundary == "POST /api/social/message-resources ";
+    let at_download = boundary == "GET /api/social/message-resources/";
+    server.observe_snapshot_staging(&root, source);
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let source_rows = source_owner.get_transcript_entries().unwrap();
+    let request_runtime = Arc::clone(&runtime);
+    let request_args = args.clone();
+    let request = thread::spawn(move || forward_gateway_result(&request_runtime, &request_args));
+    let observed = waiting.recv_timeout(std::time::Duration::from_secs(15));
+    if observed.is_err() {
+        let _ = release.send(());
+        let result = request.join();
+        panic!("forward never reached {boundary}: {observed:?}; result: {result:?}");
+    }
+    let admitted = source_owner.read_metadata().unwrap();
+    let original_batch = admitted["humanForwardBatches"][0].clone();
+    let snapshots = assert_forward_staged_bytes(&root, &args, &files, &server);
+    let pending = runtime.read_human_conversation_transcript(first).unwrap();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["clientNonce"], original_batch["destinations"][0]["clientNonce"]);
+    assert_eq!(server.resource_post_count(), if at_upload { 1 } else { 2 });
+    assert_eq!(server.post_count(), if at_upload { 0 } else { 1 });
+    let admitted_requests = server.state.lock().unwrap().requests.len();
+    let mut rebound = admitted.clone();
+    // The destination remains authorized and local membership is unchanged.
+    // Rechecking only the destination cannot detect this source substitution.
+    rebound["participantIds"] = json!(["1", "9"]);
+    write_human_identity_metadata(source_owner.db_path(), &rebound);
+    let released = release.send(());
+    let result = request.join();
+    assert!(released.is_ok(), "release the owned service wait: {boundary}");
+    let denied = result.expect("owned forward worker").expect("durable source-denial envelope");
+    assert!(denied["destinations"].as_array().unwrap().iter().all(|target|
+        target["status"] == "failed" && target["error"].as_str().unwrap().contains("canonical identity")), "{boundary}");
+    assert_eq!(server.state.lock().unwrap().requests.len(), admitted_requests,
+        "source loss permits no further resource/message/download request: {boundary}");
+    assert!(!root.join("agents/human-message-resources").exists(),
+        "a rejected response publishes no resource bytes: {boundary}");
+    let retained = runtime.read_human_conversation_transcript(first).unwrap();
+    assert_eq!(retained.len(), 1);
+    for key in ["id", "content", "clientNonce", "attachments", "forwardContext", "forwardBatchOwned", "remoteDispatchAttachments"] {
+        assert_eq!(retained[0][key], pending[0][key], "retain admitted outbox {key}/{boundary}");
+    }
+    assert_eq!(retained[0]["delivery"], "pending");
+    assert!(retained[0].get("remoteMessageId").is_none());
+    assert!(retained[0]["lastDispatchError"].as_str().unwrap().contains("canonical identity"));
+    assert!(runtime.read_human_conversation_transcript(second).unwrap().is_empty());
+    let denied_metadata = read_forward_metadata_from_disk(&root, source);
+    let denied_batch = &denied_metadata["humanForwardBatches"][0];
+    assert_forward_intent_unchanged(&original_batch, denied_batch);
+    assert!(denied_batch["destinations"].as_array().unwrap().iter().all(|target|
+        target["completed"] == false && target["error"].as_str().unwrap().contains("canonical identity")));
+    assert_eq!(source_owner.get_transcript_entries().unwrap(), source_rows);
+    for (snapshot, (_, original, bytes)) in snapshots.iter().zip(files.iter()) {
+        assert_eq!(fs::read(snapshot).unwrap(), *bytes, "source denial retains pinned bytes");
+        fs::remove_file(original).unwrap();
+    }
+    runtime.shutdown(); drop((source_owner, runtime));
+
+    let blocked = human_message_fixture_runtime(&root, &server.url);
+    let replay = forward_gateway_result(&blocked, &args).expect("cold retained journal denial");
+    assert_eq!(replay, denied);
+    let nonce = original_batch["destinations"][0]["clientNonce"].as_str().unwrap();
+    assert!(dispatch_production_session_gateway_call(&blocked, "retryHumanMessage",
+        &json!({"conversationId":first,"clientNonce":nonce})).unwrap().is_err());
+    assert_eq!(blocked.read_human_conversation_transcript(first).unwrap(), retained);
+    assert_eq!(server.state.lock().unwrap().requests.len(), admitted_requests);
+    blocked.shutdown(); drop(blocked);
+
+    // Restore only the source pair on the current journal; never replace its
+    // retained denial/progress with the older pre-response metadata snapshot.
+    let mut restored_metadata = read_forward_metadata_from_disk(&root, source);
+    restored_metadata["participantIds"] = admitted["participantIds"].clone();
+    write_human_identity_metadata(&forward_db_path(&root, source), &restored_metadata);
+    let restored = human_message_fixture_runtime(&root, &server.url);
+    let first_result = dispatch(&restored, "retryHumanMessage", json!({"conversationId":first,"clientNonce":nonce}));
+    assert_eq!(first_result["clientNonce"], nonce);
+    assert_eq!(first_result["content"], pending[0]["content"]);
+    assert_eq!(first_result["forwardContext"], pending[0]["forwardContext"]);
+    let completed = forward_gateway_result(&restored, &args).expect("resume original batch after source repair");
+    assert!(completed["destinations"].as_array().unwrap().iter().all(|target| target["status"] == "sent"));
+    assert_forward_settled(&restored, &args);
+    assert_eq!(server.post_count(), if at_upload { 2 } else { 3 }, "retain accepted message nonce");
+    assert_eq!(server.resource_post_count(), if at_upload { 5 } else { 4 },
+        "reuse complete receipts; partial-prefix persistence remains a separate gap");
+    {
+        let state = server.state.lock().unwrap();
+        assert_eq!(state.accepted.len(), 2, "one canonical service message per original target nonce");
+        let downloads = state.requests.iter().filter(|request|
+            request.starts_with("GET /api/social/message-resources/")).count();
+        assert_eq!(downloads, if at_download { 5 } else { 4 });
+        let uploads = &state.uploaded_files[usize::from(at_upload)..];
+        assert_eq!(uploads.len(), 4);
+        for (index, (name, bytes)) in uploads.iter().enumerate() {
+            assert_eq!(name, &files[index % 2].0);
+            assert_eq!(bytes, &files[index % 2].2, "recovery uploads original pinned bytes");
+        }
+        for message in state.accepted.values() {
+            for (resource, (_, _, bytes)) in message["attachments"].as_array().unwrap().iter().zip(files.iter()) {
+                assert_eq!(&state.resources[resource["resourceId"].as_str().unwrap()].1, bytes);
+            }
+        }
+    }
+    for (snapshot, (_, original, bytes)) in snapshots.iter().zip(files.iter()) {
+        assert_eq!(fs::read(snapshot).unwrap(), *bytes);
+        assert!(!original.exists(), "recovery never recreates deleted mutable input");
+    }
+    let completed_requests = server.state.lock().unwrap().requests.len();
+    restored.shutdown(); drop(restored);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    assert_eq!(forward_gateway_result(&reopened, &args).unwrap(), completed);
+    assert_forward_settled(&reopened, &args);
+    assert_eq!(server.state.lock().unwrap().requests.len(), completed_requests);
+    reopened.shutdown(); drop(reopened);
+    server.finish();
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn shipping_human_forward_source_pair_change_during_upload_stops_later_io_and_recovers() {
+    assert_forward_source_pair_response_wait(
+        "forward-source-pair-during-upload", "POST /api/social/message-resources ",
+    );
+}
+
+#[test]
+fn shipping_human_forward_source_pair_change_during_message_or_download_wait_preserves_intent() {
+    for (label, boundary) in [
+        ("forward-source-pair-during-message", "POST /api/social/messages "),
+        ("forward-source-pair-during-download", "GET /api/social/message-resources/"),
+    ] {
+        assert_forward_source_pair_response_wait(label, boundary);
+    }
 }

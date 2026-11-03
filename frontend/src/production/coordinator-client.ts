@@ -1,4 +1,7 @@
 import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
+// The local pre-admission Human retry uses sendHumanMessage but must admit
+// its raw settlement through the same canonical contract before projection.
+export { parseCoordinatorHumanMessageRetryResponse } from "../../../source/shared/rpc/coordinator";
 import {
   parseCoordinatorHumanTranscriptPageRequest,
   parseCoordinatorHumanMessageRetryRequest,

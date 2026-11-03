@@ -26,6 +26,61 @@ test.afterAll(async () => { await server?.close(); });
 const messageRow = (page: Page, id: string) => page.getByRole('log', { name: 'Conversation transcript' }).locator(`[data-entry-id="${id}"]`);
 const domIds = (page: Page) => page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id]').evaluateAll((entries) => entries.map((entry) => entry.getAttribute('data-entry-id')));
 
+async function installReactionKeyboardDiagnostics(page: Page) {
+  await page.evaluate(() => {
+    const trace: Record<string, unknown>[] = [];
+    const describe = (element: EventTarget | null) => {
+      if (!(element instanceof Element)) return null;
+      const rect = element.getBoundingClientRect();
+      return { tag: element.tagName, id: element.id, label: element.getAttribute('aria-label'),
+        role: element.getAttribute('role'), className: element.getAttribute('class'),
+        entry: element.closest('[data-entry-id]')?.getAttribute('data-entry-id'),
+        connected: element.isConnected, hidden: getComputedStyle(element).visibility,
+        display: getComputedStyle(element).display,
+        bounds: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } };
+    };
+    const record = (phase: string, event?: Event, extra: Record<string, unknown> = {}) => {
+      if (trace.length === 400) trace.shift();
+      trace.push({ phase, time: performance.now(), key: event instanceof KeyboardEvent ? event.key : undefined,
+        shift: event instanceof KeyboardEvent ? event.shiftKey : undefined,
+        defaultPrevented: event?.defaultPrevented, target: describe(event?.target ?? null),
+        active: describe(document.activeElement), ...extra });
+    };
+    const capture = (event: KeyboardEvent) => {
+      if (!['Tab', 'Enter', 'Escape'].includes(event.key)) return;
+      record('keydown-capture', event);
+      queueMicrotask(() => record('keydown-microtask', event));
+      requestAnimationFrame(() => record('keydown-frame', event));
+    };
+    const bubble = (event: KeyboardEvent) => {
+      if (['Tab', 'Enter', 'Escape'].includes(event.key)) record('keydown-bubble', event);
+    };
+    const focusEvent = (event: FocusEvent) => record(event.type, event, { related: describe(event.relatedTarget) });
+    const originalFocus = HTMLElement.prototype.focus;
+    function observedFocus(this: HTMLElement, options?: FocusOptions) {
+      const relevant = this.matches('.sand-emoji-cell, .sand-message-hover-actions__button');
+      if (relevant) record('focus-call-before', undefined, { candidate: describe(this), stack: new Error().stack });
+      originalFocus.call(this, options);
+      if (relevant) record('focus-call-after', undefined, { candidate: describe(this) });
+    }
+    HTMLElement.prototype.focus = observedFocus;
+    window.addEventListener('keydown', capture, true);
+    document.addEventListener('keydown', bubble);
+    document.addEventListener('focusin', focusEvent, true);
+    document.addEventListener('focusout', focusEvent, true);
+    (window as unknown as { reactionKeyboardDiagnostics: { trace: Record<string, unknown>[]; dispose(): void } }).reactionKeyboardDiagnostics = {
+      trace,
+      dispose() {
+        window.removeEventListener('keydown', capture, true);
+        document.removeEventListener('keydown', bubble);
+        document.removeEventListener('focusin', focusEvent, true);
+        document.removeEventListener('focusout', focusEvent, true);
+        if (HTMLElement.prototype.focus === observedFocus) HTMLElement.prototype.focus = originalFocus;
+      },
+    };
+  });
+}
+
 async function openReactionPicker(page: Page, id: string) {
   const row = messageRow(page, id);
   // Rows span the transcript width; only the actual message anchor reveals
@@ -83,6 +138,14 @@ test.afterEach(async ({ page }, info) => {
   await info.attach('renderer-errors', { body: JSON.stringify(errors), contentType: 'application/json' });
   await info.attach('coordinator-requests', { body: JSON.stringify(await page.evaluate(() => window.nativeMessageFixture?.requests ?? []).catch(() => []), null, 2), contentType: 'application/json' });
   await info.attach('approval-clears', { body: JSON.stringify(await page.evaluate(() => window.nativeMessageFixture?.approvalClears ?? []).catch(() => [])), contentType: 'application/json' });
+  const keyboardTrace = await page.evaluate(() => {
+    const diagnostics = (window as unknown as { reactionKeyboardDiagnostics?: { trace: Record<string, unknown>[]; dispose(): void } }).reactionKeyboardDiagnostics;
+    diagnostics?.dispose();
+    return diagnostics?.trace ?? [];
+  }).catch(() => []);
+  if (keyboardTrace.length > 0) await info.attach('reaction-keyboard-focus-diagnostic', {
+    body: JSON.stringify(keyboardTrace, null, 2), contentType: 'application/json',
+  });
   expect(errors).toEqual([]);
 });
 
@@ -297,6 +360,7 @@ for (const oldPhase of ['in-flight', 'queued']) {
 test('NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation', async ({ page }, info) => {
   await openAlice(page);
   await loadOlder(page);
+  await installReactionKeyboardDiagnostics(page);
   await openReactionPicker(page, 'm1');
   await page.getByRole('dialog', { name: 'Choose reaction' }).getByRole('button', { name: 'React with 👍', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Choose reaction' })).toHaveCount(0);
@@ -423,3 +487,300 @@ test('HRR-05 persisted Human Resend uses one original Host nonce across refusal 
   expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'sendHumanMessage'))).toEqual([]);
   await milestone(page, info, 'human-durable-retry-settled');
 });
+
+async function flushRenderer(page: Page) {
+  // Replies first settle the actual client promise; two layout frames then
+  // expose any deferred React update before asserting absence of stale output.
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+}
+
+async function beginHumanRetry(page: Page, nonce: string) {
+  await openAlice(page);
+  await loadOlder(page);
+  await page.evaluate((original) => window.nativeMessageFixture.stageFailedHuman(original), nonce);
+  const failed = messageRow(page, `human-message:${nonce}`);
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(1);
+  return failed;
+}
+
+for (const outcome of ['success', 'failure'] as const) {
+  test(`HRR-06 conversation A-B-A ignores a previous retry ${outcome} and preserves the current draft`, async ({ page }, info) => {
+    const nonce = `retry-selection-${outcome}`;
+    const failed = await beginHumanRetry(page, nonce);
+    await page.locator('[contenteditable="true"]').fill('Current Alice draft');
+    await page.getByRole('button', { name: 'Bob', exact: true }).click();
+    await expect(messageRow(page, 'b1')).toBeVisible();
+    await page.getByRole('button', { name: 'Alice', exact: true }).click();
+    await expect(failed).toBeVisible();
+    await expect(page.locator('[contenteditable="true"]')).toHaveText('Current Alice draft');
+    await page.evaluate((result) => {
+      if (result === 'success') window.nativeMessageFixture.settleHumanRetry(0);
+      else window.nativeMessageFixture.rejectHumanRetry(0);
+    }, outcome);
+    await flushRenderer(page);
+    await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+    await expect(messageRow(page, 'human-server-message:901')).toHaveCount(0);
+    await expect(page.getByText(/^Human retry unavailable:/)).toHaveCount(0);
+    await expect(page.locator('[contenteditable="true"]')).toHaveText('Current Alice draft');
+    await milestone(page, info, `retry-selection-aba-${outcome}`);
+    if (outcome === 'success') {
+      // Ignoring the expired UI receipt does not cancel the Host-owned send.
+      // A fresh root recovers the durable canonical row through normal history.
+      await page.reload();
+      await expect(messageRow(page, 'human-server-message:901')).toContainText('Original pending Human text');
+      await expect(failed).toHaveCount(0);
+    } else {
+      await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+      await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+      await page.evaluate(() => window.nativeMessageFixture.settleHumanRetry(1));
+      await expect(messageRow(page, 'human-server-message:901')).toBeVisible();
+    }
+  });
+}
+
+test('HRR-06 a retry waiting for Coordinator readiness cannot post after leaving and returning to its conversation', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  await page.getByRole('button', { name: 'Bob', exact: true }).click();
+  await expect(messageRow(page, 'b1')).toBeVisible();
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  const nonce = 'retry-before-frame';
+  await page.evaluate((original) => {
+    window.nativeMessageFixture.stageFailedHuman(original);
+    window.nativeMessageFixture.pauseReadiness();
+  }, nonce);
+  const failed = messageRow(page, `human-message:${nonce}`);
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await page.getByRole('button', { name: 'Bob', exact: true }).click();
+  await expect(messageRow(page, 'b1')).toBeVisible();
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  await expect(failed).toBeVisible();
+  await page.locator('[contenteditable="true"]').fill('Draft while the port reconnects');
+  await page.evaluate(() => window.nativeMessageFixture.resumeReadiness());
+  await flushRenderer(page);
+  expect(await page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(0);
+  await expect(page.getByText(/^Human retry unavailable:/)).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Draft while the port reconnects');
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(1);
+  await page.evaluate(() => window.nativeMessageFixture.settleHumanRetry(0));
+  await expect(messageRow(page, 'human-server-message:901')).toBeVisible();
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Draft while the port reconnects');
+  await milestone(page, info, 'retry-before-frame-selection-fence');
+});
+
+for (const outcome of ['success', 'failure'] as const) {
+  test(`HRR-06 account A-B-A rejects late retry ${outcome} while its replacement attempt stays single-flight`, async ({ page }, info) => {
+    const nonce = `retry-account-${outcome}`;
+    const failed = await beginHumanRetry(page, nonce);
+    await page.evaluate(() => window.nativeMessageFixture.setAccount('next-account'));
+    await expect(messageRow(page, 'new-a')).toBeVisible();
+    await page.evaluate(() => window.nativeMessageFixture.setAccount('local'));
+    await flushRenderer(page);
+    await expect(messageRow(page, 'new-a')).toBeVisible();
+    await page.evaluate((original) => {
+      window.nativeMessageFixture.stageFailedHuman(original);
+      window.nativeMessageFixture.mutate('human:a', `human-message:${original}`, { content: 'Replacement account lifetime row' });
+    }, nonce);
+    await expect(failed).toContainText('Replacement account lifetime row');
+    await page.locator('[contenteditable="true"]').fill('New account lifetime draft');
+    await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+    await page.evaluate((result) => {
+      if (result === 'success') window.nativeMessageFixture.replyHumanRetry(0);
+      else window.nativeMessageFixture.rejectHumanRetry(0);
+    }, outcome);
+    await flushRenderer(page);
+    await expect(failed).toContainText('Replacement account lifetime row');
+    await expect(messageRow(page, 'human-server-message:901')).toHaveCount(0);
+    await expect(page.getByText(/^Human retry unavailable:/)).toHaveCount(0);
+    await failed.getByRole('button', { name: 'Resend', exact: true }).dblclick();
+    expect(await page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+    await page.evaluate(() => window.nativeMessageFixture.settleHumanRetry(1));
+    await expect(messageRow(page, 'human-server-message:901')).toContainText('Replacement account lifetime row');
+    await expect(page.locator('[contenteditable="true"]')).toHaveText('New account lifetime draft');
+    await milestone(page, info, `retry-account-aba-${outcome}`);
+  });
+}
+
+test('HRR-05 a same-nonce retry receipt from another author cannot consume the local failed row or draft', async ({ page }, info) => {
+  const nonce = 'retry-author-collision';
+  const failed = await beginHumanRetry(page, nonce);
+  await page.locator('[contenteditable="true"]').fill('Keep this local draft');
+  await page.evaluate(() => window.nativeMessageFixture.replyHumanRetry(0, { authorId: 'peer-a' }));
+  await expect(page.getByText('Human retry unavailable: retryHumanMessage did not return a matching canonical settlement', { exact: true })).toBeVisible();
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(messageRow(page, 'human-server-message:901')).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Keep this local draft');
+  expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toEqual([]);
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+  await page.evaluate(() => window.nativeMessageFixture.settleHumanRetry(1));
+  await expect(messageRow(page, 'human-server-message:901')).toContainText('Original pending Human text');
+  await expect(failed).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Keep this local draft');
+  await milestone(page, info, 'retry-receipt-author-fence');
+});
+
+test('HRR-06 a local pre-admission retry retains its nonce and committed attachment after selection expiry', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  await page.evaluate(() => window.nativeMessageFixture.failNextAttachmentCommit());
+  await page.locator('input[type="file"]').setInputFiles({ name: 'retry.txt', mimeType: 'text/plain', buffer: Buffer.from('original file') });
+  await expect(page.locator('.sand-prompt-form')).toContainText('retry.txt');
+  await page.locator('[contenteditable="true"]').fill('Original failed composer send');
+  await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  const failed = page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id^="pending-"]');
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  const pendingId = await failed.getAttribute('data-entry-id');
+  expect(pendingId).not.toBeNull();
+  const originalNonce = pendingId!.slice('pending-'.length);
+  expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(0);
+  await page.locator('[contenteditable="true"]').fill('Newer composer draft remains untouched');
+  await page.evaluate(() => window.nativeMessageFixture.holdNextAttachmentCommit());
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.heldAttachmentCommitCount())).toBe(1);
+  await page.getByRole('button', { name: 'Bob', exact: true }).click();
+  await expect(messageRow(page, 'b1')).toBeVisible();
+  await page.getByRole('button', { name: 'Alice', exact: true }).click();
+  await page.evaluate(() => window.nativeMessageFixture.releaseAttachmentCommits());
+  await flushRenderer(page);
+  expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(0);
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Newer composer draft remains untouched');
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
+  const requests = await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage'));
+  expect(requests).toHaveLength(1);
+  expect(requests[0].args.clientNonce).toBe(originalNonce);
+  expect(requests[0].args.text).toBe('Original failed composer send');
+  expect(requests[0].args.attachments).toEqual([{ path: '/committed/retry.txt', name: 'retry.txt' }]);
+  expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toHaveLength(2);
+  await page.evaluate(() => { window.nativeMessageFixture.publishSend(0); window.nativeMessageFixture.settleSend(0); });
+  await expect(messageRow(page, 'human-server-message:100')).toContainText('Original failed composer send');
+  await expect(failed).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Newer composer draft remains untouched');
+  expect(await page.evaluate(() => window.nativeMessageFixture.approvalClears)).toEqual([]);
+  await milestone(page, info, 'local-retry-selection-expiry');
+});
+
+test('HRR-06 unmount retires a pending retry presentation without another dispatch', async ({ page }) => {
+  await beginHumanRetry(page, 'retry-unmount');
+  await page.evaluate(() => {
+    window.nativeMessageFixture.unmount();
+    window.nativeMessageFixture.replyHumanRetry(0);
+  });
+  await flushRenderer(page);
+  await expect(page.getByRole('log', { name: 'Conversation transcript' })).toHaveCount(0);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'retryHumanMessage'))).toHaveLength(1);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage'))).toEqual([]);
+  expect(await page.evaluate(() => window.nativeMessageFixture.approvalClears)).toEqual([]);
+});
+
+for (const outcome of ['failure', 'selection-expired-success'] as const) {
+  test(`HRR-06 local retry ${outcome} advances its queued successor once without reconnecting`, async ({ page }, info) => {
+    await openAlice(page);
+    await loadOlder(page);
+    await page.evaluate(() => window.nativeMessageFixture.failNextAttachmentCommit());
+    await page.locator('input[type="file"]').setInputFiles({ name: 'queued-retry.txt', mimeType: 'text/plain', buffer: Buffer.from('retained original file') });
+    await expect(page.locator('.sand-prompt-form')).toContainText('queued-retry.txt');
+    await page.locator('[contenteditable="true"]').fill('Original retry before successor');
+    await page.getByRole('button', { name: 'Send message', exact: true }).click();
+    const initial = page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id^="pending-"]');
+    await expect(initial.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+    const originalId = await initial.getAttribute('data-entry-id');
+    expect(originalId).not.toBeNull();
+    const original = messageRow(page, originalId!);
+    await original.getByRole('button', { name: 'Resend', exact: true }).click();
+    // The original retry has committed its file and entered Host. Its reply
+    // remains held while a distinct text-only successor enters the same lane.
+    await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
+    expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toHaveLength(2);
+    await page.getByRole('button', { name: 'Remove queued-retry.txt', exact: true }).click();
+    await expect(page.locator('.sand-prompt-form')).not.toContainText('queued-retry.txt');
+    await page.locator('[contenteditable="true"]').fill('Queued successor must advance');
+    await page.getByRole('button', { name: 'Send message', exact: true }).click();
+    const successor = page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id^="pending-"]').filter({ hasText: 'Queued successor must advance' });
+    await expect(successor).toContainText('Will send when reconnected');
+    expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
+    await page.locator('[contenteditable="true"]').fill('New unsent draft after successor');
+
+    if (outcome === 'selection-expired-success') {
+      await page.getByRole('button', { name: 'Bob', exact: true }).click();
+      await expect(messageRow(page, 'b1')).toBeVisible();
+      await page.getByRole('button', { name: 'Alice', exact: true }).click();
+      await expect(original).toBeVisible();
+      await page.evaluate(() => window.nativeMessageFixture.settleSend(0));
+    } else {
+      await page.evaluate(() => window.nativeMessageFixture.rejectSend(0));
+    }
+
+    await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(2);
+    await expect(original).toContainText('Original retry before successor');
+    await expect(original.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+    await expect(page.locator('[contenteditable="true"]')).toHaveText('New unsent draft after successor');
+    const requests = await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage'));
+    expect(requests).toHaveLength(2);
+    expect(requests.map((request) => request.args.text)).toEqual(['Original retry before successor', 'Queued successor must advance']);
+    expect(requests[0].args.clientNonce).toBe(originalId!.slice('pending-'.length));
+    expect(requests[1].args.clientNonce).not.toBe(requests[0].args.clientNonce);
+    expect(requests[0].args.attachments).toEqual([{ path: '/committed/queued-retry.txt', name: 'queued-retry.txt' }]);
+    expect(requests[1].args.attachments).toEqual([]);
+    expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'retryHumanMessage'))).toEqual([]);
+    await page.evaluate(() => { window.nativeMessageFixture.publishSend(1); window.nativeMessageFixture.settleSend(1); });
+    await expect(messageRow(page, 'human-server-message:101')).toContainText('Queued successor must advance');
+    await expect(successor).toHaveCount(0);
+    await expect(original).toContainText('Original retry before successor');
+    await expect(page.locator('[contenteditable="true"]')).toHaveText('New unsent draft after successor');
+    await flushRenderer(page);
+    expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(2);
+    await milestone(page, info, `local-retry-successor-${outcome}`);
+  });
+}
+
+for (const missingField of ['id', 'delivery'] as const) {
+  test(`HRR-05 local retry rejects a raw receipt missing ${missingField} before display defaults can settle it`, async ({ page }, info) => {
+    await openAlice(page);
+    await loadOlder(page);
+    await page.evaluate(() => window.nativeMessageFixture.failNextAttachmentCommit());
+    await page.locator('input[type="file"]').setInputFiles({ name: 'raw-receipt.txt', mimeType: 'text/plain', buffer: Buffer.from('original attachment') });
+    await expect(page.locator('.sand-prompt-form')).toContainText('raw-receipt.txt');
+    await page.locator('[contenteditable="true"]').fill('Original raw-receipt retry message');
+    await page.getByRole('button', { name: 'Send message', exact: true }).click();
+    const failed = page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id^="pending-"]');
+    await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+    const originalId = await failed.getAttribute('data-entry-id');
+    expect(originalId).not.toBeNull();
+    await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
+    await page.locator('[contenteditable="true"]').fill('New draft while retry receipt is pending');
+    await page.evaluate((field) => window.nativeMessageFixture.replySend(0, {}, [field]), missingField);
+    await expect(page.getByText('Human message retry did not settle; original draft and nonce are retained', { exact: true })).toBeVisible();
+    await expect(failed).toHaveAttribute('data-entry-id', originalId!);
+    await expect(failed).toContainText('Original raw-receipt retry message');
+    await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+    await expect(messageRow(page, 'entry-0')).toHaveCount(0);
+    await expect(messageRow(page, 'human-server-message:100')).toHaveCount(0);
+    await expect(page.locator('[contenteditable="true"]')).toHaveText('New draft while retry receipt is pending');
+    expect(await page.evaluate(() => window.nativeMessageFixture.approvalClears)).toEqual([]);
+    expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toHaveLength(2);
+    const requests = await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage'));
+    expect(requests).toHaveLength(1);
+    expect(requests[0].args.clientNonce).toBe(originalId!.slice('pending-'.length));
+    await milestone(page, info, `raw-retry-missing-${missingField}-rejected`);
+
+    // Malformed UI acknowledgement does not erase Host-admitted work. The
+    // unchanged valid ordinary transcript event still settles the same nonce.
+    await page.evaluate(() => window.nativeMessageFixture.publishSend(0));
+    await expect(messageRow(page, 'human-server-message:100')).toContainText('Original raw-receipt retry message');
+    await expect(failed).toHaveCount(0);
+    await expect(messageRow(page, 'entry-0')).toHaveCount(0);
+    await expect(page.locator('[contenteditable="true"]')).toHaveText('New draft while retry receipt is pending');
+    expect(await page.evaluate(() => window.nativeMessageFixture.approvalClears)).toEqual([]);
+    expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
+    expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'retryHumanMessage'))).toEqual([]);
+    await milestone(page, info, `raw-retry-missing-${missingField}-event-recovery`);
+  });
+}

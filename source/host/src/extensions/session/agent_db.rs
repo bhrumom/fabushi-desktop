@@ -390,7 +390,13 @@ impl SandAgentDb {
         let Some(raw) = self.read_kv("metadata")? else {
             return Ok(default_agent_metadata(&self.agent_dir_name));
         };
-        let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+        Self::decode_metadata(&raw)
+    }
+
+    // Human admission must validate and consume the same persisted value;
+    // a second metadata read is not the snapshot that was checked.
+    pub(super) fn decode_metadata(raw: &str) -> Result<serde_json::Value, AgentDbProjectionError> {
+        let bytes = decode_hex(raw).map_err(AgentDbProjectionError::MetadataHex)?;
         Ok(serde_json::from_slice(&bytes)?)
     }
 

@@ -66,6 +66,20 @@ Plugins/MCP/Computer/Automations capabilities retain their existing behavior.
   does not erase a Host-admitted durable send; normal transcript recovery later
   exposes its outcome. Reuse the NMR-50 optional current-scope admission contract
   at the existing client; do not create a second transport or account authority.
+- HRR-07: The existing Human Session owner must bind a readable persisted
+  conversation to its canonical participant-pair ID before it authorizes retry,
+  send, transcript/history/search, reaction or resource materialization. Use
+  the same order-independent ID algorithm as creation; check cached and cold
+  owners without replacing metadata, user content or pending work. Cold
+  admission retains the validated read-only opener. Recheck identity after
+  service waits before settlement side effects. A private structural-only
+  forward-journal reader may preserve the original request reservation and
+  account/issuer-qualified denial after source authorization changes; it must
+  not grant product read/send/resource authority. Valid participant reordering
+  or title edits remain compatible. This reconciles the independently committed
+  NMR-CONVERSATION-IDENTITY-01 design at `f3467c39e1258e2562ddbd7639c2617460a36f46`
+  with this branch's newer cold-store protection; it does not import that
+  branch's separate event-feed implementation or declare it accepted.
 
 ## Implementation and verification
 
@@ -90,6 +104,15 @@ concurrent changes by exact path identities and non-force expected-head CAS.
   behavior and all existing renderer/Transcript/Chromium checks. Build the actual
   renderer and Host through the existing workflow; packaged visual/a11y remains
   a separate final gate, not proven by controller tests.
+- HRR-AC-04: Real Session/SQLite and gateway HTTP fixtures refuse a changed
+  participant pair under the old ID in cached, fresh and restarted owners,
+  preserve stored bytes/rows, produce no unsafe network work, and recover after
+  valid metadata restoration. Include reversed-pair/title positive controls,
+  retained forward denial and a service response held across identity change.
+  Actual-root UI negatives cover selection A-to-B-to-A, account replacement,
+  late error/success, a same-nonce foreign-author response and an unstaged
+  retry whose request waits for readiness. Original and newer composer drafts
+  remain unchanged. Preserve all prior cases and exact-H Actions evidence.
 
 All executable validation is GitHub Actions only on the frozen containing H.
 Retain the actual afb34 compile failure (E0382 at the reaction-reopen cleanup),
@@ -111,3 +134,13 @@ stale-progress patches are superseded by current4f1070/94dc code and are not
 replayed. Full source/legal, real service, supported signed packages, complete
 UI/a11y/timing/security/performance/soak/upgrade/rollback/Bot regression and
 independent ACCEPT remain mandatory and open.
+
+### HRR-06 local retry queue continuation
+
+An explicit local pre-admission retry may coexist with a newer composer draft or queued send. When that retry fails or its presentation selection expires, the existing ComposerSubmissionQueue must advance eligible queued successors within the same account lifetime without reconnecting, retrying the failed record, clearing the newer draft, or allowing a later submission to overtake it. Account retirement must not dispatch the retired queue. HRR-AC-04 includes actual-root failure and selection-expiry scenarios with a held Host reply, one successor dispatch and preserved original intent.
+
+### HRR-07 retained forward authorization across service waits
+
+For a source-owned forward, the original source identity and policy as well as the destination identity remain required after each resource or message response wait, before later network work or successful settlement. Reauthorize the original source context under its account/issuer without introducing a lock held across HTTP. If permission is lost, preserve the batch, target nonce and pinned bytes, record the existing durable denial, and permit the same request to recover after source restoration and restart. HRR-AC-04 includes source mutation during upload and message-response waits; these are distinct from destination mutation tests.
+
+Local pre-admission retry receipts must satisfy the existing raw canonical Human settlement parser before display projection supplies defaults, and must correlate the captured author and original nonce. Missing or malformed canonical ID, remote identity, role or delivery cannot consume the failed row or newer draft. An eventual valid ordinary transcript event may still settle the already admitted Host work.
