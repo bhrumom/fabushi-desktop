@@ -7288,7 +7288,14 @@ fn shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_set
     let foreign = dispatch_production_session_gateway_call(&restarted, "retryHumanMessage",
         &json!({"conversationId":foreign_conversation_id,"clientNonce":"retry-resource-nonce"}))
         .expect("retry gateway").expect_err("foreign conversation cannot claim another conversation's nonce");
-    assert!(!foreign.to_string().is_empty());
+    assert!(
+        matches!(
+            foreign,
+            SessionGatewayError::Internal(message)
+                if message == "local Human identity is not a conversation participant"
+        ),
+        "foreign conversation retry must be rejected by the Session owner"
+    );
     assert_eq!(server.post_count(), 1, "a foreign conversation cannot reach the remote message endpoint");
     assert_eq!(server.resource_post_count(), 1, "a foreign conversation cannot re-upload the Human attachment");
     let settled = dispatch(&restarted, "retryHumanMessage", json!({
