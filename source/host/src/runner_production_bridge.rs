@@ -81,6 +81,7 @@ pub struct ProductionRunnerCompositionHooks {
 pub struct ProductionRunnerCompositionInput {
     pub provider: RoutedProvider,
     pub fabushi_model: Option<String>,
+    pub codex_model: Option<String>,
     pub fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     pub bridge: Arc<dyn RoutedToolBridge>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
@@ -123,6 +124,9 @@ pub fn create_production_runner_composition(
     );
     if let Some(model) = input.fabushi_model {
         composition = composition.with_fabushi_model(model);
+    }
+    if let Some(model) = input.codex_model {
+        composition = composition.with_codex_model(model);
     }
     if let Some(binding) = input.fabushi_request_binding {
         composition = composition.with_fabushi_request_binding(binding);

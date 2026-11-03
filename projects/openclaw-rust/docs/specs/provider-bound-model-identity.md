@@ -1065,6 +1065,17 @@ The protected existing `routed_send_acceptance_contract.rs` draft is not part of
 this implementation. No global completion or scoped verified flag is promoted
 by authored code, source review or an unrelated passing H.
 
+Decision **CMI-PRC-CHILD-01 — FIX / TEST_FLAW** (historical CMI draft
+identifier `PRC-ORACLE-03`; root integration source review
+at `6273f9252f308355526c68e833da8dea194bb6cf`, before repair): the App fixture's
+45-second parent deadline can unwind into `OwnedChild::drop`, which calls an
+unbounded `wait()` after kill. Bound that single Drop retirement observation to
+three seconds using `try_wait`. A kill request, observation error or exhausted
+deadline is not terminal completion; retain the root unless real terminal exit
+and the existing successful exact nonce/PID/completion receipt were observed.
+Preserve all four selected tests and every behavioral assertion. This repairs
+the test lifecycle only; it does not establish provider or restart acceptance.
+
 ### Provider checkpoint publication — OCRM-PROVIDER-CHECKPOINT-WRITE-v1
 
 Decision **CPW-DEFECT-01 — FIX / IMPL_BUG**. At source base

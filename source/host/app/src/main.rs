@@ -1406,6 +1406,7 @@ struct RoutedTurnModelAdmission {
     lease_guard: RoutedTurnLeaseGuard,
     persisted_session_model: SessionModelEntryState,
     fabushi_model: Option<String>,
+    codex_model: Option<String>,
     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     direction_epoch: u64,
     original_turn: Option<OriginalTurnReference>,
@@ -1522,6 +1523,15 @@ fn prepare_routed_turn_model_admission_with_guard(
     } else {
         None
     };
+    let codex_model = if provider == RoutedProvider::Codex {
+        Some(inference.port().resolve_codex_turn_model(
+            persisted_session_model.model_override.as_deref(),
+            persisted_session_model.provider_override.as_deref(),
+            explicit_model_id,
+        ).map_err(|error| GatewayCommandError::BadRequest(error.to_string()))?)
+    } else {
+        None
+    };
     let fabushi_request_binding = if provider == RoutedProvider::Fabushi {
         Some(capture_fabushi_responses_request_binding().map_err(|error| match &error {
             ProviderSessionError::Authentication(_) => GatewayCommandError::Unauthorized(error.to_string()),
@@ -1553,6 +1563,7 @@ fn prepare_routed_turn_model_admission_with_guard(
         lease_guard,
         persisted_session_model,
         fabushi_model,
+        codex_model,
         fabushi_request_binding,
         direction_epoch,
         original_turn,
@@ -9253,6 +9264,7 @@ fn start_routed_provider_task(
         lease_guard: routed_turn_lease_guard,
         persisted_session_model,
         fabushi_model,
+        codex_model,
         fabushi_request_binding,
         direction_epoch: turn_local_tool_direction_epoch,
         original_turn,
@@ -12117,7 +12129,8 @@ fn start_routed_provider_task(
             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
             let settle_labeling_auth = Arc::clone(&cursor_auth);
             let cursor_model_id = cursor_auth.requested_model().model_id;
-            let turn_model_id = fabushi_model.clone().unwrap_or_else(|| cursor_model_id.clone());
+            let turn_model_id = fabushi_model.clone().or_else(|| codex_model.clone())
+                .unwrap_or_else(|| cursor_model_id.clone());
             let web_executor: Arc<dyn WebToolExecutor> = Arc::new(
                 ProductionWebToolExecutor::new(Arc::clone(&inference), cursor_model_id),
             );
@@ -12196,6 +12209,7 @@ fn start_routed_provider_task(
                 ProductionRunnerCompositionInput {
                     provider,
                     fabushi_model: fabushi_model.clone(),
+                    codex_model: codex_model.clone(),
                     fabushi_request_binding: fabushi_request_binding.clone(),
                     bridge,
                     cursor_auth: Some(cursor_auth),
@@ -12702,7 +12716,7 @@ fn start_routed_provider_task(
                                 |system_prompt: &str, user_prompt: &str| -> Result<String, String> {
                                     let should_cancel = || memory_cancellation.is_cancelled();
                                     inference.run_turn_memory_prompt(
-                                        &data_dir, provider, fabushi_model.as_deref(),
+                                        &data_dir, provider, fabushi_model.as_deref(), codex_model.as_deref(),
                                         fabushi_request_binding.as_ref(), system_prompt,
                                         user_prompt, &should_cancel,
                                     ).map_err(|error| error.to_string())
@@ -17843,6 +17857,9 @@ mod tests {
 
     #[path = "config_secret_boundary_tests.rs"]
     mod config_secret_boundary_tests;
+
+    #[path = "codex_model_admission_tests.rs"]
+    mod codex_model_admission_tests;
 
     use super::{
         BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBrowserUaLog,

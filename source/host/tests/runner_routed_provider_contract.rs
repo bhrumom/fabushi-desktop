@@ -1086,6 +1086,7 @@ mod received_catalog {
                 RoutedProviderRun {
                     provider: RoutedProvider::ClaudeCode,
                     fabushi_model: None,
+                    codex_model: None,
                     fabushi_request_binding: None,
                     data_dir: root,
                     messages: &messages,

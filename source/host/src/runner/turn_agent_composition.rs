@@ -320,6 +320,7 @@ pub fn build_turn_subagent_types(
 pub struct TurnAgentComposition {
     provider: RoutedProvider,
     fabushi_model: Option<String>,
+    codex_model: Option<String>,
     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     bridge: Arc<dyn RoutedToolBridge>,
     cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
@@ -390,6 +391,7 @@ impl TurnAgentComposition {
         Self {
             provider,
             fabushi_model: None,
+            codex_model: None,
             fabushi_request_binding: None,
             bridge,
             cursor_auth: None,
@@ -446,6 +448,11 @@ impl TurnAgentComposition {
 
     pub fn with_fabushi_model(mut self, model: impl Into<String>) -> Self {
         self.fabushi_model = Some(model.into());
+        self
+    }
+
+    pub fn with_codex_model(mut self, model: impl Into<String>) -> Self {
+        self.codex_model = Some(model.into());
         self
     }
 
@@ -1088,6 +1095,7 @@ impl TurnAgentComposition {
             RoutedProviderRun {
                 provider: self.provider,
                 fabushi_model: self.fabushi_model.clone(),
+                codex_model: self.codex_model.clone(),
                 fabushi_request_binding: self.fabushi_request_binding.clone(),
                 data_dir,
                 messages,

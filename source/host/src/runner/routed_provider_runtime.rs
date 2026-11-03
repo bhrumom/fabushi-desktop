@@ -21,6 +21,7 @@ use crate::extensions::inference::provider_session::{
     ProviderSessionError, ProviderTokenUsage,
     ProviderToolStepReminderHook, RoutedMcpMetaToolDefinition, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
+    resolve_codex_request_model,
     run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps,
 };
 use crate::host_request_context::HostRequestContext;
@@ -479,6 +480,7 @@ fn sync_checkpoint_directory(directory: &Path) -> io::Result<()> {
 struct ProductionRoutedProviderAttemptExecutor<'a> {
     provider: RoutedProvider,
     fabushi_model: Option<String>,
+    codex_model: Option<String>,
     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     data_dir: &'a Path,
     messages: &'a [ProviderMessage],
@@ -543,6 +545,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
                 data_dir: self.data_dir,
                 typed_replay: self.typed_replay,
                 fabushi_model: self.fabushi_model.as_deref(),
+                codex_model: self.codex_model.as_deref(),
                 fabushi_request_binding: self.fabushi_request_binding.as_ref(),
                 cursor_auth: self.cursor_auth.clone(),
                 tools: self.tools,
@@ -587,6 +590,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
 pub struct RoutedProviderRun<'a> {
     pub provider: RoutedProvider,
     pub fabushi_model: Option<String>,
+    pub codex_model: Option<String>,
     pub fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     pub data_dir: &'a Path,
     pub messages: &'a [ProviderMessage],
@@ -612,6 +616,14 @@ pub fn run_routed_provider_in_runner(
     on_text_delta: &mut dyn FnMut(&str, &str),
 ) -> Result<String, ProviderSessionError> {
     run.cancellation.check()?;
+
+    // A direct invocation may have no Host-admitted model. Resolve its
+    // compatibility fallback once before tools and share it across attempts.
+    let codex_model = if run.provider == RoutedProvider::Codex {
+        Some(resolve_codex_request_model(run.codex_model.as_deref(), None)?)
+    } else {
+        None
+    };
 
     let system_prompt = render_request_context_system_prompt_with_capabilities(
         &run.request_context.context,
@@ -658,6 +670,7 @@ pub fn run_routed_provider_in_runner(
     let mut executor = ProductionRoutedProviderAttemptExecutor {
         provider: run.provider,
         fabushi_model: run.fabushi_model.clone(),
+        codex_model,
         fabushi_request_binding: if run.provider == RoutedProvider::Fabushi {
             Some(run.fabushi_request_binding.clone().unwrap_or_else(
                 FabushiResponsesRequestBinding::for_runner_invocation,

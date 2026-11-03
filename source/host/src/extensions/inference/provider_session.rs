@@ -39,6 +39,10 @@ use super::typed_replay_serialization::{
     serialize_chat_replay, serialize_cursor_replay, serialize_responses_replay,
 };
 
+#[cfg(test)]
+#[path = "codex_model_identity_tests.rs"]
+mod codex_model_identity_tests;
+
 pub const FABUSHI_ROUTER_SYSTEM_PROMPT: &str =
     "You are Fabushi, a warm, concise desktop assistant.\n\
 You are running inside Fabushi, not inside Codex CLI or Claude Code.\n\
@@ -510,6 +514,40 @@ fn configured_codex_model() -> String {
                 .and_then(|config| toml_string_setting(&config, "model"))
         })
         .unwrap_or_else(|| "gpt-5.4".into())
+}
+
+fn normalized_codex_model_selection(model: &str) -> Result<&str, ProviderSessionError> {
+    if model.chars().any(char::is_control) || model.trim().is_empty() {
+        return Err(ProviderSessionError::Configuration(
+            "Codex model selection must be nonblank and contain no control characters.".into(),
+        ));
+    }
+    Ok(model.trim())
+}
+
+/// Check Codex request identity before authentication or transport creation.
+/// Independent calls keep their compatibility fallback; an absent model in a
+/// legacy Codex checkpoint does not manufacture or override that selection.
+pub fn resolve_codex_request_model(
+    requested: Option<&str>,
+    resume: Option<&CodexDirectCheckpoint>,
+) -> Result<String, ProviderSessionError> {
+    let checkpoint_model = resume.and_then(|checkpoint| checkpoint.model.as_deref());
+    if let Some(model) = checkpoint_model {
+        if model.is_empty() || model.trim() != model || model.chars().any(char::is_control) {
+            return Err(ProviderSessionError::Protocol(
+                "Codex checkpoint requires a nonblank, normalized model identity without control characters.".into(),
+            ));
+        }
+    }
+    let selected = requested.map(str::to_string).unwrap_or_else(configured_codex_model);
+    let model = normalized_codex_model_selection(&selected)?.to_string();
+    if checkpoint_model.is_some_and(|checkpoint| checkpoint != model.as_str()) {
+        return Err(ProviderSessionError::Protocol(
+            "Codex checkpoint model identity does not match this turn.".into(),
+        ));
+    }
+    Ok(model)
 }
 
 fn configured_codex_reasoning_effort() -> Option<String> {
@@ -1138,6 +1176,16 @@ impl CodexHttpTransport {
     }
 }
 
+fn new_codex_direct_transport() -> Result<Box<dyn CodexDirectTransport>, ProviderSessionError> {
+    #[cfg(test)]
+    if let Some(transport) = codex_model_identity_tests::transport_for_current_thread() {
+        return Ok(transport);
+    }
+    Ok(Box::new(CodexHttpTransport::new_codex(
+        &codex_home().join("auth.json"),
+    )?))
+}
+
 async fn send_codex_request(
     client: &AsyncClient,
     credentials: &ResponsesHttpCredentials,
@@ -1463,6 +1511,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
         messages,
         None,
+        None,
         tools,
         execute_tool,
         on_text_delta,
@@ -1478,6 +1527,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
 fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
     messages: &[ProviderMessage],
     typed_replay: Option<&[TypedReplayEntry]>,
+    requested_model: Option<&str>,
     tools: &[RoutedToolDefinition],
     execute_tool: &mut dyn FnMut(
         &RoutedToolDefinition,
@@ -1494,14 +1544,20 @@ fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_rep
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
-    let mut transport = CodexHttpTransport::new_codex(&codex_home().join("auth.json"))?;
+    if should_cancel() {
+        return Err(ProviderSessionError::Cancelled(
+            "Runner cancelled before provider dispatch".into(),
+        ));
+    }
+    let model = resolve_codex_request_model(requested_model, resume_from)?;
+    let mut transport = new_codex_direct_transport()?;
     let system_prompt = assembled_provider_system_prompt(messages);
     let input = responses_input_for_turn(
         messages,
         resume_from.is_none().then_some(typed_replay).flatten(),
     )?;
     let mut request = CodexDirectOptions::new(
-        configured_codex_model(),
+        model,
         system_prompt,
         input,
     );
@@ -1514,7 +1570,7 @@ fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_rep
         .map(|tool| (tool.name.clone(), tool))
         .collect::<BTreeMap<_, _>>();
     let result = run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
-        &mut transport,
+        transport.as_mut(),
         &request,
         resume_from,
         &mut |tool, args, tool_call_id| {
@@ -1649,6 +1705,7 @@ pub struct RoutedProviderOptions<'a> {
     pub data_dir: &'a Path,
     pub typed_replay: Option<&'a [TypedReplayEntry]>,
     pub fabushi_model: Option<&'a str>,
+    pub codex_model: Option<&'a str>,
     pub fabushi_request_binding: Option<&'a FabushiResponsesRequestBinding>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub tools: &'a [RoutedToolDefinition],
@@ -1892,6 +1949,7 @@ fn run_routed_provider_text_with_lifecycle_impl(
             run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
                 messages,
                 options.typed_replay,
+                options.codex_model,
                 options.tools,
                 options.execute_tool,
                 options.on_text_delta,

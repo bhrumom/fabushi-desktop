@@ -526,6 +526,7 @@ fn exercise_provider(root: &Path, explicit_cancel: bool) -> Value {
         &[ProviderMessage { role: "user".into(), content: "Keep exact body and model.".into() }],
         &mut RoutedProviderOptions {
             data_dir: root, typed_replay: None, fabushi_model: Some(MODEL),
+            codex_model: None,
             fabushi_request_binding: None, cursor_auth: None,
             tools: &[], mcp_server_url: None,
             execute_tool: &mut |_, _, _| { tools += 1; Ok(json!({})) },
@@ -613,6 +614,7 @@ impl RoutedProviderAttemptExecutor for RoutedRefusalExecutor<'_> {
             RoutedProvider::Fabushi, &[],
             &mut RoutedProviderOptions {
                 data_dir: self.root, typed_replay: None, fabushi_model: Some(MODEL),
+                codex_model: None,
                 fabushi_request_binding: None, cursor_auth: None,
                 tools: &[], mcp_server_url: None,
                 execute_tool: &mut |_, _, _| panic!("refused tool execution"),
@@ -690,6 +692,7 @@ impl RoutedProviderAttemptExecutor for RoutedHttpErrorExecutor<'_> {
             &[ProviderMessage { role: "user".into(), content: "Keep exact body and model.".into() }],
             &mut RoutedProviderOptions {
                 data_dir: self.root, typed_replay: None, fabushi_model: Some(MODEL),
+                codex_model: None,
                 fabushi_request_binding: None, cursor_auth: None,
                 tools: &[], mcp_server_url: None,
                 execute_tool: &mut |_, _, _| { *tools += 1; Ok(json!({})) },

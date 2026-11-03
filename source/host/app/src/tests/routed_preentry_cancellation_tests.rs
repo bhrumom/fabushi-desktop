@@ -28,14 +28,26 @@ struct OwnedChild { child: Child, root: PathBuf, completed: bool }
 
 impl Drop for OwnedChild {
     fn drop(&mut self) {
-        if !matches!(self.child.try_wait(), Ok(Some(_))) {
-            let _ = self.child.kill();
-            let _ = self.child.wait();
+        let mut terminal = matches!(self.child.try_wait(), Ok(Some(_)));
+        if !terminal {
+            let kill = self.child.kill();
+            let deadline = Instant::now() + Duration::from_secs(3);
+            loop {
+                if matches!(self.child.try_wait(), Ok(Some(_))) {
+                    terminal = true;
+                    break;
+                }
+                if Instant::now() >= deadline {
+                    eprintln!("[prc] terminal exit unobserved after bounded retirement; child={} kill={kill:?}", self.child.id());
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
         }
-        if self.completed {
+        if self.completed && terminal {
             let _ = fs::remove_dir_all(&self.root);
         } else {
-            eprintln!("[prc] retained child={} root={}", self.child.id(), self.root.display());
+            eprintln!("[prc] retained child={} terminal={terminal} root={}", self.child.id(), self.root.display());
         }
     }
 }

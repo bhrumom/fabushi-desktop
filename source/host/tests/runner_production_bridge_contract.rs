@@ -199,6 +199,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
             fabushi_model: None,
+            codex_model: None,
             fabushi_request_binding: None,
             bridge: Arc::new(EmptyBridge),
             cursor_auth: None,
@@ -256,6 +257,7 @@ fn production_bridge_projects_mcp_management_into_canonical_turn_composition() {
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
             fabushi_model: None,
+            codex_model: None,
             fabushi_request_binding: None,
             bridge: Arc::new(EmptyBridge),
             cursor_auth: None,
@@ -297,6 +299,7 @@ fn production_bridge_registers_canonical_mcp_state_executor_on_turn_composition(
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
             fabushi_model: None,
+            codex_model: None,
             fabushi_request_binding: None,
             bridge: Arc::new(McpStateBridge),
             cursor_auth: None,
@@ -414,6 +417,7 @@ fn production_bridge_projects_host_resolved_turn_hooks_behaviorally() {
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
             fabushi_model: None,
+            codex_model: None,
             fabushi_request_binding: None,
             bridge: Arc::new(EmptyBridge),
             cursor_auth: None,
@@ -470,6 +474,7 @@ fn production_bridge_binds_the_generated_runner_facade() {
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
             fabushi_model: None,
+            codex_model: None,
             fabushi_request_binding: None,
             bridge: Arc::new(EmptyBridge),
             cursor_auth: None,
@@ -649,6 +654,7 @@ fn production_runner_catalog_refusal_stops_before_execution_and_ordinary_failure
             ProductionRunnerCompositionInput {
                 provider: RoutedProvider::OpenRouter,
                 fabushi_model: None,
+                codex_model: None,
                 fabushi_request_binding: None,
                 bridge: bridge.clone(),
                 cursor_auth: None,

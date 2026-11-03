@@ -704,6 +704,7 @@ impl ProductionFixtureOwners {
             ProductionRunnerCompositionInput {
                 provider: self.provider,
                 fabushi_model: Some(model.clone()),
+                codex_model: None,
                 fabushi_request_binding,
                 bridge: Arc::new(EmptyBridge),
                 cursor_auth: None,
@@ -1398,7 +1399,7 @@ fn run_bound_memory_consumers(
         |system, user| {
             calls += 1;
             let result = owners.inference.run_turn_memory_prompt(
-                root, owners.provider, Some(model), Some(binding), system, user, &|| false,
+                root, owners.provider, Some(model), None, Some(binding), system, user, &|| false,
             );
             if case.rotates() {
                 assert!(result.is_ok(), "actual turn-memory consumer must permit same-context rotation");
@@ -1454,7 +1455,7 @@ fn run_bound_memory_consumers(
         |system, user| {
             evidence_inference_calls += 1;
             owners.inference.run_turn_memory_prompt(
-                root, owners.provider, Some(model), Some(binding), system, user, &|| false,
+                root, owners.provider, Some(model), None, Some(binding), system, user, &|| false,
             ).map_err(|_| "unexpected evidence-mode inference".to_string())
         },
     );
@@ -1527,14 +1528,14 @@ fn run_binding_followup_child(root: &Path, case: BindingCase) {
         generation = next_generation;
     }
     let missing_binding = owners.inference.run_turn_memory_prompt(
-        root, owners.provider, Some(model.as_str()), None,
+        root, owners.provider, Some(model.as_str()), None, None,
         "Check Native turn-memory binding admission.", "This prompt must not be dispatched.",
         &|| false,
     );
     assert!(matches!(missing_binding, Err(ProviderSessionError::Configuration(_))),
         "Native turn-memory must refuse a missing admitted binding before transport");
     let cancelled_without_binding = owners.inference.run_turn_memory_prompt(
-        root, owners.provider, Some(model.as_str()), None,
+        root, owners.provider, Some(model.as_str()), None, None,
         "Check Native turn-memory binding admission.", "This prompt must not be dispatched.",
         &|| true,
     );

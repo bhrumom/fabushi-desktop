@@ -29,7 +29,7 @@
   "responsibilities": [
     {
       "adr_refs": [],
-      "behavior": "Preserve a provider-bound default through the existing desktop bridge and Rust Settings; resolve an authorized Fabushi turn once and retain identity in actual Responses JSON, metadata, accepted checkpoint retry, summarization and turn-memory. The broader catalog, picker mutation and interrupted-turn recovery remain separate responsibilities.",
+      "behavior": "Preserve a provider-bound default through the existing desktop bridge and Rust Settings; resolve an authorized Fabushi or Codex turn once and retain identity in actual Responses JSON, metadata, attempts/nudges, accepted known-model checkpoint retry, summarization and turn-memory. Generic Codex model-less legacy checkpoints remain compatible. The broader catalog, picker mutation and interrupted-turn recovery remain separate responsibilities.",
       "blocker_ids": [
         "OCRM-MODEL-IDENTITY-SCOPED-AUTHORITY-PENDING",
         "OCRM-MODEL-IDENTITY-EXACT-H-BEHAVIOR-PENDING",
@@ -39,7 +39,8 @@
       "capability_ids": [
         "models.provider_bound_default",
         "inference.frozen_fabushi_model",
-        "runner.accepted_checkpoint_model_identity"
+        "runner.accepted_checkpoint_model_identity",
+        "inference.frozen_codex_model"
       ],
       "dependencies": [
         "SettingsService atomic writer and checked source reader",
@@ -65,7 +66,10 @@
         "source/host/tests/fabushi_model_identity_production_contract.rs",
         "source/electron-main/main-edge.ts",
         "source/shared/node/settings/sand-settings-store.ts",
-        "source/electron-main/main-edge-model.contract.test.ts"
+        "source/electron-main/main-edge-model.contract.test.ts",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -87,7 +91,7 @@
       ],
       "id": "OCRM-RESP-MODEL-IDENTITY-001",
       "integration": {
-        "consumer": "Fabushi Responses serializer, runtime model metadata, accepted checkpoint retry, turn-memory and independent summarization producer",
+        "consumer": "Existing Fabushi and Codex Responses serializers, runtime model metadata, production Runner attempts/nudges, accepted known-model checkpoint retry, turn-memory and independent summarization producer",
         "entrypoint": "Existing agents.setDefaultModel appWindow RPC to Host Settings; source/host/app/src/main.rs::prepare_routed_turn_model_admission after route/session authorization",
         "owner": "ProductionAgentInferenceOwner selects; existing Settings and Session persist; Runner carries immutable identity",
         "producer": "Authenticated config.set / setHostSettings / specialized Settings writer and existing Session model read"
@@ -97,7 +101,7 @@
         "Legacy unbound defaults retain Cursor semantics; another provider binding cannot select a Fabushi or Cursor default",
         "Raw explicit presence is validated before priority selection; invalid persistent source is never absence",
         "Accepted checkpoint identity cannot silently fall back to environment or a new default",
-        "Generic Codex legacy checkpoint decoding remains compatible; only Fabushi enforces the strict model fence"
+        "Generic Codex model-less legacy checkpoints remain compatible; known Codex identities must match the captured model, while Fabushi also refuses model-less legacy resume"
       ],
       "migration_rollback": "Retain the additive optional checkpoint field and stored default fields; never replay accepted Fabushi effects under an unknown or changed model. Revert composition only with compatible persisted data and a verified release.",
       "oracle_ids": [
@@ -107,11 +111,13 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "owner_decision": "Extend existing Settings/Inference/Runner boundaries; no new runtime owner or store. Host remains a thin authorized composition and lease bridge.",
       "postconditions": [
-        "Actual Fabushi request model and runtime metadata equal the frozen turn model",
+        "Actual Fabushi/Codex request model and runtime metadata equal the frozen authorized turn model",
         "An updated default affects a later turn, while accepted tool continuation and retry retain the old model",
         "Identity refusal releases an already accepted lease before permission direction, attachments, auth, HTTP or tools advance"
       ],
@@ -162,7 +168,7 @@
         "OCRM-AC23"
       ],
       "responsibility_kind": "business-runtime",
-      "reviewer": "Current production chain reconciled read-only at 0533ca72870a2794c2db32959b9d01427abf325a; new bridge and source-tool review pending; no scoped acceptance",
+      "reviewer": "Current production chain reconciled read-only at 0533ca72870a2794c2db32959b9d01427abf325a; new bridge and source-tool review pending; no scoped acceptance; CMI-v1 extends the same production owner to Codex. Independent frozen review and exact-subject Actions remain required; historical source reads, statuses and blockers are retained.",
       "risk": "High: provider identity, persisted configuration, accepted tool effects, stale settings, cancellation and lease/permission ordering. Full relevant implementation/call-state review required; no source-wide contract-only completion claim.",
       "selected_owner": "source/host/src/extensions/inference/production.rs",
       "source_refs": [
@@ -666,7 +672,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/inference/production.rs",
-        "symbol": "ProductionAgentInferenceOwner::resolve_fabushi_turn_model"
+        "symbol": "ProductionAgentInferenceOwner::{resolve_fabushi_turn_model,resolve_codex_turn_model}"
       },
       "tests": [
         "source/host/tests/settings_service_contract.rs",
@@ -679,7 +685,9 @@
         "source/host/tests/runner_production_bridge_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
-        "source/electron-main/main-edge-model.contract.test.ts"
+        "source/electron-main/main-edge-model.contract.test.ts",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "typed_contracts": [
         "OCRM-MODEL-IDENTITY-v1",
@@ -688,7 +696,11 @@
         "RoutedProviderOptions::fabushi_model",
         "CodexDirectCheckpoint::model",
         "resolve_fabushi_request_model",
-        "OCRM-MODEL-BRIDGE-v1"
+        "OCRM-MODEL-BRIDGE-v1",
+        "OCRM-CODEX-MODEL-IDENTITY-v1",
+        "ProductionRunnerCompositionInput::codex_model",
+        "RoutedProviderOptions::codex_model",
+        "resolve_codex_request_model"
       ],
       "unit_id": "OCRM-UNIT-MODEL-IDENTITY-001"
     },

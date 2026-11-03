@@ -136,7 +136,10 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -183,7 +186,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -286,7 +291,10 @@
         "source/host/tests/agent_content_search_contract.rs",
         "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
         "source/host/tests/palette_message_gateway_contract.rs",
-        "frontend/src/production/command-palette-message-search.contract.test.ts"
+        "frontend/src/production/command-palette-message-search.contract.test.ts",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R05",
@@ -299,7 +307,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -412,7 +422,10 @@
         "source/host/tests/automation_runtime_contract.rs",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -455,7 +468,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -564,7 +579,10 @@
         "source/node-agent-coordinator/tests/production_protocol.rs",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -583,7 +601,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -634,7 +654,10 @@
         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R10",
@@ -653,7 +676,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -757,6 +782,9 @@
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
         "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs",
         "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
@@ -776,7 +804,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -823,7 +853,10 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R14",
@@ -841,7 +874,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -925,7 +960,10 @@
         "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R16",
@@ -944,7 +982,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -964,7 +1004,10 @@
         "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R17",
@@ -981,7 +1024,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1176,7 +1221,10 @@
         "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -1201,7 +1249,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1593,7 +1643,10 @@
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "source/host/tests/fabushi_model_identity_production_contract.rs",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC06",
@@ -1606,7 +1659,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -1629,7 +1684,10 @@
       "evidence_refs": [
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC07",
@@ -1642,7 +1700,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -1706,7 +1766,10 @@
         "source/host/tests/automation_runtime_contract.rs",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",
@@ -1749,7 +1812,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -1838,7 +1903,10 @@
       "evidence_refs": [
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC09",
@@ -1851,7 +1919,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2166,6 +2236,9 @@
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
         "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs",
         "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
@@ -2189,7 +2262,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2230,6 +2305,9 @@
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
         "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs",
         "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
@@ -2243,7 +2321,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2432,7 +2512,10 @@
         "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "source/host/app/src/tests/codex_model_admission_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -2457,7 +2540,9 @@
         "OCRM-MODEL-IDENTITY-O04",
         "OCRM-MODEL-IDENTITY-O05",
         "OCRM-MODEL-IDENTITY-O06",
-        "OCRM-MODEL-IDENTITY-O07"
+        "OCRM-MODEL-IDENTITY-O07",
+        "CMI-O1",
+        "CMI-O2"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [

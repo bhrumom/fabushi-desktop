@@ -410,6 +410,7 @@ fn run_invocation(root: &Path, nonce: &str, case: Case, later: bool) -> Invocati
     let result = run_routed_provider_in_runner(
         RoutedProviderRun {
             provider: RoutedProvider::Fabushi, fabushi_model: Some(MODEL.into()),
+            codex_model: None,
             fabushi_request_binding: None,
             data_dir: root, messages: &messages, typed_replay: None, cursor_auth: None,
             bridge: Arc::new(EffectBridge {

@@ -30,7 +30,7 @@ use super::provider_session::{
     FabushiResponsesRequestBinding, ProviderMessage, ProviderSessionError,
     ProviderTokenUsage, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
-    resolve_fabushi_request_model, run_routed_provider_text,
+    resolve_codex_request_model, resolve_fabushi_request_model, run_routed_provider_text,
     run_routed_provider_text_with_lifecycle_reporting_usage,
 };
 
@@ -273,6 +273,52 @@ impl ProductionAgentInferenceOwner {
         resolve_fabushi_request_model(None, None)
     }
 
+    /// Resolve the already-authorized Codex route's identity once at admission.
+    /// A persisted model selection never changes the caller's provider route.
+    pub fn resolve_codex_turn_model(
+        &self,
+        session_model_id: Option<&str>,
+        session_provider: Option<&str>,
+        explicit_model_id: Option<&serde_json::Value>,
+    ) -> Result<String, ProviderSessionError> {
+        let explicit = match explicit_model_id {
+            None | Some(serde_json::Value::Null) => None,
+            Some(serde_json::Value::String(value)) => {
+                Some(resolve_codex_request_model(Some(value), None)?)
+            }
+            Some(_) => return Err(ProviderSessionError::Configuration(
+                "Codex modelId must be a nonempty string when supplied".into(),
+            )),
+        };
+        match (session_model_id, session_provider) {
+            (Some(model), Some("codex")) => {
+                return resolve_codex_request_model(Some(model), None);
+            }
+            (None, None) => {}
+            _ => return Err(ProviderSessionError::Configuration(
+                "persisted session model must contain a complete Codex provider/model pair".into(),
+            )),
+        }
+        if let Some(model) = explicit {
+            return Ok(model);
+        }
+        let stored = self.settings.get_agent_default_model_checked().map_err(|error| {
+            ProviderSessionError::Configuration(format!(
+                "could not read the persisted default model: {error}"
+            ))
+        })?;
+        if let Some(value) = stored.as_ref().filter(|value| {
+            value.get("provider").and_then(serde_json::Value::as_str) == Some("codex")
+        }) {
+            let model = value.get("modelId").and_then(serde_json::Value::as_str)
+                .ok_or_else(|| ProviderSessionError::Configuration(
+                    "persisted Codex default is missing modelId".into(),
+                ))?;
+            return resolve_codex_request_model(Some(model), None);
+        }
+        resolve_codex_request_model(None, None)
+    }
+
     pub fn resolve_requested_model(
         &self,
         session_options: Option<&SandSessionOptions>,
@@ -508,6 +554,7 @@ impl ProductionInferenceExtension {
         data_dir: &Path,
         provider: RoutedProvider,
         fabushi_model: Option<&str>,
+        codex_model: Option<&str>,
         fabushi_request_binding: Option<&FabushiResponsesRequestBinding>,
         system_prompt: &str,
         user_prompt: &str,
@@ -521,6 +568,11 @@ impl ProductionInferenceExtension {
         if provider == RoutedProvider::Fabushi && fabushi_request_binding.is_none() {
             return Err(ProviderSessionError::Configuration(
                 "Native turn-memory inference requires its admitted request binding.".into(),
+            ));
+        }
+        if provider == RoutedProvider::Codex && codex_model.is_none() {
+            return Err(ProviderSessionError::Configuration(
+                "Codex turn-memory inference requires its admitted model identity.".into(),
             ));
         }
         let messages = vec![
@@ -541,6 +593,7 @@ impl ProductionInferenceExtension {
             data_dir,
             typed_replay: None,
             fabushi_model,
+            codex_model,
             fabushi_request_binding,
             cursor_auth: Some(self.auth.clone()),
             tools: &[],
@@ -572,6 +625,11 @@ impl ProductionInferenceExtension {
         } else {
             None
         };
+        let codex_model = if provider == RoutedProvider::Codex {
+            Some(self.runtime.port().resolve_codex_turn_model(None, None, None)?)
+        } else {
+            None
+        };
         let session_options = summarization_session_options();
         let cursor_auth = self.cursor_auth_for_session(Some(&session_options));
         let messages = vec![
@@ -598,6 +656,7 @@ impl ProductionInferenceExtension {
             data_dir,
             typed_replay: None,
             fabushi_model: fabushi_model.as_deref(),
+            codex_model: codex_model.as_deref(),
             fabushi_request_binding: None,
             cursor_auth: Some(cursor_auth),
             tools: &[],
