@@ -214,3 +214,41 @@ Frozen generated contracts: `agent_pb.ts` blob
 `runner/agent_v1_wire.rs`. Actual producer, wrapper chain, generated codec,
 Session decoder/outline/maintenance and private App fixture were traced before
 this spec. Full recursive source/dependency/legal closure is not claimed.
+
+## Actions admission recovery — SGF-CI-01
+
+At published H `497c2c7a7bc5201aead83d3d36e44f52ba164d04`, runtime run
+`41569288081` failed before creating any job. GitHub's annotation states that
+the 512,095-byte workflow exceeds its 500 KB admission limit. This is
+`TEST_FLAW`: no product compile or behavior result exists for that run.
+
+Move the existing portable-contract Python body into
+`projects/openclaw-rust/scripts/capture_portable_contracts.py`, alongside the
+existing OCRM capture instruments. The same workflow step invokes that file
+from the same repository working directory. Preserve its checkout, condition,
+step identity, environment, cache, timeout, command order, stdout/capture,
+required names and counts, strict acceptance predicates, 14 oracle controls,
+receipt fields, palette export and downstream/artifact behavior. The only
+Python-body change adds this script to its own source-input hash list. No
+command, assertion or gate is removed or weakened, and no product owner changes.
+
+The source move must reproduce the original dedented body exactly after
+removing that single declared input-list addition. A fresh focused review
+checks this identity and the unchanged invocation context. Only admission and
+execution on the new published H can resolve the failure; a smaller file or a
+source review alone is not runtime acceptance. Preserve the original failure,
+do not rerun unchanged H, and keep all broader acceptance limitations above.
+
+Publication reconciliation preserves incoming Memory subject
+`b55657cf87950ca014c2bfe827f5b043adbcab7e`: its complete 945-line portable
+body, including the added MSI commands, required names, predicates and input
+identities, becomes the extraction preimage. Its surrounding workflow additions
+remain unchanged. The earlier 497 extraction identity is historical evidence;
+fresh focused review compares the final move against this incoming preimage.
+
+The latest device role-token checkpoint `0e845ce1679e0cdf95346adc54f5d58bf06464e8`
+also extends the shared instrument. Preserve its full current body and surrounding
+workflow, including DRT selected-role controls and all MSI/DVR predicates. The
+same mechanical move and sole self-input addition apply. Earlier preimage
+reviews remain historical; the new frozen snapshot requires fresh focused
+review and actual combined-H Actions before any acceptance claim.
