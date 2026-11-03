@@ -362,3 +362,71 @@ license, security or platform closure, nor change any global completion flag.
 Keep the full BXR scope and source approvals; review this necessary lock-input
 extension with its exact provenance and existing capture consumer before
 publishing the combined production candidate.
+
+### BXR-SHELL-CAPTURE-v1 — foreground execution and capture custody
+
+Contract fixed before implementation at source subject
+ac615165744da1b8462a35b07221800c06aad1fb, tree
+61ef27820a6ba5dc696a276cd58b30e153a25b57. The producer is
+source/box-exec-daemon/src/server.rs blob
+a40dc3b5f78e414c3ac302137668f1d5be8dc73f. Fixed upstream U remains
+openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845.
+
+The real foreground owner currently ignores read_to_end errors, replaces a
+capture-worker panic with empty output, and maps all run_process errors to
+ShellSpawnError even after spawn succeeded. These paths can publish a known
+result for an execution whose effects or output custody were not observed.
+This is a necessary existing Box/Runner contract correction, not a new runtime.
+
+- SC01: Separate refusal before a child is created from failure after successful
+  spawn. Preserve known ShellSpawnError for the former. Missing pipes, capture
+  setup/worker creation, read, wait and join failures after spawn must remain
+  entered-execution uncertainty. Never publish partial or substituted empty
+  capture as complete output. Retry Interrupted reads under the Read contract.
+- SC02: BoxExecRuntime remains the only child, process-group, pipe and capture
+  worker owner. Retain ownership through terminal cleanup. Early failure must
+  terminate/reap the owned child where still live, observe both capture workers
+  and remove the foreground registration. Do not detach the second worker after
+  an error from the first. Cleanup must not signal a stale PID after reaping,
+  deadlock on an inherited pipe, or erase the original unknown classification.
+  A cleanup error remains unknown; it is never evidence that effects did not occur.
+- SC03: Both ordinary ShellArgs and MiniSweAgentBashArgs project post-spawn
+  failure through the existing matching Throw control frame and StreamClose.
+  Keep existing request/exec identity and transport completion rules. A broken
+  connection remains transport uncertainty. Use bounded phase/category
+  diagnostics without command payload or captured stdout/stderr. Allocate no
+  protobuf field, result variant, public fault option or retry policy.
+- SC04: Preserve normal success/nonzero exit, timeout and abort result shapes
+  when their execution/capture has been observed, and preserve existing lossy
+  UTF-8 text display. This contract does not grant raw-byte or HTML provenance.
+  Adapt every actual Rust helper caller to retain the typed failure distinction.
+- SC05: The actual Host accessor, ForeverBox resource port, Runner bridge and
+  existing tool guard retain RemoteThrow as ToolOutcomeUnknown and mark
+  DownstreamOutcomeUnknown before local receipt completion. Further tool admission
+  and checkpoint/replay remain refused. Reuse these owners and their custody
+  state; do not add a second retry, process registry or permission authority.
+- SC06: Use private per-runtime fault injection at actual operations only in
+  cfg(test). Negative controls must run a real child and observe a real prefix
+  after a counted side effect before read/worker/wait loss; require one effect,
+  Throw with no definitive result, bounded cleanup and the real downstream
+  unknown-custody behavior. Include stdout/stderr, both foreground dispatch cases,
+  pre-spawn refusal, complete text/nonzero/invalid-UTF8 and timeout/abort controls.
+  A test-only ignored child entrypoint in the actual daemon test executable may
+  serve this real producer over authenticated loopback to Host tests. Bind that
+  test executable separately from the normal shipping daemon. No production CLI,
+  environment fault control, default feature or dependency change is authorized.
+- SC07: Extend the existing portable capture, source bindings and required-name
+  checks. Build the actual daemon test executable from the tracked lock using
+  --locked and compiler artifact metadata, verify its bytes before/after tests,
+  and fail if it is absent/stale/ambiguous. Reuse existing Box 77 direct names and
+  downstream custody cases; add the actual producer fault cases and actual Host
+  consumer chain without replacing prior assertions. All execution is exact-H
+  GitHub Actions only. Fresh complete-scope general/structure review is required.
+
+Foreground Rust state is ephemeral; no database migration is introduced.
+Restart must not replay an unresolved request. Existing Runner custody/recovery
+remains authoritative. This slice does not claim descendant-process, arbitrary
+platform/device/service, raw capture cap, generated-HTML provenance or full
+OCRM acceptance. Those responsibilities and the existing eight global flags
+remain open. Record actual source review depth, failed results and execution
+subject separately from evidence carriers; no mock is real compatibility proof.
