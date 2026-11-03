@@ -2235,8 +2235,16 @@ impl ProductionSessionWorkers {
         if sender_id != local_human_id {
             return Ok(());
         }
-        let nonce = remote.client_request_id.as_deref()
-            .map(str::trim).filter(|value| !value.is_empty());
+        // Client request ids are durable opaque identities. Reauthorization
+        // must use the exact bytes later used for canonical settlement: never
+        // allow a padded history echo to evade the source-owner check and then
+        // settle the trimmed nonce in the outbox.
+        if remote.client_request_id.as_deref().is_some_and(|nonce|
+            nonce.is_empty() || nonce.trim() != nonce || nonce.len() > 200
+        ) {
+            return Err("remote Human acknowledgement has a noncanonical client nonce".into());
+        }
+        let nonce = remote.client_request_id.as_deref();
         let by_nonce = nonce.and_then(|nonce| existing.iter().find(|row| {
             row.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
                 && row.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce)
@@ -2401,12 +2409,7 @@ impl ProductionSessionWorkers {
         {
             object.insert("authorName".into(), serde_json::json!(author_name));
         }
-        if let Some(client_nonce) = remote
-            .client_request_id
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-        {
+        if let Some(client_nonce) = remote.client_request_id.as_deref() {
             if sender_id == local_human_id {
                 object.insert("clientNonce".into(), serde_json::json!(client_nonce));
             } else {

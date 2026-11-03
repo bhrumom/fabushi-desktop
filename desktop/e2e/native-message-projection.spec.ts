@@ -859,3 +859,43 @@ for (const missingField of ['id', 'delivery'] as const) {
     await milestone(page, info, `raw-retry-missing-${missingField}-event-recovery`);
   });
 }
+
+test('HRR-10 a failed transferred request frame preserves one local Human retry and its committed attachment', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'once.txt', mimeType: 'text/plain', buffer: Buffer.from('committed once'),
+  });
+  await expect(page.locator('.sand-prompt-form')).toContainText('once.txt');
+  await page.locator('[contenteditable="true"]').fill('Original failed port send');
+  await page.evaluate(() => window.nativeMessageFixture.failNextSendPost());
+  await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  const failed = page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id^="pending-"]');
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  const pendingId = await failed.getAttribute('data-entry-id');
+  expect(pendingId).not.toBeNull();
+  const originalNonce = pendingId!.slice('pending-'.length);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'sendHumanMessage'))).toEqual([]);
+  expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(0);
+  expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toHaveLength(1);
+  await page.locator('[contenteditable="true"]').fill('Independent unsent draft after port failure');
+
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
+  const calls = await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'sendHumanMessage'));
+  expect(calls).toHaveLength(1);
+  expect(calls[0].args.clientNonce).toBe(originalNonce);
+  expect(calls[0].args.text).toBe('Original failed port send');
+  expect(calls[0].args.attachments).toEqual([{ path: '/committed/once.txt', name: 'once.txt' }]);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'retryHumanMessage'))).toEqual([]);
+  expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toHaveLength(1);
+  await page.evaluate(() => {
+    window.nativeMessageFixture.publishSend(0);
+    window.nativeMessageFixture.settleSend(0);
+  });
+  await expect(messageRow(page, 'human-server-message:100')).toContainText('Original failed port send');
+  await expect(messageRow(page, 'human-server-message:100')).toContainText('once.txt');
+  await expect(failed).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Independent unsent draft after port failure');
+  await milestone(page, info, 'human-port-post-failure-same-nonce-recovered');
+});

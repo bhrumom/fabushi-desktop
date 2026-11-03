@@ -33,8 +33,13 @@ class ControlledPort implements TransferredCoordinatorPort {
   readonly #closes = new Set<CloseListener>();
   starts = 0;
   closes = 0;
+  failNextSendPost = false;
 
   postMessage(message: unknown): void {
+    if (this.failNextSendPost && isRecord(message) && message.kind === "request" && message.method === "sendHumanMessage") {
+      this.failNextSendPost = false;
+      throw new Error("fixture request frame was not posted");
+    }
     // A real transferred port cannot serialize the local admission callback.
     // Recording a clone also prevents later caller mutations hiding the frame.
     this.posted.push(structuredClone(message));
@@ -649,4 +654,34 @@ test("Malformed replies with unknown identities or from a retired port cannot se
   assert.equal(current.requests.length, 1);
   current.succeed(request, settledHumanRetry());
   assert.deepEqual(await retry, settledHumanRetry());
+});
+
+test("Human send admission records only a posted frame; a refused port preserves the original nonce for retry", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  port.ready();
+  await h.client.ready;
+  const original = { conversationId: "human:local:peer", text: "same original", clientNonce: "post-failed-nonce", attachments: [] };
+  let admissionChecks = 0;
+  let posted = 0;
+  port.failNextSendPost = true;
+  const first = observed(h.client.call("sendHumanMessage", original, () => {
+    admissionChecks += 1;
+    return true;
+  }, () => { posted += 1; }));
+  await assert.rejects(first, /fixture request frame was not posted/);
+  assert.equal(admissionChecks, 1, "readiness may check scope but does not imply Host admission");
+  assert.equal(posted, 0, "failed frame serialization must not mark a Host-owned send");
+  assert.equal(port.requests.length, 0, "a failed request is never transmitted");
+
+  const retry = observed(h.client.call("sendHumanMessage", original, () => true, () => { posted += 1; }));
+  await nextTurn();
+  const request = onlyRequest(port);
+  assert.deepEqual(request.args, original, "retry retains the original nonce and immutable intent");
+  assert.equal(posted, 1, "only the successful frame records Host admission");
+  assert.equal(request.requestId, "r-2", "failed frame correlation is not recycled");
+  port.receive({ kind: "reply", requestId: "r-1", outcome: { status: "ok", value: { id: "forged-old" } } });
+  const settled = { id: "human-server-message:201", clientNonce: original.clientNonce, delivery: "sent" };
+  port.succeed(request, settled);
+  assert.deepEqual(await retry, settled, "a late unknown reply cannot replace the surviving intent");
 });

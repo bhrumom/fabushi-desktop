@@ -59,7 +59,7 @@ function validateReply(method: string, value: unknown): unknown {
 export interface ProductionCoordinatorClient {
   readonly ready: Promise<void>;
   /** Local admission after readiness; never serialized or used to cancel posted work. */
-  call(method: string, args?: unknown, isCurrent?: () => boolean): Promise<unknown>;
+  call(method: string, args?: unknown, isCurrent?: () => boolean, onPosted?: () => void): Promise<unknown>;
   telegramAuthStatus(): Promise<TelegramAuthorizationProjection>;
   telegramSendCode(phoneNumber: string): Promise<TelegramAuthorizationProjection>;
   telegramSignIn(code: string): Promise<TelegramAuthorizationProjection>;
@@ -182,7 +182,7 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   if (claim == null) return null;
   claim.request();
 
-  const call = async (method: string, args: unknown = {}, isCurrent?: () => boolean) => {
+  const call = async (method: string, args: unknown = {}, isCurrent?: () => boolean, onPosted?: () => void) => {
     if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageRequest(args) == null) {
       throw new Error("getHumanConversationTranscriptTail requires a valid Human transcript cursor");
     }
@@ -197,7 +197,17 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
     const requestId = `r-${++nextRequestId}`;
     const response = new Promise<unknown>((resolve, reject) => pending.set(requestId, { method, resolve, reject }));
-    port.postMessage({ kind: "request", requestId, method, args });
+    try {
+      port.postMessage({ kind: "request", requestId, method, args });
+    } catch (error) {
+      // A port that was ready can still be replaced before its request frame
+      // is serialized. No Host request exists; discard its correlation slot.
+      pending.delete(requestId);
+      throw error;
+    }
+    // Local consumers may record Host admission only after the actual frame
+    // was posted; an earlier readiness/admission predicate is not delivery.
+    onPosted?.();
     return await response;
   };
 

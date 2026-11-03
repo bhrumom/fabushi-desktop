@@ -29,6 +29,7 @@ let holdOlder = true;
 let holdInitial = new URLSearchParams(location.search).get('holdInitial') === '1';
 let holdNextSendRoster = false;
 let holdReady = false;
+let failNextSendPost = false;
 let attachmentCommitMode: 'normal' | 'fail' | 'hold' = 'normal';
 const attachmentCommits: string[][] = [];
 const heldAttachmentCommits: Array<() => void> = [];
@@ -138,6 +139,10 @@ const coordinatorPort: CoordinatorPortBridge = {
     const port: TransferredCoordinatorPort = {
       postMessage(frame) {
         const value = frame as Record<string, unknown>;
+        if (value.kind === 'request' && value.method === 'sendHumanMessage' && failNextSendPost) {
+          failNextSendPost = false;
+          throw new Error('fixture request frame was not posted');
+        }
         if (value.kind === 'lifecycle' && value.phase === 'hello') {
           if (!holdReady) queueMicrotask(() => sendFrame({ kind: 'lifecycle', phase: 'ready', protocolVersion: 1 }));
         } else if (value.kind === 'request') queueMicrotask(() => receive(value as unknown as Request));
@@ -331,6 +336,7 @@ const fixture = {
     });
   },
   settleReaction(index = 0) { const pending = reactions[index]; if (pending == null) throw new Error('No pending reaction'); reply(pending); },
+  failNextSendPost() { failNextSendPost = true; },
   pauseReadiness() { holdReady = true; sendFrame({ kind: 'lifecycle', phase: 'shutdown' }); },
   resumeReadiness() { holdReady = false; sendFrame({ kind: 'lifecycle', phase: 'ready', protocolVersion: 1 }); },
   failNextAttachmentCommit() { attachmentCommitMode = 'fail'; },

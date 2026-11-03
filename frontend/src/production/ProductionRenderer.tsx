@@ -1192,10 +1192,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         composedAtMs: submission.createdAtMs,
         attachments,
         ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
-      }, () => {
-        const admitted = isCurrent();
-        if (admitted) hostAdmittedHumanSendNoncesRef.current.add(submission.nonce);
-        return admitted;
+      }, () => isCurrent(), () => {
+        hostAdmittedHumanSendNoncesRef.current.add(submission.nonce);
       });
       if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
       if (scope?.isHumanRetryCurrent != null) {

@@ -246,12 +246,13 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 80 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 81 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_partial_upload_prefix_recovers_suffix_after_restart_without_reupload ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_invalid_upload_prefix_refuses_retry_without_io_or_replacing_intent ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_partial_upload_history_echo_cannot_settle_incomplete_attachments ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_malformed_complete_upload_history_receipts_preserve_intent_and_coverage ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_forward_revoked_source_during_post_rejects_concurrent_history_settlement ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_forward_padded_history_nonce_cannot_bypass_source_reauthorization ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_partial_forward_upload_prefix_keeps_snapshot_and_source_admission ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
@@ -797,8 +798,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/coordinator-client.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/coordinator-admission.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-admission-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/coordinator-admission.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-admission.log
-          grep -Fx '# tests 18' artifacts/native-message-ui/coordinator-admission.log
-          grep -Fx '# pass 18' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# tests 19' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# pass 19' artifacts/native-message-ui/coordinator-admission.log
           grep -Fx '# fail 0' artifacts/native-message-ui/coordinator-admission.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/coordinator-admission.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/coordinator-admission.log
@@ -854,20 +855,20 @@ jobs:
           import fs from 'node:fs';
           import assert from 'node:assert/strict';
           const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/production-renderer.json', 'utf8'));
-          assert.equal(report.stats.expected, 25);
+          assert.equal(report.stats.expected, 26);
           for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
           assert.deepEqual(report.errors, []);
           const cases = [];
           const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
           for (const suite of report.suites) walk(suite);
-          assert.equal(cases.length, 25);
+          assert.equal(cases.length, 26);
           for (const item of cases) {
             assert.equal(item.expectedStatus, 'passed');
             assert.equal(item.results.length, 1);
             assert.equal(item.results[0].status, 'passed');
             assert.equal(item.results[0].retry, 0);
           }
-          console.log('actual ProductionRenderer: 25 passed, 0 failed, 0 skipped, 0 retries');
+          console.log('actual ProductionRenderer: 26 passed, 0 failed, 0 skipped, 0 retries');
           NODE
       - name: Actual ProductionRenderer Transcript cache and continuation behaviors
         shell: bash
