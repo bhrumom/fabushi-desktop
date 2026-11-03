@@ -236,6 +236,13 @@ inputs = sorted(set(inputs) | {"source/host/build.rs", "source/host/tests/genera
 # BXR-v1.3 binds the actual Box owner, all changed consumers and the existing
 # daemon producer separately from unrelated portable-source coverage.
 box_response_inputs = [
+    "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+    "source/host/src/extensions/forever_box/host_box.rs",
+    "source/host/src/extensions/forever_box/forever_box_service.rs",
+    "source/host/src/extensions/inference/codex_direct_responses.rs",
+    "source/host/src/runner/stream_attempt.rs",
+    "source/host/src/runner/production_turn_run_shell_adapter.rs",
+    "source/host/src/runner/routed_provider_runtime.rs",
     ".github/workflows/rust-desktop-runtime.yml",
     "docs/specs/g11-box-browser-wire-completion.md",
     "projects/openclaw-rust/scripts/capture_portable_contracts.py",
@@ -1259,6 +1266,9 @@ cases = [
     ("box-response-real-daemon", base + ["--test","box_exec_daemon_process_contract","box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion","--","--exact","--ignored","--test-threads=1"], [
         "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
 ]),
+    ("box-response-shell-capture-unit", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::foreground_capture_", "--", "--test-threads=1"], ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes"]),
+    ("box-response-shell-capture-consumer", base + ["--test", "box_exec_daemon_process_contract", "box_foreground_capture_", "--", "--ignored", "--test-threads=1"], ["foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"]),
+    ("box-response-shell-capture-disconnect", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::disconnect_aborts_foreground_shell_process_group", "--", "--exact", "--test-threads=1"], ["server::tests::disconnect_aborts_foreground_shell_process_group"]),
 ]
 def successful_test_names(output):
     # libtest decorates an expected-panic success without changing its name.
@@ -1308,7 +1318,7 @@ for label, output, cargo_exit, capture_exit, expected in [
 # keyword module. Both legal libtest spellings map to one exact required name;
 # duplicate aliases, foreign owners and additional positives are rejected.
 box_response_exhaustion_name = "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
-box_response_filtered_cases = {"box-response-manager-exhaustion", "box-response-forever-box", "box-response-real-daemon"}
+box_response_filtered_cases = {"box-response-manager-exhaustion", "box-response-forever-box", "box-response-real-daemon", "box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect"}
 
 def box_response_observed_names(output):
     names = successful_test_names(output.replace("\r\n", "\n"))
@@ -1394,6 +1404,9 @@ receipt = {
     "local_exec_outcome_inputs_before": local_exec_outcome_inputs_before,
     "local_exec_outcome_required_runner_names": ["production_generated_runner_retains_unknown_external_shell_effects","production_generated_runner_preserves_known_external_shell_outcomes","production_external_shell_adapter_types_uncertain_results_and_errors"],
     "local_exec_outcome_scope": "Actual registered generated Runner, production ExternalShell adapter, shared Host LocalExec and permission owner through real bridge delivery. Counted external effects, unknown post-entry outcomes, sticky custody, no uncertain checkpoint/replay, known refusal/Exit and fresh-owner journal controls use fixture-owned peers. Separate native three-platform and actual App/protocol receipts remain required; no physical device, external account, full process-tree, package or global acceptance.",
+    "box_shell_capture_contract": "BXR-SHELL-CAPTURE-v1",
+    "box_shell_capture_required_names": ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed","server::tests::disconnect_aborts_foreground_shell_process_group"],
+    "box_shell_capture_scope": "Actual daemon foreground capture distinguishes pre-spawn known refusal from entered read/wait/worker uncertainty for ordinary Shell and MiniSwe. Owned children remain in the existing registry through bounded observed cleanup; actual Throw/Close reaches Host, ForeverBox, Runner sticky custody, no replay and checkpoint refusal. Private cfg(test) operation faults are bound to a separately identified library test artifact; normal shipping daemon controls remain independent. Descendant-process closure, hostile ownership changes, raw HTML provenance, power loss, platform packages and real services remain unaccepted.",
     "box_response_contract": "BXR-v1.3",
     "box_response_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
     "box_response_inputs_before": box_response_inputs_before,
@@ -1495,6 +1508,127 @@ daemon_build["result"] = "compiled-and-bound" if daemon_passed else "failed-or-i
 print(daemon_raw.decode("utf-8", errors="replace"), flush=True)
 print(json.dumps({"box_response_daemon_build": daemon_build}), flush=True)
 
+
+# SC uses a separately identified cfg(test) library executable solely for the
+# real operation-fault child. The ordinary shipping daemon above remains bound
+# and exercised independently. A stale or unrelated test executable is refused.
+capture_manifest = pathlib.Path("source/box-exec-daemon/Cargo.toml").resolve()
+capture_source = pathlib.Path("source/box-exec-daemon/src/lib.rs").resolve()
+capture_target = pathlib.Path("source/box-exec-daemon/target").resolve()
+
+def select_shell_capture_test_artifact(raw):
+    artifacts, finished = [], []
+    for line in raw.decode("utf-8").splitlines():
+        try:
+            message = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(message, dict):
+            continue
+        if message.get("reason") == "build-finished":
+            finished.append(message.get("success"))
+        if message.get("reason") != "compiler-artifact":
+            continue
+        target, profile = message.get("target", {}), message.get("profile", {})
+        executable = message.get("executable")
+        if (not isinstance(target, dict) or not isinstance(profile, dict)
+            or profile.get("test") is not True
+            or target.get("name") != "fabushi_box_exec_daemon"
+            or target.get("kind") != ["lib"]
+            or not isinstance(target.get("src_path"), str)
+            or pathlib.Path(target["src_path"]).resolve() != capture_source
+            or not isinstance(executable, str) or not executable):
+            continue
+        path = pathlib.Path(executable).resolve()
+        if not path.is_relative_to(capture_target):
+            raise ValueError("daemon library test artifact is outside its declared target directory")
+        artifacts.append((path, message))
+    if finished != [True] or len(artifacts) != 1:
+        raise ValueError("current Cargo build lacks one unambiguous successful daemon library test artifact")
+    return artifacts[0]
+
+capture_artifact_sample = {
+    "reason": "compiler-artifact", "package_id": "owned-oracle-only",
+    "target": {"name": "fabushi_box_exec_daemon", "kind": ["lib"], "src_path": str(capture_source)},
+    "profile": {"test": True}, "executable": str(capture_target / "debug/deps/owned-oracle-only"),
+}
+capture_artifact_finish = {"reason": "build-finished", "success": True}
+def capture_artifact_variant(field, value):
+    changed = json.loads(json.dumps(capture_artifact_sample))
+    if "." in field:
+        parent, child = field.split(".", 1)
+        changed[parent][child] = value
+    else:
+        changed[field] = value
+    return changed
+capture_artifact_controls = []
+for control, messages, expected in [
+    ("current-library-test", [capture_artifact_sample, capture_artifact_finish], True),
+    ("missing-artifact", [capture_artifact_finish], False),
+    ("duplicate-artifact", [capture_artifact_sample, capture_artifact_sample, capture_artifact_finish], False),
+    ("foreign-source", [capture_artifact_variant("target.src_path", str(capture_source.parent / "other.rs")), capture_artifact_finish], False),
+    ("foreign-target", [capture_artifact_variant("target.name", "other"), capture_artifact_finish], False),
+    ("ordinary-library", [capture_artifact_variant("profile.test", False), capture_artifact_finish], False),
+    ("binary-test", [capture_artifact_variant("target.kind", ["bin"]), capture_artifact_finish], False),
+    ("missing-executable", [capture_artifact_variant("executable", None), capture_artifact_finish], False),
+    ("foreign-executable", [capture_artifact_variant("executable", str(capture_target.parent / "foreign")), capture_artifact_finish], False),
+    ("missing-build-terminal", [capture_artifact_sample], False),
+    ("failed-build-terminal", [capture_artifact_sample, {"reason":"build-finished","success":False}], False),
+    ("duplicate-build-terminal", [capture_artifact_sample, capture_artifact_finish, capture_artifact_finish], False),
+]:
+    try:
+        select_shell_capture_test_artifact(("\n".join(json.dumps(item) for item in messages) + "\n").encode("utf-8"))
+        actual = True
+    except (ValueError, OSError):
+        actual = False
+    capture_artifact_controls.append({"case": control, "expected": expected, "actual": actual})
+    assert actual == expected, f"SC artifact selection oracle failed: {control}"
+
+capture_command = ["cargo", "test", "--locked", "--manifest-path", str(capture_manifest),
+    "--lib", "--no-run", "--message-format=json", "--target-dir", str(capture_target)]
+capture_log = root / "box-response-shell-capture-build.log"
+capture_build = {
+    "command": capture_command, "cargo_exit": None, "capture_exit": 0,
+    "log": capture_log.name, "execution_error": None, "result": "failed-or-incomplete",
+    "role": "cfg(test) operation-fault producer; separate from the ordinary daemon binary",
+    "lock_was_exact_h_source_input": box_daemon_lock_tracked,
+    "binary": None, "binary_sha256_before_cases": None,
+    "artifact_selection_oracle_controls": capture_artifact_controls,
+}
+receipt["box_shell_capture_test_build"] = capture_build
+(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+capture_raw, capture_binary, capture_passed = b"", None, False
+try:
+    if not box_daemon_lock_tracked:
+        raise ValueError("SC producer requires a tracked exact-H Cargo.lock")
+    capture_build["lock_sha256_before_build"] = hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest()
+    with capture_log.open("wb") as output:
+        capture_build["cargo_exit"] = subprocess.run(capture_command,
+            stdout=output, stderr=subprocess.STDOUT, check=False).returncode
+    capture_raw = capture_log.read_bytes()
+    capture_build["lock_sha256_after_build"] = hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest()
+    if capture_build["cargo_exit"] != 0:
+        raise ValueError("SC library test build failed")
+    if capture_build["lock_sha256_after_build"] != capture_build["lock_sha256_before_build"]:
+        raise ValueError("SC library test build changed its frozen Cargo.lock")
+    capture_binary, artifact = select_shell_capture_test_artifact(capture_raw)
+    if not capture_binary.is_file() or not os.access(capture_binary, os.X_OK):
+        raise ValueError("SC library test artifact is missing or not executable")
+    capture_bytes = capture_binary.read_bytes()
+    capture_build.update({
+        "binary": str(capture_binary), "binary_bytes": len(capture_bytes),
+        "binary_sha256_before_cases": hashlib.sha256(capture_bytes).hexdigest(),
+        "compiler_artifact": artifact, "result": "compiled-and-bound",
+    })
+    capture_passed = True
+except (OSError, ValueError) as error:
+    capture_build["capture_exit"] = 1
+    capture_build["execution_error"] = str(error)
+capture_build["log_sha256"] = hashlib.sha256(capture_raw).hexdigest()
+(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+print(capture_raw.decode("utf-8", errors="replace"), flush=True)
+print(json.dumps({"box_shell_capture_test_build": capture_build}), flush=True)
+
 for label, command, required in cases:
     receipt["active_case"] = label
     (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -1506,11 +1640,18 @@ for label, command, required in cases:
         child_environment_overrides["SAND_DISABLE_LARGE_OUTPUT_SPILL"] = "0"
     if label == "box-response-real-daemon" and daemon_passed:
         child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_TEST_BIN"] = str(daemon_binary)
+    if label == "box-response-shell-capture-consumer" and capture_passed:
+        child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN"] = str(capture_binary)
     child_environment = dict(os.environ, **child_environment_overrides) if child_environment_overrides else None
     try:
         if label == "box-response-real-daemon" and not daemon_passed:
             capture_exit = 1
             execution_error = "BXR real daemon control blocked: the current build did not produce a bound executable"
+            raw = (execution_error + "\n").encode("utf-8")
+            log_path.write_bytes(raw)
+        elif label in ("box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect") and not capture_passed:
+            capture_exit = 1
+            execution_error = "SC control blocked: the current library test build did not produce a bound executable"
             raw = (execution_error + "\n").encode("utf-8")
             log_path.write_bytes(raw)
         else:
@@ -1591,9 +1732,18 @@ daemon_unchanged = (daemon_passed
     and daemon_build["binary_sha256_after_cases"] == daemon_build["binary_sha256_before_cases"]
     and daemon_build["lock_sha256_after_cases"] == daemon_build["resolved_lock"]["sha256"])
 receipt["box_response_producer_unchanged"] = daemon_unchanged
+capture_build["binary_sha256_after_cases"] = (
+    hashlib.sha256(capture_binary.read_bytes()).hexdigest()
+    if capture_passed and capture_binary is not None and capture_binary.is_file() else None)
+capture_build["lock_sha256_after_cases"] = (
+    hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest() if box_daemon_lock.is_file() else None)
+capture_unchanged = (capture_passed
+    and capture_build["binary_sha256_after_cases"] == capture_build["binary_sha256_before_cases"]
+    and capture_build["lock_sha256_after_cases"] == capture_build["lock_sha256_before_build"])
+receipt["box_shell_capture_test_producer_unchanged"] = capture_unchanged
 accepted = (palette_exported and len(receipt["executions"]) == len(cases)
     and all(case["oracle_accepted"] for case in receipt["executions"])
-    and box_response_sources_unchanged and daemon_unchanged and local_exec_outcome_sources_unchanged
+    and box_response_sources_unchanged and daemon_unchanged and capture_unchanged and local_exec_outcome_sources_unchanged
     and plugin_admission_lock_sources_unchanged)
 receipt["result"] = "passed" if accepted else "failed-or-incomplete"
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")

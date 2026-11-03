@@ -1436,7 +1436,8 @@
         "docs/specs/g11-box-browser-wire-completion.md",
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
-        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json"
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json",
+        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -1479,7 +1480,14 @@
         "BXR03",
         "BXR04",
         "BXR05",
-        "BXR06"
+        "BXR06",
+        "SC01",
+        "SC02",
+        "SC03",
+        "SC04",
+        "SC05",
+        "SC06",
+        "SC07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -3008,7 +3016,8 @@
         "docs/specs/g11-box-browser-wire-completion.md",
         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
-        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json"
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json",
+        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -3051,7 +3060,14 @@
         "BXR03",
         "BXR04",
         "BXR05",
-        "BXR06"
+        "BXR06",
+        "SC01",
+        "SC02",
+        "SC03",
+        "SC04",
+        "SC05",
+        "SC06",
+        "SC07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [

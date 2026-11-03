@@ -1,9 +1,9 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, Command, Stdio};
+use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
@@ -614,6 +614,155 @@ struct ProcessOutcome {
     aborted: bool,
 }
 
+
+/// A child entered execution, but its result/capture could not be observed.
+/// The private phase is bounded and never contains command or captured bytes.
+#[derive(Debug, Clone)]
+pub struct ShellExecutionUnknown {
+    phase: &'static str,
+    cleanup_unresolved: bool,
+}
+
+impl std::fmt::Display for ShellExecutionUnknown {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "foreground shell outcome unknown: {}", self.phase)?;
+        if self.cleanup_unresolved {
+            formatter.write_str("; owned child cleanup unresolved")?;
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for ShellExecutionUnknown {}
+
+impl ShellExecutionUnknown {
+    fn new(phase: &'static str) -> Self {
+        Self { phase, cleanup_unresolved: false }
+    }
+}
+
+enum ProcessFailure {
+    Spawn(String),
+    Unknown(ShellExecutionUnknown),
+}
+
+#[derive(Clone)]
+enum ForegroundProcess {
+    // Existing streamed/background-handoff ownership remains unchanged.
+    Stream,
+    // The same registry retains a Child if bounded cleanup cannot observe reap.
+    Capture(Arc<Mutex<CapturedChild>>),
+}
+
+struct CapturedChild {
+    child: Child,
+    status: Option<ExitStatus>,
+    cleanup_unknown: bool,
+    capture_complete: bool,
+    #[cfg(test)]
+    signals_sent: usize,
+}
+
+impl CapturedChild {
+    fn poll(&mut self) -> Result<Option<ExitStatus>, ShellExecutionUnknown> {
+        if self.status.is_none() {
+            self.status = self.child.try_wait()
+                .map_err(|_| ShellExecutionUnknown::new("child wait failed"))?;
+        }
+        Ok(self.status)
+    }
+
+    fn signal(&mut self, force: bool) -> Result<(), ShellExecutionUnknown> {
+        // Poll and signal under the same ownership mutex. An unreaped child
+        // reserves its PID; after observing reap we never signal that number.
+        if self.poll()?.is_some() {
+            return Ok(());
+        }
+        #[cfg(unix)]
+        {
+            let signal = if force { libc::SIGKILL } else { libc::SIGTERM };
+            let result = unsafe { libc::kill(-(self.child.id() as i32), signal) };
+            if result != 0 {
+                if std::io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH) {
+                    // Exit may race this syscall without any intervening reap.
+                    // Keep observing the same Child; never infer non-execution.
+                    self.poll()?;
+                    return Ok(());
+                }
+                return Err(ShellExecutionUnknown::new("child termination failed"));
+            }
+        }
+        #[cfg(not(unix))]
+        self.child.kill()
+            .map_err(|_| ShellExecutionUnknown::new("child termination failed"))?;
+        #[cfg(test)]
+        { self.signals_sent += 1; }
+        Ok(())
+    }
+}
+
+const FOREGROUND_POLL_INTERVAL: Duration = Duration::from_millis(10);
+const FOREGROUND_TERM_GRACE: Duration = Duration::from_millis(250);
+const FOREGROUND_CLEANUP_LIMIT: Duration = Duration::from_secs(2);
+
+fn cleanup_captured_child(
+    owner: &Arc<Mutex<CapturedChild>>,
+) -> Result<(), ShellExecutionUnknown> {
+    let started = Instant::now();
+    let mut sent_term = false;
+    let mut sent_kill = false;
+    loop {
+        {
+            let mut state = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            match state.poll() {
+                Ok(Some(_)) => {
+                    state.cleanup_unknown = false;
+                    return Ok(());
+                }
+                Ok(None) => {}
+                Err(error) => {
+                    state.cleanup_unknown = true;
+                    return Err(error);
+                }
+            }
+            let force = started.elapsed() >= FOREGROUND_TERM_GRACE;
+            if !sent_term || (force && !sent_kill) {
+                if let Err(error) = state.signal(force) {
+                    state.cleanup_unknown = true;
+                    return Err(error);
+                }
+                sent_term = true;
+                sent_kill |= force;
+            }
+            if started.elapsed() >= FOREGROUND_CLEANUP_LIMIT {
+                state.cleanup_unknown = true;
+                return Err(ShellExecutionUnknown::new("child cleanup deadline elapsed"));
+            }
+        }
+        thread::sleep(FOREGROUND_POLL_INTERVAL);
+    }
+}
+
+struct CaptureWorker {
+    worker: Option<JoinHandle<Result<Vec<u8>, ShellExecutionUnknown>>>,
+    bytes: Option<Vec<u8>>,
+}
+
+impl CaptureWorker {
+    fn new() -> Self {
+        Self { worker: None, bytes: None }
+    }
+
+    fn observe(&mut self, wait: bool) -> Result<(), ShellExecutionUnknown> {
+        if self.worker.as_ref().is_some_and(|worker| wait || worker.is_finished()) {
+            let worker = self.worker.take().expect("observed capture worker");
+            self.bytes = Some(worker.join()
+                .map_err(|_| ShellExecutionUnknown::new("capture worker lost"))??);
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 enum ShellPipeEvent {
     Stdout(Vec<u8>),
@@ -633,7 +782,9 @@ pub struct BoxExecRuntime {
     pub workspace_root: PathBuf,
     pub terminals_directory: PathBuf,
     environment: Mutex<HashMap<String, String>>,
-    foreground_pids: Mutex<HashSet<u32>>,
+    foreground_pids: Mutex<HashMap<u32, ForegroundProcess>>,
+    #[cfg(test)]
+    capture_probe: Mutex<Option<Arc<CaptureProbe>>>,
     background: Arc<Mutex<HashMap<u32, BackgroundProcess>>>,
     next_shell_id: AtomicU32,
     stopping: AtomicBool,
@@ -649,7 +800,9 @@ impl BoxExecRuntime {
             workspace_root,
             terminals_directory,
             environment: Mutex::new(environment),
-            foreground_pids: Mutex::new(HashSet::new()),
+            foreground_pids: Mutex::new(HashMap::new()),
+            #[cfg(test)]
+            capture_probe: Mutex::new(None),
             background: Arc::new(Mutex::new(HashMap::new())),
             next_shell_id: AtomicU32::new(1),
             stopping: AtomicBool::new(false),
@@ -865,7 +1018,7 @@ impl BoxExecRuntime {
         }
     }
 
-    pub fn shell(&self, args: &ShellArgs) -> ShellResult {
+    pub fn shell(&self, args: &ShellArgs) -> Result<ShellResult, ShellExecutionUnknown> {
         let abort = AtomicBool::new(false);
         self.shell_with_abort(args, &abort)
     }
@@ -874,44 +1027,45 @@ impl BoxExecRuntime {
         &self,
         args: &ShellArgs,
         abort: &AtomicBool,
-    ) -> ShellResult {
+    ) -> Result<ShellResult, ShellExecutionUnknown> {
         let cwd = match self.resolve_path(&args.working_directory) {
             Ok(cwd) => cwd,
             Err(error) => {
-                return ShellResult {
+                return Ok(ShellResult {
                     result: Some(shell_result::Result::SpawnError(ShellSpawnError {
                         command: args.command.clone(),
                         working_directory: args.working_directory.clone(),
                         error,
                     })),
-                };
+                });
             }
         };
         let timeout = (args.timeout > 0).then_some(args.timeout as u64);
         let outcome = match self.run_process(&args.command, &cwd, timeout, abort) {
             Ok(outcome) => outcome,
-            Err(error) => {
-                return ShellResult {
+            Err(ProcessFailure::Unknown(error)) => return Err(error),
+            Err(ProcessFailure::Spawn(error)) => {
+                return Ok(ShellResult {
                     result: Some(shell_result::Result::SpawnError(ShellSpawnError {
                         command: args.command.clone(),
                         working_directory: args.working_directory.clone(),
                         error,
                     })),
-                };
+                });
             }
         };
         if outcome.timed_out {
-            return ShellResult {
+            return Ok(ShellResult {
                 result: Some(shell_result::Result::Timeout(ShellTimeout {
                     command: args.command.clone(),
                     working_directory: args.working_directory.clone(),
                     timeout_ms: args.timeout,
                 })),
-            };
+            });
         }
         let elapsed = saturating_i32(outcome.elapsed_ms);
         let interleaved = format!("{}{}", outcome.stdout, outcome.stderr);
-        if outcome.code == 0 && !outcome.aborted {
+        Ok(if outcome.code == 0 && !outcome.aborted {
             ShellResult {
                 result: Some(shell_result::Result::Success(ShellSuccess {
                     command: args.command.clone(),
@@ -940,7 +1094,7 @@ impl BoxExecRuntime {
                     local_execution_time_ms: Some(elapsed),
                 })),
             }
-        }
+        })
     }
 
     fn shell_stream_live<F>(
@@ -971,7 +1125,7 @@ impl BoxExecRuntime {
         self.foreground_pids
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .insert(pid);
+            .insert(pid, ForegroundProcess::Stream);
         let stdout = child
             .as_mut()
             .expect("stream child")
@@ -1563,23 +1717,31 @@ impl BoxExecRuntime {
             }
             Some(exec_server_message::Message::ShellArgs(args)) => {
                 let started = Instant::now();
-                let result = self.shell_with_abort(&args, abort);
-                emit(client_message(
-                    id,
-                    &exec_id,
-                    exec_client_message::Message::ShellResult(result),
-                    Some(saturating_i32(started.elapsed().as_millis() as u64)),
-                ))?;
+                match self.shell_with_abort(&args, abort) {
+                    Ok(result) => emit(client_message(
+                        id,
+                        &exec_id,
+                        exec_client_message::Message::ShellResult(result),
+                        Some(saturating_i32(started.elapsed().as_millis() as u64)),
+                    ))?,
+                    Err(error) => emit(thrown(
+                        id, error.to_string(), "BOX_EXEC_DAEMON_ERROR",
+                    ))?,
+                }
             }
             Some(exec_server_message::Message::MiniSweAgentBashArgs(args)) => {
                 let started = Instant::now();
-                let result = self.shell_with_abort(&args, abort);
-                emit(client_message(
-                    id,
-                    &exec_id,
-                    exec_client_message::Message::MiniSweAgentBashResult(result),
-                    Some(saturating_i32(started.elapsed().as_millis() as u64)),
-                ))?;
+                match self.shell_with_abort(&args, abort) {
+                    Ok(result) => emit(client_message(
+                        id,
+                        &exec_id,
+                        exec_client_message::Message::MiniSweAgentBashResult(result),
+                        Some(saturating_i32(started.elapsed().as_millis() as u64)),
+                    ))?,
+                    Err(error) => emit(thrown(
+                        id, error.to_string(), "BOX_EXEC_DAEMON_ERROR",
+                    ))?,
+                }
             }
             Some(exec_server_message::Message::ShellStreamArgs(args)) => {
                 if let Err(error) =
@@ -1630,15 +1792,21 @@ impl BoxExecRuntime {
         output
     }
 
-    pub fn stop(&self) {
+    pub fn stop(&self) -> Result<(), String> {
         self.stopping.store(true, Ordering::Release);
-        let foreground = self
-            .foreground_pids
+        let foreground = self.foreground_pids
             .lock()
-            .map(|pids| pids.iter().copied().collect::<Vec<_>>())
-            .unwrap_or_default();
-        for pid in foreground {
-            kill_process_group(pid);
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .iter().map(|(pid, process)| (*pid, process.clone())).collect::<Vec<_>>();
+        let mut unresolved = false;
+        for (pid, process) in foreground {
+            match process {
+                ForegroundProcess::Stream => kill_process_group(pid),
+                ForegroundProcess::Capture(owner) => {
+                    unresolved |= cleanup_captured_child(&owner).is_err();
+                    self.remove_completed_capture(pid, &owner);
+                }
+            }
         }
         let background = self
             .background
@@ -1649,6 +1817,41 @@ impl BoxExecRuntime {
             .unwrap_or_default();
         for pid in background {
             kill_process_group(pid);
+        }
+        // The request still owns its capture workers. Reaping alone is not
+        // permission to report that the request has finished cleanup.
+        let deadline = Instant::now() + FOREGROUND_CLEANUP_LIMIT;
+        loop {
+            let pending = self.foreground_pids.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .values().any(|process| matches!(process, ForegroundProcess::Capture(_)));
+            if !pending {
+                return if unresolved {
+                    Err("foreground child cleanup was not fully observed".into())
+                } else {
+                    Ok(())
+                };
+            }
+            if Instant::now() >= deadline {
+                return Err("foreground child cleanup remains unresolved".into());
+            }
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+    }
+
+    fn remove_completed_capture(&self, pid: u32, owner: &Arc<Mutex<CapturedChild>>) {
+        let completed = {
+            let state = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            state.status.is_some() && state.capture_complete
+        };
+        if completed {
+            let mut processes = self.foreground_pids.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if matches!(processes.get(&pid), Some(ForegroundProcess::Capture(current))
+                if Arc::ptr_eq(current, owner))
+            {
+                processes.remove(&pid);
+            }
         }
     }
 
@@ -1682,69 +1885,141 @@ impl BoxExecRuntime {
         cwd: &Path,
         timeout_ms: Option<u64>,
         abort: &AtomicBool,
-    ) -> Result<ProcessOutcome, String> {
-        let mut child = self.spawn_shell(command, cwd)?;
-        let pid = child.id();
-        self.foreground_pids
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .insert(pid);
-        let stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| "shell stdout was unavailable".to_string())?;
-        let stderr = child
-            .stderr
-            .take()
-            .ok_or_else(|| "shell stderr was unavailable".to_string())?;
-        let stdout_worker = thread::spawn(move || read_all(stdout));
-        let stderr_worker = thread::spawn(move || read_all(stderr));
-        let started = Instant::now();
-        let mut timed_out = false;
-        let mut kill_requested = false;
-        let status = loop {
-            if let Some(status) = child.try_wait().map_err(|error| error.to_string())? {
-                break status;
+    ) -> Result<ProcessOutcome, ProcessFailure> {
+        let (pid, owner) = {
+            // Admission and stop's snapshot share the existing registry mutex.
+            // Stop cannot report clean between a successful spawn and insertion.
+            let mut processes = self.foreground_pids.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if self.stopping.load(Ordering::Acquire) {
+                return Err(ProcessFailure::Spawn("box exec daemon is stopping".into()));
             }
-            if !kill_requested
-                && timeout_ms.is_some_and(|timeout| {
-                    started.elapsed() >= Duration::from_millis(timeout)
-                })
-            {
-                timed_out = true;
-                kill_process_group(pid);
-                kill_requested = true;
-            }
-            if !kill_requested
-                && (abort.load(Ordering::Acquire)
-                    || self.stopping.load(Ordering::Acquire))
-            {
-                kill_process_group(pid);
-                kill_requested = true;
-            }
-            thread::sleep(Duration::from_millis(10));
+            let child = self.spawn_shell(command, cwd).map_err(ProcessFailure::Spawn)?;
+            let pid = child.id();
+            let owner = Arc::new(Mutex::new(CapturedChild {
+                child, status: None, cleanup_unknown: false, capture_complete: false,
+                #[cfg(test)]
+                signals_sent: 0,
+            }));
+            processes.insert(pid, ForegroundProcess::Capture(Arc::clone(&owner)));
+            (pid, owner)
         };
-        self.foreground_pids
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .remove(&pid);
-        let stdout = stdout_worker
-            .join()
-            .unwrap_or_else(|_| Vec::new());
-        let stderr = stderr_worker
-            .join()
-            .unwrap_or_else(|_| Vec::new());
-        let signal = status_signal(&status);
-        Ok(ProcessOutcome {
-            code: status.code().unwrap_or(1),
-            signal,
-            stdout: String::from_utf8_lossy(&stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&stderr).into_owned(),
-            elapsed_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
-            timed_out,
-            aborted: abort.load(Ordering::Acquire)
-                || self.stopping.load(Ordering::Acquire),
-        })
+        let control = CaptureControl {
+            cancelled: Arc::new(AtomicBool::new(false)),
+            #[cfg(test)]
+            probe: self.capture_probe.lock().expect("capture probe").clone(),
+            #[cfg(test)]
+            pid,
+        };
+        let mut stdout_worker = CaptureWorker::new();
+        let mut stderr_worker = CaptureWorker::new();
+        let started = Instant::now();
+        let result = (|| -> Result<ProcessOutcome, ShellExecutionUnknown> {
+            let (stdout, stderr) = {
+                let mut state = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                let stdout = state.child.stdout.take()
+                    .ok_or_else(|| ShellExecutionUnknown::new("stdout pipe unavailable"))?;
+                let stderr = state.child.stderr.take()
+                    .ok_or_else(|| ShellExecutionUnknown::new("stderr pipe unavailable"))?;
+                (stdout, stderr)
+            };
+            prepare_capture_pipe(&stdout)?;
+            prepare_capture_pipe(&stderr)?;
+            stdout_worker.worker = Some(spawn_capture_worker(stdout, control.clone(), "stdout")?);
+            stderr_worker.worker = Some(spawn_capture_worker(stderr, control.clone(), "stderr")?);
+            let mut timed_out = false;
+            let mut termination_started = None;
+            let mut sent_kill = false;
+            let mut capture_stop_started = None;
+            loop {
+                stdout_worker.observe(false)?;
+                stderr_worker.observe(false)?;
+                #[cfg(test)]
+                if control.probe.as_ref().is_some_and(|probe| probe.wait_fault_ready()) {
+                    return Err(ShellExecutionUnknown::new("child wait failed"));
+                }
+                let status = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).poll()?;
+                if let Some(status) = status {
+                    if stdout_worker.bytes.is_some() && stderr_worker.bytes.is_some() {
+                        return Ok(ProcessOutcome {
+                            code: status.code().unwrap_or(1),
+                            signal: status_signal(&status),
+                            stdout: String::from_utf8_lossy(
+                                stdout_worker.bytes.as_ref().expect("observed stdout"),
+                            ).into_owned(),
+                            stderr: String::from_utf8_lossy(
+                                stderr_worker.bytes.as_ref().expect("observed stderr"),
+                            ).into_owned(),
+                            elapsed_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                            timed_out,
+                            aborted: abort.load(Ordering::Acquire)
+                                || self.stopping.load(Ordering::Acquire),
+                        });
+                    }
+                    // A normally completed direct child may have a legitimate
+                    // descendant still writing. Do not invent an independent
+                    // output deadline; only request timeout/abort/stop ends that
+                    // wait, with a bounded chance to observe the final EOF.
+                    if timeout_ms.is_some_and(|timeout|
+                        started.elapsed() >= Duration::from_millis(timeout))
+                        || abort.load(Ordering::Acquire)
+                        || self.stopping.load(Ordering::Acquire)
+                    {
+                        let drain = capture_stop_started.get_or_insert_with(Instant::now);
+                        if drain.elapsed() >= FOREGROUND_TERM_GRACE {
+                            return Err(ShellExecutionUnknown::new("capture cancelled before EOF"));
+                        }
+                    }
+                } else {
+                    if termination_started.is_none() {
+                        timed_out = timeout_ms.is_some_and(|timeout|
+                            started.elapsed() >= Duration::from_millis(timeout));
+                        if timed_out || abort.load(Ordering::Acquire)
+                            || self.stopping.load(Ordering::Acquire)
+                        {
+                            owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+                                .signal(false)?;
+                            termination_started = Some(Instant::now());
+                        }
+                    }
+                    if let Some(termination) = termination_started {
+                        if !sent_kill && termination.elapsed() >= FOREGROUND_TERM_GRACE {
+                            owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+                                .signal(true)?;
+                            sent_kill = true;
+                        }
+                        if termination.elapsed() >= FOREGROUND_CLEANUP_LIMIT {
+                            return Err(ShellExecutionUnknown::new("child termination deadline elapsed"));
+                        }
+                    }
+                }
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            }
+        })();
+        // Every return after spawn passes this boundary. Cancellation stops even
+        // a pipe inherited by a still-running descendant; both workers are joined.
+        control.cancelled.store(true, Ordering::Release);
+        let cleanup = if result.is_err() { cleanup_captured_child(&owner) } else { Ok(()) };
+        let stdout_observed = stdout_worker.observe(true);
+        let stderr_observed = stderr_worker.observe(true);
+        {
+            let mut state = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            state.capture_complete = true;
+            state.cleanup_unknown |= cleanup.is_err();
+        }
+        self.remove_completed_capture(pid, &owner);
+        match result {
+            Err(mut error) => {
+                error.cleanup_unresolved = owner.lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner()).cleanup_unknown;
+                Err(ProcessFailure::Unknown(error))
+            }
+            Ok(outcome) => {
+                stdout_observed.map_err(ProcessFailure::Unknown)?;
+                stderr_observed.map_err(ProcessFailure::Unknown)?;
+                Ok(outcome)
+            }
+        }
     }
 
 }
@@ -1773,11 +2048,11 @@ impl BoxExecDaemonHandle {
     }
 
     pub fn stop(&self) -> Result<(), String> {
-        if self.stop.swap(true, Ordering::AcqRel) {
-            return Ok(());
-        }
+        self.stop.store(true, Ordering::Release);
         self.ready.store(false, Ordering::Release);
-        self.runtime.stop();
+        // A previous incomplete stop is retryable observation, never a false
+        // success caused solely by the accept-loop flag already being set.
+        let cleanup = self.runtime.stop();
         if let Some(worker) = self
             .worker
             .lock()
@@ -1788,7 +2063,7 @@ impl BoxExecDaemonHandle {
                 .join()
                 .map_err(|_| "box exec daemon accept worker panicked".to_string())?;
         }
-        Ok(())
+        cleanup
     }
 }
 
@@ -2310,10 +2585,171 @@ where
     })
 }
 
-fn read_all<R: Read>(mut reader: R) -> Vec<u8> {
+#[derive(Clone)]
+struct CaptureControl {
+    cancelled: Arc<AtomicBool>,
+    #[cfg(test)]
+    probe: Option<Arc<CaptureProbe>>,
+    #[cfg(test)]
+    pid: u32,
+}
+
+#[cfg(unix)]
+fn prepare_capture_pipe<R: std::os::fd::AsRawFd>(
+    reader: &R,
+) -> Result<(), ShellExecutionUnknown> {
+    let descriptor = reader.as_raw_fd();
+    let flags = unsafe { libc::fcntl(descriptor, libc::F_GETFL) };
+    if flags < 0 || unsafe { libc::fcntl(descriptor, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
+        return Err(ShellExecutionUnknown::new("nonblocking capture setup failed"));
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn prepare_capture_pipe<R>(_reader: &R) -> Result<(), ShellExecutionUnknown> {
+    // The existing daemon launches /bin/sh. Do not pretend that an unsupported
+    // pipe cancellation primitive provides the Unix foreground contract.
+    Err(ShellExecutionUnknown::new("cancellable pipe capture unavailable"))
+}
+
+fn spawn_capture_worker<R: Read + Send + 'static>(
+    reader: R,
+    control: CaptureControl,
+    stream: &'static str,
+) -> Result<JoinHandle<Result<Vec<u8>, ShellExecutionUnknown>>, ShellExecutionUnknown> {
+    thread::Builder::new().name(format!("box-capture-{stream}"))
+        .spawn(move || read_capture(reader, &control, stream))
+        .map_err(|_| ShellExecutionUnknown::new("capture worker creation failed"))
+}
+
+fn read_capture<R: Read>(
+    mut reader: R,
+    control: &CaptureControl,
+    stream: &'static str,
+) -> Result<Vec<u8>, ShellExecutionUnknown> {
     let mut output = Vec::new();
-    let _ = reader.read_to_end(&mut output);
-    output
+    let mut buffer = [0_u8; 8192];
+    loop {
+        if control.cancelled.load(Ordering::Acquire) {
+            return Err(ShellExecutionUnknown::new("capture cancelled before EOF"));
+        }
+        match read_capture_chunk(&mut reader, &mut buffer, control, stream) {
+            Ok(0) => return Ok(output),
+            Ok(count) => {
+                output.extend_from_slice(&buffer[..count]);
+                #[cfg(test)]
+                if let Some(probe) = control.probe.as_ref() {
+                    probe.after_read(stream, &output, control.pid)?;
+                }
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            }
+            Err(_) => return Err(ShellExecutionUnknown::new(
+                if stream == "stdout" { "stdout read failed" } else { "stderr read failed" },
+            )),
+        }
+    }
+}
+
+fn read_capture_chunk<R: Read>(
+    reader: &mut R,
+    buffer: &mut [u8],
+    _control: &CaptureControl,
+    _stream: &str,
+) -> std::io::Result<usize> {
+    #[cfg(test)]
+    if let Some(probe) = _control.probe.as_ref() {
+        probe.before_read(_stream)?;
+    }
+    reader.read(buffer)
+}
+
+#[cfg(test)]
+fn publish_capture_probe_json(path: &Path, value: &serde_json::Value) -> std::io::Result<()> {
+    let staging = path.with_extension("staging");
+    let mut file = OpenOptions::new().write(true).create_new(true).open(&staging)?;
+    file.write_all(value.to_string().as_bytes())?;
+    drop(file);
+    fs::rename(staging, path)
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CaptureFaultKind {
+    Read,
+    Worker,
+    Wait,
+}
+
+#[cfg(test)]
+struct CaptureProbe {
+    mode: String,
+    stream: &'static str,
+    kind: CaptureFaultKind,
+    observed: AtomicBool,
+    observation_path: PathBuf,
+}
+
+#[cfg(test)]
+impl CaptureProbe {
+    fn new(mode: &str, observation_path: PathBuf) -> Option<Self> {
+        let (stream, kind) = match mode {
+            "none" => return None,
+            "stdout-read" => ("stdout", CaptureFaultKind::Read),
+            "stderr-read" => ("stderr", CaptureFaultKind::Read),
+            "stdout-worker" => ("stdout", CaptureFaultKind::Worker),
+            "stderr-worker" => ("stderr", CaptureFaultKind::Worker),
+            "stdout-wait" => ("stdout", CaptureFaultKind::Wait),
+            "stderr-wait" => ("stderr", CaptureFaultKind::Wait),
+            _ => panic!("unsupported cfg(test) capture fault"),
+        };
+        Some(Self {
+            mode: mode.into(), stream, kind, observed: AtomicBool::new(false), observation_path,
+        })
+    }
+
+    fn after_read(
+        &self,
+        stream: &str,
+        output: &[u8],
+        pid: u32,
+    ) -> Result<(), ShellExecutionUnknown> {
+        const PREFIX: &[u8] = b"SC_CAPTURE_PREFIX";
+        if stream != self.stream || !output.windows(PREFIX.len()).any(|window| window == PREFIX) {
+            return Ok(());
+        }
+        if self.observed.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        // Only this stream's single reader can publish the observation. Store
+        // the release flag after the complete fixture observation is visible.
+        let observation = serde_json::json!({
+            "mode": self.mode, "stream": stream, "prefix": "SC_CAPTURE_PREFIX",
+            "bytesObserved": output.len(), "childPid": pid,
+        });
+        publish_capture_probe_json(&self.observation_path, &observation)
+            .map_err(|_| ShellExecutionUnknown::new("test observation write failed"))?;
+        self.observed.store(true, Ordering::Release);
+        Ok(())
+    }
+
+    fn before_read(&self, stream: &str) -> std::io::Result<()> {
+        if stream == self.stream && self.observed.load(Ordering::Acquire) {
+            match self.kind {
+                CaptureFaultKind::Read => return Err(std::io::Error::other("cfg(test) capture read loss")),
+                CaptureFaultKind::Worker => panic!("cfg(test) capture worker loss after real prefix"),
+                CaptureFaultKind::Wait => {}
+            }
+        }
+        Ok(())
+    }
+
+    fn wait_fault_ready(&self) -> bool {
+        self.kind == CaptureFaultKind::Wait && self.observed.load(Ordering::Acquire)
+    }
 }
 
 fn spawn_stream_pipe<R>(
@@ -2407,6 +2843,275 @@ mod tests {
             std::env::vars().collect(),
         );
         (root, runtime)
+    }
+
+
+    /// Owned fixture entrypoint in the actual daemon *test executable*.
+    /// No production entrypoint reads these environment variables.
+    #[test]
+    #[ignore = "owned child fixture for Host foreground capture contracts"]
+    fn foreground_shell_capture_probe_child() {
+        let root = PathBuf::from(std::env::var_os("FABUSHI_SC_PROBE_ROOT")
+            .expect("probe root is required"));
+        let auth = std::env::var("FABUSHI_SC_PROBE_AUTH").expect("probe auth is required");
+        assert!(!auth.is_empty(), "probe auth must not be empty");
+        let mode = std::env::var("FABUSHI_SC_PROBE_FAULT").unwrap_or_else(|_| "none".into());
+        let port = std::env::var("FABUSHI_SC_PROBE_PORT").ok()
+            .map(|value| value.parse::<u16>().expect("probe port")).unwrap_or(0);
+        fs::create_dir_all(&root).expect("probe root");
+        let handle = start_box_exec_daemon(BoxExecDaemonOptions {
+            host: Some("127.0.0.1".into()), port: Some(port), auth_token: Some(auth),
+            workspace_root: root.join("workspace"),
+            terminals_directory: Some(root.join("terminals")),
+            environment: Some(std::env::vars().collect()),
+        }).expect("owned probe daemon");
+        *handle.runtime.capture_probe.lock().expect("probe") =
+            CaptureProbe::new(&mode, root.join("fault-observed.json")).map(Arc::new);
+        let pid = std::process::id();
+        publish_capture_probe_json(&root.join("ready.json"), &serde_json::json!({
+            "pid": pid, "host": "127.0.0.1", "port": handle.port,
+            "workspaceRoot": handle.workspace_root,
+            "terminalsDirectory": handle.terminals_directory,
+        })).expect("probe readiness");
+        let mut buffer = [0_u8; 64];
+        let mut stdin = std::io::stdin().lock();
+        loop {
+            match stdin.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(_) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(error) => panic!("probe parent pipe failed: {error}"),
+            }
+        }
+        handle.stop().expect("owned probe graceful stop");
+        let remaining = handle.runtime.foreground_pids.lock().expect("foreground registry").len();
+        assert_eq!(remaining, 0, "probe retained unresolved foreground ownership");
+        publish_capture_probe_json(&root.join("stopped.json"), &serde_json::json!({
+            "pid": pid, "clean": true, "foregroundCount": remaining,
+        })).expect("probe stop receipt");
+    }
+
+    fn foreground_args(command: &str) -> ShellArgs {
+        ShellArgs {
+            command: command.into(), working_directory: "/workspace".into(),
+            timeout: 5_000, tool_call_id: "capture-contract".into(),
+            is_background: false, skip_approval: false, timeout_behavior: 0,
+            hard_timeout: None,
+        }
+    }
+
+    fn foreground_request(args: ShellArgs, mini: bool) -> ExecServerMessage {
+        ExecServerMessage {
+            id: 73, exec_id: "capture-wire".into(),
+            message: Some(if mini {
+                exec_server_message::Message::MiniSweAgentBashArgs(args)
+            } else {
+                exec_server_message::Message::ShellArgs(args)
+            }),
+        }
+    }
+
+    fn assert_capture_throw(output: &[ExecStreamElement]) {
+        assert_eq!(output.len(), 2, "unknown must have only Throw and Close");
+        match &output[0].element {
+            Some(exec_stream_element::Element::ExecClientControlMessage(control)) =>
+                match &control.message {
+                    Some(exec_client_control_message::Message::Throw(thrown)) => {
+                        assert_eq!(thrown.id, 73);
+                        assert_eq!(thrown.error_code.as_deref(), Some("BOX_EXEC_DAEMON_ERROR"));
+                        assert!(thrown.error.starts_with("foreground shell outcome unknown: "));
+                        assert!(!thrown.error.contains("SC_CAPTURE_PREFIX"));
+                        assert!(!thrown.error.contains("effect-count"));
+                    }
+                    other => panic!("expected Throw, got {other:?}"),
+                },
+            other => panic!("expected control, got {other:?}"),
+        }
+        assert!(matches!(&output[1].element,
+            Some(exec_stream_element::Element::ExecClientControlMessage(
+                ExecClientControlMessage {
+                    message: Some(exec_client_control_message::Message::StreamClose(
+                        ExecClientStreamClose { id: 73 },
+                    )),
+                },
+            ))
+        ));
+    }
+
+    #[test]
+    fn foreground_capture_faults_preserve_unknown_for_both_dispatches() {
+        for mini in [false, true] {
+            for mode in ["stdout-read", "stderr-read", "stdout-worker", "stderr-worker",
+                "stdout-wait", "stderr-wait"]
+            {
+                let (root, runtime) = runtime();
+                let observation = root.path().join("fault-observed.json");
+                *runtime.capture_probe.lock().expect("probe") =
+                    CaptureProbe::new(mode, observation.clone()).map(Arc::new);
+                let redirect = if mode.starts_with("stderr") { " >&2" } else { "" };
+                let command = format!(
+                    "printf 'effect\\n' >> effect-count; printf '%s\\n' \"$$\" > child-pid; \
+                     printf SC_CAPTURE_PREFIX{redirect}; sleep 30",
+                );
+                let started = Instant::now();
+                let output = runtime.execute(foreground_request(foreground_args(&command), mini));
+                assert_capture_throw(&output);
+                assert!(started.elapsed() < Duration::from_secs(5), "unbounded cleanup: {mode}");
+                let record: serde_json::Value = serde_json::from_slice(
+                    &fs::read(&observation).expect("real prefix observed"),
+                ).expect("observation JSON");
+                assert_eq!(record["mode"], mode);
+                assert_eq!(record["prefix"], "SC_CAPTURE_PREFIX");
+                assert!(record["bytesObserved"].as_u64().unwrap() >= 17);
+                assert_eq!(fs::read_to_string(runtime.workspace_root.join("effect-count")).unwrap(), "effect\n");
+                assert!(runtime.foreground_pids.lock().unwrap().is_empty(), "{mode}");
+                runtime.stop().expect("no unresolved capture owner");
+            }
+        }
+    }
+
+    #[test]
+    fn foreground_capture_complete_results_preserve_text_failure_and_refusal() {
+        let (_root, runtime) = runtime();
+        let result = runtime.shell(&foreground_args(
+            "printf 'complete\\377'; printf 'diagnostic' >&2",
+        )).expect("observed complete capture");
+        let Some(shell_result::Result::Success(result)) = result.result else {
+            panic!("success control");
+        };
+        assert_eq!(result.stdout, "complete\u{fffd}");
+        assert_eq!(result.stderr, "diagnostic");
+        let result = runtime.shell(&foreground_args(
+            "printf 'partial is complete here'; printf 'failure' >&2; exit 7",
+        )).expect("observed nonzero exit");
+        let Some(shell_result::Result::Failure(result)) = result.result else {
+            panic!("nonzero control");
+        };
+        assert_eq!(result.exit_code, 7);
+        assert_eq!(result.stdout, "partial is complete here");
+        assert_eq!(result.stderr, "failure");
+        assert!(!result.aborted);
+        let mut refused = foreground_args("printf should-not-run > refused-effect");
+        refused.working_directory = "/workspace/absent-directory".into();
+        assert!(matches!(runtime.shell(&refused).expect("known pre-spawn refusal").result,
+            Some(shell_result::Result::SpawnError(_))));
+        assert!(!runtime.workspace_root.join("refused-effect").exists());
+        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child() {
+        let (_root, runtime) = runtime();
+        let mut timed = foreground_args("trap '' TERM; printf timeout-prefix; while :; do sleep 1; done");
+        timed.timeout = 100;
+        let started = Instant::now();
+        assert!(matches!(runtime.shell(&timed).expect("timeout observed").result,
+            Some(shell_result::Result::Timeout(_))));
+        assert!(started.elapsed() < Duration::from_secs(5));
+        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+
+        let abort = AtomicBool::new(true);
+        let started = Instant::now();
+        let result = runtime.shell_with_abort(
+            &foreground_args("trap '' TERM; while :; do sleep 1; done"), &abort,
+        ).expect("abort observed");
+        assert!(matches!(result.result,
+            Some(shell_result::Result::Failure(ShellFailure { aborted: true, .. }))));
+        assert!(started.elapsed() < Duration::from_secs(5));
+        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let worker_runtime = Arc::clone(&runtime);
+        let worker = thread::spawn(move || worker_runtime.shell(&foreground_args(
+            "trap '' TERM; printf SC_CAPTURE_PREFIX > started; while :; do sleep 1; done",
+        )));
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while !runtime.workspace_root.join("started").exists() {
+            assert!(Instant::now() < deadline, "real child did not start");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        let owner = runtime.foreground_pids.lock().unwrap().values().find_map(|process| {
+            match process {
+                ForegroundProcess::Capture(owner) => Some(Arc::clone(owner)),
+                ForegroundProcess::Stream => None,
+            }
+        }).expect("owned child registry");
+        runtime.stop().expect("bounded stop and joined capture");
+        let result = worker.join().expect("foreground caller").expect("observed abort");
+        assert!(matches!(result.result,
+            Some(shell_result::Result::Failure(ShellFailure { aborted: true, .. }))));
+        let mut state = owner.lock().unwrap();
+        assert!(state.status.is_some());
+        assert!(state.capture_complete);
+        let signals = state.signals_sent;
+        state.signal(true).expect("already reaped is a no-op");
+        assert_eq!(state.signals_sent, signals, "never signal a reaped PID");
+        drop(state);
+        runtime.stop().expect("repeated stop is observation");
+        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+        assert!(matches!(runtime.shell(&foreground_args(
+            "printf forbidden > after-stop",
+        )).expect("stopped owner refuses before spawn").result,
+            Some(shell_result::Result::SpawnError(_))));
+        assert!(!runtime.workspace_root.join("after-stop").exists());
+    }
+
+    #[test]
+    fn foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging() {
+        let (_root, runtime) = runtime();
+        let complete = runtime.shell(&foreground_args(
+            "(sleep 2; printf delayed) & printf initial; exit 0",
+        )).expect("normal delayed descendant output retains request timeout");
+        let Some(shell_result::Result::Success(complete)) = complete.result else {
+            panic!("delayed capture success");
+        };
+        assert_eq!(complete.stdout, "initialdelayed");
+        // This bounded descendant keeps real capture pipes open after the
+        // direct child exits. Explicit request timeout authorizes cancellation;
+        // absent that authority normal delayed output above remains complete.
+        let mut args = foreground_args(
+            "(trap '' TERM; sleep 3) & printf SC_CAPTURE_PREFIX; exit 0",
+        );
+        args.timeout = 100;
+        let started = Instant::now();
+        let result = runtime.shell(&args);
+        let error = result.expect_err("explicit timeout cannot certify missing EOF");
+        assert_eq!(error.phase, "capture cancelled before EOF");
+        assert!(started.elapsed() < Duration::from_secs(2));
+        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+        // Let the deliberately bounded fixture descendant end before deleting
+        // its workspace; its PID is never used as cleanup authority.
+        while started.elapsed() < Duration::from_millis(3_100) {
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+    }
+
+    #[test]
+    fn foreground_capture_interrupted_read_retries_without_losing_bytes() {
+        struct InterruptedOnce {
+            interrupted: bool,
+            bytes: std::io::Cursor<Vec<u8>>,
+        }
+        impl Read for InterruptedOnce {
+            fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
+                if !self.interrupted {
+                    self.interrupted = true;
+                    return Err(std::io::ErrorKind::Interrupted.into());
+                }
+                self.bytes.read(output)
+            }
+        }
+        let control = CaptureControl {
+            cancelled: Arc::new(AtomicBool::new(false)), probe: None, pid: 0,
+        };
+        let bytes = read_capture(InterruptedOnce {
+            interrupted: false, bytes: std::io::Cursor::new(b"complete".to_vec()),
+        }, &control, "stdout").expect("interrupted read retried");
+        assert_eq!(bytes, b"complete");
     }
 
     #[test]
@@ -2562,7 +3267,7 @@ mod tests {
             skip_approval: false,
             timeout_behavior: 0,
             hard_timeout: None,
-        });
+        }).expect("foreground execution and capture observed");
         let Some(shell_result::Result::Success(success)) = result.result else {
             panic!("expected shell success");
         };
@@ -2749,7 +3454,7 @@ mod tests {
             id: 77,
             exec_id: "abort-wire".into(),
             message: Some(exec_server_message::Message::ShellArgs(ShellArgs {
-                command: "echo $ > abort-pid.txt; sleep 10".into(),
+                command: "echo $$ > abort-pid.txt; sleep 10".into(),
                 working_directory: "/workspace".into(),
                 timeout: 0,
                 tool_call_id: "abort-tool".into(),
@@ -2772,28 +3477,44 @@ mod tests {
 
         let pid_path = workspace.join("abort-pid.txt");
         let deadline = Instant::now() + Duration::from_secs(2);
-        while !pid_path.exists() {
-            assert!(Instant::now() < deadline, "foreground shell never started");
+        let pid = loop {
+            if let Ok(value) = fs::read_to_string(&pid_path) {
+                let value = value.trim();
+                if let Ok(pid) = value.parse::<u32>() {
+                    if pid > 0 {
+                        break pid;
+                    }
+                }
+            }
+            assert!(Instant::now() < deadline, "foreground shell did not publish a numeric PID");
             thread::sleep(Duration::from_millis(10));
+        };
+        let owner = {
+            let processes = handle.runtime.foreground_pids.lock().expect("foreground owner");
+            match processes.get(&pid) {
+                Some(ForegroundProcess::Capture(owner)) => Arc::clone(owner),
+                _ => panic!("published PID must belong to the actual foreground capture"),
+            }
+        };
+        {
+            let mut child = owner.lock().expect("owned child");
+            assert_eq!(child.child.id(), pid);
+            assert!(child.poll().expect("observe child before disconnect").is_none(),
+                "disconnect must act on a live owned child");
+            assert_eq!(child.signals_sent, 0, "no termination precedes disconnect");
         }
-        let pid = fs::read_to_string(&pid_path)
-            .expect("pid")
-            .trim()
-            .to_string();
         drop(stream);
 
         let deadline = Instant::now() + Duration::from_secs(3);
         let mut exited = false;
         while Instant::now() < deadline {
-            let alive = Command::new("kill")
-                .args(["-0", &pid])
-                .status()
-                .map(|status| status.success())
-                .unwrap_or(false);
-            if !alive {
+            let mut child = owner.lock().expect("same owned child");
+            if child.poll().expect("observe actual child reap after disconnect").is_some() {
+                assert!(child.signals_sent > 0, "disconnect must signal the owned child");
                 exited = true;
                 break;
             }
+            drop(child);
             thread::sleep(Duration::from_millis(20));
         }
         if !exited {
