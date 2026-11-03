@@ -507,3 +507,28 @@ the unresolved assertion; an independent countdown cannot supply that oracle.
 Retain failure cleanup and all prior identity, unknown outcome and no-resignal
 assertions. Normal stream drain/termination and full background custody remain
 separate open behavior; this correction does not accept them.
+
+### SC02-R3 — stream output file ownership
+
+A foreground invocation identity is local to its existing runtime and cannot
+alone name a file in a directory shared by multiple daemon handles. Stream spool
+creation must claim a previously absent file atomically; an occupied file or
+symlink is never truncated, appended to, read as this invocation's output, or
+registered for cleanup. Use a bounded collision-safe allocation in the existing
+owner without adding a dependency, process registry or wire identity. Record a
+cleanup path only after that request successfully creates its own file.
+
+Apply the same ownership admission to a stream-to-background terminal file:
+failure to create it exclusively keeps the prior file untouched, preserves the
+entered request's real Child/readers under existing exceptional recovery, and
+returns uncertainty through the current contract. Do not erase an occupied
+terminal merely because handoff setup failed. This is not acceptance of the
+separate ordinary BackgroundProcess controller or its shell-ID generation policy.
+
+Required controls execute two real independent runtimes sharing one terminal
+directory with equal local invocation IDs, coordinate actual output and release,
+and prove separate complete content plus no cross-removal. Occupied spool/terminal
+sentinels (including Unix symlinks) retain their exact original bytes and target;
+creation refusal must not claim cleanup ownership. Preserve later normal success,
+existing handoff positives, single-effect and all earlier identity/custody controls.
+Do not use sleeps as the only proof of the collision or release order.

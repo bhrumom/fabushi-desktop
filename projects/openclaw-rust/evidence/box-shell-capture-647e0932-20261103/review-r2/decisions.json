@@ -1,0 +1,35 @@
+{
+  "schema": "ocrm-review-fix-decision-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BXR-SHELL-CAPTURE-v1",
+  "review_round": 2,
+  "subject": "00bb59e487e55b89cb41bc9d25b14e3b707e9b6a",
+  "tree": "206cb590550ac71497b5a79227d3f752368ea90c",
+  "original_base": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "decisions": [
+    {
+      "id": "SC-R2-SHARED-SPOOL-OWNERSHIP",
+      "decision": "FIX",
+      "priority": "P2",
+      "basis": "Root independently read runtime counter initialization, actual default terminal directory, spool creation, handoff and removal in source blob20b6a1635c091a5cacbc0bbdabff17cdc041e90f; independent reviews also report the same concrete collision.",
+      "failure": "Independent runtime-local identities can select the same shared-directory spool; create/truncate and later unlink can corrupt another active stream.",
+      "repair": "Exclusively create a bounded collision-safe spool in the existing owner; preserve occupied paths; record cleanup authority only after actual creation.",
+      "oracle": "Two real independent runtimes with equal invocation numbers and one directory preserve distinct output and cleanup; occupied path/symlink remains unchanged."
+    },
+    {
+      "id": "SC-R2-PRECREATION-CLEANUP-CLAIM",
+      "decision": "FIX",
+      "priority": "P2",
+      "basis": "Additional root direct source finding: cleanup_paths is populated at1298–1308 and1521–1548 before either file creation succeeds; observe_stream_recovery unconditionally removes registered paths at694–696.",
+      "failure": "A post-spawn setup/handoff refusal can classify a pre-existing spool or terminal path as request-owned and erase it during recovery.",
+      "repair": "Push cleanup ownership only after exclusive creation; handoff must refuse an occupied terminal without mutation or deletion while retaining actual process/worker custody.",
+      "oracle": "Occupied normal/symlink sentinels survive actual failed entry/handoff and later recovery; created request files are still cleaned only after their actual readers complete."
+    }
+  ],
+  "review_delivery": {
+    "general": "Source verdict REQUEST_CHANGES received; optional full report upload denied by automatic approval. No report blob exists; denied payload is not republished here.",
+    "structure": "Independent source finding received; final report identity will be recorded only if actually available."
+  },
+  "implementation": "Pending; this decision and updated SC02-R3 contract precede source repair.",
+  "execution": "Not run. No old or new source review establishes exact-H runtime acceptance."
+}
