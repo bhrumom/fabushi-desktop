@@ -3508,6 +3508,13 @@ impl ProductionSessionWorkers {
             return Err("retryHumanMessage requires nonempty unpadded identities and a nonce of at most 200 UTF-8 bytes".into());
         }
         let sender_id = self.local_human_id()?;
+        // Retry has a narrower in-flight lane than ordinary conversation
+        // mutation: the conversation lane is intentionally released around
+        // HTTP so sync can progress, while this nonce lane prevents two retry
+        // callers from dispatching the same durable intent concurrently.
+        let retry_lane = self.human_message_lock(&format!("human-retry:{conversation_id}:{client_nonce}"))?;
+        let _retry_guard = retry_lane.lock()
+            .map_err(|_| "Human retry serial lock poisoned".to_string())?;
         let serial = self.human_message_lock(conversation_id)?;
         let guard = serial.lock()
             .map_err(|_| "Human conversation serial lock poisoned".to_string())?;
