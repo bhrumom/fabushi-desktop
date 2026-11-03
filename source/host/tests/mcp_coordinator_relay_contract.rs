@@ -889,6 +889,10 @@ mod desktop_service_contracts {
         assert_eq!(fixture.service.dispatch_desktop_command("getPluginSyncStatus", &json!({}))
             .unwrap().unwrap(), json!({
                 "authBlocked":[{"pluginId":"41","pluginName":"Calendar"}],
+                "authRecovery":{
+                    "refusals":[{"pluginId":"41","pluginName":"Calendar"}],
+                    "refreshOutcomeUnknown":false,
+                },
             }));
         assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
         let before = fs::read(fixture.cache_path()).unwrap();

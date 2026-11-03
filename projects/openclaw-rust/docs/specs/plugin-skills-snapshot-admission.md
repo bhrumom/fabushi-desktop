@@ -1205,3 +1205,35 @@ The target owner and consumer chain, not an upstream auth-journal claim, motivat
 this repair. Full source/dependency closure, account/backend incarnation after
 response, already captured prompts/effects, real ecosystems, platform barriers,
 UI and all G01–G12/AC01–AC24 remain unaccepted; no global flag is promoted.
+
+### AR-CI — preserve poisoned-reader handoff and exact status projection
+
+Original exact-H `d70f86f33b5e3c67545954b270373e1548809f4b` Actions run
+`41578381556`, Linux job `125727154700`, exposed two distinct failures in
+the existing portable contract selection. This amendment precedes the fixes.
+
+- **AR-CI-01 (test oracle):** the real desktop service status must retain its
+  exact `authBlocked` value and also expose AR-08's actual `authRecovery`
+  refusals with `refreshOutcomeUnknown: false` after a completed known
+  refusal. Update that exact expected object. Keep real loader waiting,
+  request/callback counts, cache-byte retention on errors and closed-service
+  assertions; do not replace the equality with a partial-field check.
+- **AR-CI-02 (implementation):** preserve PS-LIVE-07's existing same-root
+  successor after the shared admission mutex is poisoned. A successful
+  publication/service-state one-shot claim permanently retires the old owner.
+  Poison already makes that exact shared reader deny every plugin; retaining
+  the same poisoned Arc in the successor cannot grant authority and must not
+  turn the completed retirement into an error after consuming its claim.
+  The no-I/O refresh-fencing helper may return without touching poisoned
+  admission. It must never clear poison, read or replace the unavailable
+  state, create a fresh reader, reset facts, perform I/O or call the loader.
+  Healthy admission still fences only this owner's exact refresh custody.
+  Publication/state lock failures and duplicate claims remain errors.
+
+The existing poisoned-reader contract is the decisive regression oracle:
+keep its successful same-Arc successor construction, denied retained/current
+reads, refused successor sync and unchanged persistent cache assertions.
+Also pin the fixed recovery fault projection and one-shot claim after handoff.
+Run only in GitHub Actions after immutable source review; preserve original
+failure logs and still-valid evidence separately. This bounded recovery does
+not relax AR-01–09, private-image integrity, real provider or final acceptance.

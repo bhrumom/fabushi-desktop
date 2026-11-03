@@ -1756,7 +1756,14 @@ fn poisoned_admission_fails_closed_for_retained_and_successor_readers_without_re
     let successor = h.service.successor_with_loader(Arc::new(StaticLoader(two_plugins(&h.root, "fresh")))).unwrap();
     assert!(Arc::ptr_eq(&reader, &successor.admission_reader()));
     assert!(successor.current().is_empty());
+    assert!(reader.is_denied("9") && reader.is_denied("10"));
+    assert_eq!(successor.auth_recovery_status(), Some(json!({
+        "refusals": [], "refreshOutcomeUnknown": true,
+        "fault": "admission-state-unavailable",
+    })));
+    assert_eq!(h.service.retire_for_replacement().unwrap_err(), "plugin skills replacement already claimed");
     assert_eq!(successor.sync("startup").unwrap_err(), "plugin skills live admission poisoned");
+    h.assert_calls(1);
     assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
 }
 

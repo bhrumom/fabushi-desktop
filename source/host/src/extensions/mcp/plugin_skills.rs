@@ -738,15 +738,18 @@ impl SandPluginSkillsService {
 
     // Called only while this service holds P. It performs no I/O, including
     // when Host composition holds its binding lock around one-shot retirement.
-    fn fence_owned_refresh(&self) -> Result<(), String> {
-        let mut live = self.admission.state.lock()
-            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+    fn fence_owned_refresh(&self) {
+        let Ok(mut live) = self.admission.state.lock() else {
+            // Poison already denies every plugin through this same reader.
+            // Preserve it across handoff; never reset or inspect unavailable
+            // admission after the one-shot lifecycle claim has completed.
+            return;
+        };
         if let Some(refresh) = live.refresh.as_mut() {
             if Arc::ptr_eq(&refresh.owner, &self.refresh_owner) {
                 refresh.disposition = RefreshDisposition::Fenced;
             }
         }
-        Ok(())
     }
 
     fn finish_refresh_guard(&self, pass: &RefreshPass) {
@@ -896,7 +899,8 @@ impl SandPluginSkillsService {
         state.pending = None;
         self.changed.notify_all();
         drop(state);
-        self.fence_owned_refresh()
+        self.fence_owned_refresh();
+        Ok(())
     }
 
     pub fn with_now(mut self, now: Arc<dyn Fn() -> i64 + Send + Sync>) -> Self {
@@ -942,7 +946,7 @@ impl SandPluginSkillsService {
         drop(state);
         // Repeated disposal of a predecessor cannot fence its successor's
         // distinct owner/token. Keep this no-I/O boundary under composition.
-        let _ = self.fence_owned_refresh();
+        self.fence_owned_refresh();
     }
 
     fn filter_live_records(&self, mut records: Vec<PluginSkillRecord>) -> Vec<PluginSkillRecord> {
