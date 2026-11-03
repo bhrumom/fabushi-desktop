@@ -612,6 +612,65 @@ impl MessagingState {
         self.conversation_child_states.push(state);
         self.conversation_child_states.last_mut()
     }
+
+    pub fn migrate_legacy_topic_child_states(&mut self) {
+        let legacy_reads = self
+            .topic_read_cursors
+            .iter()
+            .flat_map(|(conversation_id, by_actor)| {
+                let messages = self.messages.get(conversation_id);
+                by_actor.iter().flat_map(move |(actor_id, by_topic)| {
+                    by_topic.iter().filter_map(move |(topic_id, message_id)| {
+                        let message = messages?.get(message_id)?;
+                        Some((
+                            ConversationDestination::topic(
+                                conversation_id.clone(),
+                                format!("topic:{topic_id}"),
+                            ),
+                            actor_id.clone(),
+                            ConversationMessagePosition::new(
+                                message.created_at_ms,
+                                message.id.0.clone(),
+                            ),
+                        ))
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+        for (destination, actor_id, position) in legacy_reads {
+            if let Some(child) = self.child_state_mut(destination, actor_id) {
+                let _ = child.advance_inbox_read_till(position, None);
+            }
+        }
+
+        let legacy_drafts = self
+            .topic_drafts
+            .iter()
+            .flat_map(|(conversation_id, by_actor)| {
+                by_actor.iter().flat_map(move |(actor_id, by_topic)| {
+                    by_topic.iter().map(move |(topic_id, draft)| {
+                        (
+                            ConversationDestination::topic(
+                                conversation_id.clone(),
+                                format!("topic:{topic_id}"),
+                            ),
+                            actor_id.clone(),
+                            draft.clone(),
+                        )
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+        for (destination, actor_id, draft) in legacy_drafts {
+            if let Some(child) = self.child_state_mut(destination, actor_id) {
+                if child.draft.is_none()
+                    && (!draft.text.trim().is_empty() || draft.reply_to_message_id.is_some())
+                {
+                    child.set_draft(draft.text, draft.reply_to_message_id, draft.updated_at_ms);
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -904,7 +963,8 @@ impl MessagingEngine {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn from_state(state: MessagingState) -> Self {
+    pub fn from_state(mut state: MessagingState) -> Self {
+        state.migrate_legacy_topic_child_states();
         Self { state }
     }
     pub fn state(&self) -> &MessagingState {
@@ -912,6 +972,56 @@ impl MessagingEngine {
     }
     pub fn into_state(self) -> MessagingState {
         self.state
+    }
+
+    /// Resolves the canonical `SavedSublist` participant for a message stored in a
+    /// `SavedMessages` parent conversation (`TDRP-R9-SHARE-THREAD-DESTINATION-001` / `SB-02`):
+    /// - Messages forwarded with preserved origin (`forward_origin.is_some()`) belong to
+    ///   the root origin message's `sender_id` (walked up to 8 hops).
+    /// - Direct self-notes or messages forwarded with `drop_sender_names: true`
+    ///   (`forward_origin.is_none()`) belong to `message.sender_id` (the self sublist).
+    pub fn saved_sublist_participant_for_message(
+        &self,
+        parent_conversation_id: &ConversationId,
+        message_id: &MessageId,
+    ) -> Option<ActorId> {
+        let conversation = self.state.conversations.get(parent_conversation_id)?;
+        if !matches!(conversation.kind, ConversationKind::SavedMessages) {
+            return None;
+        }
+        let message = self
+            .state
+            .messages
+            .get(parent_conversation_id)?
+            .get(message_id)?;
+        if message.deleted {
+            return None;
+        }
+        let Some(mut origin) = message.forward_origin.as_deref() else {
+            return Some(message.sender_id.clone());
+        };
+        let mut resolved_sender: Option<ActorId> = None;
+        for _ in 0..8 {
+            let (source_conv_raw, source_msg_raw) = origin.rsplit_once(':')?;
+            let source_conv_id = ConversationId(source_conv_raw.to_string());
+            let source_msg_id = MessageId(source_msg_raw.to_string());
+            let Some(source_msg) = self
+                .state
+                .messages
+                .get(&source_conv_id)
+                .and_then(|msgs| msgs.get(&source_msg_id))
+            else {
+                break;
+            };
+            resolved_sender = Some(source_msg.sender_id.clone());
+            match source_msg.forward_origin.as_deref() {
+                Some(next_origin) if !next_origin.is_empty() && next_origin != origin => {
+                    origin = next_origin;
+                }
+                _ => break,
+            }
+        }
+        resolved_sender
     }
 
     pub fn story_visibility_flags(&self, owner_id: &ActorId, viewer_id: &ActorId) -> (bool, bool) {
@@ -2298,17 +2408,31 @@ impl MessagingEngine {
                 }
                 let message_conversation_id = destination_message_conversation_id(&destination);
                 let message = self.require_message(message_conversation_id, &message_id)?;
-                if let Some(ConversationChildIdentity::Topic { root_message_id }) =
-                    &destination.child
-                {
-                    let belongs = message
-                        .thread_root_message_id
-                        .as_ref()
-                        .is_some_and(|root| root.0 == *root_message_id)
-                        || message.id.0 == *root_message_id;
-                    if !belongs {
-                        return Err(EngineError::ConversationChildMessageMismatch);
+                match &destination.child {
+                    Some(ConversationChildIdentity::Topic { root_message_id }) => {
+                        let belongs = message
+                            .thread_root_message_id
+                            .as_ref()
+                            .is_some_and(|root| root.0 == *root_message_id)
+                            || message.id.0 == *root_message_id;
+                        if !belongs {
+                            return Err(EngineError::ConversationChildMessageMismatch);
+                        }
                     }
+                    Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
+                        if message.forward_origin.is_some()
+                            && self
+                                .saved_sublist_participant_for_message(
+                                    &destination.conversation_id,
+                                    &message_id,
+                                )
+                                .as_ref()
+                                != Some(participant_id)
+                        {
+                            return Err(EngineError::ConversationChildMessageMismatch);
+                        }
+                    }
+                    _ => {}
                 }
                 Ok(vec![Event::ConversationChildReadChanged {
                     destination,
@@ -2459,16 +2583,21 @@ impl MessagingEngine {
                     reply_to_message_id: None,
                     updated_at_ms: 0,
                 })?;
-                // SavedSublist membership is not derivable from the current canonical
-                // Message shape yet. Never accept arbitrary parent messages into that
-                // child just to populate a page; empty lifecycle snapshots remain valid
-                // until a source-neutral message-to-child relation lands.
-                if matches!(
-                    &destination.child,
-                    Some(ConversationChildIdentity::SavedSublist { .. })
-                ) && !message_ids.is_empty()
+                if let Some(ConversationChildIdentity::SavedSublist { participant_id }) =
+                    &destination.child
                 {
-                    return Err(EngineError::ConversationChildMessageMismatch);
+                    for message_id in &message_ids {
+                        if self
+                            .saved_sublist_participant_for_message(
+                                &destination.conversation_id,
+                                message_id,
+                            )
+                            .as_ref()
+                            != Some(participant_id)
+                        {
+                            return Err(EngineError::ConversationChildMessageMismatch);
+                        }
+                    }
                 }
                 for message_id in &message_ids {
                     self.decide(Command::MarkConversationChildRead {
@@ -3795,8 +3924,35 @@ impl MessagingEngine {
                                 .get_mut(&message.conversation_id)
                                 .and_then(|community| community.topics.get_mut(topic_id))
                             {
-                                topic.last_message_id = Some(message.id.0);
+                                topic.last_message_id = Some(message.id.0.clone());
                             }
+                        }
+                    }
+                    let saved_sublist_participant = self.saved_sublist_participant_for_message(
+                        &message.conversation_id,
+                        &message.id,
+                    );
+                    for child in &mut self.state.conversation_child_states {
+                        let matches_child = match &child.destination.child {
+                            Some(ConversationChildIdentity::Topic { root_message_id }) => {
+                                child.destination.conversation_id == message.conversation_id
+                                    && (message
+                                        .thread_root_message_id
+                                        .as_ref()
+                                        .is_some_and(|root| root.0 == *root_message_id)
+                                        || message.id.0 == *root_message_id)
+                            }
+                            Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
+                                child.destination.conversation_id == message.conversation_id
+                                    && saved_sublist_participant.as_ref() == Some(participant_id)
+                            }
+                            Some(ConversationChildIdentity::Conversation { conversation_id }) => {
+                                *conversation_id == message.conversation_id
+                            }
+                            None => false,
+                        };
+                        if matches_child {
+                            child.note_non_empty();
                         }
                     }
                 }

@@ -1190,6 +1190,289 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
         } if conversation_children.iter().all(|child| child.destination != destination)
             && conversation_children.iter().any(|child| child.destination == saved_destination)
     ));
+
+    // Canonical SavedSublist message-membership relation + MessageQueued pin restoration:
+    // 1. Peer sends a message in `child_id`, and owner forwards it into `saved_parent_id`
+    //    with preserved forward origin (`drop_sender_names: false`).
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:peer", "peer-source-for-saved-sublist"),
+                ClientCommand::SendMessage {
+                    conversation_id: child_id.clone(),
+                    client_message_id: ClientMessageId("client:peer-source-1".into()),
+                    content: text_message("from peer to saved"),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            17,
+        )
+        .unwrap();
+    let peer_source_msg_id = service
+        .engine()
+        .state()
+        .messages
+        .get(&child_id)
+        .unwrap()
+        .values()
+        .find(|msg| msg.client_message_id.0 == "client:peer-source-1")
+        .unwrap()
+        .id
+        .clone();
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "forward-preserved-to-saved"),
+                ClientCommand::ForwardMessages {
+                    from_conversation_id: child_id.clone(),
+                    to_conversation_id: saved_parent_id.clone(),
+                    message_ids: vec![peer_source_msg_id.clone()],
+                    client_batch_id: "batch:saved-sublist-preserved".into(),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                    drop_sender_names: false,
+                    drop_captions: false,
+                },
+            ),
+            18,
+        )
+        .unwrap();
+    let preserved_saved_msg_id = service
+        .engine()
+        .state()
+        .messages
+        .get(&saved_parent_id)
+        .unwrap()
+        .values()
+        .find(|msg| msg.client_message_id.0.starts_with("batch:saved-sublist-preserved"))
+        .unwrap()
+        .id
+        .clone();
+
+    // Non-empty SavedSublist window succeeds for a message genuinely forwarded from `human:peer`
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-page-provable-peer"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: saved_destination.clone(),
+                    message_ids: vec![preserved_saved_msg_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            19,
+        )
+        .unwrap();
+
+    // 2. Forwarding with `drop_sender_names: true` clears `forward_origin`, so it belongs to
+    //    `human:owner`'s self sublist and fails closed for `human:peer`'s sublist.
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "forward-anon-to-saved"),
+                ClientCommand::ForwardMessages {
+                    from_conversation_id: child_id.clone(),
+                    to_conversation_id: saved_parent_id.clone(),
+                    message_ids: vec![peer_source_msg_id.clone()],
+                    client_batch_id: "batch:saved-sublist-anon".into(),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                    drop_sender_names: true,
+                    drop_captions: false,
+                },
+            ),
+            20,
+        )
+        .unwrap();
+    let anon_saved_msg_id = service
+        .engine()
+        .state()
+        .messages
+        .get(&saved_parent_id)
+        .unwrap()
+        .values()
+        .find(|msg| msg.client_message_id.0.starts_with("batch:saved-sublist-anon"))
+        .unwrap()
+        .id
+        .clone();
+
+    let anon_on_peer_sublist = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-page-anon-mismatch"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: saved_destination.clone(),
+                    message_ids: vec![anon_saved_msg_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            21,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        anon_on_peer_sublist,
+        MessagingServiceError::Engine(EngineError::ConversationChildMessageMismatch)
+    ));
+
+    let owner_self_sublist = ConversationDestination::saved_sublist(
+        saved_parent_id.clone(),
+        ActorId::new("human:owner"),
+    );
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-page-owner-self-sublist"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: owner_self_sublist,
+                    message_ids: vec![anon_saved_msg_id],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            22,
+        )
+        .unwrap();
+
+    // 3. Pin `saved_destination`, make it locally empty, and verify queuing a new forwarded
+    //    message from `human:peer` automatically restores `pinned = true`.
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "pin-saved-sublist"),
+                ClientCommand::SetConversationChildPinned {
+                    destination: saved_destination.clone(),
+                    pinned: true,
+                },
+            ),
+            23,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "empty-saved-sublist-window"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: saved_destination.clone(),
+                    message_ids: Vec::new(),
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(0),
+                },
+            ),
+            24,
+        )
+        .unwrap();
+    let empty_saved = service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|child| child.destination == saved_destination)
+        .expect("empty saved sublist");
+    assert!(!empty_saved.pinned);
+    assert!(empty_saved.restore_pinned_when_non_empty);
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "forward-second-preserved-to-saved"),
+                ClientCommand::ForwardMessages {
+                    from_conversation_id: child_id.clone(),
+                    to_conversation_id: saved_parent_id.clone(),
+                    message_ids: vec![peer_source_msg_id],
+                    client_batch_id: "batch:saved-sublist-restore-pin".into(),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                    drop_sender_names: false,
+                    drop_captions: false,
+                },
+            ),
+            25,
+        )
+        .unwrap();
+    let restored_saved = service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|child| child.destination == saved_destination)
+        .expect("restored saved sublist");
+    assert!(restored_saved.pinned);
+    assert!(!restored_saved.restore_pinned_when_non_empty);
+
+    // 4. Legacy `topic_read_cursors` and `topic_drafts` migrate into `conversation_child_states`
+    //    when `MessagingEngine::from_state` loads a snapshot.
+    let mut legacy_state = service.engine().state().clone();
+    legacy_state.conversation_child_states.clear();
+    legacy_state
+        .topic_read_cursors
+        .entry(child_id.clone())
+        .or_default()
+        .entry(ActorId::new("human:owner"))
+        .or_default()
+        .insert("legacy-topic".into(), message_id.clone());
+    legacy_state
+        .topic_drafts
+        .entry(child_id.clone())
+        .or_default()
+        .entry(ActorId::new("human:owner"))
+        .or_default()
+        .insert(
+            "legacy-topic".into(),
+            mahayana_messaging::TopicDraft {
+                conversation_id: child_id.clone(),
+                topic_id: "legacy-topic".into(),
+                actor_id: ActorId::new("human:owner"),
+                text: "migrated topic draft".into(),
+                reply_to_message_id: None,
+                updated_at_ms: 42,
+            },
+        );
+    let migrated_engine = MessagingEngine::from_state(legacy_state);
+    let migrated_topic_dest =
+        ConversationDestination::topic(child_id, "topic:legacy-topic".to_string());
+    let migrated_child = migrated_engine
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|child| {
+            child.destination == migrated_topic_dest
+                && child.actor_id == ActorId::new("human:owner")
+        })
+        .expect("migrated legacy topic child state");
+    assert_eq!(
+        migrated_child
+            .inbox_read_till
+            .as_ref()
+            .map(|pos| pos.message_id.as_str()),
+        Some(message_id.0.as_str())
+    );
+    assert_eq!(
+        migrated_child
+            .draft
+            .as_ref()
+            .map(|draft| draft.text.as_str()),
+        Some("migrated topic draft")
+    );
 }
 
 #[test]

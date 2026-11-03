@@ -1328,12 +1328,17 @@
         "ConversationChildRuntimeState::clear_draft_reply_to",
         "ConversationChildRuntimeState::remove_deleted_messages",
         "pub fn can_toggle_unread(",
+        "saved_sublist_participant_for_message",
+        "migrate_legacy_topic_child_states",
         "thread_root_message_id"
       ],
       "target_language": "Rust",
       "language_rationale": "Thread routing is canonical message/conversation domain state already owned by Rust.",
       "command_event_contracts": [
-        "ClientCommand::ForwardMessage.thread_root_message_id -> Command::ForwardMessage.thread_root_message_id -> Event::MessageQueued Message.thread_root_message_id"
+        "ClientCommand::ForwardMessage.thread_root_message_id -> Command::ForwardMessage.thread_root_message_id -> Event::MessageQueued Message.thread_root_message_id",
+        "Command::ReplaceConversationChildWindow -> saved_sublist_participant_for_message validation -> Event::ConversationChildWindowReplaced",
+        "Event::MessageQueued -> child.note_non_empty() pin restoration for Topic/SavedSublist/Conversation children",
+        "MessagingEngine::from_state -> MessagingState::migrate_legacy_topic_child_states"
       ],
       "state_owner": "Canonical Message thread_root_message_id with Conversation/Topic identity",
       "lifecycle_owner": "MessagingService + MessagingEngine canonical forward/send lifecycle",
@@ -1349,11 +1354,12 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
-        "Pin/list restoration, active-child continuity, notification/unread reconciliation and child-level no-paid-messages exception remain open",
         "Shipping nested picker UI has not yet composed the typed child identity/destruction contract"
       ],
       "production_entrypoints": [
-        "Canonical recipient/topic selection -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine -> Message.thread_root_message_id"
+        "Canonical recipient/topic selection -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine -> Message.thread_root_message_id",
+        "ClientCommand::ReplaceConversationChildWindow -> MessagingEngine::saved_sublist_participant_for_message -> ConversationChildRuntimeState",
+        "MessagingEngine::from_state -> MessagingState::migrate_legacy_topic_child_states -> conversation_child_states"
       ],
       "production_evidence": [
         "commit:18289a68a55a3166f42013b9ea8cb84b7565faf1",
@@ -1363,6 +1369,9 @@
         "path:native/mahayana-messaging/src/conversation.rs#ConversationChildIdentity",
         "path:native/mahayana-messaging/src/conversation.rs#ConversationDestinationSelection",
         "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::remove_deleted_messages",
+        "path:native/mahayana-messaging/src/engine.rs#saved_sublist_participant_for_message",
+        "path:native/mahayana-messaging/src/engine.rs#migrate_legacy_topic_child_states",
+        "path:native/mahayana-messaging/src/engine.rs#Event::MessageQueued",
         "path:native/mahayana-messaging/src/engine.rs#Event::MessagesDeleted"
       ],
       "test_evidence": [
@@ -1371,7 +1380,8 @@
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::destroying_exact_child_clears_selection_without_parent_fallback",
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::unread_toggle_policy_preserves_topic_community_and_saved_sublist_rules",
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::child_runtime_removes_deleted_messages_and_clears_matching_draft_reply_without_losing_text",
-        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs#deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_child_windows"
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs#deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_child_windows",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs#typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_scoped"
       ],
       "target_commit": "bc3252c40684f4420ee0f2f51dc7b9237cc58038",
       "workflow_run": null,

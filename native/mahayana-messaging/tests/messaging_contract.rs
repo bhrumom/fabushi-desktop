@@ -1199,8 +1199,8 @@ fn paid_send_plan_approval_consumption_and_story_share_at_time_revalidation() {
     let comment = FormattedText {
         text: "🔥 highlight".into(),
         entities: vec![TextEntity {
-            offset: 3,
-            length: 9,
+            offset_utf16: 3,
+            length_utf16: 9,
             kind: TextEntityKind::Bold,
         }],
     };
@@ -1214,7 +1214,7 @@ fn paid_send_plan_approval_consumption_and_story_share_at_time_revalidation() {
     let expected_prefix = "https://fabushi.example/s/peer_free/1?t=83\n";
     assert_eq!(composed_link.text, format!("{expected_prefix}🔥 highlight"));
     assert_eq!(
-        composed_link.entities[0].offset,
+        composed_link.entities[0].offset_utf16,
         u32::try_from(expected_prefix.encode_utf16().count()).unwrap() + 3
     );
 
@@ -1334,13 +1334,16 @@ fn paid_send_plan_approval_consumption_and_story_share_at_time_revalidation() {
         owner_id: peer_free_id.clone(),
         media: MediaRef {
             id: "media:story:share:1".into(),
-            mime_type: "video/mp4".into(),
-            size_bytes: 2048,
+            file_name: None,
+            mime_type: Some("video/mp4".into()),
+            size_bytes: Some(2048),
             width: Some(720),
             height: Some(1280),
             duration_ms: Some(120_000),
-            sha256: "ef".repeat(32),
             thumbnail_id: None,
+            local_path: None,
+            remote_url: None,
+            content_hash: Some("ef".repeat(32)),
         },
         caption: FormattedText::plain("shareable"),
         privacy: StoryPrivacy {
