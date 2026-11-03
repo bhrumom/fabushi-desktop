@@ -86,7 +86,7 @@ use super::session_profile_files::{
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
-    FabushiHumanSendError, FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
+    FabushiHumanReactionError, FabushiHumanSendError, FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
     FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, FabushiRemoteHumanReaction,
     fabushi_identity_text, fabushi_message_identity_text,
 };
@@ -97,6 +97,27 @@ enum ForwardSourceFailure {
     Policy(String),
     #[error("{0}")]
     Storage(String),
+}
+
+// One invocation keeps its original credential binding and first qualified
+// reaction refusal. This is not another durable message or credential owner.
+struct HumanSyncRecoveryContext {
+    local_human_id: String,
+    credential_fingerprint: String,
+    first_reaction_refusal: Option<String>,
+}
+
+impl HumanSyncRecoveryContext {
+    fn is_continuing(&self) -> bool {
+        self.first_reaction_refusal.is_some()
+    }
+
+    fn finish<T>(self, value: T) -> Result<T, String> {
+        match self.first_reaction_refusal {
+            Some(error) => Err(error),
+            None => Ok(value),
+        }
+    }
 }
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
@@ -543,9 +564,18 @@ impl ProductionSessionWorkers {
     }
 
     pub fn sync_call_session_from_remote(&self, call_id: &str) -> Result<CallSession, String> {
+        self.sync_call_session_from_remote_with_recovery(call_id, None)
+    }
+
+    fn sync_call_session_from_remote_with_recovery(
+        &self,
+        call_id: &str,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<CallSession, String> {
         const PAGE_LIMIT: usize = 200;
         const MAX_PAGES: usize = 32;
 
+        self.check_human_sync_continuation(recovery)?;
         let local = self.authorized_call_session(call_id)?;
         let Some(client) = self.shipping_native_messaging()? else {
             return Ok(local);
@@ -555,13 +585,41 @@ impl ProductionSessionWorkers {
             return Err("Fabushi call credential identity does not match active Human identity".into());
         }
 
+        let continuation_owner = if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
+            let owner = self.open_human_conversation_db_owner(&local.scope_id)?;
+            let metadata = Self::read_human_conversation_metadata(&owner, &local.scope_id)?;
+            if self.peer_human_id_from_metadata(&metadata)? != self.local_call_peer(&local.participant_ids)? {
+                return Err("remote Human call participants do not match CallSession owner".into());
+            }
+            Some((owner, metadata))
+        } else { None };
+        let check_continuation = || -> Result<(), String> {
+            self.check_human_sync_continuation(recovery)?;
+            if let Some((owner, metadata)) = &continuation_owner {
+                self.revalidate_human_recovery_owner(&local.scope_id, owner, metadata)?;
+                let current = self.authorized_call_session(call_id)?;
+                if current.scope_id != local.scope_id {
+                    return Err("remote Human call resolved to a different canonical conversation scope".into());
+                }
+                if current.participant_ids != local.participant_ids {
+                    return Err("remote Human call participants do not match CallSession owner".into());
+                }
+            }
+            Ok(())
+        };
+        check_continuation()?;
         let mut cursor = self.call_sessions()?.remote_event_seq(call_id)?;
         for _ in 0..MAX_PAGES {
+            check_continuation()?;
             let (remote, events, next_after_seq) =
                 client.get_human_call(call_id, cursor, PAGE_LIMIT)?;
+            check_continuation()?;
             self.validate_remote_call(&remote, &self.authorized_call_session(call_id)?)?;
             let prior_cursor = cursor;
             for event in events {
+                if continuation_owner.is_some() && event.call_id != call_id {
+                    return Err("remote Human call event does not match requested CallSession owner".into());
+                }
                 if event.seq <= cursor {
                     continue;
                 }
@@ -572,11 +630,14 @@ impl ProductionSessionWorkers {
                         event.seq
                     ));
                 }
+                check_continuation()?;
                 self.apply_remote_call_event(&event)?;
+                check_continuation()?;
                 self.call_sessions()?.set_remote_event_seq(call_id, event.seq)?;
                 cursor = event.seq;
             }
             if cursor >= remote.event_seq {
+                check_continuation()?;
                 return self.authorized_call_session(call_id);
             }
             if cursor == prior_cursor || next_after_seq <= cursor {
@@ -656,6 +717,14 @@ impl ProductionSessionWorkers {
     }
 
     pub fn sync_human_calls(&self) -> Result<Vec<CallSession>, String> {
+        self.sync_human_calls_with_recovery(None)
+    }
+
+    fn sync_human_calls_with_recovery(
+        &self,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<Vec<CallSession>, String> {
+        self.check_human_sync_continuation(recovery)?;
         let Some(client) = self.shipping_native_messaging()? else {
             return Ok(Vec::new());
         };
@@ -664,18 +733,39 @@ impl ProductionSessionWorkers {
         if identity.user_id != local_human_id {
             return Err("Fabushi call credential identity does not match active Human identity".into());
         }
+        self.check_human_sync_continuation(recovery)?;
         let remote_calls = client.list_human_calls(200)?;
+        self.check_human_sync_continuation(recovery)?;
         let mut synced = Vec::with_capacity(remote_calls.len());
         for remote in remote_calls {
+            self.check_human_sync_continuation(recovery)?;
             let peer = self.remote_call_peer(&remote)?;
-            let conversation = self.create_human_conversation(&peer, &peer)?;
+            let conversation = self.create_human_conversation_with_recovery(&peer, &peer, recovery)?;
+            self.check_human_sync_continuation(recovery)?;
             let scope_id = conversation
                 .get("id")
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "Human call discovery could not resolve canonical conversation scope".to_string())?;
+            let continuation_owner = if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
+                let owner = self.open_human_conversation_db_owner(scope_id)?;
+                let metadata = Self::read_human_conversation_metadata(&owner, scope_id)?;
+                if self.peer_human_id_from_metadata(&metadata)? != peer {
+                    return Err("remote Human call participants do not match CallSession owner".into());
+                }
+                Some((owner, metadata))
+            } else { None };
+            let check_continuation = || -> Result<(), String> {
+                self.check_human_sync_continuation(recovery)?;
+                if let Some((owner, metadata)) = &continuation_owner {
+                    self.revalidate_human_recovery_owner(scope_id, owner, metadata)?;
+                }
+                Ok(())
+            };
+            check_continuation()?;
             if self.call_sessions()?.get(&remote.call_id)?.is_none() {
                 let creator = fabushi_identity_text(&remote.creator_user_id)?;
                 let participants = vec![local_human_id.clone(), peer.clone()];
+                check_continuation()?;
                 self.call_sessions()?.create_with_id(
                     &remote.call_id,
                     scope_id,
@@ -683,13 +773,16 @@ impl ProductionSessionWorkers {
                     &participants,
                 )?;
             }
+            check_continuation()?;
             let call = self.authorized_call_session(&remote.call_id)?;
             if call.scope_id != scope_id {
                 return Err("remote Human call resolved to a different canonical conversation scope".into());
             }
             self.validate_remote_call(&remote, &call)?;
-            synced.push(self.sync_call_session_from_remote(&remote.call_id)?);
+            synced.push(self.sync_call_session_from_remote_with_recovery(&remote.call_id, recovery)?);
+            check_continuation()?;
         }
+        self.check_human_sync_continuation(recovery)?;
         Ok(synced)
     }
 
@@ -2573,25 +2666,148 @@ impl ProductionSessionWorkers {
         Ok(())
     }
 
+    fn capture_human_sync_recovery(
+        &self,
+        client: &FabushiNativeMessagingClient,
+    ) -> Result<HumanSyncRecoveryContext, String> {
+        let local_human_id = self.local_human_id()?.to_string();
+        if client.identity()?.user_id != local_human_id {
+            return Err("Fabushi native messaging credential changed Human account".into());
+        }
+        let recovery = HumanSyncRecoveryContext {
+            local_human_id,
+            credential_fingerprint: client.request_credential_fingerprint()?,
+            first_reaction_refusal: None,
+        };
+        self.check_human_sync_binding(client, &recovery)?;
+        Ok(recovery)
+    }
+
+    fn check_human_sync_binding(
+        &self,
+        client: &FabushiNativeMessagingClient,
+        recovery: &HumanSyncRecoveryContext,
+    ) -> Result<(), String> {
+        if self.local_human_id()? != recovery.local_human_id
+            || client.identity()?.user_id != recovery.local_human_id
+        {
+            return Err("Fabushi native messaging credential changed Human account".into());
+        }
+        if client.request_credential_fingerprint()? != recovery.credential_fingerprint {
+            return Err("Fabushi native messaging credential changed during Human request".into());
+        }
+        Ok(())
+    }
+
+    fn check_human_sync_continuation(
+        &self,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<(), String> {
+        let Some(recovery) = recovery.filter(|value| value.is_continuing()) else {
+            return Ok(());
+        };
+        let client = self.shipping_native_messaging()?
+            .ok_or_else(|| "Human recovery continuation requires native messaging".to_string())?;
+        self.check_human_sync_binding(client, recovery)
+    }
+
+    fn revalidate_human_recovery_owner(
+        &self,
+        conversation_id: &str,
+        owner: &SandAgentDb,
+        original_metadata: &serde_json::Value,
+    ) -> Result<(), String> {
+        // A retained response cannot reopen or register a replacement after
+        // Session shutdown. Reuse only the original, still registered owner.
+        if owner.is_closed() {
+            return Err("Human conversation owner is closed".into());
+        }
+        let db_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
+            .map_err(|error| error.to_string())?;
+        let directory = db_path.parent()
+            .ok_or_else(|| "native Human conversation database has no parent".to_string())?;
+        let directory_type = fs::symlink_metadata(directory).map_err(|error| error.to_string())?;
+        if directory_type.file_type().is_symlink() || !directory_type.is_dir() {
+            return Err(format!("Human conversation parent is not a real directory: {conversation_id}"));
+        }
+        let file_type = fs::symlink_metadata(&db_path).map_err(|error| error.to_string())?;
+        if file_type.file_type().is_symlink() || !file_type.is_file() {
+            return Err(format!("Human conversation store is not a regular non-symlink file: {conversation_id}"));
+        }
+        let key = Self::native_conversation_owner_key(conversation_id);
+        let current = {
+            let owners = self.db_owners.lock()
+                .map_err(|_| "conversation db owner map poisoned".to_string())?;
+            owners.get(&key).cloned()
+        }.ok_or_else(|| "Human conversation owner changed during reaction recovery".to_string())?;
+        // SandAgentDb resolves relative paths against the current directory
+        // when it opens the existing owner. Match that same path contract.
+        let expected_owner_path = if db_path.is_absolute() {
+            db_path
+        } else {
+            std::env::current_dir().map_err(|error| error.to_string())?.join(db_path)
+        };
+        if !std::ptr::eq(current.as_ref(), owner) || owner.db_path() != expected_owner_path.as_path() {
+            return Err("Human conversation owner changed during reaction recovery".into());
+        }
+        if current.is_closed() {
+            return Err("Human conversation owner is closed".into());
+        }
+        let metadata = Self::read_human_conversation_metadata(&current, conversation_id)?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        if metadata.get("participantIds") != original_metadata.get("participantIds") {
+            return Err("Human conversation participants changed during reaction recovery".into());
+        }
+        Ok(())
+    }
+
+    fn check_human_history_continuation(
+        &self,
+        conversation_id: &str,
+        owner: &SandAgentDb,
+        metadata: &serde_json::Value,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<(), String> {
+        if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
+            self.check_human_sync_continuation(recovery)?;
+            self.revalidate_human_recovery_owner(conversation_id, owner, metadata)?;
+        }
+        Ok(())
+    }
+
     pub fn sync_human_conversation(
         &self,
         conversation_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
-        // Resume the source-owned plan before taking a destination mutation
-        // lock. Forward delivery itself takes destination locks and performs HTTP.
+        let client = self.shipping_native_messaging()?;
+        let mut recovery = client.map(|client| self.capture_human_sync_recovery(client)).transpose()?;
+        // Capture before forward recovery; its completion cannot authorize a
+        // replacement credential. Forward delivery still precedes destination locks.
         self.resume_human_forward_batches()?;
-        self.sync_human_conversation_history(conversation_id)
+        if let (Some(client), Some(recovery)) = (client, recovery.as_ref()) {
+            self.check_human_sync_binding(client, recovery)?;
+        }
+        let entries = self.sync_human_conversation_history(conversation_id, recovery.as_mut())?;
+        match recovery {
+            Some(recovery) => recovery.finish(entries),
+            None => Ok(entries),
+        }
     }
 
     fn sync_human_conversation_history(
         &self,
         conversation_id: &str,
+        mut recovery: Option<&mut HumanSyncRecoveryContext>,
     ) -> Result<Vec<serde_json::Value>, String> {
         const PAGE_LIMIT: usize = 200;
         const MAX_GAP_PAGES: usize = 32;
         const MAX_SAFE_ID: u64 = 9_007_199_254_740_991;
+        self.check_human_sync_continuation(recovery.as_deref())?;
         let serial = self.human_message_lock(conversation_id)?;
         let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
+        self.check_human_sync_continuation(recovery.as_deref())?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         if !self.metadata_has_local_human(&metadata)? {
@@ -2604,6 +2820,7 @@ impl ProductionSessionWorkers {
         if client.identity()?.user_id != local_human_id {
             return Err("Fabushi native messaging credential changed Human account".into());
         }
+        self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
         let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
         let (covered, complete) = match coverage.as_ref() {
             None | Some(serde_json::Value::Null) => (0, false),
@@ -2627,7 +2844,10 @@ impl ProductionSessionWorkers {
                 }
             }
         };
-        self.replay_human_reaction_intent(&owner, &metadata, client)?;
+        self.replay_human_reaction_intent_with_recovery(
+            &owner, &metadata, client, recovery.as_deref_mut(),
+        )?;
+        self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
         let pending = owner.get_transcript_entries().map_err(|error| error.to_string())?
             .into_iter().filter(|entry| {
                 entry.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id.as_str())
@@ -2636,6 +2856,7 @@ impl ProductionSessionWorkers {
                     && entry.get("clientNonce").and_then(serde_json::Value::as_str).is_some()
             }).collect::<Vec<_>>();
         for entry in pending {
+            self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
             // Earlier parents in this ordered replay may have atomically
             // repaired this child's reply edge. Consume the current durable
             // row, not the reply ID captured in the initial pending snapshot.
@@ -2657,10 +2878,16 @@ impl ProductionSessionWorkers {
             let reply = entry.get("replyToId").and_then(serde_json::Value::as_str);
             let composed = entry.get("composedAtMs").and_then(serde_json::Value::as_f64);
             let attachments = entry.get("attachments").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
-            let _ = self.append_human_message_with_context(
+            let result = self.append_human_message_with_context(
                 conversation_id, text, nonce, composed, reply, &attachments,
                 entry.get("forwardContext"), Some(&_exclusive), false,
             );
+            if recovery.as_deref().is_some_and(HumanSyncRecoveryContext::is_continuing) {
+                // This branch was unreachable after a refused reaction before.
+                // Recheck binding first, then preserve every append error unchanged.
+                self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
+                result?;
+            }
         }
         let peer = self.peer_human_id_from_metadata(&metadata)?;
         let mut after = if complete && covered < PAGE_LIMIT as u64 { 0 } else { covered };
@@ -2668,8 +2895,10 @@ impl ProductionSessionWorkers {
         let mut reached_end = false;
         let mut pages_used = 0;
         for _ in 0..MAX_GAP_PAGES {
+            self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
             pages_used += 1;
             let page = client.list_direct_messages_after_for_user(&peer, &local_human_id, after, PAGE_LIMIT)?;
+            self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
             if client.identity()?.user_id != local_human_id {
                 return Err("Fabushi native messaging credential changed Human account".into());
             }
@@ -2677,7 +2906,10 @@ impl ProductionSessionWorkers {
                 return Err("Fabushi Human history page exceeded the 200-message response budget".into());
             }
             if page.is_empty() {
-                if rejected.is_none() { Self::store_human_coverage(&owner, after.max(covered), true)?; }
+                if rejected.is_none() {
+                    self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
+                    Self::store_human_coverage(&owner, after.max(covered), true)?;
+                }
                 reached_end = true;
                 break;
             }
@@ -2694,36 +2926,56 @@ impl ProductionSessionWorkers {
                 last = id;
                 match self.validate_remote_human_message(remote, &local_human_id, &peer, &snapshot) {
                     Ok(()) => accepted.push(remote.clone()),
-                    Err(error) => { rejected.get_or_insert(error); }
+                    Err(error) => {
+                        if recovery.as_deref().is_some_and(HumanSyncRecoveryContext::is_continuing) {
+                            return Err(error);
+                        }
+                        rejected.get_or_insert(error);
+                    }
                 }
             }
             for remote in accepted {
+                self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
                 if let Err(error) = self.validate_remote_human_message(&remote, &local_human_id, &peer, &snapshot) {
+                    if recovery.as_deref().is_some_and(HumanSyncRecoveryContext::is_continuing) {
+                        return Err(error);
+                    }
                     rejected.get_or_insert(error);
                     continue;
                 }
                 let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
                 Self::update_human_replay_snapshot(&mut snapshot, settled);
+                // A synchronous committed-row callback may rotate credentials.
+                // Finish that existing materialization/activity unit, then stop.
+                self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
             }
-            if rejected.is_none() { Self::store_human_coverage(&owner, last, is_last)?; }
+            if rejected.is_none() {
+                self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
+                Self::store_human_coverage(&owner, last, is_last)?;
+            }
             after = last;
             if is_last { reached_end = true; break; }
         }
         // A 32-page window is an absolute request budget, including the last
         // short or empty page. A latest-snapshot refresh may use only spare capacity.
         if reached_end && rejected.is_none() && pages_used < MAX_GAP_PAGES && after >= PAGE_LIMIT as u64 {
+            self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
             let latest = client.list_direct_messages_for_user(&peer, &local_human_id, None, PAGE_LIMIT)?;
+            self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
             let mut snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
             let known = snapshot.iter().filter_map(|entry| entry.get("remoteMessageId")
                 .and_then(serde_json::Value::as_str).map(str::to_string)).collect::<BTreeSet<_>>();
             for remote in latest {
                 let remote_id = fabushi_message_identity_text(&remote.id)?;
                 if !known.contains(remote_id.as_str()) { continue; }
+                self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
                 self.validate_remote_human_message(&remote, &local_human_id, &peer, &snapshot)?;
                 let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
                 Self::update_human_replay_snapshot(&mut snapshot, settled);
+                self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
             }
         }
+        self.check_human_history_continuation(conversation_id, &owner, &metadata, recovery.as_deref())?;
         if let Some(error) = rejected { return Err(error); }
         // Full 32-page windows persist a nonterminal cursor for the next sync/restart.
         owner.get_human_transcript_entries().map_err(|error| error.to_string())
@@ -2742,13 +2994,25 @@ impl ProductionSessionWorkers {
                 local_human_id
             ));
         }
+        let mut recovery = self.capture_human_sync_recovery(client)?;
         self.resume_human_forward_batches()?;
-        for friend in client.list_friends_for_user(local_human_id)? {
+        self.check_human_sync_binding(client, &recovery)?;
+        let friends = client.list_friends_for_user(local_human_id)?;
+        self.check_human_sync_continuation(Some(&recovery))?;
+        let mut synced_conversations = BTreeSet::new();
+        for friend in friends {
+            // Conversation discovery itself can create a durable store.
+            self.check_human_sync_continuation(Some(&recovery))?;
             let peer_human_id = fabushi_identity_text(&friend.user_id)?;
+            let expected_id = Self::human_direct_conversation_id(local_human_id, &peer_human_id);
+            // Duplicate roster rows cannot grant another reaction attempt or
+            // another 32-page history budget for the same canonical scope.
+            if !synced_conversations.insert(expected_id) { continue; }
             let title = friend.display_name.trim();
-            let conversation = self.create_human_conversation(
+            let conversation = self.create_human_conversation_with_recovery(
                 &peer_human_id,
                 if title.is_empty() { &friend.username } else { title },
+                Some(&recovery),
             )?;
             let conversation_id = conversation
                 .get("id")
@@ -2756,10 +3020,12 @@ impl ProductionSessionWorkers {
                 .ok_or_else(|| "synced Human conversation omitted its id".to_string())?;
             // The top-level roster invocation already recovered the outbox.
             // A failed target gets one attempt per invocation, not per friend.
-            self.sync_human_conversation_history(conversation_id)?;
+            self.sync_human_conversation_history(conversation_id, Some(&mut recovery))?;
         }
-        self.sync_human_calls()?;
-        self.list_human_conversations()
+        self.check_human_sync_continuation(Some(&recovery))?;
+        self.sync_human_calls_with_recovery(Some(&recovery))?;
+        self.check_human_sync_continuation(Some(&recovery))?;
+        recovery.finish(self.list_human_conversations()?)
     }
 
     fn human_direct_conversation_id(first: &str, second: &str) -> String {
@@ -2797,6 +3063,16 @@ impl ProductionSessionWorkers {
         peer_human_id: &str,
         title: &str,
     ) -> Result<serde_json::Value, String> {
+        self.create_human_conversation_with_recovery(peer_human_id, title, None)
+    }
+
+    fn create_human_conversation_with_recovery(
+        &self,
+        peer_human_id: &str,
+        title: &str,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<serde_json::Value, String> {
+        self.check_human_sync_continuation(recovery)?;
         let local_human_id = self.local_human_id()?;
         let peer_human_id = peer_human_id.trim();
         let title = title.trim();
@@ -2814,6 +3090,9 @@ impl ProductionSessionWorkers {
             .map_err(|_| "Human conversation serial lock poisoned".to_string())?;
         #[cfg(test)]
         self.observe_human_creation(HumanCreationStage::Locked, &conversation_id, None);
+        // A continuation can wait behind another creator; its old pre-lock
+        // credential check cannot authorize the following filesystem writes.
+        self.check_human_sync_continuation(recovery)?;
 
         // The canonical path is shared by every discovery of this pair. Keep
         // creation in the same mutation lane as send/sync through publication.
@@ -2858,6 +3137,7 @@ impl ProductionSessionWorkers {
             self.observe_human_creation(
                 HumanCreationStage::BeforeInitialize, &conversation_id, Some(&owner),
             );
+            self.check_human_sync_continuation(recovery)?;
             // false can mean existing metadata or a busy write, never ownership
             // of this directory. Validate durable metadata below in either case.
             let _ = owner.initialize_human_metadata_if_empty(metadata)
@@ -2870,6 +3150,7 @@ impl ProductionSessionWorkers {
         self.observe_human_creation(
             HumanCreationStage::BeforePublish, &conversation_id, Some(&owner),
         );
+        self.check_human_sync_continuation(recovery)?;
         // Read-side openers do not take the mutation lock and may have published
         // a valid owner after initialization. Retain that Arc; dropping only our
         // unpublished candidate must never close or replace the cached winner.
@@ -4455,6 +4736,16 @@ impl ProductionSessionWorkers {
         metadata: &serde_json::Value,
         client: &FabushiNativeMessagingClient,
     ) -> Result<Option<serde_json::Value>, String> {
+        self.replay_human_reaction_intent_with_recovery(owner, metadata, client, None)
+    }
+
+    fn replay_human_reaction_intent_with_recovery(
+        &self,
+        owner: &SandAgentDb,
+        metadata: &serde_json::Value,
+        client: &FabushiNativeMessagingClient,
+        mut recovery: Option<&mut HumanSyncRecoveryContext>,
+    ) -> Result<Option<serde_json::Value>, String> {
         let Some(intent) = owner.get_metadata("humanReactionIntent")
             .map_err(|error| error.to_string())?.filter(|value| !value.is_null()) else {
             return Ok(None);
@@ -4486,7 +4777,52 @@ impl ProductionSessionWorkers {
         if Self::human_reaction_remote_identity(&current)? != remote_id {
             return Err("persisted Human reaction remote identity changed".into());
         }
-        let remote = client.set_direct_message_reaction_for_user(remote_id, emoji, active, author)?;
+        let revalidate_owner = || -> Result<(), String> {
+            let conversation_id = metadata.get("conversationId")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "existing Human conversation metadata is missing its identity".to_string())?;
+            self.revalidate_human_recovery_owner(conversation_id, owner, metadata)
+        };
+        if let Some(recovery) = recovery.as_deref() {
+            self.check_human_sync_binding(client, recovery)?;
+            if recovery.is_continuing() { revalidate_owner()?; }
+        }
+        let response = client.set_direct_message_reaction_for_user_classified(
+            remote_id, emoji, active, author,
+        );
+        if let Some(recovery) = recovery.as_deref() {
+            self.check_human_sync_binding(client, recovery)?;
+            if recovery.is_continuing() { revalidate_owner()?; }
+        }
+        let remote = match response {
+            Ok(remote) => remote,
+            Err(FabushiHumanReactionError::RemoteRefusal { status, message }) => {
+                let Some(recovery) = recovery.as_deref_mut() else { return Err(message); };
+                if !matches!(status, 404 | 409) { return Err(message); }
+                // A transport refusal is only a candidate. The request cannot
+                // lend its old admission to an independently changed SQLite row.
+                revalidate_owner()?;
+                if owner.get_metadata("humanReactionIntent").map_err(|error| error.to_string())?.as_ref()
+                    != Some(&intent)
+                {
+                    return Err("persisted Human reaction intent changed before recovery continuation".into());
+                }
+                let current_target = owner.get_transcript_entry_by_id(entry_id)
+                    .map_err(|error| error.to_string())?
+                    .ok_or_else(|| "persisted Human reaction target disappeared".to_string())?;
+                Self::validate_human_reaction_target(&current_target, author, &peer)?;
+                if Self::human_reaction_remote_identity(&current_target)? != remote_id {
+                    return Err("persisted Human reaction remote identity changed".into());
+                }
+                if current_target.get("authorId") != current.get("authorId") {
+                    return Err("persisted Human reaction target author changed".into());
+                }
+                self.check_human_sync_binding(client, recovery)?;
+                recovery.first_reaction_refusal.get_or_insert(message);
+                return Ok(None);
+            }
+            Err(error) => return Err(error.into_message()),
+        };
         Self::validate_remote_human_reactions(&remote)?;
         // HTTP success is not settlement: the service must confirm the requested
         // participant state. Keep the durable intent if a stale/misrouted reply
@@ -4519,6 +4855,10 @@ impl ProductionSessionWorkers {
         let settled = owner.update_transcript_entry(entry_id, &next)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
+        if let Some(recovery) = recovery.as_deref().filter(|value| value.is_continuing()) {
+            self.check_human_sync_binding(client, recovery)?;
+            revalidate_owner()?;
+        }
         if !owner.set_metadata("humanReactionIntent", serde_json::Value::Null)
             .map_err(|error| error.to_string())? {
             return Err("Human reaction intent could not be durably acknowledged".into());

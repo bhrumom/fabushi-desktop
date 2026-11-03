@@ -186,6 +186,27 @@ impl From<String> for FabushiHumanSendError {
     }
 }
 
+// Session must revalidate its original binding and durable target before this
+// transport-level refusal can permit continued recovery.
+pub(super) enum FabushiHumanReactionError {
+    Failure(String),
+    RemoteRefusal { status: u16, message: String },
+}
+
+impl FabushiHumanReactionError {
+    pub(super) fn into_message(self) -> String {
+        match self {
+            Self::Failure(message) | Self::RemoteRefusal { message, .. } => message,
+        }
+    }
+}
+
+impl From<String> for FabushiHumanReactionError {
+    fn from(message: String) -> Self {
+        Self::Failure(message)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ListData {
@@ -704,6 +725,7 @@ impl FabushiNativeMessagingClient {
         active: bool,
     ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
         self.set_direct_message_reaction_bound(message_id, emoji, active, None)
+            .map_err(FabushiHumanReactionError::into_message)
     }
 
     pub fn set_direct_message_reaction_for_user(
@@ -713,6 +735,18 @@ impl FabushiNativeMessagingClient {
         active: bool,
         expected_user_id: &str,
     ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
+        self.set_direct_message_reaction_for_user_classified(
+            message_id, emoji, active, expected_user_id,
+        ).map_err(FabushiHumanReactionError::into_message)
+    }
+
+    pub(super) fn set_direct_message_reaction_for_user_classified(
+        &self,
+        message_id: &str,
+        emoji: &str,
+        active: bool,
+        expected_user_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanReaction>, FabushiHumanReactionError> {
         self.set_direct_message_reaction_bound(
             message_id, emoji, active, Some(expected_user_id),
         )
@@ -724,7 +758,7 @@ impl FabushiNativeMessagingClient {
         emoji: &str,
         active: bool,
         expected_user_id: Option<&str>,
-    ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
+    ) -> Result<Vec<FabushiRemoteHumanReaction>, FabushiHumanReactionError> {
         let canonical_message_id = required_trimmed(message_id, "message id")?;
         if message_id
             .parse::<u64>()
@@ -733,11 +767,15 @@ impl FabushiNativeMessagingClient {
                 && value.to_string() == message_id && canonical_message_id == message_id)
             .is_none()
         {
-            return Err("Fabushi Human reaction requires a positive canonical message id".into());
+            return Err(FabushiHumanReactionError::Failure(
+                "Fabushi Human reaction requires a positive canonical message id".into(),
+            ));
         }
         let emoji = required_trimmed(emoji, "reaction emoji")?;
         if emoji.as_bytes().len() > 32 {
-            return Err("Fabushi Human reaction emoji exceeds the backend limit".into());
+            return Err(FabushiHumanReactionError::Failure(
+                "Fabushi Human reaction emoji exceeds the backend limit".into(),
+            ));
         }
         let credentials = self.read_bound_credentials()?;
         Self::ensure_bound_user(&credentials, expected_user_id)?;
@@ -769,11 +807,22 @@ impl FabushiNativeMessagingClient {
             )
         })?;
         if !status.is_success() || !envelope.success {
-            return Err(format!(
+            // A refusal with a success payload is contradictory. Neither the
+            // status nor error text authorizes inferring a canonical tombstone.
+            let deferrable = matches!(status.as_u16(), 404 | 409)
+                && !envelope.success
+                && envelope.message_id.is_none()
+                && envelope.reactions.is_none();
+            let message = format!(
                 "Fabushi Human reaction mutation was rejected (HTTP {}): {}",
                 status.as_u16(),
                 envelope.error.unwrap_or_else(|| "unknown backend error".into())
-            ));
+            );
+            return Err(if deferrable {
+                FabushiHumanReactionError::RemoteRefusal { status: status.as_u16(), message }
+            } else {
+                FabushiHumanReactionError::Failure(message)
+            });
         }
         let returned_id = envelope
             .message_id
@@ -781,11 +830,13 @@ impl FabushiNativeMessagingClient {
             .ok_or_else(|| "Fabushi Human reaction response omitted the message id.".to_string())
             .and_then(fabushi_identity_text)?;
         if returned_id != message_id {
-            return Err("Fabushi Human reaction backend returned a mismatched message id".into());
+            return Err(FabushiHumanReactionError::Failure(
+                "Fabushi Human reaction backend returned a mismatched message id".into(),
+            ));
         }
-        envelope.reactions.ok_or_else(|| {
+        Ok(envelope.reactions.ok_or_else(|| {
             "Fabushi Human reaction response omitted the reaction summary".to_string()
-        })
+        })?)
     }
 
     pub fn list_friends(&self) -> Result<Vec<FabushiRemoteHumanContact>, String> {
@@ -1024,10 +1075,12 @@ impl FabushiNativeMessagingClient {
             .header("accept", "application/json")
             .send()
             .map_err(|error| format!("Fabushi Human call discovery failed: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let status = response.status();
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human call discovery response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human call discovery response was invalid JSON (HTTP {}): {error}",
@@ -1120,10 +1173,12 @@ impl FabushiNativeMessagingClient {
             .header("accept", "application/json")
             .send()
             .map_err(|error| format!("Fabushi Human call sync failed: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let status = response.status();
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human call sync response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human call sync response was invalid JSON (HTTP {}): {error}",

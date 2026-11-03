@@ -296,7 +296,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 77 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 81 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history ... ok' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens ... ok' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api ... ok' artifacts/native-message/session-gateway.log
@@ -311,7 +311,11 @@ jobs:
             shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids \
             shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins \
             shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement \
-            shipping_human_offline_origin_is_explicit_and_survives_settlement_and_restart; do
+            shipping_human_offline_origin_is_explicit_and_survives_settlement_and_restart \
+            shipping_human_reaction_rejection_preserves_intent_while_history_progresses_after_restart \
+            shipping_human_roster_reaction_rejection_does_not_starve_other_conversations_or_calls \
+            shipping_human_reaction_rejection_continuation_refuses_changed_credentials_before_downstream_work \
+            shipping_human_reaction_rejection_keeps_admission_and_protocol_failures_fail_closed; do
             grep -Fx "test $case_name ... ok" artifacts/native-message/session-gateway.log
           done
       - name: Human resource upload size and bounded-read contracts

@@ -6,56 +6,75 @@ Date: 2026-11-03
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Round8 — message recovery qualified; retained Telegram startup follow-up
+## Round8 — qualified message recovery and admitted reaction refusal continuation
 
-Exact `1de845141d5e30ae9ff4965caf2915f68df2f650` run41559676882 passed
-reconciliation121/121 (Human77, full6400/32, durable continuation/restart, reaction
-concurrency/late receipts, all4 production Transcript feed cases and explicit
-offline-origin persistence). Actual Mac run41559676909 passed Plugins2/2 and
-Human2/2, retries0, with five real Human process lifetimes. Controlled-service
-reopen, nonce replay, settled draft retirement, distinct same-text draft and late
-receipts are proved within those tests; active deployment/signing are separate.
+Fixed U is f985723b552b30fe1c17d377d57f44e61a15a8c4. Existing checkpoint
+checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1 is retained with force=false
+expected-head CAS. Main last reread is5528062177e3865eef60a073a066cca144f9e3e8.
+The local execution environment is offline; no uncommitted-clean claim or local
+test/build/validator execution is made.
 
-H6da UI executed203 with201 passed/2 failed. The exact1de follow-up preserves
-the failed evidence and corrects only the queued-account reconnect ordering and
-actual three-consumer roster accounting. Its new marker implementation rejects
-indeterminate reads before import and commits completion by temporary write and
-rename; original5 persistence cases plus2 target7/full UI205. At this preparation,
-the full UI job125666991740 is still executing the author/browser recovery step;
-no terminal205-pass result is claimed. Current shipping remains queued.
+Exacte8ee557383661694c44a590950f2fdc8631c39a9/run41560824752 actually passed
+reconciliation121 (Human77), desktop owner40 (10+11+6+8+5) and UI205
+(Node169 + Renderer13 + author23), zero failed/ignored in those selected groups,
+zero browser retries. Full logs and exact artifact identities were read.
+Source run41560824735 passed Node161/Python37/schema0 and the unaccepted
+candidate check. Inventory remains16381/root6895;184 responsibility rows,
+16 source reviews with2 complete/14 pending, opaque inputs2/unresolved refs76.
+Unknown/unread remain null and every source/product/independent acceptance false.
+Shipping compile job125670726737 is still queued at this preparation boundary;
+the new legacy policy is not macOS shipping qualified by its Linux40 alone.
 
-The frozen NMR-RETAINED-TELEGRAM-01 follow-up now changes the existing desktop
-Host/Runtime/FeatureHost owners. Only explicit Session/Transcript construction
-selects a new in-memory policy preserving historical Social and Telegram work
-before turn/handoff recovery mutations. Old None and Social-only policy behavior,
-ordinary Agent recovery and fallback remain. Explicit desktop Telegram open/send
-refuse before auth, locks, plugin/context work or events with the existing error.
-No provider is revived and no retained data, credential or original reader is
-deleted or migrated.
+Previous exact1de845141d5e30ae9ff4965caf2915f68df2f650/run41559676882 UI
+executed205 with204 passed/1 failed. Its final author case completed business
+assertions and afterEach, then context teardown exceeded90seconds; the retained
+trace shows an approximately88-second context fixture stop before the secondary
+already-stopping error. Artifact13197690404/digest
+e06334d026a6086c574fd3f884e465d60d166e4d88de4754d7ec7d24beb0f575 remains
+failed evidence. Read-only Actions41562018504 and41562413518 inspected that
+same immutable artifact, without rerunning product tests. The later e8ee pass
+does not erase this failure or prove stability. Exact1de actual Mac
+run41559676909 executed Plugins2/Human2 with zero failures/skips/retries; this
+controlled process/SQLite evidence is not deployed service or signed acceptance.
 
-Original Runtime9 and AppHost7 cases remain;2+1 new cases require Runtime11 and
-AppHost8, while existing Feature10 expands its Telegram matrix. The real AppHost
-fixture includes independent waiting-user and handoff waiting targets, raw payload
-equality, three child lifetimes, account changes, zero unexpected transport and
-a separate actual registry-absence oracle. Linux and macOS selected groups require
-10+11+6+8+5=40. These are authored requirements until containing-H Actions.
-All message121/UI205, actual Mac2+2 and shipping checks remain.
+The next frozen product batch implements NMR-REACTION-RECOVERY-01 in the
+existing Native/Session owners. Only admitted structured404/409 with the
+original complete credential and unchanged canonical target may defer its
+original error. Keep the unconfirmed intent; continue bounded history, later
+friends and Calls, then return the first refusal. Later credential, owner,
+pending, protocol or persistence errors stop immediately across all later
+friends. Revalidation never reopens a retired owner; Calls keep original scope
+and event identity. Canonical duplicate friends do not repeat recovery.
+Four actual Host/SQLite/HTTP cases extend Human77 to81/reconciliation125.
+These new125 inputs require containing-H Actions; they are not passed yet.
 
-Source run41559676865 at H1de passed Node161/Python37/schema0 and unaccepted-
-candidate consistency. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
-Only FBCP-NMR-001 gains current target/requirement/test anchors; all183 other rows,
-source reviews and acceptance fields stay unchanged. Source review remains16
-records/2 complete, unknown/unread null and every acceptance false. A conditional
-old-data startup defect is addressed; actual user-store presence/import is unproved.
+The only browser fixture change excludes its owned author-recovery-results
+directory from the Vite source watcher. All23 cases, oracles,90-second budget,
+zero retries and trace/video/screenshot capture remain. This repairs the proven
+watch-isolation defect without claiming it alone explains the teardown stall.
+UI205, owner40, actual Mac2+2 and every shipping gate remain required.
 
-Backend main687718ce9e0083aa124d29005bcce4051d357919 still rejects afterId=0;
-PR137 is draft/open/unmerged at52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23,
-production readiness skipped, active Worker unverified. Remote revision/tombstone
-and old-message discovery, reaction409, complete source/legal, signed supported
-platforms, full Bot/UI/a11y/security/performance/soak/upgrade/rollback and independent
-ACCEPT remain open. Bounded evidence is in
-`projects/telegram-desktop-rust/evidence/round8-retained-telegram-recovery-20261103.json`;
-earlier round8 receipts and failing attempts remain preserved.
+Spec reaction boundary was frozen at4d05c96a8485d67425d04140f85833ae19c57729;
+the evidence-isolation boundary atc8028d72c1cb72af2008225413f895350036ef52.
+Actions41561761778 generated canonical ledger blob3bf47d8f7504bb179896c502a16329d9f0f80645
+fromcd1b4b2cee8763b61392cb0be718354b20d02eee. Root read the full input/output:
+only FBCP-NMR-001 appended; all183 other rows, globals/source-review fields,
+historical execution scalars and acceptance remain unchanged. The new row has
+64 paths/83 symbols and requires its containing-H schema/candidate validation.
+Public source, review, exact-run and artifact pointers are saved in
+projects/telegram-desktop-rust/evidence/round8-reaction-recovery-20261103.json.
+Raw diagnostics remain in Actions artifacts.
+
+Backend main687718ce9e0083aa124d29005bcce4051d357919 still rejects explicit
+afterId=0 in the inspected source; draft PR137/head52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23
+is open/unmerged and active Worker/D1/readiness remains unverified. No backend
+write, merge, deployment or active service probe is authorized/performed here.
+Permanent reaction-intent termination, canonical revision/tombstones, bounded
+old-message change discovery and outbound edit/delete remain incomplete.
+Full fixed-U source/dependency/generated/legal disposition, old-data mapping,
+supported signed packages, complete Bot/UI/visual/a11y/security/performance/
+soak/upgrade/rollback and independent ACCEPT remain open. This is not complete
+migration or shipping acceptance.
 
 ## Round30 — forward feedback and recovery qualification
 

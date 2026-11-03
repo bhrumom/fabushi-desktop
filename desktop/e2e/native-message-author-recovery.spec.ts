@@ -37,7 +37,11 @@ test.beforeAll(async () => {
     configFile: path.join(appRoot, 'vite.config.ts'),
     root: appRoot,
     customLogger: logger,
-    server: { host: '127.0.0.1', port: 0, strictPort: false },
+    server: {
+      host: '127.0.0.1', port: 0, strictPort: false,
+      // Trace/video output belongs to this test run, not the Vite source graph.
+      watch: { ignored: [path.join(appRoot, 'author-recovery-results').replaceAll(path.sep, '/') + '/**'] },
+    },
     plugins: [{
       name: 'native-message-author-recovery-root-fixture',
       configureServer(vite) {

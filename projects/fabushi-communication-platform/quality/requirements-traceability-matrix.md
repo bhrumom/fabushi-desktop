@@ -895,3 +895,17 @@ This addresses a conditional current-source startup/refusal defect. Actual user
 store presence, old-data import/mapping, active service, signed installed packages,
 full source/legal/Bot/quality/upgrade/rollback and independent ACCEPT are unproved.
 No retained data, provider reader or credential is removed or reinterpreted.
+
+### NMR-REACTION-RECOVERY-01 — Qualified reaction refusal and bounded independent recovery
+
+| Requirement | Existing production owner | Required behavior and evidence |
+|---|---|---|
+| NMR-REACTION-RECOVERY-01a | Native reaction response classification and Session's original intent/target admission. | Only stable actual404/409 with explicit failure and no contradictory success payload may defer its unchanged public error. Recheck exact original intent, account, owner, participants and canonical target after HTTP. Other local, credential, protocol and ACK failures remain hard; no tombstone or acknowledgement is inferred. |
+| NMR-REACTION-RECOVERY-01b / NMR-REACTION-RECOVERY-01d | Existing Session history/roster, SandAgentDb and post-commit Transcript feed; existing Renderer error/local-read fallback. | Retain exact intent, continue bounded history and later friends/Calls, then return first refusal. Carry strict continuation into later friends without their own intent; pending and row validation errors stop immediately. Real restart/HTTP progress and roster/call cases preserve original error, precise requests and durable coverage. |
+| NMR-REACTION-RECOVERY-01c | Original full Native credential fingerprint, existing root/store/participant checks and CallSession owner. | Capture before forward recovery and never rebind. Check before downstream requests/create/write, after responses and before coverage. Native Calls reads check headers/body; Session validates original call scope and event identity before applying. Held body and committed-row rotation controls retain earlier valid state, with no later unauthorized effects; existing Calls DB is observed read-only. |
+| NMR-AC-REACTION-RECOVERY-01 | Spec frozen at4d05c96a8485d67425d04140f85833ae19c57729, same FBCP-NMR-001 responsibility. | Four exact shipping_human_ cases in session_gateway_contract.rs extend77→81; reconciliation125 and zero failed/ignored, original30 bad-intent variants retained. Preserve UI205, owner40, actual Mac2+2 and all shipping gates. Require containing-H Actions; source audits and authored assertions do not qualify deployment or ACCEPT. |
+
+Permanent-intent termination, arbitrary old-message mutation discovery, canonical
+revision/tombstone semantics and active backend afterId=0 remain separate open
+contracts. This batch does not clear a refused intent, migrate user data or grant
+full source/product/independent acceptance.

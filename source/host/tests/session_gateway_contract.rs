@@ -1839,6 +1839,15 @@ enum HumanMessageFixtureReply {
         std::sync::mpsc::Sender<()>,
         std::sync::mpsc::Receiver<()>,
     ),
+    // NMR-REACTION-RECOVERY-01: hold a real response after headers and one
+    // body byte, and keep the listener observable after the scripted prefix.
+    StreamingJson(
+        u16,
+        serde_json::Value,
+        std::sync::mpsc::Sender<()>,
+        std::sync::mpsc::Receiver<()>,
+    ),
+    ObserveUntilStopped(std::sync::mpsc::Receiver<()>),
 }
 
 fn spawn_human_message_fixture(
@@ -1852,6 +1861,33 @@ fn spawn_human_message_fixture(
         let mut deferred = Vec::new();
         for (response_index, response) in responses.into_iter().enumerate() {
             let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+            if let HumanMessageFixtureReply::ObserveUntilStopped(stopped) = &response {
+                loop {
+                    assert!(std::time::Instant::now() < deadline, "live Human fixture observer was not stopped");
+                    match listener.accept() {
+                        Ok((mut stream, _)) => {
+                            stream.set_nonblocking(false).expect("blocking unexpected Human request");
+                            stream.set_write_timeout(Some(std::time::Duration::from_secs(15)))
+                                .expect("bound unexpected Human response");
+                            requests.push(read_fixture_http_request_before(&mut stream, Some(deadline)));
+                            let body = json!({"success":false,"error":"unexpected downstream Human recovery request"}).to_string();
+                            write!(stream,
+                                "HTTP/1.1 503 Unexpected\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                                body.len(), body,
+                            ).expect("answer unexpected Human recovery request");
+                            stream.flush().expect("flush unexpected Human recovery response");
+                        }
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            match stopped.recv_timeout(std::time::Duration::from_millis(5)) {
+                                Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                            }
+                        }
+                        Err(error) => panic!("live Human recovery observer accept: {error}"),
+                    }
+                }
+                continue;
+            }
             let mut stream = loop {
                 match listener.accept() {
                     Ok((stream, _)) => break stream,
@@ -1871,14 +1907,17 @@ fn spawn_human_message_fixture(
             let after_id = requests.last().and_then(|request| request.split("afterId=").nth(1))
                 .and_then(|tail| tail.split(|character: char| !character.is_ascii_digit()).next())
                 .and_then(|value| value.parse::<u64>().ok());
-            let (response, release) = match response {
+            let (response, release, streaming_body) = match response {
                 HumanMessageFixtureReply::Deferred(response, accepted, release) => {
                     accepted.send(()).expect("observe accepted deferred request");
-                    (*response, Some(release))
+                    (*response, Some(release), None)
                 }
-                response => (response, None),
+                HumanMessageFixtureReply::StreamingJson(status, body, started, release) => {
+                    (HumanMessageFixtureReply::Json(status, body), None, Some((started, release)))
+                }
+                response => (response, None, None),
             };
-            let is_deferred = release.is_some();
+            let is_deferred = release.is_some() || streaming_body.is_some();
             let respond = move || {
                 if let Some(release) = release {
                     release.recv_timeout(std::time::Duration::from_secs(15))
@@ -1913,7 +1952,10 @@ fn spawn_human_message_fixture(
                         stream.flush().expect("flush truncated response");
                         return;
                     }
-                    HumanMessageFixtureReply::Deferred(..) => panic!("nested deferred replies are unsupported"),
+                    HumanMessageFixtureReply::Deferred(..)
+                    | HumanMessageFixtureReply::StreamingJson(..)
+                    | HumanMessageFixtureReply::ObserveUntilStopped(..) =>
+                        panic!("nested or misplaced Human fixture control"),
                 };
                 let reason = match status {
                     200 => "OK",
@@ -1926,8 +1968,22 @@ fn spawn_human_message_fixture(
                     "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                     body.len()
                 ).expect("write Human response headers");
-                stream.write_all(&body).expect("write Human response body");
-                stream.flush().expect("flush Human fixture response");
+                if let Some((started, release)) = streaming_body {
+                    assert!(!body.is_empty(), "streamed JSON has a first byte");
+                    stream.write_all(&body[..1]).expect("first Human response body byte");
+                    stream.flush().expect("flush incomplete Human response body");
+                    started.send(()).expect("observe incomplete Human response");
+                    release.recv_timeout(std::time::Duration::from_secs(15))
+                        .expect("release remaining Human response body");
+                    if let Err(error) = stream.write_all(&body[1..]).and_then(|_| stream.flush()) {
+                        assert!(matches!(error.kind(),
+                            std::io::ErrorKind::BrokenPipe | std::io::ErrorKind::ConnectionReset
+                        ), "unexpected streamed Human response failure: {error}");
+                    }
+                } else {
+                    stream.write_all(&body).expect("write Human response body");
+                    stream.flush().expect("flush Human fixture response");
+                }
             };
             if is_deferred {
                 deferred.push(thread::spawn(respond));
@@ -9676,5 +9732,929 @@ fn shipping_human_offline_origin_is_explicit_and_survives_settlement_and_restart
         assert!(requests.iter().all(|request| request.starts_with("GET /api/social/messages?")
             && request.contains("&afterId=0")), "invalid origin never dispatches an unsafe POST: {label}");
         let _ = fs::remove_dir_all(root);
+    }
+}
+
+
+// NMR-REACTION-RECOVERY-01: real existing Session/Native/SQLite owners.
+// These helpers observe the transport and durable state; they implement no
+// reaction, history, credential or CallSession business behavior.
+fn reaction_recovery_seed(
+    runtime: &ProductionSessionWorkers,
+    peer: &str,
+    remote_id: u64,
+    stage_intent: bool,
+) -> (String, serde_json::Value, serde_json::Value) {
+    let id = runtime.create_human_conversation(peer, "Retained recovery peer")
+        .expect("canonical recovery conversation")["id"].as_str().unwrap().to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("real recovery SQLite owner");
+    let mut row = human_local_history_message(remote_id);
+    row["authorId"] = json!(peer);
+    row["retainedLocalMetadata"] = json!({"text":"keep original\0人","version":7});
+    assert!(owner.append_transcript_entry(&row).expect("seed settled canonical target"));
+    let intent = json!({
+        "entryId":format!("human-server-message:{remote_id}"),
+        "remoteMessageId":remote_id.to_string(),"emoji":"👍","active":true,"localHumanId":"1"
+    });
+    if stage_intent {
+        assert!(owner.set_metadata("humanReactionIntent", intent.clone()).expect("retained desired state"));
+    }
+    (id, row, intent)
+}
+
+fn reaction_recovery_friends(peers: &[u64]) -> serde_json::Value {
+    json!({"success":true,"data":{"friends":peers.iter().map(|peer| json!({
+        "id":peer,"userId":peer,"username":format!("peer-{peer}"),
+        "displayName":format!("Peer {peer}"),"avatarUrl":null,"status":"accepted"
+    })).collect::<Vec<_>>()}})
+}
+
+fn reaction_recovery_history(peer: u64, id: u64, text: &str) -> HumanMessageFixtureReply {
+    human_history_reply(vec![fixture_remote_human_message(id, peer, 1, text, None, json!([]))])
+}
+
+fn reaction_recovery_refusal(status: u16) -> HumanMessageFixtureReply {
+    HumanMessageFixtureReply::Json(status, json!({"success":false,"error":"retained reaction refusal"}))
+}
+
+fn reaction_recovery_error(status: u16) -> String {
+    format!("Fabushi Human reaction mutation was rejected (HTTP {status}): retained reaction refusal")
+}
+
+fn reaction_recovery_remote_call(call_id: &str, peer: u64, event_seq: u64) -> serde_json::Value {
+    json!({
+        "callId":call_id,"creatorUserId":peer,"peerUserId":1,
+        "state":if event_seq == 0 { "invited" } else { "negotiating" },
+        "generation":0,"eventSeq":event_seq,"terminalState":null,
+        "createdAt":"2026-10-05T04:10:00Z","updatedAt":"2026-10-05T04:10:01Z"
+    })
+}
+
+fn reaction_recovery_call_body(call_id: &str, peer: u64) -> serde_json::Value {
+    json!({
+        "success":true,"call":reaction_recovery_remote_call(call_id, peer, 1),
+        "events":[{
+            "callId":call_id,"seq":1,"generation":0,"userId":1,"deviceId":"device-a",
+            "clientEventId":"transition:0:accept","kind":"transition",
+            "payload":{"action":"accept","state":"negotiating"},
+            "createdAt":"2026-10-05T04:10:01Z"
+        }],"nextAfterSeq":1
+    })
+}
+
+fn reaction_recovery_calls_image(runtime: &ProductionSessionWorkers) -> serde_json::Value {
+    // Calling shipping get/list would itself synchronize Calls. This reader
+    // uses the already initialized owner path and cannot create or alter a DB.
+    let db = rusqlite::Connection::open_with_flags(
+        runtime.call_session_store_path().expect("existing CallSession database"),
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    ).expect("read-only Calls observer");
+    db.busy_timeout(std::time::Duration::from_secs(5)).expect("bounded Calls read");
+    let mut image = serde_json::Map::new();
+    for (table, order) in [
+        ("call_sessions", "1"), ("call_remote_sync", "1"), ("call_signals", "1,2,3"),
+    ] {
+        let mut statement = db.prepare(&format!("SELECT * FROM {table} ORDER BY {order}"))
+            .expect("existing Calls table");
+        let columns = statement.column_count();
+        let rows = statement.query_map([], |row| {
+            (0..columns).map(|column| Ok(match row.get_ref(column)? {
+                rusqlite::types::ValueRef::Null => serde_json::Value::Null,
+                rusqlite::types::ValueRef::Integer(value) => json!(value),
+                rusqlite::types::ValueRef::Real(value) => json!(value),
+                rusqlite::types::ValueRef::Text(bytes) =>
+                    json!(String::from_utf8(bytes.to_vec()).expect("fixture UTF-8")),
+                rusqlite::types::ValueRef::Blob(bytes) => json!({"blob":bytes}),
+            })).collect::<Result<Vec<_>, rusqlite::Error>>()
+        }).expect("query Calls rows").collect::<Result<Vec<_>, _>>().expect("read Calls rows");
+        image.insert(table.into(), json!(rows));
+    }
+    serde_json::Value::Object(image)
+}
+
+fn reaction_recovery_directories(root: &std::path::Path) -> Vec<String> {
+    let mut entries = fs::read_dir(root.join("agents/.conversations"))
+        .expect("existing native conversation root")
+        .map(|entry| entry.expect("conversation directory entry").file_name()
+            .to_string_lossy().into_owned()).collect::<Vec<_>>();
+    entries.sort();
+    entries
+}
+
+fn reaction_recovery_state(runtime: &ProductionSessionWorkers, root: &std::path::Path) -> serde_json::Value {
+    let roster = runtime.list_human_conversations().expect("local roster only");
+    let conversations = roster.iter().map(|conversation| {
+        let id = conversation["id"].as_str().expect("canonical roster id");
+        let owner = runtime.open_human_conversation_db_owner(id).expect("existing conversation owner");
+        json!({"id":id,"metadata":owner.read_metadata().expect("complete metadata"),
+            "rows":owner.get_transcript_entries().expect("complete retained rows")})
+    }).collect::<Vec<_>>();
+    json!({"roster":roster,"conversations":conversations,
+        "calls":reaction_recovery_calls_image(runtime),"directories":reaction_recovery_directories(root)})
+}
+
+fn reaction_recovery_events(root: &std::path::Path) -> (
+    Arc<std::sync::Mutex<Vec<serde_json::Value>>>,
+    mahayana_host_runtime::transcript_mutation_events::TranscriptMutationSubscription,
+) {
+    let origin_root = fs::canonicalize(root.join("agents/.conversations")).expect("owned event origin");
+    let events = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let captured = Arc::clone(&events);
+    let subscription = subscribe_transcript_mutations(move |mutation| {
+        if mutation.get(TRANSCRIPT_MUTATION_ORIGIN_KEY).and_then(serde_json::Value::as_str)
+            .is_some_and(|origin| std::path::Path::new(origin).starts_with(&origin_root))
+        {
+            captured.lock().expect("capture scoped recovery event")
+                .push(serde_json::Value::Object(mutation.clone()));
+        }
+    });
+    (events, subscription)
+}
+
+fn reaction_recovery_complete_credential(root: &std::path::Path, url: &str) -> serde_json::Value {
+    let expires = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64 + 600_000;
+    let value = json!({
+        "accessToken":"fixture-token","deviceId":"device-a","userId":1,
+        "sessionId":"original-recovery-session","expiresAtMs":expires,"issuer":url
+    });
+    // The existing fixture already created a private 0600 file.
+    fs::write(root.join("host-credential.json"), value.to_string()).expect("complete six-field credential");
+    value
+}
+
+fn reaction_recovery_rotated_credential(original: &serde_json::Value, field: &str) -> serde_json::Value {
+    let mut value = original.clone();
+    value[field] = match field {
+        "userId" => json!(9),
+        "deviceId" => json!("rotated-recovery-device"),
+        "accessToken" => json!("rotated-recovery-token"),
+        "sessionId" => json!("rotated-recovery-session"),
+        "expiresAtMs" => json!(original["expiresAtMs"].as_u64().unwrap() + 60_000),
+        "issuer" => json!("http://127.0.0.1:1"),
+        _ => panic!("unknown credential field"),
+    };
+    value
+}
+
+fn assert_reaction_recovery_requests(requests: &[String], expected: &[String]) {
+    assert_eq!(requests.len(), expected.len(), "exact recovery HTTP count");
+    for (request, expected) in requests.iter().zip(expected) {
+        assert!(request.starts_with(&format!("{expected} ")), "unexpected route; expected {expected}");
+        let lower = request.to_ascii_lowercase();
+        assert!(lower.contains("authorization: bearer fixture-token"));
+        assert!(lower.contains("x-fabushi-device-id: device-a"));
+        if expected.starts_with("POST ") && expected.ends_with("/reactions") {
+            assert_eq!(fixture_request_json(request), json!({"emoji":"👍","active":true}),
+                "replay the original desired state, never retoggle");
+        }
+    }
+}
+
+#[test]
+fn shipping_human_reaction_rejection_preserves_intent_while_history_progresses_after_restart() {
+    for status in [404, 409] {
+        let root = temp_root(&format!("reaction-refusal-history-{status}"));
+        let (stop, stopped) = std::sync::mpsc::channel();
+        let ack = json!({"success":true,"messageId":17,
+            "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]});
+        let (url, server) = spawn_human_message_fixture(vec![
+            reaction_recovery_refusal(status),
+            reaction_recovery_refusal(status),
+            reaction_recovery_history(2, 18, "history despite refused reaction"),
+            reaction_recovery_refusal(status),
+            reaction_recovery_history(2, 19, "later restart history"),
+            HumanMessageFixtureReply::Json(200, ack),
+            HumanMessageFixtureReply::ObserveUntilStopped(stopped),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let (id, original, intent) = reaction_recovery_seed(&runtime, "2", 17, false);
+        let target = original["id"].as_str().unwrap();
+        assert_eq!(runtime.toggle_human_message_reaction(&id, target, "👍").unwrap_err(),
+            reaction_recovery_error(status), "direct command keeps its original refusal");
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent.clone()));
+        assert_eq!(owner.get_transcript_entries().unwrap(), vec![original.clone()]);
+        runtime.shutdown(); drop(owner); drop(runtime);
+
+        let restarted = human_message_fixture_runtime(&root, &url);
+        let owner = restarted.open_human_conversation_db_owner(&id).unwrap();
+        let (events, subscription) = reaction_recovery_events(&root);
+        assert_eq!(restarted.sync_human_conversation(&id).unwrap_err(), reaction_recovery_error(status));
+        let first_progress = owner.get_transcript_entries().unwrap();
+        assert_eq!(human_row_ids(&first_progress), ["human-server-message:17", "human-server-message:18"]);
+        assert_eq!(first_progress[0], original);
+        assert_eq!(first_progress[1]["content"], "history despite refused reaction");
+        assert_eq!(owner.get_metadata("humanHistoryCoverage").unwrap(),
+            Some(json!({"version":1,"afterId":18,"complete":true})));
+        assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent.clone()));
+        let published = events.lock().unwrap().clone();
+        assert_eq!(published.len(), 1, "only independent committed history reaches the real feed");
+        assert_eq!(published[0]["entries"], json!([first_progress[1].clone()]));
+        subscription.unsubscribe();
+        restarted.shutdown(); drop(owner); drop(restarted);
+
+        let reopened = human_message_fixture_runtime(&root, &url);
+        let owner = reopened.open_human_conversation_db_owner(&id).unwrap();
+        assert_eq!(owner.get_transcript_entries().unwrap(), first_progress, "pure reopen retains progress");
+        assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent.clone()));
+        assert_eq!(reopened.sync_human_conversation(&id).unwrap_err(), reaction_recovery_error(status));
+        let progressed = owner.get_transcript_entries().unwrap();
+        assert_eq!(human_row_ids(&progressed),
+            ["human-server-message:17", "human-server-message:18", "human-server-message:19"]);
+        assert_eq!(owner.get_metadata("humanHistoryCoverage").unwrap(),
+            Some(json!({"version":1,"afterId":19,"complete":true})));
+        assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent));
+        let settled = reopened.toggle_human_message_reaction(&id, target, "👍")
+            .expect("same occupied intent can later receive a real acknowledgement");
+        assert_eq!(settled["remoteReactions"], json!([{"emoji":"👍","count":1,"reactedByMe":true}]));
+        assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(json!(null)));
+        let final_rows = owner.get_transcript_entries().unwrap();
+        assert_eq!(final_rows.len(), 3);
+        assert_eq!(final_rows[1..], progressed[1..], "settlement preserves independent history");
+        reopened.shutdown(); drop(owner); drop(reopened);
+        let final_owner = human_message_fixture_runtime(&root, &url);
+        let owner = final_owner.open_human_conversation_db_owner(&id).unwrap();
+        assert_eq!(owner.get_transcript_entries().unwrap(), final_rows);
+        assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(json!(null)));
+        final_owner.shutdown(); drop(owner); drop(final_owner);
+        stop.send(()).unwrap();
+        let requests = server.join().expect("live history observer");
+        assert_reaction_recovery_requests(&requests, &[
+            "POST /api/social/messages/17/reactions".into(),
+            "POST /api/social/messages/17/reactions".into(),
+            "GET /api/social/messages?contactId=2&limit=200&afterId=0".into(),
+            "POST /api/social/messages/17/reactions".into(),
+            "GET /api/social/messages?contactId=2&limit=200&afterId=0".into(),
+            "POST /api/social/messages/17/reactions".into(),
+        ]);
+        fs::remove_dir_all(root).expect("remove owned reaction recovery fixture");
+    }
+}
+
+#[test]
+fn shipping_human_roster_reaction_rejection_does_not_starve_other_conversations_or_calls() {
+    let root = temp_root("reaction-refusal-roster-calls");
+    let call_id = "reaction-recovery-incoming-call";
+    let (stop, stopped) = std::sync::mpsc::channel();
+    let (url, server) = spawn_human_message_fixture(vec![
+        // A repeated roster peer must not replay an occupied reaction twice.
+        HumanMessageFixtureReply::Json(200, reaction_recovery_friends(&[2, 2, 3])),
+        reaction_recovery_refusal(409),
+        reaction_recovery_history(2, 18, "first peer history"),
+        reaction_recovery_history(3, 31, "second peer history"),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,
+            "calls":[reaction_recovery_remote_call(call_id, 4, 1)]})),
+        HumanMessageFixtureReply::Json(200, reaction_recovery_call_body(call_id, 4)),
+        HumanMessageFixtureReply::ObserveUntilStopped(stopped),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let (id, original, intent) = reaction_recovery_seed(&runtime, "2", 17, true);
+    let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+    let (events, subscription) = reaction_recovery_events(&root);
+    assert_eq!(runtime.sync_human_conversations().unwrap_err(), reaction_recovery_error(409));
+    let roster = runtime.list_human_conversations().expect("UI local roster fallback");
+    assert_eq!(roster.len(), 3, "both friends and the independently discovered call peer");
+    let find_peer = |peer: &str| roster.iter().find(|row|
+        row["participantIds"].as_array().unwrap().contains(&json!(peer)))
+        .expect("actual canonical peer")["id"].as_str().unwrap().to_owned();
+    let second = find_peer("3");
+    let call_scope = find_peer("4");
+    let first_rows = owner.get_transcript_entries().unwrap();
+    assert_eq!(human_row_ids(&first_rows), ["human-server-message:17", "human-server-message:18"]);
+    assert_eq!(first_rows[0], original);
+    assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent.clone()));
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").unwrap(),
+        Some(json!({"version":1,"afterId":18,"complete":true})));
+    let second_owner = runtime.open_human_conversation_db_owner(&second).unwrap();
+    assert_eq!(human_row_ids(&second_owner.get_transcript_entries().unwrap()), ["human-server-message:31"]);
+    assert_eq!(second_owner.get_metadata("humanHistoryCoverage").unwrap(),
+        Some(json!({"version":1,"afterId":31,"complete":true})));
+    let calls = reaction_recovery_calls_image(&runtime);
+    assert_eq!(calls["call_sessions"].as_array().unwrap().len(), 1);
+    assert_eq!(calls["call_sessions"][0][0], call_id);
+    assert_eq!(calls["call_sessions"][0][1], call_scope);
+    assert_eq!(calls["call_sessions"][0][3], "negotiating");
+    assert_eq!(calls["call_sessions"][0][4], 0);
+    assert_eq!(calls["call_remote_sync"], json!([[call_id, 1]]));
+    assert_eq!(calls["call_signals"], json!([]));
+    let published = events.lock().unwrap().clone();
+    assert_eq!(published.len(), 2, "only the two real committed history rows");
+    assert!(published.iter().any(|event| event["entries"][0]["id"] == "human-server-message:18"));
+    assert!(published.iter().any(|event| event["entries"][0]["id"] == "human-server-message:31"));
+    let durable = reaction_recovery_state(&runtime, &root);
+    subscription.unsubscribe();
+    runtime.shutdown(); drop(second_owner); drop(owner); drop(runtime);
+    let reopened = human_message_fixture_runtime(&root, &url);
+    assert_eq!(reaction_recovery_state(&reopened, &root), durable, "roster/history/Calls survive pure reopen");
+    let owner = reopened.open_human_conversation_db_owner(&id).unwrap();
+    assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent));
+    reopened.shutdown(); drop(owner); drop(reopened);
+    stop.send(()).unwrap();
+    assert_reaction_recovery_requests(&server.join().expect("roster continuation observer"), &[
+        "GET /api/social/friends".into(),
+        "POST /api/social/messages/17/reactions".into(),
+        "GET /api/social/messages?contactId=2&limit=200&afterId=0".into(),
+        "GET /api/social/messages?contactId=3&limit=200&afterId=0".into(),
+        "GET /api/social/calls?limit=200".into(),
+        format!("GET /api/social/calls/{call_id}?afterSeq=0&limit=200"),
+    ]);
+    fs::remove_dir_all(root).expect("remove owned roster continuation fixture");
+}
+
+
+#[test]
+fn shipping_human_reaction_rejection_continuation_refuses_changed_credentials_before_downstream_work() {
+    // Every field starts present, and both expiry values remain in the future.
+    // This is an unchanged-invocation test, not merely an expired-token test.
+    let fields = ["userId", "deviceId", "accessToken", "sessionId", "expiresAtMs", "issuer"];
+    for stage in ["reaction", "history", "empty-history", "latest-history", "calls-list", "calls-get"] {
+        for field in fields {
+            let root = temp_root(&format!("reaction-continuation-{stage}-{field}"));
+            let (started, body_started) = std::sync::mpsc::channel();
+            let (release, resume) = std::sync::mpsc::channel();
+            let (stop, stopped) = std::sync::mpsc::channel();
+            let call_id = "held-recovery-call";
+            let mut replies = vec![HumanMessageFixtureReply::Json(200, reaction_recovery_friends(&[2, 3]))];
+            let mut routes = vec!["GET /api/social/friends".to_string()];
+            if stage == "reaction" {
+                replies.push(HumanMessageFixtureReply::StreamingJson(404,
+                    json!({"success":false,"error":"retained reaction refusal"}), started, resume));
+                routes.push("POST /api/social/messages/17/reactions".into());
+            } else {
+                replies.push(reaction_recovery_refusal(404));
+                routes.push("POST /api/social/messages/17/reactions".into());
+                match stage {
+                    "history" | "empty-history" => {
+                        let messages = if stage == "empty-history" { vec![] } else {
+                            vec![fixture_remote_human_message(18, 2, 1, "stale history body", None, json!([]))]
+                        };
+                        replies.push(HumanMessageFixtureReply::StreamingJson(200,
+                            json!({"success":true,"data":{"messages":messages}}), started, resume));
+                        routes.push("GET /api/social/messages?contactId=2&limit=200&afterId=0".into());
+                    }
+                    "latest-history" => {
+                        replies.push(human_history_reply(vec![]));
+                        routes.push("GET /api/social/messages?contactId=2&limit=200&afterId=200".into());
+                        replies.push(HumanMessageFixtureReply::StreamingJson(200,
+                            json!({"success":true,"data":{"messages":[
+                                fixture_remote_human_message(17, 2, 1, "stale latest refresh", None, json!([]))
+                            ]}}), started, resume));
+                        routes.push("GET /api/social/messages?contactId=2&limit=200".into());
+                    }
+                    "calls-list" | "calls-get" => {
+                        replies.push(reaction_recovery_history(2, 18, "authorized prefix peer2"));
+                        replies.push(reaction_recovery_history(3, 31, "authorized prefix peer3"));
+                        routes.push("GET /api/social/messages?contactId=2&limit=200&afterId=0".into());
+                        routes.push("GET /api/social/messages?contactId=3&limit=200&afterId=0".into());
+                        let body = json!({"success":true,"calls":[reaction_recovery_remote_call(call_id, 4, 1)]});
+                        routes.push("GET /api/social/calls?limit=200".into());
+                        if stage == "calls-list" {
+                            replies.push(HumanMessageFixtureReply::StreamingJson(200, body, started, resume));
+                        } else {
+                            replies.push(HumanMessageFixtureReply::Json(200, body));
+                            replies.push(HumanMessageFixtureReply::StreamingJson(200,
+                                reaction_recovery_call_body(call_id, 4), started, resume));
+                            routes.push(format!("GET /api/social/calls/{call_id}?afterSeq=0&limit=200"));
+                        }
+                    }
+                    _ => unreachable!(),
+                }
+            }
+            replies.push(HumanMessageFixtureReply::ObserveUntilStopped(stopped));
+            let (url, server) = spawn_human_message_fixture(replies);
+            let runtime = human_message_fixture_runtime(&root, &url);
+            let (id, _, intent) = reaction_recovery_seed(&runtime, "2", 17, true);
+            let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+            if stage == "latest-history" {
+                assert!(owner.set_metadata("humanHistoryCoverage",
+                    json!({"version":1,"afterId":200,"complete":true})).unwrap());
+            }
+            let credential = reaction_recovery_complete_credential(&root, &url);
+            let (events, subscription) = reaction_recovery_events(&root);
+            let running = {
+                let runtime = Arc::clone(&runtime);
+                thread::spawn(move || runtime.sync_human_conversations())
+            };
+            let observed = body_started.recv_timeout(std::time::Duration::from_secs(15));
+            // Already-authorized histories and a pre-get invited call form the
+            // allowed prefix. Nothing after the rotated binding may change it.
+            let before = reaction_recovery_state(&runtime, &root);
+            let before_events = events.lock().unwrap().clone();
+            let rotated = reaction_recovery_rotated_credential(&credential, field);
+            let changed = fs::write(root.join("host-credential.json"), rotated.to_string());
+            let released = release.send(());
+            let result = running.join();
+            let stopped = stop.send(());
+            let requests = server.join();
+            observed.expect("HTTP headers and first body byte arrived");
+            changed.expect("rotate exactly one complete credential field");
+            released.expect("always release held response before assertions");
+            let error = result.expect("real roster worker").expect_err("retired binding must fail");
+            stopped.expect("stop live downstream observer");
+            assert!(error.contains("credential") || error.contains("issuer") || error.contains("origin"),
+                "{stage}/{field}: {error}");
+            assert_ne!(error, reaction_recovery_error(404), "credential failure outranks saved refusal");
+            assert_eq!(reaction_recovery_state(&runtime, &root), before, "{stage}/{field}: no downstream write");
+            assert_eq!(*events.lock().unwrap(), before_events, "{stage}/{field}: no downstream event");
+            assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent));
+            assert_reaction_recovery_requests(&requests.expect("live body observer"), &routes);
+            subscription.unsubscribe();
+            runtime.shutdown(); drop(owner); drop(runtime);
+            fs::remove_dir_all(root).expect("remove credential response-boundary fixture");
+        }
+    }
+
+    // These private-file failures happen while the admitted 404 body is held,
+    // and must not be downgraded to a recoverable service refusal.
+    for fault in ["missing-file", "invalid-json", "nonregular-file"] {
+        let root = temp_root(&format!("reaction-continuation-{fault}"));
+        let (started, body_started) = std::sync::mpsc::channel();
+        let (release, resume) = std::sync::mpsc::channel();
+        let (stop, stopped) = std::sync::mpsc::channel();
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Json(200, reaction_recovery_friends(&[2, 3])),
+            HumanMessageFixtureReply::StreamingJson(409,
+                json!({"success":false,"error":"retained reaction refusal"}), started, resume),
+            HumanMessageFixtureReply::ObserveUntilStopped(stopped),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let (_, _, _) = reaction_recovery_seed(&runtime, "2", 17, true);
+        reaction_recovery_complete_credential(&root, &url);
+        let before = reaction_recovery_state(&runtime, &root);
+        let (events, subscription) = reaction_recovery_events(&root);
+        let running = { let runtime = Arc::clone(&runtime);
+            thread::spawn(move || runtime.sync_human_conversations()) };
+        let observed = body_started.recv_timeout(std::time::Duration::from_secs(15));
+        let path = root.join("host-credential.json");
+        let changed = (|| -> std::io::Result<()> {
+            match fault {
+                "missing-file" => fs::remove_file(&path),
+                "invalid-json" => fs::write(&path, b"{"),
+                "nonregular-file" => { fs::remove_file(&path)?; fs::create_dir(&path) },
+                _ => unreachable!(),
+            }
+        })();
+        let released = release.send(());
+        let result = running.join();
+        let stopped = stop.send(());
+        let requests = server.join();
+        observed.expect("held rejection body");
+        changed.expect("private credential fault");
+        released.expect("release private-file refusal fixture");
+        let error = result.unwrap().expect_err("private credential failure remains hard");
+        stopped.unwrap();
+        assert!(error.contains("credential"), "{fault}: {error}");
+        assert_ne!(error, reaction_recovery_error(409));
+        assert_eq!(reaction_recovery_state(&runtime, &root), before);
+        assert!(events.lock().unwrap().is_empty());
+        assert_reaction_recovery_requests(&requests.unwrap(), &[
+            "GET /api/social/friends".into(), "POST /api/social/messages/17/reactions".into(),
+        ]);
+        subscription.unsubscribe();
+        runtime.shutdown(); drop(runtime);
+        fs::remove_dir_all(root).expect("remove owned credential-fault fixture");
+    }
+
+    // Rotation by an actual committed-row observer is after the request's
+    // Native stability check. Rebinding before the next friend would incorrectly
+    // accept it. No internal controller state or synthetic mutation is used.
+    for field in fields {
+        let root = temp_root(&format!("reaction-continuation-postcommit-{field}"));
+        let (stop, stopped) = std::sync::mpsc::channel();
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Json(200, reaction_recovery_friends(&[2, 3])),
+            reaction_recovery_refusal(404),
+            reaction_recovery_history(2, 18, "commit under original credential"),
+            HumanMessageFixtureReply::ObserveUntilStopped(stopped),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let (id, original, intent) = reaction_recovery_seed(&runtime, "2", 17, true);
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        let credential = reaction_recovery_complete_credential(&root, &url);
+        let rotated = reaction_recovery_rotated_credential(&credential, field);
+        let calls = reaction_recovery_calls_image(&runtime);
+        let dirs = reaction_recovery_directories(&root);
+        let original_metadata = owner.read_metadata().unwrap();
+        let origin = transcript_mutation_origin(owner.db_path()).expect("exact original SQLite origin");
+        let credential_path = root.join("host-credential.json");
+        let changed = Arc::new(std::sync::Mutex::new(None::<Result<(), String>>));
+        let callback_result = Arc::clone(&changed);
+        let expected_id = id.clone();
+        let (events, event_subscription) = reaction_recovery_events(&root);
+        let rotation_subscription = subscribe_transcript_mutations(move |mutation| {
+            if mutation.get(TRANSCRIPT_MUTATION_ORIGIN_KEY).and_then(serde_json::Value::as_str) != Some(origin.as_str())
+                || mutation.get("agentId").and_then(serde_json::Value::as_str) != Some(expected_id.as_str())
+                || !mutation.get("entries").and_then(serde_json::Value::as_array)
+                    .is_some_and(|rows| rows.iter().any(|row| row["id"] == "human-server-message:18"))
+            { return; }
+            if let Ok(mut observed) = callback_result.lock() {
+                if observed.is_none() {
+                    *observed = Some(fs::write(&credential_path, rotated.to_string()).map_err(|error| error.to_string()));
+                }
+            }
+        });
+        let result = runtime.sync_human_conversations();
+        stop.send(()).unwrap();
+        let requests = server.join().expect("post-commit continuation observer");
+        let error = result.expect_err("the invocation cannot obtain a fresh lease for its next friend");
+        changed.lock().unwrap().as_ref().expect("actual commit callback executed").as_ref()
+            .expect("credential rotation succeeded outside swallowed callback assertions");
+        assert!(error.contains("credential") || error.contains("issuer") || error.contains("origin"), "{field}: {error}");
+        assert_ne!(error, reaction_recovery_error(404));
+        let rows = owner.get_transcript_entries().unwrap();
+        assert_eq!(human_row_ids(&rows), ["human-server-message:17", "human-server-message:18"]);
+        assert_eq!(rows[0], original);
+        assert_eq!(rows[1]["content"], "commit under original credential");
+        assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent));
+        assert!(owner.get_metadata("humanHistoryCoverage").unwrap().is_none(), "no checkpoint after revoked binding");
+        let mut permitted_metadata = original_metadata;
+        permitted_metadata["lastActivityAt"] = rows[1]["timestampMs"].clone();
+        assert_eq!(owner.read_metadata().unwrap(), permitted_metadata,
+            "only the already admitted materialization/activity unit may finish");
+        assert_eq!(reaction_recovery_calls_image(&runtime), calls);
+        assert_eq!(reaction_recovery_directories(&root), dirs, "next friend is not created");
+        assert_eq!(events.lock().unwrap().len(), 1);
+        assert_reaction_recovery_requests(&requests, &[
+            "GET /api/social/friends".into(), "POST /api/social/messages/17/reactions".into(),
+            "GET /api/social/messages?contactId=2&limit=200&afterId=0".into(),
+        ]);
+        rotation_subscription.unsubscribe(); event_subscription.unsubscribe();
+        runtime.shutdown(); drop(owner); drop(runtime);
+        fs::remove_dir_all(root).expect("remove post-commit binding fixture");
+    }
+
+    // Admission is repeated after an HTTP refusal. The fixture's independent
+    // mutation remains authoritative; the recovery path must not undo it.
+    for change in ["target-identity", "target-author", "target-author-local", "target-delivery", "participants",
+        "intent", "closed-owner", "root-file"] {
+        let root = temp_root(&format!("reaction-refusal-readmission-{change}"));
+        let (started, body_started) = std::sync::mpsc::channel();
+        let (release, resume) = std::sync::mpsc::channel();
+        let (stop, stopped) = std::sync::mpsc::channel();
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Json(200, reaction_recovery_friends(&[2, 3])),
+            HumanMessageFixtureReply::StreamingJson(404,
+                json!({"success":false,"error":"retained reaction refusal"}), started, resume),
+            HumanMessageFixtureReply::ObserveUntilStopped(stopped),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let (id, original, intent) = reaction_recovery_seed(&runtime, "2", 17, true);
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        if change == "closed-owner" {
+            assert_eq!(mahayana_host_runtime::storage::store_db::live_db_handle_count(owner.db_path()), 1,
+                "the fixture starts with exactly its original registered owner");
+        }
+        let calls = reaction_recovery_calls_image(&runtime);
+        let dirs = reaction_recovery_directories(&root);
+        let mut retained_metadata = owner.read_metadata().unwrap();
+        let mut retained_rows = vec![original.clone()];
+        let mut retained_intent = intent;
+        let (events, subscription) = reaction_recovery_events(&root);
+        let running = { let runtime = Arc::clone(&runtime);
+            thread::spawn(move || runtime.sync_human_conversations()) };
+        let observed = body_started.recv_timeout(std::time::Duration::from_secs(15));
+        let changed = (|| -> Result<(), String> {
+            match change {
+                "target-identity" | "target-author" | "target-author-local" | "target-delivery" => {
+                    let mut current = original.clone();
+                    match change {
+                        "target-identity" => current["remoteMessageId"] = json!("999"),
+                        "target-author" => current["authorId"] = json!("9"),
+                        "target-author-local" => current["authorId"] = json!("1"),
+                        _ => current["delivery"] = json!("pending"),
+                    }
+                    owner.update_transcript_entry(original["id"].as_str().unwrap(), &current)
+                        .map_err(|error| error.to_string())?.ok_or("target disappeared")?;
+                    retained_rows = vec![current];
+                }
+                "participants" => {
+                    owner.set_metadata("participantIds", json!(["1", "9"])).map_err(|error| error.to_string())?;
+                    retained_metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+                }
+                "intent" => {
+                    retained_intent["active"] = json!(false);
+                    owner.set_metadata("humanReactionIntent", retained_intent.clone()).map_err(|error| error.to_string())?;
+                    retained_metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+                }
+                "closed-owner" => runtime.shutdown(),
+                "root-file" => {
+                    fs::rename(root.join("agents/.conversations"), root.join("retained-conversations"))
+                        .map_err(|error| error.to_string())?;
+                    fs::write(root.join("agents/.conversations"), b"owned root fault")
+                        .map_err(|error| error.to_string())?;
+                }
+                _ => unreachable!(),
+            }
+            Ok(())
+        })();
+        let fixture_events = events.lock().unwrap().clone();
+        let closed_handle_count = (change == "closed-owner").then(||
+            mahayana_host_runtime::storage::store_db::live_db_handle_count(owner.db_path()));
+        let released = release.send(());
+        let result = running.join();
+        let stopped = stop.send(());
+        let requests = server.join();
+        if change == "root-file" {
+            fs::remove_file(root.join("agents/.conversations")).expect("remove only owned fault");
+            fs::rename(root.join("retained-conversations"), root.join("agents/.conversations"))
+                .expect("restore original owned root");
+        }
+        observed.expect("held refusal before independent mutation");
+        changed.expect("change admitted owner or target");
+        released.expect("release response before observing refusal");
+        let error = result.unwrap().expect_err("changed admission cannot authorize recovery");
+        stopped.unwrap();
+        assert_ne!(error, reaction_recovery_error(404), "{change}: admission error takes precedence");
+        assert!(!error.is_empty());
+        assert_eq!(*events.lock().unwrap(), fixture_events, "no extra recovery event: {change}");
+        if let Some(after_close) = closed_handle_count {
+            assert_eq!(after_close, 0, "close released the original registered handle");
+            assert!(owner.is_closed(), "the original Arc remains closed");
+            assert_eq!(mahayana_host_runtime::storage::store_db::live_db_handle_count(owner.db_path()), 0,
+                "refusal must not cold-open and register a replacement owner");
+        }
+        assert_eq!(reaction_recovery_calls_image(&runtime), calls, "no Calls effect: {change}");
+        assert_eq!(reaction_recovery_directories(&root), dirs, "no later friend: {change}");
+        assert_reaction_recovery_requests(&requests.unwrap(), &[
+            "GET /api/social/friends".into(), "POST /api/social/messages/17/reactions".into(),
+        ]);
+        subscription.unsubscribe();
+        runtime.shutdown(); drop(owner); drop(runtime);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        // Direct READ_ONLY inspection also works when the fixture intentionally
+        // left invalid participants; opening through Session must then refuse.
+        let db = rusqlite::Connection::open_with_flags(forward_db_path(&root, &id),
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).expect("retained invalid-state observer");
+        let mut statement = db.prepare("SELECT entry FROM transcript_entries ORDER BY rowid")
+            .expect("existing transcript table");
+        let stored_rows = statement.query_map([], |row| row.get::<_, String>(0)).unwrap()
+            .map(|row| serde_json::from_str::<serde_json::Value>(&row.unwrap()).unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(stored_rows, retained_rows, "independent target change survives restart: {change}");
+        let metadata = read_forward_metadata_from_disk(&root, &id);
+        assert_eq!(metadata, retained_metadata, "no metadata rewrite: {change}");
+        assert_eq!(metadata["humanReactionIntent"], retained_intent);
+        assert_eq!(reaction_recovery_calls_image(&reopened), calls);
+        drop(statement); drop(db);
+        reopened.shutdown(); drop(reopened);
+        fs::remove_dir_all(root).expect("remove owner readmission fixture");
+    }
+}
+
+
+#[test]
+fn shipping_human_reaction_rejection_keeps_admission_and_protocol_failures_fail_closed() {
+    let responses = vec![
+        ("401", HumanMessageFixtureReply::Json(401, json!({"success":false,"error":"denied"})), "HTTP 401"),
+        ("403", HumanMessageFixtureReply::Json(403, json!({"success":false,"error":"denied"})), "HTTP 403"),
+        ("503-forged-404", HumanMessageFixtureReply::Json(503,
+            json!({"success":false,"error":"provider text says HTTP 404; do not classify strings"})), "HTTP 503"),
+        ("invalid-json-404", HumanMessageFixtureReply::Bytes(404, b"not-json".to_vec()), "invalid JSON"),
+        ("truncated-409", HumanMessageFixtureReply::Truncated(409), "could not be read"),
+        ("disconnect", HumanMessageFixtureReply::Disconnect, "mutation failed"),
+        ("missing-success", HumanMessageFixtureReply::Json(404, json!({"error":"missing boolean"})), "invalid JSON"),
+        ("null-success", HumanMessageFixtureReply::Json(409, json!({"success":null})), "invalid JSON"),
+        ("string-success", HumanMessageFixtureReply::Json(404, json!({"success":"false"})), "invalid JSON"),
+        ("contradictory-success", HumanMessageFixtureReply::Json(404,
+            json!({"success":true,"messageId":17,"reactions":[]})), "HTTP 404"),
+        ("false-200", HumanMessageFixtureReply::Json(200,
+            json!({"success":false,"error":"retained reaction refusal"})), "HTTP 200"),
+        ("false-with-message-id", HumanMessageFixtureReply::Json(404,
+            json!({"success":false,"error":"retained reaction refusal","messageId":17})), "HTTP 404"),
+        ("false-with-summary", HumanMessageFixtureReply::Json(409,
+            json!({"success":false,"error":"retained reaction refusal","reactions":[]})), "HTTP 409"),
+        ("false-with-success-fields", HumanMessageFixtureReply::Json(404,
+            json!({"success":false,"error":"retained reaction refusal","messageId":17,
+                "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]})), "HTTP 404"),
+        ("ack-missing-id", HumanMessageFixtureReply::Json(200,
+            json!({"success":true,"reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]})), "omitted the message id"),
+        ("ack-wrong-id", HumanMessageFixtureReply::Json(200,
+            json!({"success":true,"messageId":18,"reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]})), "mismatched message id"),
+        ("ack-missing-summary", HumanMessageFixtureReply::Json(200,
+            json!({"success":true,"messageId":17})), "omitted the reaction summary"),
+        ("ack-unconfirmed", HumanMessageFixtureReply::Json(200,
+            json!({"success":true,"messageId":17,"reactions":[]})), "did not confirm"),
+        ("ack-invalid-summary", HumanMessageFixtureReply::Json(200,
+            json!({"success":true,"messageId":17,"reactions":[{"emoji":"👍","count":0,"reactedByMe":true}]})), "reaction"),
+    ];
+    for (label, response, expected_error) in responses {
+        let root = temp_root(&format!("reaction-hard-protocol-{label}"));
+        let (stop, stopped) = std::sync::mpsc::channel();
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Json(200, reaction_recovery_friends(&[2, 3])),
+            response,
+            HumanMessageFixtureReply::ObserveUntilStopped(stopped),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let _ = reaction_recovery_seed(&runtime, "2", 17, true);
+        let before = reaction_recovery_state(&runtime, &root);
+        let (events, subscription) = reaction_recovery_events(&root);
+        let error = runtime.sync_human_conversations().expect_err("only qualified rejection may continue");
+        stop.send(()).unwrap();
+        let requests = server.join().expect("hard failure live observer");
+        assert!(error.contains(expected_error), "{label}: {error}");
+        assert_eq!(reaction_recovery_state(&runtime, &root), before,
+            "no optimistic reaction, history, cursor, friend or Calls effect: {label}");
+        assert!(events.lock().unwrap().is_empty(), "{label}");
+        assert_reaction_recovery_requests(&requests, &[
+            "GET /api/social/friends".into(), "POST /api/social/messages/17/reactions".into(),
+        ]);
+        subscription.unsubscribe();
+        runtime.shutdown(); drop(runtime);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reaction_recovery_state(&reopened, &root), before, "hard failure retains exact durable input: {label}");
+        reopened.shutdown(); drop(reopened);
+        fs::remove_dir_all(root).expect("remove protocol refusal fixture");
+    }
+
+    // A's refusal puts the whole invocation into strict continuation. B has no
+    // reaction: its failure cannot be swallowed by the old normal-history path.
+    for failure in ["bad-pending", "foreign-history", "history-json", "history-401", "db-write"] {
+        let root = temp_root(&format!("reaction-strict-later-friend-{failure}"));
+        let (stop, stopped) = std::sync::mpsc::channel();
+        let mut responses = vec![
+            HumanMessageFixtureReply::Json(200, reaction_recovery_friends(&[2, 3, 4])),
+            reaction_recovery_refusal(404),
+            reaction_recovery_history(2, 18, "A's permitted prefix"),
+        ];
+        let expected_error = match failure {
+            "bad-pending" => "Human queuedOffline origin must be a boolean",
+            "foreign-history" => {
+                responses.push(human_history_reply(vec![
+                    fixture_remote_human_message(31, 3, 1, "valid B prefix must not apply", None, json!([])),
+                    fixture_remote_human_message(32, 9, 1, "foreign B row", None, json!([])),
+                ]));
+                "remote Human message does not belong to the selected Human conversation"
+            }
+            "history-json" => {
+                responses.push(HumanMessageFixtureReply::Bytes(200, b"not-json".to_vec()));
+                "invalid JSON"
+            }
+            "history-401" => {
+                responses.push(HumanMessageFixtureReply::Json(401, json!({"success":false,"error":"history revoked"})));
+                "HTTP 401"
+            }
+            "db-write" => {
+                responses.push(reaction_recovery_history(3, 31, "B row whose SQL write fails"));
+                "NMR-REACTION-RECOVERY injected row failure"
+            }
+            _ => unreachable!(),
+        };
+        responses.push(HumanMessageFixtureReply::ObserveUntilStopped(stopped));
+        let (url, server) = spawn_human_message_fixture(responses);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let (first_id, original, intent) = reaction_recovery_seed(&runtime, "2", 17, true);
+        let second_id = runtime.create_human_conversation("3", "B has no reaction").unwrap()["id"]
+            .as_str().unwrap().to_owned();
+        let first_owner = runtime.open_human_conversation_db_owner(&first_id).unwrap();
+        let second_owner = runtime.open_human_conversation_db_owner(&second_id).unwrap();
+        if failure == "bad-pending" {
+            let mut pending = pending_reply_fixture_row("strict-later-friend", "retain invalid pending origin", None);
+            pending["queuedOffline"] = json!("true");
+            assert!(second_owner.append_transcript_entry(&pending).unwrap());
+        }
+        assert!(second_owner.get_metadata("humanReactionIntent").unwrap().is_none());
+        let second_rows = second_owner.get_transcript_entries().unwrap();
+        let second_metadata = second_owner.read_metadata().unwrap();
+        let dirs = reaction_recovery_directories(&root);
+        let calls = reaction_recovery_calls_image(&runtime);
+        let fault_db = if failure == "db-write" {
+            let db = rusqlite::Connection::open(forward_db_path(&root, &second_id)).unwrap();
+            db.busy_timeout(std::time::Duration::from_secs(5)).unwrap();
+            db.execute_batch("CREATE TRIGGER reject_recovery_row BEFORE INSERT ON transcript_entries
+                WHEN NEW.id = 'human-server-message:31'
+                BEGIN SELECT RAISE(ABORT, 'NMR-REACTION-RECOVERY injected row failure'); END;")
+                .expect("reject actual B SQLite write");
+            Some(db)
+        } else { None };
+        let (events, subscription) = reaction_recovery_events(&root);
+        let error = runtime.sync_human_conversations().expect_err("later hard failure must terminate strict continuation");
+        stop.send(()).unwrap();
+        let requests = server.join().expect("later-friend live observer");
+        assert!(error.contains(expected_error), "{failure}: {error}");
+        assert_ne!(error, reaction_recovery_error(404), "later original error takes precedence");
+        let first_rows = first_owner.get_transcript_entries().unwrap();
+        assert_eq!(human_row_ids(&first_rows), ["human-server-message:17", "human-server-message:18"]);
+        assert_eq!(first_rows[0], original);
+        assert_eq!(first_owner.get_metadata("humanReactionIntent").unwrap(), Some(intent));
+        assert_eq!(first_owner.get_metadata("humanHistoryCoverage").unwrap(),
+            Some(json!({"version":1,"afterId":18,"complete":true})));
+        assert_eq!(second_owner.get_transcript_entries().unwrap(), second_rows, "{failure}: no B apply");
+        assert_eq!(second_owner.read_metadata().unwrap(), second_metadata, "{failure}: no B checkpoint/activity");
+        assert_eq!(reaction_recovery_directories(&root), dirs, "C is not created: {failure}");
+        assert_eq!(reaction_recovery_calls_image(&runtime), calls, "Calls is not touched: {failure}");
+        let published = events.lock().unwrap().clone();
+        assert_eq!(published.len(), 1, "only A's prior valid commit is observable: {failure}");
+        assert_eq!(published[0]["entries"], json!([first_rows[1].clone()]));
+        let mut expected_routes = vec![
+            "GET /api/social/friends".into(), "POST /api/social/messages/17/reactions".into(),
+            "GET /api/social/messages?contactId=2&limit=200&afterId=0".into(),
+        ];
+        if failure != "bad-pending" {
+            expected_routes.push("GET /api/social/messages?contactId=3&limit=200&afterId=0".into());
+        }
+        assert_reaction_recovery_requests(&requests, &expected_routes);
+        if let Some(db) = fault_db {
+            db.execute_batch("DROP TRIGGER reject_recovery_row;").expect("remove only fixture trigger");
+        }
+        let durable = reaction_recovery_state(&runtime, &root);
+        subscription.unsubscribe();
+        runtime.shutdown(); drop(second_owner); drop(first_owner); drop(runtime);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reaction_recovery_state(&reopened, &root), durable, "valid prefix and denied B survive reopen");
+        reopened.shutdown(); drop(reopened);
+        fs::remove_dir_all(root).expect("remove later-friend strict fixture");
+    }
+
+    // The continued Calls lane must bind both event callId and the original
+    // requested scope. A valid event for another locally authorized call is not
+    // permission to mutate that call or advance the requested call's cursor.
+    for failure in ["foreign-event", "foreign-event-duplicate", "changed-call-scope"] {
+        let root = temp_root(&format!("reaction-strict-calls-{failure}"));
+        let call_id = "strict-recovery-call-a";
+        let other_call_id = "strict-recovery-call-b";
+        let (started, body_started) = std::sync::mpsc::channel();
+        let (release, resume) = std::sync::mpsc::channel();
+        let (stop, stopped) = std::sync::mpsc::channel();
+        let mut replay = reaction_recovery_call_body(call_id, 4);
+        if failure.starts_with("foreign-event") {
+            replay["events"][0]["callId"] = json!(other_call_id);
+            if failure == "foreign-event-duplicate" {
+                // Even an already-covered sequence must not smuggle another
+                // call's event through the normal deduplication branch.
+                replay["call"] = reaction_recovery_remote_call(call_id, 4, 0);
+                replay["events"][0]["seq"] = json!(0);
+                replay["nextAfterSeq"] = json!(0);
+            }
+        }
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Json(200, reaction_recovery_friends(&[2])),
+            reaction_recovery_refusal(404),
+            reaction_recovery_history(2, 18, "valid history before hard Calls failure"),
+            HumanMessageFixtureReply::Json(200, json!({"success":true,
+                "calls":[reaction_recovery_remote_call(call_id, 4,
+                    if failure == "foreign-event-duplicate" { 0 } else { 1 })]})),
+            HumanMessageFixtureReply::StreamingJson(200, replay, started, resume),
+            HumanMessageFixtureReply::ObserveUntilStopped(stopped),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let (id, _, intent) = reaction_recovery_seed(&runtime, "2", 17, true);
+        let scope = runtime.create_human_conversation("4", "Call A peer").unwrap()["id"]
+            .as_str().unwrap().to_owned();
+        let other_scope = runtime.create_human_conversation("5", "Call B peer").unwrap()["id"]
+            .as_str().unwrap().to_owned();
+        // Seed two ordinary records in the already initialized actual Calls
+        // schema, as an older installed owner could have left them. No new store.
+        let db = rusqlite::Connection::open(runtime.call_session_store_path().unwrap())
+            .expect("owned Calls fixture writer");
+        db.busy_timeout(std::time::Duration::from_secs(5)).unwrap();
+        for (call, scope, creator, peer) in [
+            (call_id, scope.as_str(), "4", "4"),
+            (other_call_id, other_scope.as_str(), "5", "5"),
+        ] {
+            db.execute("INSERT INTO call_sessions
+                (id, scope_id, creator_id, state, generation, signal_seq, participant_ids_json,
+                 media_capabilities_json, device_selection_json, created_at_ms, updated_at_ms)
+                VALUES (?1, ?2, ?3, 'invited', 0, 0, ?4, '{}', '{}', 17, 17)",
+                rusqlite::params![call, scope, creator, json!(["1", peer]).to_string()])
+                .expect("seed actual authorized call");
+        }
+        let running = { let runtime = Arc::clone(&runtime);
+            thread::spawn(move || runtime.sync_human_conversations()) };
+        let observed = body_started.recv_timeout(std::time::Duration::from_secs(15));
+        let changed = if failure == "changed-call-scope" {
+            db.execute("UPDATE call_sessions SET scope_id = ?1 WHERE id = ?2",
+                rusqlite::params![other_scope, call_id]).map(|count| count == 1)
+        } else { Ok(true) };
+        let retained_calls = reaction_recovery_calls_image(&runtime);
+        let retained_state = reaction_recovery_state(&runtime, &root);
+        let released = release.send(());
+        let result = running.join();
+        let stopped = stop.send(());
+        let requests = server.join();
+        observed.expect("Calls body held after discovery admission");
+        assert!(changed.expect("independent Calls scope fixture mutation"));
+        released.expect("release actual Calls body");
+        let error = result.unwrap().expect_err("strict Calls binding must fail");
+        stopped.unwrap();
+        assert_ne!(error, reaction_recovery_error(404), "Calls error outranks deferred reaction");
+        assert!(error.to_ascii_lowercase().contains("call"), "{failure}: {error}");
+        assert_eq!(reaction_recovery_calls_image(&runtime), retained_calls,
+            "neither call/event/cursor may be mutated: {failure}");
+        assert_eq!(reaction_recovery_state(&runtime, &root), retained_state);
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        assert_eq!(owner.get_metadata("humanReactionIntent").unwrap(), Some(intent));
+        assert_reaction_recovery_requests(&requests.unwrap(), &[
+            "GET /api/social/friends".into(), "POST /api/social/messages/17/reactions".into(),
+            "GET /api/social/messages?contactId=2&limit=200&afterId=0".into(),
+            "GET /api/social/calls?limit=200".into(),
+            format!("GET /api/social/calls/{call_id}?afterSeq=0&limit=200"),
+        ]);
+        drop(db);
+        runtime.shutdown(); drop(owner); drop(runtime);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reaction_recovery_calls_image(&reopened), retained_calls, "refused Calls effects remain absent after reopen");
+        reopened.shutdown(); drop(reopened);
+        fs::remove_dir_all(root).expect("remove strict Calls fixture");
     }
 }
