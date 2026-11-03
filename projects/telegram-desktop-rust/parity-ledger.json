@@ -733,7 +733,33 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox source authority; no Telegram runtime or product-branded owner is retained. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "This row closes only preservation of scheduled_at_ms and silent through the native forward path. It does not close reminder/schedule-until-online, UI menu eligibility, thread routing, paid-send, fan-out settlement, or the rest of ShareBox."
+      "notes": "This row closes only preservation of scheduled_at_ms and silent through the native forward path. It does not close reminder/schedule-until-online, UI menu eligibility, thread routing, paid-send, fan-out settlement, or the rest of ShareBox.",
+      "additional_source_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+          "object": "86865db47439dbce848fc812df2554335d3e004c"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -1435,7 +1461,21 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement."
+      "notes": "First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement.",
+      "additional_source_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -1683,7 +1723,21 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-topic destination semantics using canonical Fabushi Conversation/Community/Topic owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "This row closes only native topic existence/closed/hidden eligibility at the forward boundary. Nested picker lifecycle/destruction, saved-message sublists/community-child selection, UI evidence, and exact-head runtime evidence remain open, so global unknown does not decrement."
+      "notes": "This row closes only native topic existence/closed/hidden eligibility at the forward boundary. Nested picker lifecycle/destruction, saved-message sublists/community-child selection, UI evidence, and exact-head runtime evidence remain open, so global unknown does not decrement.",
+      "additional_source_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -2209,6 +2263,18 @@
           "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
           "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
           "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
         }
       ]
     },
@@ -50155,6 +50221,30 @@
           "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
           "path": "Telegram/SourceFiles/history/history_item.cpp",
           "object": "b753d3ea7bd5fde15cdad206d17ab3eee6d68cab"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+          "object": "86865db47439dbce848fc812df2554335d3e004c"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e"
         }
       ],
       "source_kind": "source",
@@ -50290,7 +50380,9 @@
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts",
         "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
-        "frontend/src/production/ProductionRenderer.transcript.fixture.tsx"
+        "frontend/src/production/ProductionRenderer.transcript.fixture.tsx",
+        "frontend/src/recovered/features/conversation/workspace/pdf-viewer.css",
+        "frontend/src/recovered/features/conversation/workspace/view.css"
       ],
       "fabushi_target_symbols": [
         "validate_remote_human_message",
@@ -50384,7 +50476,10 @@
         "MessageActionAnchor",
         "TranscriptAttachmentGallery",
         "createSpreadsheetViewerProvider",
-        "transcriptAttachmentIdentity"
+        "transcriptAttachmentIdentity",
+        "open_human_forward_recovery_owner",
+        "deliver_forward_batch_while_locked",
+        "pending_human_forward_is_batch_owned"
       ],
       "target_language": "Rust Host/service boundary with existing TypeScript renderer projection",
       "language_rationale": "Extend the existing production owners in their current implementation languages; no upstream C++ runtime copy, alternate message engine or new owner is introduced.",
@@ -50532,7 +50627,8 @@
         "Current exact1de845141d5e30ae9ff4965caf2915f68df2f650 freezes the bounded legacy recovery contract. Existing shipping FeatureHost selects MahayanaHost::create_with_session_transcript_owner; existing Runtime recovery owns both early retention checks. This addresses a conditional source defect, not observed user-data presence or a completed legacy import.",
         "Current exacte8ee557383661694c44a590950f2fdc8631c39a9 source shows same-conversation and roster starvation at reaction replay error. The scoped repair reuses Native status/credential handling, Session locks and SQLite/feed, existing Renderer error-to-local-read fallback and CallSession owner; service deployment remains unverified.",
         "At exact source base 04ba336789a46d926bf8b49c90f40b4dfedece84, read_human_conversation_metadata checked Human kind, requested/persisted ID and participant shape but did not bind the pair to the deterministic human_direct_conversation_id. The bounded repair adds that existing owner check before cached or cold owners are returned.",
-        "Exact6d42fa7d64d6059ae010891a20d41dfacc51f246 has actual Host/Transcript update wiring, but nonempty Human search is not invalidated; MessageActionAnchor can return before hooks; gallery and spreadsheet retain removed resource state. This scoped batch reuses the existing controllers/provider instead of adding an owner."
+        "Exact6d42fa7d64d6059ae010891a20d41dfacc51f246 has actual Host/Transcript update wiring, but nonempty Human search is not invalidated; MessageActionAnchor can return before hooks; gallery and spreadsheet retain removed resource state. This scoped batch reuses the existing controllers/provider instead of adding an owner.",
+        "NMR-UI-ENTRY-REFRESH-01 repair retains existing viewer z-index 4000 and reserves the production 52px window chrome band; private retained-forward journal classification/recovery does not grant ordinary canonical conversation admission."
       ],
       "test_evidence": [
         "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -51482,7 +51578,8 @@
         "Exact H98be438bad69f9982c503e5a3442f721307c85ce run41550895037/job125637914323 UI terminal success:194 actual,194 passed,0fail/skip/retry/flaky = TAP159+renderer13+author22, with actual Renderer compile. Receipt ecd3c390101a7f17b2c61bdae0e470d743a0ba64; artifact13193436755 SHA2565024a14213997d9c6512bcf962377c00fb1171a0062cb08759429d0e6ddaacf6. Do not relabel this old-H evidence as new transport recovery execution.",
         "Exact H1bcdae6dffa038768250daa41fc4f7c0ff9c6852/run41552585826/job125643584508 UI terminal success194/194 with compiled Renderer,0fail/skip/retry/flaky; receipt a527545e0a191afdf5209c65fb24571f2e3e03fc, artifact13192994087 SHA2568e704ef5ffa8dc4d270c4fd92018cf3dcd2cdd071188db0ccb6861a923bbe510. New runtime/origin candidates require their own H.",
         "Prior exacte8ee557383661694c44a590950f2fdc8631c39a9 run41560824752 reconciliation job125670726762 passed121 (Human77); owner job125670726674 passed40 selected outer cases (10+11+6+8+5). Source run41560824735 passed161 Node/37 Python/schema0 and unaccepted-candidate-consistent. These prior inputs do not qualify the new reaction continuation changes; UI/shipping remained nonterminal at preparation.",
-        "Prerequisite exact6d42fa7d64d6059ae010891a20d41dfacc51f246/run41563429938: job125679139806 passed125 includingHuman81; UI125679140092 passed205 retry0; owner125679140064 passed40; Electron125679140130 passed100 plus actual compile. Source41563429876 passed161Node/37Python/schema0 and unaccepted candidate. Actual Mac41563429896/job125679138961 passedPlugins2/Human2 retry0. OriginalUI failure1de remains retained. The new UI source requires containing-H execution; native shipping job125679140188 remains queued at this preparation."
+        "Prerequisite exact6d42fa7d64d6059ae010891a20d41dfacc51f246/run41563429938: job125679139806 passed125 includingHuman81; UI125679140092 passed205 retry0; owner125679140064 passed40; Electron125679140130 passed100 plus actual compile. Source41563429876 passed161Node/37Python/schema0 and unaccepted candidate. Actual Mac41563429896/job125679138961 passedPlugins2/Human2 retry0. OriginalUI failure1de remains retained. The new UI source requires containing-H execution; native shipping job125679140188 remains queued at this preparation.",
+        "Exact a0e6cd2ded523f59add3a7ade6bd43890b448300/run41565477479: UI job125685842485 executed209,206 passed/3 failed (empty-editor placeholder oracle, actual PDF pointer overlap, StrictMode mount-read oracle); reconciliation125685842433 executed84,80 passed/4 failed before remaining41. Failures retained and repaired by cause; these candidates require new containing-H execution. Exact43529823ffc669d6118d79ea493c67cdd5f2be69 source41565715729 passed161Node/37Python/schema0/unaccepted candidate. Later6f7 source41566271637 passed161/37 then schema rejected4 redundant review fields;14 missing exact review relations also require repair. No source, product or independent acceptance is granted. Concurrent3a4af377451d915795466362b084247e05975101 removed the four redundant fields and added scoped viewer read sharing; preserve that source. The14 exact relations remain missing at this reviewed input."
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
