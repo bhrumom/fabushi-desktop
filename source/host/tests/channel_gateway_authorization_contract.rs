@@ -474,7 +474,15 @@ fn channel_gateway_write_and_admin_credentials_persist_through_reopen() {
                 let mut fixture = CredentialGateway::new(configured);
                 let credential = issue(&fixture.api.pairing, "mutator", "operator", &[scope]);
                 fixture.exercise_mutations_and_reopen(Some(&credential.bearer), headers);
-                assert_eq!(fixture.api.pairing.authenticate_device_token(&credential.token).unwrap(), Some(credential.authority));
+                let reopened = fixture.api.pairing.authenticate_device_token(&credential.token)
+                    .expect("authenticate the persisted credential after reopen")
+                    .expect("the same persisted token must remain valid");
+                assert_eq!(reopened.device_id, credential.authority.device_id);
+                assert_eq!(reopened.role, credential.authority.role);
+                assert_eq!(reopened.scopes, credential.authority.scopes);
+                // Durable identity/grants survive restart; an authentication
+                // proof belongs to the owner instance that actually issued it.
+                assert_ne!(reopened, credential.authority);
             }
         }
     }
