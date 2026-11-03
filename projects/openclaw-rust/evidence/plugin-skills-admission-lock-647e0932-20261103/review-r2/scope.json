@@ -1,0 +1,113 @@
+{
+  "schema": "ocrm-candidate-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 2,
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "subject": {
+    "commit": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+    "tree": "f609dcdc22418f313177c3d86e01103a226799de",
+    "role": "actual integrated source candidate; exact-H execution not yet run"
+  },
+  "original_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "previous_source_candidate": "ac615165744da1b8462a35b07221800c06aad1fb",
+  "contract": "PS-LOCK-RECONCILE-v2",
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "sha": "fce914e9e59a275b3ddd9da5266eee384b30c27e"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+      "sha": "155f4dff0f6fe7c7f9f1f3210296beac7bf81a6a"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "3a966124085449eaa6684e76f9a4cc597e6b0b94"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "0c95f4c725bc8dcd8a2c4e668e6b8824e2c79ab6"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "sha": "4d36a626d71b3794b2b64ef8a899aaa739ee65fa"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "sha": "56c8c4fc5596e63121ec09624bc8eaff693f9595"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+      "sha": "8b8a03ccde91dfbf5a20ca141d84a073ab9c19b5"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+      "sha": "93ed0cccd79bcb4c8a7a68ed537017ca6fcc1c8f"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/skill_publish.rs",
+      "sha": "d93b54fb169ae09dd6db809dd125f665be5f3545"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "sha": "4c88b00b2dfe563ba957bd0669f177a422a330a7"
+    },
+    {
+      "path": "source/host/src/workflows/workflow_store.rs",
+      "sha": "dd3945c0b454eea446397e033632fac93e60a17d"
+    },
+    {
+      "path": "source/host/tests/mcp_service_contract.rs",
+      "sha": "2fa0aba1e0fa7ac3c3e67c8b392fe43197f0a14a"
+    },
+    {
+      "path": "source/host/tests/workflow_store_contract.rs",
+      "sha": "7d927e0dc69d9183d84dcdec7a31469ae062f74e"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+      "sha": "80807849a210630af4617ac5db6ab41b0b134230"
+    }
+  ],
+  "diffs": [
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/full.diff",
+      "blob": "1a60df0cd1d7cd1a19b982f89ddf6adf0c1d3319",
+      "bytes": 253512,
+      "sha256": "bf710c776576cb761dcc509a653a4bd1c048088342c4fb25ba6193d634824093"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/fix-delta.diff",
+      "blob": "ad0276d15ab16cd6d109240c3942e54491700102",
+      "bytes": 146456,
+      "sha256": "2e1e989586f24805145499c05c82516a1bbf1f91c776037b6bed7583a28c0c33"
+    }
+  ],
+  "diff_carriers": {
+    "full": {
+      "sha": "7f79c0361c055e06574beced8594d74477eff640",
+      "tree": "e478a5fd574fdd939589742c4e543c9f94b72282",
+      "parent": "9864d1c02e7e67881d644800963abc807b3abaab",
+      "sourceSubject": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+      "role": "diff-only; not runnable or shipping subject"
+    },
+    "fix_delta": {
+      "sha": "eedf98fbe9cbd903ab39586609dc185b5a63c1b7",
+      "tree": "22fd634fb692bd38d27e6e3985d3a565ac51d77f",
+      "parent": "ac615165744da1b8462a35b07221800c06aad1fb",
+      "sourceSubject": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+      "role": "diff-only; not runnable or shipping subject"
+    }
+  },
+  "scope_note": "All 14 declared path contents exactly match the actual source subject. Isolated diff carriers overlay those exact blobs onto their declared immutable bases solely to expose complete API patches; carriers are not execution or shipping candidates. Shared ledger/RTM/capture diffs include preserved incoming changes; no paths or hunks are silently omitted. All patch additions/deletions matched API file statistics.",
+  "review_requirements": [
+    "Read complete full diff and complete proper fix delta, including unchanged caller/callee/state and test oracle context as risk requires.",
+    "Independently evaluate source against canonical Spec and actual production chain. Prior reviewer reports, findings and author success assertions are not part of the blind review prompt.",
+    "Report each MUST_FIX with exact source anchors and causal failure; keep NON_BLOCKING distinct. State read depth honestly.",
+    "No executable validation outside GitHub Actions; no compile/runtime/real ecosystem or shipping acceptance from source review."
+  ]
+}
