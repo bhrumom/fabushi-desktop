@@ -487,3 +487,23 @@ injected wait/unwind boundary is labeled controlled, not an OS failure replay.
 No second registry, runtime, protocol field or generic background controller is
 introduced. The separate existing background raw-PID stop window remains open
 for a following existing-owner batch and blocks full Box/shipping acceptance.
+
+SC02-R2 completed-recovery observation: exceptional cleanup must retain unresolved
+resources, not indefinitely retain already reaped, worker-free registrations or
+parent pipe handles. After bounded exceptional cleanup, nonblockingly observe
+finished readers and remove only the exact completed invocation. Reuse existing
+foreground request boundaries to observe retained stream recoveries whose readers
+finish just after the exceptional return; add no sweeper thread, scheduler or
+second registry. An observation error or still-live child/reader remains pending.
+The request outcome stays unknown even after resource cleanup becomes complete.
+
+Require real setup failure and repeated-error controls proving actual child
+termination/reap without accumulating completed registrations until stop. Keep a
+late-reader recovery retained through real EOF, then prove an existing normal
+request boundary observes it without using shutdown as a garbage collector.
+Fixture-only observation may expose the actual owned state without substituting
+execution results. Keep inherited pipes alive by an owned explicit release until
+the unresolved assertion; an independent countdown cannot supply that oracle.
+Retain failure cleanup and all prior identity, unknown outcome and no-resignal
+assertions. Normal stream drain/termination and full background custody remain
+separate open behavior; this correction does not accept them.

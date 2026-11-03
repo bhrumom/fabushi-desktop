@@ -133,6 +133,40 @@
       "rationale": "Source shows the child can terminate independently of the assertion's required handoff. Repair the fixture's causal ordering rather than increase arbitrary sleeps, remove assertions or rerun for green.",
       "execution": "not-run",
       "state": "Recorded before applying fixture correction"
+    },
+    {
+      "id": "SC-PRE-R2-COMPLETED-RECOVERY-RETENTION",
+      "classification": "IMPLEMENTATION",
+      "priority": "P2",
+      "decision": "FIX",
+      "source_candidate_blob": "33cec3aeccc3c94034acbc3795fc677aea4763b6",
+      "anchors": [
+        "source/box-exec-daemon/src/server.rs:682-701",
+        "source/box-exec-daemon/src/server.rs:781-802",
+        "source/box-exec-daemon/src/server.rs:1865-1917"
+      ],
+      "failure": "Exceptional Drop retains a completed, reaped, worker-free Capture with capture_complete=false until stop. Repeated setup failures can accumulate registrations and retained parent stdin handles during normal runtime; observe_stream_recovery currently has no non-stop caller.",
+      "repair": "After bounded exceptional cleanup, nonblockingly observe already-finished readers and remove only exact completed invocation custody. Reuse the same owner for nonblocking observation of retained stream recoveries at subsequent existing foreground admission/completion boundaries, so workers finishing just after Drop do not accumulate until shutdown. Retain actual unresolved child/readers, never signal cached PID, create no sweeper thread/second registry, and preserve unknown outcome classification.",
+      "oracles": "Real setup-failure controls retain evidence of actual owned-child reap/signaling but require completed cleanup without needing stop; repeated failures do not accumulate completed registrations/handles. A late-reader recovery remains retained until actual EOF and is observed by an existing normal request boundary. Existing unresolved-stop and exact-identity/no-resignal assertions remain.",
+      "rationale": "Root read the complete candidate diff and actual call sites; independent source author confirmed the sole recovery observation caller is stop. Record FIX before source correction.",
+      "execution": "not-run",
+      "state": "FIX recorded before source correction"
+    },
+    {
+      "id": "SC-PRE-R2-UNWIND-RELEASE-ORACLE",
+      "classification": "TEST_FLAW",
+      "priority": "P2",
+      "decision": "FIX",
+      "source_candidate_blob": "33cec3aeccc3c94034acbc3795fc677aea4763b6",
+      "anchors": [
+        "source/box-exec-daemon/src/server.rs:3656-3658",
+        "source/box-exec-daemon/src/server.rs:3713-3718"
+      ],
+      "failure": "The descendant autonomously exits after 1500 polling iterations, allowing EOF before the intended unresolved-stop assertion if the test thread is delayed. Correct cleanup can therefore fail the test without a production defect.",
+      "repair": "Keep the owned pipe producer alive until an explicit causally ordered release; retain failure-path release and bounded owned cleanup. Do not lengthen an arbitrary countdown or remove the unresolved-stop/no-signal/later-EOF assertions.",
+      "rationale": "The same causal fixture principle as SC-PRE-R2-HANDOFF-ORACLE applies. Root and author confirmed this source scenario; no actual flaky run is alleged.",
+      "execution": "not-run",
+      "state": "FIX recorded before fixture correction"
     }
   ],
   "retained_follow_on": [
