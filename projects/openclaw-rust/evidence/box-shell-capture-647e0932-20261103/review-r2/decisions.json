@@ -37,8 +37,21 @@
   ],
   "review_delivery": {
     "general": "Source verdict REQUEST_CHANGES received; optional full report upload denied by automatic approval. No report blob exists; denied payload is not republished here.",
-    "structure": "Independent source finding received; final report identity will be recorded only if actually available."
+    "structure": {
+      "verdict": "MUST_FIX",
+      "blob": "5605dc1da3e4d1273556c85c73616add734ab96f",
+      "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r2/structure.md",
+      "readback_verified": true
+    }
   },
   "implementation": "Pending; this decision and updated SC02-R3 contract precede source repair.",
-  "execution": "Not run. No old or new source review establishes exact-H runtime acceptance."
+  "execution": "Not run. No old or new source review establishes exact-H runtime acceptance.",
+  "non_blocking": [
+    {
+      "id": "SC-R2-STRUCT-NB01",
+      "decision": "DEFER",
+      "classification": "NON_BLOCKING",
+      "rationale": "Performance/soak remains explicitly unaccepted. Per-child bounded cleanup does not establish an aggregate two-second stop SLA; no such SLA is claimed here. Record required later polling/wakeup and retained-owner shutdown measurements without opening a source-fix round from this observation."
+    }
+  ]
 }

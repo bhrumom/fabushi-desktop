@@ -1,0 +1,108 @@
+{
+  "schema": "ocrm-frozen-source-review-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "CRF-v1 / DJC-07",
+  "repository": "bhrumom/fabushi-desktop",
+  "subject": {
+    "commit": "6f76741a57ccdb66a4f276f120821da1bc7819e1",
+    "tree": "d0b96b9bb67bb033bd145de8bb2baa3e24e79fd9",
+    "role": "actual integrated immutable source candidate; no executable verification yet"
+  },
+  "original_base": "d9632aef264bbd50e54bd73edc84b951b01ec176",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "sha": "d6566d9d1955c02a9fbc035c3d6ad6eff2019de7"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "sha": "e047585c9ea0670fc41626ed41b4be6b8ade7ca3"
+    },
+    {
+      "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+      "sha": "92967b7dd7e69d8b5686b93075db347eb3a023a5"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+      "sha": "d8b5f89ea136cf6710a425b5ca40f5301d81173f"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/custody-recovery-verification.md",
+      "sha": "95c83e8d2a8e3df7a744a0d8f74db202ac4f0206"
+    }
+  ],
+  "diff": {
+    "path": "projects/openclaw-rust/evidence/custody-recovery-647e0932-20261103/review-r1/full.diff",
+    "blob": "5b0b84221f37b7c084af5d4a0822536c91a3e972",
+    "bytes": 49349,
+    "sha256": "d13fd35a3de89b0d2cdaf1b24c6b19299a7d57742109f46e33f6b447bf414ab5",
+    "files": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "e047585c9ea0670fc41626ed41b4be6b8ade7ca3",
+        "status": "modified",
+        "additions": 114,
+        "deletions": 6,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/custody-recovery-verification.md",
+        "sha": "95c83e8d2a8e3df7a744a0d8f74db202ac4f0206",
+        "status": "added",
+        "additions": 41,
+        "deletions": 0,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+        "sha": "d8b5f89ea136cf6710a425b5ca40f5301d81173f",
+        "status": "modified",
+        "additions": 34,
+        "deletions": 0,
+        "complete": true
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "sha": "d6566d9d1955c02a9fbc035c3d6ad6eff2019de7",
+        "status": "modified",
+        "additions": 168,
+        "deletions": 8,
+        "complete": true
+      },
+      {
+        "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+        "sha": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
+        "status": "modified",
+        "additions": 153,
+        "deletions": 1,
+        "complete": true
+      }
+    ],
+    "carrier": {
+      "sha": "d2cd741a66d889d8c7e157201179c99f03bcf9c3",
+      "tree": "aa5898e4664d666dbeba231c927f21badd1f870d",
+      "parent": "d9632aef264bbd50e54bd73edc84b951b01ec176",
+      "sourceSubject": "6f76741a57ccdb66a4f276f120821da1bc7819e1",
+      "role": "isolated complete-scope diff carrier only, not execution or shipping subject"
+    }
+  },
+  "scope_note": "Complete original five-path scope, all text patches present with observed additions/deletions equal GitHub statistics. No binary/rename omission. Detached diff carrier is not execution or shipping subject. Independent SC production repairs/spec/ledger and LDB work outside these paths remain independent, not accepted by this review.",
+  "requirements": [
+    "Read complete full diff, both complete governing Specs, edited test/harness and actual DevicePairingOwner transaction/dependency contract. Verify default foreign-key qualification, actual successful BEGIN/UPDATE before exact deferred COMMIT refusal, rollback/full row observations, public owner error/redaction/repeat/reopen/explicit repair/single use; original eight tests and original lock assertion must remain intact.",
+    "Read all modified capture functions and their existing sources/commands/oracles/artifact consumers. Verify full plan retained, exact qualified names, sixteen explicit selected groups, missing/duplicate/extra/ignored/measured/exit/unknown-scope controls, real selected execution distinct from synthetic controls, source/lock/binary before-after binding and scoped-only receipt semantics.",
+    "Inspect changed workflow job selection in the complete original jobs context, exact-H dispatch/push binding, full/existing scope preservation, pinned toolchain/cache/native dependency setup, two-platform shipping compile/capture and owned failure artifact retention. Confirm no unrelated job or historical failure is presented as passed/skipped-to-pass/full acceptance.",
+    "Fresh blind GENERAL/security/lifetime and STRUCTURE/reuse/performance review: do not fetch historical review reports, arbitration decisions, another reviewer output or detailed CI assessments. Requirements/history in canonical Specs are not verdicts.",
+    "No local/htch/compiler/test/parser/generator/formatter/Actions execution or shared/source/ref mutation. Return MUST_FIX separately from NON_BLOCKING with exact anchors/failure sequence/minimal owner-preserving correction and truthful read depth. Optional new report blob only after independent repository identity and authorization check; if denied do not retry/repackage."
+  ],
+  "limits": [
+    "No run has yet executed the new DJC-07 instrument or CRF selection.",
+    "Historical unchanged macOS reader-lock eight-second failure remains unresolved; scoped success cannot erase it or establish whole DJC acceptance.",
+    "SC producer is separately under review, Plugin repaired oracles require actual execution, LDB and all real ecosystems/platform packages/performance/final OCRM gates remain open."
+  ]
+}
