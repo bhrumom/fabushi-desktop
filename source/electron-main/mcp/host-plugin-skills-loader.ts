@@ -114,7 +114,11 @@ function authBlocksFromFailures(
     marketplaceName?: string;
   }> = [];
   for (const failure of failures) {
-    if (classifyCloneError(failure.errorMessage) !== "user_git_access") continue;
+    // Only clone/install transport failures can represent a user's remote Git
+    // authorization refusal. Local cache I/O can contain the same words
+    // (for example EACCES: permission denied) and must never become an
+    // authorization decision.
+    if (failure.errorType !== "clone" || classifyCloneError(failure.errorMessage) !== "user_git_access") continue;
     const id = failure.pluginDbId;
     if (typeof id !== "string" || canonicalPluginDbId(id) === undefined) {
       throw new Error("Plugin Skills authorization failure has no valid canonical plugin ID.");
