@@ -4554,6 +4554,112 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: desktop/package-lock.json
+      - name: Verify pinned OpenClaw notice inputs and packaging contract
+        timeout-minutes: 5
+        env:
+          NOTICE_EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, re, subprocess
+          from pathlib import Path
+          root = Path(".evidence/openclaw-notice")
+          root.mkdir(parents=True, exist_ok=True)
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          if head != os.environ["NOTICE_EXPECTED_SHA"]:
+              raise SystemExit("Notice execution subject mismatch")
+          lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          inputs = [
+              ".github/workflows/rust-desktop-runtime.yml", ".github/workflows/release-macos-main.yml",
+              "projects/openclaw-rust/upstream.lock.json",
+              "projects/openclaw-rust/docs/specs/desktop-openclaw-notice.md",
+              "desktop/resources/licenses/openclaw/LICENSE", "desktop/package.json",
+              "desktop/resources/licenses/openclaw/.gitattributes",
+              "desktop/scripts/check-electron-runtime-bundle.mjs",
+              "desktop/scripts/openclaw-notice.contract.test.mjs",
+          ]
+          required = [
+              'onp_real_notice_only_uses_locked_source_and_common_mapping',
+              'onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts',
+              'onp_default_mode_retains_all_required_runtime_artifacts',
+              'onp_default_mode_accepts_complete_controlled_runtime_and_notice',
+              'onp_missing_source_notice_is_refused_without_repair',
+              'onp_changed_source_bytes_are_refused_without_normalization',
+              'onp_non_file_source_notice_is_refused',
+              'onp_missing_malformed_and_invalid_lock_identity_are_refused',
+              'onp_root_license_identity_cannot_follow_discovery_candidate',
+              'onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused',
+              'onp_platform_only_mapping_cannot_replace_the_common_mapping',
+              'onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination',
+              'onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused',
+              'onp_packaged_resources_requires_an_existing_directory',
+              'onp_unknown_conflicting_and_incomplete_cli_options_are_refused',
+              'onp_default_mode_retains_preload_and_coordinator_contracts',
+              'onp_default_mode_retains_forbidden_product_code_and_resources',
+              'onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs',
+              'onp_competing_resource_writers_are_refused_across_common_and_platform_sets',
+              'onp_disjoint_resource_mappings_preserve_all_platforms',
+              'onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf',
+          ]
+          cases = [
+              ("source-notice", ["node", "desktop/scripts/check-electron-runtime-bundle.mjs", "--notice-only"]),
+              ("notice-contract", ["node", "--test", "--test-reporter=tap", "desktop/scripts/openclaw-notice.contract.test.mjs"]),
+          ]
+          receipt = {"contract": "ONP-v1", "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
+              "node": subprocess.check_output(["node", "--version"], text=True).strip(),
+              "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in inputs},
+              "planned_commands": [{"case": label, "command": command} for label, command in cases],
+              "required_tests": required, "executions": [], "result": "failed-or-incomplete",
+              "scope": "Actual locked source notice and common electron-builder mapping plus the real checker CLI over owned byte-preserved fixtures. Negative controls cover source/lock/mapping/options, competing common/platform resource writers and packaged-resource validation; default runtime assertions are retained. Actual isolated Git autocrlf checkout consumes the tracked narrow attribute, with an independent no-attribute byte-conversion refusal control. Fixture Resources are not a signed installer or actual packaged artifact. Actual macOS/Windows/Linux packages, signing, complete recursive legal provenance and full migration acceptance remain open."}
+          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          for label, command in cases:
+              log_path = root / (label + ".log")
+              command_exit, capture_exit, execution_error, raw = None, 0, None, b""
+              try:
+                  with log_path.open("wb") as output:
+                      completed = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)
+                  command_exit = completed.returncode
+                  raw = log_path.read_bytes()
+              except OSError as error:
+                  capture_exit, execution_error = 1, str(error)
+              text = raw.decode("utf-8", errors="replace")
+              print(text, flush=True)
+              accepted = command_exit == 0 and capture_exit == 0
+              result = {"case": label, "command": command, "command_exit": command_exit,
+                  "capture_exit": capture_exit, "execution_error": execution_error,
+                  "log": log_path.name, "log_sha256": hashlib.sha256(raw).hexdigest()}
+              if label == "notice-contract":
+                  passed = re.findall(r"^ok [0-9]+ - (.+)$", text, re.MULTILINE)
+                  missing = [name for name in required if passed.count(name) != 1]
+                  counts = {key: re.findall(r"^# " + key + r" ([0-9]+)$", text, re.MULTILINE)
+                      for key in ("tests", "pass", "fail", "cancelled", "skipped", "todo")}
+                  expected = {"tests": [str(len(required))], "pass": [str(len(required))],
+                      "fail": ["0"], "cancelled": ["0"], "skipped": ["0"], "todo": ["0"]}
+                  accepted = accepted and not missing and counts == expected and len(passed) == len(required)
+                  result.update({"observed_passed_test_names": passed,
+                      "missing_or_nonunique_positive_results": missing, "tap_counts": counts})
+              result["oracle_accepted"] = accepted
+              receipt["executions"].append(result)
+              (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          accepted = len(receipt["executions"]) == len(cases) and all(item["oracle_accepted"] for item in receipt["executions"])
+          receipt["result"] = "passed" if accepted else "failed-or-incomplete"
+          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2), flush=True)
+          raise SystemExit(0 if accepted else 1)
+          PY
+      - name: Upload pinned notice contract evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-openclaw-notice-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/openclaw-notice
+          if-no-files-found: error
+          retention-days: 90
       - name: Install desktop dependencies
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Build Grok-shaped Electron runtime

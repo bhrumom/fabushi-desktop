@@ -1048,7 +1048,16 @@
     {
       "acceptance_status": "not-started",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/desktop-openclaw-notice.md",
+        "desktop/resources/licenses/openclaw/LICENSE",
+        "desktop/resources/licenses/openclaw/.gitattributes",
+        "desktop/package.json",
+        "desktop/scripts/check-electron-runtime-bundle.mjs",
+        "desktop/scripts/openclaw-notice.contract.test.mjs",
+        ".github/workflows/release-macos-main.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
       "gate_ids": [],
       "id": "OCRM-R18",
       "kind": "requirement",
@@ -2500,7 +2509,16 @@
     {
       "acceptance_status": "not-started",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/desktop-openclaw-notice.md",
+        "desktop/resources/licenses/openclaw/LICENSE",
+        "desktop/resources/licenses/openclaw/.gitattributes",
+        "desktop/package.json",
+        "desktop/scripts/check-electron-runtime-bundle.mjs",
+        "desktop/scripts/openclaw-notice.contract.test.mjs",
+        ".github/workflows/release-macos-main.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC22",
       "kind": "acceptance-criterion",

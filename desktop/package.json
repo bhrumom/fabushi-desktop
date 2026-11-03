@@ -102,6 +102,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "resources/licenses/openclaw",
+        "to": "licenses/openclaw",
+        "filter": [
+          "LICENSE"
+        ]
       }
     ],
     "mac": {
