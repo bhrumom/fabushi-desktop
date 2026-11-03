@@ -6,52 +6,56 @@ Date: 2026-11-03
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Round8 — actual message and Electron recovery; marker and UI follow-up
+## Round8 — message recovery qualified; retained Telegram startup follow-up
 
-Exact `6da98eae8c42a53f24a42d7e3301693bd449ecab` run41556626655 passed
+Exact `1de845141d5e30ae9ff4965caf2915f68df2f650` run41559676882 passed
 reconciliation121/121 (Human77, full6400/32, durable continuation/restart, reaction
 concurrency/late receipts, all4 production Transcript feed cases and explicit
-offline-origin persistence). Actual Mac run41556626730 passed Plugins2/2 and
-Human2/2 with retries0: five real process lifetimes covered same-directory recovery,
-original nonce replay, settled draft retirement, distinct same-text new draft,
-late closed-process receipts and canonical UI/SQLite. These controlled-service
-results do not prove active backend deployment, force-kill/power-loss or signing.
+offline-origin persistence). Actual Mac run41559676909 passed Plugins2/2 and
+Human2/2, retries0, with five real Human process lifetimes. Controlled-service
+reopen, nonce replay, settled draft retirement, distinct same-text draft and late
+receipts are proved within those tests; active deployment/signing are separate.
 
-The same H UI gate executed203:201 passed and2 failed. All167 Node cases and
-Renderer compile passed; projection browser12/13 and author22/23 passed.
-The queued-account oracle waited for remote rows before its explicit reconnect,
-contrary to retained observed-down state. The new author recovery oracle counted
-all three existing roster consumers as the Root's single refresh; later held-Retry
-sections were not reached. Narrow test corrections retain actual account/port/
-epoch isolation, bounded shared requests, draft/cache preservation and no-reload/
-no-send assertions; no unchanged retry or passing result is substituted.
+H6da UI executed203 with201 passed/2 failed. The exact1de follow-up preserves
+the failed evidence and corrects only the queued-account reconnect ordering and
+actual three-consumer roster accounting. Its new marker implementation rejects
+indeterminate reads before import and commits completion by temporary write and
+rename; original5 persistence cases plus2 target7/full UI205. At this preparation,
+the full UI job125666991740 is still executing the author/browser recovery step;
+no terminal205-pass result is claimed. Current shipping remains queued.
 
-NMR-PERSIST-MIGRATION-01 is frozen at `4b69d61c93332500197bab14daaf653027468c3d`.
-The existing Electron persistence owner now rejects indeterminate marker reads
-before imports and commits its unchanged marker through temporary write/rename.
-Two additional real-owner controlled-I/O tests cover retired-draft resurrection,
-partial import/marker writes, rename failures, same/reopened-owner recovery,
-original-input retry and newer values. Original5 remain; persistence7/full UI205
-are authored requirements awaiting the containing frozen-H Actions.
+The frozen NMR-RETAINED-TELEGRAM-01 follow-up now changes the existing desktop
+Host/Runtime/FeatureHost owners. Only explicit Session/Transcript construction
+selects a new in-memory policy preserving historical Social and Telegram work
+before turn/handoff recovery mutations. Old None and Social-only policy behavior,
+ordinary Agent recovery and fallback remain. Explicit desktop Telegram open/send
+refuse before auth, locks, plugin/context work or events with the existing error.
+No provider is revived and no retained data, credential or original reader is
+deleted or migrated.
 
-Source run41556626683 at H6da passed Node161/Python37/schema0 and unaccepted-
+Original Runtime9 and AppHost7 cases remain;2+1 new cases require Runtime11 and
+AppHost8, while existing Feature10 expands its Telegram matrix. The real AppHost
+fixture includes independent waiting-user and handoff waiting targets, raw payload
+equality, three child lifetimes, account changes, zero unexpected transport and
+a separate actual registry-absence oracle. Linux and macOS selected groups require
+10+11+6+8+5=40. These are authored requirements until containing-H Actions.
+All message121/UI205, actual Mac2+2 and shipping checks remain.
+
+Source run41559676865 at H1de passed Node161/Python37/schema0 and unaccepted-
 candidate consistency. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
-The canonical ledger append changes only FBCP-NMR-001; all183 other rows and
-source-review/global fields remain. Source review remains16 records/2 complete,
-unknown/unread null and every acceptance false. Current shipping remains queued
-without an allocated runner or execution evidence.
+Only FBCP-NMR-001 gains current target/requirement/test anchors; all183 other rows,
+source reviews and acceptance fields stay unchanged. Source review remains16
+records/2 complete, unknown/unread null and every acceptance false. A conditional
+old-data startup defect is addressed; actual user-store presence/import is unproved.
 
-The current Native Session/Transcript and retained MessagingService/Telegram
-callers were checked at exact4b. Historical telegram:chat: RuntimeStore rows can
-conditionally block startup or be rewritten during recovery; actual user-store
-presence is unknown and a separate narrow preservation/refusal repair is open.
 Backend main687718ce9e0083aa124d29005bcce4051d357919 still rejects afterId=0;
-PR137 remains draft/open/unmerged at52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23,
-with production readiness skipped. Active Worker identity is unverified.
-Remote revisions/tombstones/old-message discovery, reaction409 recovery, complete
-source/legal, signed supported platforms, full Bot/UI/a11y/security/performance/
-soak/upgrade/rollback and independent ACCEPT remain open. Existing round8 receipts
-retain actual results, failures, artifact identities and candidate inputs.
+PR137 is draft/open/unmerged at52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23,
+production readiness skipped, active Worker unverified. Remote revision/tombstone
+and old-message discovery, reaction409, complete source/legal, signed supported
+platforms, full Bot/UI/a11y/security/performance/soak/upgrade/rollback and independent
+ACCEPT remain open. Bounded evidence is in
+`projects/telegram-desktop-rust/evidence/round8-retained-telegram-recovery-20261103.json`;
+earlier round8 receipts and failing attempts remain preserved.
 
 ## Round30 — forward feedback and recovery qualification
 

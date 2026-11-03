@@ -417,7 +417,7 @@ fn build_runtime(
 
     let mut builder = RuntimeBuilder::new(runtime_config.clone());
     if session_owned {
-        builder = builder.with_retained_conversation_policy(RetainedConversationPolicy::PreserveSocialContacts);
+        builder = builder.with_retained_conversation_policy(RetainedConversationPolicy::PreserveDesktopLegacyConversations);
     }
     #[cfg(feature = "codex-compat")]
     let mut compatibility_conversation_providers: Vec<Arc<dyn ConversationProvider>> = Vec::new();

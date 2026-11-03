@@ -1037,6 +1037,14 @@ impl FeatureHostController {
                     if conversation_id.trim().starts_with("mahayana:contact:") => {
                     return Err(FeatureHostError::Contract("social conversations are unavailable in the desktop host; use the Session/Transcript owner".into()));
                 }
+                FeatureCommand::ConversationOpen { conversation_id, .. }
+                    if conversation_id.trim().starts_with("telegram:chat:") => {
+                    return Err(FeatureHostError::Contract("provider is unavailable: telegram".into()));
+                }
+                FeatureCommand::ChatSend { conversation_id: Some(conversation_id), .. }
+                    if conversation_id.trim().starts_with("telegram:chat:") => {
+                    return Err(FeatureHostError::Contract("provider is unavailable: telegram".into()));
+                }
                 _ => {}
             }
         }

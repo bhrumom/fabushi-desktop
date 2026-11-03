@@ -1,5 +1,6 @@
-//! NMR-34/35 and NMR-SOCIAL-OWNER-02 / NMR-SOCIAL-AC-01 tests. Production fixtures have
-//! no MahayanaHost runtime: they verify refusal before that runtime is touched.
+//! NMR-34/35, NMR-SOCIAL-OWNER-02 / NMR-SOCIAL-AC-01 and
+//! NMR-RETAINED-TELEGRAM-01 tests. Production fixtures have no MahayanaHost
+//! runtime: they verify refusal before that runtime is touched.
 //! Real Production AppHost construction, account handoff and process restart are
 //! covered by the native_desktop_account_handoff integration target.
 
@@ -14,6 +15,14 @@ const DESKTOP_REFUSAL: &str =
     "standalone messaging is unavailable in the desktop host; use the Session/Transcript owner";
 const DESKTOP_SOCIAL_REFUSAL: &str =
     "social conversations are unavailable in the desktop host; use the Session/Transcript owner";
+const DESKTOP_TELEGRAM_REFUSAL: &str = "provider is unavailable: telegram";
+const TELEGRAM_PUBLIC_INTENTS: [&str; 5] = [
+    "telegram:chat:42",
+    "telegram:chat:",
+    " \ttelegram:chat:42\n",
+    " \ttelegram:chat:\n",
+    "telegram:chat:historical-unknown",
+];
 
 struct OwnedRoot(PathBuf);
 
@@ -199,6 +208,37 @@ fn social_commands(conversation_id: &str) -> [FeatureCommand; 2] {
     ]
 }
 
+fn telegram_commands(conversation_id: &str) -> [FeatureCommand; 3] {
+    let send = |agent_id: &str| FeatureCommand::ChatSend {
+        request_id: format!("telegram-send-{agent_id}"),
+        text: "Retained Telegram text must not reach plugins or Agent context.".into(),
+        agent_id: Some(agent_id.into()),
+        conversation_id: Some(conversation_id.into()),
+        client_message_id: Some(format!("public-telegram-client-{agent_id}")),
+        retry_of_message_id: None,
+        mode: AgentMode::Agent,
+        mode_statement: Some("Keep the original retired-provider intent".into()),
+        model: None,
+        attachments: Vec::new(),
+    };
+    [
+        FeatureCommand::ConversationOpen {
+            request_id: "telegram-open".into(),
+            conversation_id: conversation_id.into(),
+        },
+        send("mahayana-assistant"),
+        send("retained-plugin-fixture"),
+    ]
+}
+
+fn assert_telegram_refused(result: Result<CommandAccepted, FeatureHostError>) {
+    match result {
+        Err(FeatureHostError::Contract(message)) => assert_eq!(message, DESKTOP_TELEGRAM_REFUSAL),
+        Err(error) => panic!("expected Telegram refusal before auth, state or plugin dispatch, got {error}"),
+        Ok(_) => panic!("desktop accepted a retired Telegram conversation"),
+    }
+}
+
 fn assert_social_refused(result: Result<CommandAccepted, FeatureHostError>) {
     match result {
         Err(FeatureHostError::Contract(message)) => assert_eq!(message, DESKTOP_SOCIAL_REFUSAL),
@@ -212,6 +252,8 @@ fn desktop_social_intents_refuse_before_auth_runtime_context_io_and_events() {
     let root = OwnedRoot::new();
     let controller = owner(&root, HostMode::Production, SurfacePlatform::Electron);
     let before = event_image(&controller);
+    #[cfg(feature = "production")]
+    assert!(controller.runtime.is_none(), "refusal must not require an initialized Runtime");
     for conversation_id in [
         "mahayana:contact:42",
         "mahayana:contact:",
@@ -221,6 +263,13 @@ fn desktop_social_intents_refuse_before_auth_runtime_context_io_and_events() {
             assert_social_refused(controller.execute(command));
             assert_eq!(event_image(&controller), before);
             assert!(!root.0.exists(), "denial must precede any Agent workspace creation");
+        }
+    }
+    for conversation_id in TELEGRAM_PUBLIC_INTENTS {
+        for command in telegram_commands(conversation_id) {
+            assert_telegram_refused(controller.execute(command));
+            assert_eq!(event_image(&controller), before);
+            assert!(!root.0.exists(), "Telegram refusal must precede plugin or Agent workspace creation");
         }
     }
 }
@@ -242,6 +291,11 @@ fn desktop_social_refusal_does_not_lock_state_or_touch_retained_context() {
     for command in social_commands("mahayana:contact:42") {
         assert_social_refused(controller.execute(command));
     }
+    for conversation_id in TELEGRAM_PUBLIC_INTENTS {
+        for command in telegram_commands(conversation_id) {
+            assert_telegram_refused(controller.execute(command));
+        }
+    }
     let state = controller.state.lock().unwrap_or_else(|error| error.into_inner());
     let after_events = state.events.iter()
         .map(|event| serde_json::to_value(event).expect("serialize retained event"))
@@ -257,6 +311,11 @@ fn social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces() {
     for command in social_commands("mahayana:contact:42") {
         controller.execute(command).expect("explicit Test dispatch remains available");
     }
+    for conversation_id in TELEGRAM_PUBLIC_INTENTS {
+        for command in telegram_commands(conversation_id) {
+            controller.execute(command).expect("explicit Test Telegram dispatch remains available");
+        }
+    }
     for platform in [SurfacePlatform::Ios, SurfacePlatform::Android, SurfacePlatform::Wasm] {
         let controller = owner(&root, HostMode::Production, platform);
         for command in social_commands("mahayana:contact:42") {
@@ -264,6 +323,14 @@ fn social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces() {
                 controller.execute(command),
                 Err(FeatureHostError::ProductionUnavailable)
             ), "non-desktop request must reach its existing absent-runtime boundary");
+        }
+        for conversation_id in TELEGRAM_PUBLIC_INTENTS {
+            for command in telegram_commands(conversation_id) {
+                assert!(matches!(
+                    controller.execute(command),
+                    Err(FeatureHostError::ProductionUnavailable)
+                ), "non-desktop Telegram intent must retain the existing absent-runtime boundary");
+            }
         }
     }
     let controller = owner(&root, HostMode::Production, SurfacePlatform::Electron);
@@ -281,6 +348,20 @@ fn social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces() {
             }),
             Err(FeatureHostError::ProductionUnavailable)
         ), "unrelated namespace must retain the existing dispatch boundary");
+    }
+    for conversation_id in [
+        "telegram:chats:42",
+        "telegram:channel:42",
+        "telegram:chat",
+        "telegram",
+        " \ttelegram:chats:42\n",
+    ] {
+        for command in telegram_commands(conversation_id) {
+            assert!(matches!(
+                controller.execute(command),
+                Err(FeatureHostError::ProductionUnavailable)
+            ), "nearby Telegram namespaces must retain their existing dispatch boundary");
+        }
     }
 }
 

@@ -76,6 +76,9 @@ pub enum RetainedConversationPolicy {
     /// Only the desktop Session/Transcript owner may resume these historical
     /// contact turns. Leave their SQLite rows untouched for reviewed rollback.
     PreserveSocialContacts,
+    /// The desktop Session/Transcript composition also leaves retired Telegram
+    /// work untouched. Other constructors retain their existing recovery policy.
+    PreserveDesktopLegacyConversations,
 }
 
 pub struct RuntimeBuilder {
@@ -1114,17 +1117,26 @@ impl MahayanaRuntime {
         })
     }
 
-    fn retains_social_conversation(&self, conversation: &ConversationId) -> bool {
-        self.retained_conversation_policy == RetainedConversationPolicy::PreserveSocialContacts
-            && conversation.as_str().starts_with("mahayana:contact:")
-            && conversation.as_str().len() > "mahayana:contact:".len()
+    fn retains_historical_conversation(&self, conversation: &ConversationId) -> bool {
+        let id = conversation.as_str();
+        let social = id.starts_with("mahayana:contact:")
+            && id.len() > "mahayana:contact:".len();
+        match self.retained_conversation_policy {
+            RetainedConversationPolicy::None => false,
+            RetainedConversationPolicy::PreserveSocialContacts => social,
+            RetainedConversationPolicy::PreserveDesktopLegacyConversations => {
+                // Retain the original namespace bytes, including unknown
+                // suffixes. This does not validate, normalize or reopen a chat.
+                social || id.strip_prefix("telegram:chat:").is_some_and(|suffix| !suffix.is_empty())
+            }
+        }
     }
 
     fn recover_interrupted_turns(&self) -> Result<(), RuntimeError> {
         for pending in self.store.recoverable_turns()? {
             // Check before waiting-user failure, provider lookup, read history
             // or a generation rewrite. This is a no-mutation retention policy.
-            if self.retains_social_conversation(&pending.conversation_id) {
+            if self.retains_historical_conversation(&pending.conversation_id) {
                 continue;
             }
             if pending.state == TurnState::WaitingUser {
@@ -1224,7 +1236,7 @@ impl MahayanaRuntime {
                 .unwrap_or_else(|| {
                     ConversationId(format!("codex:agent:{}", pending.intent.target_agent))
                 });
-            if self.retains_social_conversation(&target_conversation) {
+            if self.retains_historical_conversation(&target_conversation) {
                 continue;
             }
             let message_id = MessageId::new(pending.intent.id.to_string())

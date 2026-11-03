@@ -107,8 +107,9 @@ fn auth(host: &AppHost) -> Value {
 }
 
 fn assert_legacy_unavailable(host: &AppHost) {
-    // A registered-but-unauthorized provider produces a different error. This
-    // exercises the actual production registry through the public command.
+    // Preserve the public legacy refusal. The early desktop guard has the same
+    // error string, so this alone is not proof of provider-registry absence.
+    // assert_production_social_registry_selection checks that independently.
     let response = host.dispatch(HostRequest {
         id: None,
         method: "feature.execute".into(),
@@ -121,7 +122,7 @@ fn assert_legacy_unavailable(host: &AppHost) {
     assert!(!response.ok);
     assert!(
         response.error.as_deref().unwrap_or("").contains("provider is unavailable: telegram"),
-        "must reject at the missing provider boundary: {:?}", response.error
+        "must preserve the public legacy refusal: {:?}", response.error
     );
     assert_legacy_auth_matrix(host);
     assert!(host.take_startup_native_shell_event().expect("startup event").is_none());
@@ -857,7 +858,7 @@ fn legacy_child_case(root: &Path, restart: bool) {
 
 fn run_child(root: &Path, mode: &str) {
     let issuer = if mode == "production" || mode.starts_with("legacy-")
-        || mode.starts_with("social-")
+        || mode.starts_with("social-") || mode.starts_with("telegram-")
         || (mode.starts_with("messaging-") && mode != "messaging-isolated")
     {
         PRODUCTION
@@ -899,7 +900,7 @@ fn run_child(root: &Path, mode: &str) {
     // Keep the production issuer identity needed by the registration control,
     // while routing any unexpected reqwest transport to this owned rejection
     // proxy. No inherited proxy bypass or real service is needed by the test.
-    let network_fence = if mode.starts_with("social-") {
+    let network_fence = if mode.starts_with("social-") || mode.starts_with("telegram-") {
         let listener = TcpListener::bind("127.0.0.1:0").expect("owned rejection proxy");
         listener.set_nonblocking(true).expect("nonblocking proxy observation");
         let proxy = format!("http://{}", listener.local_addr().expect("proxy address"));
@@ -927,7 +928,7 @@ fn run_child(root: &Path, mode: &str) {
         }
         if let Some(status) = child.try_wait().expect("poll test child") {
             assert!(status.success(), "Native AppHost child case failed: {mode}");
-            assert_eq!(unexpected_transports, 0, "social owner dispatched unexpected HTTP: {mode}");
+            assert_eq!(unexpected_transports, 0, "retained desktop owner dispatched unexpected HTTP: {mode}");
             return;
         }
         if Instant::now() >= deadline {
@@ -957,6 +958,10 @@ fn native_desktop_account_handoff() {
         }
         if matches!(mode.as_str(), "social-first" | "social-restart" | "social-repeat") {
             social_child_case(&root, mode == "social-first");
+            return;
+        }
+        if matches!(mode.as_str(), "telegram-first" | "telegram-restart" | "telegram-repeat") {
+            telegram_child_case(&root, mode == "telegram-first");
             return;
         }
         assert!(matches!(
@@ -1379,6 +1384,14 @@ fn assert_production_social_registry_selection(root: &Path) {
         .filter(|provider| provider != "mahayana-social")
         .collect::<Vec<_>>();
     assert_eq!(providers, expected, "only the generic social writer is retired");
+    // Public FeatureHost denial now runs before the registry. Inspect the real
+    // Session/Transcript-owned Host and call its Runtime directly as well.
+    assert!(!providers.iter().any(|provider| provider == "telegram"));
+    let error = owned.execute(mahayana_core::RuntimeCommand::ConversationHistory {
+        conversation_id: mahayana_core::ConversationId("telegram:chat:42".into()),
+        limit: Some(20),
+    }).expect_err("the actual desktop Runtime must not register Telegram");
+    assert_eq!(error.to_string(), "provider is unavailable: telegram");
     drop(owned);
 }
 
@@ -1566,3 +1579,226 @@ fn native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass() {
 }
 
 
+
+const TELEGRAM_OWNER_ERROR: &str = "host operation failed: provider is unavailable: telegram";
+const TELEGRAM_RETAINED_TEXT: &str =
+    "Public retained Telegram payload; never resend or reinterpret as Agent input.\0Unicode: 人";
+const BOT_TELEGRAM: &str = "public-retained-owner-agent-control";
+
+fn seed_telegram_retained_work(host: &AppHost) {
+    // Seed the schema initialized by the real Production AppHost, never a
+    // replacement database. The third turn predates durable turn_requests.
+    host.mini_app_store_port().expect("real RuntimeStore fixture port")
+        .with_connection::<_, rusqlite::Error>(|connection| {
+            let transaction = connection.transaction()?;
+            for (index, (suffix, conversation, state, generation, nonce)) in [
+                ("active", "telegram:chat:42", "thinking", 7_i64, "public-telegram-active-nonce"),
+                ("waiting", "telegram:chat:public-retained-chat", "waiting-user", 11_i64, "public-telegram-running-handoff"),
+                ("legacy", "telegram:chat:-10042", "recovering", 4_i64, "public-telegram-legacy-nonce"),
+                ("waiting-direct", "telegram:chat:43", "waiting-user", 13_i64, "public-telegram-waiting-direct-nonce"),
+            ].into_iter().enumerate() {
+                let turn_id = format!("public-telegram-{suffix}-turn");
+                let run_id = format!("public-telegram-{suffix}-run");
+                let at = 170_i64 + index as i64 * 10;
+                transaction.execute(
+                    "INSERT INTO conversations(conversation_id, updated_at_ms) VALUES (?1, ?2)",
+                    rusqlite::params![conversation, at],
+                )?;
+                transaction.execute(
+                    "INSERT INTO turns(turn_id, conversation_id, user_message_id, created_at_ms, state, active_run_id)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                    rusqlite::params![turn_id, conversation, nonce, at + 1, state, run_id],
+                )?;
+                transaction.execute(
+                    "INSERT INTO runs(run_id, turn_id, generation, provider, started_at_ms, finished_at_ms, state)
+                     VALUES (?1, ?2, ?3, 'telegram', ?4, NULL, ?5)",
+                    rusqlite::params![run_id, turn_id, generation, at + 2, state],
+                )?;
+                if suffix != "legacy" {
+                    transaction.execute(
+                        "INSERT INTO turn_requests(turn_id, message_id, text, inference_provider, hidden, updated_at_ms)
+                         VALUES (?1, ?2, ?3, 'public-retained-route', ?4, ?5)",
+                        rusqlite::params![turn_id, nonce, format!("{TELEGRAM_RETAINED_TEXT}\n{suffix}"),
+                            i64::from(suffix == "waiting"), at + 3],
+                    )?;
+                }
+            }
+            // Keep exact spacing, escaped NUL and unknown fields in the stored
+            // JSON. Comparing decoded objects would miss a payload rewrite.
+            let question = r#"{
+  "id" : "public-telegram-question", "turnId":"public-telegram-waiting-turn",
+  "runId":"public-telegram-waiting-run",
+  "question" : "Public retained Telegram payload; preserve question\u0000人",
+  "unknown" : { "order" : [3, 1], "spaces" : "a  b" }
+}"#;
+            transaction.execute(
+                "INSERT INTO pending_intents(intent_id, turn_id, run_id, kind, payload_json, created_at_ms)
+                 VALUES ('public-telegram-question', 'public-telegram-waiting-turn',
+                         'public-telegram-waiting-run', 'ask-user', ?1, 205)",
+                [question],
+            )?;
+            // This independent waiting-user row is not excluded by the
+            // RuntimeStore's agent-handoff nonce join. It must survive the
+            // interrupted-turn branch before that branch can mark it Failed.
+            let direct_question = r#"{
+  "id" : "public-telegram-direct-question", "turnId":"public-telegram-waiting-direct-turn",
+  "runId":"public-telegram-waiting-direct-run",
+  "question" : "Public retained Telegram payload; direct waiting question\u0000人",
+  "unknown" : { "spaces" : " keep  original " }
+}"#;
+            transaction.execute(
+                "INSERT INTO pending_intents(intent_id, turn_id, run_id, kind, payload_json, created_at_ms)
+                 VALUES ('public-telegram-direct-question', 'public-telegram-waiting-direct-turn',
+                         'public-telegram-waiting-direct-run', 'ask-user', ?1, 208)",
+                [direct_question],
+            )?;
+            for (intent_id, dispatch_state, target_operation_id, payload) in [
+                (
+                    "public-telegram-queued-handoff",
+                    "queued",
+                    None,
+                    r#"{
+  "id" : "public-telegram-queued-handoff", "targetAgent":"public-retained-target",
+  "targetConversationId" : "telegram:chat:42",
+  "task" : "Public retained Telegram payload; queued handoff\u0000人",
+  "constraints" : { "literal" : " keep  spacing " }, "expectedOutput":null,
+  "originRun":"public-telegram-active-run", "depth":1, "unknown":[9, 2]
+}"#,
+                ),
+                (
+                    "public-telegram-running-handoff",
+                    "running",
+                    Some("public-telegram-waiting-run"),
+                    r#"{
+  "id" : "public-telegram-running-handoff", "targetAgent":"public-retained-target",
+  "targetConversationId" : "telegram:chat:public-retained-chat",
+  "task" : "Public retained Telegram payload; running handoff\u0000人",
+  "constraints" : { "literal" : " retain  unknown " }, "expectedOutput":"original",
+  "originRun":"public-telegram-active-run", "depth":2, "unknown":{"future":true}
+}"#,
+                ),
+            ] {
+                transaction.execute(
+                    "INSERT INTO pending_intents(intent_id, turn_id, run_id, kind, payload_json, created_at_ms)
+                     VALUES (?1, 'public-telegram-active-turn', 'public-telegram-active-run',
+                             'agent-handoff', ?2, 206)",
+                    rusqlite::params![intent_id, payload],
+                )?;
+                transaction.execute(
+                    "INSERT INTO handoff_dispatch(intent_id, target_operation_id, state, updated_at_ms)
+                     VALUES (?1, ?2, ?3, 207)",
+                    rusqlite::params![intent_id, target_operation_id, dispatch_state],
+                )?;
+            }
+            transaction.commit()
+        }).expect("seed retained Telegram input, question and handoff rows without dispatch");
+}
+
+fn assert_telegram_entries_unavailable(host: &AppHost) {
+    for conversation in [
+        "telegram:chat:42",
+        "telegram:chat:",
+        " \ttelegram:chat:42\n",
+        " \ttelegram:chat:\n",
+        "telegram:chat:public-retained-chat",
+    ] {
+        for command in [
+            json!({"type": "conversation.open", "requestId": "retained-telegram-open",
+                "conversationId": conversation}),
+            json!({"type": "chat.send", "requestId": "retained-telegram-send",
+                "conversationId": conversation, "agentId": "mahayana-assistant",
+                "clientMessageId": "public-telegram-denied-nonce",
+                "text": TELEGRAM_RETAINED_TEXT, "mode": "agent"}),
+            json!({"type": "chat.send", "requestId": "retained-telegram-plugin-send",
+                "conversationId": conversation, "agentId": "retained-plugin-fixture",
+                "clientMessageId": "public-telegram-denied-plugin-nonce",
+                "text": TELEGRAM_RETAINED_TEXT, "mode": "agent"}),
+        ] {
+            for params in [command.clone(), json!({"command": command})] {
+                let response = identified_request(host, "telegram-owner", "feature.execute", params);
+                assert!(!response.ok);
+                assert!(response.result.is_none(), "denial cannot admit an operation");
+                assert_eq!(response.error.as_deref(), Some(TELEGRAM_OWNER_ERROR));
+            }
+        }
+    }
+    // Native account/Agent bootstrap events are allowed. No retired input,
+    // conversation result, turn transition or operation can escape this owner.
+    // The six-table equality below independently rejects newly persisted work.
+    for _ in 0..256 {
+        let response = identified_request(host, "telegram-event-check", "feature.receive", json!({"timeoutMs": 0}));
+        assert!(response.ok);
+        let event = response.result.expect("feature event result");
+        if event.is_null() {
+            return;
+        }
+        let kind = event["type"].as_str().expect("typed Host event");
+        assert!(!matches!(kind, "chat.message" | "chat.delta" | "conversation.opened" | "turn.state" | "messaging.event"),
+            "retired Telegram intent published a message or turn event: {kind}");
+        assert!(!kind.starts_with("operation."), "unexpected operation event: {kind}");
+        assert!(event.get("operationId").is_none(), "unexpected admitted operation: {event}");
+        let encoded = event.to_string();
+        assert!(!encoded.contains("Public retained Telegram payload"), "retained body leaked into events");
+        assert!(!encoded.contains("public-telegram-"), "retained identity leaked into events");
+    }
+    panic!("Telegram owner fixture event queue did not settle");
+}
+
+fn telegram_child_case(root: &Path, first: bool) {
+    let credential = root.join("native-credential.json");
+    let expected_credential = replace_native_credential(&credential, PRODUCTION, "123");
+    assert_production_social_registry_selection(root);
+    let host = production_host(root);
+    assert_eq!(auth(&host)["loggedIn"], true);
+    assert_eq!(host.mini_app_account_port().current_scope().expect("production Native scope").account_id, "123");
+    let baseline = root.join("public-telegram-retention-before.json");
+    if first {
+        create(&host, BOT_TELEGRAM);
+        seed_telegram_retained_work(&host);
+        fs::write(&baseline, serde_json::to_vec(&social_sqlite_image(&host)).expect("retained SQLite baseline"))
+            .expect("write owned Telegram test baseline");
+    } else {
+        assert!(contains_bot(&host, BOT_TELEGRAM), "normal Agent remains available after real process restart");
+    }
+    let before: Value = serde_json::from_slice(&fs::read(&baseline).expect("original retained Telegram baseline"))
+        .expect("decode retained Telegram baseline");
+    assert_eq!(social_sqlite_image(&host), before, "startup changed retained Telegram fields or payload bytes");
+    assert_telegram_entries_unavailable(&host);
+    assert_eq!(fs::read(&credential).expect("Native credential after Telegram refusal"), expected_credential);
+    assert_eq!(social_sqlite_image(&host), before, "denied Telegram intent wrote RuntimeStore work");
+
+    let switched_credential = replace_native_credential(&credential, PRODUCTION, "456");
+    assert_eq!(auth(&host)["loggedIn"], true);
+    assert_eq!(host.mini_app_account_port().current_scope().expect("switched Native scope").account_id, "456");
+    assert!(!contains_bot(&host, BOT_TELEGRAM), "previous account Agent must remain isolated");
+    assert_telegram_entries_unavailable(&host);
+    assert_eq!(fs::read(&credential).expect("switched Native credential after Telegram refusal"), switched_credential);
+    assert_eq!(social_sqlite_image(&host), before, "account change altered retained Telegram work");
+
+    let returned_credential = replace_native_credential(&credential, PRODUCTION, "123");
+    assert_eq!(auth(&host)["loggedIn"], true);
+    assert_eq!(host.mini_app_account_port().current_scope().expect("returned Native scope").account_id, "123");
+    assert!(contains_bot(&host, BOT_TELEGRAM), "original account Agent remains durable");
+    assert_telegram_entries_unavailable(&host);
+    assert_eq!(fs::read(&credential).expect("returned Native credential after Telegram refusal"), returned_credential);
+    assert_eq!(social_sqlite_image(&host), before, "account return altered retained Telegram work");
+
+    fs::remove_file(&credential).expect("Native logout fixture");
+    assert_eq!(auth(&host)["loggedIn"], false);
+    assert_telegram_entries_unavailable(&host);
+    assert!(matches!(fs::symlink_metadata(&credential), Err(error)
+        if error.kind() == std::io::ErrorKind::NotFound),
+        "logged-out Telegram refusal must not recreate a Native credential");
+    assert_eq!(auth(&host)["loggedIn"], false);
+    assert_eq!(social_sqlite_image(&host), before, "logged-out refusal altered retained Telegram work");
+    assert!(!root.join("app-host/feature-host/account-session.json").exists());
+    drop(host);
+}
+
+#[test]
+fn native_telegram_owner_preserves_sqlite_turns_and_refuses_bypass() {
+    let root = test_directory("telegram-owner");
+    for mode in ["telegram-first", "telegram-restart", "telegram-repeat"] {
+        run_child(&root.0, mode);
+    }
+}

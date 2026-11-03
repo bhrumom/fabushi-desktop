@@ -1,0 +1,206 @@
+{
+  "format": "FBCP_NMR_RETAINED_TELEGRAM_DELIVERY_V1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 8,
+  "repository": "bhrumom/fabushi-desktop",
+  "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "production_base": "1de845141d5e30ae9ff4965caf2915f68df2f650",
+  "integration_parent": "5feb74f7845225cdb2d73e090d0cbef89dc558e4",
+  "contract": {
+    "path": "docs/specs/fbcp-native-message-reconciliation.md",
+    "blob": "44b1a44b7d39adc5fc5829f9990bee8eb6a8d7a4",
+    "frozen_at": "1de845141d5e30ae9ff4965caf2915f68df2f650",
+    "id": "NMR-RETAINED-TELEGRAM-01a..d/AC"
+  },
+  "publication": {
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "force": false,
+    "expected_sha": "5feb74f7845225cdb2d73e090d0cbef89dc558e4",
+    "containing_sha": "Resolve from the containing Git commit and API readback."
+  },
+  "problem": "Conditional historical telegram:chat: RuntimeStore work could abort desktop startup at missing-provider lookup or rewrite waiting-user work. Explicit old chat.send could reach plugin/context work before its late provider refusal. Actual user-data presence is unknown.",
+  "changes": [
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+      "blob": "f47e6ae360bb0780803d2271812ee5d768b3be44",
+      "behavior": "New explicit desktop in-memory policy; same two earliest retention checks before state/generation/provider/handoff/authorization effects. None and Social-only retain their semantics. Unknown nonempty retired suffixes are retained without normalization."
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+      "blob": "6d29e3609d371933e3af180ddcfab9923818d2f9",
+      "behavior": "Only session_owned construction selects the new policy; existing constructor signatures and ordinary composition remain."
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+      "blob": "26053fc95f5f795f3c9a25527ddf22b292bcd362",
+      "behavior": "Two early Production+Electron command guards preserve the existing provider-unavailable error and refuse before authorization, state/runtime locks, plugin and context work. Existing Social and other commands remain."
+    }
+  ],
+  "tests": {
+    "executed_at_preparation": false,
+    "required_outer_groups": {
+      "feature": 10,
+      "runtime": 11,
+      "platform": 6,
+      "apphost": 8,
+      "native_response": 5
+    },
+    "required_outer_total": 40,
+    "new_top_level_names": [
+      "retained_telegram_turns_and_handoffs_survive_desktop_sqlite_restart_without_dispatch",
+      "legacy_telegram_recovery_keeps_default_and_social_only_policies",
+      "native_telegram_owner_preserves_sqlite_turns_and_refuses_bypass"
+    ],
+    "test_blobs": {
+      "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs": "93b4f89b9ae4890ed85312f8a5c91f7b0105f571",
+      "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs": "238f11818e4209184e36fbee2c6f4a86cb95a295",
+      "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs": "7a10ddab44e7e03e2609849aa33aa81c0ec68755"
+    },
+    "coverage": "Real SQLite all recoverable states and handoff target states, exact raw payload/field equality, registered recorder zero-call controls, old-policy Telegram and ordinary Agent positives. Production AppHost three separate child lifetimes, account transitions, credential equality, independent provider absence and no unexpected transport. Existing9/7 top-level cases remain; variants/child summaries do not add cases.",
+    "oracle_repair": "The unintegrated AppHost draft used a waiting nonce excluded by the handoff filter. Final candidate adds a distinct waiting-direct nonce/question while retaining the handoff waiting target; both actual recovery branches are now exercised.",
+    "retained_gates": "Reconciliation121/Human77, complete UI205, actual Mac Plugins2/Human2 and all shipping/dependency/binary/package checks remain.",
+    "workflow_blob": "a4d7c2328074eb07f923e56f20bda168d6a28753"
+  },
+  "static_reviews": {
+    "runtime": "70dca53e75ed26c4cb645002288b6c294a92c0d0",
+    "feature": "62ea20023f2002f713c19db65156d5ac4614bf22",
+    "apphost": "f7e435cde376976a5b9580be2fbd051a2cc1b815",
+    "shared": "e07834c945e4311413022f3d70fd8b2b8c08162e",
+    "result": "No remaining static blocker; static review is not execution or independent ACCEPT."
+  },
+  "prior_exact_execution": {
+    "head": "1de845141d5e30ae9ff4965caf2915f68df2f650",
+    "native_run": 41559676882,
+    "reconciliation": {
+      "job": 125666991711,
+      "conclusion": "success",
+      "executed": 121,
+      "passed": 121,
+      "failed": 0,
+      "ignored": 0,
+      "groups": [
+        3,
+        77,
+        3,
+        14,
+        3,
+        1,
+        12,
+        4,
+        3,
+        1
+      ],
+      "artifact": [
+        {
+          "id": 13195778087,
+          "digest": "sha256:595c8c6307d650e41ae441185ed8dfaf265d9eda1751d230b601622826f7f9ec",
+          "size": 48595
+        }
+      ]
+    },
+    "social": {
+      "job": 125666991834,
+      "conclusion": "success",
+      "outer_cases": 37,
+      "groups": [
+        10,
+        9,
+        6,
+        7,
+        5
+      ],
+      "artifact": [
+        {
+          "id": 13196417431,
+          "digest": "sha256:322af4b5a45433fd1642de305cb587895c38461c736b3e7f6d6216c6123f3a35",
+          "size": 18920
+        }
+      ],
+      "scope": "This older-input result does not qualify the new40."
+    },
+    "actual_mac": {
+      "run": 41559676909,
+      "job": 125666991460,
+      "conclusion": "success",
+      "plugins": 2,
+      "human": 2,
+      "failed": 0,
+      "skipped": 0,
+      "retries": 0,
+      "human_process_lifetimes": 5,
+      "artifact": [
+        {
+          "id": 13195588486,
+          "digest": "sha256:7a1feeaa0381a2b697eded3aa73a7b48607d03455fe17f8fdd9f6725754470b3",
+          "size": 26989433
+        }
+      ]
+    },
+    "source": {
+      "run": 41559676865,
+      "contract_job": 125666991028,
+      "candidate_job": 125667111966,
+      "conclusion": "success",
+      "node": 161,
+      "python": 37,
+      "schema_errors": 0,
+      "ledger_blob": "20cf65bc7063565c20e8c49e851b68904085581c",
+      "result": "unaccepted-candidate-consistent",
+      "scope": "Does not validate the new cd1 ledger until its containing commit."
+    },
+    "ui": {
+      "job": 125666991740,
+      "status": "in_progress",
+      "required": 205,
+      "terminal_actual_count": null
+    },
+    "shipping": {
+      "job": 125666991915,
+      "status": "queued",
+      "execution_evidence": false
+    }
+  },
+  "ledger": {
+    "input": "20cf65bc7063565c20e8c49e851b68904085581c",
+    "output": "cd1b4b2cee8763b61392cb0be718354b20d02eee",
+    "output_sha256": "af46822424fda782bab66667d2a7a4bfe74bbe7c6b31e3a07e5a974f8d46471b",
+    "producer_run": 41559947695,
+    "producer_job": 125667906029,
+    "producer_head": "5feb74f7845225cdb2d73e090d0cbef89dc558e4",
+    "artifact": 13197041262,
+    "digest": "sha256:10595b8c7c820a5b9f1df2b902144a6c374890ba9ba4a195aa929836bce7cb7a",
+    "only_changed_row": "FBCP-NMR-001",
+    "target_paths": 64,
+    "target_symbols": 76,
+    "other_183_rows_and_all_source_review_fields_unchanged": true,
+    "product_validation": false
+  },
+  "rtm": {
+    "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+    "blob": "ae049bdeb0f0443be9cb2df70c66290f904f9a57",
+    "existing_prefix_unchanged": true,
+    "new_requirement_rows": 4
+  },
+  "backend": {
+    "repository": "bhrumom/fabushi-backend",
+    "main": "687718ce9e0083aa124d29005bcce4051d357919",
+    "pr": 137,
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "state": "draft open unmerged",
+    "main_after_id_zero": "source rejects",
+    "production_readiness": "skipped",
+    "active_worker_verified": false,
+    "writes_or_service_probes": false
+  },
+  "remaining": [
+    "Containing-H actual40 and current message/UI/Electron/shipping evidence.",
+    "Active backend afterId=0 deployment and authenticated readiness.",
+    "Remote revision/tombstone/old-message mutation discovery and reaction409 recovery.",
+    "Actual old-data inventory/import/mapping, all fixed-U source/legal and caller closure.",
+    "Supported signed packages and complete Bot/UI/visual/accessibility/security/performance/soak/upgrade/rollback/independent ACCEPT."
+  ],
+  "limitations": "Tests compare SQLite values and raw payload bytes, not physical file/WAL pages or power-loss. Controlled library providers and test processes are not deployed services or installed signed packages. No user data is deleted, rewritten or claimed migrated.",
+  "accepted": false,
+  "complete": false,
+  "raw_logs_copied": false
+}
