@@ -615,5 +615,53 @@ mod recipient_policy_tests {
         assert!(query_matches_fields("origin summary", &fields));
         assert!(!query_matches_fields("alice missing-token", &fields));
         assert!(!query_matches_fields("   ", &fields));
+
+        let keep = ForwardPrivacy {
+            drop_sender_names: false,
+            drop_captions: false,
+        };
+        let drop_sender = ForwardPrivacy {
+            drop_sender_names: true,
+            drop_captions: false,
+        };
+        assert_eq!(
+            keep.resolve_forward_origin_attribution(
+                Some(keep),
+                Some("carol-id"),
+                Some("  Carol Origin  "),
+                Some("bob-id"),
+                Some("Bob Intermediate"),
+                Some("Bob Peer"),
+            ),
+            Some(crate::message::ForwardOriginAttribution {
+                author_id: Some("carol-id"),
+                author_name: Some("Carol Origin"),
+            })
+        );
+        assert_eq!(
+            keep.resolve_forward_origin_attribution(
+                Some(drop_sender),
+                Some("carol-id"),
+                Some("Carol Origin"),
+                Some("bob-id"),
+                None,
+                Some("  Bob Peer  "),
+            ),
+            Some(crate::message::ForwardOriginAttribution {
+                author_id: Some("bob-id"),
+                author_name: Some("Bob Peer"),
+            })
+        );
+        assert_eq!(
+            drop_sender.resolve_forward_origin_attribution(
+                Some(keep),
+                Some("carol-id"),
+                Some("Carol Origin"),
+                Some("bob-id"),
+                Some("Bob Intermediate"),
+                Some("Bob Peer"),
+            ),
+            None
+        );
     }
 }

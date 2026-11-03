@@ -462,6 +462,133 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
         .iter()
         .any(|item| item["agentId"] == carol_id));
 
+    let dave_conversation = session
+        .create_human_conversation("human-dave", "Dave")
+        .expect("dave conversation");
+    let dave_id = dave_conversation["id"]
+        .as_str()
+        .expect("dave conversation id")
+        .to_string();
+    let bob_forwarded_entry_id = bob_forward_matches
+        .as_array()
+        .and_then(|items| items.first())
+        .and_then(|item| item["id"].as_str())
+        .expect("bob forwarded entry id");
+    let dave_chained_forward = session
+        .forward_human_message(
+            &bob_id,
+            bob_forwarded_entry_id,
+            std::slice::from_ref(&dave_id),
+            "fwd-chained-origin",
+            false,
+            false,
+        )
+        .expect("chained forward preserving original origin author");
+    assert_eq!(dave_chained_forward["destinations"][0]["status"], json!("sent"));
+
+    let carol_forwarded_entry_id = carol_content_matches
+        .as_array()
+        .and_then(|items| items.first())
+        .and_then(|item| item["id"].as_str())
+        .expect("carol anonymously forwarded entry id");
+    let dave_anon_reforward = session
+        .forward_human_message(
+            &carol_id,
+            carol_forwarded_entry_id,
+            std::slice::from_ref(&dave_id),
+            "fwd-chained-anon",
+            false,
+            false,
+        )
+        .expect("re-forward of anonymous forward must not leak hidden origin");
+    assert_eq!(dave_anon_reforward["destinations"][0]["status"], json!("sent"));
+
+    let dave_origin_matches = dispatch_production_session_gateway_call(
+        &session,
+        "searchHumanMessages",
+        &json!({
+            "conversationId": dave_id,
+            "query": "OriginArchitect roadmap",
+            "limit": 10
+        }),
+    )
+    .expect("dave searchHumanMessages method")
+    .expect("dave searchHumanMessages");
+    let dave_origin_array = dave_origin_matches.as_array().expect("dave origin array");
+    assert_eq!(dave_origin_array.len(), 1);
+    assert_eq!(
+        dave_origin_array[0].pointer("/forwardContext/origin/authorName"),
+        Some(&json!("OriginArchitect")),
+    );
+
+    let dave_transcript = session
+        .read_human_conversation_transcript(&dave_id)
+        .expect("dave transcript");
+    assert_eq!(dave_transcript.len(), 2);
+    assert_eq!(
+        dave_transcript[1].pointer("/forwardContext/origin/authorId"),
+        Some(&json!("human-local")),
+    );
+    assert_eq!(
+        dave_transcript[1].pointer("/forwardContext/origin/authorName"),
+        None,
+    );
+
+    let bob_owner = session
+        .open_human_conversation_db_owner(&bob_id)
+        .expect("bob owner");
+    assert!(bob_owner
+        .append_transcript_entry(&json!({
+            "id": "human-server-message:801",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "human-bob",
+            "content": "peer fallback note",
+            "timestampMs": 1010.0,
+            "delivery": "sent",
+            "remoteMessageId": "801",
+            "remoteCreatedAt": "1970-01-01T00:00:01Z"
+        }))
+        .expect("seed bob peer row without authorName"));
+    let peer_fallback_forward = session
+        .forward_human_message(
+            &bob_id,
+            "human-server-message:801",
+            std::slice::from_ref(&carol_id),
+            "fwd-peer-title-fallback",
+            false,
+            false,
+        )
+        .expect("forward peer row with conversation title fallback");
+    assert_eq!(
+        peer_fallback_forward["destinations"][0]["status"],
+        json!("sent")
+    );
+    let carol_peer_fallback_matches = dispatch_production_session_gateway_call(
+        &session,
+        "searchHumanMessages",
+        &json!({
+            "conversationId": carol_id,
+            "query": "Bob fallback note",
+            "limit": 10
+        }),
+    )
+    .expect("carol peer fallback searchHumanMessages method")
+    .expect("carol peer fallback searchHumanMessages");
+    let carol_peer_fallback_array = carol_peer_fallback_matches
+        .as_array()
+        .expect("carol peer fallback array");
+    assert_eq!(carol_peer_fallback_array.len(), 1);
+    assert_eq!(
+        carol_peer_fallback_array[0].pointer("/forwardContext/origin/authorId"),
+        Some(&json!("human-bob")),
+    );
+    assert_eq!(
+        carol_peer_fallback_array[0].pointer("/forwardContext/origin/authorName"),
+        Some(&json!("Bob")),
+    );
+
     session.shutdown();
 
     let foreign_memory = Arc::new(

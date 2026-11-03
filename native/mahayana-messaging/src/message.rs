@@ -169,11 +169,65 @@ pub struct ForwardPrivacy {
     pub drop_captions: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ForwardOriginAttribution<'a> {
+    pub author_id: Option<&'a str>,
+    pub author_name: Option<&'a str>,
+}
+
 impl ForwardPrivacy {
     pub fn normalized(self) -> Self {
         Self {
             drop_sender_names: self.drop_sender_names || self.drop_captions,
             drop_captions: self.drop_captions,
+        }
+    }
+
+    /// Resolves the canonical forward-origin attribution when forwarding a source message.
+    ///
+    /// - If `self.normalized().drop_sender_names` is `true`, returns `None` (no origin may be emitted).
+    /// - Otherwise, if the source message already carries a forward context whose own privacy
+    ///   did not drop sender names (`!source_forward_privacy.normalized().drop_sender_names`)
+    ///   and whose origin has at least one non-empty `author_id` or `author_name`, preserves
+    ///   that upstream origin (`chained forward`).
+    /// - Otherwise (ordinary message or anonymously forwarded source message), attributes the
+    ///   forward to the source message's direct author (`source_author_id`, `source_author_name`,
+    ///   falling back to `peer_title_fallback` when `source_author_name` is absent and the
+    ///   source author is the peer in that direct conversation).
+    pub fn resolve_forward_origin_attribution<'a>(
+        self,
+        source_forward_privacy: Option<Self>,
+        source_origin_author_id: Option<&'a str>,
+        source_origin_author_name: Option<&'a str>,
+        source_author_id: Option<&'a str>,
+        source_author_name: Option<&'a str>,
+        peer_title_fallback: Option<&'a str>,
+    ) -> Option<ForwardOriginAttribution<'a>> {
+        if self.normalized().drop_sender_names {
+            return None;
+        }
+        let clean = |value: Option<&'a str>| value.map(str::trim).filter(|s| !s.is_empty());
+        if let Some(upstream_privacy) = source_forward_privacy {
+            if !upstream_privacy.normalized().drop_sender_names {
+                let upstream_id = clean(source_origin_author_id);
+                let upstream_name = clean(source_origin_author_name);
+                if upstream_id.is_some() || upstream_name.is_some() {
+                    return Some(ForwardOriginAttribution {
+                        author_id: upstream_id,
+                        author_name: upstream_name,
+                    });
+                }
+            }
+        }
+        let direct_id = clean(source_author_id);
+        let direct_name = clean(source_author_name).or_else(|| clean(peer_title_fallback));
+        if direct_id.is_some() || direct_name.is_some() {
+            Some(ForwardOriginAttribution {
+                author_id: direct_id,
+                author_name: direct_name,
+            })
+        } else {
+            None
         }
     }
 }

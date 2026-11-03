@@ -8,6 +8,7 @@ on:
       - 'source/host/src/extensions/transcript/extension.rs'
       - 'source/host/src/extensions/transcript/roster_emit.rs'
       - 'source/host/src/extensions/transcript/roster_search.rs'
+      - 'native/mahayana-messaging/src/message.rs'
       - 'native/mahayana-messaging/src/search.rs'
       - 'frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'

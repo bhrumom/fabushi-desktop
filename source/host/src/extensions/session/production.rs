@@ -3844,15 +3844,17 @@ impl ProductionSessionWorkers {
                     "dropCaptions": privacy.drop_captions,
                 },
             });
-            if !privacy.drop_sender_names {
-                let mut origin = serde_json::Map::new();
-                for key in ["authorId", "authorName"] {
-                    if let Some(value) = source_entry.get(key).cloned() { origin.insert(key.into(), value); }
-                }
-                if !origin.is_empty() {
-                    context.as_object_mut().expect("forward context object")
-                        .insert("origin".into(), serde_json::Value::Object(origin));
-                }
+            let source_metadata = source_owner.read_metadata().ok();
+            if let Some(origin) = Self::resolve_human_forward_origin(
+                &source_entry,
+                source_metadata.as_ref(),
+                &account,
+                privacy,
+            ) {
+                context
+                    .as_object_mut()
+                    .expect("forward context object")
+                    .insert("origin".into(), origin);
             }
             let batch = HumanForwardBatch::new(
                 account, issuer, client_nonce.to_string(), source_conversation_id.to_string(),
@@ -4982,6 +4984,68 @@ impl ProductionSessionWorkers {
         }
         self.replay_human_reaction_intent(&owner, &metadata, client)?
             .ok_or_else(|| "Human reaction intent disappeared before settlement".to_string())
+    }
+
+    pub(crate) fn resolve_human_forward_origin(
+        source_entry: &serde_json::Value,
+        source_metadata: Option<&serde_json::Value>,
+        local_human_id: &str,
+        privacy: fabushi_messaging_core::ForwardPrivacy,
+    ) -> Option<serde_json::Value> {
+        let source_context = source_entry.get("forwardContext");
+        let source_forward_privacy =
+            source_context.map(|ctx| fabushi_messaging_core::ForwardPrivacy {
+                drop_sender_names: ctx
+                    .pointer("/privacy/dropSenderNames")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
+                drop_captions: ctx
+                    .pointer("/privacy/dropCaptions")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
+            });
+        let source_origin_author_id = source_context
+            .and_then(|ctx| ctx.pointer("/origin/authorId"))
+            .and_then(serde_json::Value::as_str);
+        let source_origin_author_name = source_context
+            .and_then(|ctx| ctx.pointer("/origin/authorName"))
+            .and_then(serde_json::Value::as_str);
+        let source_author_id = source_entry
+            .get("authorId")
+            .and_then(serde_json::Value::as_str);
+        let source_author_name = source_entry
+            .get("authorName")
+            .and_then(serde_json::Value::as_str);
+        let peer_title_fallback = if source_author_id.is_some_and(|id| id.trim() != local_human_id)
+        {
+            source_metadata
+                .and_then(|metadata| metadata.get("title"))
+                .and_then(serde_json::Value::as_str)
+        } else {
+            None
+        };
+        let attribution = privacy.resolve_forward_origin_attribution(
+            source_forward_privacy,
+            source_origin_author_id,
+            source_origin_author_name,
+            source_author_id,
+            source_author_name,
+            peer_title_fallback,
+        )?;
+        let mut origin = serde_json::Map::new();
+        if let Some(author_id) = attribution.author_id {
+            origin.insert(
+                "authorId".into(),
+                serde_json::Value::String(author_id.to_string()),
+            );
+        }
+        if let Some(author_name) = attribution.author_name {
+            origin.insert(
+                "authorName".into(),
+                serde_json::Value::String(author_name.to_string()),
+            );
+        }
+        (!origin.is_empty()).then_some(serde_json::Value::Object(origin))
     }
 
     pub(crate) fn human_entry_visible_forward_origin_author(

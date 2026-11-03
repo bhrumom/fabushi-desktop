@@ -88,6 +88,7 @@ export function mergeAuthoritativeTranscriptMessage(
       ...(readAt === undefined ? {} : { readAt }),
     };
     if (readAt === undefined) delete preserved.readAt;
+    if (current.forwardedFromAuthorName === undefined) delete preserved.forwardedFromAuthorName;
     return preserved;
   }
   const humanSettlement = isLocalSendPlaceholder(current) && isCanonicalHumanSend(incoming)
@@ -113,6 +114,7 @@ export function mergeAuthoritativeTranscriptMessage(
     ...(readAt === undefined ? {} : { readAt }),
   };
   if (readAt === undefined) delete merged.readAt;
+  if (human && incoming.forwardedFromAuthorName === undefined) delete merged.forwardedFromAuthorName;
   if (options.preserveCurrentId && !("delivery" in current)) delete merged.delivery;
   return merged;
 }

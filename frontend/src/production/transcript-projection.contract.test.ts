@@ -1279,5 +1279,27 @@ test("NMR-READ-RECEIPT-01 Human read receipts and forwarded provenance require v
     });
     assert.equal(hiddenForward.forwardedFromAuthorName, undefined);
     assert.equal(shouldShowHumanForwardedNotice(hiddenForward), false);
+
+    const localLeakedForwardPlaceholder = project({
+      ...canonical,
+      id: "human-message:read-receipt-nonce",
+      remoteMessageId: undefined,
+      delivery: "pending",
+      forwardContext: {
+        origin: { authorName: "Carol", conversationId: "human:c", messageId: "human-server-message:9" },
+        privacy: { dropSenderNames: false, dropCaptions: false },
+      },
+    });
+    assert.equal(localLeakedForwardPlaceholder.forwardedFromAuthorName, "Carol");
+
+    for (const settled of [
+      mergeAuthoritativeTranscriptMessage(localLeakedForwardPlaceholder, hiddenForward),
+      mergeAuthoritativeTranscriptMessage(hiddenForward, localLeakedForwardPlaceholder),
+      row(reconcileTranscriptMutation([localLeakedForwardPlaceholder], hiddenForward), canonical.id),
+      row(reconcileTranscriptMutation([hiddenForward], localLeakedForwardPlaceholder), canonical.id),
+    ]) {
+      assert.equal(settled.forwardedFromAuthorName, undefined);
+      assert.equal(shouldShowHumanForwardedNotice(settled), false);
+    }
   }
 });
