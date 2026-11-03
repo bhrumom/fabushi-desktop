@@ -1769,7 +1769,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2955fbb0754b62bf252cb3f8c12d7ee764c38f51",
+      "targetBlobSha": "165db98ce0446973ec86d9e0751264684c0c5065",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
@@ -1781,7 +1781,7 @@
         ".github/workflows/native-service-contracts.yml",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "rationale": "NMR-26 reaction-picker production adjustment at exact taskbfafe567: the original ordinary toolbar child placed the first emoji outside the visible viewport for older Human transcript rows. Keep the existing message Action, ReactionPicker, controller, Host and Session canonical reaction owners; only the visual picker is portaled to a viewport-bounded overlay with scroll/resize/content-position updates, focus restoration and keyboard loop. Controller-originated selection now completes the same onReacted callback as transport selection without changing the network mutation owner. Real Chromium NMR-26 exercises old-row click and settlement, bottom-of-transcript geometry, Escape/Tab focus behavior, and unchanged data/event assertions. Full packaged visual/a11y and independent acceptance remain open."
+      "rationale": "NMR-26 reaction-picker production adjustment at exact taskbfafe567: the original ordinary toolbar child placed the first emoji outside the visible viewport for older Human transcript rows. Keep the existing message Action, ReactionPicker, controller, Host and Session canonical reaction owners; only the visual picker is portaled to a viewport-bounded overlay with scroll/resize/content-position updates, focus restoration and keyboard loop. Controller-originated selection now completes the same onReacted callback as transport selection without changing the network mutation owner. Real Chromium NMR-26 exercises old-row click and settlement, bottom-of-transcript geometry, Escape/Tab focus behavior, and unchanged data/event assertions. Full packaged visual/a11y and independent acceptance remain open. Exact-H Chromium 743152 found initial-focus failure after the viewport/click repair, so the picker now focuses its first cell only after the portal's layout-phase position/visibility commit, with preventScroll to retain the existing transcript viewport. The original focus/keyboard/settlement assertions are retained unchanged; new exact-H execution is required."
     }
   ]
 }

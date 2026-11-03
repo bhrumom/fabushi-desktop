@@ -171,6 +171,7 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
     const popover = popoverRef.current;
     if (trigger == null || popover == null) return;
     const viewport = trigger.closest<HTMLElement>(".sand-virtual-transcript");
+    let focused = false;
     const position = () => {
       const triggerBox = trigger.getBoundingClientRect();
       const viewportBox = viewport?.getBoundingClientRect();
@@ -195,6 +196,13 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
       popover.style.left = String(Math.max(leftEdge, Math.min(rightEdge - width, triggerBox.right - width))) + "px";
       popover.style.top = String(Math.max(topEdge, Math.min(bottomEdge - height, preferredTop))) + "px";
       popover.style.visibility = "visible";
+      // Layout effects run before passive effects; focus only after the
+      // portaled picker is positioned and visible, avoiding a hidden focus
+      // candidate on initial render. Do not scroll the canonical transcript.
+      if (!focused) {
+        focused = true;
+        popover.querySelector<HTMLButtonElement>(".sand-emoji-cell")?.focus({ preventScroll: true });
+      }
     };
     let frame = 0;
     const schedule = () => {
@@ -220,7 +228,6 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
 
   useEffect(() => {
     if (!open) return;
-    popoverRef.current?.querySelector<HTMLButtonElement>(".sand-emoji-cell")?.focus();
     const onPointerDown = (event: globalThis.PointerEvent) => {
       if (!(event.target instanceof Node) || wrapperRef.current?.contains(event.target) || popoverRef.current?.contains(event.target)) return;
       setOpen(false);
