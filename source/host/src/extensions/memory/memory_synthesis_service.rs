@@ -120,17 +120,34 @@ pub struct SynthesisReport {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SynthesisInferenceError {
+    Authentication,
+    Configuration,
+    Cancelled,
+    Retryable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum SynthesisAttemptError {
     InvalidOutput(usize),
     Rejected(usize),
+    Inference(SynthesisInferenceError),
     Failed,
 }
 
 impl SynthesisAttemptError {
+    fn is_terminal(&self) -> bool {
+        matches!(self, Self::Inference(
+            SynthesisInferenceError::Authentication
+                | SynthesisInferenceError::Configuration
+                | SynthesisInferenceError::Cancelled
+        ))
+    }
+
     fn proposed_count(&self) -> usize {
         match self {
             Self::InvalidOutput(count) | Self::Rejected(count) => *count,
-            Self::Failed => 0,
+            Self::Inference(_) | Self::Failed => 0,
         }
     }
 
@@ -138,7 +155,7 @@ impl SynthesisAttemptError {
         match self {
             Self::InvalidOutput(_) => SynthesisOutcome::InvalidOutput,
             Self::Rejected(_) => SynthesisOutcome::Rejected,
-            Self::Failed => SynthesisOutcome::Failed,
+            Self::Inference(_) | Self::Failed => SynthesisOutcome::Failed,
         }
     }
 
@@ -146,7 +163,7 @@ impl SynthesisAttemptError {
         match self {
             Self::InvalidOutput(_) => SynthesisReportOutcome::InvalidOutput,
             Self::Rejected(_) => SynthesisReportOutcome::Rejected,
-            Self::Failed => SynthesisReportOutcome::Failed,
+            Self::Inference(_) | Self::Failed => SynthesisReportOutcome::Failed,
         }
     }
 }
@@ -692,11 +709,35 @@ type Verify = Arc<
         + Send
         + Sync,
 >;
+type ModelPropose = Arc<
+    dyn Fn(SynthesisProposalRequest, SynthesisCancelSignal) -> Result<Value, SynthesisInferenceError>
+        + Send
+        + Sync,
+>;
+type ModelVerify = Arc<
+    dyn Fn(SynthesisVerificationRequest, SynthesisCancelSignal) -> Result<bool, SynthesisInferenceError>
+        + Send
+        + Sync,
+>;
+type JobFactory = Arc<dyn Fn() -> SynthesisModelJob + Send + Sync>;
 type Report = Arc<dyn Fn(SynthesisReport) + Send + Sync>;
 
+/// The paired model operations for one snapshot and every attempt of that snapshot.
+/// Provider identity is owned by the production Inference job captured by these callbacks.
+#[derive(Clone)]
+pub struct SynthesisModelJob {
+    propose: ModelPropose,
+    verify: Option<ModelVerify>,
+}
+
+impl SynthesisModelJob {
+    pub fn new(propose: ModelPropose, verify: Option<ModelVerify>) -> Self {
+        Self { propose, verify }
+    }
+}
+
 fn perform_synthesis_attempt(
-    propose: Propose,
-    verify: Option<Verify>,
+    job: SynthesisModelJob,
     request: SynthesisProposalRequest,
     snapshot: SynthesisSnapshot,
     evidence: Vec<MemoryEvidence>,
@@ -704,12 +745,12 @@ fn perform_synthesis_attempt(
     cancel: SynthesisCancelSignal,
 ) -> Result<Vec<MemoryChange>, SynthesisAttemptError> {
     if cancel.is_cancelled() {
-        return Err(SynthesisAttemptError::Failed);
+        return Err(SynthesisAttemptError::Inference(SynthesisInferenceError::Cancelled));
     }
-    let raw = propose(request.clone(), cancel.clone())
-        .map_err(|_| SynthesisAttemptError::Failed)?;
+    let raw = (job.propose)(request.clone(), cancel.clone())
+        .map_err(SynthesisAttemptError::Inference)?;
     if cancel.is_cancelled() {
-        return Err(SynthesisAttemptError::Failed);
+        return Err(SynthesisAttemptError::Inference(SynthesisInferenceError::Cancelled));
     }
     let changes = parse_memory_synthesis_changes(&raw)
         .ok_or(SynthesisAttemptError::InvalidOutput(0))?;
@@ -724,22 +765,25 @@ fn perform_synthesis_attempt(
         return Err(SynthesisAttemptError::Rejected(changes.len()));
     }
     if !changes.is_empty() {
-        if let Some(verify) = verify {
+        if let Some(verify) = job.verify {
             let verification = SynthesisVerificationRequest {
                 today: request.today,
                 current_memories: snapshot.memories,
                 evidence,
                 proposed_changes: changes.clone(),
             };
+            if cancel.is_cancelled() {
+                return Err(SynthesisAttemptError::Inference(SynthesisInferenceError::Cancelled));
+            }
             match verify(verification, cancel.clone()) {
                 Ok(true) => {}
                 Ok(false) => return Err(SynthesisAttemptError::Rejected(changes.len())),
-                Err(_) => return Err(SynthesisAttemptError::Failed),
+                Err(error) => return Err(SynthesisAttemptError::Inference(error)),
             }
         }
     }
     if cancel.is_cancelled() {
-        return Err(SynthesisAttemptError::Failed);
+        return Err(SynthesisAttemptError::Inference(SynthesisInferenceError::Cancelled));
     }
     Ok(changes)
 }
@@ -747,8 +791,8 @@ fn perform_synthesis_attempt(
 pub struct MemorySynthesisOptions {
     pub list_targets: ListTargets,
     pub get_target: GetTarget,
-    pub propose: Propose,
-    pub verify: Option<Verify>,
+    /// Allocation only; invoked once after selecting a real snapshot, never per retry.
+    pub job_factory: JobFactory,
     pub debounce: Duration,
     pub deadline: Duration,
     pub poll_interval: Duration,
@@ -757,15 +801,30 @@ pub struct MemorySynthesisOptions {
     pub retry_max: Duration,
     pub now: Arc<dyn Fn() -> i64 + Send + Sync>,
     pub report: Option<Report>,
+    /// Construct and retain a thread-affine test guard on the actual inference worker.
+    #[cfg(test)]
+    pub worker_entry: Option<Arc<dyn Fn() -> Box<dyn std::any::Any> + Send + Sync>>,
 }
 
 impl MemorySynthesisOptions {
     pub fn new(list_targets: ListTargets, get_target: GetTarget, propose: Propose) -> Self {
+        let propose: ModelPropose = Arc::new(move |request, cancel| {
+            propose(request, cancel).map_err(|_| SynthesisInferenceError::Retryable)
+        });
+        Self::new_with_job_factory(list_targets, get_target, Arc::new(move || {
+            SynthesisModelJob::new(Arc::clone(&propose), None)
+        }))
+    }
+
+    pub fn new_with_job_factory(
+        list_targets: ListTargets,
+        get_target: GetTarget,
+        job_factory: JobFactory,
+    ) -> Self {
         Self {
             list_targets,
             get_target,
-            propose,
-            verify: None,
+            job_factory,
             debounce: Duration::from_millis(MEMORY_SYNTHESIS_DEBOUNCE_MS),
             deadline: Duration::from_millis(MEMORY_SYNTHESIS_DEADLINE_MS),
             poll_interval: Duration::from_millis(MEMORY_SYNTHESIS_POLL_INTERVAL_MS),
@@ -774,7 +833,22 @@ impl MemorySynthesisOptions {
             retry_max: Duration::from_millis(MEMORY_SYNTHESIS_RETRY_MAX_MS),
             now: Arc::new(|| Utc::now().timestamp_millis()),
             report: None,
+            #[cfg(test)]
+            worker_entry: None,
         }
+    }
+
+    /// Compatibility adapter for callback consumers; it uses the same snapshot executor.
+    pub fn set_verifier(&mut self, verify: Verify) {
+        let verify: ModelVerify = Arc::new(move |request, cancel| {
+            verify(request, cancel).map_err(|_| SynthesisInferenceError::Retryable)
+        });
+        let factory = Arc::clone(&self.job_factory);
+        self.job_factory = Arc::new(move || {
+            let mut job = factory();
+            job.verify = Some(Arc::clone(&verify));
+            job
+        });
     }
 }
 
@@ -1012,6 +1086,9 @@ impl MemorySynthesisService {
         let snapshot = target.prepare_synthesis();
         let started = (self.options.now)();
 
+        if self.cancel.is_cancelled() {
+            return SynthesisOutcome::NoWork;
+        }
         if snapshot.memories.is_empty() && evidence.is_empty() {
             if temporal {
                 target.mark_temporal_review(started);
@@ -1039,7 +1116,9 @@ impl MemorySynthesisService {
             new_evidence: evidence.clone(),
         };
 
+        let job = (self.options.job_factory)();
         let changes = match self.perform_with_retry(
+            job,
             request,
             snapshot.clone(),
             evidence.clone(),
@@ -1050,7 +1129,7 @@ impl MemorySynthesisService {
                 if self.cancel.is_cancelled() {
                     return SynthesisOutcome::NoWork;
                 }
-                if temporal {
+                if temporal && !error.is_terminal() {
                     target.mark_temporal_review(started);
                 }
                 self.finish(agent_id, &evidence, temporal);
@@ -1067,6 +1146,11 @@ impl MemorySynthesisService {
             }
         };
 
+        // A successful worker result is not permission to mutate after lifetime cancellation.
+        // This check does not make cancellation atomic with the existing filesystem commit.
+        if self.cancel.is_cancelled() {
+            return SynthesisOutcome::NoWork;
+        }
         if changes.is_empty() {
             if temporal {
                 target.mark_temporal_review(started);
@@ -1128,6 +1212,7 @@ impl MemorySynthesisService {
 
     fn perform_with_retry(
         &self,
+        job: SynthesisModelJob,
         request: SynthesisProposalRequest,
         snapshot: SynthesisSnapshot,
         evidence: Vec<MemoryEvidence>,
@@ -1140,13 +1225,14 @@ impl MemorySynthesisService {
                 return Err(SynthesisAttemptError::Failed);
             }
             match self.run_attempt_with_deadline(
+                job.clone(),
                 request.clone(),
                 snapshot.clone(),
                 evidence.clone(),
                 temporal,
             ) {
                 Ok(changes) => return Ok(changes),
-                Err(error) if attempt + 1 < attempts => {
+                Err(error) if !error.is_terminal() && attempt + 1 < attempts => {
                     if !self.wait_retry_delay(delay.min(self.options.retry_max)) {
                         return Err(SynthesisAttemptError::Failed);
                     }
@@ -1164,28 +1250,32 @@ impl MemorySynthesisService {
 
     fn run_attempt_with_deadline(
         &self,
+        job: SynthesisModelJob,
         request: SynthesisProposalRequest,
         snapshot: SynthesisSnapshot,
         evidence: Vec<MemoryEvidence>,
         temporal: bool,
     ) -> Result<Vec<MemoryChange>, SynthesisAttemptError> {
         let (result_tx, result_rx) = mpsc::sync_channel(1);
-        let propose = Arc::clone(&self.options.propose);
-        let verify = self.options.verify.clone();
+        #[cfg(test)]
+        let worker_entry = self.options.worker_entry.clone();
         let cancel = self.cancel.child();
         let worker_cancel = cancel.clone();
         thread::Builder::new()
             .name("sand-memory-synthesis-inference".into())
             .spawn(move || {
+                #[cfg(test)]
+                let _worker_guard = worker_entry.as_ref().map(|enter| enter());
                 let result = perform_synthesis_attempt(
-                    propose,
-                    verify,
+                    job,
                     request,
                     snapshot,
                     evidence,
                     temporal,
                     worker_cancel,
                 );
+                #[cfg(test)]
+                drop(_worker_guard);
                 let _ = result_tx.send(result);
             })
             .map_err(|_| SynthesisAttemptError::Failed)?;

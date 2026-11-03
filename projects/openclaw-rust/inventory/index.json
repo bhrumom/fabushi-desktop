@@ -35,6 +35,51 @@
     "unread": 62071,
     "unreviewed_applicable": 0
   },
+  "pending_mapping_additions": {
+    "entries": [
+      {
+        "blob_sha": "5861377169b54c96e42164997a8cf078d7ed0e8c",
+        "path": "src/agents/execution-auth-binding.ts",
+        "responsibility_id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+      },
+      {
+        "blob_sha": "bcf1672d7538bbeba3f9d44e4097b78e8a995773",
+        "path": "extensions/memory-core/src/dreaming.ts",
+        "responsibility_id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+      },
+      {
+        "blob_sha": "c680bde47acabf6883d33ce823da664c3886ad10",
+        "path": "extensions/memory-core/src/dreaming-phases.ts",
+        "responsibility_id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+      },
+      {
+        "blob_sha": "a416f9bba5de8fa323b1bf55a68d41bab070ee61",
+        "path": "extensions/memory-core/src/dreaming-narrative.ts",
+        "responsibility_id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+      },
+      {
+        "blob_sha": "a3529dfaa42674a74ca92d677223df77d9f236a1",
+        "path": "extensions/memory-core/src/dreaming-consolidation.ts",
+        "responsibility_id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+      },
+      {
+        "blob_sha": "aadabab915d3b93d132ae72e0206c2067fd44e68",
+        "path": "src/plugin-sdk/runtime-store.ts",
+        "responsibility_id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+      },
+      {
+        "blob_sha": "b54d1b3038fc5eaf5ad2e9ef57cfc75e8ce89859",
+        "path": "src/gateway/server-plugins.ts",
+        "responsibility_id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+      },
+      {
+        "blob_sha": "2accb0ec18020ffb1d41660f3e5e9be45130a5a4",
+        "path": "src/gateway/server-plugin-subagent-runtime.ts",
+        "responsibility_id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+      }
+    ],
+    "from_canonical_inventory_sha256": "64b4e062c0f1cbc34c9383f2bf957eaa4bf1c55bf12ceaa9d88c58a0398859e4"
+  },
   "project_id": "OCRM-001",
   "spec_revision": 2,
   "upstream": {

@@ -468,6 +468,12 @@ jobs:
               "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
               "source/host/src/extensions/inference/codex_request_binding.rs",
               "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+              "source/host/src/extensions/inference/summary_job.rs",
+              "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+              "source/host/src/extensions/memory/production_identity_tests.rs",
+              "source/host/tests/host_production_extensions_contract.rs",
+              "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+              "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
               "source/host/src/extensions/inference/codex_model_identity_tests.rs",
               "source/host/app/src/tests/codex_model_admission_tests.rs",
               "source/host/src/extensions/inference/production.rs",
@@ -952,6 +958,7 @@ jobs:
           cwb_status=0
           run_recovery_check codex-workspace-binding cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::inference::provider_session::codex_request_binding::tests:: -- --test-threads=1 || cwb_status=1
           run_recovery_check codex-workspace-http cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::inference::provider_session::codex_request_workspace_tests:: -- --test-threads=1 || cwb_status=1
+          run_recovery_check memory-synthesis-identity cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::memory::production::identity_tests:: -- --test-threads=1 || cwb_status=1
           python3 - <<'CWB_PY' || cwb_status=1
           import hashlib, json, os, re, runpy, shlex, subprocess
           from pathlib import Path
@@ -980,6 +987,20 @@ jobs:
                   "codex_workspace_built_request_errors_keep_cancellation_precedence",
                   "codex_workspace_actual_watchdog_preserves_credential_refusal_and_user_cancellation",
                   "codex_workspace_admitted_summary_keeps_identity_across_compaction_phases",
+                  "synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+                  "synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+                  "synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+                  "synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata",
+                  "synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+                  "synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal",
+              ]),
+              ("memory-synthesis-identity", "extensions::memory::production::identity_tests::", [
+                  "production_native_synthesis_pins_model_and_rotates_token",
+                  "production_native_synthesis_refuses_changed_context_without_writes",
+                  "production_native_temporal_synthesis_refuses_changed_context_without_review",
+                  "production_native_synthesis_retry_keeps_snapshot_identity",
+                  "production_native_synthesis_retry_refuses_changed_context",
+                  "production_native_synthesis_cancellation_after_worker_success_prevents_apply",
               ]),
           ]
           executions = []
@@ -1037,8 +1058,9 @@ jobs:
               and all(item["oracle_accepted"] for item in executions))
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
-          receipt.update({"contract": "CWB-v1", "executions": executions,
+          receipt.update({"contract": "CWB-v1", "additional_contracts": ["MSI-v1"], "executions": executions,
               "result": "passed" if accepted else "failed",
+              "memory_synthesis_scope": "The listed Native and Codex controls reach the production Memory factory, actual HTTP assembly, Session apply gate and FileMemoryStore with owned credentials. They cover retained model/credential identity, same-context token rotation, account/workspace refusal, cancellation, and a deadline while actual admission is initializing. Generic Memory timeout and Stale resnapshot controls require their separate same-subject integration receipt; this receipt does not establish those separate results. Detached-worker drain, atomic cancellation/commit, original evidence account binding, durable synthesis recovery and real providers remain unaccepted.",
               "scope": "Real private credential loader, fixed source/workspace binding, actual Codex HTTP/refresh assembly and existing Runner/checkpoint/custody/Memory and admitted summary consumers. Native admitted summary reuses the earlier exact-subject settings-inference command. Only built request destinations use owned loopback peers. Synthetic accounts do not establish real service, external-writer settlement, process-restart, UI or package acceptance."})
           (root / "codex-workspace-binding.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
@@ -2249,6 +2271,9 @@ jobs:
               "proposal_and_verification_commit_through_synthesis_target",
               "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
               "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
           ]
           append_missing = [name for name in append_required if passed.count(name) != 1]
           synthesis_label = "lib-extensions_memory_production_append_read_tests"
@@ -3656,6 +3681,11 @@ jobs:
               "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
               "source/host/src/extensions/inference/codex_request_binding.rs",
               "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+              "source/host/src/extensions/inference/summary_job.rs",
+              "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+              "source/host/src/extensions/memory/production_identity_tests.rs",
+              "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+              "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
               "source/host/src/extensions/inference/codex_model_identity_tests.rs",
               "source/host/app/src/tests/codex_model_admission_tests.rs",
               "source/host/src/extensions/inference/production.rs",
@@ -3820,6 +3850,9 @@ jobs:
               "proposal_and_verification_commit_through_synthesis_target",
               "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
               "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
               "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
               "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
               "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
@@ -4099,6 +4132,12 @@ jobs:
                       "codex_workspace_built_request_errors_keep_cancellation_precedence",
                       "codex_workspace_actual_watchdog_preserves_credential_refusal_and_user_cancellation",
                       "codex_workspace_admitted_summary_keeps_identity_across_compaction_phases",
+                      "synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+                      "synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+                      "synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+                      "synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata",
+                      "synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+                      "synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal",
                   ]
               ]),
               ("codex-model-regressions", base + ["--no-fail-fast", "--test", "settings_service_contract", "--test", "inference_extension_composition_contract", "--test", "inference_codex_direct_contract", "--test", "inference_provider_session_contract", "--test", "fabushi_model_identity_production_contract", "--test", "runner_effect_custody_contract", "--", "--test-threads=1"], [
@@ -4155,6 +4194,14 @@ jobs:
               ]),
               ('device-join-tls', base + ['--test', 'gateway_server_contract', 'gateway_serves_real_tls_when_cert_and_key_are_configured', '--', '--exact', '--test-threads=1'], [
                   'gateway_serves_real_tls_when_cert_and_key_are_configured',
+              ]),
+              ("memory-synthesis-identity", base + ["--lib", "extensions::memory::production::identity_tests::", "--", "--test-threads=1"], [
+                  "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+                  "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+                  "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review",
+                  "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+                  "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+                  "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply",
               ]),
               ("production-memory-synthesis", base + ["--lib", "extensions::memory::production::append_read_tests::", "--", "--test-threads=1"], [
                   "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
@@ -4366,7 +4413,8 @@ jobs:
 
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "MSI-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1"],
+              "memory_synthesis_identity_scope": "Per-snapshot MemorySynthesis uses one admitted model/credential identity across proposal, verification and retries. Native and Codex controls reach the production factory, actual HTTP assembly, Session apply gate and FileMemoryStore with owned credentials. Same-context token rotation is accepted; account/workspace drift and cancellation preserve memory/temporal bytes. Stale starts a new snapshot admission. Detached-worker drain, atomic cancellation/commit, original evidence account binding, durable synthesis recovery and real providers remain unaccepted.",
               "send_message_fidelity_scope": "SGF-v1 preserves actual completed SendMessage producer wire through existing canonical field 2 independently of live observation, using a fresh invocation recorder and checked receipt/callback/drain custody. Actual Session success-only decoding retains full-envelope and effective oneof semantics through backfill/reopen. Controlled actual App SQL sends compare message identity, normalized arguments, timestamps, live/canonical bytes and Journal projection; original typed failure, completion revocation and two fresh owner reads retain no replay or marker authority. Real providers/channels, external delivery ACK, lost SQL identity reconstruction, original interrupted-turn restart, rich variants and packaged-platform acceptance remain open.",
               "codex_workspace_binding_scope": "Actual private credential loading, per-turn source/workspace continuity, same-workspace rotation, recreated retry/checkpoint refusal, one-401 refresh before persistence and bound/fresh Memory consumers through real HTTP with owned redirected destinations. Real service, external-writer settlement and process-restart acceptance remain open.",
               "generated_history_scope": "Actual generated Runner retains ordered known successful tool observations and the accepted user through the existing canonical root/Journal transaction after provider failure or cancellation. Owned fresh processes observe history without provider/tool replay or completion/marker authority. Real provider-store refusal retains unaccepted effect custody; unknown/no-effect/root-drift controls, original typed error preservation, prior-completion invalidation and ordinary success remain required. Controlled Responses do not prove real provider compatibility, unknown/pending history, complete typed replay/UI, original-turn restart or packaged-platform acceptance.",
@@ -4405,7 +4453,7 @@ jobs:
               missing = [name for name in required if passed.count(name) != 1]
               counts = successful_test_summaries(text)
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
-              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http", "generated-send-message-recorder"):
+              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http", "memory-synthesis-identity", "generated-send-message-recorder"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
               complete_counts = None
               if label in ("device-pairing-revocation-authority", "device-pairing-revocation-gateway", "device-pairing-retained-stream"):
@@ -4757,6 +4805,12 @@ jobs:
               "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
               "source/host/src/extensions/inference/codex_request_binding.rs",
               "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+              "source/host/src/extensions/inference/summary_job.rs",
+              "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+              "source/host/src/extensions/memory/production_identity_tests.rs",
+              "source/host/tests/host_production_extensions_contract.rs",
+              "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+              "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
               "source/host/src/extensions/inference/codex_model_identity_tests.rs",
               "source/host/app/src/tests/codex_model_admission_tests.rs",
               "source/host/src/extensions/inference/production.rs",

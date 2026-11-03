@@ -354,13 +354,14 @@ struct Reply {
     content_type: &'static str,
     body: Vec<u8>,
     before_response: Option<Box<dyn FnOnce(&WireRequest) + Send>>,
+    cancelled_peer: bool,
 }
 
 impl Reply {
     fn events(events: Vec<Value>) -> Self {
         let body = events.into_iter().map(|event| format!("data: {event}\n\n")).collect::<String>();
         Self { kind: RequestKind::Responses, status: 200, content_type: "text/event-stream",
-            body: body.into_bytes(), before_response: None }
+            body: body.into_bytes(), before_response: None, cancelled_peer: false }
     }
 
     fn terminal(text: &str) -> Self {
@@ -370,16 +371,22 @@ impl Reply {
 
     fn status(status: u16) -> Self {
         Self { kind: RequestKind::Responses, status, content_type: "application/json",
-            body: b"{}".to_vec(), before_response: None }
+            body: b"{}".to_vec(), before_response: None, cancelled_peer: false }
     }
 
     fn refresh(payload: Value) -> Self {
         Self { kind: RequestKind::Refresh, status: 200, content_type: "application/json",
-            body: serde_json::to_vec(&payload).unwrap(), before_response: None }
+            body: serde_json::to_vec(&payload).unwrap(), before_response: None, cancelled_peer: false }
     }
 
     fn before(mut self, action: impl FnOnce(&WireRequest) + Send + 'static) -> Self {
         self.before_response = Some(Box::new(action));
+        self
+    }
+
+    fn cancelling(mut self, action: impl FnOnce(&WireRequest) + Send + 'static) -> Self {
+        self.before_response = Some(Box::new(action));
+        self.cancelled_peer = true;
         self
     }
 }
@@ -476,8 +483,19 @@ impl OwnedPeer {
                         let reason = match reply.status { 200 => "OK", 401 => "Unauthorized", 503 => "Service Unavailable", _ => "Fixture" };
                         let head = format!("HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                             reply.status, reason, reply.content_type, reply.body.len());
-                        stream.write_all(head.as_bytes()).and_then(|()| stream.write_all(&reply.body))
-                            .map_err(|error| format!("owned response write failed: {error}"))?;
+                        if let Err(error) = stream.write_all(head.as_bytes())
+                            .and_then(|()| stream.write_all(&reply.body))
+                        {
+                            // Only an explicitly scripted cancellation may close
+                            // this peer after its complete request was observed.
+                            // Every ordinary response retains strict write proof.
+                            if !reply.cancelled_peer || !matches!(error.kind(),
+                                std::io::ErrorKind::BrokenPipe | std::io::ErrorKind::ConnectionReset
+                                | std::io::ErrorKind::ConnectionAborted)
+                            {
+                                return Err(format!("owned response write failed: {error}"));
+                            }
+                        }
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => thread::sleep(Duration::from_millis(5)),
                     Err(error) => return Err(format!("owned accept failed: {error}")),
@@ -637,24 +655,29 @@ struct Owners {
     retries: Arc<RetryObservations>,
 }
 
+fn codex_inference_owners(root: &Path) -> (Arc<SettingsService>, ProductionInferenceExtension) {
+    let settings = Arc::new(SettingsService::new(root.join("settings.json")));
+    let before = settings.get_host_settings_snapshot();
+    settings.set_host_settings_if_current(Some(&before.hash), json!({
+        "inferenceProvider":"codex",
+        "agentDefaultModel":{"provider":"codex","modelId":MODEL,"maxMode":true,"parameters":[]},
+    })).unwrap();
+    let auth = start_host_auth_extension_with_options(HostAuthServiceOptions {
+        environment: HostAuthEnvironment::from_pairs([("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE".into(),
+            root.join("absent-native.json").to_string_lossy().into_owned())]),
+        backend_url: Some("http://127.0.0.1:9".into()), backend: None,
+        machine_id: Arc::new(|| Ok("cwb-fixture-device".into())), log: Arc::new(|_| {}), now_ms: Arc::new(|| 0),
+    }, Arc::new(|_| Ok(None))).unwrap();
+    let inference = start_production_inference_extension(Arc::new(auth),
+        Arc::new(HostExperimentsExtension::new(HostExperimentsOptions { is_dev_build: false, env_gate_overrides: None })),
+        settings.clone());
+    assert_eq!(inference.route(), InferenceRoute::Routed(RoutedProvider::Codex));
+    (settings, inference)
+}
+
 impl Owners {
     fn new(root: &Path) -> Self {
-        let settings = Arc::new(SettingsService::new(root.join("settings.json")));
-        let before = settings.get_host_settings_snapshot();
-        settings.set_host_settings_if_current(Some(&before.hash), json!({
-            "inferenceProvider":"codex",
-            "agentDefaultModel":{"provider":"codex","modelId":MODEL,"maxMode":true,"parameters":[]},
-        })).unwrap();
-        let auth = start_host_auth_extension_with_options(HostAuthServiceOptions {
-            environment: HostAuthEnvironment::from_pairs([("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE".into(),
-                root.join("absent-native.json").to_string_lossy().into_owned())]),
-            backend_url: Some("http://127.0.0.1:9".into()), backend: None,
-            machine_id: Arc::new(|| Ok("cwb-fixture-device".into())), log: Arc::new(|_| {}), now_ms: Arc::new(|| 0),
-        }, Arc::new(|_| Ok(None))).unwrap();
-        let inference = start_production_inference_extension(Arc::new(auth),
-            Arc::new(HostExperimentsExtension::new(HostExperimentsOptions { is_dev_build: false, env_gate_overrides: None })),
-            settings.clone());
-        assert_eq!(inference.route(), InferenceRoute::Routed(RoutedProvider::Codex));
+        let (settings, inference) = codex_inference_owners(root);
         Self { inference, host: HostRunnerComposition::with_sink(
             Arc::new(SandLocalToolPermissionController::production(settings)), Arc::new(|_| {})),
             delivery: Arc::new(CountedDelivery::default()), retries: Arc::new(RetryObservations::default()) }
@@ -700,6 +723,9 @@ impl Owners {
             Arc::new(Mutex::new(SubagentRuntime::default())), None, None, None, None)
     }
 }
+
+#[path = "codex_synthesis_identity_tests.rs"]
+mod synthesis_identity_tests;
 
 fn request_context(root: &Path) -> RunnerRequestContextSnapshot {
     RunnerRequestContextSnapshot { context: HostRequestContext {

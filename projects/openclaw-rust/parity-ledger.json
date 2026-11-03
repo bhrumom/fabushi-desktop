@@ -36398,6 +36398,261 @@
         "strip_pairing_command_prefix"
       ],
       "unit_id": "OCRM-UNIT-PLUGIN-SDK-CHANNEL-LIFECYCLE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Retain one selected provider route and Native/Codex model and credential binding across a background Memory snapshot proposal, verification and bounded retry sequence; same-identity token rotation remains valid, changed identity refuses before another request. This bounded existing-owner contract does not claim full upstream dreaming equivalence.",
+      "blocker_ids": [
+        "MSI-EXACT-H-SCOPED-AUTHORITY-PENDING",
+        "MSI-EXACT-H-BEHAVIOR-PENDING",
+        "MSI-REAL-PROVIDER-AND-PLATFORM-PENDING"
+      ],
+      "capability_ids": [
+        "memory.background_synthesis_identity_continuity"
+      ],
+      "dependencies": [
+        "Existing SettingsService checked model reader and route owner",
+        "Existing provider_session Native/Codex private credential readers, request bindings, HTTP/refresh/cancel/usage paths",
+        "Existing Session canonical apply gate, FileMemoryStore fingerprint, grounding and append-read rules",
+        "Fixed-U dreaming/Gateway bounded source graph in source-contract.json; other downstream upstream execution/fallback behavior and full dependency/legal closure remain open",
+        "Locked reqwest/base64 usage/security/license review retained in codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json; no added dependencies"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production.rs",
+        "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "source/host/src/extensions/inference/production.rs",
+        "source/host/src/extensions/inference/summary_job.rs",
+        "source/host/src/extensions/inference/provider_session.rs",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/memory/production.rs",
+          "reason": "Existing production proposal/verification composition"
+        },
+        {
+          "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "reason": "Sole background snapshot, retry and settlement owner"
+        },
+        {
+          "path": "source/host/src/extensions/inference/production.rs",
+          "reason": "Existing model selection and summary execution owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001",
+      "integration": {
+        "consumer": "Production proposal/verify callbacks -> SummaryInferenceJob -> actual bound transport -> Session apply gate -> FileMemoryStore",
+        "entrypoint": "Existing Memory experiment enablement and MemoryService::record_memory_evidence / temporal sweep",
+        "owner": "MemorySynthesisService for snapshot lifetime; ProductionInferenceExtension for admitted provider identity",
+        "producer": "Actual completed-turn evidence bridge and existing temporal-target queue"
+      },
+      "invariants": [
+        "MemorySynthesisService alone owns queue/retry/settlement; Inference and existing transports own identity and secrets; Session and FileMemoryStore own writes",
+        "No cached tokens, serialized identity grant, alternate store or scheduler",
+        "Cancellation is checked before/after admission and before consuming successful work; no atomic cancellation/commit or full worker-drain claim",
+        "Only Native/Codex credential/model identity is covered; other routes keep their existing behavior under a fixed route"
+      ],
+      "migration_rollback": "No persisted format migration. Job identity is process-local; service replacement/restart retires it and later maintenance is a new admission. Reverting restores the documented between-phase identity gap.",
+      "oracle_ids": [
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
+      ],
+      "owner_decision": "Extend the existing Memory executor with one paired callback job; Inference owns its opaque admission result. No ADR/new product owner is necessary.",
+      "postconditions": [
+        "Identity/configuration refusal performs no later HTTP dispatch, apply or temporal-review advancement in that snapshot",
+        "A later independent snapshot may admit the then-current identity; Stale does not reuse a prior proposal"
+      ],
+      "preconditions": [
+        "Existing authenticated-bootstrap Memory experiment and target snapshot admission",
+        "Production factory allocates one job per run_agent snapshot; settings/credential I/O stays inside its bounded worker"
+      ],
+      "required_evidence_dimensions": [
+        "scoped-source-authority",
+        "scoped-coverage",
+        "contract",
+        "integration",
+        "security-negative-test",
+        "recovery",
+        "real-provider-compatibility",
+        "package"
+      ],
+      "required_gate_ids": [
+        "OCRM-G01",
+        "OCRM-G02",
+        "OCRM-G03",
+        "OCRM-G04",
+        "OCRM-G05",
+        "OCRM-G06",
+        "OCRM-G07"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-R13",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC13",
+        "OCRM-AC17",
+        "OCRM-AC18",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "ChatGPT source readers; exact identities, bounded ranges and execution configuration retained in source-contract.json",
+      "risk": "High: memory disclosure across account/workspace changes, retry/timeout overlap and temporal metadata. Original memory-account authorization, full worker drainage, atomic cancellation/commit, durable queue recovery and all-provider policies remain unclosed.",
+      "selected_owner": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "5861377169b54c96e42164997a8cf078d7ed0e8c",
+          "path": "src/agents/execution-auth-binding.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 295,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "bcf1672d7538bbeba3f9d44e4097b78e8a995773",
+          "path": "extensions/memory-core/src/dreaming.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 657,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "c680bde47acabf6883d33ce823da664c3886ad10",
+          "path": "extensions/memory-core/src/dreaming-phases.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 1216,
+                "start_line": 1151
+              }
+            ],
+            "read_status": "partial"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "a416f9bba5de8fa323b1bf55a68d41bab070ee61",
+          "path": "extensions/memory-core/src/dreaming-narrative.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 319,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "a3529dfaa42674a74ca92d677223df77d9f236a1",
+          "path": "extensions/memory-core/src/dreaming-consolidation.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 476,
+                "start_line": 383
+              }
+            ],
+            "read_status": "partial"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "aadabab915d3b93d132ae72e0206c2067fd44e68",
+          "path": "src/plugin-sdk/runtime-store.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 89,
+                "start_line": 1
+              }
+            ],
+            "read_status": "read-complete"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "b54d1b3038fc5eaf5ad2e9ef57cfc75e8ce89859",
+          "path": "src/gateway/server-plugins.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 373,
+                "start_line": 295
+              }
+            ],
+            "read_status": "partial"
+          },
+          "symbol": null
+        },
+        {
+          "blob_sha": "2accb0ec18020ffb1d41660f3e5e9be45130a5a4",
+          "path": "src/gateway/server-plugin-subagent-runtime.ts",
+          "range": {
+            "read_ranges": [
+              {
+                "end_line": 82,
+                "start_line": 1
+              },
+              {
+                "end_line": 487,
+                "start_line": 349
+              }
+            ],
+            "read_status": "partial"
+          },
+          "symbol": null
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "mapped",
+        "read": "partial",
+        "verification": "not-run",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "symbol": "MemorySynthesisService::{run_agent,perform_with_retry,run_attempt_with_deadline}"
+      },
+      "tests": [
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
+      ],
+      "typed_contracts": [
+        "MSI-v1",
+        "SynthesisModelJob",
+        "SynthesisInferenceError",
+        "SummaryInferenceJob",
+        "CodexResponsesRequestBinding",
+        "FabushiResponsesRequestBinding"
+      ],
+      "unit_id": "OCRM-UNIT-MEM-001"
     }
   ],
   "schema_version": 1,

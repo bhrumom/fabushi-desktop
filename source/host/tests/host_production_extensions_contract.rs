@@ -16,6 +16,7 @@ use mahayana_host_runtime::host_production_extensions::{
 
 const PRODUCTION_OWNER: &str = include_str!("../src/host_production_extensions.rs");
 const MEMORY_PRODUCTION: &str = include_str!("../src/extensions/memory/production.rs");
+const SUMMARY_JOB: &str = include_str!("../src/extensions/inference/summary_job.rs");
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
 #[test]
@@ -532,7 +533,12 @@ fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() 
     );
 
     for needle in [
-        "run_summarization_prompt(",
+        "create_summarization_job(",
+        "let propose_job = Arc::clone(&job);",
+        "propose_job.run_prompt(",
+        "let output = job.run_prompt(",
+        "SynthesisModelJob::new(propose, Some(verify))",
+        "MemorySynthesisOptions::new_with_job_factory(",
         "synthesis_system_prompt()",
         "verification_system_prompt()",
         "is_cancelled()",
@@ -546,6 +552,14 @@ fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() 
             "shipping Memory production must consume the shared inference/telemetry path: {needle}"
         );
     }
+    assert!(
+        !MEMORY_PRODUCTION.contains(".run_summarization_prompt("),
+        "one Memory snapshot must not recapture an independent identity for each phase"
+    );
+    assert!(
+        SUMMARY_JOB.contains("self.inference.run_summarization_prompt_with_identity("),
+        "the summary job must delegate to the existing shipping Inference owner"
+    );
     assert!(
         SHIPPING_HOST.contains("bind_memory_synthesis_gate()"),
         "shipping Host must bind Memory synthesis to the session owner before runtime use"

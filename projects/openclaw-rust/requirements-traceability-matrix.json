@@ -457,7 +457,12 @@
         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -502,7 +507,14 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -581,7 +593,8 @@
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-ENTRY-001",
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-INBOUND-INGRESS-001",
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001",
-        "OCRM-RESP-MODEL-IDENTITY-001"
+        "OCRM-RESP-MODEL-IDENTITY-001",
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -842,7 +855,11 @@
         "source/host/tests/device_pairing_revocation_gateway_contract.rs",
         "source/host/tests/device_pairing_retained_stream_contract.rs",
         "source/host/app/src/tests/device_pairing_revocation_tests.rs",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -863,7 +880,14 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -889,7 +913,8 @@
         "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001",
         "OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001",
         "OCRM-RESP-NODE-HOST-WORKER-ORACLES-001",
-        "OCRM-RESP-MODEL-IDENTITY-001"
+        "OCRM-RESP-MODEL-IDENTITY-001",
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1452,7 +1477,11 @@
         "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
         "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
         "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
-        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1509,7 +1538,14 @@
         "OCRM-REMOTE-WORKSPACE-O01",
         "OCRM-WEB-MEDIA-O01",
         "OCRM-WEB-MEDIA-O02",
-        "OCRM-WEB-MEDIA-O03"
+        "OCRM-WEB-MEDIA-O03",
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1619,7 +1655,8 @@
         "OCRM-RESP-SESSION-TURNS-CONTROLLER-001",
         "OCRM-RESP-SHARED-ASYNC-SCOPE-001",
         "OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001",
-        "OCRM-RESP-MEDIA-STAGED-INPUTS-001"
+        "OCRM-RESP-MEDIA-STAGED-INPUTS-001",
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1894,7 +1931,12 @@
         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",
@@ -1939,7 +1981,14 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2018,7 +2067,8 @@
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-ENTRY-001",
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-INBOUND-INGRESS-001",
         "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001",
-        "OCRM-RESP-MODEL-IDENTITY-001"
+        "OCRM-RESP-MODEL-IDENTITY-001",
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -2208,16 +2258,29 @@
         "frontend/src/production/command-palette-message-search.contract.test.ts",
         "source/host/src/runner/turn_memory.rs",
         "source/host/tests/turn_memory_contract.rs",
-        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC13",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
-        "OCRM-RESP-NODE-HOST-WORKER-ORACLES-001"
+        "OCRM-RESP-NODE-HOST-WORKER-ORACLES-001",
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
       ],
       "reviewer": null
     },
@@ -2397,7 +2460,11 @@
         "source/host/tests/device_pairing_revocation_gateway_contract.rs",
         "source/host/tests/device_pairing_retained_stream_contract.rs",
         "source/host/app/src/tests/device_pairing_revocation_tests.rs",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2422,7 +2489,14 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2435,7 +2509,8 @@
         "OCRM-RESP-EXEC-COMMAND-ERROR-001",
         "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
         "OCRM-RESP-EXEC-KILL-TREE-001",
-        "OCRM-RESP-MODEL-IDENTITY-001"
+        "OCRM-RESP-MODEL-IDENTITY-001",
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -2479,7 +2554,11 @@
         "source/host/tests/device_pairing_revocation_gateway_contract.rs",
         "source/host/tests/device_pairing_retained_stream_contract.rs",
         "source/host/app/src/tests/device_pairing_revocation_tests.rs",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC18",
@@ -2494,11 +2573,19 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
-        "OCRM-RESP-MODEL-IDENTITY-001"
+        "OCRM-RESP-MODEL-IDENTITY-001",
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
       ],
       "reviewer": null
     },
@@ -2848,7 +2935,11 @@
         "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
         "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
         "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
-        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+        "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+        "source/host/src/extensions/memory/production_identity_tests.rs",
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
@@ -2905,7 +2996,14 @@
         "OCRM-REMOTE-WORKSPACE-O01",
         "OCRM-WEB-MEDIA-O01",
         "OCRM-WEB-MEDIA-O02",
-        "OCRM-WEB-MEDIA-O03"
+        "OCRM-WEB-MEDIA-O03",
+        "MSI-01",
+        "MSI-02",
+        "MSI-03",
+        "MSI-04",
+        "MSI-05",
+        "MSI-06",
+        "MSI-07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -3009,7 +3107,8 @@
         "OCRM-RESP-PROCESS-CRABBOX-ORACLES-001",
         "OCRM-RESP-SECURITY-OPENgrep-CRABBOX-001",
         "OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001",
-        "OCRM-RESP-MEDIA-STAGED-INPUTS-001"
+        "OCRM-RESP-MEDIA-STAGED-INPUTS-001",
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     }

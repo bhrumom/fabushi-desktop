@@ -36,6 +36,12 @@ use super::provider_session::{
     run_routed_provider_text_with_lifecycle_reporting_usage,
 };
 
+#[path = "summary_job.rs"]
+mod summary_job;
+pub use summary_job::SummaryInferenceJob;
+#[cfg(test)]
+pub(crate) use summary_job::SummaryAdmissionHookScope;
+
 pub type RequestIdObserver = Arc<dyn Fn(&str) + Send + Sync>;
 pub type ModelExperimentApplied = Arc<dyn Fn() + Send + Sync>;
 

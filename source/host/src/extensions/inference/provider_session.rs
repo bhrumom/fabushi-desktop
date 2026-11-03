@@ -286,7 +286,7 @@ pub struct McpCatalogRefusal {
     pub reason: McpCatalogReason,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Clone, Error)]
 pub enum ProviderSessionError {
     #[error("{0}")]
     Configuration(String),
