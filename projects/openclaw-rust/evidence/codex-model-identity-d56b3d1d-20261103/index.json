@@ -1,0 +1,127 @@
+{
+  "kind": "source-review-and-publication-evidence-carrier",
+  "taskId": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "product_subject": {
+    "H": "916d79a2b191a12676d1e0df675393e05d59c6f2",
+    "tree": "d15a2c21f25c6e470b97797ca30ad80e30875189",
+    "parent": "0509c1d13595680248630ff476f5bd6dbe5ed185",
+    "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "U_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "scope": "Immutable source-review snapshots and actual GitHub publication readback. No source-reading, unit-verification, runtime/platform or final-acceptance status is promoted. The commit storing these records is an evidence carrier, not the runtime subject.",
+  "snapshot_parts": [
+    {
+      "path": "cmi-3aaa-snapshot-part-01.json",
+      "bytes": 70256,
+      "sha256": "a94b146c11febfefbe2e22cd770f1bda006130efd9e43db2f64c4156d29954bb",
+      "snapshot": "cmi-3aaa-snapshot",
+      "part": 1,
+      "parts": 1
+    },
+    {
+      "path": "cmi-5f8-integrated-part-01.json",
+      "bytes": 180514,
+      "sha256": "9e5a3b18e02c2800975240499175bd22021273ee00f262fa848eb5bdfec7565e",
+      "snapshot": "cmi-5f8-integrated",
+      "part": 1,
+      "parts": 4
+    },
+    {
+      "path": "cmi-5f8-integrated-part-02.json",
+      "bytes": 180419,
+      "sha256": "a8c52fb65964e4cff9365e556b31e1ded5d69775f0ada1a6e3b15ccc4a1461e6",
+      "snapshot": "cmi-5f8-integrated",
+      "part": 2,
+      "parts": 4
+    },
+    {
+      "path": "cmi-5f8-integrated-part-03.json",
+      "bytes": 180419,
+      "sha256": "cf518a2c1b1cb855d53ea83795fc2171d4bd1add9f1f5c82cd9d06553b61d141",
+      "snapshot": "cmi-5f8-integrated",
+      "part": 3,
+      "parts": 4
+    },
+    {
+      "path": "cmi-5f8-integrated-part-04.json",
+      "bytes": 179747,
+      "sha256": "1453d92cb7018a4d0d86b04fef057a766ee3a35f5c7c23eb69c2799633c37a83",
+      "snapshot": "cmi-5f8-integrated",
+      "part": 4,
+      "parts": 4
+    },
+    {
+      "path": "cmi-841-integrated-part-01.json",
+      "bytes": 175056,
+      "sha256": "bb34e4c613952ef573b977cb1fec149c3cdbb5f0f689aa5d9114fd38a6aed03a",
+      "snapshot": "cmi-841-integrated",
+      "part": 1,
+      "parts": 1
+    },
+    {
+      "path": "cmi-0509-integrated-part-01.json",
+      "bytes": 180533,
+      "sha256": "07a51e9a0d22e57d57aac52a139d1ac4cf6377292e6031f97f1fc18c43ff8dfb",
+      "snapshot": "cmi-0509-integrated",
+      "part": 1,
+      "parts": 3
+    },
+    {
+      "path": "cmi-0509-integrated-part-02.json",
+      "bytes": 180420,
+      "sha256": "955a0d48b76203c894079fef7b9c34e183fda7cbf946e268e730f7c0fd03730f",
+      "snapshot": "cmi-0509-integrated",
+      "part": 2,
+      "parts": 3
+    },
+    {
+      "path": "cmi-0509-integrated-part-03.json",
+      "bytes": 119051,
+      "sha256": "ee221bbb8bde52b9208e14397c3e4833503894ebca9a846f6e5509935ed472d2",
+      "snapshot": "cmi-0509-integrated",
+      "part": 3,
+      "parts": 3
+    }
+  ],
+  "other_records": [
+    {
+      "path": "publication-readback.json",
+      "source_record": "fusion-review/cmi-916-publication.json",
+      "bytes": 7879,
+      "sha256": "f7461ff5532206628c5c34eb69dd2590fbf1b6e8ced9909f02b07e8aa8251a14"
+    },
+    {
+      "path": "actual-object-staging-receipt.json",
+      "source_record": "fusion-review/cmi-object-carrier/actual-staging-receipt.json",
+      "bytes": 692,
+      "sha256": "a56f8b01f4349d59ae6bc05bc9d93992f674efb43274c33b7e0283ebe9d092a3"
+    },
+    {
+      "path": "object-carrier-source-review.json",
+      "source_record": "fusion-review/cmi-object-carrier/security-review.json",
+      "bytes": 11150,
+      "sha256": "db74d106317afe64bfd995095358a7d7420593d68ac3e88d4c276c50d50757e4"
+    },
+    {
+      "path": "historical-runtime-evidence-fidelity-review.json",
+      "source_record": "fusion-review/runtime-owner-evidence-carrier-review.json",
+      "bytes": 81507,
+      "sha256": "84d76ae9391a89645f70d50c08836ee9d50fac9e27ea86fde1d8267face4358a"
+    }
+  ],
+  "execution_observation_at_capture": {
+    "runtime_run": 41554298283,
+    "source_run": 41554298312,
+    "attempt": 1,
+    "state": "in-progress/queued; no executable result adopted in this snapshot"
+  },
+  "remaining": [
+    "Exact-H affected shipping Host and authored controls must execute in GitHub Actions; current snapshot is not a result.",
+    "Fixed-U source/dependency/download/patch/generated/LFS/resource/legal closure and scoped authority/coverage remain incomplete.",
+    "Real provider/accounts/channels/plugins/nodes/devices, UI/timing/security, performance/soak, supported packages, upgrade/rollback and existing Fabushi regression plus G01-G12/AC01-AC24 and independent ACCEPT remain open.",
+    "Codex credential-source/workspace continuity and cross-process refresh settlement are separately identified unresolved production work."
+  ],
+  "object_carrier_review_limit": "The security review is bound to the earlier unpublished carrier432eb4fc9eb64967aa4430b82787e8df80d67afa/tree711a04. Actual published carrierf4399acf6a642af2b6b6e180123adb1e737b8ea8 reused identical workflowa5b133dd30100733e4dc5566aedc57b24ce307cd and patch4bdb9bdf2d54255c7c3075efe61fcf0834415a2f; only manifest base/candidate identities were updated and root-reconciled after unchanged before/after object identities. Actual staging run41553340058/job125646087629 succeeded; root read full job log and both remote exact blob contents. Product916 deletes three carrier paths. The review is not relabeled as a fresh actual-carrier review and staging proves no product execution.",
+  "review_boundary": "Complete CMI source review at3aaa and full22-path5f8, then fresh focused841 and0509 integration reviews, each preserves its actual immutable subject and limitations. Five incoming generated inventory files atd95 were retained by identity/disposition; they receive no new semantic read credit. The historical fidelity review concerns separate7eb/cdef/961 runtime subjects only. All reports are copied byte-for-byte and their original scope statements govern."
+}

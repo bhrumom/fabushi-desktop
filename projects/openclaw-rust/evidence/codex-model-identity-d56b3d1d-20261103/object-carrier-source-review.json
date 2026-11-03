@@ -1,0 +1,119 @@
+{
+  "review_kind": "temporary-carrier-security-lifetime-repository-integrity",
+  "verdict": "CONVERGED",
+  "blocking_findings": [],
+  "summary": "No falsifiable blocker found in the frozen three-file carrier. This verdict covers source-level object-staging boundaries and the declared publication handoff only; it does not approve product model semantics, execution, publication or acceptance.",
+  "configuration": {
+    "selected_effort": "xhigh",
+    "applied_setting": "Inherited parent configuration; the assignment states xhigh was selected and applied. No independent runtime effort introspection is exposed to this worker.",
+    "model": "Inherited configured model; no override requested or made.",
+    "reason": "Scoped contents:write token, patch-as-data handling, immutable object identity and final publication boundaries."
+  },
+  "scope": {
+    "repository": "bhrumom/fabushi-desktop",
+    "repository_root": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "base_commit": "d95efb8a690750ad8dc78ec375ec5ff2a7ad2660",
+    "carrier_tree": "711a04b643e3df2746dbe02c856030d359dcea5a",
+    "carrier_commit": "432eb4fc9eb64967aa4430b82787e8df80d67afa",
+    "candidate_product_tree": "9e40308b710fcc66602623880857512a20a5331a",
+    "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+    "round": 1,
+    "full_diff_sha256": "696760bc9979ae0f222ab02f0d7ec8f8cb23f6b898d223cc742375dd0a2ba132",
+    "changed_files": [
+      {
+        "status": "A",
+        "path": ".github/ocrm-reviewed-objects/manifest.json",
+        "mode": "100644",
+        "blob": "4f2bf31413895c4b60139320ce844d2ea70a99dc",
+        "bytes": 1255
+      },
+      {
+        "status": "A",
+        "path": ".github/ocrm-reviewed-objects/object.patch",
+        "mode": "100644",
+        "blob": "4bdb9bdf2d54255c7c3075efe61fcf0834415a2f",
+        "bytes": 11787,
+        "sha256": "7a1673c4c42922d1b2ec07f1e3c50b810754145e28c824af896f8598a8899424"
+      },
+      {
+        "status": "A",
+        "path": ".github/workflows/ocrm-stage-reviewed-objects.yml",
+        "mode": "100644",
+        "blob": "a5b133dd30100733e4dc5566aedc57b24ce307cd",
+        "bytes": 4791
+      }
+    ],
+    "targets": [
+      {
+        "path": "source/host/app/src/main.rs",
+        "mode": "100644",
+        "before_blob": "4929c514b110cc5105f2f7abcc6e7e53226fa501",
+        "after_blob": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+        "after_bytes": 985710,
+        "after_sha256": "139d55d9e2c52eeaeef78eced67ce7130f45207b92968dd761535bdf8dd6f625"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "mode": "100644",
+        "before_blob": "2c7b233c8d5d0456050e8d2dc5e16a223155e550",
+        "after_blob": "4e6844496f267050e4236494de424de28630ccc8",
+        "after_bytes": 1386279,
+        "after_sha256": "4076ad135b934be9156af3390aebf25a082366e4194262fe064eb50028671916"
+      }
+    ]
+  },
+  "direct_evidence": [
+    "Read all three files and the complete binary-safe frozen diff. A fresh Git diff from the exact base to the carrier tree has the same SHA-256 as carrier-full.diff and exactly the three declared additions.",
+    "Read-only Git tree/blob operations independently confirmed both target before/after identities, regular-file modes, after byte lengths and after SHA-256 values. The full-index binary-safe diff from base to product tree restricted to the two targets has SHA-256 7a1673c4c42922d1b2ec07f1e3c50b810754145e28c824af896f8598a8899424, exactly the supplied patch. No patch was applied locally.",
+    "GET https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/432eb4fc9eb64967aa4430b82787e8df80d67afa independently returned tree 711a04b643e3df2746dbe02c856030d359dcea5a and exactly one parent, d95efb8a690750ad8dc78ec375ec5ff2a7ad2660. This confirms the created object, not branch publication.",
+    "Read AGENTS.md, blob e4682748087759b2d4bb2b3a47916b6148e8a6f2, and projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md, blob 7e64ad5b1384d6881e99254495002b1266f0a1d1, including the carrier policy at lines 104-109. Local instruction/policy bytes match these exact-tree blobs.",
+    "Read the earlier three-file carrier workflow and manifest at 3aaa79ae47e05c5d3273bbdaf5e086b2d7e112b4. It uses the same branch/path trigger, checkout, permission scope, fixed endpoint and redirect refusal. The current extension requires exactly two targets and completes both local object checks before entering the upload loop. An older two-object precedent was unavailable locally because a promisor fetch failed; no claim relies on that unread precedent.",
+    "Read the workflow event/filter declarations and the complete relevant triggers in ocrm-p0-authority.yml and rust-desktop-runtime.yml at the carrier tree. Read publication-contract.json and compared its 22 object entries plus three removals with the exact carrier-to-product Git tree difference. The entries and modes match, and all carrier paths are absent from the product tree."
+  ],
+  "assessments": [
+    {
+      "boundary": "Patch remains data",
+      "source": ".github/workflows/ocrm-stage-reviewed-objects.yml:33-62; .github/ocrm-reviewed-objects/object.patch:1-192",
+      "conclusion": "The complete frozen patch modifies only the two regular files named in the allowlist. It is read by Git apply, never evaluated as shell/Python/Rust. Git commands use argument arrays. No repository script, product entry point, build or validator is invoked. Exact before blobs and patch SHA-256 precede apply; the staged path set is checked afterward. No applicable .gitattributes or root modules shadowing the explicitly imported Python modules were found in the frozen base."
+    },
+    {
+      "boundary": "Admission and object identity",
+      "source": ".github/workflows/ocrm-stage-reviewed-objects.yml:34-62",
+      "conclusion": "The source checks exactly two distinct allowed target paths, the literal repository, task/round, checked-out event SHA, sole declared parent, exactly three added carrier paths, each old blob, patch digest, resulting path set, and both resulting byte counts/Git blob IDs. Both captured byte arrays enter verified_objects before any POST. The frozen manifest is part of the reviewed authority; this verdict does not authorize arbitrary later manifest/workflow revisions."
+    },
+    {
+      "boundary": "Token and network destination",
+      "source": ".github/workflows/ocrm-stage-reviewed-objects.yml:10-28,63-90",
+      "conclusion": "The job requests contents:write and passes github.token through GH_TOKEN to the materialization step. The only application network write is POST to the literal HTTPS endpoint https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs. The redirect handler refuses redirected requests. Source diagnostics and the uploaded receipt contain paths, hashes, counts and revision identities, not the token or Authorization header. No API path, host, shell command or artifact path is derived from patch content. Checkout and artifact actions retain the established v4 dependencies."
+    },
+    {
+      "boundary": "Failure and lifetime",
+      "source": ".github/workflows/ocrm-stage-reviewed-objects.yml:16,57-90",
+      "conclusion": "Requests have a 60-second timeout and response context managers; the job has a 10-minute timeout. Upload responses must match the expected Git blob IDs. The receipt is written only after both uploads pass. If the second upload fails, the first may remain as an unreferenced immutable blob, but the job has no commit/tree/ref update and emits no successful receipt. There is no broad cleanup or process-lifetime manipulation."
+    },
+    {
+      "boundary": "Trigger isolation and evidence meaning",
+      "source": ".github/workflows/ocrm-stage-reviewed-objects.yml:3-8,77-90; .github/workflows/ocrm-p0-authority.yml:3-16; .github/workflows/rust-desktop-runtime.yml:18-61",
+      "conclusion": "For the intended single-commit push from the exact base to the carrier on the named branch, the three changed paths select the carrier and do not match the source-authority/runtime push path filters. Other inspected push branch filters exclude this branch. This is not a claim about unrelated dispatches or a cumulative PR diff. The receipt explicitly records product_validation_executed_by_staging_job=false; no product-validation credit follows from carrier success."
+    },
+    {
+      "boundary": "Final publication handoff",
+      "source": "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md:104-109; fusion-review/cmi-object-carrier/publication-contract.json",
+      "conclusion": "The declared root API consumer waits for the exact successful carrier job and receipt plus both remote objects, applies 22 pinned object entries and three sha:null removals to carrier tree 711a04b643e3df2746dbe02c856030d359dcea5a, and rejects any returned tree except 9e40308b710fcc66602623880857512a20a5331a before creating a product commit. It requires the actual carrier as sole parent, a fresh lease and expected_sha=432eb4fc9eb64967aa4430b82787e8df80d67afa with force=false, followed by remote commit/tree/parent/content readback and carrier absence. These are necessary consumer conditions, not steps enforced or performed by the carrier job. The declared arguments agree with the frozen tree difference."
+    }
+  ],
+  "limits": [
+    "Static review and read-only identity/API inspection only. No local or htch build, lint, test, generator, schema validator, workflow execution, patch application, push, commit creation or ref update was performed by this reviewer.",
+    "No product-model semantics or full product tree acceptance was assessed. Product blobs were inspected as immutable data identities and patch contents within this carrier boundary.",
+    "The job checks after_bytes and after_blob, but does not evaluate the manifest's after_sha256 fields. Those fields were independently matched to the frozen target objects in this review. The exact patch digest and expected Git object checks satisfy the existing carrier contract; this is not a claim of an additional runtime SHA-256 check.",
+    "Carrier Actions execution, final API publication, post-publication readback and product source/runtime evidence remain pending and are not approved as completed by this verdict.",
+    "GitHub-hosted runner and existing checkout/upload action implementations were not independently audited. This review judges the repository's frozen workflow and declared handoff."
+  ],
+  "independence_disclosure": {
+    "current_cmi_or_carrier_peer_reports_read": false,
+    "current_review_decision_ledger_read": false,
+    "accidental_unrelated_exposure": "An overbroad reference search returned embedded historical device-pairing review text from projects/openclaw-rust/evidence. The parent was notified immediately; that text was not used to assess this carrier, and subsequent reads were confined to the explicit carrier objects, policy, precedent, triggers and publication contract.",
+    "authored_file": "fusion-review/cmi-object-carrier/security-review.json"
+  }
+}

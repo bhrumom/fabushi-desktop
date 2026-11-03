@@ -1,0 +1,20 @@
+{
+  "base_commit": "84120837330f88d9a7b21e9a5bc75daaa728de82",
+  "candidate_tree": "6472d14c1ad0f20ed0fb56a40d5ef84689efb92c",
+  "carrier_commit": "f4399acf6a642af2b6b6e180123adb1e737b8ea8",
+  "kind": "reviewed-git-object-staging",
+  "objects": [
+    {
+      "bytes": 985710,
+      "git_blob": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+      "path": "source/host/app/src/main.rs"
+    },
+    {
+      "bytes": 1386279,
+      "git_blob": "4e6844496f267050e4236494de424de28630ccc8",
+      "path": "projects/openclaw-rust/parity-ledger.json"
+    }
+  ],
+  "patch_sha256": "7a1673c4c42922d1b2ec07f1e3c50b810754145e28c824af896f8598a8899424",
+  "product_validation_executed_by_staging_job": false
+}

@@ -1,0 +1,1433 @@
+{
+  "schema_version": 1,
+  "review_kind": "independent-evidence-carrier-fidelity",
+  "reviewer": "/root/cmi_evidence_fidelity",
+  "written_utc": "2026-11-03 00:44:49 UTC",
+  "verdict": "APPROVED",
+  "verdict_scope": "Bounded source-only approval of the 14 added evidence paths at frozen tree 1b913fdabd83913d2e68fdbfb8ba6026786ab860 against base 916d79a2b191a12676d1e0df675393e05d59c6f2. Approval covers lossless artifact persistence, reconstructibility, exact subject/storage-carrier separation and the stated publication provenance. It grants no new product source verdict, executable result, source-read credit, scoped unit verification or migration acceptance.",
+  "findings": [],
+  "blocking_findings": [],
+  "non_blocking_findings": [],
+  "configuration": {
+    "selected_effort": "xhigh",
+    "applied_effort": "Inherited configured setting; parent assignment states xhigh applied. This worker has no independent runtime effort introspection and applied no override.",
+    "model": "Inherited configured model; no override.",
+    "reason": "Multi-round reconstructibility, immutable Git identities, historical review boundaries and subject versus storage-carrier claims require judgment."
+  },
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "root": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+    "manifest": "fusion-review/cmi-evidence-persistence-snapshot/manifest.json",
+    "manifest_sha256": "fe79bba7b3278b47f296569dd1cc0711bc4a95e32c29b5495553f329699342ab",
+    "base": "916d79a2b191a12676d1e0df675393e05d59c6f2",
+    "tree": "1b913fdabd83913d2e68fdbfb8ba6026786ab860",
+    "subject": {
+      "H": "916d79a2b191a12676d1e0df675393e05d59c6f2",
+      "tree": "d15a2c21f25c6e470b97797ca30ad80e30875189",
+      "parent": "0509c1d13595680248630ff476f5bd6dbe5ed185",
+      "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "U_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    "full_diff": {
+      "bytes": 1563853,
+      "sha256": "bd6510e98a52e5af665952bfb531b5529bdcf3af0ca0166258cc9fee7d3a5362"
+    },
+    "full_diff_regenerated_matches": true,
+    "changed_paths": 14,
+    "all_status_added": true,
+    "no_changes_outside_declared_directory": true,
+    "storage_carrier_commit": "Not assigned by this review; the reviewed storage subject is the frozen tree above. Product H remains 916d79a2b191a12676d1e0df675393e05d59c6f2."
+  },
+  "summary": {
+    "added_paths": 14,
+    "strict_utf8_json_paths": 14,
+    "snapshot_groups": 4,
+    "snapshot_parts": 9,
+    "embedded_files_compared": 23,
+    "direct_records_compared": 4,
+    "original_raw_bytes_compared": 5489256,
+    "historical_manifest_path_identities_checked": 83,
+    "full_snapshot_diffs_reproduced": 4,
+    "prior_round_diffs_reproduced": 3,
+    "publication_bindings_verified_locally_and_via_api": 22,
+    "all_comparisons_equal": true,
+    "no_out_of_scope_change": true
+  },
+  "policies_consulted": [
+    {
+      "path": "AGENTS.md",
+      "scope": "Independent review; immutable snapshots and staging isolation; truthful evidence states; worker effort/model inheritance; OCRM Actions-only execution and source-review amendment."
+    },
+    {
+      "path": "docs/specs/spec-first-ai-development.md",
+      "scope": "Spec/evidence and exact-source review requirements."
+    },
+    {
+      "path": "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+      "scope": "Current authority ordering, fixed U, literal source-read states, unpromoted flags and execution boundary."
+    },
+    {
+      "path": "docs/specs/openclaw-rust-equivalence-migration.md",
+      "scope": "Sections 12.1, 12.2, 12.3 and 12.3.1: evidence identity, subject versus carrier, no inherited executable acceptance."
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+      "scope": "Causal verification/review and provenance/open-obligation statements; product semantics were not re-reviewed."
+    },
+    {
+      "path": "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+      "scope": "Source-accounting and temporary object-staging publication boundaries."
+    }
+  ],
+  "acquisition_and_method": {
+    "frozen_object_reads": "All 14 changed files were read from the pinned Git tree, decoded strictly as UTF-8 JSON, and compared with manifest byte size, SHA-256 and independently recomputed Git blob SHA-1. Git ls-tree confirms all are regular 100644 blobs.",
+    "outer_scope": "git diff --no-ext-diff --no-textconv --name-status <base> <tree> enumerates exactly 14 additions, all under the declared evidence directory.",
+    "diff_reproduction": "git diff --no-ext-diff --no-textconv --no-color --binary --full-index --find-renames <base> <tree> exactly reproduces the frozen full.diff and each historical full/prior delta named below.",
+    "payload_reconstruction": "Group part records by snapshot, order contiguous part numbers 1..parts, concatenate payload strings, encode UTF-8, compare aggregate byte count/SHA-256, parse JSON, strictly decode each content as base64, gzip-decompress, and compare complete resulting bytes to fusion-review/<snapshot>/<entry>. No source was executed or patched.",
+    "publication": "Read GitHub exact commit, branch ref and root tree; recompute the 19 local ancestor Git-tree object hashes; read all 12 relevant exact parent-tree API objects to independently confirm the 22 file bindings and absence of the three temporary carrier paths.",
+    "real_index_used_as_scratch": false,
+    "source_evidence_files_edited": false,
+    "product_checks_executed": false,
+    "api_mutations": false
+  },
+  "file_identities": [
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/actual-object-staging-receipt.json",
+      "bytes": 692,
+      "sha256": "a56f8b01f4349d59ae6bc05bc9d93992f674efb43274c33b7e0283ebe9d092a3",
+      "blob": "922b08fbf762dce24e4ea6901a376b79e3d37800",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-0509-integrated-part-01.json",
+      "bytes": 180533,
+      "sha256": "07a51e9a0d22e57d57aac52a139d1ac4cf6377292e6031f97f1fc18c43ff8dfb",
+      "blob": "71e0407ae83a794ed68491891c390c7ef55bddf3",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-0509-integrated-part-02.json",
+      "bytes": 180420,
+      "sha256": "955a0d48b76203c894079fef7b9c34e183fda7cbf946e268e730f7c0fd03730f",
+      "blob": "570d85c36f07f8f1cf5ffde69506ef54ff91cf5a",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-0509-integrated-part-03.json",
+      "bytes": 119051,
+      "sha256": "ee221bbb8bde52b9208e14397c3e4833503894ebca9a846f6e5509935ed472d2",
+      "blob": "84227c86b99fd1b2f6d44fbc831f98fed1acf942",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-3aaa-snapshot-part-01.json",
+      "bytes": 70256,
+      "sha256": "a94b146c11febfefbe2e22cd770f1bda006130efd9e43db2f64c4156d29954bb",
+      "blob": "7a268ae3af3b75487aa3a7340f99b4eed463890a",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-5f8-integrated-part-01.json",
+      "bytes": 180514,
+      "sha256": "9e5a3b18e02c2800975240499175bd22021273ee00f262fa848eb5bdfec7565e",
+      "blob": "00da3837e70550f5a425c5fe18abf643bff26517",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-5f8-integrated-part-02.json",
+      "bytes": 180419,
+      "sha256": "a8c52fb65964e4cff9365e556b31e1ded5d69775f0ada1a6e3b15ccc4a1461e6",
+      "blob": "d59144fb46eac5177e3dfa30d20a3cfc6559c9c4",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-5f8-integrated-part-03.json",
+      "bytes": 180419,
+      "sha256": "cf518a2c1b1cb855d53ea83795fc2171d4bd1add9f1f5c82cd9d06553b61d141",
+      "blob": "9b763107302ce5d0d277cc36c34f63c85b93a30b",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-5f8-integrated-part-04.json",
+      "bytes": 179747,
+      "sha256": "1453d92cb7018a4d0d86b04fef057a766ee3a35f5c7c23eb69c2799633c37a83",
+      "blob": "31d81a0456adac074c3e14702e25eab028688763",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-841-integrated-part-01.json",
+      "bytes": 175056,
+      "sha256": "bb34e4c613952ef573b977cb1fec149c3cdbb5f0f689aa5d9114fd38a6aed03a",
+      "blob": "c13e9244a9390074652fb25ec0271eed2d7d2fad",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/historical-runtime-evidence-fidelity-review.json",
+      "bytes": 81507,
+      "sha256": "84d76ae9391a89645f70d50c08836ee9d50fac9e27ea86fde1d8267face4358a",
+      "blob": "bc269fc6cf826a828a4e938c230812add65b40da",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/index.json",
+      "bytes": 5991,
+      "sha256": "5f746c1590eaa422164d20f26fa3b673f4051af7e3c5cfa7624ebdc75d41e07d",
+      "blob": "15217e29548586d7891e09ba38f1d29b21d68626",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/object-carrier-source-review.json",
+      "bytes": 11150,
+      "sha256": "db74d106317afe64bfd995095358a7d7420593d68ac3e88d4c276c50d50757e4",
+      "blob": "29b3004cf4a9c4158e17eb53c82d1f6fc5beee88",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/publication-readback.json",
+      "bytes": 7879,
+      "sha256": "f7461ff5532206628c5c34eb69dd2590fbf1b6e8ced9909f02b07e8aa8251a14",
+      "blob": "db74bb239b6cbe943107c3544f6ed6094cf32c19",
+      "status": "A",
+      "mode": "100644",
+      "strict_utf8": true,
+      "metadata_matches": true
+    }
+  ],
+  "index_inventory_complete": true,
+  "snapshot_reconstructions": [
+    {
+      "snapshot": "cmi-0509-integrated",
+      "parts": 3,
+      "part_paths": [
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-0509-integrated-part-01.json",
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-0509-integrated-part-02.json",
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-0509-integrated-part-03.json"
+      ],
+      "snapshot_json_bytes": 478594,
+      "snapshot_json_sha256": "377cd3d83eb7e46c71bf590efb015b207e2dac58ee4b291ec9c17b13f2810b36",
+      "sequence_complete": true,
+      "all_header_identities_match": true,
+      "entries": [
+        {
+          "name": "changed-paths.txt",
+          "bytes": 1444,
+          "sha256": "fd0bc94b09729b0e65d4d5f419fafba8f0e57aae843c358f92f4c39b3a6594cc",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-0509-integrated/changed-paths.txt",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "full.diff",
+          "bytes": 622983,
+          "sha256": "fa2a6b97d3ae1bcca69abdcc30ab03a50301fa4c09867dfa75cdd6e16965463d",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-0509-integrated/full.diff",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "general-review.json",
+          "bytes": 25149,
+          "sha256": "2e9f5b58b07f27ba33e8d4643eec0a5eff19eef8814b2fa06251526e74848799",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-0509-integrated/general-review.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "integration.json",
+          "bytes": 2248,
+          "sha256": "9a2dd0762b7bb7d31a5b11f7aed3fb530c8929567132d1315003bacecadc22b1",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-0509-integrated/integration.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "manifest.json",
+          "bytes": 7289,
+          "sha256": "ba95c76ea09099e58866771988e57613449ebb9e1a07f73d99a7b0c488641565",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-0509-integrated/manifest.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "prior-round-delta.diff",
+          "bytes": 1042755,
+          "sha256": "fd262b5605058ae4b9d427385f632a57ce5a68cd0844a49c42cccc8eb33d2219",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-0509-integrated/prior-round-delta.diff",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "structure-review.json",
+          "bytes": 12507,
+          "sha256": "c231e79c5a649b519d3fe54975444e471fe2806f7127799ef98c3296eba04fca",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-0509-integrated/structure-review.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "working-status.txt",
+          "bytes": 1655,
+          "sha256": "e6e554a67ee72274414e1fe8629156140e1fb85494a109e305ddc47ce7e73197",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-0509-integrated/working-status.txt",
+          "raw_byte_equal": true
+        }
+      ],
+      "omitted_local_files": [
+        "index"
+      ]
+    },
+    {
+      "snapshot": "cmi-3aaa-snapshot",
+      "parts": 1,
+      "part_paths": [
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-3aaa-snapshot-part-01.json"
+      ],
+      "snapshot_json_bytes": 69779,
+      "snapshot_json_sha256": "1488b8d901caf7efd2ebfc17938d15c74ffbf57e8e7d0ecfb2dbf519533f626d",
+      "sequence_complete": true,
+      "all_header_identities_match": true,
+      "entries": [
+        {
+          "name": "full.diff",
+          "bytes": 150523,
+          "sha256": "1f2c5c17bc803e2466b025a39e70fdc573b992a8236af6122f0dd4caf94515a7",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-3aaa-snapshot/full.diff",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "independent-review.json",
+          "bytes": 46427,
+          "sha256": "e7d1c087725671821a59bf25773e10f2cb9174f09c48486aefa1189680c839c1",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-3aaa-snapshot/independent-review.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "manifest.json",
+          "bytes": 4535,
+          "sha256": "e6eb137759e95e7c40763ac8b520ef04b2cd887f38d0d81b4a3285b82beb5a1c",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-3aaa-snapshot/manifest.json",
+          "raw_byte_equal": true
+        }
+      ],
+      "omitted_local_files": [
+        "index"
+      ]
+    },
+    {
+      "snapshot": "cmi-5f8-integrated",
+      "parts": 4,
+      "part_paths": [
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-5f8-integrated-part-01.json",
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-5f8-integrated-part-02.json",
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-5f8-integrated-part-03.json",
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-5f8-integrated-part-04.json"
+      ],
+      "snapshot_json_bytes": 719309,
+      "snapshot_json_sha256": "ece05e5b8020217aa034c9dd4cc12b73376c4abdd8ed09f13d092fbcc03bbf46",
+      "sequence_complete": true,
+      "all_header_identities_match": true,
+      "entries": [
+        {
+          "name": "changed-paths.txt",
+          "bytes": 1301,
+          "sha256": "2ba7fbf3d51af8c3ba6d6c7bbdcdd50d0e42e1484728f0da3109d5ca816273b6",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-5f8-integrated/changed-paths.txt",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "full.diff",
+          "bytes": 602411,
+          "sha256": "84dcaf1d8be9505c79fa8b0a856c7715c4a6b1878784499432f241b06c4afbde",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-5f8-integrated/full.diff",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "general-review.json",
+          "bytes": 42191,
+          "sha256": "dda07c50aa9b02b010f59b92e12bb3f04ba8c0eaf46a8b6508516dcfb0488bec",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-5f8-integrated/general-review.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "manifest.json",
+          "bytes": 6215,
+          "sha256": "11a841b6452dc6fa9e496dba12af374cab7e2a23359fdfd99bde5817103578ef",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-5f8-integrated/manifest.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "prior-round-delta.diff",
+          "bytes": 2086816,
+          "sha256": "3e64dcb36b7d4319ac29a8c6ebe61360953b49ea4345818f02cc9292596da979",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-5f8-integrated/prior-round-delta.diff",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "structure-review.json",
+          "bytes": 33912,
+          "sha256": "cd86322dd152db671d4887392b56c8619719b0f7f53d335fb7beb9388df9f825",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-5f8-integrated/structure-review.json",
+          "raw_byte_equal": true
+        }
+      ],
+      "omitted_local_files": [
+        "complete-original-scope.diff",
+        "index"
+      ]
+    },
+    {
+      "snapshot": "cmi-841-integrated",
+      "parts": 1,
+      "part_paths": [
+        "projects/openclaw-rust/evidence/codex-model-identity-d56b3d1d-20261103/cmi-841-integrated-part-01.json"
+      ],
+      "snapshot_json_bytes": 174523,
+      "snapshot_json_sha256": "13b3eb469c70b5f1826146c94da4b30ef4bb0eb8a228709a99536889ffea1d6e",
+      "sequence_complete": true,
+      "all_header_identities_match": true,
+      "entries": [
+        {
+          "name": "changed-paths.txt",
+          "bytes": 1301,
+          "sha256": "2ba7fbf3d51af8c3ba6d6c7bbdcdd50d0e42e1484728f0da3109d5ca816273b6",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-841-integrated/changed-paths.txt",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "full.diff",
+          "bytes": 604179,
+          "sha256": "20c01d294117b391a93bc9516409f14fd28b0bd9a815f21371e1ddf47aa61fd0",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-841-integrated/full.diff",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "general-review.json",
+          "bytes": 10303,
+          "sha256": "a897d89a07dda7d4caea2eb1c660569412c01c13706865072d71edea75d82058",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-841-integrated/general-review.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "manifest.json",
+          "bytes": 6970,
+          "sha256": "e0e95bc019d1d0cb5b4c9fe5c9358c3ca4ff2b749376017e38beafe257636083",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-841-integrated/manifest.json",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "prior-round-delta.diff",
+          "bytes": 63089,
+          "sha256": "a072f7298a25c72cd243a0335db207501248e0aaed05850c0606485f4aee6573",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-841-integrated/prior-round-delta.diff",
+          "raw_byte_equal": true
+        },
+        {
+          "name": "structure-review.json",
+          "bytes": 11825,
+          "sha256": "95cbebe5a1fdec88e844d886c0b07d53ba39fdab3f5e908f3248f046df950de1",
+          "encoding": "gzip+base64",
+          "original": "fusion-review/cmi-841-integrated/structure-review.json",
+          "raw_byte_equal": true
+        }
+      ],
+      "omitted_local_files": [
+        "index"
+      ]
+    }
+  ],
+  "direct_record_comparisons": [
+    {
+      "path": "publication-readback.json",
+      "source_record": "fusion-review/cmi-916-publication.json",
+      "bytes": 7879,
+      "sha256": "f7461ff5532206628c5c34eb69dd2590fbf1b6e8ced9909f02b07e8aa8251a14",
+      "raw_byte_equal": true
+    },
+    {
+      "path": "actual-object-staging-receipt.json",
+      "source_record": "fusion-review/cmi-object-carrier/actual-staging-receipt.json",
+      "bytes": 692,
+      "sha256": "a56f8b01f4349d59ae6bc05bc9d93992f674efb43274c33b7e0283ebe9d092a3",
+      "raw_byte_equal": true
+    },
+    {
+      "path": "object-carrier-source-review.json",
+      "source_record": "fusion-review/cmi-object-carrier/security-review.json",
+      "bytes": 11150,
+      "sha256": "db74d106317afe64bfd995095358a7d7420593d68ac3e88d4c276c50d50757e4",
+      "raw_byte_equal": true
+    },
+    {
+      "path": "historical-runtime-evidence-fidelity-review.json",
+      "source_record": "fusion-review/runtime-owner-evidence-carrier-review.json",
+      "bytes": 81507,
+      "sha256": "84d76ae9391a89645f70d50c08836ee9d50fac9e27ea86fde1d8267face4358a",
+      "raw_byte_equal": true
+    }
+  ],
+  "historical_snapshot_identity_checks": [
+    {
+      "snapshot": "cmi-3aaa-snapshot",
+      "manifest_paths": 17,
+      "all_blob_identities_match": true,
+      "failures": [],
+      "full_diff_regenerated_matches": true,
+      "full_diff_bytes": 150523,
+      "full_diff_sha256": "1f2c5c17bc803e2466b025a39e70fdc573b992a8236af6122f0dd4caf94515a7",
+      "base": "3aaa79ae47e05c5d3273bbdaf5e086b2d7e112b4",
+      "tree": "f72107d619e75f8882a1390bf54b8e396ea6ff5d"
+    },
+    {
+      "snapshot": "cmi-5f8-integrated",
+      "manifest_paths": 22,
+      "all_blob_identities_match": true,
+      "failures": [],
+      "full_diff_regenerated_matches": true,
+      "full_diff_bytes": 602411,
+      "full_diff_sha256": "84dcaf1d8be9505c79fa8b0a856c7715c4a6b1878784499432f241b06c4afbde",
+      "base": "5f8c5ab76fee0cef28ebe43dc7250a21e5eec0b5",
+      "tree": "b2c6249d8a111386aa38409fa8f55ec2c209ddfb",
+      "prior_round_tree": "f72107d619e75f8882a1390bf54b8e396ea6ff5d",
+      "prior_delta_regenerated_matches": true,
+      "prior_delta_bytes": 2086816,
+      "prior_delta_sha256": "3e64dcb36b7d4319ac29a8c6ebe61360953b49ea4345818f02cc9292596da979"
+    },
+    {
+      "snapshot": "cmi-841-integrated",
+      "manifest_paths": 22,
+      "all_blob_identities_match": true,
+      "failures": [],
+      "full_diff_regenerated_matches": true,
+      "full_diff_bytes": 604179,
+      "full_diff_sha256": "20c01d294117b391a93bc9516409f14fd28b0bd9a815f21371e1ddf47aa61fd0",
+      "base": "84120837330f88d9a7b21e9a5bc75daaa728de82",
+      "tree": "6472d14c1ad0f20ed0fb56a40d5ef84689efb92c",
+      "prior_round_tree": "9e40308b710fcc66602623880857512a20a5331a",
+      "prior_delta_regenerated_matches": true,
+      "prior_delta_bytes": 63089,
+      "prior_delta_sha256": "a072f7298a25c72cd243a0335db207501248e0aaed05850c0606485f4aee6573"
+    },
+    {
+      "snapshot": "cmi-0509-integrated",
+      "manifest_paths": 22,
+      "all_blob_identities_match": true,
+      "failures": [],
+      "full_diff_regenerated_matches": true,
+      "full_diff_bytes": 622983,
+      "full_diff_sha256": "fa2a6b97d3ae1bcca69abdcc30ab03a50301fa4c09867dfa75cdd6e16965463d",
+      "base": "0509c1d13595680248630ff476f5bd6dbe5ed185",
+      "tree": "d15a2c21f25c6e470b97797ca30ad80e30875189",
+      "prior_round_tree": "6472d14c1ad0f20ed0fb56a40d5ef84689efb92c",
+      "prior_delta_regenerated_matches": true,
+      "prior_delta_bytes": 1042755,
+      "prior_delta_sha256": "fd262b5605058ae4b9d427385f632a57ce5a68cd0844a49c42cccc8eb33d2219"
+    }
+  ],
+  "omitted_local_artifact_disposition": [
+    {
+      "paths": [
+        "fusion-review/cmi-3aaa-snapshot/index",
+        "fusion-review/cmi-5f8-integrated/index",
+        "fusion-review/cmi-841-integrated/index",
+        "fusion-review/cmi-0509-integrated/index"
+      ],
+      "disposition": "Private staging/index implementation files are not required snapshot deliverables. Their omission does not remove the preserved base/tree identities, full diffs, changed-path records or exact review reports. No private index was used or mutated by this reviewer."
+    },
+    {
+      "path": "fusion-review/cmi-5f8-integrated/complete-original-scope.diff",
+      "bytes": 2228588,
+      "sha256": "ca3d1d9f4d18525786dc243034e9a6b004b8926a42dda3086e42a6c0c872a0db",
+      "disposition": "Not directly embedded. It is a redundant cumulative derivative referenced by the preserved structure report. Reproduced byte-for-byte from the preserved original base 3aaa79ae47e05c5d3273bbdaf5e086b2d7e112b4 and preserved 5f8 snapshot tree b2c6249d8a111386aa38409fa8f55ec2c209ddfb with the recorded full-index binary diff command. No fidelity or reconstructibility defect.",
+      "exactly_derivable": true
+    }
+  ],
+  "publication_identity": {
+    "observed_utc": "2026-11-03 00:44:49 UTC",
+    "repository": "bhrumom/fabushi-desktop",
+    "commit_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/916d79a2b191a12676d1e0df675393e05d59c6f2",
+    "observed_commit": "916d79a2b191a12676d1e0df675393e05d59c6f2",
+    "observed_tree": "d15a2c21f25c6e470b97797ca30ad80e30875189",
+    "observed_parents": [
+      "0509c1d13595680248630ff476f5bd6dbe5ed185"
+    ],
+    "root_tree_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/trees/d15a2c21f25c6e470b97797ca30ad80e30875189",
+    "root_tree_truncated": false,
+    "branch_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/ref/heads/codex/openclaw-rust-fusion-chat-20261101-writer",
+    "observed_branch_ref": "refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer",
+    "observed_branch_commit": "916d79a2b191a12676d1e0df675393e05d59c6f2",
+    "all_22_bindings": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "expected": "639c409557ad39869fd2cdc0a86522847d81abb2",
+        "observed_in_record": "639c409557ad39869fd2cdc0a86522847d81abb2",
+        "local_blob": "639c409557ad39869fd2cdc0a86522847d81abb2",
+        "bytes": 394422,
+        "sha256": "d8e0013835b71fcdb8c2c840e431ccee02ee21501e507e385203e69c75531d0b",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "d631b4acecdd00bde84086d7086078f3f943170c"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+        "expected": "f4fff8c4cbcc6134a2189e2d326afb9edc388f44",
+        "observed_in_record": "f4fff8c4cbcc6134a2189e2d326afb9edc388f44",
+        "local_blob": "f4fff8c4cbcc6134a2189e2d326afb9edc388f44",
+        "bytes": 13862,
+        "sha256": "b72cb5ae1a20aeb636f847eb56db3407fc32fb21060e39bf4f5aae74ffa03953",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "96caf64675e5ed00f2fd6844655d8a54a6ba9549"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "expected": "770d1ad624b9e23f1747831a80490e7b957ee001",
+        "observed_in_record": "770d1ad624b9e23f1747831a80490e7b957ee001",
+        "local_blob": "770d1ad624b9e23f1747831a80490e7b957ee001",
+        "bytes": 83889,
+        "sha256": "d3765615a5900c98a3e79c3cf18730ed0e7fbd586eb9512c36e29341fa066422",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "96caf64675e5ed00f2fd6844655d8a54a6ba9549"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/runtime-owner-closures-d56b3d1d-20261103.json",
+        "expected": "7ea3381b0420413c2168ef5cb66426d3d5870b9a",
+        "observed_in_record": "7ea3381b0420413c2168ef5cb66426d3d5870b9a",
+        "local_blob": "7ea3381b0420413c2168ef5cb66426d3d5870b9a",
+        "bytes": 406377,
+        "sha256": "b15915422f2f0007345a2ccff33478f154be70a53690fb2f03354f0d655b1d03",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "231502ab6cae761cb42c658717cb628d6387948f"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "expected": "4e6844496f267050e4236494de424de28630ccc8",
+        "observed_in_record": "4e6844496f267050e4236494de424de28630ccc8",
+        "local_blob": "4e6844496f267050e4236494de424de28630ccc8",
+        "bytes": 1386279,
+        "sha256": "4076ad135b934be9156af3390aebf25a082366e4194262fe064eb50028671916",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "9a373094db6b3bbe84c991d4b5589a65a665f3da"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "expected": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+        "observed_in_record": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+        "local_blob": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+        "bytes": 129323,
+        "sha256": "0d3a928a817176a1ed33f39bf7af53ad0227ba40afb893db2c202bbb3eabd440",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "9a373094db6b3bbe84c991d4b5589a65a665f3da"
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "expected": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+        "observed_in_record": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+        "local_blob": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+        "bytes": 985710,
+        "sha256": "139d55d9e2c52eeaeef78eced67ce7130f45207b92968dd761535bdf8dd6f625",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "e7ff0d26f31b177094cb37829df5704c09e7e835"
+      },
+      {
+        "path": "source/host/app/src/tests/codex_model_admission_tests.rs",
+        "expected": "225083ebafb2efd9700793503869304d43cfbf22",
+        "observed_in_record": "225083ebafb2efd9700793503869304d43cfbf22",
+        "local_blob": "225083ebafb2efd9700793503869304d43cfbf22",
+        "bytes": 17275,
+        "sha256": "91dd058f562ac960157238526840b509f2892aeb62b9cd7c5a2cc98066260203",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "b28d4e3269a1760581a242d98c9a04e0551803f9"
+      },
+      {
+        "path": "source/host/app/src/tests/routed_preentry_cancellation_tests.rs",
+        "expected": "9fef7f76df8dbf42ace99222b88e7629aaeb40a3",
+        "observed_in_record": "9fef7f76df8dbf42ace99222b88e7629aaeb40a3",
+        "local_blob": "9fef7f76df8dbf42ace99222b88e7629aaeb40a3",
+        "bytes": 26162,
+        "sha256": "4471b810443aa28775382564815a18575f5b4e12148cc39e821c090c0ca0b817",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "b28d4e3269a1760581a242d98c9a04e0551803f9"
+      },
+      {
+        "path": "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "expected": "009022caee1936e7e79058e521d7c4cfbc4b84b3",
+        "observed_in_record": "009022caee1936e7e79058e521d7c4cfbc4b84b3",
+        "local_blob": "009022caee1936e7e79058e521d7c4cfbc4b84b3",
+        "bytes": 58757,
+        "sha256": "4c84de1fc6380772be907869b37ed927051eb6b93192392c86ee8616a7ff7a63",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "33db148e2235089c908b9521c075cba41c825935"
+      },
+      {
+        "path": "source/host/src/extensions/inference/production.rs",
+        "expected": "b03a7d35b583bed564d966873db55ff165be9626",
+        "observed_in_record": "b03a7d35b583bed564d966873db55ff165be9626",
+        "local_blob": "b03a7d35b583bed564d966873db55ff165be9626",
+        "bytes": 35194,
+        "sha256": "b6c736d0c5db519d6302da65d67140c3beb7a5d0d09e9bc561f2e2f14a597a0f",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "33db148e2235089c908b9521c075cba41c825935"
+      },
+      {
+        "path": "source/host/src/extensions/inference/provider_session.rs",
+        "expected": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+        "observed_in_record": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+        "local_blob": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+        "bytes": 164494,
+        "sha256": "e864607400bbaf52a4cd44e4c901254fd0ed4684554d5a404b0acaea21cacde2",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "33db148e2235089c908b9521c075cba41c825935"
+      },
+      {
+        "path": "source/host/src/runner/routed_provider_runtime.rs",
+        "expected": "81cddbe5f70b3988e2f06009437d79c6738c89fc",
+        "observed_in_record": "81cddbe5f70b3988e2f06009437d79c6738c89fc",
+        "local_blob": "81cddbe5f70b3988e2f06009437d79c6738c89fc",
+        "bytes": 57842,
+        "sha256": "dd10f37453b5806c818d186f28bc7856b594dabcc31db46a20ca389ac978acbf",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "4925356e8503c74d3f9a71c8764c67c3e81cdab6"
+      },
+      {
+        "path": "source/host/src/runner/turn_agent_composition.rs",
+        "expected": "cb6a5ab4852703e38b12423cdf90cf407d8fc0b2",
+        "observed_in_record": "cb6a5ab4852703e38b12423cdf90cf407d8fc0b2",
+        "local_blob": "cb6a5ab4852703e38b12423cdf90cf407d8fc0b2",
+        "bytes": 38888,
+        "sha256": "de8234666092b18e0bc2c7ee097e01ce088c90f73217a95b3ce81b66dd58001f",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "4925356e8503c74d3f9a71c8764c67c3e81cdab6"
+      },
+      {
+        "path": "source/host/src/runner_production_bridge.rs",
+        "expected": "87cd7b803c3cb7bd861dbf6fc9984b2ec636b46c",
+        "observed_in_record": "87cd7b803c3cb7bd861dbf6fc9984b2ec636b46c",
+        "local_blob": "87cd7b803c3cb7bd861dbf6fc9984b2ec636b46c",
+        "bytes": 13297,
+        "sha256": "7dd8b458f982aa67893af2dc6a137804d47c0d8934d0b3d865904a3629718365",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "9c6ff0bb61c058607df3d6da61324f14553dfef3"
+      },
+      {
+        "path": "source/host/tests/fabushi_model_identity_production_contract.rs",
+        "expected": "3ebf14bf3e23de70c52140fa289c64e43bd22ece",
+        "observed_in_record": "3ebf14bf3e23de70c52140fa289c64e43bd22ece",
+        "local_blob": "3ebf14bf3e23de70c52140fa289c64e43bd22ece",
+        "bytes": 77735,
+        "sha256": "c2632e52ce3cc2fb1e30839787e3f0d49a2c774db1658b1ff368ac52842d95d3",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "a635541c15580f2ca0ab264558cc2aa3a3d4d849"
+      },
+      {
+        "path": "source/host/tests/fabushi_responses_credential_context_contract.rs",
+        "expected": "0f6e24f12ffda3212a9b5b5056a765a8d50769ff",
+        "observed_in_record": "0f6e24f12ffda3212a9b5b5056a765a8d50769ff",
+        "local_blob": "0f6e24f12ffda3212a9b5b5056a765a8d50769ff",
+        "bytes": 68050,
+        "sha256": "02ac87ba370ec59aa3704e074def5aae1576860f66d7dffb1ba142bfacf36df7",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "a635541c15580f2ca0ab264558cc2aa3a3d4d849"
+      },
+      {
+        "path": "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+        "expected": "37f712b96c7a93e5c62237fb0fd749cbf861bb32",
+        "observed_in_record": "37f712b96c7a93e5c62237fb0fd749cbf861bb32",
+        "local_blob": "37f712b96c7a93e5c62237fb0fd749cbf861bb32",
+        "bytes": 39817,
+        "sha256": "88a34cb07a9d8c6c1c3b75294717eed653fa1f1ee1f709449acd589d41b04775",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "99a94077acc2d1d1ea35cef701090632bb738387"
+      },
+      {
+        "path": "source/host/tests/inference_provider_session_contract.rs",
+        "expected": "60e7a75d83ada42a3ad3f9d342f7c3f6cfd8004a",
+        "observed_in_record": "60e7a75d83ada42a3ad3f9d342f7c3f6cfd8004a",
+        "local_blob": "60e7a75d83ada42a3ad3f9d342f7c3f6cfd8004a",
+        "bytes": 23562,
+        "sha256": "0800291f69dc4c5bc25100201134a7bbea9adf62e37560a0fbc34f4ecbabc5b7",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "a635541c15580f2ca0ab264558cc2aa3a3d4d849"
+      },
+      {
+        "path": "source/host/tests/runner_effect_custody_contract.rs",
+        "expected": "b7180b290fb4cfec3fd1dc814ee66b21316b00f8",
+        "observed_in_record": "b7180b290fb4cfec3fd1dc814ee66b21316b00f8",
+        "local_blob": "b7180b290fb4cfec3fd1dc814ee66b21316b00f8",
+        "bytes": 81367,
+        "sha256": "4e67bd230cfa6272ab6964036ac21c23f8aef4a23c9be19925daef28029f1b60",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "a635541c15580f2ca0ab264558cc2aa3a3d4d849"
+      },
+      {
+        "path": "source/host/tests/runner_production_bridge_contract.rs",
+        "expected": "c33dcc1fc7f690d2981c97dfe7863d78c2c4da5a",
+        "observed_in_record": "c33dcc1fc7f690d2981c97dfe7863d78c2c4da5a",
+        "local_blob": "c33dcc1fc7f690d2981c97dfe7863d78c2c4da5a",
+        "bytes": 31883,
+        "sha256": "f626f38433d58462893916e0422a274b3fe1d83b256b7527452d8ee5f0a35782",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "a635541c15580f2ca0ab264558cc2aa3a3d4d849"
+      },
+      {
+        "path": "source/host/tests/runner_routed_provider_contract.rs",
+        "expected": "9f3d49e575ec3677ed0b2d0ae5a4d53ab35c95cf",
+        "observed_in_record": "9f3d49e575ec3677ed0b2d0ae5a4d53ab35c95cf",
+        "local_blob": "9f3d49e575ec3677ed0b2d0ae5a4d53ab35c95cf",
+        "bytes": 62957,
+        "sha256": "933bd78ac00cf2393f1c279cb051120315c59f303b9c994fc1233dcc21204fe5",
+        "matches_publication_and_manifest": true,
+        "parent_tree": "a635541c15580f2ca0ab264558cc2aa3a3d4d849"
+      }
+    ],
+    "local_ancestor_tree_hash_checks": {
+      "": {
+        "sha": "d15a2c21f25c6e470b97797ca30ad80e30875189",
+        "bytes": 575,
+        "hash_matches": true
+      },
+      ".github": {
+        "sha": "04c1765e3d57a68f745665ff39d9d2c7c3503ccb",
+        "bytes": 70,
+        "hash_matches": true
+      },
+      ".github/workflows": {
+        "sha": "d631b4acecdd00bde84086d7086078f3f943170c",
+        "bytes": 1607,
+        "hash_matches": true
+      },
+      "projects": {
+        "sha": "47017f2a27e783431a2540bce5662c8e3050013a",
+        "bytes": 244,
+        "hash_matches": true
+      },
+      "projects/openclaw-rust": {
+        "sha": "9a373094db6b3bbe84c991d4b5589a65a665f3da",
+        "bytes": 595,
+        "hash_matches": true
+      },
+      "projects/openclaw-rust/docs": {
+        "sha": "007b4a472017af8e77e983dc0264855784a56258",
+        "bytes": 32,
+        "hash_matches": true
+      },
+      "projects/openclaw-rust/docs/specs": {
+        "sha": "96caf64675e5ed00f2fd6844655d8a54a6ba9549",
+        "bytes": 3109,
+        "hash_matches": true
+      },
+      "projects/openclaw-rust/evidence": {
+        "sha": "231502ab6cae761cb42c658717cb628d6387948f",
+        "bytes": 1524,
+        "hash_matches": true
+      },
+      "source": {
+        "sha": "7584070222471979b43ed3d9c622bb403906079c",
+        "bytes": 638,
+        "hash_matches": true
+      },
+      "source/host": {
+        "sha": "c8b9dde8cd31965e802a6bed428ebc7f73ce9e14",
+        "bytes": 308,
+        "hash_matches": true
+      },
+      "source/host/app": {
+        "sha": "16a5c8296bc2a5b40a42228be9433cb0cfda55f5",
+        "bytes": 138,
+        "hash_matches": true
+      },
+      "source/host/app/src": {
+        "sha": "e7ff0d26f31b177094cb37829df5704c09e7e835",
+        "bytes": 67,
+        "hash_matches": true
+      },
+      "source/host/app/src/tests": {
+        "sha": "b28d4e3269a1760581a242d98c9a04e0551803f9",
+        "bytes": 600,
+        "hash_matches": true
+      },
+      "source/host/src": {
+        "sha": "9c6ff0bb61c058607df3d6da61324f14553dfef3",
+        "bytes": 2768,
+        "hash_matches": true
+      },
+      "source/host/src/extensions": {
+        "sha": "262ecdda64149a57753ae510b3eda0e3a0304f08",
+        "bytes": 2073,
+        "hash_matches": true
+      },
+      "source/host/src/extensions/inference": {
+        "sha": "33db148e2235089c908b9521c075cba41c825935",
+        "bytes": 943,
+        "hash_matches": true
+      },
+      "source/host/src/runner": {
+        "sha": "4925356e8503c74d3f9a71c8764c67c3e81cdab6",
+        "bytes": 3579,
+        "hash_matches": true
+      },
+      "source/host/tests": {
+        "sha": "a635541c15580f2ca0ab264558cc2aa3a3d4d849",
+        "bytes": 29121,
+        "hash_matches": true
+      },
+      "source/host/tests/fabushi_responses_credential_context_contract": {
+        "sha": "99a94077acc2d1d1ea35cef701090632bb738387",
+        "bytes": 56,
+        "hash_matches": true
+      }
+    },
+    "api_parent_tree_checks": [
+      {
+        "path": ".github/workflows",
+        "expected_sha": "d631b4acecdd00bde84086d7086078f3f943170c",
+        "observed_sha": "d631b4acecdd00bde84086d7086078f3f943170c",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "expected": "639c409557ad39869fd2cdc0a86522847d81abb2",
+            "observed": "639c409557ad39869fd2cdc0a86522847d81abb2",
+            "mode": "100644",
+            "type": "blob",
+            "size": 394422,
+            "matched": true
+          }
+        ],
+        "removals": [
+          {
+            "path": ".github/workflows/ocrm-stage-reviewed-objects.yml",
+            "absent": true
+          }
+        ]
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs",
+        "expected_sha": "96caf64675e5ed00f2fd6844655d8a54a6ba9549",
+        "observed_sha": "96caf64675e5ed00f2fd6844655d8a54a6ba9549",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+            "expected": "f4fff8c4cbcc6134a2189e2d326afb9edc388f44",
+            "observed": "f4fff8c4cbcc6134a2189e2d326afb9edc388f44",
+            "mode": "100644",
+            "type": "blob",
+            "size": 13862,
+            "matched": true
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+            "expected": "770d1ad624b9e23f1747831a80490e7b957ee001",
+            "observed": "770d1ad624b9e23f1747831a80490e7b957ee001",
+            "mode": "100644",
+            "type": "blob",
+            "size": 83889,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "projects/openclaw-rust/evidence",
+        "expected_sha": "231502ab6cae761cb42c658717cb628d6387948f",
+        "observed_sha": "231502ab6cae761cb42c658717cb628d6387948f",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "projects/openclaw-rust/evidence/runtime-owner-closures-d56b3d1d-20261103.json",
+            "expected": "7ea3381b0420413c2168ef5cb66426d3d5870b9a",
+            "observed": "7ea3381b0420413c2168ef5cb66426d3d5870b9a",
+            "mode": "100644",
+            "type": "blob",
+            "size": 406377,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "projects/openclaw-rust",
+        "expected_sha": "9a373094db6b3bbe84c991d4b5589a65a665f3da",
+        "observed_sha": "9a373094db6b3bbe84c991d4b5589a65a665f3da",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "projects/openclaw-rust/parity-ledger.json",
+            "expected": "4e6844496f267050e4236494de424de28630ccc8",
+            "observed": "4e6844496f267050e4236494de424de28630ccc8",
+            "mode": "100644",
+            "type": "blob",
+            "size": 1386279,
+            "matched": true
+          },
+          {
+            "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+            "expected": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+            "observed": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+            "mode": "100644",
+            "type": "blob",
+            "size": 129323,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "source/host/app/src",
+        "expected_sha": "e7ff0d26f31b177094cb37829df5704c09e7e835",
+        "observed_sha": "e7ff0d26f31b177094cb37829df5704c09e7e835",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "source/host/app/src/main.rs",
+            "expected": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+            "observed": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+            "mode": "100644",
+            "type": "blob",
+            "size": 985710,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "source/host/app/src/tests",
+        "expected_sha": "b28d4e3269a1760581a242d98c9a04e0551803f9",
+        "observed_sha": "b28d4e3269a1760581a242d98c9a04e0551803f9",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "source/host/app/src/tests/codex_model_admission_tests.rs",
+            "expected": "225083ebafb2efd9700793503869304d43cfbf22",
+            "observed": "225083ebafb2efd9700793503869304d43cfbf22",
+            "mode": "100644",
+            "type": "blob",
+            "size": 17275,
+            "matched": true
+          },
+          {
+            "path": "source/host/app/src/tests/routed_preentry_cancellation_tests.rs",
+            "expected": "9fef7f76df8dbf42ace99222b88e7629aaeb40a3",
+            "observed": "9fef7f76df8dbf42ace99222b88e7629aaeb40a3",
+            "mode": "100644",
+            "type": "blob",
+            "size": 26162,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "source/host/src/extensions/inference",
+        "expected_sha": "33db148e2235089c908b9521c075cba41c825935",
+        "observed_sha": "33db148e2235089c908b9521c075cba41c825935",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+            "expected": "009022caee1936e7e79058e521d7c4cfbc4b84b3",
+            "observed": "009022caee1936e7e79058e521d7c4cfbc4b84b3",
+            "mode": "100644",
+            "type": "blob",
+            "size": 58757,
+            "matched": true
+          },
+          {
+            "path": "source/host/src/extensions/inference/production.rs",
+            "expected": "b03a7d35b583bed564d966873db55ff165be9626",
+            "observed": "b03a7d35b583bed564d966873db55ff165be9626",
+            "mode": "100644",
+            "type": "blob",
+            "size": 35194,
+            "matched": true
+          },
+          {
+            "path": "source/host/src/extensions/inference/provider_session.rs",
+            "expected": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+            "observed": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+            "mode": "100644",
+            "type": "blob",
+            "size": 164494,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "source/host/src/runner",
+        "expected_sha": "4925356e8503c74d3f9a71c8764c67c3e81cdab6",
+        "observed_sha": "4925356e8503c74d3f9a71c8764c67c3e81cdab6",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "source/host/src/runner/routed_provider_runtime.rs",
+            "expected": "81cddbe5f70b3988e2f06009437d79c6738c89fc",
+            "observed": "81cddbe5f70b3988e2f06009437d79c6738c89fc",
+            "mode": "100644",
+            "type": "blob",
+            "size": 57842,
+            "matched": true
+          },
+          {
+            "path": "source/host/src/runner/turn_agent_composition.rs",
+            "expected": "cb6a5ab4852703e38b12423cdf90cf407d8fc0b2",
+            "observed": "cb6a5ab4852703e38b12423cdf90cf407d8fc0b2",
+            "mode": "100644",
+            "type": "blob",
+            "size": 38888,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "source/host/src",
+        "expected_sha": "9c6ff0bb61c058607df3d6da61324f14553dfef3",
+        "observed_sha": "9c6ff0bb61c058607df3d6da61324f14553dfef3",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "source/host/src/runner_production_bridge.rs",
+            "expected": "87cd7b803c3cb7bd861dbf6fc9984b2ec636b46c",
+            "observed": "87cd7b803c3cb7bd861dbf6fc9984b2ec636b46c",
+            "mode": "100644",
+            "type": "blob",
+            "size": 13297,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "source/host/tests",
+        "expected_sha": "a635541c15580f2ca0ab264558cc2aa3a3d4d849",
+        "observed_sha": "a635541c15580f2ca0ab264558cc2aa3a3d4d849",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "source/host/tests/fabushi_model_identity_production_contract.rs",
+            "expected": "3ebf14bf3e23de70c52140fa289c64e43bd22ece",
+            "observed": "3ebf14bf3e23de70c52140fa289c64e43bd22ece",
+            "mode": "100644",
+            "type": "blob",
+            "size": 77735,
+            "matched": true
+          },
+          {
+            "path": "source/host/tests/fabushi_responses_credential_context_contract.rs",
+            "expected": "0f6e24f12ffda3212a9b5b5056a765a8d50769ff",
+            "observed": "0f6e24f12ffda3212a9b5b5056a765a8d50769ff",
+            "mode": "100644",
+            "type": "blob",
+            "size": 68050,
+            "matched": true
+          },
+          {
+            "path": "source/host/tests/inference_provider_session_contract.rs",
+            "expected": "60e7a75d83ada42a3ad3f9d342f7c3f6cfd8004a",
+            "observed": "60e7a75d83ada42a3ad3f9d342f7c3f6cfd8004a",
+            "mode": "100644",
+            "type": "blob",
+            "size": 23562,
+            "matched": true
+          },
+          {
+            "path": "source/host/tests/runner_effect_custody_contract.rs",
+            "expected": "b7180b290fb4cfec3fd1dc814ee66b21316b00f8",
+            "observed": "b7180b290fb4cfec3fd1dc814ee66b21316b00f8",
+            "mode": "100644",
+            "type": "blob",
+            "size": 81367,
+            "matched": true
+          },
+          {
+            "path": "source/host/tests/runner_production_bridge_contract.rs",
+            "expected": "c33dcc1fc7f690d2981c97dfe7863d78c2c4da5a",
+            "observed": "c33dcc1fc7f690d2981c97dfe7863d78c2c4da5a",
+            "mode": "100644",
+            "type": "blob",
+            "size": 31883,
+            "matched": true
+          },
+          {
+            "path": "source/host/tests/runner_routed_provider_contract.rs",
+            "expected": "9f3d49e575ec3677ed0b2d0ae5a4d53ab35c95cf",
+            "observed": "9f3d49e575ec3677ed0b2d0ae5a4d53ab35c95cf",
+            "mode": "100644",
+            "type": "blob",
+            "size": 62957,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": "source/host/tests/fabushi_responses_credential_context_contract",
+        "expected_sha": "99a94077acc2d1d1ea35cef701090632bb738387",
+        "observed_sha": "99a94077acc2d1d1ea35cef701090632bb738387",
+        "truncated": false,
+        "matched": true,
+        "files": [
+          {
+            "path": "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+            "expected": "37f712b96c7a93e5c62237fb0fd749cbf861bb32",
+            "observed": "37f712b96c7a93e5c62237fb0fd749cbf861bb32",
+            "mode": "100644",
+            "type": "blob",
+            "size": 39817,
+            "matched": true
+          }
+        ],
+        "removals": []
+      },
+      {
+        "path": ".github",
+        "expected_sha": "04c1765e3d57a68f745665ff39d9d2c7c3503ccb",
+        "observed_sha": "04c1765e3d57a68f745665ff39d9d2c7c3503ccb",
+        "truncated": false,
+        "matched": true,
+        "files": [],
+        "removals": [
+          {
+            "path": ".github/ocrm-reviewed-objects",
+            "absent": true
+          }
+        ]
+      }
+    ],
+    "removed_carrier_paths": [
+      {
+        "path": ".github/ocrm-reviewed-objects/manifest.json",
+        "absent": true
+      },
+      {
+        "path": ".github/ocrm-reviewed-objects/object.patch",
+        "absent": true
+      },
+      {
+        "path": ".github/workflows/ocrm-stage-reviewed-objects.yml",
+        "absent": true
+      }
+    ],
+    "verified_field_meaning": "publication-readback.json verified=true is identity readback in the stated API-publication scope. It is not CI approval, signature verification or runtime acceptance.",
+    "record_limit": "This API publication/readback evidence is not executable validation, scoped unit acceptance or final migration acceptance."
+  },
+  "object_carrier_provenance": {
+    "prior_security_review_subject": {
+      "commit": "432eb4fc9eb64967aa4430b82787e8df80d67afa",
+      "tree": "711a04b643e3df2746dbe02c856030d359dcea5a",
+      "base": "d95efb8a690750ad8dc78ec375ec5ff2a7ad2660",
+      "candidate_product_tree": "9e40308b710fcc66602623880857512a20a5331a",
+      "index_labels_unpublished": true,
+      "old_commit_object_available_locally": false,
+      "old_frozen_tree_available_and_read": true
+    },
+    "actual_published_carrier": {
+      "commit": "f4399acf6a642af2b6b6e180123adb1e737b8ea8",
+      "tree": "361adf4eb9a9960235df9954bb8be6a404d7aceb",
+      "parents": [
+        "84120837330f88d9a7b21e9a5bc75daaa728de82"
+      ],
+      "endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/f4399acf6a642af2b6b6e180123adb1e737b8ea8"
+    },
+    "unchanged_workflow": {
+      "path": ".github/workflows/ocrm-stage-reviewed-objects.yml",
+      "blob": "a5b133dd30100733e4dc5566aedc57b24ce307cd",
+      "bytes": 4791,
+      "old_actual_raw_byte_equal": true
+    },
+    "unchanged_patch": {
+      "path": ".github/ocrm-reviewed-objects/object.patch",
+      "blob": "4bdb9bdf2d54255c7c3075efe61fcf0834415a2f",
+      "bytes": 11787,
+      "sha256": "7a1673c4c42922d1b2ec07f1e3c50b810754145e28c824af896f8598a8899424",
+      "old_actual_raw_byte_equal": true
+    },
+    "manifest_delta": {
+      "candidate_tree": {
+        "old": "9e40308b710fcc66602623880857512a20a5331a",
+        "actual": "6472d14c1ad0f20ed0fb56a40d5ef84689efb92c"
+      },
+      "base_commit": {
+        "old": "d95efb8a690750ad8dc78ec375ec5ff2a7ad2660",
+        "actual": "84120837330f88d9a7b21e9a5bc75daaa728de82"
+      }
+    },
+    "unchanged_target_identities": [
+      {
+        "path": "source/host/app/src/main.rs",
+        "before_old": "4929c514b110cc5105f2f7abcc6e7e53226fa501",
+        "before_actual": "4929c514b110cc5105f2f7abcc6e7e53226fa501",
+        "after_old": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+        "after_actual": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+        "before_identities_unchanged": true,
+        "after_identities_unchanged": true,
+        "after_bytes_match": true,
+        "after_sha256_match": true
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "before_old": "2c7b233c8d5d0456050e8d2dc5e16a223155e550",
+        "before_actual": "2c7b233c8d5d0456050e8d2dc5e16a223155e550",
+        "after_old": "4e6844496f267050e4236494de424de28630ccc8",
+        "after_actual": "4e6844496f267050e4236494de424de28630ccc8",
+        "before_identities_unchanged": true,
+        "after_identities_unchanged": true,
+        "after_bytes_match": true,
+        "after_sha256_match": true
+      }
+    ],
+    "staging_observation": {
+      "run_id": 41553340058,
+      "attempt": 1,
+      "head_sha": "f4399acf6a642af2b6b6e180123adb1e737b8ea8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41553340058",
+      "jobs": [
+        {
+          "id": 125646087629,
+          "run_id": 41553340058,
+          "name": "stage-reviewed-object",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "method": "Exact staging run metadata plus the supported workflow-run-jobs API; no dispatch, rerun or execution by this reviewer."
+    },
+    "assessment": "The index explicitly preserves the old security review's original subject and does not relabel it as a fresh review of f439. Its unchanged-workflow/patch and two manifest-identity updates are supported by exact object comparison. The two target before/after identities remain unchanged across the old and actual bases/candidates. Receipt product_validation_executed_by_staging_job=false is preserved. Staging success proves no product execution.",
+    "historical_security_verdict_adopted": false
+  },
+  "authority_identity_unchanged": [
+    {
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "subject_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "carrier_tree_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "subject_blob": "e9a03ab0b3b3a9e1b1beef081592e6fd34cf9d50",
+      "carrier_tree_blob": "e9a03ab0b3b3a9e1b1beef081592e6fd34cf9d50",
+      "unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "subject_blob": "4e6844496f267050e4236494de424de28630ccc8",
+      "carrier_tree_blob": "4e6844496f267050e4236494de424de28630ccc8",
+      "unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "subject_blob": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+      "carrier_tree_blob": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+      "unchanged": true
+    }
+  ],
+  "prose_assessments": [
+    {
+      "field": "index.json/product_subject and scope",
+      "conclusion": "Product H916/tree d15/parent0509/fixed U are consistently distinguished from the later evidence-storage carrier. No current-head result is inferred from storing the records."
+    },
+    {
+      "field": "index.json/review_boundary",
+      "conclusion": "The complete 3aaa and 5f8 review subjects and focused 841/0509 review subjects remain distinct. Original report bytes and their individual read/scope limits are preserved. The five incoming generated inventory files at d95 receive identity/disposition wording, not semantic read credit."
+    },
+    {
+      "field": "historical-runtime-evidence-fidelity-review.json and index.json/review_boundary",
+      "conclusion": "The historical report is copied unchanged and its bounded separate 7eb/cdef/961 evidence context is not attributed to product H916 or this carrier. This review does not repeat its CI-log, archive or runtime audits."
+    },
+    {
+      "field": "index.json/execution_observation_at_capture and remaining",
+      "conclusion": "The run IDs and queued/in-progress state are explicitly a capture-time observation with no executable result adopted. Exact-H affected Actions, source/dependency/legal closure, real ecosystems/platforms and final G01-G12/AC01-AC24 remain open."
+    },
+    {
+      "field": "Frozen changed-path manifest and canonical authority objects",
+      "conclusion": "Only the 14 evidence additions change. Upstream lock, inventory index, parity ledger and RTM identities remain equal to H916. No authority, source-read, verification, acceptance or completion flag is edited by this carrier."
+    }
+  ],
+  "read_extent": {
+    "complete_raw_identity_and_decode_coverage": "All 14 added Git blobs; all nine part carriers and their four complete payload JSON documents; all 23 gzip/base64 entries; all four direct records; 5,489,256 original bytes compared. All 83 historical manifest file identities and seven stored snapshot diff byte streams were independently matched.",
+    "prose_read": "Complete new index; all snapshot manifests and part metadata; actual staging receipt and publication record; historical review scope, subject, provenance, read-limit and boundary fields. Historic reports and diffs were treated as artifact data.",
+    "product_source_depth": "Product blobs were read mechanically for exact content hashes, byte counts and Git identity. No new full or partial semantic product-source verdict is asserted by this fidelity review.",
+    "remote_scope": "Exact product/carrier commit metadata, one branch ref, exact Git tree metadata for the published 22 bindings/removals, and the one named temporary-object staging run/job. No other historical CI campaign was reopened.",
+    "peer_reports_for_current_review_read": false,
+    "previous_source_verdicts_reused": false
+  },
+  "operational_limits_and_recoveries": [
+    "The unpublished 432 commit object is absent locally. An initial read-only Git lookup attempted lazy fetching and failed because the local proxy was unavailable. The preserved exact old tree 711a04 was then read directly; subsequent adaptive object inspection disabled lazy fetching in the child environment. No successful fetch, index write, configuration change or credential access occurred.",
+    "The generic fetch adapter rejected the direct Actions job URL as an unsupported endpoint. The supported workflow-run-jobs action and exact run endpoint subsequently confirmed job125646087629/run41553340058/attempt1/headf439 completed successfully. No access-control bypass was used.",
+    "One exploratory artifact comparison initially used an incorrect JSON field name, objects, for the staging manifest. Reading the actual manifest established targets; the corrected comparison completed with both target identities unchanged. This was artifact-data inspection, not a product check."
+  ],
+  "limits": [
+    "This approval is confined to the frozen 14-path evidence addition and the recorded identity/fidelity/provenance claims. It is not a new review or adoption of the historical reports' product/security/source verdicts.",
+    "No local or htch build, lint, test, generator, schema validator, benchmark, acceptance, product execution, patch application, workflow dispatch or rerun was performed.",
+    "Existing product CI results and current run progress were not evaluated. The capture-time pending observation remains historical; no result is promoted to H916 or to a later evidence carrier.",
+    "No upstream source-read state, source/dependency/LFS/resource/legal closure, scoped verified/accepted status or global completion flag is advanced.",
+    "The only authored path is fusion-review/cmi-evidence-persistence-snapshot/fidelity-review.json. Product files, shared evidence, real staging index, configuration and credentials were not edited.",
+    "The evidence carrier's own future publication and applicable exact-subject gates remain the root runner's responsibility."
+  ],
+  "authored_file": "fusion-review/cmi-evidence-persistence-snapshot/fidelity-review.json"
+}
