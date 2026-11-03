@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "reviewRound": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "sourceSubject": {
+    "commit": "ac615165744da1b8462a35b07221800c06aad1fb",
+    "tree": "61ef27820a6ba5dc696a276cd58b30e153a25b57"
+  },
+  "originalBase": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "fullScopeManifestBlob": "b0b2aaa779bf8473daf48d84c467f42c2e62df4a",
+  "fullDiffBlob": "241aa8208a796ef9f675b3647bd25912f9e6459e",
+  "verdict": "REQUEST_CHANGES",
+  "sourceOnly": true,
+  "execution": "not-run",
+  "contract": "PS-LOCK-RECONCILE-v2",
+  "decisions": [
+    {
+      "id": "PS-R1-DURABLE-ABA",
+      "reviewerFindings": [
+        "general:G2",
+        "structure:S1"
+      ],
+      "priority": "P1",
+      "decision": "FIX",
+      "locations": [
+        "plugin_skills.rs:483-486",
+        "plugin_skills.rs:1208-1215",
+        "plugin_skills.rs:1275-1308"
+      ],
+      "evidence": "A holds an actual refresh with confirmed9. A foreign owner reserves/settles Removed9 without A observing its pending image; confirmed/pending/refresh intent and even serialized bytes can return to the earlier values. A then accepts its older materialization and clears the newer confirmation. Cooperating owners and successful persistence suffice.",
+      "requiredChange": "Durable per-uninstall causal identity in the same strict image/owner; private v3 contract with required nullable canonical UUID uninstallObservation and strict v1/v2 reads. Explicit transitions rotate, auth-only writes retain. Bind/recheck actual pass and cleanup. Preserve upgrade/rollback custody.",
+      "oracle": "Owned-child repeated-confirmation and transient-pending cycles without intermediate parent observation; stale pass has no cache replacement/release/prune/success report; later fresh recovery succeeds."
+    },
+    {
+      "id": "PS-R1-WORKFLOW-CURRENTNESS",
+      "reviewerFindings": [
+        "general:G1",
+        "structure:S2"
+      ],
+      "priority": "P1",
+      "decision": "FIX",
+      "locations": [
+        "workflow_store.rs:577-605",
+        "skill_publish.rs:216-235"
+      ],
+      "evidence": "Workflow selects record/publisher/current-user/file bytes before potentially waiting for SH; a real EX publisher can change the committed index before the lease, which only checks negative admission. The old path is then replaced under stale edit authority.",
+      "requiredChange": "Acquire for initial canonical plugin, then re-read/revalidate committed record, identity, current edit grant and path under the same held lease before read/serialization/write. Reuse existing publisher rules.",
+      "oracle": "Gate before acquire, publish real identity/path change, resume; reject and preserve both file images. Current-publisher positive remains."
+    },
+    {
+      "id": "PS-R1-READER-FAULT",
+      "reviewerFindings": [
+        "structure:S3"
+      ],
+      "priority": "P2",
+      "decision": "FIX",
+      "locations": [
+        "plugin_skills.rs:516-519",
+        "plugin_skills.rs:544-548",
+        "plugin_skills.rs:760-767"
+      ],
+      "evidence": "An authoritative SH reader returning an image-loader error does not latch recovery_fault. A repaired marker-only/malformed image can silently reopen the same retained reader, unlike the total-loss default-image branch already tested.",
+      "requiredChange": "Reuse owner-local fault latch for serialized reader/acquire failures, preserve known facts and advance observation; keep contended unlocked reads observation-only.",
+      "oracle": "Malformed image, invalid marker, missing initialized image and nonregular/unreadable controls, each read/lease as first observer. Exact repair cannot heal retained owner; fresh owner inspects repair."
+    },
+    {
+      "id": "PS-R1-UPLOAD-CALLBACK-LEASE",
+      "reviewerFindings": [
+        "structure:S4"
+      ],
+      "priority": "P2",
+      "decision": "FIX",
+      "locations": [
+        "skill_publish.rs:129-140",
+        "skill_publish.rs:167-194",
+        "plugin_skills.rs:877-885"
+      ],
+      "evidence": "resync holds SH through upload. Real cleanup error invokes log/report before upload returns. Callback sync waits for EX while same outer call still owns SH, a direct reentrant deadlock.",
+      "requiredChange": "Release the protected mutation lease before cleanup notifications on every operation outcome; preserve backend coverage, operation result and diagnostics.",
+      "oracle": "Real owned cleanup filesystem error; callback first probes EX then reenters actual owner; completed callback/result and retained backend-entry lease controls."
+    },
+    {
+      "id": "PS-R1-READ-FANOUT",
+      "reviewerFindings": [
+        "structure:NON_BLOCKING"
+      ],
+      "priority": "NON_BLOCKING",
+      "decision": "DEFER_NO_NEW_FIX_ROUND",
+      "evidence": "Per-skill read admission performs repeated full-image I/O; source-derived complexity only, no timing measurement.",
+      "disposition": "Retain as later performance/soak work. No acceptance exemption or measured regression claim."
+    }
+  ],
+  "unprovenConcerns": [
+    {
+      "name": "general P->EX/backend->P inversion",
+      "disposition": "Not a separate proven MUST_FIX; do not rewrite lock ordering solely for the hypothesis. Concrete cleanup callback cycle is covered by PS-R1-UPLOAD-CALLBACK-LEASE."
+    }
+  ],
+  "reviewSettings": {
+    "general": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "forkTurns": "none",
+      "task": "/root/plugin_admission_r1_general"
+    },
+    "structure": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "xhigh",
+      "forkTurns": "none",
+      "task": "/root/plugin_admission_r1_structure"
+    },
+    "attestation": "Root tool calls explicitly requested these overrides and returned the canonical task names. No hidden-runtime model attestation is claimed."
+  },
+  "coverage": "Complete declared baseline delta read by both fresh reviewers; reports retain exact per-file read depths and source-only limits. Shared Box/LocalExec metadata is not runtime acceptance.",
+  "globalCompletionFlagsPromoted": false
+}

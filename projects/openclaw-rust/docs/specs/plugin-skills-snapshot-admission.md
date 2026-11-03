@@ -1288,3 +1288,68 @@ Source review must retain the incoming five paths plus the repair and its
 adjacent consumers. Freeze the combined candidate with the saved Box batch,
 then run its affected Actions commands once; no local/htch execution and no
 full-source, external-service, platform or release acceptance is implied.
+
+## AR-LOCK-R2 — causal cross-process observations and mutation currentness
+
+Shared correction contract: PS-LOCK-RECONCILE-v2. Frozen reviewed source
+ac615165744da1b8462a35b07221800c06aad1fb / tree
+61ef27820a6ba5dc696a276cd58b30e153a25b57; original base remains
+9864d1c02e7e67881d644800963abc807b3abaab. R1 source review found four concrete
+contract violations. They require repair before exact-H verification; no
+previous failure, assertion, source reading fact or acceptance flag is erased.
+
+- LR2-01: The existing uninstall image must preserve a causal observation across
+  processes, including confirmed->pending->same-confirmed and pending->absent
+  cycles entirely between another owner's reads. Add private format version 3
+  with required nullable `uninstallObservation`: null or a canonical UUID string.
+  Strict format-1 and format-2 reads remain supported and decode as no durable
+  observation. All new images emit version 3 and retain the existing fields and
+  initialization marker/barriers. Do not accept a missing field as null, malformed
+  UUID, duplicate key or unknown field. Every explicit uninstall reservation,
+  exact settlement and confirmed-fact transition rotates the observation to a
+  fresh identity; auth/refresh-only writes preserve it. A null legacy identity
+  is not evidence of a newly observed uninstall. An owner that has accepted a
+  non-null identity must not silently accept its disappearance as legacy state.
+  Preserve the opaque in-process observation fence and bind each actual refresh
+  to the durable identity before loader entry. Recheck it at aggregate import,
+  publication/release and cleanup. Matching final sets or bytes is insufficient.
+  A format-3 image is a private-format upgrade; older readers must refuse it
+  rather than silently dropping custody. Rollback retains the image and needs
+  a reader supporting its format; do not downgrade or clear it for old binaries.
+- LR2-02: A workflow mutation may sample an initial record to locate the plugin
+  lease, but after acquisition must re-read the current committed record/index
+  and revalidate canonical workflow/plugin identity, current publisher/current
+  user and selected path before reading/encoding/replacing the skill file.
+  Refuse if the selected record/path or edit grant changed across acquisition.
+  Keep the existing publisher policy and current-publisher success behavior.
+- LR2-03: A complete read holding authoritative SH that encounters malformed,
+  unreadable, nonregular or missing initialized custody latches the existing
+  recovery fault, preserves adverse facts and advances the local observation.
+  Restoring bytes cannot heal that retained owner; a fresh owner may inspect
+  repaired custody. Reuse the same fault mechanism for is_denied/acquire and
+  writer reads. A contended unlocked observation remains observation-only and
+  cannot grant admission or be mistaken for a serialized complete image.
+- LR2-04: Resync/unpublish retain their admission lease through the protected
+  filesystem/backend mutation. Upload cleanup diagnostics and public log/edge
+  callbacks run only after that lease is released, on success and failure.
+  Preserve the original operation result and cleanup diagnostics; a callback
+  may safely reenter the same existing Skills owner. Add no second lock owner.
+
+Required controls extend the existing oracles: an owned foreign process performs
+the full repeated-confirmation cycle while the actual old loader is held, with
+no intermediate read by that loader owner; stale publication/release/prune/report
+must fail, and an explicit later fresh exact-ID recovery succeeds. Add gated
+real Workflow update versus committed identity/path change with unchanged old
+and current bytes, plus current-publisher success. Extend the first-observer
+integrity matrix for both read and lease entry, repaired-byte retention and fresh
+owner controls. Cause an actual owned upload cleanup I/O error; the callback
+must observe available EX before its actual reentrant sync, preserving backend
+lease probes and the original upload result. A failed lock probe is a direct
+oracle; do not rely on a timeout as proof of exclusion or weaken assertions.
+
+Read-path image I/O fanout was recorded as NON_BLOCKING without measurement.
+It is not a new fix round or a waiver of eventual performance/soak acceptance.
+Freeze a fresh complete-scope candidate against the same original base, include
+the actual R1->R2 fix delta, obtain new blind GENERAL and STRUCTURE reviews,
+then execute affected locked build/contracts/wiring/negative cases only in
+GitHub Actions. Unit source readiness is not full migration acceptance.
