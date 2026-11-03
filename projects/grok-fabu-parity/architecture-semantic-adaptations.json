@@ -22,7 +22,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "97866105d2f1dacb46daa6fd237f420c7bcb0ff5",
+      "targetBlobSha": "e2cec6fc568b6767e364a6ae29b178256d799dd1",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
