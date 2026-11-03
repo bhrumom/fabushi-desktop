@@ -2346,3 +2346,101 @@ open, as do active afterId=0 deployment, complete source/legal, signed supported
 platforms, full UI/a11y/Bot/soak/upgrade/rollback and independent ACCEPT.
 Rollback removes only this projection wiring; persisted user messages,
 resources, outbox and source identities remain intact.
+
+
+## NMR-TRANSPORT-RECOVERY-01 — Existing Host/Gateway to Renderer recovery
+
+At containing desktop H `1bcdae6dffa038768250daa41fc4f7c0ff9c6852`,
+the actual Rust Coordinator emits `family: "runtime"` with
+`host.lifecycle` / `gateway.lifecycle`, but the production Coordinator
+client only forwards those frames to ordinary family subscribers. Renderer
+roster recovery depends on its existing transport subscription. A surviving
+MessagePort therefore does not currently carry Host replacement or same-Host
+SSE reconnection into that recovery owner. Source diagnosis is retained in
+blob `4cb35f9cac0dc0465c3ca7226fb9ff29bd00aeeb`; it is not a claim that
+this alone explains every actual Electron failure.
+
+Use the existing Coordinator client, connection controller, ProductionRenderer
+roster/Transcript projection and Session authorities. Add no RPC, service
+client, second retry owner or automatic user-mutation replay.
+
+- **NMR-TRANSPORT-RECOVERY-01a:** Classify meaningful runtime type/lifecycle
+  pairs before advancing any generation or sequence. Require positive safe
+  integer generation and sequence. Current MessagePort identity and Host
+  generation precede sequence; an old generation with a larger sequence is
+  obsolete. Unknown, malformed and informational events (including
+  protocol-error and discovery) cannot move connection watermarks or state.
+  Ordinary runtime family subscribers continue to receive their original
+  payloads.
+- **NMR-TRANSPORT-RECOVERY-01b:** Host running means a spawned process, not a
+  usable Gateway. Only the actual Gateway transport-connected observation
+  establishes runtime availability. Terminal Host states close that generation
+  against late connected events; nonterminal transport-down allows a later
+  same-generation reconnect. Duplicate/stale observations do not create extra
+  recovery episodes. A valid newer generation must invalidate the prior
+  episode even when its down notification was missed. Port replacement resets
+  runtime epochs while preserving existing claim, handshake and pending-call
+  settlement rules; runtime lifecycle frames alone do not reject all business
+  Promises.
+- **NMR-TRANSPORT-RECOVERY-01c:** Retain the existing connection controller as
+  Retry owner. Account, transport episode and current request identity fence
+  completion. A transport change retires an obsolete in-flight slot without
+  cancelling its underlying RPC, and preserves/coalesces an existing user
+  Retry obligation. Establish current isRetrying synchronously, then start the
+  current retry after the complete transport-listener fanout so Renderer has
+  already advanced its transport generation. A late old success, failure or
+  finally cannot clear the new slot, finish its waiter or suppress the current
+  listAgents -> Human sync -> Transcript refresh. Account changes/disposal
+  retire queued and in-flight obligations without cross-account replay.
+- **NMR-TRANSPORT-RECOVERY-01d:** Current transport state remains authoritative
+  across new subscriptions and account-effect restarts. Initial ready
+  resolution is only a fallback when no newer transport observation exists;
+  it cannot overwrite an observed runtime down or launch a duplicate initial
+  roster retry. Keep the initial ready path for startup events emitted before
+  the Renderer handshake. Preserve current cached selection, paged messages,
+  local draft identities, pending sends and non-message surfaces.
+- **NMR-TRANSPORT-RECOVERY-01e:** Actual Electron fixture repair is narrowly
+  bounded: isolate the current AppHost through its supported FABUSHI_APP_DATA
+  root, and explicitly record the observed auxiliary endpoints as controlled
+  unavailable with their real 404 response. Unknown methods, paths and queries
+  still fail the strict oracle. No new reload, timeout extension or retry may
+  hide a missing production reconnect. This does not itself prove or fix the
+  separately observed exec-daemon port collision.
+
+**NMR-AC-TRANSPORT-RECOVERY-01:** Preserve the existing four real
+Coordinator-client/controller port cases and add these six top-level cases:
+
+- `runtime Host replacement waits for the current Gateway transport before notifying recovery`
+- `runtime same-generation reconnects once and rejects stale or terminal-generation transitions`
+- `runtime informational and malformed frames cannot advance the generation or sequence fence`
+- `Coordinator port replacement resets runtime epochs while lifecycle events preserve pending RPC settlement`
+- `an in-flight roster retry is replaced after same-generation transport recovery and ignores its late result`
+- `transport retry handoff is account-scoped, single-flight and inert after disposal`
+
+The held Retry case covers both late success and late failure, with actual
+controller-before-Renderer listener order and an asynchronous current refresh.
+The lifecycle matrix covers late initial ready and current-state subscription,
+Host terminal fencing, same-generation SSE down/up, malformed/informational
+sequence poisoning, a newer generation without observed down, port replacement
+and unchanged pending mutation settlement. Case variants do not add to the
+top-level count.
+
+Add the actual ProductionRenderer browser case (author suite22 ->23)
+`NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the active Human draft after a held Retry` that
+injects real runtime envelopes through the existing Coordinator port and
+follows automatic Agent roster -> Human sync -> active Transcript refresh.
+Hold a prior user Retry across same-generation down/up and release it after
+the replacement starts; it cannot swallow the current recovery. Assert retained
+selection, cache and draft with no reload, focus or conversation-switch recovery
+trigger, zero unknown RPCs and zero page errors. Retain actual Electron
+Plugins2/Human2 and all existing pure, pagination, reply, forwarding, Host and
+shipping gates. The retry contract group40 ->46 and browser author22 ->23 are
+authored targets, not passed evidence; execute only the frozen containing H
+in GitHub Actions.
+
+This bounded wiring does not qualify active afterId=0 deployment, arbitrary old
+message discovery, remote revision/tombstone semantics, reaction409 retirement,
+full source/legal accounting, signed supported platforms, complete Bot/visual/
+accessibility/security/performance/soak/upgrade/rollback or independent ACCEPT.
+Rollback restores only the former notification/retry projection and leaves
+durable messages, resources and draft data intact.

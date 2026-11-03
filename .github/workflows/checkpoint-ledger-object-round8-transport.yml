@@ -1,0 +1,157 @@
+name: Round8 runtime recovery ledger object
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/checkpoint-ledger-ops-round8-transport.json'
+      - '.github/workflows/checkpoint-ledger-object-round8-transport.yml'
+      - 'projects/telegram-desktop-rust/parity-ledger.json'
+permissions:
+  contents: read
+jobs:
+  prepare-ledger-object:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Apply only frozen NMR anchor corrections and reviewed append
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/round8-transport-ledger-object
+          export ROUND8_INPUT_BLOB
+          ROUND8_INPUT_BLOB=$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import assert from 'node:assert/strict';
+          const gitHash = bytes => crypto.createHash('sha1').update(Buffer.from('blob ' + bytes.length + '\0')).update(bytes).digest('hex');
+          const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+          const allowedFields = new Set(['blockers', 'production_entrypoints', 'production_evidence',
+            'test_evidence', 'requirement_ids', 'oracle_ids', 'invariant_ids', 'test_environment_ids',
+            'test_execution_evidence', 'fabushi_target_paths', 'fabushi_target_symbols', 'unit_case_ids',
+            'fault_recovery_case_ids', 'security_case_ids', 'regression_ids', 'ui_functional_case_ids',
+            'test_fixture_ids', 'ui_acceptance_scenarios', 'command_event_contracts']);
+          const identityFields = ['source_repository', 'source_commit', 'source_path', 'source_blob_sha'];
+          const opsBytes = fs.readFileSync('.github/checkpoint-ledger-ops-round8-transport.json');
+          const ops = JSON.parse(opsBytes);
+          assert.equal(process.env.GITHUB_REPOSITORY, 'bhrumom/fabushi-desktop');
+          assert.equal(process.env.GITHUB_REF, 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1');
+          assert.deepEqual(Object.keys(ops).sort(), ['format_version', 'repository', 'path', 'reviewed_base', 'input_blob', 'authored_ui_cases', 'operations'].sort());
+          assert.equal(ops.repository, process.env.GITHUB_REPOSITORY);
+          assert.equal(ops.path, 'projects/telegram-desktop-rust/parity-ledger.json');
+          assert.equal(ops.format_version, 3);
+          assert.equal(ops.input_blob, '25cf6dbdea41d48dc57df1f252d256772750362a');
+          assert.equal(ops.reviewed_base, '1bcdae6dffa038768250daa41fc4f7c0ff9c6852');
+          assert.equal(ops.authored_ui_cases, 23);
+          assert.equal(ops.operations.length, 1);
+          const op = ops.operations[0];
+          assert.deepEqual(Object.keys(op).sort(), ['id', 'source_identity', 'normalize', 'append', 'note'].sort());
+          assert.equal(op.id, 'FBCP-NMR-001');
+          assert.deepEqual(op.append.unit_case_ids, ["frontend/src/production/human-message-retry-port.contract.test.ts#runtime Host replacement waits for the current Gateway transport before notifying recovery","frontend/src/production/human-message-retry-port.contract.test.ts#runtime same-generation reconnects once and rejects stale or terminal-generation transitions","frontend/src/production/human-message-retry-port.contract.test.ts#runtime informational and malformed frames cannot advance the generation or sequence fence","frontend/src/production/human-message-retry-port.contract.test.ts#Coordinator port replacement resets runtime epochs while lifecycle events preserve pending RPC settlement","frontend/src/production/human-message-retry-port.contract.test.ts#an in-flight roster retry is replaced after same-generation transport recovery and ignores its late result","frontend/src/production/human-message-retry-port.contract.test.ts#transport retry handoff is account-scoped, single-flight and inert after disposal"]);
+          assert.deepEqual(Object.keys(op.normalize).sort(), ['fabushi_target_paths', 'fabushi_target_symbols']);
+          assert.equal(op.normalize.fabushi_target_paths.length, 0);
+          assert.equal(op.normalize.fabushi_target_symbols.length, 0);
+          assert.deepEqual(Object.keys(op.source_identity).sort(), [...identityFields].sort());
+          const input = fs.readFileSync(ops.path);
+          const inputBlob = gitHash(input);
+          assert.equal(inputBlob, process.env.ROUND8_INPUT_BLOB, 'checkout input differs from its immutable Git tree');
+          assert.equal(inputBlob, ops.input_blob, 'current canonical ledger differs from reviewed input; root must reconcile rather than overwrite');
+          const original = JSON.parse(input);
+          const changed = structuredClone(original);
+          const indexes = changed.rows.flatMap((row, index) => row.responsibility_id === op.id ? [index] : []);
+          assert.equal(indexes.length, 1);
+          const index = indexes[0];
+          const before = original.rows[index], row = changed.rows[index];
+          for (const key of identityFields) assert.deepEqual(row[key], op.source_identity[key], 'source identity conflict: ' + key);
+          for (const [key, replacements] of Object.entries(op.normalize)) {
+            assert.ok(Array.isArray(row[key]), key);
+            const oldValues = new Set();
+            for (const replacement of replacements) {
+              assert.deepEqual(Object.keys(replacement).sort(), ['after', 'before']);
+              const { before: oldValue, after: newValue } = replacement;
+              assert.ok(typeof oldValue === 'string' && oldValue.length > 0);
+              assert.ok(typeof newValue === 'string' && newValue.length > 0 && newValue !== oldValue);
+              assert.ok(!oldValues.has(oldValue), 'duplicate correction');
+              oldValues.add(oldValue);
+              if (key === 'fabushi_target_paths') {
+                assert.equal(oldValue, 'bhrumom/fabushi-desktop:' + newValue);
+                assert.ok(!newValue.startsWith('/') && !newValue.split('/').includes('..') && !newValue.includes(':'));
+              }
+              const at = row[key].indexOf(oldValue);
+              assert.ok(at >= 0 && row[key].lastIndexOf(oldValue) === at, 'correction must match one exact old value');
+              if (row[key].includes(newValue)) row[key].splice(at, 1);
+              else row[key][at] = newValue;
+            }
+            assert.equal(new Set(row[key]).size, row[key].length, 'canonical references remain unique');
+          }
+          for (const [key, values] of Object.entries(op.append)) {
+            assert.ok(allowedFields.has(key), 'undeclared array field: ' + key);
+            assert.ok(Array.isArray(row[key]) && Array.isArray(values), key);
+            assert.ok(values.every(value => typeof value === 'string' && value.length > 0), key);
+            for (const value of values) if (!row[key].some(existing => equal(existing, value))) row[key].push(value);
+            assert.deepEqual(row[key].slice(0, before[key].length), before[key], 'original array items must remain');
+          }
+          assert.equal(typeof row.notes, 'string');
+          assert.equal(typeof op.note, 'string');
+          assert.ok(op.note.startsWith('\nNMR-TRANSPORT-RECOVERY-01'));
+          if (!row.notes.includes(op.note)) row.notes += op.note;
+          assert.ok(row.notes.startsWith(before.notes));
+          assert.deepEqual(Object.keys(row), Object.keys(before));
+          for (const key of Object.keys(before)) if (key !== 'notes' && !Object.hasOwn(op.append, key) && !Object.hasOwn(op.normalize, key)) {
+            assert.deepEqual(row[key], before[key], 'unmodified field changed: ' + key);
+          }
+          for (const key of Object.keys(original)) if (key !== 'rows') assert.deepEqual(changed[key], original[key], key);
+          assert.equal(changed.rows.length, original.rows.length);
+          for (let other = 0; other < original.rows.length; other++) if (other !== index) {
+            assert.deepEqual(changed.rows[other], original.rows[other], 'unrelated row changed');
+          }
+          assert.equal(row.ui_functional_case_ids.filter(value => value.startsWith('desktop/e2e/native-message-author-recovery.spec.ts#')).length, 23);
+          assert.equal(row.fabushi_target_paths.length, 60);
+          assert.equal(row.fabushi_target_symbols.length, 67);
+          const output = Buffer.from(JSON.stringify(changed, null, 2) + '\n');
+          fs.writeFileSync('artifacts/round8-transport-ledger-object/prepared-ledger.json', output);
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/round8-transport-ledger-blob.json', JSON.stringify({content: output.toString('utf8'), encoding: 'utf-8'}));
+          fs.writeFileSync('artifacts/round8-transport-ledger-object/receipt.json', JSON.stringify({
+            harness_sha: process.env.GITHUB_SHA, input_blob: inputBlob, ops_blob: gitHash(opsBytes),
+            reviewed_base: ops.reviewed_base, output_blob: gitHash(output),
+            output_sha256: crypto.createHash('sha256').update(output).digest('hex'),
+            changed_rows: [op.id], authored_ui_cases: ops.authored_ui_cases,
+            normalized_target_paths: op.normalize.fabushi_target_paths.length,
+            normalized_target_symbols: op.normalize.fabushi_target_symbols.length,
+            product_validation: false, source_acceptance: false,
+            commit_created: false, ref_updated: false,
+            integration_condition: 'Root API reads the full input/output and matches the current canonical input before force=false expected-head CAS.'
+          }, null, 2) + '\n');
+          NODE
+      - name: Create only the unattached Git blob
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" \
+            --input "$RUNNER_TEMP/round8-transport-ledger-blob.json" \
+            > artifacts/round8-transport-ledger-object/github-blob.json
+          expected=$(node -p "JSON.parse(require('fs').readFileSync('artifacts/round8-transport-ledger-object/receipt.json','utf8')).output_blob")
+          actual=$(node -p "JSON.parse(require('fs').readFileSync('artifacts/round8-transport-ledger-object/github-blob.json','utf8')).sha")
+          test "$actual" = "$expected"
+          cat artifacts/round8-transport-ledger-object/receipt.json
+          printf '%s\n' "$actual"
+      - name: Preserve object identity for root CAS readback
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: round8-transport-ledger-object-${{ github.sha }}
+          path: artifacts/round8-transport-ledger-object
+          if-no-files-found: error
