@@ -750,6 +750,18 @@ struct StreamResources {
     recovery: StreamRecovery,
 }
 
+impl StreamResources {
+    fn remove_created_file(&mut self, path: &Path) {
+        let Some(index) = self.recovery.cleanup_paths.iter().position(|owned| owned == path)
+            else { return; };
+        if fs::remove_file(path).is_ok() {
+            // Another runtime can now claim this candidate. No later failure
+            // may remove that successor through an obsolete cleanup entry.
+            self.recovery.cleanup_paths.swap_remove(index);
+        }
+    }
+}
+
 // The active request retains its actual resources from spawn onward. Any
 // exceptional return or unwind transfers them to the same invocation's
 // captured-child recovery, which request admission or stop can observe without
@@ -814,6 +826,7 @@ impl Drop for StreamRequest<'_> {
 const FOREGROUND_POLL_INTERVAL: Duration = Duration::from_millis(10);
 const FOREGROUND_TERM_GRACE: Duration = Duration::from_millis(250);
 const FOREGROUND_CLEANUP_LIMIT: Duration = Duration::from_secs(2);
+const STREAM_SPOOL_CREATE_ATTEMPTS: u32 = 64;
 
 fn cleanup_captured_child(
     owner: &Arc<Mutex<CapturedChild>>,
@@ -1295,18 +1308,10 @@ impl BoxExecRuntime {
             .ok_or_else(|| "shell stream stderr was unavailable".to_string())?;
 
         fs::create_dir_all(&self.terminals_directory).map_err(|error| error.to_string())?;
-        let stream_spool_path = self
-            .terminals_directory
-            .join(format!(".shell-stream-{}.tmp", request.registration_id.0));
+        let (stream_spool_path, stream_spool) =
+            self.create_stream_spool(request.registration_id)?;
         request.resources().recovery.cleanup_paths.push(stream_spool_path.clone());
-        let stream_spool_writer = Arc::new(Mutex::new(
-            OpenOptions::new()
-                .create(true)
-                .truncate(true)
-                .write(true)
-                .open(&stream_spool_path)
-                .map_err(|error| error.to_string())?,
-        ));
+        let stream_spool_writer = Arc::new(Mutex::new(stream_spool));
 
         let (events_tx, events_rx) = mpsc::channel::<ShellPipeEvent>();
         request.resources().recovery.stdout_worker = Some(spawn_stream_pipe(
@@ -1478,7 +1483,7 @@ impl BoxExecRuntime {
             }
         }
         drop(stream_spool_writer);
-        let _ = fs::remove_file(&stream_spool_path);
+        request.resources().remove_created_file(&stream_spool_path);
 
         if let Some(error) = stream_error {
             return Err(error);
@@ -1502,6 +1507,27 @@ impl BoxExecRuntime {
         ))
     }
 
+    fn stream_spool_path(&self, registration_id: ForegroundId, attempt: u32) -> PathBuf {
+        self.terminals_directory.join(format!(
+            ".shell-stream-{}-{}-{attempt}.tmp",
+            std::process::id(), registration_id.0,
+        ))
+    }
+
+    fn create_stream_spool(&self, registration_id: ForegroundId) -> Result<(PathBuf, File), String> {
+        // Process/local identity reduces collisions; only create_new grants
+        // ownership across independent runtimes sharing this directory.
+        for attempt in 0..STREAM_SPOOL_CREATE_ATTEMPTS {
+            let path = self.stream_spool_path(registration_id, attempt);
+            match OpenOptions::new().write(true).create_new(true).open(&path) {
+                Ok(file) => return Ok((path, file)),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => return Err(error.to_string()),
+            }
+        }
+        Err("shell stream spool allocation exhausted".into())
+    }
+
     fn handoff_shell_stream_to_background(
         &self,
         request: &mut StreamRequest<'_>,
@@ -1519,7 +1545,6 @@ impl BoxExecRuntime {
         let stdin = request.resources().state.child.stdin.take()
             .ok_or_else(|| "shell stream stdin was unavailable during background handoff".to_string())?;
         let terminal_path = self.terminals_directory.join(format!("{shell_id}.txt"));
-        request.resources().recovery.cleanup_paths.push(terminal_path.clone());
         let background_args = BackgroundShellSpawnArgs {
             command: args.command.clone(),
             working_directory: args.working_directory.clone(),
@@ -1534,20 +1559,20 @@ impl BoxExecRuntime {
             current_writer.flush().map_err(|error| error.to_string())?;
             let spooled = fs::read(&stream_spool_path).map_err(|error| error.to_string())?;
             let mut terminal = OpenOptions::new()
-                .create(true)
-                .truncate(true)
+                .create_new(true)
                 .write(true)
                 .open(&terminal_path)
                 .map_err(|error| error.to_string())?;
+            request.resources().recovery.cleanup_paths.push(terminal_path.clone());
             terminal.write_all(
                 terminal_frontmatter(&background_args, Some(pid), started_at).as_bytes(),
             ).map_err(|error| error.to_string())?;
             terminal.write_all(&spooled).map_err(|error| error.to_string())?;
             terminal.flush().map_err(|error| error.to_string())?;
-            *current_writer = OpenOptions::new().append(true).open(&terminal_path)
-                .map_err(|error| error.to_string())?;
+            // Keep writing through the file this request actually created.
+            *current_writer = terminal;
         }
-        let _ = fs::remove_file(&stream_spool_path);
+        request.resources().remove_created_file(&stream_spool_path);
 
         // Keep the request guard armed until the background receiver exists
         // and the exact registry transition can commit. A thread creation
@@ -3869,6 +3894,506 @@ mod tests {
     fn foreground_capture_stream_late_eof_is_observed_by_normal_admission() {
         assert_stream_unwind_recovery(StreamRecoveryBoundary::Shell);
         assert_stream_unwind_recovery(StreamRecoveryBoundary::Stream);
+    }
+
+
+    fn stream_file_request(args: ShellArgs) -> ExecServerMessage {
+        ExecServerMessage {
+            id: 81, exec_id: "stream-files".into(),
+            message: Some(exec_server_message::Message::ShellStreamArgs(args)),
+        }
+    }
+
+    fn stream_file_stdout(events: &[ExecStreamElement]) -> String {
+        events.iter().filter_map(|event| match &event.element {
+            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                    event: Some(shell_stream::Event::Stdout(stdout)),
+                })), ..
+            })) => Some(stdout.data.as_str()),
+            _ => None,
+        }).collect()
+    }
+
+    fn assert_stream_file_result(events: &[ExecStreamElement], unknown: bool) {
+        let mut starts = 0;
+        let mut exits = 0;
+        let mut throws = 0;
+        let mut closes = 0;
+        for event in events {
+            match &event.element {
+                Some(exec_stream_element::Element::ExecClientMessage(message)) => {
+                    assert_eq!(message.id, 81);
+                    assert_eq!(message.exec_id, "stream-files");
+                    match &message.message {
+                        Some(exec_client_message::Message::ShellStream(ShellStream {
+                            event: Some(shell_stream::Event::Start(_)),
+                        })) => starts += 1,
+                        Some(exec_client_message::Message::ShellStream(ShellStream {
+                            event: Some(shell_stream::Event::Stdout(_) | shell_stream::Event::Stderr(_)),
+                        })) => {}
+                        Some(exec_client_message::Message::ShellStream(ShellStream {
+                            event: Some(shell_stream::Event::Exit(exit)),
+                        })) => {
+                            assert_eq!(exit.code, 0);
+                            assert!(!exit.aborted);
+                            exits += 1;
+                        }
+                        other => panic!("unexpected stream file result: {other:?}"),
+                    }
+                }
+                Some(exec_stream_element::Element::ExecClientControlMessage(control)) =>
+                    match &control.message {
+                        Some(exec_client_control_message::Message::Throw(error)) => {
+                            assert_eq!(error.id, 81);
+                            assert_eq!(error.error_code.as_deref(), Some("BOX_EXEC_DAEMON_ERROR"));
+                            throws += 1;
+                        }
+                        Some(exec_client_control_message::Message::StreamClose(close)) => {
+                            assert_eq!(close.id, 81);
+                            closes += 1;
+                        }
+                        other => panic!("unexpected stream file control: {other:?}"),
+                    },
+                other => panic!("unexpected stream file envelope: {other:?}"),
+            }
+        }
+        assert_eq!(starts, 1);
+        assert_eq!(exits, if unknown { 0 } else { 1 });
+        assert_eq!(throws, if unknown { 1 } else { 0 });
+        assert_eq!(closes, 1);
+        assert!(matches!(events.last().and_then(|event| event.element.as_ref()),
+            Some(exec_stream_element::Element::ExecClientControlMessage(
+                ExecClientControlMessage {
+                    message: Some(exec_client_control_message::Message::StreamClose(_)),
+                },
+            ))));
+    }
+
+    // Actual output is observed before this request resumes. Its Child remains
+    // alive until the explicit file release, independently of the emitter gate.
+    struct HeldFileStream {
+        release_path: PathBuf,
+        finish_path: PathBuf,
+        output_observed: mpsc::Receiver<()>,
+        resume: Option<mpsc::Sender<()>>,
+        worker: Option<JoinHandle<(Result<(), String>, Vec<ExecStreamElement>)>>,
+    }
+
+    impl HeldFileStream {
+        fn new(runtime: &Arc<BoxExecRuntime>, name: &'static str, background: bool) -> Self {
+            let release_path = runtime.workspace_root.join(format!("{name}-release"));
+            let finish_path = runtime.workspace_root.join(format!("{name}-finish"));
+            let (ready_tx, ready_rx) = mpsc::channel();
+            let (output_tx, output_observed) = mpsc::channel();
+            let (resume_tx, resume_rx) = mpsc::channel();
+            let worker_runtime = Arc::clone(runtime);
+            let worker = thread::spawn(move || {
+                let mut args = foreground_args(&format!(
+                    "printf 'effect\\n' > {name}-effect; printf {name}-prefix; \
+                     while [ ! -f {name}-release ]; do sleep 0.01; done; printf {name}-tail; \
+                     while [ ! -f {name}-finish ]; do sleep 0.01; done",
+                ));
+                args.timeout = if background { 5_000 } else { 30_000 };
+                args.timeout_behavior = if background { TIMEOUT_BEHAVIOR_BACKGROUND } else { 0 };
+                let mut events = Vec::new();
+                let mut stdout = String::new();
+                let mut ready = Some(ready_tx);
+                let mut output_ready = Some(output_tx);
+                let result = worker_runtime.execute_with_emitter(
+                    stream_file_request(args), &AtomicBool::new(false), |event| {
+                        if let Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                            message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                                event: Some(shell_stream::Event::Stdout(output)),
+                            })), ..
+                        })) = &event.element {
+                            stdout.push_str(&output.data);
+                            if stdout.contains(&format!("{name}-prefix")) {
+                                if let Some(ready) = ready.take() {
+                                    ready.send(()).map_err(|error| error.to_string())?;
+                                    resume_rx.recv_timeout(Duration::from_secs(15))
+                                        .map_err(|error| error.to_string())?;
+                                }
+                            }
+                            if stdout == format!("{name}-prefix{name}-tail") {
+                                if let Some(ready) = output_ready.take() {
+                                    ready.send(()).map_err(|error| error.to_string())?;
+                                }
+                            }
+                        }
+                        events.push(event);
+                        Ok(())
+                    },
+                );
+                (result, events)
+            });
+            let fixture = Self {
+                release_path, finish_path, output_observed,
+                resume: Some(resume_tx), worker: Some(worker),
+            };
+            ready_rx.recv_timeout(Duration::from_secs(3))
+                .expect("real prefix reached the stream emitter");
+            fixture
+        }
+
+        fn resume(&mut self) {
+            if let Some(resume) = self.resume.take() {
+                let _ = resume.send(());
+            }
+        }
+
+        fn release_output(&mut self) {
+            fs::write(&self.release_path, b"release").expect("release actual output");
+            self.resume();
+            self.output_observed.recv_timeout(Duration::from_secs(3))
+                .expect("complete real output reached the emitter before child release");
+        }
+
+        fn finish(&mut self) -> Vec<ExecStreamElement> {
+            fs::write(&self.release_path, b"release").expect("release actual output");
+            fs::write(&self.finish_path, b"finish").expect("release actual child");
+            self.resume();
+            let (result, events) = self.worker.take().unwrap().join().expect("stream caller joined");
+            result.expect("stream response including any matching Throw completed");
+            events
+        }
+    }
+
+    impl Drop for HeldFileStream {
+        fn drop(&mut self) {
+            let _ = fs::write(&self.release_path, b"release");
+            let _ = fs::write(&self.finish_path, b"finish");
+            self.resume();
+            if let Some(worker) = self.worker.take() {
+                let _ = worker.join();
+            }
+        }
+    }
+
+    fn shared_terminal_runtime(runtime: &BoxExecRuntime) -> Arc<BoxExecRuntime> {
+        Arc::new(BoxExecRuntime::new(
+            runtime.workspace_root.clone(), runtime.terminals_directory.clone(),
+            std::env::vars().collect(),
+        ))
+    }
+
+    #[test]
+    fn foreground_capture_independent_runtimes_keep_distinct_spools_and_cleanup() {
+        let (_root, runtime) = runtime();
+        let first_runtime = Arc::new(runtime);
+        let second_runtime = shared_terminal_runtime(&first_runtime);
+        let mut first = HeldFileStream::new(&first_runtime, "first", false);
+        let first_spool = first_runtime.stream_spool_path(ForegroundId(1), 0);
+        assert_eq!(fs::read(&first_spool).unwrap(), b"first-prefix");
+        let mut second = HeldFileStream::new(&second_runtime, "second", false);
+        let second_spool = second_runtime.stream_spool_path(ForegroundId(1), 1);
+        for runtime in [&first_runtime, &second_runtime] {
+            let processes = runtime.foreground_processes.lock().unwrap();
+            assert_eq!(processes.len(), 1);
+            assert!(matches!(processes.get(&ForegroundId(1)),
+                Some((_, ForegroundProcess::Stream))), "equal actual runtime-local identities");
+        }
+        assert_ne!(first_spool, second_spool);
+        assert_eq!(fs::read(&first_spool).unwrap(), b"first-prefix");
+        assert_eq!(fs::read(&second_spool).unwrap(), b"second-prefix");
+        first.release_output();
+        assert_eq!(fs::read(&first_spool).unwrap(), b"first-prefixfirst-tail");
+        let first_events = first.finish();
+        assert_stream_file_result(&first_events, false);
+        assert_eq!(stream_file_stdout(&first_events), "first-prefixfirst-tail");
+        assert!(!first_spool.exists());
+        assert_eq!(fs::read(&second_spool).unwrap(), b"second-prefix",
+            "first completion must not remove or overwrite the other active stream");
+        assert!(second_runtime.foreground_processes.lock().unwrap().contains_key(&ForegroundId(1)));
+        second.release_output();
+        assert_eq!(fs::read(&second_spool).unwrap(), b"second-prefixsecond-tail");
+        let second_events = second.finish();
+        assert_stream_file_result(&second_events, false);
+        assert_eq!(stream_file_stdout(&second_events), "second-prefixsecond-tail");
+        assert!(!second_spool.exists());
+        for name in ["first", "second"] {
+            assert_eq!(fs::read(first_runtime.workspace_root.join(format!("{name}-effect"))).unwrap(),
+                b"effect\n");
+        }
+        first_runtime.stop().expect("first real child and readers completed");
+        second_runtime.stop().expect("second real child and readers completed");
+        assert_eq!(fs::read_dir(&first_runtime.terminals_directory).unwrap().count(), 0);
+    }
+
+    fn assert_file_sentinel(path: &Path, target: &Path, symbolic: bool) {
+        if symbolic {
+            assert!(fs::symlink_metadata(path).unwrap().file_type().is_symlink());
+            assert_eq!(fs::read_link(path).unwrap(), target);
+        } else {
+            assert!(fs::symlink_metadata(path).unwrap().is_file());
+        }
+        assert_eq!(fs::read(path).unwrap(), b"foreign sentinel\n");
+        assert_eq!(fs::read(target).unwrap(), b"foreign sentinel\n");
+    }
+
+    fn create_file_sentinel(path: &Path, target: &Path, symbolic: bool) {
+        if symbolic {
+            symlink(target, path).unwrap();
+        } else {
+            fs::write(path, b"foreign sentinel\n").unwrap();
+        }
+    }
+
+    fn assert_occupied_stream_spools_preserved(symbolic: bool) {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let target = runtime.workspace_root.join("sentinel-target");
+        fs::write(&target, b"foreign sentinel\n").unwrap();
+        let mut sentinels = Vec::new();
+        for attempt in 0..STREAM_SPOOL_CREATE_ATTEMPTS {
+            let path = runtime.stream_spool_path(ForegroundId(1), attempt);
+            create_file_sentinel(&path, &target, symbolic);
+            sentinels.push(path);
+        }
+        let (release, gate) = mpsc::channel();
+        *runtime.stream_setup_gate.lock().unwrap() = Some(gate);
+        let (observed_tx, observed_rx) = mpsc::channel();
+        *runtime.stream_recovery_observer.lock().unwrap() = Some(observed_tx);
+        let worker_runtime = Arc::clone(&runtime);
+        let worker = thread::spawn(move || worker_runtime.execute(stream_file_request(
+            foreground_args("printf spool-prefix; printf 'effect\\n' > spool-effect; \
+                while :; do sleep 1; done"),
+        )));
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while fs::read(runtime.workspace_root.join("spool-effect")).unwrap_or_default() != b"effect\n" {
+            assert!(Instant::now() < deadline, "real effect must precede failed spool allocation");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        assert!(runtime.foreground_processes.lock().unwrap().contains_key(&ForegroundId(1)));
+        release.send(()).unwrap();
+        let started = Instant::now();
+        let events = worker.join().expect("bounded actual setup failure");
+        assert!(started.elapsed() < Duration::from_secs(4));
+        assert_stream_file_result(&events, true);
+        assert!(events.iter().any(|event| matches!(&event.element,
+            Some(exec_stream_element::Element::ExecClientControlMessage(
+                ExecClientControlMessage {
+                    message: Some(exec_client_control_message::Message::Throw(error)),
+                },
+            )) if error.error == "shell stream spool allocation exhausted")));
+        let (id, owner) = observed_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+        assert_eq!(id, ForegroundId(1));
+        {
+            let mut state = owner.lock().unwrap();
+            assert!(state.poll().unwrap().is_some());
+            assert!(state.capture_complete);
+            assert!(state.stream_recovery.is_none());
+            assert!(state.signals_sent > 0);
+            let signals = state.signals_sent;
+            state.signal(true).unwrap();
+            assert_eq!(state.signals_sent, signals);
+        }
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        assert!(!runtime.stopping.load(Ordering::Acquire));
+        assert_eq!(fs::read(runtime.workspace_root.join("spool-effect")).unwrap(), b"effect\n");
+        for path in &sentinels {
+            assert_file_sentinel(path, &target, symbolic);
+        }
+        // The next invocation also meets an occupied candidate, but has room
+        // to exclusively claim another. It must capture only its own bytes.
+        let next_collision = runtime.stream_spool_path(ForegroundId(2), 0);
+        create_file_sentinel(&next_collision, &target, symbolic);
+        sentinels.push(next_collision);
+        let events = runtime.execute(stream_file_request(foreground_args("printf recovered")));
+        assert_stream_file_result(&events, false);
+        assert_eq!(stream_file_stdout(&events), "recovered");
+        for path in &sentinels {
+            assert_file_sentinel(path, &target, symbolic);
+        }
+        assert_eq!(fs::read_dir(&runtime.terminals_directory).unwrap().count(), sentinels.len());
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        runtime.stop().expect("failed and successful children both observed");
+    }
+
+    #[test]
+    fn foreground_capture_occupied_spool_files_survive_failure_and_recovery() {
+        assert_occupied_stream_spools_preserved(false);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn foreground_capture_occupied_spool_symlinks_survive_failure_and_recovery() {
+        assert_occupied_stream_spools_preserved(true);
+    }
+
+    fn assert_occupied_stream_terminal_preserved(symbolic: bool) {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        struct PipeRelease(Arc<BoxExecRuntime>);
+        impl Drop for PipeRelease {
+            fn drop(&mut self) {
+                let _ = fs::write(self.0.workspace_root.join("release-file-pipe"), b"release");
+                let _ = self.0.stop();
+            }
+        }
+        let _release = PipeRelease(Arc::clone(&runtime));
+        let terminal = runtime.terminals_directory.join("1.txt");
+        let target = runtime.workspace_root.join("terminal-sentinel-target");
+        fs::write(&target, b"foreign sentinel\n").unwrap();
+        create_file_sentinel(&terminal, &target, symbolic);
+        let (release_setup, setup_gate) = mpsc::channel();
+        *runtime.stream_setup_gate.lock().unwrap() = Some(setup_gate);
+        let (observed_tx, observed_rx) = mpsc::channel();
+        *runtime.stream_recovery_observer.lock().unwrap() = Some(observed_tx);
+        let worker_runtime = Arc::clone(&runtime);
+        let worker = thread::spawn(move || {
+            let mut args = foreground_args(
+                "(trap '' TERM; printf ready > file-pipe-ready; \
+                  while [ ! -f release-file-pipe ]; do sleep 0.01; done; \
+                  printf inherited-tail) & \
+                 while [ ! -f file-pipe-ready ]; do sleep 0.01; done; \
+                 printf handoff-prefix; printf 'effect\\n' > terminal-effect; \
+                 IFS= read -r release",
+            );
+            args.timeout = 1;
+            args.timeout_behavior = TIMEOUT_BEHAVIOR_BACKGROUND;
+            worker_runtime.execute(stream_file_request(args))
+        });
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while fs::read(runtime.workspace_root.join("terminal-effect")).unwrap_or_default()
+            != b"effect\n"
+        {
+            assert!(Instant::now() < deadline, "actual prefix and effect must precede handoff");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        assert_eq!(fs::read(runtime.workspace_root.join("file-pipe-ready")).unwrap(), b"ready");
+        release_setup.send(()).unwrap();
+        let started = Instant::now();
+        let events = worker.join().expect("occupied terminal returns without waiting for inherited EOF");
+        assert!(started.elapsed() < Duration::from_secs(4));
+        assert_stream_file_result(&events, true);
+        let (registration_id, owner) = observed_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+        assert_eq!(registration_id, ForegroundId(1));
+        let spool = {
+            let mut state = owner.lock().unwrap();
+            assert!(state.poll().unwrap().is_some(), "guard reaped its actual Child");
+            assert!(!state.capture_complete, "explicit release still owns inherited pipes");
+            let recovery = state.stream_recovery.as_ref().expect("actual reader custody retained");
+            assert!(recovery.stdout_worker.is_some());
+            assert!(recovery.stderr_worker.is_some());
+            assert_eq!(recovery.cleanup_paths.len(), 1, "occupied terminal grants no cleanup claim");
+            assert_eq!(recovery.cleanup_paths[0], runtime.stream_spool_path(ForegroundId(1), 0));
+            recovery.cleanup_paths[0].clone()
+        };
+        assert!(runtime.foreground_processes.lock().unwrap().contains_key(&registration_id));
+        assert!(runtime.background.lock().unwrap().is_empty(), "failed handoff is not admitted");
+        assert_file_sentinel(&terminal, &target, symbolic);
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while fs::read(&spool).unwrap_or_default() != b"handoff-prefix" {
+            assert!(Instant::now() < deadline, "real reader did not capture its prefix");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        let normal = runtime.shell(&foreground_args("printf before-file-release")).unwrap();
+        assert!(matches!(normal.result,
+            Some(shell_result::Result::Success(result)) if result.stdout == "before-file-release"));
+        assert!(runtime.foreground_processes.lock().unwrap().contains_key(&registration_id));
+        assert!(!owner.lock().unwrap().capture_complete, "normal admission must retain pending readers");
+        assert_eq!(fs::read(&spool).unwrap(), b"handoff-prefix");
+        assert_file_sentinel(&terminal, &target, symbolic);
+
+        fs::write(runtime.workspace_root.join("release-file-pipe"), b"release").unwrap();
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            let finished = {
+                let state = owner.lock().unwrap();
+                let recovery = state.stream_recovery.as_ref().unwrap();
+                recovery.stdout_worker.as_ref().unwrap().is_finished()
+                    && recovery.stderr_worker.as_ref().unwrap().is_finished()
+            };
+            if finished { break; }
+            assert!(Instant::now() < deadline, "explicitly released readers did not finish");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        assert_eq!(fs::read(&spool).unwrap(), b"handoff-prefixinherited-tail");
+        assert!(!owner.lock().unwrap().capture_complete, "fixture has not joined either worker");
+        let events = runtime.execute(stream_file_request(foreground_args("printf recovered")));
+        assert_stream_file_result(&events, false);
+        assert_eq!(stream_file_stdout(&events), "recovered");
+        assert!(!spool.exists(), "actual normal admission observes readers before deleting its spool");
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        assert!(!runtime.stopping.load(Ordering::Acquire));
+        {
+            let mut state = owner.lock().unwrap();
+            assert!(state.capture_complete);
+            assert!(state.stream_recovery.is_none());
+            let signals = state.signals_sent;
+            state.signal(true).unwrap();
+            assert_eq!(state.signals_sent, signals, "completed recovery cannot signal a reused PID");
+        }
+        assert_file_sentinel(&terminal, &target, symbolic);
+        assert_eq!(fs::read(runtime.workspace_root.join("terminal-effect")).unwrap(), b"effect\n");
+        assert_eq!(fs::read_dir(&runtime.terminals_directory).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn foreground_capture_occupied_terminal_files_preserve_pending_reader_ownership() {
+        assert_occupied_stream_terminal_preserved(false);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn foreground_capture_occupied_terminal_symlinks_preserve_pending_reader_ownership() {
+        assert_occupied_stream_terminal_preserved(true);
+    }
+
+    #[test]
+    fn foreground_capture_retired_spool_claim_cannot_remove_reused_candidate() {
+        let (_root, runtime) = runtime();
+        let first_runtime = Arc::new(runtime);
+        let second_runtime = shared_terminal_runtime(&first_runtime);
+        let mut first = HeldFileStream::new(&first_runtime, "retired", true);
+        let spool = first_runtime.stream_spool_path(ForegroundId(1), 0);
+        assert_eq!(fs::read(&spool).unwrap(), b"retired-prefix");
+
+        // The existing admission mutex holds the real handoff after writer
+        // transfer and spool deletion, before its fallible stop admission.
+        let background_admission = first_runtime.background.lock().unwrap();
+        first.resume();
+        let terminal = first_runtime.terminals_directory.join("1.txt");
+        let deadline = Instant::now() + Duration::from_secs(8);
+        while spool.exists() || !terminal.exists() {
+            assert!(Instant::now() < deadline, "real handoff did not retire the spool");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        assert!(fs::read_to_string(&terminal).unwrap().contains("retired-prefix"));
+        let mut second = HeldFileStream::new(&second_runtime, "reused", false);
+        assert_eq!(second_runtime.stream_spool_path(ForegroundId(1), 0), spool);
+        assert_eq!(fs::read(&spool).unwrap(), b"reused-prefix",
+            "the second real runtime exclusively reclaimed the removed candidate");
+
+        let stopping_runtime = Arc::clone(&first_runtime);
+        let stopper = thread::spawn(move || stopping_runtime.stop());
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while !first_runtime.stopping.load(Ordering::Acquire) {
+            assert!(Instant::now() < deadline, "actual stop did not close admission");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        drop(background_admission);
+        let events = first.finish();
+        assert_stream_file_result(&events, true);
+        stopper.join().expect("actual stopper joined").expect("failed handoff resources observed");
+        assert!(first_runtime.foreground_processes.lock().unwrap().is_empty());
+        assert!(first_runtime.background.lock().unwrap().is_empty());
+        assert!(!terminal.exists(), "failed handoff removes only the terminal it created");
+        assert_eq!(fs::read(&spool).unwrap(), b"reused-prefix",
+            "later predecessor recovery must not delete a successor's claimed file");
+        second.release_output();
+        assert_eq!(fs::read(&spool).unwrap(), b"reused-prefixreused-tail");
+        let events = second.finish();
+        assert_stream_file_result(&events, false);
+        assert_eq!(stream_file_stdout(&events), "reused-prefixreused-tail");
+        assert!(!spool.exists());
+        for name in ["retired", "reused"] {
+            assert_eq!(fs::read(first_runtime.workspace_root.join(format!("{name}-effect"))).unwrap(),
+                b"effect\n");
+        }
+        second_runtime.stop().expect("successor child and readers completed");
+        assert_eq!(fs::read_dir(&first_runtime.terminals_directory).unwrap().count(), 0);
     }
 
     #[test]

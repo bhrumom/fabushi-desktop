@@ -11,7 +11,7 @@
   "producer_implementation_base": "d1fd235e8bd46c2bb0099267bc45e2800dbd1168",
   "authority": {
     "path": "docs/specs/g11-box-browser-wire-completion.md",
-    "blob": "707256fe48cae8ac3667464bbf1bfa5c1ece6e53",
+    "blob": "e18a5cdd6d23341c9fea86f56c4010bad977009f",
     "preimplementation_commit": "d1fd235e8bd46c2bb0099267bc45e2800dbd1168",
     "ownership_clarification_commit": "d2187abaef74f979fb5bf85cd59e7d75700cba0a",
     "requirements": [
@@ -44,6 +44,16 @@
         "commit": "b31b2c6a131b09aff80233952de404d7ea7497c3",
         "blob": "707256fe48cae8ac3667464bbf1bfa5c1ece6e53",
         "contract": "SC02-R2 completed recovery observation and explicit release oracle"
+      },
+      {
+        "commit": "cfc6913211f33f6d5d174e203a0b9743b8d29fe9",
+        "blob": "781912c5eb7fb53fd82452b33a99760b31b983e0",
+        "contract": "SC02-R3 exclusive stream spool/terminal ownership before cleanup"
+      },
+      {
+        "commit": "36fcf3dda7b21a7b4cfb619e783f3a66ee487937",
+        "blob": "e18a5cdd6d23341c9fea86f56c4010bad977009f",
+        "contract": "SC02-R3 retire cleanup claims after actual removal"
       }
     ]
   },
@@ -89,7 +99,7 @@
   ],
   "required_behaviors": {
     "SC01": "Pre-spawn refusal retains known SpawnError. Successful spawn followed by missing pipe, setup, worker creation, read, wait or join failure yields typed execution uncertainty without partial/empty substitution; Interrupted read is retried.",
-    "SC02": "Retain Child and both capture workers in existing ownership chain through terminal cleanup. Signal only while owned unreaped child is observed; bounded cleanup retains unresolved child in the same registry and stop cannot claim clean completion. No second process registry. Registration identity must outlive reusable PID and be carried through every capture/stream insertion, completion and handoff. No registration may overwrite another incomplete invocation; identity exhaustion must refuse before spawn. Exceptional streamed returns/unwinds retain actual Child and started worker handles in that same invocation; bounded cleanup and later stop observation must not be replaced by an inert marker or detached handles. Completed transferred resources are observed after bounded Drop cleanup and at existing normal foreground admission boundaries; keep only actual unresolved custody, release completed parent pipe handles, and preserve unknown classification independently of later cleanup.",
+    "SC02": "Retain Child and both capture workers in existing ownership chain through terminal cleanup. Signal only while owned unreaped child is observed; bounded cleanup retains unresolved child in the same registry and stop cannot claim clean completion. No second process registry. Registration identity must outlive reusable PID and be carried through every capture/stream insertion, completion and handoff. No registration may overwrite another incomplete invocation; identity exhaustion must refuse before spawn. Exceptional streamed returns/unwinds retain actual Child and started worker handles in that same invocation; bounded cleanup and later stop observation must not be replaced by an inert marker or detached handles. Completed transferred resources are observed after bounded Drop cleanup and at existing normal foreground admission boundaries; keep only actual unresolved custody, release completed parent pipe handles, and preserve unknown classification independently of later cleanup. Stream spool allocation must exclusively create an owned file across independent runtimes sharing one directory; occupied candidates and timed-handoff terminals remain unchanged. Register cleanup authority only after actual exclusive creation; retire the claim after successful removal before any later failure.",
     "SC03": "Both foreground dispatch variants emit existing matching Throw/StreamClose with bounded static phase diagnostics, no command/output payload and no new protobuf fields.",
     "SC04": "Complete success/nonzero/timeout/abort and existing lossy UTF-8 display remain; no independent EOF deadline for a still-authorized request. Cancellation/stop/explicit timeout bounds incomplete drain.",
     "SC05": "Actual Host/ForeverBox/Runner consumer receives ToolOutcomeUnknown, sticky DownstreamOutcomeUnknown, refusal of further tools/checkpoint/replay and one provider attempt; counted external effect remains one.",
@@ -227,7 +237,13 @@
         "server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture",
         "server::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup",
         "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
-        "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+        "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission",
+        "server::tests::foreground_capture_independent_runtimes_keep_distinct_spools_and_cleanup",
+        "server::tests::foreground_capture_occupied_spool_files_survive_failure_and_recovery",
+        "server::tests::foreground_capture_occupied_spool_symlinks_survive_failure_and_recovery",
+        "server::tests::foreground_capture_occupied_terminal_files_preserve_pending_reader_ownership",
+        "server::tests::foreground_capture_occupied_terminal_symlinks_preserve_pending_reader_ownership",
+        "server::tests::foreground_capture_retired_spool_claim_cannot_remove_reused_candidate"
       ],
       "consumer": [
         "foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay",
@@ -249,10 +265,17 @@
       "consumer_env": "FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN",
       "scope": "Only cfg(test) artifact may expose the private owned fault probe; normal shipping binary is separately built and exercised."
     },
-    "retained": "All existing BXR77 direct positives in eight cases and14 actual downstream custody names remain required; three SC cases now require16 additional direct positives (13 daemon unit,2 actual consumer,1 disconnect). Existing Plugin/LocalExec capture contracts remain intact.",
+    "retained": "All existing BXR77 direct positives in eight cases and14 downstream custody names remain in the full plan; three SC cases require22 direct positives (19 daemon unit,2 actual consumer,1 disconnect). CRF-v1 selects the11 Box/SC cases plus4 repaired Plugin consumer cases and1 DJC-07 instrument; its scoped-only result does not claim unselected downstream or full-plan execution.",
     "execution": "not-run",
-    "source_review": "Combined SC02-R2 registration identity, owned stream stop, exceptional custody and completed-recovery fixes are authored and integrated for fresh complete-context R2 GENERAL/STRUCTURE review. Source authors and root inspected the exact changed functions and meaningful real-child oracles; this is not independent approval or executable verification.",
-    "oracle_limits": "Owned real children and actual authenticated loopback producers/consumers with cfg(test) operation faults are controlled evidence, not live service/device/platform/package acceptance. The pre-aborted unit proves bounded observed abort, not trap readiness/escalation for that same abort. A controlled registration alias proves PID-independent custody without claiming actual OS PID wraparound. A private cfg(test) observation channel exposes the guard's actual completed owner after cleanup; it does not substitute an execution result. Three repeated real setup failures must leave no completed registrations or parent pipes without stop. Stop and both normal admission variants share a real controlled unwind/release fixture; no independent descendant countdown may preempt the unresolved assertion."
+    "source_review": "R2 identified shared stream spool ownership and precreation cleanup defects. The R3 correction is pending immutable candidate review and exact-H execution; source/text authorship is not independent approval.",
+    "oracle_limits": "Owned real children and actual authenticated loopback producers/consumers with cfg(test) operation faults are controlled evidence, not live service/device/platform/package acceptance. The pre-aborted unit proves bounded observed abort, not trap readiness/escalation for that same abort. A controlled registration alias proves PID-independent custody without claiming actual OS PID wraparound. A private cfg(test) observation channel exposes the guard's actual completed owner after cleanup; it does not substitute an execution result. Three repeated real setup failures must leave no completed registrations or parent pipes without stop. Stop and both normal admission variants share a real controlled unwind/release fixture; no independent descendant countdown may preempt the unresolved assertion. Six SC02-R3 real controls require independent equal-ID runtimes, occupied regular/symlink spool and terminal preservation through actual refusal/recovery, and same-candidate reuse after successful removal. No general hostile-directory or whole background-controller claim.",
+    "focused_execution_contract": {
+      "spec": "projects/openclaw-rust/docs/specs/custody-recovery-verification.md",
+      "blob": "95c83e8d2a8e3df7a744a0d8f74db202ac4f0206",
+      "workflow_scope": "ocrm-custody-recovery",
+      "capture_scope": "custody-recovery",
+      "boundary": "Selected Linux/macOS shipping Host compile and exact producer/consumer checks only; historical DJC reader-lock failure remains unresolved."
+    }
   },
   "recovery": {
     "owner": "Existing ephemeral BoxExecRuntime foreground registry and durable existing Runner custody only.",
@@ -324,6 +347,33 @@
         "SC-PRE-R2-UNWIND-RELEASE-ORACLE"
       ],
       "disposition": "Actual source correction and13 authored foreground unit selectors; fresh independent R2 source review and exact-H execution pending. No full-unit or shipping acceptance.",
+      "execution": "not-run"
+    },
+    {
+      "kind": "combined-r3-candidate-source",
+      "source_blob": "9e3e46179bbc25bf323bc886e9e33d1506792306",
+      "source_bytes": 214698,
+      "source_sha256": "3d0110a2079ef4aebe69311be3348669824485c9d3b0b2bd5f5a7c6e27fa4c60",
+      "prior_published_source_blob": "20b6a1635c091a5cacbc0bbdabff17cdc041e90f",
+      "authority_commits": [
+        "cfc6913211f33f6d5d174e203a0b9743b8d29fe9",
+        "36fcf3dda7b21a7b4cfb619e783f3a66ee487937"
+      ],
+      "decisions": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r2/decisions.json",
+      "applied_fixes": [
+        "SC-R2-SHARED-SPOOL-OWNERSHIP",
+        "SC-R2-PRECREATION-CLEANUP-CLAIM",
+        "SC-R2-RETIRED-SPOOL-CLEANUP"
+      ],
+      "new_required_names": [
+        "server::tests::foreground_capture_independent_runtimes_keep_distinct_spools_and_cleanup",
+        "server::tests::foreground_capture_occupied_spool_files_survive_failure_and_recovery",
+        "server::tests::foreground_capture_occupied_spool_symlinks_survive_failure_and_recovery",
+        "server::tests::foreground_capture_occupied_terminal_files_preserve_pending_reader_ownership",
+        "server::tests::foreground_capture_occupied_terminal_symlinks_preserve_pending_reader_ownership",
+        "server::tests::foreground_capture_retired_spool_claim_cannot_remove_reused_candidate"
+      ],
+      "disposition": "Actual source correction exclusively creates bounded shared-directory spools and timed-handoff terminal files, records only acquired cleanup ownership, retains the created terminal File, and retires successful spool removal claims. Six authored real controls bind equal-ID runtimes, occupied regular/symlink preservation and legitimate removed-candidate reuse. Fresh complete-scope R3 source review and exact-H Actions remain pending; no full-unit or shipping acceptance.",
       "execution": "not-run"
     }
   ]
