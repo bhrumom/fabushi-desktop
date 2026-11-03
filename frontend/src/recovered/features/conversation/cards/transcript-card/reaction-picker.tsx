@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   QUICK_REACTION_EMOJIS,
@@ -221,7 +221,7 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
     };
   }, [open]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     const onPointerDown = (event: globalThis.PointerEvent) => {
       if (!(event.target instanceof Node) || wrapperRef.current?.contains(event.target) || popoverRef.current?.contains(event.target)) return;
