@@ -1,0 +1,121 @@
+{
+  "schema": "ocrm-scoped-recovery-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "H": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+    "tree": "72f078c428fe718eeb5f57885f3f1a381f107225",
+    "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "runtime_run": 41629309257,
+    "attempt": 1
+  },
+  "source_authority": {
+    "run": 41629309556,
+    "result": "success; scoped source structural evidence only"
+  },
+  "original_job_logs": [
+    {
+      "job": 125894512971,
+      "bytes": 118222,
+      "sha256": "5186a341a2a6eb207588a6fa5499a85fce47d1a9df6b058687ff48616d21e9cf",
+      "identity_scope": "complete decoded GitHub job log encoded UTF-8, including timestamps and ANSI",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125894512971/logs",
+      "acquired_by": "root and independent read-only failure assessor; hashes agree"
+    },
+    {
+      "job": 125894513227,
+      "bytes": 140032,
+      "sha256": "9f533b818e15279edfb6baf1f18d51b1af5a760ebcf95e78e11baa6bdf724626",
+      "identity_scope": "complete decoded GitHub job log encoded UTF-8, including timestamps and ANSI",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125894513227/logs",
+      "acquired_by": "root and independent read-only failure assessor; hashes agree"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "LDB-8190-STAGE-GENERATED-MEMBERS",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "job": 125894512971,
+      "path": "desktop/scripts/build-local-exec-dependencies.mjs",
+      "blob": "1fed2eccd3fd655a6f3f45a3ae0b32c1c80e32b4",
+      "symbol": "buildStage / verifyLocalExecDependencyStage",
+      "failure_signature": "missing or changed staged source input: tree-sitter/node_modules/node-addon-api/node_addon_api.Makefile",
+      "cause": "Native builds run inside the future stage. Source inventory excludes nested node_modules; GYP writes a nested Makefile outside packageRoot/build, and build cleanup leaves it to enter the stage manifest. The unchanged verifier correctly refuses its absent source identity.",
+      "required_repair": "Build in the existing owned work area and assemble a separate fresh candidate only from exact declared sources, the approved stock patch, byte-checked header members and two qualified native outputs. Preserve full build work on failure. Do not weaken stage membership/source verification or widen source exclusions.",
+      "required_controls": [
+        "Real Node and Electron builds and parser loads remain required.",
+        "Generated nested Makefile and other compiler byproducts do not enter the assembled stage.",
+        "A rewritten stage receipt cannot admit undeclared generated source as legitimate input.",
+        "Source/header drift and path/symlink checks remain fail closed."
+      ],
+      "retained_positive_evidence": "Both native compilation commands reached gyp info ok and npm ci succeeded at H; this does not qualify the rejected stage or the unattempted Electron domain.",
+      "invalidated_or_absent": "No successful final Node stage publication; Electron stage, startup, LPI and downstream grouped renderer behavior remain unverified."
+    },
+    {
+      "id": "LDB-8190-TAP-SUMMARY-DIRECTIVE",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "job": 125894513227,
+      "path": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+      "blob": "ee01ed55d46866f64c156f9c7f0fd65601ea0f06",
+      "symbol": "tap_assessment / qualify_oracles",
+      "failure_signature": "LPI/LDB result oracle qualification failed",
+      "cause": "Case-insensitive unanchored SKIP/TODO directive search matches the valid summary '# todo 0'. Five positive TAP controls fail before any product execution; executions is empty.",
+      "required_repair": "Recognize SKIP/TODO directives only on TAP result lines. Keep exact names, unique numbering, plan, version, all numeric summary checks and exit/capture constraints. Retain every existing negative and add direct LF/CRLF, zero-todo summary and result-line directive controls.",
+      "required_controls": [
+        "All five formerly rejected TAP positives are accepted in Actions.",
+        "Actual SKIP/TODO directives and nonzero numeric summaries remain refused.",
+        "A declared test name containing a directive is refused, so name comparison alone is not the negative oracle.",
+        "No local or htch execution."
+      ],
+      "retained_positive_evidence": "Rust synthetic positive matched; this is oracle qualification only, not a Rust product test.",
+      "invalidated_or_absent": "No LPI/LDB product command executed at H; negative TAP results do not establish discrimination while positives are all refused."
+    }
+  ],
+  "retained_scoped_evidence": {
+    "ONP": {
+      "job": 125894512971,
+      "positive_tests": 21,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "source_command_exit": 0,
+      "source_capture_exit": 0,
+      "contract_command_exit": 0,
+      "contract_capture_exit": 0,
+      "independent_acquisition": "Failure assessor checked all27 ONP input hashes and reconstructed both command logs; root independently acquired the complete original job log.",
+      "source_log": {
+        "bytes": 440,
+        "sha256": "4da2c122733058bc013660d36ec4ae41a29f651da970884f382ed63f4e7a731f"
+      },
+      "contract_log": {
+        "bytes": 4199,
+        "sha256": "9ac525d78ca3a3f1e69aca4e98087e415eeb8b296fd53df228e240bec013b6df"
+      },
+      "transfer_limit": "Bound only to H8190; changed builder invalidates using this receipt to accept the next H."
+    },
+    "native_retention": {
+      "artifact_id": 13226878746,
+      "zip_sha256": "c8d5c6c5919bc3747539bdf91c0297c6f05577a87dcbd4095d22e78d0d0d409e",
+      "reported_tar_bytes": 94720000,
+      "reported_tar_sha256": "79a7ac4edc413f75c02206c7931853ac4fd446bad665070b0d6ebfd88621683d",
+      "reported_members": 3645,
+      "scope": "GitHub metadata and original receipt report archive; ZIP not independently downloaded. Retention is not successful build or process-quiescence proof."
+    }
+  },
+  "independent_directness_assessment": {
+    "actor": "/root/ldb_exact_h_failure",
+    "effort": "xhigh failure diagnosis; inherited session retained, backend setting not independently introspectable",
+    "scope": "Complete original job logs, exact causal source/build/capture and required receipt inputs; no edits or execution.",
+    "conclusion": "Two deterministic source-caused failures with distinct direct repairs. Preserve old positives and all assertions; next instrument is one focused recovery of repaired exact-H LocalExec Linux and renderer selection. Do not rerun unrelated media/restore/pressure/platform campaigns, and do not rerun unchanged failing H."
+  },
+  "publication_policy": "This file records decisions before repair. It is an evidence carrier, never the execution subject. Freeze repaired source and review the fix delta with full LDB scope before executing the next H.",
+  "acceptance": {
+    "status": "not accepted",
+    "global_flags_promoted": false,
+    "final_gates": "All applicable G01-G12/AC01-AC24 remain open."
+  }
+}
