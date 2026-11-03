@@ -2,7 +2,7 @@
   "format_version": 1,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 8,
-  "recorded_at": "2026-11-03 00:09:39 UTC",
+  "recorded_at": "2026-11-03 00:23:30 UTC",
   "scope": "NMR-UI-01 / NMR-AC-UI-01: existing ProductionRenderer Human author, cache, queue and asynchronous settlement",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
@@ -16,10 +16,10 @@
   "integration_base": "6e2f1c3728ac29cae3b460e2a4ec7deb7719d01b",
   "publication": {
     "force": false,
-    "expected_sha": "c4e6c6c2320d82c8e2bd205f10d357042e7bacd9",
+    "expected_sha": "98be438bad69f9982c503e5a3442f721307c85ce",
     "full_remote_sha_and_content_readback_required": true,
-    "validation_at_preparation": "H487 native/source successes and UI/Mac failures remain exact-head evidence. New Host feed code and the minimal UI fixture repair require the containing frozen commit Actions.",
-    "containing_commit": "Resolve through the actual containing Git commit; no self-referential or guessed SHA."
+    "containing_commit": "Resolve from actual containing Git commit; no self-reference.",
+    "validation_at_preparation": "H98 native79 executed78pass1fail; source contract and candidate passed in unaccepted mode. The new lifecycle fixture-only repair requires its containing-H Actions. Actual Mac b6 still failed0/2 Human."
   },
   "source_guard_delivery": {
     "sha": "59308cf3cee48213278c52e4ad60bfd9250fb545",
@@ -569,7 +569,7 @@
     "complete": false,
     "accepted": false,
     "independent_acceptance": "not-run",
-    "current_batch_execution": "New feed and fixture implementation authored; execution not-run at preparation. Earlier116 Human/message and193/194 UI results do not qualify these changes."
+    "current_batch_execution": "H98 failed79-case executed prefix78/1; complete120 not reached. Fixture repair not-run at preparation; UI and Mac/shipping remain separate required results."
   },
   "recent_message_prerequisite": {
     "head": "106bb95ba97ef7722e9523285783824393039bc0",
@@ -7840,6 +7840,130 @@
       ],
       "new_writer_contract": "The internal origin is added only to the temporary outer notification Map after the durable write. Stored entry/SQLite payloads are unchanged. The new projection sends current durable entry through existing RosterEmit and does not relay the outer Map.",
       "local_execution": false
+    },
+    "fixture_lifecycle_correction": {
+      "classification": "test fixture reused a closed owner; production shutdown remains unchanged",
+      "path": "source/host/tests/session_gateway_contract.rs",
+      "base_blob": "acfb2660f35e6f5757b7a2e0fe3dec387e4eff98",
+      "replacement_blob": "b04cca295c12bdc1b05bc239f7c5e773ad110f42",
+      "receipt": {
+        "schema": "fabushi.nmr-feed-copied-callback-test-fix.v1",
+        "repository": "bhrumom/fabushi-desktop",
+        "baseHead": "98be438bad69f9982c503e5a3442f721307c85ce",
+        "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "recordedAtUtc": "2026-11-03T00:16:30Z",
+        "authorizedScope": "Only source/host/tests/session_gateway_contract.rs. No production/lifecycle/schema/Spec/gate/workflow/ledger/ref changes; no local or htch execution.",
+        "trigger": {
+          "runId": 41550895037,
+          "jobId": 125637913950,
+          "head": "98be438bad69f9982c503e5a3442f721307c85ce",
+          "countsFromRootAndIndependentReview": {
+            "transcriptPassed": 3,
+            "humanPassed": 75,
+            "humanFailed": 1,
+            "humanTotal": 76
+          },
+          "failure": "shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement failed at old line9347: owner.get_transcript_entry_by_id returned None, expected Some(committed).",
+          "logEvidenceBoundary": "The root and core_recovery reported their complete 156626-character log reads. This receipt records my independent exact-source diagnosis and candidate readback; it does not claim another log read or a candidate execution."
+        },
+        "sourceDiagnosis": [
+          {
+            "path": "source/host/src/extensions/transcript/extension.rs",
+            "blob": "2d7f86577dacd278e03ed9a5816010e675c3455d",
+            "detail": "Drop195–211 first fences and explicitly unsubscribes the Human callback, then calls manager.dispose at208."
+          },
+          {
+            "path": "source/host/src/extensions/transcript/transcript_manager.rs",
+            "blob": "3d86d37255aebeff06707ed5888fb722b9760a73",
+            "detail": "Existing dispose901–958 invokes session_workers.shutdown_with_checkpoint at958."
+          },
+          {
+            "path": "source/host/src/extensions/session/production.rs",
+            "blob": "ade01bc58ca2684b6b6b4c7ce1c6ad1e8741e600",
+            "detail": "shutdown_inner4870–4889 takes and clears the db_owners map, closes each owner and closes worker pool members. It does not restore old owner Arcs; normal open_human_conversation_db_owner can load/register a fresh Arc."
+          },
+          {
+            "path": "source/host/src/extensions/session/agent_db.rs",
+            "blob": "7f9df1030a254bf21db4820fb500dceed8e80eca",
+            "detail": "get_transcript_entry_by_id1666–1680 returns Ok(None) for is_closed or absent connection. The original failed read was therefore a closed-owner fixture oracle error, not evidence of a lost committed row."
+          },
+          {
+            "path": "source/host/src/extensions/transcript/roster_emit.rs",
+            "blob": "5fb7bb1e99b3a04f5e9617b0fade44025b99ca7b",
+            "detail": "publish_transcript_updated408–416 directly calls the retained event_sink. Reopening a valid cached owner before releasing the copied callback means an omitted alive fence is not masked by an empty Session cache or a separate Roster disposed flag."
+          },
+          {
+            "path": "source/host/app/src/main.rs",
+            "blob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+            "detail": "Production starts Session before Transcript, then stops Transcript13416 before Session shutdown13419. The candidate does not alter this lifecycle."
+          }
+        ],
+        "classification": "Test fixture retained and reused a closed SQLite owner after the established TranscriptManager dispose lifecycle. Production semantics are preserved.",
+        "candidate": {
+          "path": "source/host/tests/session_gateway_contract.rs",
+          "baseBlob": "acfb2660f35e6f5757b7a2e0fe3dec387e4eff98",
+          "resultBlob": "b04cca295c12bdc1b05bc239f7c5e773ad110f42",
+          "baseChars": 519380,
+          "resultChars": 520939,
+          "fullApiReadbackIdentical": true,
+          "replacementCount": 1,
+          "netAddedLines": 20,
+          "humanTestDefinitionsBefore": 76,
+          "humanTestDefinitionsAfter": 76,
+          "changedTest": "shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement",
+          "exactReplacement": {
+            "before": "    drop(extension);\n    assert!(manager.is_disposed());\n    let (replacement, new_events) = start_human_transcript_feed(&root, &runtime);\n    release.send(()).expect(\"release old copied callback\");\n    let committed = write.join().expect(\"paused writer\");\n    blocker.unsubscribe();\n    assert_eq!(owner.get_transcript_entry_by_id(\"human-server-message:51\").expect(\"read committed row\"), Some(committed));\n    assert!(human_transcript_feed_events(&old_events).is_empty(), \"copied old callback cannot publish after disposal\");\n    assert!(human_transcript_feed_events(&new_events).is_empty(), \"old dispatch cannot be attributed to the replacement\");\n\n    let current = owner.update_transcript_entry(\n        \"human-server-message:51\", &fixture_saved_human_message(51, \"2\", \"replacement current row\"),\n    ).expect(\"replacement commit\").expect(\"replacement row\");\n    assert_eq!(human_transcript_feed_events(&new_events), vec![json!({\n        \"channel\":\"transcript\",\"payload\":{\"type\":\"updated\",\"agentId\":conversation_id,\"entry\":current},\n    })], \"replacement installs exactly one projection observer\");\n    assert!(human_transcript_feed_events(&old_events).is_empty());\n    drop(replacement);\n    owner.update_transcript_entry(\n        \"human-server-message:51\", &fixture_saved_human_message(51, \"2\", \"after both extensions stopped\"),\n    ).expect(\"post-disposal commit\").expect(\"post-disposal row\");\n    assert!(human_transcript_feed_events(&old_events).is_empty());\n    assert!(human_transcript_feed_events(&new_events).is_empty());\n\n    runtime.shutdown();\n    stop.send(()).expect(\"stop no-request fixture\");\n    assert!(server.join().expect(\"no-request fixture\").is_empty(), \"relay lifecycle performs no HTTP\");\n    drop((owner, runtime, manager));",
+            "after": "    drop(extension);\n    assert!(manager.is_disposed());\n    assert!(owner.is_closed(), \"disposing the manager closes its Session database owners\");\n    // Reopen through the normal Session owner path before releasing the copied\n    // callback. The old callback would still have a readable authorized owner\n    // if its disposal fence failed; an empty cache must not mask that failure.\n    let replacement_owner = runtime.open_human_conversation_db_owner(&conversation_id)\n        .expect(\"replacement owner\");\n    assert!(!Arc::ptr_eq(&owner, &replacement_owner));\n    assert!(!replacement_owner.is_closed());\n    let durable = replacement_owner.get_transcript_entry_by_id(\"human-server-message:51\")\n        .expect(\"read before releasing copied callback\").expect(\"committed durable row\");\n    assert_eq!(durable[\"content\"], \"committed before disposal\");\n    let (replacement, new_events) = start_human_transcript_feed(&root, &runtime);\n    release.send(()).expect(\"release old copied callback\");\n    let committed = write.join().expect(\"paused writer\");\n    blocker.unsubscribe();\n    assert_eq!(replacement_owner.get_transcript_entry_by_id(\"human-server-message:51\").expect(\"read committed row\"), Some(committed));\n    assert!(human_transcript_feed_events(&old_events).is_empty(), \"copied old callback cannot publish after disposal\");\n    assert!(human_transcript_feed_events(&new_events).is_empty(), \"old dispatch cannot be attributed to the replacement\");\n\n    let current = replacement_owner.update_transcript_entry(\n        \"human-server-message:51\", &fixture_saved_human_message(51, \"2\", \"replacement current row\"),\n    ).expect(\"replacement commit\").expect(\"replacement row\");\n    assert_eq!(human_transcript_feed_events(&new_events), vec![json!({\n        \"channel\":\"transcript\",\"payload\":{\"type\":\"updated\",\"agentId\":conversation_id,\"entry\":current},\n    })], \"replacement installs exactly one projection observer\");\n    assert!(human_transcript_feed_events(&old_events).is_empty());\n    drop(replacement);\n    assert!(replacement_owner.is_closed());\n    // The final zero-event observation must accompany a real committed write,\n    // not the no-op behavior of an owner closed by replacement Drop.\n    let final_owner = runtime.open_human_conversation_db_owner(&conversation_id)\n        .expect(\"post-disposal owner\");\n    assert!(!Arc::ptr_eq(&replacement_owner, &final_owner));\n    assert!(!final_owner.is_closed());\n    assert_eq!(final_owner.get_transcript_entry_by_id(\"human-server-message:51\").expect(\"read replacement row\"), Some(current));\n    let final_entry = final_owner.update_transcript_entry(\n        \"human-server-message:51\", &fixture_saved_human_message(51, \"2\", \"after both extensions stopped\"),\n    ).expect(\"post-disposal commit\").expect(\"post-disposal row\");\n    assert_eq!(final_owner.get_transcript_entry_by_id(\"human-server-message:51\").expect(\"read post-disposal row\"), Some(final_entry));\n    assert!(human_transcript_feed_events(&old_events).is_empty());\n    assert!(human_transcript_feed_events(&new_events).is_empty());\n\n    runtime.shutdown();\n    stop.send(()).expect(\"stop no-request fixture\");\n    assert!(server.join().expect(\"no-request fixture\").is_empty(), \"relay lifecycle performs no HTTP\");\n    drop((final_owner, replacement_owner, owner, runtime, manager));"
+          }
+        },
+        "preservedAndStrengthenedOracles": [
+          "The existing global blocker and registration order pause the copied snapshot before old callback admission; no test hook or timeout increase.",
+          "After old extension Drop, manager is disposed and old owner explicitly closed.",
+          "Normal public Session open obtains a distinct, non-closed replacement owner; an actual committed row is read before registering replacement and releasing the old snapshot.",
+          "The copied callback therefore still has access through its captured same Session to an authorized current owner if its fence were missing; no fresh-Session empty-cache shortcut.",
+          "Replacement observer is installed before release. Joined writer result is compared exactly with durable readback from the valid owner.",
+          "Copied dispatch produces zero events on both old and replacement buses.",
+          "Subsequent actual replacement-owner write produces exactly one existing updated envelope on the replacement bus and zero old events.",
+          "After replacement Drop, its owner is explicitly closed. A third distinct/non-closed owner is loaded through the same public Session entrypoint.",
+          "Third owner rereads the preceding current row, performs a real update, and rereads the full final row. Both disposed buses remain empty.",
+          "The original no-HTTP fixture assertion remains; other 75 Human tests and the 6400/32-page test are byte-identical."
+        ],
+        "limitations": [
+          "No candidate build, test or mutation-test execution has occurred. Exact new containing H must pass GitHub Actions.",
+          "This case exercises normal owner reload in the same Session to make the disposal fence oracle discriminating; it is not a full new-process restart. The existing 6400/resume case covers a fresh Session lifecycle.",
+          "The earlier in-memory fresh-Session candidate was discarded before any blob was saved."
+        ]
+      },
+      "independent_review": {
+        "schema": "fabushi.static-review-receipt.v1",
+        "repository": "bhrumom/fabushi-desktop",
+        "base_head": "98be438bad69f9982c503e5a3442f721307c85ce",
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "blob": "b04cca295c12bdc1b05bc239f7c5e773ad110f42",
+        "base": "acfb2660f35e6f5757b7a2e0fe3dec387e4eff98",
+        "other75CasesUnchanged": true,
+        "findings": [
+          "Old closed Arc is explicitly rejected; normal public openHuman registers a distinct live Arc in the same Session before release.",
+          "The old callback's captured Session now has an authorized readable owner; empty-cache refusal cannot mask a missed disposal fence.",
+          "Old roster publication is direct through its retained event sink and has no independent manager-disposed gate; oldbus0 remains a meaningful combined-lifetime negative.",
+          "The new observer is registered after the old global snapshot but before release; old snapshot cannot be attributed to new listener.",
+          "Replacement live owner writes and reads succeed; expected newbus exact one and oldbus zero retained.",
+          "After second Drop a third normal open returns a distinct live owner; final write and full durable readback prove the zero-event observation accompanies an actual commit.",
+          "No private state injection, production edits, count changes, timeout changes or local execution."
+        ],
+        "status": "no_static_blocker_pending_actions",
+        "failed_actions_receipt": "f328a0855f5e00531a05f2f754475b57b684c37a",
+        "human_authored_count": 76,
+        "reviewed_characters": 520939,
+        "limits": [
+          "Static review only; corrected containing H must execute Actions.",
+          "Same Session public owner replacement is an adversarial lifecycle harness, not a claim of an actual new Host/Electron process restart.",
+          "No source acceptance or overall migration acceptance."
+        ]
+      },
+      "test_definitions": 76,
+      "prior75_unchanged": true,
+      "execution": "Not-run for replacement at preparation. Same-Session normal owner reopening preserves a non-vacuous copied-callback fence oracle; it is distinct from the separately tested new-Session6400 restart."
     }
   },
   "backend_feed_preparation_readonly": {
@@ -7949,5 +8073,1049 @@
       },
       "outcome": "No observed PR/main/workflow identity, newly created backend Actions run, known canonical delivery attempt or actual readiness-job change since the previous check. Historical run40047409890/source33a26692ce2f74e3fdca3940dfc4cbfb3ede151b remains delivery provenance only; it does not identify the active Worker. Backend afterId=0 deployment acceptance remains unverified."
     }
+  },
+  "observed_exact_98_execution": {
+    "head": "98be438bad69f9982c503e5a3442f721307c85ce",
+    "native_run": 41550895037,
+    "source_run": 41550895137,
+    "mac_run": 41550895126,
+    "reconciliation": {
+      "schema": "fabushi.actions-terminal-receipt.v1",
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "run_id": 41550895037,
+      "run_attempt": 1,
+      "event": "push",
+      "job_id": 125637913950,
+      "job_name": "native-message-reconciliation",
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41550895037/job/125637913950",
+      "evidence": {
+        "full_job_log_fetched": true,
+        "full_job_log_characters": 156626,
+        "full_job_log_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125637913950/logs",
+        "artifact": {
+          "id": 13193130055,
+          "name": "native-message-reconciliation-98be438bad69f9982c503e5a3442f721307c85ce",
+          "size_in_bytes": 12006,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13193130055",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13193130055/zip",
+          "expired": false,
+          "created_at": "2026-11-03T00:14:08Z",
+          "expires_at": "2027-02-01T00:10:15Z",
+          "updated_at": "2026-11-03T00:14:08Z",
+          "digest": "sha256:545674a77a24f6a116a4f6557d46f9854fe7b15de7da75a28ccf45a11d9dd749",
+          "workflow_run": {
+            "id": 41550895037,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "98be438bad69f9982c503e5a3442f721307c85ce"
+          }
+        }
+      },
+      "actual": {
+        "test_groups": [
+          {
+            "label": "Transcript compaction/recovery",
+            "executed": 3,
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0
+          },
+          {
+            "label": "Human ingress/settlement/restart",
+            "executed": 76,
+            "passed": 75,
+            "failed": 1,
+            "ignored": 0,
+            "duration_seconds": 92.96
+          }
+        ],
+        "total_executed": 79,
+        "total_passed": 78,
+        "total_failed": 1,
+        "total_ignored": 0,
+        "unexecuted_later_planned_tests": 41,
+        "all_76_human_results": [
+          "test shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_restart ... ok",
+          "test shipping_human_committed_refresh_reaches_production_transcript_bus ... ok",
+          "test shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_committed_page ... ok",
+          "test shipping_human_agent_handoff_and_history_download_keep_activity_monotonic ... ok",
+          "test shipping_human_equal_timestamp_pagination_keeps_cursor_through_refresh_reaction_and_restart ... ok",
+          "test shipping_human_concurrent_reactions_serialize_one_conversation_without_blocking_another ... ok",
+          "test shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history ... ok",
+          "test shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging ... ok",
+          "test shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy ... ok",
+          "test shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement ... ok",
+          "test shipping_human_forward_idempotent_replay_rejects_changed_scope_and_expanded_destinations ... ok",
+          "test shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes ... ok",
+          "test shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post ... ok",
+          "test shipping_human_forward_process_kill_preserves_complete_intent_before_first_post ... ok",
+          "test shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources ... ok",
+          "test shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok",
+          "test shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy ... ok",
+          "test shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair ... ok",
+          "test shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope ... ok",
+          "test shipping_human_forward_restart_sync_recovers_unsubmitted_target_and_original_snapshot ... ok",
+          "test shipping_human_history_cursor_echo_rejects_legacy_and_conflicting_backend_pages ... ok",
+          "test shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch ... ok",
+          "test shipping_human_history_rejects_damaged_checkpoint_before_any_network_request ... ok",
+          "test shipping_human_history_rejects_oversized_page_before_persisting_coverage ... ok",
+          "test shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page ... ok",
+          "test shipping_human_known_refresh_preserves_omitted_reactions_and_clears_explicit_empty ... ok",
+          "test shipping_human_late_invalid_send_acknowledgements_stay_rejected_without_rolling_back_settlement ... ok",
+          "test shipping_human_late_send_acknowledgement_preserves_newer_reaction_and_read_receipt ... ok",
+          "test shipping_human_late_send_transport_failure_returns_durable_settlement_after_restart ... ok",
+          "test shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send ... ok",
+          "test shipping_human_invalid_persisted_reaction_intents_are_retained_without_http_after_restart ... ok",
+          "test shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok",
+          "test shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce ... ok",
+          "test shipping_human_midpage_resource_failure_replays_durable_prefix_after_restart ... ok",
+          "test shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok",
+          "test shipping_human_reaction_intent_survives_failed_http_and_replays_once_after_restart ... ok",
+          "test shipping_human_reaction_missing_summary_does_not_acknowledge_intent ... ok",
+          "test shipping_human_malformed_history_ids_preserve_page_checkpoint_and_recover_after_restart ... ok",
+          "test shipping_human_reaction_rejects_credential_change_while_response_body_is_streaming ... ok",
+          "test shipping_human_reaction_rejects_midflight_credential_rotation_and_recovers_after_restart ... ok",
+          "test shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling ... ok",
+          "test shipping_human_reaction_gateway_rejects_invalid_targets_and_emoji_before_staging_intent ... ok",
+          "test shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart ... ok",
+          "test shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript ... ok",
+          "test shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart ... ok",
+          "test shipping_human_reaction_unconfirmed_success_keeps_intent_until_restart_replay ... ok",
+          "test shipping_human_reaction_rechecks_current_target_after_http_without_overwriting_newer_fields ... ok",
+          "test shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok",
+          "test shipping_human_read_receipts_compare_rfc3339_instants_and_reject_invalid_ingress_before_resources ... ok",
+          "test shipping_human_retry_fences_account_and_issuer_changes_and_restores_durable_failure ... ok",
+          "test shipping_human_reaction_waits_for_inflight_history_before_deriving_desired_state ... ok",
+          "test shipping_human_retry_preserves_forward_source_policy_and_refuses_generic_ownership_bypass ... ok",
+          "test shipping_human_retry_reopens_attachment_reply_and_coalesces_same_nonce_without_reupload ... ok",
+          "test shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api ... ok",
+          "test shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens ... ok",
+          "test shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_http ... ok",
+          "test shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload ... ok",
+          "test shipping_human_roster_rejects_six_streaming_credential_rotations_before_effects_and_recovers ... ok",
+          "test shipping_human_send_rejects_changed_account_before_message_or_resource_dispatch ... ok",
+          "test shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity ... ok",
+          "test shipping_human_send_rejects_midflight_credential_changes_and_recovers_after_restart ... ok",
+          "test shipping_human_snapshot_cursor_survives_pending_settlement_and_authoritative_anchor_refresh ... ok",
+          "test shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart ... ok",
+          "test shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation ... ok",
+          "test shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce ... ok",
+          "test shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access ... ok",
+          "test shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap ... ok",
+          "test shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap ... ok",
+          "test shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap ... ok",
+          "test shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_time_inserts ... ok",
+          "test shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement ... FAILED",
+          "test shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids ... ok",
+          "test shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins ... ok",
+          "test shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap ... ok",
+          "test shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart ... ok",
+          "test shipping_human_short_32nd_page_defers_latest_refresh_to_next_sync ... ok"
+        ],
+        "new_feed_cases": [
+          "test shipping_human_committed_refresh_reaches_production_transcript_bus ... ok",
+          "test shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement ... FAILED",
+          "test shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids ... ok",
+          "test shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins ... ok"
+        ],
+        "budget_6400_case": "test shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart ... ok",
+        "summary_lines": [
+          "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 161 filtered out; finished in 0.00s",
+          "test result: FAILED. 75 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 92.96s"
+        ],
+        "skipped_steps": [
+          "Human resource upload size and bounded-read contracts",
+          "Concurrent Human creation and non-destructive initialization recovery",
+          "Durable forwarding sharebox owner contract",
+          "Durable forwarding journal and stale-write CAS contracts",
+          "Preserve Agent send nonce boundary",
+          "Prove completed HTTP credential fencing at settlement",
+          "Authenticated forward and identity-only retry gateway HTTP contract",
+          "Post Run Swatinem/rust-cache@v2"
+        ]
+      },
+      "failure": {
+        "classification": "test_fixture_lifetime_oracle_defect",
+        "test": "shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement",
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "test_blob": "acfb2660f35e6f5757b7a2e0fe3dec387e4eff98",
+        "line": 9347,
+        "first_error": "assertion left == right failed: old owner's get_transcript_entry_by_id returned None, expected the committed row",
+        "causal_chain": [
+          {
+            "path": "source/host/src/extensions/transcript/extension.rs",
+            "blob": "2d7f86577dacd278e03ed9a5816010e675c3455d",
+            "symbol": "TranscriptExtension::drop",
+            "fact": "Closes projection admission, unsubscribes, then invokes the existing manager.dispose."
+          },
+          {
+            "path": "source/host/src/extensions/transcript/transcript_manager.rs",
+            "blob": "3d86d37255aebeff06707ed5888fb722b9760a73",
+            "symbol": "TranscriptManager::dispose",
+            "line": 958,
+            "fact": "Existing unchanged disposal calls session_workers.shutdown_with_checkpoint."
+          },
+          {
+            "path": "source/host/src/extensions/session/production.rs",
+            "blob": "ade01bc58ca2684b6b6b4c7ce1c6ad1e8741e600",
+            "symbol": "ProductionSessionWorkers::shutdown_inner",
+            "lines": "4881-4887",
+            "fact": "Takes the db_owners map and closes every registered owner."
+          },
+          {
+            "path": "source/host/src/extensions/session/agent_db.rs",
+            "blob": "7f9df1030a254bf21db4820fb500dceed8e80eca",
+            "symbol": "SandAgentDb::get_transcript_entry_by_id",
+            "lines": "1666-1680",
+            "fact": "Existing closed owner returns Ok(None); the retained Arc is not a reopened database owner."
+          }
+        ],
+        "production_lifetime": [
+          {
+            "path": "source/host/app/src/main.rs",
+            "blob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+            "facts": [
+              "11622 creates ProductionSessionWorkers;11686 starts Session;11798 starts Transcript.",
+              "13416 stops Transcript and13419 shuts down Session; start/stop Transcript each occur once in this file."
+            ]
+          },
+          {
+            "path": "source/host/src/host_production_extensions.rs",
+            "blob": "e25e39c1653582d7c3381ff5bd73a18c7bf94168",
+            "facts": [
+              "start_transcript(750) retains one extension and rejects an occupied slot.",
+              "stop_transcript(792) takes/drops that extension; it does not preserve an open old DB Arc."
+            ]
+          }
+        ],
+        "required_correction": "Keep the copied-snapshot pause, lifetime fence, exact durable readback and all old/new-bus assertions. Assert the old Arc is closed, then normal-open a distinct live owner before replacement; use that new owner for persistence and writes. Reopen again after replacement disposal for the final real write with both observers stopped. Do not change production disposal or suppress assertions.",
+        "oracle_caveat": "Using only a fresh replacement Session while leaving the old Session cache empty can make oldbus==0 vacuous: a leaked old callback would then be rejected by cached-owner admission even without the lifetime fence. A normal reopen in the existing Session (without reviving the old Arc), or an equally explicit authorized cached owner for the old callback, must preserve the non-vacuous fence oracle."
+      },
+      "limits": [
+        "This H's reconciliation gate failed; planned120 tests have not all executed.",
+        "The first three new feed tests and enhanced6400/32-page/restart test passed; copied-callback disposal acceptance remains failed.",
+        "Static review e90b3c1d36dffbf0f8974b227a4f96fff193e15b did not detect this fixture lifecycle misuse before Actions; it is not dynamic acceptance.",
+        "No local tests, rerun, source edit or ref mutation performed by this reviewer; correction is not yet validated."
+      ]
+    },
+    "source_contract": {
+      "schema": "fabushi.actions-terminal-receipt.v1",
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "run_id": 41550895137,
+      "run_attempt": 1,
+      "event": "push",
+      "job_id": 125637914360,
+      "job_name": "contract",
+      "job_status": "completed",
+      "job_conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41550895137/job/125637914360",
+      "evidence": {
+        "full_job_log_fetched": true,
+        "full_job_log_characters": 91552,
+        "full_job_log_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125637914360/logs",
+        "actual_checkout_sha_observed": "98be438bad69f9982c503e5a3442f721307c85ce",
+        "artifact": {
+          "id": 13191545393,
+          "name": "tdrp-source-review-contract-98be438bad69f9982c503e5a3442f721307c85ce",
+          "size_in_bytes": 6959,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13191545393",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13191545393/zip",
+          "expired": false,
+          "created_at": "2026-11-03T00:10:32Z",
+          "expires_at": "2027-02-01T00:10:15Z",
+          "updated_at": "2026-11-03T00:10:32Z",
+          "digest": "sha256:ef2dc7208c44dc66bf8ab7bafdc935e49d13b6fe879184d21fea92b8d78800e5",
+          "workflow_run": {
+            "id": 41550895137,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "98be438bad69f9982c503e5a3442f721307c85ce"
+          }
+        }
+      },
+      "actual": {
+        "node": {
+          "executed": 161,
+          "passed": 161,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "cases": [
+            "ok 1 - nested identity matches GitHub and GitLab mounts bidirectionally",
+            "ok 2 - strict GitHub and GitLab submodule URL identities",
+            "ok 3 - reject GitLab nested pin parent mismatch",
+            "ok 4 - reject GitLab nested pin path mismatch",
+            "ok 5 - reject GitLab nested pin repository mismatch",
+            "ok 6 - reject GitLab nested pin commit mismatch",
+            "ok 7 - reject extra GitLab nested pin concealed alongside the expected pin",
+            "ok 8 - reject omitted GitLab nested pin",
+            "ok 9 - reject duplicate locked and observed mounts",
+            "ok 10 - reject malformed and unpinned nested identities",
+            "ok 11 - closed acquisition state is only a necessary guard and never grants source or product acceptance",
+            "ok 12 - complete source reviews cannot bypass acquisition candidates or a candidate JSON pointer",
+            "ok 13 - accepted acquisition guard rejects open partial historical missing and invented completion states",
+            "ok 14 - accepted acquisition guard requires integer zero pending counts in both actual authority and lock",
+            "ok 15 - accepted acquisition guard binds the actual source and reachability to fixed U",
+            "ok 16 - complete review records cannot override explicit unresolved generated LFS build or legal evidence",
+            "ok 17 - responsibility mapping accepts root and recursive primary sources at their own pinned commits",
+            "ok 18 - responsibility mapping rejects recursive primary repository drift",
+            "ok 19 - responsibility mapping rejects recursive primary commit drift",
+            "ok 20 - responsibility mapping rejects recursive primary path drift",
+            "ok 21 - responsibility mapping rejects recursive primary object drift",
+            "ok 22 - a row cannot declare its own recursive inventory membership",
+            "ok 23 - pre-acceptance mapping retains strict additional identity and uniqueness checks",
+            "ok 24 - pre-acceptance mapping rejects missing collections and malformed Git identities",
+            "ok 25 - authority CLI enforces actual acquisition closure before later checks or network access",
+            "ok 26 - product deep review follows the primary source and returns source counts only",
+            "ok 27 - generated accepts evidenced non-deep disposition without product rows",
+            "ok 28 - dependency accepts evidenced non-deep disposition without product rows",
+            "ok 29 - resource accepts evidenced non-deep disposition without product rows",
+            "ok 30 - documentation accepts evidenced non-deep disposition without product rows",
+            "ok 31 - tooling accepts evidenced non-deep disposition without product rows",
+            "ok 32 - mixed UI and high-risk dependencies accept deep review with an exact source link",
+            "ok 33 - one responsibility can explicitly cover additional exact recursive identities",
+            "ok 34 - one source can map to distinct responsibilities without duplicating source reviews",
+            "ok 35 - reject stale review repository",
+            "ok 36 - an existing responsibility cannot close another source with different repository",
+            "ok 37 - reject stale review commit",
+            "ok 38 - an existing responsibility cannot close another source with different commit",
+            "ok 39 - reject stale review path",
+            "ok 40 - an existing responsibility cannot close another source with different path",
+            "ok 41 - reject stale review object",
+            "ok 42 - an existing responsibility cannot close another source with different object",
+            "ok 43 - reject pending",
+            "ok 44 - reject missing evidence",
+            "ok 45 - reject blank evidence",
+            "ok 46 - reject duplicate evidence",
+            "ok 47 - reject missing rationale",
+            "ok 48 - reject shallow product",
+            "ok 49 - reject shallow mixed UI",
+            "ok 50 - reject shallow high risk",
+            "ok 51 - reject unknown responsibility",
+            "ok 52 - reject missing product mapping",
+            "ok 53 - reject duplicate responsibility links",
+            "ok 54 - reject unknown category",
+            "ok 55 - reject unknown risk",
+            "ok 56 - reject unknown review depth",
+            "ok 57 - reject dependency disposition",
+            "ok 58 - reject generated disposition",
+            "ok 59 - reject unrelated responsibility links even for non-product dispositions",
+            "ok 60 - reject duplicate inventory identities even when mount metadata differs",
+            "ok 61 - reject duplicate and missing source reviews",
+            "ok 62 - reject undeclared review fields consistently with the strict schema",
+            "ok 63 - additional source links never replace individual source review evidence",
+            "ok 64 - reject duplicate responsibility IDs",
+            "ok 65 - reject responsibility primary sources absent from the inventory",
+            "ok 66 - reject unknown additional source identities",
+            "ok 67 - reject duplicate additional identities and repetition of the primary identity",
+            "ok 68 - additional identities use the same exact four fields as the schema",
+            "ok 69 - reject malformed Git identities at every input boundary",
+            "ok 70 - reject missing repository or path identities instead of treating missing fields as equal",
+            "ok 71 - reject absent or malformed input collections",
+            "ok 72 - frozen upstream reads only the pinned commit even when dev advances",
+            "ok 73 - frozen upstream snapshots the selected identity before its asynchronous read",
+            "ok 74 - frozen upstream rejects mismatched or missing returned commit and tree identities",
+            "ok 75 - frozen upstream rejects missing or malformed pins before requesting data",
+            "ok 76 - frozen upstream preserves retrieval failures and never falls back to a branch",
+            "ok 77 - source acceptance rejects any retained rebaseline candidate even if marked rejected or null",
+            "ok 78 - absence of a source candidate neither mutates unknown counts nor grants acceptance",
+            "ok 79 - focused candidate checks actual source arrays and preserves unestablished counters without acceptance",
+            "ok 80 - candidate evidence object key order does not change its immutable identity",
+            "ok 81 - candidate checks authored review subset against the full inventory without granting closure",
+            "ok 82 - candidate admits schema-compatible pending work without counting it as reviewed",
+            "ok 83 - candidate rejects authored review stale object",
+            "ok 84 - candidate rejects authored review missing evidence",
+            "ok 85 - candidate rejects authored review shallow mixed UI",
+            "ok 86 - candidate rejects authored review unrelated responsibility",
+            "ok 87 - candidate rejects duplicate or nonarray authored reviews",
+            "ok 88 - a consistently reduced graph cannot omit the separately required cppgir child",
+            "ok 89 - focused source candidate rejects missing ledger U",
+            "ok 90 - focused source candidate rejects candidate U drift",
+            "ok 91 - focused source candidate rejects index tree drift",
+            "ok 92 - focused source candidate rejects missing lock U",
+            "ok 93 - focused source candidate rejects null candidate marker",
+            "ok 94 - focused source candidate rejects candidate extra acceptance claim",
+            "ok 95 - focused source candidate rejects candidate accepted status",
+            "ok 96 - focused source candidate rejects candidate missing observation field",
+            "ok 97 - focused source candidate rejects true upstream acceptance",
+            "ok 98 - focused source candidate rejects missing false acceptance",
+            "ok 99 - focused source candidate rejects false semantic completion claim",
+            "ok 100 - focused source candidate rejects null coerced to zero",
+            "ok 101 - focused source candidate rejects old numeric minimum",
+            "ok 102 - focused source candidate rejects missing pending counter",
+            "ok 103 - focused source candidate rejects numeric string denominator",
+            "ok 104 - focused source candidate rejects claimed denominator drift",
+            "ok 105 - focused source candidate rejects actual inventory omission",
+            "ok 106 - focused source candidate rejects root denominator drift",
+            "ok 107 - focused source candidate rejects duplicate actual source",
+            "ok 108 - focused source candidate rejects conflicting object at same source path",
+            "ok 109 - focused source candidate rejects missing root identity in recursive array",
+            "ok 110 - focused source candidate rejects wrong nested count",
+            "ok 111 - focused source candidate rejects cppgir mirror claim",
+            "ok 112 - focused source candidate rejects missing manifest",
+            "ok 113 - focused source candidate rejects same-count stale direct commit",
+            "ok 114 - focused source candidate rejects same-count wrong direct repository",
+            "ok 115 - focused source candidate rejects same-count stale nested parent",
+            "ok 116 - focused source candidate rejects same-count wrong nested path",
+            "ok 117 - focused source candidate rejects stale cppgir declaration parent",
+            "ok 118 - focused source candidate rejects wrong cppgir declaration blob",
+            "ok 119 - focused source candidate rejects missing cppgir manifest declaration blob",
+            "ok 120 - focused source candidate rejects missing direct tuple",
+            "ok 121 - focused source candidate rejects duplicate nested tuple",
+            "ok 122 - focused source candidate rejects expected-lite incorrectly mixed into first nested pins",
+            "ok 123 - focused source candidate rejects missing manifest child edge",
+            "ok 124 - focused source candidate rejects manifest parent identity drift",
+            "ok 125 - focused source candidate rejects manifest declared repository drift",
+            "ok 126 - focused source candidate rejects missing explicit cppgir child proof",
+            "ok 127 - focused source candidate rejects child proof commit drift",
+            "ok 128 - focused source candidate rejects unread child tree",
+            "ok 129 - focused source candidate rejects responsibility count drift",
+            "ok 130 - focused source candidate rejects duplicate responsibility",
+            "ok 131 - focused source candidate rejects stale responsibility object",
+            "ok 132 - focused source candidate rejects unknown additional identity",
+            "ok 133 - focused source candidate rejects export target H drift",
+            "ok 134 - focused source candidate rejects export claims source acceptance",
+            "ok 135 - focused source candidate rejects export claims source execution",
+            "ok 136 - focused source candidate rejects opaque source falsely read",
+            "ok 137 - focused source candidate rejects read completion ignores opaque input",
+            "ok 138 - focused source candidate rejects duplicate lexical observation",
+            "ok 139 - focused source candidate rejects changed observed source line",
+            "ok 140 - focused source candidate rejects classified old occurrence relabelled current",
+            "ok 141 - focused source candidate rejects expanded observations renamed root scope",
+            "ok 142 - focused source candidate rejects unresolved refs labelled zero",
+            "ok 143 - focused source candidate rejects old deep authority U relabelled current",
+            "ok 144 - focused source candidate rejects current build pointer points at old discovery",
+            "ok 145 - focused source candidate rejects current candidate count reuses 331",
+            "ok 146 - focused source candidate rejects current candidate adds accepted true",
+            "ok 147 - focused source candidate rejects mutable authority U relabelled current",
+            "ok 148 - focused source candidate rejects tools falsely current-complete",
+            "ok 149 - historical classified totals do not supply missing current identities or counters",
+            "ok 150 - candidate recovery selects exact indexed members and preserves producer versus new target H",
+            "ok 151 - candidate recovery rejects a nested old recovery execution as the new H",
+            "ok 152 - candidate recovery rejects mismatched artifact identity and incomplete members",
+            "ok 153 - candidate recovery rehashes complete ZIP bytes",
+            "ok 154 - candidate recovery rehashes exact member bytes and cannot substitute another prefix",
+            "ok 155 - candidate recovery rejects duplicate member paths and traversal",
+            "ok 156 - candidate recovery rejects a metadata producer mismatch even with a matching metadata digest",
+            "ok 157 - candidate recovery does not follow a selected member symlink",
+            "ok 158 - focused candidate CLI rejects local execution before reading inputs",
+            "ok 159 - responsibility traceability requires every requirement oracle and invariant from RTM or dossier",
+            "ok 160 - responsibility traceability cannot substitute abbreviated requirement or oracle identifiers",
+            "ok 161 - canonical NMR traceability uses current checkout without promoting candidate source acceptance"
+          ]
+        },
+        "python": {
+          "executed": 37,
+          "passed": 37,
+          "failed": 0,
+          "cases": [
+            "test_additional_source_identities_are_optional_and_allow_distinct_sources (__main__.SourceReviewSchemaContractTests.test_additional_source_identities_are_optional_and_allow_distinct_sources) ... ok",
+            "test_additional_source_identities_reject_non_arrays_and_duplicates (__main__.SourceReviewSchemaContractTests.test_additional_source_identities_reject_non_arrays_and_duplicates) ... ok",
+            "test_additional_source_identity_rejects_malformed_fields (__main__.SourceReviewSchemaContractTests.test_additional_source_identity_rejects_malformed_fields) ... ok",
+            "test_additional_source_identity_requires_exactly_four_fields (__main__.SourceReviewSchemaContractTests.test_additional_source_identity_requires_exactly_four_fields) ... ok",
+            "test_complete_generated_and_dependency_reviews_need_contract_or_deep (__main__.SourceReviewSchemaContractTests.test_complete_generated_and_dependency_reviews_need_contract_or_deep) ... ok",
+            "test_complete_high_risk_reviews_require_deep_review (__main__.SourceReviewSchemaContractTests.test_complete_high_risk_reviews_require_deep_review) ... ok",
+            "test_complete_product_and_mixed_ui_require_deep_review_and_mapping (__main__.SourceReviewSchemaContractTests.test_complete_product_and_mixed_ui_require_deep_review_and_mapping) ... ok",
+            "test_complete_review_requires_evidence_for_every_category (__main__.SourceReviewSchemaContractTests.test_complete_review_requires_evidence_for_every_category) ... ok",
+            "test_complete_reviews_accept_risk_appropriate_dispositions (__main__.SourceReviewSchemaContractTests.test_complete_reviews_accept_risk_appropriate_dispositions) ... ok",
+            "test_early_high_risk_stages_can_record_unauthored_case_gaps (__main__.SourceReviewSchemaContractTests.test_early_high_risk_stages_can_record_unauthored_case_gaps) ... ok",
+            "test_early_high_risk_stages_still_require_oracle_and_invariant (__main__.SourceReviewSchemaContractTests.test_early_high_risk_stages_still_require_oracle_and_invariant) ... ok",
+            "test_full_candidate_counters_cannot_reuse_numeric_or_partial_values (__main__.SourceReviewSchemaContractTests.test_full_candidate_counters_cannot_reuse_numeric_or_partial_values) ... ok",
+            "test_full_candidate_still_requires_strict_marker_identity_and_fields (__main__.SourceReviewSchemaContractTests.test_full_candidate_still_requires_strict_marker_identity_and_fields) ... ok",
+            "test_full_ledger_candidate_nulls_use_the_root_condition (__main__.SourceReviewSchemaContractTests.test_full_ledger_candidate_nulls_use_the_root_condition) ... ok",
+            "test_full_schema_is_valid_draft_2020_12 (__main__.SourceReviewSchemaContractTests.test_full_schema_is_valid_draft_2020_12) ... ok",
+            "test_implemented_and_verified_high_risk_require_both_authored_case_kinds (__main__.SourceReviewSchemaContractTests.test_implemented_and_verified_high_risk_require_both_authored_case_kinds) ... ok",
+            "test_null_current_counters_require_the_candidate_marker (__main__.SourceReviewSchemaContractTests.test_null_current_counters_require_the_candidate_marker) ... ok",
+            "test_pending_coverage_never_allows_a_null_or_coerced_denominator (__main__.SourceReviewSchemaContractTests.test_pending_coverage_never_allows_a_null_or_coerced_denominator) ... ok",
+            "test_pending_product_review_can_record_unfinished_work (__main__.SourceReviewSchemaContractTests.test_pending_product_review_can_record_unfinished_work) ... ok",
+            "test_rebaseline_candidate_cannot_claim_accepted_status (__main__.SourceReviewSchemaContractTests.test_rebaseline_candidate_cannot_claim_accepted_status) ... ok",
+            "test_rebaseline_candidate_is_optional_and_preserves_unknown_nulls (__main__.SourceReviewSchemaContractTests.test_rebaseline_candidate_is_optional_and_preserves_unknown_nulls) ... ok",
+            "test_rebaseline_candidate_rejects_non_objects_and_extra_root_fields (__main__.SourceReviewSchemaContractTests.test_rebaseline_candidate_rejects_non_objects_and_extra_root_fields) ... ok",
+            "test_rebaseline_candidate_requires_all_observation_fields (__main__.SourceReviewSchemaContractTests.test_rebaseline_candidate_requires_all_observation_fields) ... ok",
+            "test_rebaseline_coverage_accepts_only_unknown_or_nonnegative_integers (__main__.SourceReviewSchemaContractTests.test_rebaseline_coverage_accepts_only_unknown_or_nonnegative_integers) ... ok",
+            "test_rebaseline_cppgir_identity_enforces_field_types (__main__.SourceReviewSchemaContractTests.test_rebaseline_cppgir_identity_enforces_field_types) ... ok",
+            "test_rebaseline_cppgir_identity_is_required_and_strict (__main__.SourceReviewSchemaContractTests.test_rebaseline_cppgir_identity_is_required_and_strict) ... ok",
+            "test_rebaseline_gitlink_counts_are_nonnegative_integers (__main__.SourceReviewSchemaContractTests.test_rebaseline_gitlink_counts_are_nonnegative_integers) ... ok",
+            "test_rebaseline_source_observations_require_exact_oid_and_nonempty_note (__main__.SourceReviewSchemaContractTests.test_rebaseline_source_observations_require_exact_oid_and_nonempty_note) ... ok",
+            "test_review_evidence_and_links_are_unique_nonempty_string_arrays (__main__.SourceReviewSchemaContractTests.test_review_evidence_and_links_are_unique_nonempty_string_arrays) ... ok",
+            "test_review_git_identities_require_full_lowercase_object_ids (__main__.SourceReviewSchemaContractTests.test_review_git_identities_require_full_lowercase_object_ids) ... ok",
+            "test_review_rejects_unknown_fields_and_enum_values (__main__.SourceReviewSchemaContractTests.test_review_rejects_unknown_fields_and_enum_values) ... ok",
+            "test_review_requires_every_declared_contract_field (__main__.SourceReviewSchemaContractTests.test_review_requires_every_declared_contract_field) ... ok",
+            "test_review_text_fields_cannot_be_blank_or_non_strings (__main__.SourceReviewSchemaContractTests.test_review_text_fields_cannot_be_blank_or_non_strings) ... ok",
+            "test_risk_stage_projection_rejects_missing_unknown_or_malformed_fields (__main__.SourceReviewSchemaContractTests.test_risk_stage_projection_rejects_missing_unknown_or_malformed_fields) ... ok",
+            "test_source_reviews_rejects_non_array_instances (__main__.SourceReviewSchemaContractTests.test_source_reviews_rejects_non_array_instances) ... ok",
+            "test_source_reviews_remains_optional_for_historical_candidates (__main__.SourceReviewSchemaContractTests.test_source_reviews_remains_optional_for_historical_candidates) ... ok",
+            "test_unmarked_integer_coverage_remains_valid_without_granting_acceptance (__main__.SourceReviewSchemaContractTests.test_unmarked_integer_coverage_remains_valid_without_granting_acceptance) ... ok"
+          ]
+        },
+        "canonical_ledger_schema_errors": 0,
+        "summary_lines": [
+          "1..161",
+          "# tests 161",
+          "# pass 161",
+          "# fail 0",
+          "# cancelled 0",
+          "# skipped 0",
+          "# todo 0",
+          "Ran 37 tests in 0.106s",
+          "OK",
+          "Canonical ledger schema errors: 0; source acceptance is not granted."
+        ]
+      },
+      "limits": [
+        "Source checker and schema behavior execution only; these counts are not product feature coverage.",
+        "Canonical ledger validation explicitly does not grant source acceptance.",
+        "Second fixed-source-candidate job and product gates have separate results.",
+        "No local execution or rerun performed."
+      ]
+    },
+    "source_candidate": {
+      "schema": "fabushi.actions-terminal-receipt.v1",
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "run_id": 41550895137,
+      "run_attempt": 1,
+      "event": "push",
+      "run_status": "completed",
+      "run_conclusion": "success",
+      "job_id": 125638053771,
+      "job_name": "fixed-source-candidate",
+      "job_status": "completed",
+      "job_conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41550895137/job/125638053771",
+      "evidence": {
+        "full_job_log_fetched": true,
+        "full_job_log_characters": 146040,
+        "full_job_log_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125638053771/logs",
+        "artifact": {
+          "id": 13191966225,
+          "name": "tdrp-source-candidate-98be438bad69f9982c503e5a3442f721307c85ce",
+          "size_in_bytes": 79144,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13191966225",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13191966225/zip",
+          "expired": false,
+          "created_at": "2026-11-03T00:11:07Z",
+          "expires_at": "2027-02-01T00:10:15Z",
+          "updated_at": "2026-11-03T00:11:07Z",
+          "digest": "sha256:0e3f140027623e94258a835777564968559e0e046c240b0be8e17a2908f51a32",
+          "workflow_run": {
+            "id": 41550895137,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "98be438bad69f9982c503e5a3442f721307c85ce"
+          }
+        },
+        "source_contract_terminal_receipt_blob": "f8437f204e4a6e4251a448f4781ddc0802748f2a"
+      },
+      "actual": {
+        "recovered_input_archives": [
+          {
+            "complete": true,
+            "completed_members": 137,
+            "expected": {
+              "artifact_id": 13118749668,
+              "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+              "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+              "repository": "bhrumom/fabushi-desktop",
+              "run_id": 41397005716
+            }
+          },
+          {
+            "complete": true,
+            "completed_members": 486,
+            "expected": {
+              "artifact_id": 13121721589,
+              "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+              "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+              "repository": "bhrumom/fabushi-desktop",
+              "run_id": 41401970993
+            }
+          }
+        ],
+        "candidate_report": {
+          "status": "unaccepted-candidate-consistent",
+          "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_entries_total": 16381,
+          "root_source_entries_total": 6895,
+          "responsibility_rows": 184,
+          "authored_source_review_records": 16,
+          "completed_source_review_records": 2,
+          "unknown": null,
+          "unread": null,
+          "lexical_observations": 333,
+          "counts_by_scope": {
+            "pinned-cmake-component": 2,
+            "legacy-root-paths": 331
+          },
+          "text_files_read": 203,
+          "opaque_inputs_unread": 2,
+          "unresolved_ref_observations": 76,
+          "baseline_accepted": false,
+          "source_closure_ready": false,
+          "product_accepted": false,
+          "independent_acceptance": false,
+          "target_commit": "98be438bad69f9982c503e5a3442f721307c85ce",
+          "reused_git_artifact": {
+            "repository": "bhrumom/fabushi-desktop",
+            "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+            "artifact_id": 13118749668,
+            "run_id": 41397005716,
+            "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+          },
+          "reused_build_input_artifact": {
+            "repository": "bhrumom/fabushi-desktop",
+            "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+            "artifact_id": 13121721589,
+            "run_id": 41401970993,
+            "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+          }
+        },
+        "accepted_mode_negative": {
+          "executed": true,
+          "result": "rejected_as_required",
+          "actual_error": "Error: accepted source accounting cannot contain a rebaseline candidate",
+          "job_step": "Prove open candidates cannot enter accepted mode"
+        },
+        "additional_tap_or_rust_cases": 0
+      },
+      "limits": [
+        "This successful job proves consistency of the explicitly unaccepted source candidate and rejects accepted mode; it is not source closure or product acceptance.",
+        "Source entry/member/record totals are accounting observations, not feature implementation or deep-review percentages.",
+        "Input producer identities remain their original immutable heads; the current validation target is exact98be438bad69f9982c503e5a3442f721307c85ce.",
+        "Source contract actual 161 Node +37 Python tests are separately recorded and not counted again here.",
+        "Native reconciliation and UI/platform acceptance are separate gates; no local execution, rerun or ref mutation performed."
+      ]
+    },
+    "other_native": {
+      "carrier": {
+        "job": 125637914279,
+        "passed": 100,
+        "groups": [
+          {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "tests": 3,
+            "pass": 3,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "tests": 16,
+            "pass": 16,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "tests": 28,
+            "pass": 28,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "tests": 18,
+            "pass": 18,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "tests": 7,
+            "pass": 7,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        ],
+        "scope": "Node behavior and desktop runtime compilation; not actual Mac recovery"
+      },
+      "publisher": {
+        "job": 125637914449,
+        "passed": 11,
+        "scope": "CI publisher contracts; not released signed packages"
+      },
+      "peer_linux": {
+        "job": 125637914262,
+        "passed": 23
+      },
+      "peer_windows": {
+        "job": 125637914416,
+        "passed": 23
+      },
+      "retained_ffi": {
+        "job": 125637914278,
+        "passed": 15,
+        "ignored": 1,
+        "live_dc_ignored_not_pass": true
+      },
+      "social": {
+        "job": 125637914242,
+        "passed": 37,
+        "groups": [
+          10,
+          9,
+          6,
+          7,
+          5
+        ],
+        "subprocess_case_outputs_not_counted_again": true
+      }
+    },
+    "ui": {
+      "job": 125637914323,
+      "status": "in_progress",
+      "conclusion": null,
+      "scope": "Author22 step was still active at the latest read; no complete194 pass claim"
+    },
+    "shipping": {
+      "job": 125637914212,
+      "status": "queued",
+      "conclusion": null
+    },
+    "actual_mac": {
+      "run": 41550895126,
+      "job": 125637914634,
+      "status": "queued",
+      "conclusion": null
+    }
+  },
+  "legacy_persistence_followup_readonly": {
+    "evidence_blob": "8287b45a8157daffef16d57de6b6f950adb63a0b",
+    "evidence": {
+      "schema": "fabushi.client-persistence-one-shot-static-review.v1",
+      "repository": "bhrumom/fabushi-desktop",
+      "head": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "reviewedAtUtc": "2026-11-03T00:13:16Z",
+      "scope": "Read-only exact-head source and existing test inspection. No production, test, workflow, Spec, ledger or ref modification. No local/htch execution or service probe.",
+      "sources": [
+        {
+          "path": "source/shared/client-persistence-store.ts",
+          "blob": "e1304bfac5abdb2a1ea11c51f67c5dde077762f3"
+        },
+        {
+          "path": "source/shared/client-persistence-store.contract.test.ts",
+          "blob": "a2b2db8329b50b4169a787cba7ec95b97d754295"
+        },
+        {
+          "path": "source/shared/system-errno.ts",
+          "blob": "ccf5f11d6a12465a96d49e5de1a0c76e7cc9c050"
+        },
+        {
+          "path": "source/electron-main/secrets/secrets-ipc.ts",
+          "blob": "54dbbfc743ee238f182d7305ba2af01ba21ce20d"
+        },
+        {
+          "path": "source/electron-main/adapters/ipc.ts",
+          "blob": "830325397a7b7d54b0858ef9dece3c8b9318ba2f"
+        },
+        {
+          "path": "source/electron-main/main-production-services.ts",
+          "blob": "f9b474db6c062f631c8bda693cbf45ee4930c454"
+        },
+        {
+          "path": "source/electron-main/entry.ts",
+          "blob": "3c877893f5f6478251587a1130e08328c9cf15f7"
+        },
+        {
+          "path": "source/electron-preload/preload.ts",
+          "blob": "ed4e49ae6f6ef4ae4af3086ddf30716f22d95b51"
+        },
+        {
+          "path": "source/node-agent-coordinator/src/main.rs",
+          "blob": "279dc93569effbba8f49918d9293325dbb0c4ac8"
+        },
+        {
+          "path": "frontend/src/main.tsx",
+          "blob": "ccb3e932cb9b017742c7d6a6ecb77c2faf5814d7"
+        },
+        {
+          "path": "frontend/src/production/ProductionRenderer.tsx",
+          "blob": "2bd5e660ec352366d6e77fab5cdb04e3a2afeb68"
+        },
+        {
+          "path": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+          "blob": "8931a644528d7bfe1ffdc651f58d02eb2cb5812d"
+        }
+      ],
+      "actualOwner": {
+        "construction": "entry creates production IPC binding; main-production-services671 creates SecretsStores once under memoized initialization with userData/sand-client-persistence; context783 carries the same stores; adapters/ipc40–47 registers SecretsIpc with those exact stores.",
+        "dispatch": "preload315–320 uses ipc.invoke(sand:client-persistence-*) directly; secrets-ipc143–166 validates trusted sender and dispatches to that store. migrate input keeps only object entries with string key/value.",
+        "coordinatorBoundary": "This persistence route does not dispatch through Rust Coordinator or Host. Exact Rust main source was read and contains no client persistence/localStorage command owner.",
+        "nodeFiles": "secrets-ipc18–27: fs.readdir/readFile/writeFile(mode0600)/rename/rm(force:true)/stat. stat returns size for regular files and null for non-files, otherwise rejects. rm(force:true) is the ordinary ENOENT-tolerant removal boundary.",
+        "startupScope": "Main startup constructs the store and registers the API. Read frontend main.tsx, bootstrap, ProductionRenderer and its draft/layout/collapse/roster stores restore via read/write/remove; no migrateFromLocalStorage invocation was found in those actual startup scopes. Preload exposes the method but does not invoke it. Do not claim automatic browser-localStorage migration is currently wired or infer global absence from incomplete GitHub search."
+      },
+      "currentSemantics": {
+        "markerProbe": "store135–139 calls marker fileSize and returns false for every rejection, conflating ENOENT with EIO/EACCES/unknown and wrapped failures. Any non-null size, including zero, means completed.",
+        "serializedMigration": "store142–159 runs under the existing chain. Completed marker skips ledger and entries. Otherwise invalid/too-long keys, existing blob names and ClientPersistenceCapError entries are skipped. New accepted blobs use temporary write→rename. Other per-entry write failures return false and preserve prior committed entries. Directory/index/marker ensure/write failures reject.",
+        "filesAndOriginals": "Migration receives supplied string entries, not browser localStorage or original browser files. It neither reads nor deletes browser localStorage. Existing canonical blob files are skipped and never overwritten by migration. ledger removes stale *.tmp artifacts; it does not delete canonical .blob files. Explicit remove is a separate queued operation.",
+        "retry": "run161–164 resets the chain after either fulfillment or rejection. Ledger IO failure is not cached as empty/partial; only ENOENT is absence. A failed blob write/rename leaves prior committed entries; same-owner retry can overwrite its temporary, while a new owner scans the committed blobs and cleans stale temporaries. Existing newer canonical data remains preferred.",
+        "markerWrite": "store155–156 writes directly to the final marker pathname. A write that creates/truncates the file then rejects can leave a non-null size; the next probe reports completed even though the prior call rejected. This occurs after all permitted entries in that attempt were processed: it is a failed completion-marker acknowledgment/recovery issue, not independent proof that an eligible message was lost."
+      },
+      "reproducibleStaticSequences": [
+        {
+          "id": "completed-marker-read-error-reimports-retired-key",
+          "steps": [
+            "Use actual store to migrate KEY=A successfully; marker exists.",
+            "Use ordinary owner.remove(KEY), leaving the marker intact, so the user-cleared draft is absent.",
+            "For the next marker fileSize call only, inject EIO or wrapped EACCES through the existing controlled ClientPersistenceFiles boundary.",
+            "Call migrateFromLocalStorage with the stale KEY=A snapshot.",
+            "Current source treats failed marker lookup as false; cached or freshly scanned ledger lacks KEY; writeBlob recreates A and rewrites the marker. This applies both to the current owner and a reopened owner."
+          ],
+          "expected": "The exact IO failure must reject before ledger mutation/import; original marker and cleared-key absence remain. After transient recovery the existing marker returns true and stale legacy entries do not resurrect the draft.",
+          "executed": false
+        },
+        {
+          "id": "failed-final-marker-write-appears-completed",
+          "steps": [
+            "Start without a marker and migrate valid entries through successful blob commits.",
+            "Inject marker write failure after the external file boundary creates zero/partial final marker bytes.",
+            "Current migrate rejects, but subsequent hasCompletedOneShotMigration and another migration report true because final marker stat returns a size."
+          ],
+          "expected": "A failed marker commit must leave no newly completed final marker; later same-owner or reopened-owner retry must preserve prior canonical blobs, skip existing keys and finish the marker commit.",
+          "executed": false
+        }
+      ],
+      "minimumRemedyProposal": {
+        "authorization": "Await root Spec applicability and implementation authorization.",
+        "paths": [
+          "source/shared/client-persistence-store.ts",
+          "source/shared/client-persistence-store.contract.test.ts"
+        ],
+        "production": [
+          "Change hasCompletedOneShotMigration catch to false only for findSystemErrno(error)==ENOENT; rethrow all other failures unchanged.",
+          "Write the migration marker to a temporary pathname and rename it to the existing final name after success, reusing the existing .tmp cleanup convention. Keep the existing marker format and existing legacy marker acceptance.",
+          "Do not add automatic startup migration, delete old browser storage, change current caps/existing-wins behavior, or alter the ordinary draft serialization queue and read/write/remove APIs."
+        ],
+        "behaviorTests": [
+          "Preserve all 5 existing contract tests. Add actual-store tests for EIO and wrapped EACCES marker reads with completed marker plus removed KEY: same-owner/reopened rejection, no file mutation, recovery without resurrection.",
+          "Add marker partial-write and rename failure cases, each followed by same-owner and reopened recovery; distinguish final marker from temporary file, retain committed data, and verify normal newer draft B survives stale migration retry.",
+          "Add partial blob-import failure after a committed first key: false/no marker, original entries untouched, existing committed/newer blob preserved, retry imports only missing key and finishes.",
+          "Add a positive migration compatibility case covering actual ENOENT, existing-marker short circuit, existing-key priority, invalid/too-long namespace skipping, cap skipping and no canonical-file deletion."
+        ],
+        "harness": "Reuse fileBoundary and actual SandClientPersistenceStore. Extend only external file fault controls to model a partial marker write, rather than copying migration logic. GitHub Actions execution at a future exact containing head is required."
+      },
+      "acceptance": {
+        "staticSourceReview": true,
+        "existingTestsAuthored": 5,
+        "proposedTestsAuthored": false,
+        "implementationApplied": false,
+        "testsExecuted": false,
+        "migrationOrProductAcceptance": false
+      }
+    },
+    "implementation": "Not implemented; focus remains the currently failing shared feed gate and actual Electron recovery."
+  },
+  "observed_exact_b6_mac_execution": {
+    "schemaVersion": 1,
+    "kind": "NMR-ELECTRON-01/FPM-UI-CLOSE-01 exact-H execution failure evidence",
+    "repository": "bhrumom/fabushi-desktop",
+    "headSha": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+    "run": {
+      "id": 41548150741,
+      "jobId": 125628712102,
+      "jobName": "plugins-close-pointer",
+      "attempt": 1,
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41548150741"
+    },
+    "source": {
+      "spec": "desktop/e2e/agent-network-responsive.spec.ts",
+      "specBlob": "375a23265bd6b7f09e5cb5b9db3fff47a28cc7a9",
+      "workflowBlob": "c89a006015d1f38b4c4cdf6146123328bc9dc95c",
+      "fullApiSourceReadback": true
+    },
+    "build": "All setup, locked ffmpeg installation, Electron/Host/renderer/network-worker builds, desktop runtime and exact-H binary binding steps succeeded.",
+    "counts": {
+      "basis": "Complete job log: Plugins 2 passed and JSON audit success; Human both numbered cases execute and final summary is 2 failed. Both commands use workers=1 and retries=0.",
+      "plugins": {
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "retries": 0
+      },
+      "human": {
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "skipped": 0,
+        "retries": 0
+      },
+      "humanProcessLifetimesLaunched": 3
+    },
+    "plugins": {
+      "viewports": [
+        "1024x684",
+        "1280x900"
+      ],
+      "reached": "Both cases completed original and reopened dialog geometry, normal pointer Close, window-control band and dismissal assertions."
+    },
+    "human": [
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+        "result": "failed",
+        "actualLifetimes": [
+          "offline-first",
+          "offline-reopened"
+        ],
+        "reached": [
+          "Actual UI send, canonical row and unique SQLite row in first process.",
+          "First graceful close and zero-surviving-owned-process check.",
+          "Second actual process restored saved account without a new sign-in.",
+          "Remote history 503, local canonical transcript and complete persisted row/physical sequence survived in the same directory.",
+          "Actual renderer reload after service recovery and new-nonce Send; both unique canonical messages and exactly two SQLite rows.",
+          "Second graceful close and zero-surviving-owned-process check."
+        ],
+        "failure": {
+          "sourceLine": 1314,
+          "expression": "expect(scenario.unexpected).toEqual([])",
+          "expected": [],
+          "receivedRequestCount": 89
+        },
+        "unexpectedAuxiliaryPathCounts": {
+          "/aiserver.v1.AnalyticsService/BootstrapStatsig": 7,
+          "/aiserver.v1.DashboardService/ListMarketplacePlugins": 22,
+          "/fabushi-agent-network-e2e-login": 1,
+          "/favicon.ico": 1,
+          "/aiserver.v1.DashboardService/GetUserPrivacyMode": 2,
+          "/aiserver.v1.DashboardService/GetAvailableMcpServers": 34,
+          "/aiserver.v1.DashboardService/GetEffectiveUserPlugins": 2,
+          "/aiserver.v1.GrokBotService/EnsureSandBox": 6,
+          "/sand-box/local-exec-daemon-credential": 6,
+          "/aiserver.v1.AnalyticsService/SubmitLogs": 5,
+          "/aiserver.v1.GrokBotService/WatchSandBoxMigration": 3
+        },
+        "classification": "Controlled HTTP fixture coverage/oracle boundary requires correction against actual auxiliary route contracts; no broad ignore or wildcard response is justified.",
+        "notAccepted": "The case still fails its unexpected-request gate, and the following page-error emptiness check was not reached."
+      },
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen",
+        "result": "failed",
+        "actualLifetimes": [
+          "held-first"
+        ],
+        "reached": [
+          "Electron launch, video initialization, document/preload readiness, trace start, real sign-in and authenticated root shell."
+        ],
+        "failure": {
+          "helper": "openHumanWorkspace",
+          "sourceLine": 899,
+          "testCallSourceLine": 1331,
+          "assertion": "Human restart peer button is visible",
+          "timeoutMs": 30000,
+          "error": "element(s) not found"
+        },
+        "observedHostTimeline": [
+          {
+            "at": "2026-11-03T00:12:50.8315220Z",
+            "generation": 1,
+            "event": "box-exec-daemon-ready"
+          },
+          {
+            "at": "2026-11-03T00:12:51.0610480Z",
+            "generation": 1,
+            "event": "managed daemon startup rejected because loopback port 1337 was already bound"
+          },
+          {
+            "at": "2026-11-03T00:12:51.4441200Z",
+            "generation": 2,
+            "event": "box-exec-daemon-ready"
+          },
+          {
+            "event": "During the remaining peer-button wait, Host log shows getListenerIntegrations completions but no Human roster completion."
+          }
+        ],
+        "classification": "Root cause of missing peer remains under investigation across Host generation replacement and fixture isolation; do not replace with a longer wait, reload or weaker oracle.",
+        "notReached": [
+          "Any Human Send",
+          "Held response",
+          "Original draft/submission binding",
+          "Second or third process",
+          "Canonical retirement of A",
+          "Same-text B persistence",
+          "Late closed-response release"
+        ]
+      }
+    ],
+    "capture": {
+      "traceStartsSucceeded": 3,
+      "traceStopsSucceeded": 3,
+      "artifactProductionObserved": "Both offline lifetimes and the held-first failure preserve trace/video attachments; the original post-close app.process TypeError no longer occurs.",
+      "mediaVisuallyReviewed": false,
+      "archive": "Downloaded through GitHub artifact tool as an opaque ZIP file reference; archive entries/pixels are not yet readable in the allowed API-only environment. Read-only GitHub Actions extraction is being prepared by the integrator."
+    },
+    "artifact": {
+      "id": 13192011555,
+      "name": "plugins-close-pointer-b6eaa5020c0d886e40e8477673d30673bd732be8",
+      "sizeInBytes": 14283099,
+      "digest": "sha256:078e876c152384a3ce7cfae64f516b589a3cd4da59384878cd383be0cc59f4fb",
+      "headSha": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+      "apiIdentityVerified": true
+    },
+    "fullLog": {
+      "decodedCharactersRead": 357461,
+      "splitLinesRead": 4565,
+      "originalLocation": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125628712102/logs",
+      "rawCopyUploaded": false
+    },
+    "limits": [
+      "Controlled HTTP with actual Electron/Host/SQLite only; no deployed backend or complete migration acceptance.",
+      "New Host-feed candidate H98be438bad69f9982c503e5a3442f721307c85ce/run41550895126 is separate and still queued at this observation.",
+      "No code, tree, commit or ref was changed as part of this diagnosis."
+    ]
+  },
+  "electron_artifact_inspection": {
+    "workflow_path": ".github/workflows/checkpoint-round8-electron-artifact-inspection.yml",
+    "workflow_blob": "9341923d7ff96be834d55afe3925c862396c2765",
+    "source_head": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+    "source_run": 41548150741,
+    "source_artifact": 13192011555,
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
+    "method": "Verify exact artifact metadata and downloaded archive SHA256, read existing JSON attachments/selected redacted UI context/trace method timing without executing any archive content; no raw CI log, environment, headers, token or source storage payload publication.",
+    "product_execution": false,
+    "status": "Authored; containing-H execution required.",
+    "output_boundary": "Page-console messages are never copied; only event kind/level/lifetime/time and fixed diagnostic marker booleans are output. Required Human attachments must resolve uniquely within the four known archive roots; incomplete evidence fails explicitly."
   }
 }

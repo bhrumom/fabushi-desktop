@@ -9340,15 +9340,26 @@ fn shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement()
     entered.recv_timeout(std::time::Duration::from_secs(15)).expect("global snapshot copied before disposal");
     drop(extension);
     assert!(manager.is_disposed());
+    assert!(owner.is_closed(), "disposing the manager closes its Session database owners");
+    // Reopen through the normal Session owner path before releasing the copied
+    // callback. The old callback would still have a readable authorized owner
+    // if its disposal fence failed; an empty cache must not mask that failure.
+    let replacement_owner = runtime.open_human_conversation_db_owner(&conversation_id)
+        .expect("replacement owner");
+    assert!(!Arc::ptr_eq(&owner, &replacement_owner));
+    assert!(!replacement_owner.is_closed());
+    let durable = replacement_owner.get_transcript_entry_by_id("human-server-message:51")
+        .expect("read before releasing copied callback").expect("committed durable row");
+    assert_eq!(durable["content"], "committed before disposal");
     let (replacement, new_events) = start_human_transcript_feed(&root, &runtime);
     release.send(()).expect("release old copied callback");
     let committed = write.join().expect("paused writer");
     blocker.unsubscribe();
-    assert_eq!(owner.get_transcript_entry_by_id("human-server-message:51").expect("read committed row"), Some(committed));
+    assert_eq!(replacement_owner.get_transcript_entry_by_id("human-server-message:51").expect("read committed row"), Some(committed));
     assert!(human_transcript_feed_events(&old_events).is_empty(), "copied old callback cannot publish after disposal");
     assert!(human_transcript_feed_events(&new_events).is_empty(), "old dispatch cannot be attributed to the replacement");
 
-    let current = owner.update_transcript_entry(
+    let current = replacement_owner.update_transcript_entry(
         "human-server-message:51", &fixture_saved_human_message(51, "2", "replacement current row"),
     ).expect("replacement commit").expect("replacement row");
     assert_eq!(human_transcript_feed_events(&new_events), vec![json!({
@@ -9356,15 +9367,24 @@ fn shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement()
     })], "replacement installs exactly one projection observer");
     assert!(human_transcript_feed_events(&old_events).is_empty());
     drop(replacement);
-    owner.update_transcript_entry(
+    assert!(replacement_owner.is_closed());
+    // The final zero-event observation must accompany a real committed write,
+    // not the no-op behavior of an owner closed by replacement Drop.
+    let final_owner = runtime.open_human_conversation_db_owner(&conversation_id)
+        .expect("post-disposal owner");
+    assert!(!Arc::ptr_eq(&replacement_owner, &final_owner));
+    assert!(!final_owner.is_closed());
+    assert_eq!(final_owner.get_transcript_entry_by_id("human-server-message:51").expect("read replacement row"), Some(current));
+    let final_entry = final_owner.update_transcript_entry(
         "human-server-message:51", &fixture_saved_human_message(51, "2", "after both extensions stopped"),
     ).expect("post-disposal commit").expect("post-disposal row");
+    assert_eq!(final_owner.get_transcript_entry_by_id("human-server-message:51").expect("read post-disposal row"), Some(final_entry));
     assert!(human_transcript_feed_events(&old_events).is_empty());
     assert!(human_transcript_feed_events(&new_events).is_empty());
 
     runtime.shutdown();
     stop.send(()).expect("stop no-request fixture");
     assert!(server.join().expect("no-request fixture").is_empty(), "relay lifecycle performs no HTTP");
-    drop((owner, runtime, manager));
+    drop((final_owner, replacement_owner, owner, runtime, manager));
     let _ = fs::remove_dir_all(root);
 }

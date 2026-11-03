@@ -386,8 +386,11 @@ cases then failed in the fixture's post-close app.process() evidence access;
 no second-process recovery passed. The fixture now captures the same
 ChildProcess before close and retains all original process-exit and reopen
 assertions. The repair is committed at exactb6eaa5020c0d886e40e8477673d30673bd732be8;
-its Mac run41548150741/job125628712102 was queued at00:00 UTC, without
-execution evidence. Exact487 UI finished193 pass/1 fail: the 22nd author case
+its Mac run41548150741/job125628712102 finished with Plugins2/2 passed
+and Human0/2 passed. The first Human case completed two process lifetimes and
+message recovery but failed the strict auxiliary-HTTP oracle; the second never
+reached sending after a managed-daemon1337 refusal and Host replacement. These
+are retained failures; artifact inspection is required before the next repair. Exact487 UI finished193 pass/1 fail: the 22nd author case
 failed the strict unknown-RPC oracle for getPluginSyncStatus after all three
 business milestones passed. Its fixture now implements the existing empty-args
 Host reply {authBlocked:[]}; no case or oracle is removed. The changed fixture
@@ -425,6 +428,17 @@ revision/tombstone discovery, arbitrary-old mutation sweep, reaction409 recovery
 or deployed afterId=0. The canonical ledger transport run41549360973 produced
 blob25cf6dbdea41d48dc57df1f252d256772750362a with57 actual paths/64 symbols;
 all183 other rows, source reviews and acceptance counters are preserved.
+
+Exact98be438bad69f9982c503e5a3442f721307c85ce/run41550895037 executed
+Transcript3 plus Human76:78 passed and1 failed;41 later reconciliation cases
+were not run. The real6400/32-page/restart bridge and the first3 new feed cases
+passed. The copied-callback case incorrectly reused an owner closed by the
+existing manager shutdown. Its narrow repair reopens a distinct valid owner
+through the same public Session entry before releasing the copied callback,
+keeping a readable cache so the zero-old-event fence oracle cannot pass vacuously.
+It retains all76 definitions and every real-write/no-HTTP assertion; new-H
+execution remains required. Source run41550895137 passed161+37/schema0 and
+actual unaccepted-candidate checks; accepted mode still refused the candidate.
 
 Canonical inventory remains 16,381 recursive entries/184 responsibility rows,
 unknown/unread null and two unmapped responsibilities at the observed input.

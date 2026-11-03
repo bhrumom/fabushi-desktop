@@ -2,7 +2,7 @@
   "format_version": 1,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 8,
-  "recorded_at": "2026-11-03 00:05:43 UTC",
+  "recorded_at": "2026-11-03 00:23:41 UTC",
   "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "repository": "bhrumom/fabushi-desktop",
   "intended_checkpoint": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
@@ -833,7 +833,11 @@
       "job": 125628712102,
       "status_at_last_observation": "queued",
       "observation": "2026-11-03 00:00 UTC",
-      "actual_result": null
+      "actual_result": null,
+      "terminal_status": "failure",
+      "actual_plugins_passed": 2,
+      "actual_human_passed": 0,
+      "actual_human_failed": 2
     }
   },
   "human_transcript_feed_candidate": {
@@ -853,5 +857,180 @@
       "retries": 0
     },
     "execution": "Not-run at preparation; b6 queued run and historical H487 failures cannot qualify the new Host inputs."
+  },
+  "observed_exact_b6_execution": {
+    "schemaVersion": 1,
+    "kind": "NMR-ELECTRON-01/FPM-UI-CLOSE-01 exact-H execution failure evidence",
+    "repository": "bhrumom/fabushi-desktop",
+    "headSha": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+    "run": {
+      "id": 41548150741,
+      "jobId": 125628712102,
+      "jobName": "plugins-close-pointer",
+      "attempt": 1,
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41548150741"
+    },
+    "source": {
+      "spec": "desktop/e2e/agent-network-responsive.spec.ts",
+      "specBlob": "375a23265bd6b7f09e5cb5b9db3fff47a28cc7a9",
+      "workflowBlob": "c89a006015d1f38b4c4cdf6146123328bc9dc95c",
+      "fullApiSourceReadback": true
+    },
+    "build": "All setup, locked ffmpeg installation, Electron/Host/renderer/network-worker builds, desktop runtime and exact-H binary binding steps succeeded.",
+    "counts": {
+      "basis": "Complete job log: Plugins 2 passed and JSON audit success; Human both numbered cases execute and final summary is 2 failed. Both commands use workers=1 and retries=0.",
+      "plugins": {
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "retries": 0
+      },
+      "human": {
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "skipped": 0,
+        "retries": 0
+      },
+      "humanProcessLifetimesLaunched": 3
+    },
+    "plugins": {
+      "viewports": [
+        "1024x684",
+        "1280x900"
+      ],
+      "reached": "Both cases completed original and reopened dialog geometry, normal pointer Close, window-control band and dismissal assertions."
+    },
+    "human": [
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+        "result": "failed",
+        "actualLifetimes": [
+          "offline-first",
+          "offline-reopened"
+        ],
+        "reached": [
+          "Actual UI send, canonical row and unique SQLite row in first process.",
+          "First graceful close and zero-surviving-owned-process check.",
+          "Second actual process restored saved account without a new sign-in.",
+          "Remote history 503, local canonical transcript and complete persisted row/physical sequence survived in the same directory.",
+          "Actual renderer reload after service recovery and new-nonce Send; both unique canonical messages and exactly two SQLite rows.",
+          "Second graceful close and zero-surviving-owned-process check."
+        ],
+        "failure": {
+          "sourceLine": 1314,
+          "expression": "expect(scenario.unexpected).toEqual([])",
+          "expected": [],
+          "receivedRequestCount": 89
+        },
+        "unexpectedAuxiliaryPathCounts": {
+          "/aiserver.v1.AnalyticsService/BootstrapStatsig": 7,
+          "/aiserver.v1.DashboardService/ListMarketplacePlugins": 22,
+          "/fabushi-agent-network-e2e-login": 1,
+          "/favicon.ico": 1,
+          "/aiserver.v1.DashboardService/GetUserPrivacyMode": 2,
+          "/aiserver.v1.DashboardService/GetAvailableMcpServers": 34,
+          "/aiserver.v1.DashboardService/GetEffectiveUserPlugins": 2,
+          "/aiserver.v1.GrokBotService/EnsureSandBox": 6,
+          "/sand-box/local-exec-daemon-credential": 6,
+          "/aiserver.v1.AnalyticsService/SubmitLogs": 5,
+          "/aiserver.v1.GrokBotService/WatchSandBoxMigration": 3
+        },
+        "classification": "Controlled HTTP fixture coverage/oracle boundary requires correction against actual auxiliary route contracts; no broad ignore or wildcard response is justified.",
+        "notAccepted": "The case still fails its unexpected-request gate, and the following page-error emptiness check was not reached."
+      },
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen",
+        "result": "failed",
+        "actualLifetimes": [
+          "held-first"
+        ],
+        "reached": [
+          "Electron launch, video initialization, document/preload readiness, trace start, real sign-in and authenticated root shell."
+        ],
+        "failure": {
+          "helper": "openHumanWorkspace",
+          "sourceLine": 899,
+          "testCallSourceLine": 1331,
+          "assertion": "Human restart peer button is visible",
+          "timeoutMs": 30000,
+          "error": "element(s) not found"
+        },
+        "observedHostTimeline": [
+          {
+            "at": "2026-11-03T00:12:50.8315220Z",
+            "generation": 1,
+            "event": "box-exec-daemon-ready"
+          },
+          {
+            "at": "2026-11-03T00:12:51.0610480Z",
+            "generation": 1,
+            "event": "managed daemon startup rejected because loopback port 1337 was already bound"
+          },
+          {
+            "at": "2026-11-03T00:12:51.4441200Z",
+            "generation": 2,
+            "event": "box-exec-daemon-ready"
+          },
+          {
+            "event": "During the remaining peer-button wait, Host log shows getListenerIntegrations completions but no Human roster completion."
+          }
+        ],
+        "classification": "Root cause of missing peer remains under investigation across Host generation replacement and fixture isolation; do not replace with a longer wait, reload or weaker oracle.",
+        "notReached": [
+          "Any Human Send",
+          "Held response",
+          "Original draft/submission binding",
+          "Second or third process",
+          "Canonical retirement of A",
+          "Same-text B persistence",
+          "Late closed-response release"
+        ]
+      }
+    ],
+    "capture": {
+      "traceStartsSucceeded": 3,
+      "traceStopsSucceeded": 3,
+      "artifactProductionObserved": "Both offline lifetimes and the held-first failure preserve trace/video attachments; the original post-close app.process TypeError no longer occurs.",
+      "mediaVisuallyReviewed": false,
+      "archive": "Downloaded through GitHub artifact tool as an opaque ZIP file reference; archive entries/pixels are not yet readable in the allowed API-only environment. Read-only GitHub Actions extraction is being prepared by the integrator."
+    },
+    "artifact": {
+      "id": 13192011555,
+      "name": "plugins-close-pointer-b6eaa5020c0d886e40e8477673d30673bd732be8",
+      "sizeInBytes": 14283099,
+      "digest": "sha256:078e876c152384a3ce7cfae64f516b589a3cd4da59384878cd383be0cc59f4fb",
+      "headSha": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+      "apiIdentityVerified": true
+    },
+    "fullLog": {
+      "decodedCharactersRead": 357461,
+      "splitLinesRead": 4565,
+      "originalLocation": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125628712102/logs",
+      "rawCopyUploaded": false
+    },
+    "limits": [
+      "Controlled HTTP with actual Electron/Host/SQLite only; no deployed backend or complete migration acceptance.",
+      "New Host-feed candidate H98be438bad69f9982c503e5a3442f721307c85ce/run41550895126 is separate and still queued at this observation.",
+      "No code, tree, commit or ref was changed as part of this diagnosis."
+    ]
+  },
+  "artifact_inspection": {
+    "workflow_path": ".github/workflows/checkpoint-round8-electron-artifact-inspection.yml",
+    "workflow_blob": "9341923d7ff96be834d55afe3925c862396c2765",
+    "source_head": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+    "source_run": 41548150741,
+    "source_artifact": 13192011555,
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
+    "method": "Verify exact artifact metadata and downloaded archive SHA256, read existing JSON attachments/selected redacted UI context/trace method timing without executing any archive content; no raw CI log, environment, headers, token or source storage payload publication.",
+    "product_execution": false,
+    "status": "Authored; containing-H execution required.",
+    "output_boundary": "Page-console messages are never copied; only event kind/level/lifetime/time and fixed diagnostic marker booleans are output. Required Human attachments must resolve uniquely within the four known archive roots; incomplete evidence fails explicitly."
   }
 }
