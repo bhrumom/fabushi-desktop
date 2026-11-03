@@ -81,6 +81,13 @@ function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
+function humanParticipantIds(value: unknown): string[] | null {
+  if (!Array.isArray(value) || value.length !== 2) return null;
+  if (!value.every((entry) => typeof entry === "string" && entry.trim().length > 0)) return null;
+  const participantIds = value as string[];
+  return new Set(participantIds).size === 2 ? participantIds : null;
+}
+
 function parseLastEntryKinds(value: unknown): Readonly<Record<string, number>> | null {
   if (!isRecord(value)) return null;
   const kinds: Record<string, number> = {};
@@ -198,7 +205,8 @@ export function projectHumanConversation(value: unknown, now = Date.now()): Rend
   if (!isRecord(value) || value.kind !== "human") return null;
   const id = stringValue(value.id);
   if (id == null) return null;
-  const participantIds = stringArray(value.participantIds);
+  const participantIds = humanParticipantIds(value.participantIds);
+  if (participantIds == null) return null;
   const title = stringValue(value.title) ?? "Human conversation";
   return {
     id,

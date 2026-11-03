@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -9,7 +10,7 @@ use crate::storage::sqlite_busy::{is_sqlite_corrupt_error, is_sqlite_io_error};
 use crate::storage::sqlite_recovery::{
     copy_salvageable_sqlite_rows, open_sqlite_for_salvage, quarantine_corrupt_sqlite_db,
 };
-use crate::storage::store_db::DB_BUSY_TIMEOUT_MS;
+use crate::storage::store_db::{DB_BUSY_TIMEOUT_MS, SQLITE_DB_SIDECAR_SUFFIXES};
 use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_schema::AGENT_DB_SCHEMA;
@@ -119,13 +120,64 @@ pub fn is_store_db_healthy(db: &Connection) -> bool {
         .unwrap_or(false)
 }
 
-/// Reject an existing corrupt main database before journal-mode/schema writes.
-/// A WAL or rollback journal may contain the current snapshot, so those stores
-/// are left to the existing WAL-aware opener; this probe is never their authority.
+/// Reject a non-SQLite main file before SQLite can normalize or discard its sidecars.
+/// A zero-byte main with a non-empty WAL/rollback journal is left to the existing
+/// WAL-aware opener because that journal may contain the current snapshot.
 pub(super) fn probe_human_conversation_store(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<(), AgentDbRecoveryError> {
+    let main_length = match std::fs::metadata(db_path) {
+        Ok(metadata) if metadata.is_file() => Some(metadata.len()),
+        Ok(_) => return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string())),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error.into()),
+    };
+
+    let Some(main_length) = main_length else {
+        // A missing main database must not be recreated over orphaned sidecars.
+        for suffix in SQLITE_DB_SIDECAR_SUFFIXES {
+            let mut path = db_path.as_os_str().to_os_string();
+            path.push(suffix);
+            match std::fs::metadata(PathBuf::from(path)) {
+                Ok(_) => return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string())),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+                Err(error) => return Err(error.into()),
+            }
+        }
+        return Ok(());
+    };
+
+    if main_length == 0 {
+        // SQLite may legitimately keep a newly-created database snapshot only
+        // in WAL/journal before its first checkpoint. Do not reject that case.
+        for suffix in ["-wal", "-journal"] {
+            let mut path = db_path.as_os_str().to_os_string();
+            path.push(suffix);
+            match std::fs::metadata(PathBuf::from(path)) {
+                Ok(metadata) if metadata.len() > 0 => return Ok(()),
+                Ok(_) => {},
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+                Err(error) => return Err(error.into()),
+            }
+        }
+        return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+    }
+
+    let mut header = [0_u8; 16];
+    let mut file = std::fs::File::open(db_path)?;
+    if let Err(error) = file.read_exact(&mut header) {
+        if error.kind() == std::io::ErrorKind::UnexpectedEof {
+            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+        }
+        return Err(error.into());
+    }
+    if &header != b"SQLite format 3\\0" {
+        return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+    }
+
+    // A valid SQLite header plus a non-empty WAL/rollback journal must be
+    // opened by SQLite itself; the main file alone is not the snapshot authority.
     for suffix in ["-wal", "-journal"] {
         let mut path = db_path.as_os_str().to_os_string();
         path.push(suffix);
@@ -136,11 +188,7 @@ pub(super) fn probe_human_conversation_store(
             Err(error) => return Err(error.into()),
         }
     }
-    match std::fs::metadata(db_path) {
-        Ok(_) => {},
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-        Err(error) => return Err(error.into()),
-    }
+
     let mut uri = url::Url::from_file_path(db_path).map_err(|_| {
         std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid Human store path")
     })?;
@@ -156,7 +204,6 @@ pub(super) fn probe_human_conversation_store(
     }
     Ok(())
 }
-
 fn sqlite_error(error: &AgentDbRecoveryError) -> Option<&rusqlite::Error> {
     match error {
         AgentDbRecoveryError::Sqlite(error) => Some(error),

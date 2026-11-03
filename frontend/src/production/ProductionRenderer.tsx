@@ -2742,12 +2742,28 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       && initialTranscriptRequestRef.current.requestGeneration === openAgentRequestGenerationRef.current
       && initialTranscriptRequestRef.current.isHuman === isHumanTranscript
       && (isHumanTranscript || initialTranscriptRequestRef.current.transportGeneration === transportScopeGeneration)) return;
-    const requestGeneration = ++openAgentRequestGenerationRef.current;
-    pendingTranscriptReadsRef.current.clear();
-    setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     const cachedCursor = transcriptHistoryCursorsRef.current.get(agentId);
     const hasLoadedEntries = entriesByAgentRef.current[agentId] != null
       && cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot;
+    const currentPagination = transcriptPaginationController.getSnapshot();
+    const sameActiveLoadedScope = hasLoadedEntries
+      && selectionStore.get().currentAgentId === agentId
+      && currentPagination.accountSlot === transcriptAccountSlot
+      && currentPagination.agentId === agentId
+      && currentPagination.cursor.kind !== "unprobed";
+    if (sameActiveLoadedScope) {
+      // Roster restoration can load the selected Human transcript before the
+      // explicit sidebar click. Reinstalling the same initial page cancels the
+      // in-flight older read and makes the near-top effect issue it a second time.
+      setOverlay(null);
+      setWorkspaceRoute(null);
+      setCommandPaletteOpen(false);
+      selectionStore.settle(agentId);
+      return;
+    }
+    const requestGeneration = ++openAgentRequestGenerationRef.current;
+    pendingTranscriptReadsRef.current.clear();
+    setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
     selectionStore.select(agentId);
     setOverlay(null);

@@ -7293,6 +7293,15 @@ fn shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_set
         Some(json!(["2", "3"])),
         "the foreign fixture must exclude local Human identity 1"
     );
+    let roster = runtime.list_human_conversations().expect("Human roster");
+    let local_summary = roster.iter()
+        .find(|row| row.get("id").and_then(serde_json::Value::as_str) == Some(conversation_id.as_str()))
+        .expect("local Human conversation remains in the roster");
+    assert_eq!(local_summary["participantIds"], json!(["1", "2"]),
+        "the Host roster exposes the persisted JSON string-array participant contract");
+    assert!(!roster.iter().any(|row|
+        row.get("id").and_then(serde_json::Value::as_str) == Some(foreign_conversation_id.as_str())),
+        "a conversation excluding local identity 1 is foreign");
     drop(local_owner);
     drop(foreign_owner);
     let attachment_path = root.join("retry-report.pdf");

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ConversationTranscriptEntry, TranscriptMessage } from "../recovered/features/conversation/workspace/model.ts";
-import { projectTranscriptEntry } from "./model.ts";
+import { isHumanConversationAgent, projectHumanConversation, projectTranscriptEntry } from "./model.ts";
 import {
   createTranscriptPaginationController,
   mergeOlderTranscriptEntries,
@@ -41,6 +41,34 @@ function deferred<T>() {
   const promise = new Promise<T>((resolveValue, rejectValue) => { resolve = resolveValue; reject = rejectValue; });
   return { promise, resolve, reject };
 }
+
+test("FBCP Human roster projection preserves the persisted participantIds string-array contract", () => {
+  const source = {
+    id: "human:alice",
+    kind: "human",
+    title: "Alice",
+    participantIds: ["1", "2"],
+    updatedAt: 100,
+  };
+  const projected = projectHumanConversation(source, 0);
+  assert.ok(projected);
+  assert.equal(isHumanConversationAgent(projected), true);
+  assert.deepEqual(projected.memberIds, ["1", "2"]);
+  assert.deepEqual(projected.conversationPartnerIds, ["1", "2"]);
+  assert.deepEqual(projected.raw.participantIds, ["1", "2"]);
+
+  for (const participantIds of [
+    '["1","2"]',
+    ["1", 2],
+    ["1", "1"],
+    ["1", ""],
+    ["1"],
+    ["1", "2", "3"],
+    null,
+  ]) {
+    assert.equal(projectHumanConversation({ ...source, participantIds }, 0), null);
+  }
+});
 
 test("NMR-49 dispatching Human text and attachments stay pending until settlement", () => {
   const shapes = [

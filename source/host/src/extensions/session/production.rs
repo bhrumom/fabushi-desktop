@@ -2893,7 +2893,7 @@ impl ProductionSessionWorkers {
             return Ok(owner);
         }
         let owner = Arc::new(
-            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
+            SandAgentDb::open_human_conversation_store(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;

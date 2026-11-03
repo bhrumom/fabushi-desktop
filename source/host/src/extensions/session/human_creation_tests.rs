@@ -775,6 +775,12 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         assert!(cached_owner(&workers, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
         assert_eq!(directory_file_bytes(directory), saved);
+        assert!(workers.open_human_conversation_db_owner(&id).is_err(),
+            "cold Human owner reads reject corrupt identity before SQLite can remove sidecars");
+        assert!(workers.list_human_conversations().expect("corrupt Human roster is fail-closed").is_empty(),
+            "a corrupt Human store is not projected into the roster");
+        assert_eq!(directory_file_bytes(directory), saved,
+            "owner and roster reads preserve the original database, sidecars and sibling resources");
         workers.create_human_conversation(PEER, "Retry must preserve corrupt data").expect_err("same-worker refusal");
         assert_eq!(directory_file_bytes(directory), saved);
         workers.shutdown();
@@ -783,7 +789,11 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         restarted.create_human_conversation(PEER, "Reopen must preserve corrupt data").expect_err("reopened refusal");
         assert!(cached_owner(&restarted, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
-        assert_eq!(directory_file_bytes(directory), saved);
+        assert!(restarted.open_human_conversation_db_owner(&id).is_err(),
+            "restarted Human owner reads reject the corrupt identity without sidecar mutation");
+        assert!(restarted.list_human_conversations().expect("restarted corrupt Human roster").is_empty());
+        assert_eq!(directory_file_bytes(directory), saved,
+            "restarted owner and roster reads preserve all original sidecars and sibling resources");
         restarted.shutdown();
         drop(restarted);
         fs::remove_dir_all(root).unwrap();

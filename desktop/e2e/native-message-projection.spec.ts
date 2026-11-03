@@ -32,6 +32,14 @@ async function openAlice(page: Page, theme = 'dark') {
   await page.getByRole('button', { name: 'Alice', exact: true }).click();
   await expect(messageRow(page, 'm3')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.requests.filter((request) =>
+    request.method === 'getHumanConversationTranscriptTail'
+      && request.args.conversationId === 'human:a'
+      && (request.args.beforeSeq === undefined || request.args.beforeSeq === null)).length)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.requests.filter((request) =>
+    request.method === 'getHumanConversationTranscriptTail'
+      && request.args.conversationId === 'human:a'
+      && request.args.beforeSeq === 3).length)).toBe(1);
 }
 
 async function loadOlder(page: Page, expectedIds = ['m1', 'm2', 'm3', 'm4', 'm5']) {
