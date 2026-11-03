@@ -1,0 +1,1777 @@
+{
+  "schema_version": 1,
+  "contract": "H6d8-Windows-MSL-scoped-assessment",
+  "subject_commit": "6d8c241b609948c4266e1e40c8f559795b317473",
+  "subject_tree": "7690531a3a018fae94e7122b08a8b5c67252793e",
+  "evidence_carrier": "The commit containing this record; not the execution subject.",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": 41618863245,
+  "run_attempt": 1,
+  "event": "push",
+  "job_id": 125859112369,
+  "job": "media-store-windows",
+  "runner_os": "Windows",
+  "job_conclusion": "success",
+  "capture_script": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+  "capture_blob": "9e9e49980faf730b5277a12fcf20f249430753a5",
+  "assessment": {
+    "verdict": "APPROVED within declared Windows receipt scope",
+    "full_receipt_read": true,
+    "command_groups": 23,
+    "required_names": 263,
+    "unique_observed_names": 263,
+    "local_exec_positive_names": 58,
+    "source_inputs": 97,
+    "all_exits_zero": true,
+    "all_errors_null": true,
+    "all_exact_positive_summaries_verified": true,
+    "all_before_after_inputs_identical": true,
+    "all_command_logs_independently_reconstructed_and_hashed": true,
+    "all_source_tree_blobs_and_canonical_hashes_verified": true,
+    "all_windows_checkout_hashes_and_lengths_verified": true,
+    "canonical_source_bytes": 5017680,
+    "windows_checkout_bytes": 5130534
+  },
+  "decoded_job_log": {
+    "utf8_bytes": 1602342,
+    "sha256": "6af02202d88bb8fde466e48342b7039ade7732d3e435ad5df13142a2abad38fa"
+  },
+  "log_reconstruction": "Removed Actions timestamps, reversed only Python Windows text-print CRLF expansion, retained the subprocess final blank line and excluded only print's extra newline. All 23 candidate LF byte streams match the recorded command hashes; none of the unchanged CRLF streams match. Command blocks contain no ESC or replacement characters.",
+  "source_scope": "97 exact tree paths equal capture INPUTS union LXO_INPUTS. Git blob SHA-1 and canonical lengths verified for all; LF-to-CRLF reproduces every recorded Windows checkout byte length/SHA-256. This is identity verification, not full semantic review or complete compiler transitive closure.",
+  "artifact": {
+    "id": 13221949531,
+    "bytes": 189842,
+    "zip_sha256": "975cacabb47b9d0080218471336e975ec31bc40b61d78de598cdd03ef2723282",
+    "api_and_upload_metadata_agree": true,
+    "zip_bytes_read": false
+  },
+  "oracle_qualification": {
+    "scope": "Synthetic oracle qualification only; no product behavior evidence.",
+    "controls": [
+      {
+        "control": "positive",
+        "expected": true,
+        "observed": true
+      },
+      {
+        "control": "crlf-positive",
+        "expected": true,
+        "observed": true
+      },
+      {
+        "control": "missing",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "duplicate",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "unexpected",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "failed",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "ignored",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "zero-test",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "partial-log",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "duplicate-summary",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "failed-summary",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "nonzero-command",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "capture-error",
+        "expected": false,
+        "observed": false
+      }
+    ],
+    "accepted": true
+  },
+  "executions": [
+    {
+      "case": "local-exec-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::operation_owner_is_lazy_and_shared_by_distinct_permission_facades",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::duplicate_and_permission_refusal_cannot_retire_another_invocation",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::unproved_shell_terminals_preserve_typed_uncertainty_and_observed_output",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::preentry_refusals_remain_known_and_do_not_poison_journal_health",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::cancellation_close_and_deadline_remain_unknown_after_durable_reopen",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::uncertain_shell_output_remains_utf8_bounded_in_durable_history",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::post_send_journal_failures_keep_observed_facts_and_unknown_custody",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::proven_preentry_refusal_stays_known_when_its_journal_publication_fails",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::finish_admission_and_snapshot_publication_share_one_transaction",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::corrupt_journal_fails_closed_instead_of_becoming_empty_history",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::unknown_journal_version_fails_closed",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::accepted_start_ambiguity_recovers_durably_as_outcome_unknown",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::process_death_recovery_durably_marks_running_as_outcome_unknown",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::atomic_persistence_failure_is_reported",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::pre_send_journal_failure_does_not_send_exec_frame",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::completed_bounded_output_round_trips_through_journal",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::duplicate_operation_id_from_durable_history_is_not_replayed",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::unknown_custody_survives_known_terminal_churn_and_reopen",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::protected_history_and_active_capacity_refuse_before_dispatch_then_known_exit_releases_room",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::concurrent_facades_reserve_capacity_inside_durable_admission",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::version_two_migration_preserves_all_recoverable_record_fields",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::version_two_migration_is_durable_before_a_new_provider_frame",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::startup_prunes_only_oldest_known_terminals_and_persists_the_result",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::protected_legacy_overcapacity_remains_queryable_and_blocks_new_effects",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::failed_migration_retains_parsed_custody_and_latches_admission_failure",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::admission_publication_failure_restores_history_without_dispatch",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::unsupported_and_duplicate_journals_block_admission_without_rewriting"
+      ],
+      "observed_passed_test_names": [
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::accepted_start_ambiguity_recovers_durably_as_outcome_unknown",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::admission_publication_failure_restores_history_without_dispatch",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::atomic_persistence_failure_is_reported",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::cancellation_close_and_deadline_remain_unknown_after_durable_reopen",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::completed_bounded_output_round_trips_through_journal",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::concurrent_facades_reserve_capacity_inside_durable_admission",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::corrupt_journal_fails_closed_instead_of_becoming_empty_history",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::duplicate_and_permission_refusal_cannot_retire_another_invocation",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::duplicate_operation_id_from_durable_history_is_not_replayed",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::failed_migration_retains_parsed_custody_and_latches_admission_failure",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::finish_admission_and_snapshot_publication_share_one_transaction",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::operation_owner_is_lazy_and_shared_by_distinct_permission_facades",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::post_send_journal_failures_keep_observed_facts_and_unknown_custody",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::pre_send_journal_failure_does_not_send_exec_frame",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::preentry_refusals_remain_known_and_do_not_poison_journal_health",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::process_death_recovery_durably_marks_running_as_outcome_unknown",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::protected_history_and_active_capacity_refuse_before_dispatch_then_known_exit_releases_room",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::protected_legacy_overcapacity_remains_queryable_and_blocks_new_effects",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::proven_preentry_refusal_stays_known_when_its_journal_publication_fails",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::startup_prunes_only_oldest_known_terminals_and_persists_the_result",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::uncertain_shell_output_remains_utf8_bounded_in_durable_history",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::unknown_custody_survives_known_terminal_churn_and_reopen",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::unknown_journal_version_fails_closed",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::unproved_shell_terminals_preserve_typed_uncertainty_and_observed_output",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::unsupported_and_duplicate_journals_block_admission_without_rewriting",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::version_two_migration_is_durable_before_a_new_provider_frame",
+        "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::version_two_migration_preserves_all_recoverable_record_fields"
+      ],
+      "log_sha256": "38a6c292331ae1b6826721e47cd8ec529e397d4eb09d58060b5d0293cd5bf867",
+      "oracle_accepted": true
+    },
+    {
+      "case": "local-exec-gateway",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "gateway_local_exec_sand_box_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "sandbox_projects_provider_state_and_user_computers",
+        "upload_and_download_enforce_gate_and_use_frozen_frames",
+        "unavailable_computer_fails_before_permission_approval",
+        "oversized_file_and_blocked_gate_fail_before_provider_side_effect",
+        "exec_manager_streams_shell_and_read_through_permissioned_provider",
+        "shell_send_failure_finishes_pre_send_operation_as_failed",
+        "exec_manager_reports_control_throw_with_frozen_failure_classification",
+        "exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel",
+        "exec_manager_does_not_mark_cancel_when_provider_rejects_delivery",
+        "exec_manager_drives_real_os_process_to_bounded_terminal_result",
+        "exec_manager_cancel_maps_to_real_child_termination_and_history",
+        "host_local_exec_unknown_survives_churn_and_restart_without_replay",
+        "host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal"
+      ],
+      "observed_passed_test_names": [
+        "exec_manager_cancel_maps_to_real_child_termination_and_history",
+        "exec_manager_does_not_mark_cancel_when_provider_rejects_delivery",
+        "exec_manager_drives_real_os_process_to_bounded_terminal_result",
+        "exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel",
+        "exec_manager_reports_control_throw_with_frozen_failure_classification",
+        "exec_manager_streams_shell_and_read_through_permissioned_provider",
+        "host_local_exec_shared_capacity_refuses_dispatch_until_known_terminal",
+        "host_local_exec_unknown_survives_churn_and_restart_without_replay",
+        "oversized_file_and_blocked_gate_fail_before_provider_side_effect",
+        "sandbox_projects_provider_state_and_user_computers",
+        "shell_send_failure_finishes_pre_send_operation_as_failed",
+        "unavailable_computer_fails_before_permission_approval",
+        "upload_and_download_enforce_gate_and_use_frozen_frames"
+      ],
+      "log_sha256": "3c9fdb040024204345870bb5c60898a5f40a47e81498016446f5289e0ae278cd",
+      "oracle_accepted": true
+    },
+    {
+      "case": "local-exec-codec",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "local_exec_production_codec_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "production_codec_accepts_exec_client_json_and_ignores_unknown_fields",
+        "production_codec_projects_frozen_control_cases",
+        "production_codec_creates_package_owned_remote_accessor",
+        "production_codec_projects_generated_shell_and_read_shapes",
+        "production_codec_uses_generated_oneof_and_permission_error_semantics",
+        "generated_binding_owns_the_complete_exec_oneof_shape",
+        "generated_protobuf_json_preserves_read_bytes_and_int64_semantics",
+        "generated_binding_provenance_is_auditable_and_not_a_parallel_codec",
+        "generated_codec_is_uniquely_consumed_by_shipping_manager_and_runner",
+        "production_codec_preserves_preentry_refusal_and_opaque_throw_distinction"
+      ],
+      "observed_passed_test_names": [
+        "generated_binding_owns_the_complete_exec_oneof_shape",
+        "generated_binding_provenance_is_auditable_and_not_a_parallel_codec",
+        "generated_codec_is_uniquely_consumed_by_shipping_manager_and_runner",
+        "generated_protobuf_json_preserves_read_bytes_and_int64_semantics",
+        "production_codec_accepts_exec_client_json_and_ignores_unknown_fields",
+        "production_codec_creates_package_owned_remote_accessor",
+        "production_codec_preserves_preentry_refusal_and_opaque_throw_distinction",
+        "production_codec_projects_frozen_control_cases",
+        "production_codec_projects_generated_shell_and_read_shapes",
+        "production_codec_uses_generated_oneof_and_permission_error_semantics"
+      ],
+      "log_sha256": "2b88363c0fc1119e30a10836d353bace21abd10ad2aa80d6092d3ad0b4502aa3",
+      "oracle_accepted": true
+    },
+    {
+      "case": "local-exec-extension",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "extensions_local_exec_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "local_exec_ask_gate_reports_refusal_with_agent_identity",
+        "local_exec_error_preserves_provider_message",
+        "failure_classifier_matches_grok_spawn_errno_contract",
+        "command_output_formatting_strips_ansi_cr_redraw_and_bounds_tail",
+        "command_error_merges_bounded_streams_and_preserves_termination_reason",
+        "command_error_uses_timeout_and_signal_without_raw_command_newlines",
+        "local_exec_provider_lifecycle_is_persisted_through_host_telemetry",
+        "production_extension_reports_exec_failure_through_host_telemetry"
+      ],
+      "observed_passed_test_names": [
+        "command_error_merges_bounded_streams_and_preserves_termination_reason",
+        "command_error_uses_timeout_and_signal_without_raw_command_newlines",
+        "command_output_formatting_strips_ansi_cr_redraw_and_bounds_tail",
+        "failure_classifier_matches_grok_spawn_errno_contract",
+        "local_exec_ask_gate_reports_refusal_with_agent_identity",
+        "local_exec_error_preserves_provider_message",
+        "local_exec_provider_lifecycle_is_persisted_through_host_telemetry",
+        "production_extension_reports_exec_failure_through_host_telemetry"
+      ],
+      "log_sha256": "28ac5b279ac91c9905c0d76d48a295b82d003f58228148d0fff35d90fb1f4611",
+      "oracle_accepted": true
+    },
+    {
+      "case": "media-settlement-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::session::agent_db::media_settlement_tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_success_and_exact_replay_preserve_durable_contract",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_known_refusal_rolls_back_a_real_receipt_failure_prefix",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_receipt_failure_with_real_rollback_denial_is_unknown",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_deferred_commit_failure_is_unknown_with_clean_or_denied_rollback",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_real_commit_error_is_not_replaced_by_lost_ack_fault",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_prior_transaction_retires_before_claiming_or_appending",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_poisoned_transaction_is_unknown_and_retired",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_clean_begin_refusal_is_known_and_fault_is_one_shot",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_slot_rejects_invalid_occupied_closed_and_unsettled_owners",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_old_lease_drop_cannot_clear_a_new_arm",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_rollback_authorizer_denies_only_rollback_and_is_scoped"
+      ],
+      "observed_passed_test_names": [
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_clean_begin_refusal_is_known_and_fault_is_one_shot",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_deferred_commit_failure_is_unknown_with_clean_or_denied_rollback",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_slot_rejects_invalid_occupied_closed_and_unsettled_owners",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_known_refusal_rolls_back_a_real_receipt_failure_prefix",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_old_lease_drop_cannot_clear_a_new_arm",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_poisoned_transaction_is_unknown_and_retired",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_prior_transaction_retires_before_claiming_or_appending",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_real_commit_error_is_not_replaced_by_lost_ack_fault",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_receipt_failure_with_real_rollback_denial_is_unknown",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_rollback_authorizer_denies_only_rollback_and_is_scoped",
+        "extensions::session::agent_db::media_settlement_tests::media_settlement_success_and_exact_replay_preserve_durable_contract"
+      ],
+      "log_sha256": "fc431d89e1c72870123c9377421a7d1d453c302660d789d2bcf0835287e71ff9",
+      "oracle_accepted": true
+    },
+    {
+      "case": "outgoing-media-custody",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "attachment_paths::tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "attachment_paths::tests::rollback_removes_every_uncommitted_path",
+        "attachment_paths::tests::commit_prevents_cleanup_of_persisted_media",
+        "attachment_paths::tests::unknown_owner_settlement_retains_bytes_through_abort_and_drop",
+        "attachment_paths::tests::confirmed_refusal_restores_only_its_own_cleanup_authority",
+        "attachment_paths::tests::sealed_custody_refuses_new_paths_without_reopening_retained_media"
+      ],
+      "observed_passed_test_names": [
+        "attachment_paths::tests::commit_prevents_cleanup_of_persisted_media",
+        "attachment_paths::tests::confirmed_refusal_restores_only_its_own_cleanup_authority",
+        "attachment_paths::tests::rollback_removes_every_uncommitted_path",
+        "attachment_paths::tests::sealed_custody_refuses_new_paths_without_reopening_retained_media",
+        "attachment_paths::tests::unknown_owner_settlement_retains_bytes_through_abort_and_drop"
+      ],
+      "log_sha256": "93b93a69e8d074ae957becd61ac0393767a1384a0ebc10c2d3e39688ec67b951",
+      "oracle_accepted": true
+    },
+    {
+      "case": "transaction-commit-owners",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_sessions_and_config_contract",
+        "commit",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "config_set_racing_one_owner_hash_has_one_commit_and_one_conflict",
+        "test_cron_owner_writes_rollback_when_commit_fails",
+        "test_archive_owner_rolls_back_when_commit_fails",
+        "test_background_result_owner_rolls_back_when_commit_fails",
+        "test_session_transcript_append_rolls_back_when_commit_fails",
+        "test_session_transcript_update_and_identity_settlement_roll_back_when_commit_fails",
+        "test_session_transcript_delete_and_conversation_clear_roll_back_when_commit_fails",
+        "test_session_checkpoint_and_root_metadata_roll_back_when_commit_fails",
+        "test_session_metadata_owners_roll_back_when_commit_fails",
+        "test_transcript_owners_roll_back_when_commit_fails",
+        "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+        "media_commit_oracle_rejects_missing_duplicate_or_conditional_helper",
+        "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+        "media_commit_oracle_rejects_changed_commit_or_rollback_commands",
+        "media_commit_oracle_rejects_extra_aliased_or_macro_callers",
+        "media_commit_oracle_rejects_discarded_or_changed_settlement_handling",
+        "media_commit_oracle_rejects_changed_unknown_entry_handling",
+        "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+        "test_agent_db_has_no_direct_commit_error_propagation",
+        "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup",
+        "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+        "channel_commit_oracle_rejects_extra_unhandled_callers_and_method_references",
+        "channel_commit_oracle_rejects_changed_missing_or_discarded_error_handling",
+        "channel_commit_oracle_rejects_missing_ambiguous_or_malformed_helper_boundaries",
+        "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source",
+        "test_conversation_blob_cleanup_rolls_back_when_commit_fails",
+        "test_compaction_owner_rolls_back_when_commit_fails"
+      ],
+      "observed_passed_test_names": [
+        "channel_commit_oracle_rejects_changed_missing_or_discarded_error_handling",
+        "channel_commit_oracle_rejects_extra_unhandled_callers_and_method_references",
+        "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source",
+        "channel_commit_oracle_rejects_missing_ambiguous_or_malformed_helper_boundaries",
+        "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+        "config_set_racing_one_owner_hash_has_one_commit_and_one_conflict",
+        "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+        "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+        "media_commit_oracle_rejects_changed_commit_or_rollback_commands",
+        "media_commit_oracle_rejects_changed_unknown_entry_handling",
+        "media_commit_oracle_rejects_discarded_or_changed_settlement_handling",
+        "media_commit_oracle_rejects_extra_aliased_or_macro_callers",
+        "media_commit_oracle_rejects_missing_duplicate_or_conditional_helper",
+        "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+        "test_agent_db_has_no_direct_commit_error_propagation",
+        "test_archive_owner_rolls_back_when_commit_fails",
+        "test_background_result_owner_rolls_back_when_commit_fails",
+        "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup",
+        "test_compaction_owner_rolls_back_when_commit_fails",
+        "test_conversation_blob_cleanup_rolls_back_when_commit_fails",
+        "test_cron_owner_writes_rollback_when_commit_fails",
+        "test_session_checkpoint_and_root_metadata_roll_back_when_commit_fails",
+        "test_session_metadata_owners_roll_back_when_commit_fails",
+        "test_session_transcript_append_rolls_back_when_commit_fails",
+        "test_session_transcript_delete_and_conversation_clear_roll_back_when_commit_fails",
+        "test_session_transcript_update_and_identity_settlement_roll_back_when_commit_fails",
+        "test_transcript_owners_roll_back_when_commit_fails"
+      ],
+      "log_sha256": "952df337f7dd252d0002152d352c776929eaa2351c8c27dfa92cb9713becf9f0",
+      "oracle_accepted": true
+    },
+    {
+      "case": "cleanup-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::media_store::cleanup::tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "extensions::attachments::media_store::cleanup::tests::cleanup_uses_one_clock_and_strict_ttl_boundary",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_rechecks_refreshed_mtime_before_unlink",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_leaf",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_ancestor",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_root",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_retries_failed_unlink_without_pruning_branch",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_top_level_prune_errors_propagate_with_partial_progress",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_windows_identity_compares_full_file_id"
+      ],
+      "observed_passed_test_names": [
+        "extensions::attachments::media_store::cleanup::tests::cleanup_rechecks_refreshed_mtime_before_unlink",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_ancestor",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_leaf",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_root",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_retries_failed_unlink_without_pruning_branch",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_top_level_prune_errors_propagate_with_partial_progress",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_uses_one_clock_and_strict_ttl_boundary",
+        "extensions::attachments::media_store::cleanup::tests::cleanup_windows_identity_compares_full_file_id"
+      ],
+      "log_sha256": "87cf999c09949a4a0d24c82b713e17fb8116a8539db899bca133d89bd6708dab",
+      "oracle_accepted": true
+    },
+    {
+      "case": "cleanup-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_media_store_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers",
+        "remote_media_download_is_bounded_before_payload_acceptance",
+        "test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning",
+        "test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors",
+        "test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets",
+        "test_ocrm_media_store_save_and_read_buffer",
+        "test_ocrm_media_store_size_limit_rejection",
+        "test_ocrm_media_store_filename_sanitization_and_truncation",
+        "test_ocrm_media_store_subdir_traversal_protection",
+        "test_ocrm_media_store_local_file_source_boundaries",
+        "test_ocrm_media_store_delete_and_lifecycle",
+        "test_ocrm_media_store_playback_cache_and_clean_old_media",
+        "test_ocrm_media_store_gateway_service_dispatch",
+        "test_ocrm_device_pairing_qr_wiring",
+        "test_ocrm_media_store_remote_fixture_scope_and_filename_support",
+        "test_ocrm_media_store_cleanup_protects_top_level_case_variants"
+      ],
+      "observed_passed_test_names": [
+        "remote_media_download_is_bounded_before_payload_acceptance",
+        "test_ocrm_device_pairing_qr_wiring",
+        "test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning",
+        "test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors",
+        "test_ocrm_media_store_cleanup_protects_top_level_case_variants",
+        "test_ocrm_media_store_delete_and_lifecycle",
+        "test_ocrm_media_store_filename_sanitization_and_truncation",
+        "test_ocrm_media_store_gateway_service_dispatch",
+        "test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers",
+        "test_ocrm_media_store_local_file_source_boundaries",
+        "test_ocrm_media_store_playback_cache_and_clean_old_media",
+        "test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets",
+        "test_ocrm_media_store_remote_fixture_scope_and_filename_support",
+        "test_ocrm_media_store_save_and_read_buffer",
+        "test_ocrm_media_store_size_limit_rejection",
+        "test_ocrm_media_store_subdir_traversal_protection"
+      ],
+      "log_sha256": "4c27a0a0cbf660538318b63c8965d4df9bb410ded98633eef0d4ad78b5d0b9f2",
+      "oracle_accepted": true
+    },
+    {
+      "case": "html-policy",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_html_provenance_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "test_html_provenance_marker_validation",
+        "test_html_provenance_filter_stale_rows",
+        "test_html_provenance_host_read_admission",
+        "test_html_shape_ecmascript_whitespace",
+        "test_html_shape_header_word_boundaries",
+        "test_html_shape_utf16_window_boundaries",
+        "test_html_policy_public_assertion_trust_mime_and_byte_identity",
+        "test_html_policy_public_assertion_unicode_and_malformed_shape",
+        "test_html_provenance_stale_snapshot_order_and_missing_kinds"
+      ],
+      "observed_passed_test_names": [
+        "test_html_policy_public_assertion_trust_mime_and_byte_identity",
+        "test_html_policy_public_assertion_unicode_and_malformed_shape",
+        "test_html_provenance_filter_stale_rows",
+        "test_html_provenance_host_read_admission",
+        "test_html_provenance_marker_validation",
+        "test_html_provenance_stale_snapshot_order_and_missing_kinds",
+        "test_html_shape_ecmascript_whitespace",
+        "test_html_shape_header_word_boundaries",
+        "test_html_shape_utf16_window_boundaries"
+      ],
+      "log_sha256": "31ddb47e3ffb4bd2eda563c11bdc271d7c3055f0b73ea0248760cd774a746333",
+      "oracle_accepted": true
+    },
+    {
+      "case": "host-read-format",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_channel_and_local_roots_contract",
+        "test_ocrm_host_read_media_policy_format_admission",
+        "--",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "test_ocrm_host_read_media_policy_format_admission"
+      ],
+      "observed_passed_test_names": [
+        "test_ocrm_host_read_media_policy_format_admission"
+      ],
+      "log_sha256": "5a1072e4cae1f50b43c3c45fe74fa5f80175c22c2e301827cc42365a0f2981bc",
+      "oracle_accepted": true
+    },
+    {
+      "case": "file-url-admission",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::web_media::file_url_admission_tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "extensions::attachments::web_media::file_url_admission_tests::remote_file_authorities_never_enter_local_reader",
+        "extensions::attachments::web_media::file_url_admission_tests::invalid_file_urls_never_enter_local_reader",
+        "extensions::attachments::web_media::file_url_admission_tests::network_paths_never_enter_local_reader",
+        "extensions::attachments::web_media::file_url_admission_tests::local_path_enters_reader_once_with_original_options",
+        "extensions::attachments::web_media::file_url_admission_tests::local_reader_error_is_returned_without_retry",
+        "extensions::attachments::web_media::file_url_admission_tests::verbatim_drive_workspace_enters_local_reader"
+      ],
+      "observed_passed_test_names": [
+        "extensions::attachments::web_media::file_url_admission_tests::invalid_file_urls_never_enter_local_reader",
+        "extensions::attachments::web_media::file_url_admission_tests::local_path_enters_reader_once_with_original_options",
+        "extensions::attachments::web_media::file_url_admission_tests::local_reader_error_is_returned_without_retry",
+        "extensions::attachments::web_media::file_url_admission_tests::network_paths_never_enter_local_reader",
+        "extensions::attachments::web_media::file_url_admission_tests::remote_file_authorities_never_enter_local_reader",
+        "extensions::attachments::web_media::file_url_admission_tests::verbatim_drive_workspace_enters_local_reader"
+      ],
+      "log_sha256": "c8592901db12647d535e9c61b7500f72c8555b6f21396a82d32294343183fff8",
+      "oracle_accepted": true
+    },
+    {
+      "case": "explicit-html-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_web_media_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "test_ocrm_anthropic_inline_content_blocks_normalization",
+        "test_ocrm_web_media_animated_webp_preservation",
+        "test_ocrm_web_media_file_url_and_traversal_guards",
+        "test_ocrm_web_media_local_loading_and_roots_boundary",
+        "web_media_local_reads_are_bounded_before_buffer_acceptance",
+        "test_ocrm_remote_workspace_file_transfer",
+        "test_ocrm_web_media_gateway_service_dispatch",
+        "test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+        "test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+        "test_ocrm_web_media_explicit_html_utf16_shape_window",
+        "test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+        "test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+        "test_ocrm_web_media_html_publication_requires_exact_mode",
+        "test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+        "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+        "test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+        "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+        "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
+        "test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
+        "test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
+        "test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes",
+        "test_ocrm_web_media_service_reader_zero_exact_and_default_caps",
+        "test_ocrm_web_media_service_reader_failures_and_fresh_retry",
+        "lfa_web_media_uses_shared_invalid_file_url_boundary",
+        "lfa_web_media_normalized_file_urls_reach_loader_and_service",
+        "lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry"
+      ],
+      "observed_passed_test_names": [
+        "lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry",
+        "lfa_web_media_normalized_file_urls_reach_loader_and_service",
+        "lfa_web_media_uses_shared_invalid_file_url_boundary",
+        "test_ocrm_anthropic_inline_content_blocks_normalization",
+        "test_ocrm_remote_workspace_file_transfer",
+        "test_ocrm_web_media_animated_webp_preservation",
+        "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+        "test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+        "test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+        "test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+        "test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+        "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+        "test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+        "test_ocrm_web_media_explicit_html_utf16_shape_window",
+        "test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+        "test_ocrm_web_media_file_url_and_traversal_guards",
+        "test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
+        "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
+        "test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
+        "test_ocrm_web_media_gateway_service_dispatch",
+        "test_ocrm_web_media_html_publication_requires_exact_mode",
+        "test_ocrm_web_media_local_loading_and_roots_boundary",
+        "test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes",
+        "test_ocrm_web_media_service_reader_failures_and_fresh_retry",
+        "test_ocrm_web_media_service_reader_zero_exact_and_default_caps",
+        "web_media_local_reads_are_bounded_before_buffer_acceptance"
+      ],
+      "log_sha256": "1b20dce29011826cd19e2901148da5b76bea066f0fc351e0bf35a233477b9f50",
+      "oracle_accepted": true
+    },
+    {
+      "case": "image-probe-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_image_ops_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "test_ocrm_image_ops_build_resize_side_grid",
+        "test_ocrm_image_ops_quality_steps_ladder",
+        "test_ocrm_image_ops_animated_webp_detection",
+        "test_ocrm_image_ops_still_png_and_apng_detection",
+        "test_ocrm_image_ops_display_metadata_orientation_swap",
+        "test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
+        "test_ocrm_image_ops_prepare_attachment",
+        "test_ocrm_image_ops_normalize_anthropic_inline_image",
+        "test_ocrm_image_ops_gateway_dispatch",
+        "test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type",
+        "test_ocrm_image_ops_png_probe_preserves_required_header_metadata",
+        "test_ocrm_image_ops_png_probe_rejects_zero_dimensions",
+        "test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry",
+        "test_ocrm_image_ops_png_prefix_file_loader_and_retry",
+        "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+        "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry"
+      ],
+      "observed_passed_test_names": [
+        "test_ocrm_image_ops_animated_webp_detection",
+        "test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
+        "test_ocrm_image_ops_build_resize_side_grid",
+        "test_ocrm_image_ops_display_metadata_orientation_swap",
+        "test_ocrm_image_ops_gateway_dispatch",
+        "test_ocrm_image_ops_normalize_anthropic_inline_image",
+        "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+        "test_ocrm_image_ops_png_prefix_file_loader_and_retry",
+        "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry",
+        "test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry",
+        "test_ocrm_image_ops_png_probe_preserves_required_header_metadata",
+        "test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type",
+        "test_ocrm_image_ops_png_probe_rejects_zero_dimensions",
+        "test_ocrm_image_ops_prepare_attachment",
+        "test_ocrm_image_ops_quality_steps_ladder",
+        "test_ocrm_image_ops_still_png_and_apng_detection"
+      ],
+      "log_sha256": "084bfbe8fd0e714e66553bf6c68a9287bdedcbbbc14bd04cb02675c859974417",
+      "oracle_accepted": true
+    },
+    {
+      "case": "bounded-reader-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::media_reference::bounded_read_tests::",
+        "--",
+        "--test-threads=1",
+        "--show-output"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_short_reads_and_interrupted_preserve_bytes",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_zero_and_one_over_probe_without_allocating_extra_bytes",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_late_read_error_discards_prefix",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_allocation_failure_discards_prefix",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_growth_is_bounded_and_amortized",
+        "extensions::attachments::media_reference::bounded_read_tests::br_initial_allocation_ignores_large_metadata_hint",
+        "extensions::attachments::media_reference::bounded_read_tests::br_opened_admission_rechecks_size_after_preflight",
+        "extensions::attachments::media_reference::bounded_read_tests::br_opened_file_growth_is_not_successful_prefix"
+      ],
+      "observed_passed_test_names": [
+        "extensions::attachments::media_reference::bounded_read_tests::br_initial_allocation_ignores_large_metadata_hint",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_allocation_failure_discards_prefix",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_growth_is_bounded_and_amortized",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_late_read_error_discards_prefix",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_short_reads_and_interrupted_preserve_bytes",
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_zero_and_one_over_probe_without_allocating_extra_bytes",
+        "extensions::attachments::media_reference::bounded_read_tests::br_opened_admission_rechecks_size_after_preflight",
+        "extensions::attachments::media_reference::bounded_read_tests::br_opened_file_growth_is_not_successful_prefix"
+      ],
+      "log_sha256": "aa71bed12d85954dbe96088d69b701596eee0fbcd7bd9e89ec2b330e409bd2ee",
+      "oracle_accepted": true
+    },
+    {
+      "case": "bounded-reader-public",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_media_reference_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "test_ocrm_media_ref_01_inbound_uri_parsing_and_validation",
+        "test_ocrm_media_ref_02_classify_media_reference_source",
+        "test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite",
+        "test_ocrm_media_ref_04_bounded_read_file",
+        "test_ocrm_media_ref_05_playback_codec_policy_resolution",
+        "test_ocrm_media_ref_06_native_codec_compatibility_rules",
+        "test_ocrm_media_ref_07_probe_metadata_aspect_ratio_and_rotation",
+        "test_ocrm_media_ref_08_canonicalize_persisted_user_message_media",
+        "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+        "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+        "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals",
+        "br_public_empty_zero_exact_and_over_limits",
+        "br_public_usize_max_returns_original_bytes",
+        "br_public_missing_and_directory_preserve_not_found",
+        "br_public_retry_observes_replaced_file",
+        "br_public_hard_links_preserve_bytes",
+        "br_public_symbolic_links_preserve_bytes"
+      ],
+      "observed_passed_test_names": [
+        "br_public_empty_zero_exact_and_over_limits",
+        "br_public_hard_links_preserve_bytes",
+        "br_public_missing_and_directory_preserve_not_found",
+        "br_public_retry_observes_replaced_file",
+        "br_public_symbolic_links_preserve_bytes",
+        "br_public_usize_max_returns_original_bytes",
+        "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals",
+        "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+        "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+        "test_ocrm_media_ref_01_inbound_uri_parsing_and_validation",
+        "test_ocrm_media_ref_02_classify_media_reference_source",
+        "test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite",
+        "test_ocrm_media_ref_04_bounded_read_file",
+        "test_ocrm_media_ref_05_playback_codec_policy_resolution",
+        "test_ocrm_media_ref_06_native_codec_compatibility_rules",
+        "test_ocrm_media_ref_07_probe_metadata_aspect_ratio_and_rotation",
+        "test_ocrm_media_ref_08_canonicalize_persisted_user_message_media"
+      ],
+      "log_sha256": "9bcc2be69465498bb6e2bd31c6c7743ca68e918ed5e5eb536ec681e169c317e3",
+      "oracle_accepted": true
+    },
+    {
+      "case": "bounded-reader-box-consumer",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "attachments_service_contract",
+        "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+        "--",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store"
+      ],
+      "observed_passed_test_names": [
+        "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store"
+      ],
+      "log_sha256": "2664ca88feee76ea4a48d8ae9e60f8da89916100e3bd56b52cdee80dd59b3fb2",
+      "oracle_accepted": true
+    },
+    {
+      "case": "bounded-reader-image-consumer",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "attachments_service_contract",
+        "image_reads_and_persistence_preserve_content_addressed_dimensions",
+        "--",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "image_reads_and_persistence_preserve_content_addressed_dimensions"
+      ],
+      "observed_passed_test_names": [
+        "image_reads_and_persistence_preserve_content_addressed_dimensions"
+      ],
+      "log_sha256": "ef3c5f740887ce4ec7e69726d3809569d04835ca0d0acaf0de73521b43f99963",
+      "oracle_accepted": true
+    },
+    {
+      "case": "bounded-reader-channel-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "channel_attachment_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "remote_urls_are_forwarded_without_host_fetching",
+        "file_urls_and_plain_paths_upload_bytes_with_frozen_mime_rules",
+        "empty_directory_zero_and_oversize_local_inputs_fail_closed",
+        "frozen_shared_media_inventory_drives_channel_classification",
+        "lfa_channel_native_url_variants_preserve_bytes_and_metadata",
+        "lfa_channel_invalid_file_urls_never_become_local_paths",
+        "lfa_channel_invalid_encoding_preserves_source_and_valid_retry",
+        "lfa_windows_channel_paths_reject_network_and_alias_spellings"
+      ],
+      "observed_passed_test_names": [
+        "empty_directory_zero_and_oversize_local_inputs_fail_closed",
+        "file_urls_and_plain_paths_upload_bytes_with_frozen_mime_rules",
+        "frozen_shared_media_inventory_drives_channel_classification",
+        "lfa_channel_invalid_encoding_preserves_source_and_valid_retry",
+        "lfa_channel_invalid_file_urls_never_become_local_paths",
+        "lfa_channel_native_url_variants_preserve_bytes_and_metadata",
+        "lfa_windows_channel_paths_reject_network_and_alias_spellings",
+        "remote_urls_are_forwarded_without_host_fetching"
+      ],
+      "log_sha256": "e6b6f6ab480d4e0ed64422ae0061e34079430738d8edbca08009cd0043d78fa4",
+      "oracle_accepted": true
+    },
+    {
+      "case": "local-file-url-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "local_media_file_url_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "lfa_shared_owner_distinguishes_non_file_sources",
+        "lfa_shared_owner_preserves_native_file_url_variants",
+        "lfa_shared_owner_rejects_all_remote_authorities",
+        "lfa_shared_owner_rejects_malformed_file_urls_after_normalization",
+        "lfa_shared_owner_rejects_bad_path_escapes_without_fallback",
+        "lfa_shared_owner_decodes_path_once_and_ignores_url_metadata",
+        "lfa_shared_owner_keeps_refusal_stateless",
+        "lfa_path_guard_rejects_nul_on_every_platform",
+        "lfa_windows_shared_owner_rejects_drive_less_and_alias_urls",
+        "lfa_windows_path_guard_rejects_network_and_namespace_aliases",
+        "lfa_windows_path_guard_accepts_rooted_drives"
+      ],
+      "observed_passed_test_names": [
+        "lfa_path_guard_rejects_nul_on_every_platform",
+        "lfa_shared_owner_decodes_path_once_and_ignores_url_metadata",
+        "lfa_shared_owner_distinguishes_non_file_sources",
+        "lfa_shared_owner_keeps_refusal_stateless",
+        "lfa_shared_owner_preserves_native_file_url_variants",
+        "lfa_shared_owner_rejects_all_remote_authorities",
+        "lfa_shared_owner_rejects_bad_path_escapes_without_fallback",
+        "lfa_shared_owner_rejects_malformed_file_urls_after_normalization",
+        "lfa_windows_path_guard_accepts_rooted_drives",
+        "lfa_windows_path_guard_rejects_network_and_namespace_aliases",
+        "lfa_windows_shared_owner_rejects_drive_less_and_alias_urls"
+      ],
+      "log_sha256": "63d03e8156c8331779367acfaae934853bdc8819087dde977f862adcfeefcbc1",
+      "oracle_accepted": true
+    },
+    {
+      "case": "file-context-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_media_file_context_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization",
+        "test_ocrm_file_ctx_02_render_file_context_block_escaping",
+        "test_ocrm_file_ctx_03_resolve_local_media_path",
+        "test_ocrm_file_ctx_04_unlink_if_exists",
+        "test_ocrm_file_ctx_05_document_truncation_notice",
+        "test_ocrm_file_ctx_06_runtime_prompt_image_provenance",
+        "test_ocrm_file_ctx_07_image_processor_contracts",
+        "test_ocrm_file_ctx_08_gateway_service_dispatch",
+        "lfa_file_context_uses_shared_admission_without_lossy_fallback",
+        "lfa_windows_file_context_rejects_plain_network_and_alias_paths"
+      ],
+      "observed_passed_test_names": [
+        "lfa_file_context_uses_shared_admission_without_lossy_fallback",
+        "lfa_windows_file_context_rejects_plain_network_and_alias_paths",
+        "test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization",
+        "test_ocrm_file_ctx_02_render_file_context_block_escaping",
+        "test_ocrm_file_ctx_03_resolve_local_media_path",
+        "test_ocrm_file_ctx_04_unlink_if_exists",
+        "test_ocrm_file_ctx_05_document_truncation_notice",
+        "test_ocrm_file_ctx_06_runtime_prompt_image_provenance",
+        "test_ocrm_file_ctx_07_image_processor_contracts",
+        "test_ocrm_file_ctx_08_gateway_service_dispatch"
+      ],
+      "log_sha256": "bee5b907636df5f9ea8827d49bcb21f19eec09cd307e0e39472029dfac7a4de2",
+      "oracle_accepted": true
+    },
+    {
+      "case": "send-message-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "send_message_tool_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "send_message_guard_rejects_when_shipping_state_is_waiting_on_user",
+        "schema_matches_frozen_type_fences_and_attachment_schemes",
+        "widget_schema_matches_frozen_choice_contract_and_normalization",
+        "generated_send_message_schema_exposes_frozen_widget_constraints",
+        "encoding_preserves_frozen_text_markdown_and_summary_projection",
+        "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag",
+        "send_message_bridge_is_first_party_and_delegates_other_tools",
+        "cursor_agent_message_resolves_shipping_title_fail_soft",
+        "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire",
+        "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting",
+        "box_media_resolution_matches_frozen_root_desktop_and_image_fences",
+        "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting",
+        "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+        "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+        "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+        "lfa_send_message_file_url_facade_preserves_admitted_metadata",
+        "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+        "send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
+        "send_message_bridge_aborts_prepared_custody_on_known_resolution_error"
+      ],
+      "observed_passed_test_names": [
+        "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+        "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting",
+        "box_media_resolution_matches_frozen_root_desktop_and_image_fences",
+        "cursor_agent_message_resolves_shipping_title_fail_soft",
+        "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+        "encoding_preserves_frozen_text_markdown_and_summary_projection",
+        "generated_send_message_schema_exposes_frozen_widget_constraints",
+        "lfa_send_message_file_url_facade_preserves_admitted_metadata",
+        "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+        "schema_matches_frozen_type_fences_and_attachment_schemes",
+        "send_message_bridge_aborts_prepared_custody_on_known_resolution_error",
+        "send_message_bridge_is_first_party_and_delegates_other_tools",
+        "send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
+        "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting",
+        "send_message_guard_rejects_when_shipping_state_is_waiting_on_user",
+        "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire",
+        "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag",
+        "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+        "widget_schema_matches_frozen_choice_contract_and_normalization"
+      ],
+      "log_sha256": "a3bfb75a2204a802b9013739c65236a180ddc60e68165faeeb30ecc054c8a206",
+      "oracle_accepted": true
+    },
+    {
+      "case": "agent-management-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "sand_agent_management_tools_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "required_positive_names": [
+        "runner_management_tools_are_first_party_and_validate_send_inputs",
+        "create_and_update_tools_delegate_with_merge_semantics",
+        "lfa_agent_management_batch_admits_all_urls_before_resolving"
+      ],
+      "observed_passed_test_names": [
+        "create_and_update_tools_delegate_with_merge_semantics",
+        "lfa_agent_management_batch_admits_all_urls_before_resolving",
+        "runner_management_tools_are_first_party_and_validate_send_inputs"
+      ],
+      "log_sha256": "e2bdeadbabbf3938bb14064a90e01c3d2119ea421fdaf4d70f61e12447667f67",
+      "oracle_accepted": true
+    }
+  ],
+  "inputs_before": {
+    ".github/workflows/rust-desktop-runtime.yml": {
+      "bytes": 490614,
+      "working_tree_sha256": "3656d22f43066d00f217dc1b308a7543a7e304431d5bc47f75a3d691def927c9",
+      "git_blob_sha": "0c2b44b51a129ce2deb12599676a94a87ed7a91d",
+      "normalized_worktree_blob_sha": "0c2b44b51a129ce2deb12599676a94a87ed7a91d"
+    },
+    "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md": {
+      "bytes": 11641,
+      "working_tree_sha256": "0e1025e5b6654dec26342d2ecbdefb91f590a6343ada36436693eea6069b956a",
+      "git_blob_sha": "e89c27654614752fd4700e6506735bee3bde25a8",
+      "normalized_worktree_blob_sha": "e89c27654614752fd4700e6506735bee3bde25a8"
+    },
+    "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md": {
+      "bytes": 16431,
+      "working_tree_sha256": "7a48912beedbd94201443ad329232945bd3f5e04893adc62627e5427f9d8701e",
+      "git_blob_sha": "59f624bce2f9552cd9bd1134c1ff6facb6ed6cfc",
+      "normalized_worktree_blob_sha": "59f624bce2f9552cd9bd1134c1ff6facb6ed6cfc"
+    },
+    "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md": {
+      "bytes": 20621,
+      "working_tree_sha256": "ae8b59288422eea2991f45d3e0ed7ec534c907572f384dc42701f58a54221936",
+      "git_blob_sha": "9249e4a93f353247e97c7ef47339382932451d72",
+      "normalized_worktree_blob_sha": "9249e4a93f353247e97c7ef47339382932451d72"
+    },
+    "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md": {
+      "bytes": 13576,
+      "working_tree_sha256": "b9e9f90cd73dc8aa108af24c7ebbb5aef042d1701a72c691837ccc96c26f5a16",
+      "git_blob_sha": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "normalized_worktree_blob_sha": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e"
+    },
+    "projects/openclaw-rust/docs/specs/media-file-url-admission.md": {
+      "bytes": 23826,
+      "working_tree_sha256": "48e7855a854144d40070b4654c4ad76dba580be6b2f8e072e216556f25e98eeb",
+      "git_blob_sha": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "normalized_worktree_blob_sha": "8efd93cc604fa814b4660b5153b6b38033faa2ca"
+    },
+    "projects/openclaw-rust/docs/specs/media-html-policy-safety.md": {
+      "bytes": 15306,
+      "working_tree_sha256": "3eeee993e8b56d3b4ed42092162c1998bb401f8ec1caba41d150aa62aadf4f47",
+      "git_blob_sha": "f0892088bfa3448441f7b92df6344692ac535932",
+      "normalized_worktree_blob_sha": "f0892088bfa3448441f7b92df6344692ac535932"
+    },
+    "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md": {
+      "bytes": 5687,
+      "working_tree_sha256": "5aefd38601b4f0a27194728cfb4d3e8c24d467f456d9ce0f25259dcd0e426e21",
+      "git_blob_sha": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "normalized_worktree_blob_sha": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698"
+    },
+    "projects/openclaw-rust/docs/specs/media-settlement-unknown.md": {
+      "bytes": 16332,
+      "working_tree_sha256": "b52e9b391e8f4a33e861f6852467aad883ee65a0b7f45d5d6e5eff70c3aec226",
+      "git_blob_sha": "8235f203e5ac0797f73cb2d9002b64eeb1f69110",
+      "normalized_worktree_blob_sha": "8235f203e5ac0797f73cb2d9002b64eeb1f69110"
+    },
+    "projects/openclaw-rust/docs/specs/media-store-lifecycle.md": {
+      "bytes": 22606,
+      "working_tree_sha256": "f957f8d1e0732dc5e0f94430b79c277f133f4cc5959b001c55ca6887f4fb8545",
+      "git_blob_sha": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "normalized_worktree_blob_sha": "62c61025c47b12ddb3782cc3f1db32e51cb5e205"
+    },
+    "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-decision.json": {
+      "bytes": 1603,
+      "working_tree_sha256": "490aee78f404b1a3ac181d005b775746a3498871f8bfedfaae520e13a316f5f7",
+      "git_blob_sha": "79e4fb938f28513b4f41fd462c2965807ab43040",
+      "normalized_worktree_blob_sha": "79e4fb938f28513b4f41fd462c2965807ab43040"
+    },
+    "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json": {
+      "bytes": 7096,
+      "working_tree_sha256": "902c7e89a5aa3fb4b5029e7345f7247e4fc95db5050cc6f9d3e47bf576cf4a03",
+      "git_blob_sha": "5bfe96af850152b7d4aa753fe27361f9b280d031",
+      "normalized_worktree_blob_sha": "5bfe96af850152b7d4aa753fe27361f9b280d031"
+    },
+    "projects/openclaw-rust/scripts/capture_media_cleanup.py": {
+      "bytes": 42498,
+      "working_tree_sha256": "65dd5bd129fe4450a1168ae5692c909039a9c96137db14b792242de051b5404c",
+      "git_blob_sha": "9e9e49980faf730b5277a12fcf20f249430753a5",
+      "normalized_worktree_blob_sha": "9e9e49980faf730b5277a12fcf20f249430753a5"
+    },
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+      "bytes": 158661,
+      "working_tree_sha256": "d15e87619eb3dccf476641085aaaee99575c47d3feca43d2b5efce281815e6ad",
+      "git_blob_sha": "94020e6d2ff811d3fd897f312e3f545b0863e5d3",
+      "normalized_worktree_blob_sha": "94020e6d2ff811d3fd897f312e3f545b0863e5d3"
+    },
+    "projects/openclaw-rust/upstream.lock.json": {
+      "bytes": 3568,
+      "working_tree_sha256": "67b80a262ce14ef7b12482fd9babd4628a10d1fa2056e470441908ec387e782e",
+      "git_blob_sha": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "normalized_worktree_blob_sha": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+    },
+    "source/host/Cargo.lock": {
+      "bytes": 124809,
+      "working_tree_sha256": "4a62a2a12fd09ba7a36e9001eee41fff03f4d37488dc2e439bcc134b3085efac",
+      "git_blob_sha": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "normalized_worktree_blob_sha": "9895ce7752768b1c8d3fe107ef95e513457ca518"
+    },
+    "source/host/Cargo.toml": {
+      "bytes": 1962,
+      "working_tree_sha256": "26461d87adb948e2187d492d07256946548ebb8f9bcd2100ce407fac6b723226",
+      "git_blob_sha": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "normalized_worktree_blob_sha": "e42cc9f56cc98337a49622ae9117ebd9823ef820"
+    },
+    "source/host/app/Cargo.lock": {
+      "bytes": 164953,
+      "working_tree_sha256": "5130b2bc25cc2d433f16b796c47dbc17e1f510b2d1397cdfdb878e5e56eae141",
+      "git_blob_sha": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "normalized_worktree_blob_sha": "5f929af729ac7b537e054283c5977cc269be38ad"
+    },
+    "source/host/app/Cargo.toml": {
+      "bytes": 908,
+      "working_tree_sha256": "6f1d1c8c4ba4bc86280df3a56876e8e3f3489e621282c5817651c82e78a40b31",
+      "git_blob_sha": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "normalized_worktree_blob_sha": "a2c58167a82657194b79aaf3e1e0d55577b2221c"
+    },
+    "source/host/app/src/main.rs": {
+      "bytes": 1030859,
+      "working_tree_sha256": "c9cff25c0edcc26634336561414a737d2478397dcf2fc2a563d2324da766f132",
+      "git_blob_sha": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+      "normalized_worktree_blob_sha": "d261aa4428899dc8932a4e3e219f9e2d889428ce"
+    },
+    "source/host/app/src/tests/channel_host_lane_tests.rs": {
+      "bytes": 128661,
+      "working_tree_sha256": "e3d6a14b9d60aa79f02af086aeadb362ba08400cdab8b97022dee2484940593e",
+      "git_blob_sha": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "normalized_worktree_blob_sha": "f6139af6bde9829f7e9147e6a2028ec77680bf42"
+    },
+    "source/host/app/src/tests/local_exec_outcome_tests.rs": {
+      "bytes": 13739,
+      "working_tree_sha256": "8e5594f2d6a22425dac676f2fbf78015d73e545176bdd7c38b278e9e83f34319",
+      "git_blob_sha": "bfc6d3925cbbb41c4ec9866e4779bda1f0bdbe3b",
+      "normalized_worktree_blob_sha": "bfc6d3925cbbb41c4ec9866e4779bda1f0bdbe3b"
+    },
+    "source/host/app/src/tests/local_media_file_url_tests.rs": {
+      "bytes": 37113,
+      "working_tree_sha256": "d40436aa71f69a24ce8d9a4716ecdf189e4466685d8fed808abf1a369be28f20",
+      "git_blob_sha": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "normalized_worktree_blob_sha": "57a0a3393f1bb9560eb036687688656b1f3fe6c8"
+    },
+    "source/host/app/src/tests/media_settlement_unknown_tests.rs": {
+      "bytes": 59254,
+      "working_tree_sha256": "f8d71a3958effd6795c17ad5819ad0637d3bdd2ebf273f829ca82495fc569a5a",
+      "git_blob_sha": "fc1f056a318fee390e0c8e67cdda361d94f0c3a5",
+      "normalized_worktree_blob_sha": "fc1f056a318fee390e0c8e67cdda361d94f0c3a5"
+    },
+    "source/host/build.rs": {
+      "bytes": 71375,
+      "working_tree_sha256": "6b7470a88e5c0b41a39940bd65c935bd1312837e314176fbea533e95ea8252d2",
+      "git_blob_sha": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "normalized_worktree_blob_sha": "64e0666f1fa9773181344abd8ca817996cd652a8"
+    },
+    "source/host/local-exec/local-exec-provider.ts": {
+      "bytes": 25324,
+      "working_tree_sha256": "4107be5d65c98fe24384df8bb9e14b5489f57973e5dcbe0e7dd12e1191eac3a4",
+      "git_blob_sha": "10d6a23519ab15b1c00545239e61d19f580779bc",
+      "normalized_worktree_blob_sha": "10d6a23519ab15b1c00545239e61d19f580779bc"
+    },
+    "source/host/proto/agent/v1/local_exec.proto": {
+      "bytes": 10638,
+      "working_tree_sha256": "2fd0013f8c3e6a9d4e8cb0049d7dfbd54e92ba7eadc3ade149dc9b7ebcd6dc77",
+      "git_blob_sha": "6e1bf9e41ab7573ffeaba28c1685d81f8b857a6c",
+      "normalized_worktree_blob_sha": "6e1bf9e41ab7573ffeaba28c1685d81f8b857a6c"
+    },
+    "source/host/src/agent_isolation/conversation_blob_store.rs": {
+      "bytes": 19761,
+      "working_tree_sha256": "ee11caa9ceb8e0cfaa6aa0a5c5f5a777e701e07711c91379d68acf45a68da751",
+      "git_blob_sha": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "normalized_worktree_blob_sha": "f7c821d5802f23e4445dd072b904fa7c6f176fff"
+    },
+    "source/host/src/attachment_paths.rs": {
+      "bytes": 13571,
+      "working_tree_sha256": "16f05e6c341977b94bb705b653037a823c5fc5c950d9a73c9ee007046c24e6e9",
+      "git_blob_sha": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "normalized_worktree_blob_sha": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda"
+    },
+    "source/host/src/connectors/channel_attachment.rs": {
+      "bytes": 3301,
+      "working_tree_sha256": "295f2d110a1ef442a023af7623b716e30b410df6ed4eb9dc57bee4d02dda735d",
+      "git_blob_sha": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "normalized_worktree_blob_sha": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e"
+    },
+    "source/host/src/device_pairing_owner.rs": {
+      "bytes": 105644,
+      "working_tree_sha256": "d5b57d59eaabe2a6d5231673cb1d46ec3cce1f9409fdf47955b9870a54ad9050",
+      "git_blob_sha": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+      "normalized_worktree_blob_sha": "9825003cf1f7047027aa1b8e496c40f0c1693a23"
+    },
+    "source/host/src/durable_file_policy.rs": {
+      "bytes": 1573,
+      "working_tree_sha256": "3982b6e051e30d5d5c1f490ceba90e9d96c7a71ca27405a2dc0e3a593695ccc0",
+      "git_blob_sha": "65a1f432372f2d67d6fe7fcac76be5fc6b492cab",
+      "normalized_worktree_blob_sha": "65a1f432372f2d67d6fe7fcac76be5fc6b492cab"
+    },
+    "source/host/src/extensions/attachments/attachments_service.rs": {
+      "bytes": 89778,
+      "working_tree_sha256": "858a12cb3403bfb42b387e672f0dfc4b816f2fe5ce98f601fb1c53025918e082",
+      "git_blob_sha": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "normalized_worktree_blob_sha": "75a49490ee80e7416df66df2431d2f3013f1b17c"
+    },
+    "source/host/src/extensions/attachments/box_staging.rs": {
+      "bytes": 2424,
+      "working_tree_sha256": "4464a0dbca1b9378a49bd535dd7e90ad53f3124eb41ceae4cca410f7b8daf657",
+      "git_blob_sha": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "normalized_worktree_blob_sha": "6339dd944730c07e880883c61b97a6778fc25ead"
+    },
+    "source/host/src/extensions/attachments/extension.rs": {
+      "bytes": 2790,
+      "working_tree_sha256": "93db5e4d06cddd3882ac08fa6f0e054d18822a879defa0431c5960d3274be434",
+      "git_blob_sha": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "normalized_worktree_blob_sha": "1662b752a4a0366d11079c25d424ba121a5a3eee"
+    },
+    "source/host/src/extensions/attachments/generate_image_resource_accessor.rs": {
+      "bytes": 5415,
+      "working_tree_sha256": "2f4355e9746c49051a28e721543ce52db1f355920b2d4ec99544a7e5efd60019",
+      "git_blob_sha": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "normalized_worktree_blob_sha": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048"
+    },
+    "source/host/src/extensions/attachments/host_read_media_policy.rs": {
+      "bytes": 15656,
+      "working_tree_sha256": "fcd3a8b45964ffdfa0b8a389710ee2ba134178fb6f44fac854c237c085782246",
+      "git_blob_sha": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "normalized_worktree_blob_sha": "9087b941ce253ac261a453df3d8b0054e64804e2"
+    },
+    "source/host/src/extensions/attachments/image_ops.rs": {
+      "bytes": 19681,
+      "working_tree_sha256": "a0b7c66cfae2ca992aaef4e9ea8da42efab5b960343e7f1460e36b41b2ee47f4",
+      "git_blob_sha": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "normalized_worktree_blob_sha": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d"
+    },
+    "source/host/src/extensions/attachments/media_file_context.rs": {
+      "bytes": 10247,
+      "working_tree_sha256": "1567b08377c297f17858213d31d0dcbd3a737307bf0168ed6a9c3b0e996ffd63",
+      "git_blob_sha": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "normalized_worktree_blob_sha": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6"
+    },
+    "source/host/src/extensions/attachments/media_reference.rs": {
+      "bytes": 38886,
+      "working_tree_sha256": "79d28bb43ca207774df59d0d780a8ab03def2a19018e9b5123281e5d64fad23e",
+      "git_blob_sha": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "normalized_worktree_blob_sha": "0956a0db7df81390002fde917ebc3fe782e75296"
+    },
+    "source/host/src/extensions/attachments/media_store.rs": {
+      "bytes": 80607,
+      "working_tree_sha256": "4af6634e7c4b139a2c4a9875d01a8e98214c48341dec6f85b76f76046ffdab9b",
+      "git_blob_sha": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "normalized_worktree_blob_sha": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1"
+    },
+    "source/host/src/extensions/attachments/media_store_shared.rs": {
+      "bytes": 2108,
+      "working_tree_sha256": "d66b30a67de4783955cf4dd8a52e727da9dca37354e173483c555e360b5237f8",
+      "git_blob_sha": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "normalized_worktree_blob_sha": "20561901efe9dc99a4fa92469d6e3a1684439d0f"
+    },
+    "source/host/src/extensions/attachments/web_media.rs": {
+      "bytes": 30492,
+      "working_tree_sha256": "591faa0aa4732ef772a5bdb8f7e12212c7c6c3c6fded13d838b168cf2b022f19",
+      "git_blob_sha": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "normalized_worktree_blob_sha": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b"
+    },
+    "source/host/src/extensions/local_exec/agent_v1_exec_wire.rs": {
+      "bytes": 1109,
+      "working_tree_sha256": "29ac18294d692589703f795eb7a7031f17d1ca438194426afd51609b041123d4",
+      "git_blob_sha": "6120c6735ffcd28eea942ed3bff8d99c6f2024f5",
+      "normalized_worktree_blob_sha": "6120c6735ffcd28eea942ed3bff8d99c6f2024f5"
+    },
+    "source/host/src/extensions/local_exec/extension.rs": {
+      "bytes": 7888,
+      "working_tree_sha256": "583b6946cc0e6d35c4be55c7ce745b8752e9c68bec09260f6b6841d731925677",
+      "git_blob_sha": "508e2463e5f50acec325b42a8b2c47e15b90ed56",
+      "normalized_worktree_blob_sha": "508e2463e5f50acec325b42a8b2c47e15b90ed56"
+    },
+    "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs": {
+      "bytes": 133570,
+      "working_tree_sha256": "06231c9635833ecc4ee47a3dd119b7eb4a1403662b4791386b10fb2d5d3ecfaf",
+      "git_blob_sha": "8f99af02826365fb2d12971114ff5bf62551883e",
+      "normalized_worktree_blob_sha": "8f99af02826365fb2d12971114ff5bf62551883e"
+    },
+    "source/host/src/extensions/local_exec/local_exec_bridge.rs": {
+      "bytes": 27204,
+      "working_tree_sha256": "db388a550d1c0d7a225c86b1b3816d4e4f1a523e0394ffacf01acfebac3e185b",
+      "git_blob_sha": "f19d738cec812920eb28b377015ddc8e240310ca",
+      "normalized_worktree_blob_sha": "f19d738cec812920eb28b377015ddc8e240310ca"
+    },
+    "source/host/src/extensions/local_exec/local_exec_error.rs": {
+      "bytes": 716,
+      "working_tree_sha256": "110647a5a4c7ef48debb9ae119ed4bd67998ea2b4d94ddf81bec81daf3527b87",
+      "git_blob_sha": "f8508ff904b873f93ad3d873dcc190b270e384d7",
+      "normalized_worktree_blob_sha": "f8508ff904b873f93ad3d873dcc190b270e384d7"
+    },
+    "source/host/src/extensions/local_exec/production.rs": {
+      "bytes": 6826,
+      "working_tree_sha256": "8962afd4ac87ae5ce7b5ece6e7f9c7a013bdf4c53aa293d34f92b3100cb200d7",
+      "git_blob_sha": "9daa65ce980eaae31d3ea0f4045e752200d3c58c",
+      "normalized_worktree_blob_sha": "9daa65ce980eaae31d3ea0f4045e752200d3c58c"
+    },
+    "source/host/src/extensions/local_tool_permission/extension.rs": {
+      "bytes": 5748,
+      "working_tree_sha256": "c042223c8d1697a234a96fb29b33bfb2df172b471b8952208b8eef5060b01d22",
+      "git_blob_sha": "829889281cf49162aed3b3cad8086473ec153011",
+      "normalized_worktree_blob_sha": "829889281cf49162aed3b3cad8086473ec153011"
+    },
+    "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs": {
+      "bytes": 45409,
+      "working_tree_sha256": "10efaf1027132018b64fcd9f8379b383ea81450a2f260b788447209a351be02e",
+      "git_blob_sha": "2befb28cc54f7b5d7bce5b2e6fb7298e46bec867",
+      "normalized_worktree_blob_sha": "2befb28cc54f7b5d7bce5b2e6fb7298e46bec867"
+    },
+    "source/host/src/extensions/node_host/invocation_runtime.rs": {
+      "bytes": 9155,
+      "working_tree_sha256": "6f752b1303deeb730a9086c48cac11221f39fefc46ad5966e3070d7d8c54ea59",
+      "git_blob_sha": "5fe97531210e9bbf1661e24f51873fe792650249",
+      "normalized_worktree_blob_sha": "5fe97531210e9bbf1661e24f51873fe792650249"
+    },
+    "source/host/src/extensions/node_host/invoke_protocol.rs": {
+      "bytes": 11992,
+      "working_tree_sha256": "5ae745a644bd4f2f690e35998eb846d6efe47f7765fe62eb5bff4f34dc9e1a38",
+      "git_blob_sha": "06a2f2b156dc82a499619e88f936f832df617248",
+      "normalized_worktree_blob_sha": "06a2f2b156dc82a499619e88f936f832df617248"
+    },
+    "source/host/src/extensions/node_host/runtime_state.rs": {
+      "bytes": 8980,
+      "working_tree_sha256": "b41ff3b0ac02ba0fed0f9de57364230952abf3a74759daed909fa36a27a76a88",
+      "git_blob_sha": "77729af350ea94510460e3466fa3b37b3e0505cf",
+      "normalized_worktree_blob_sha": "77729af350ea94510460e3466fa3b37b3e0505cf"
+    },
+    "source/host/src/extensions/process/command_custody.rs": {
+      "bytes": 3105,
+      "working_tree_sha256": "800965f3d87046b63c40e7cf470991810ed0456006eddd5ffff8584694fb3cf6",
+      "git_blob_sha": "369beb8769b1b5735df15f9a67f68a8d2d7782ef",
+      "normalized_worktree_blob_sha": "369beb8769b1b5735df15f9a67f68a8d2d7782ef"
+    },
+    "source/host/src/extensions/session/agent_db.rs": {
+      "bytes": 437038,
+      "working_tree_sha256": "19e73f4aff95d8f5cec8a717bc02682d63799a9eddaef6988643e355b4e4f54e",
+      "git_blob_sha": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "normalized_worktree_blob_sha": "87186bc4b246d88a5ce51ebda0623b76f4425d3d"
+    },
+    "source/host/src/extensions/session/agent_db_serde.rs": {
+      "bytes": 11761,
+      "working_tree_sha256": "52d000a06098bf080efbae3f5197682c12c07ab3511ffc39e3dc536dd68e77ee",
+      "git_blob_sha": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "normalized_worktree_blob_sha": "d1885e2d31313c1f525fffd85bafc5031cf8d127"
+    },
+    "source/host/src/extensions/session/production.rs": {
+      "bytes": 297922,
+      "working_tree_sha256": "56edf08fe5ebf904227e5ff27b3b1cc411cc90636eaf1ae2e30bf0bb7df8d3b0",
+      "git_blob_sha": "4c88b00b2dfe563ba957bd0669f177a422a330a7",
+      "normalized_worktree_blob_sha": "4c88b00b2dfe563ba957bd0669f177a422a330a7"
+    },
+    "source/host/src/extensions/settings/settings_service.rs": {
+      "bytes": 84898,
+      "working_tree_sha256": "80364c4a63f7105641706c55cf649ea80405c234c0aa5786ec3f0d7b773d82ed",
+      "git_blob_sha": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "normalized_worktree_blob_sha": "7c17f9a08af73365b062e2f212e0b444bfa546f3"
+    },
+    "source/host/src/extensions/transcript/production_runtime.rs": {
+      "bytes": 96949,
+      "working_tree_sha256": "f4b27a8f6aaaeb4e146b5c8d5b8726cd96d45c5430ace17b9c867c524ab80030",
+      "git_blob_sha": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "normalized_worktree_blob_sha": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6"
+    },
+    "source/host/src/gateway_protocol.rs": {
+      "bytes": 3173,
+      "working_tree_sha256": "b38c21bdb32dcb0f90d83bd8657e7114ed5dd45c577ef47d1f0fa6130fe884f9",
+      "git_blob_sha": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "normalized_worktree_blob_sha": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7"
+    },
+    "source/host/src/host_gateway_api.rs": {
+      "bytes": 12998,
+      "working_tree_sha256": "21b9b86489375196af9df67e9d9aeb066e6f0b9837dd71b44f8cff4cc9c2bff2",
+      "git_blob_sha": "127b340f120f931af778783aabcf338869fe0bc8",
+      "normalized_worktree_blob_sha": "127b340f120f931af778783aabcf338869fe0bc8"
+    },
+    "source/host/src/host_paths.rs": {
+      "bytes": 7366,
+      "working_tree_sha256": "420213daf61afdebf78852e5185fb0eabfc75d2b08ae4dd4c780825417ae3c89",
+      "git_blob_sha": "844be87e4a278bca99bc4968bbf85b6d751983b9",
+      "normalized_worktree_blob_sha": "844be87e4a278bca99bc4968bbf85b6d751983b9"
+    },
+    "source/host/src/host_production_extensions.rs": {
+      "bytes": 93386,
+      "working_tree_sha256": "b0f32137bae29fe134f7fdc341e9e012588f2bcb6ea9f26401f37bff5bddd181",
+      "git_blob_sha": "36b5dbac27d346f883150df179372034e0bea223",
+      "normalized_worktree_blob_sha": "36b5dbac27d346f883150df179372034e0bea223"
+    },
+    "source/host/src/lib.rs": {
+      "bytes": 3064,
+      "working_tree_sha256": "7365cd5b4153b966c245f8497d10a8d4ba88ae9a3b19fbfeb7fc6cdc7810f472",
+      "git_blob_sha": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "normalized_worktree_blob_sha": "ff0f4daa22e6782c972b04b61361d77f838114e0"
+    },
+    "source/host/src/media_mime.rs": {
+      "bytes": 12707,
+      "working_tree_sha256": "ba75b5233b5cd75c0fa70ecbae78af2ada7580ce27dc7ebe72b12ae8f9273758",
+      "git_blob_sha": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "normalized_worktree_blob_sha": "b380ea8446d859a03b594aa93040d1425d4f0662"
+    },
+    "source/host/src/runner/host_external_machine_dependencies.rs": {
+      "bytes": 14527,
+      "working_tree_sha256": "8181fd4edd2590f522bc31e2951d39469ab1380e9bc6e80181c07abb59f995a6",
+      "git_blob_sha": "1e2338bd9d490e7c681ee06759735998471ae65c",
+      "normalized_worktree_blob_sha": "1e2338bd9d490e7c681ee06759735998471ae65c"
+    },
+    "source/host/src/runner/production_turn_run_shell_adapter.rs": {
+      "bytes": 41989,
+      "working_tree_sha256": "834ac7bf306f9b2d8dcd49f0e78c7579f0e003c1098178e7ed2bb04a1b6a62b9",
+      "git_blob_sha": "d0fe2714923338dd717284f08f05eef438db69d9",
+      "normalized_worktree_blob_sha": "d0fe2714923338dd717284f08f05eef438db69d9"
+    },
+    "source/host/src/runner/stream_attempt.rs": {
+      "bytes": 24454,
+      "working_tree_sha256": "8fc3b50de42f97adfe8a50a98accef9062b22c81bc8c7b475706554d45b306ad",
+      "git_blob_sha": "6eb8a3eae5556eb6d6a6c03d00059d7c1180190f",
+      "normalized_worktree_blob_sha": "6eb8a3eae5556eb6d6a6c03d00059d7c1180190f"
+    },
+    "source/host/src/runner/tools/mcp_meta_tools.rs": {
+      "bytes": 20867,
+      "working_tree_sha256": "d547ad331ca0904ce6f5a62f18df8e7da366594b1dc7761f99cc9d07dcb7acd3",
+      "git_blob_sha": "aed2d181ba495ad529f4eb083a42a76b6c460439",
+      "normalized_worktree_blob_sha": "aed2d181ba495ad529f4eb083a42a76b6c460439"
+    },
+    "source/host/src/runner/tools/sand_agent_management_tools.rs": {
+      "bytes": 8789,
+      "working_tree_sha256": "fa072b8d7ac1e5ae809a791a9754f3b78528f297ef5c00078827876a324bd0c2",
+      "git_blob_sha": "b846e5238562896cdfd35c20aa11b28f6e12b2d0",
+      "normalized_worktree_blob_sha": "b846e5238562896cdfd35c20aa11b28f6e12b2d0"
+    },
+    "source/host/src/runner/tools/sand_external_machine_tools.rs": {
+      "bytes": 10186,
+      "working_tree_sha256": "0a59a638a3ba020c053f88d55376424ae068c78286c828f24c4483d3f2942431",
+      "git_blob_sha": "7f70954155982bc208fda2ded5019001914a7cb6",
+      "normalized_worktree_blob_sha": "7f70954155982bc208fda2ded5019001914a7cb6"
+    },
+    "source/host/src/runner/tools/send_message_tool.rs": {
+      "bytes": 17411,
+      "working_tree_sha256": "7d30ea73895c87420db1f5144b947c8bf1ca72ddc8f9f61f31f2d18d6c0c67a6",
+      "git_blob_sha": "75c7ef377d9fd5482d1082138064cccdacbe48b5",
+      "normalized_worktree_blob_sha": "75c7ef377d9fd5482d1082138064cccdacbe48b5"
+    },
+    "source/host/src/storage/store_db.rs": {
+      "bytes": 4029,
+      "working_tree_sha256": "8588d31b824bffd649fb3021181ed8302cd43ed61563cd1527ee30de5e0e2be9",
+      "git_blob_sha": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "normalized_worktree_blob_sha": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce"
+    },
+    "source/host/src/transcript_mutation_events.rs": {
+      "bytes": 1843,
+      "working_tree_sha256": "04a2ec01c722fc65509be9599dbc3f77250c5f594c8b33fef618ec19a9ec81a2",
+      "git_blob_sha": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "normalized_worktree_blob_sha": "842d4d06d8f0d788b0b730ea3aef942d75f673a2"
+    },
+    "source/host/tests/attachments_service_contract.rs": {
+      "bytes": 34551,
+      "working_tree_sha256": "720c290548ac0bd9d800c77815cc1f4efbf454d799c423470b079daa1736738f",
+      "git_blob_sha": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "normalized_worktree_blob_sha": "b4dc7511a2e9e6ffefff5c269c945787feba95a9"
+    },
+    "source/host/tests/channel_attachment_contract.rs": {
+      "bytes": 8211,
+      "working_tree_sha256": "ccfd1792e781d5e32c69d6169ad9d8393eb3ec503c205d6880ed0865f3e03aea",
+      "git_blob_sha": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "normalized_worktree_blob_sha": "887f2cb3ea78060be617ad1c039f5b28306c6ac0"
+    },
+    "source/host/tests/extensions_local_exec_contract.rs": {
+      "bytes": 11962,
+      "working_tree_sha256": "c5c6e05ed1d86f7ffd2c3ba794bb0e8f3e59c8bba6f4fbd994ae3aeb76a82f00",
+      "git_blob_sha": "259f3d8426a77e4acf960b3c59406d297bbe6407",
+      "normalized_worktree_blob_sha": "259f3d8426a77e4acf960b3c59406d297bbe6407"
+    },
+    "source/host/tests/gateway_local_exec_sand_box_contract.rs": {
+      "bytes": 51606,
+      "working_tree_sha256": "8cc60825f919b771bd35c6602fe2522a7ef857ba3112d442cdaa435cbcc57e3f",
+      "git_blob_sha": "84897a0934d4728a511abb9e6f6ac4948fc96b86",
+      "normalized_worktree_blob_sha": "84897a0934d4728a511abb9e6f6ac4948fc96b86"
+    },
+    "source/host/tests/local_exec_production_codec_contract.rs": {
+      "bytes": 11458,
+      "working_tree_sha256": "1667332de455a45388582359e475e76eb6f0af8debb265796d6409e9b6a5ef22",
+      "git_blob_sha": "af3d3c407820f258b52b9122a937355d3bb5d521",
+      "normalized_worktree_blob_sha": "af3d3c407820f258b52b9122a937355d3bb5d521"
+    },
+    "source/host/tests/local_media_file_url_contract.rs": {
+      "bytes": 7492,
+      "working_tree_sha256": "10bb578a50d9b25eff04b26d289244070848c771cb25133eb1df8f6d1766a993",
+      "git_blob_sha": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "normalized_worktree_blob_sha": "ff2d348d55572394f547deb15c2e36b2347ea43f"
+    },
+    "source/host/tests/openclaw_channel_and_local_roots_contract.rs": {
+      "bytes": 13783,
+      "working_tree_sha256": "d34d50653a75a9731218d29dbf96120054b139ebb8ab87a76a51c14297a2a1ab",
+      "git_blob_sha": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "normalized_worktree_blob_sha": "47161efa7f1fb526c517de4394c739cfe3734623"
+    },
+    "source/host/tests/openclaw_chat_cron_node_contract.rs": {
+      "bytes": 31471,
+      "working_tree_sha256": "e915d28c2425850416e42dc5d696aa9d598d2ecc0942bf86a6ae9fa170a8c8a8",
+      "git_blob_sha": "a1514f23f559ebd107b3a188d77438f479cc663f",
+      "normalized_worktree_blob_sha": "a1514f23f559ebd107b3a188d77438f479cc663f"
+    },
+    "source/host/tests/openclaw_html_provenance_contract.rs": {
+      "bytes": 19930,
+      "working_tree_sha256": "2d45d9baf5d5ff1156e6424615952a12cf9a3755966ee0bf528d4097d96da6b5",
+      "git_blob_sha": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "normalized_worktree_blob_sha": "64f7c72e44d904a4ba84c524577c24688c80c278"
+    },
+    "source/host/tests/openclaw_image_ops_contract.rs": {
+      "bytes": 22892,
+      "working_tree_sha256": "a0c240c5f53654bac7a0a5ef4422dba6c97ac5279256affd20a1ae381ecc65b4",
+      "git_blob_sha": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "normalized_worktree_blob_sha": "f7230c34879341a9126e52b38bc1e2621db3b083"
+    },
+    "source/host/tests/openclaw_media_file_context_contract.rs": {
+      "bytes": 17489,
+      "working_tree_sha256": "595dacfbf6f51c71528b3d312433621d764942410b2fa5568b08b9c229920224",
+      "git_blob_sha": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "normalized_worktree_blob_sha": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f"
+    },
+    "source/host/tests/openclaw_media_reference_contract.rs": {
+      "bytes": 20860,
+      "working_tree_sha256": "925addcb191b659bacc3f0a2a5e81f2679eb4e1d42962c1e5c37d5ccaba1bd8c",
+      "git_blob_sha": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "normalized_worktree_blob_sha": "df52afa0b1c727b2236dc2d96328047e10daab85"
+    },
+    "source/host/tests/openclaw_media_store_contract.rs": {
+      "bytes": 32695,
+      "working_tree_sha256": "3b0932a88f09e67d0493e92b7e52f85c7da4c33192520133a01fdf840c08a026",
+      "git_blob_sha": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "normalized_worktree_blob_sha": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc"
+    },
+    "source/host/tests/openclaw_sessions_and_config_contract.rs": {
+      "bytes": 174056,
+      "working_tree_sha256": "8cabb9f2a13181f02bb2dd8e0a07ce495f22544f13abbbee50aa0561048ebd32",
+      "git_blob_sha": "32a7218874c4b03e27a9872adf339186fab50f28",
+      "normalized_worktree_blob_sha": "32a7218874c4b03e27a9872adf339186fab50f28"
+    },
+    "source/host/tests/openclaw_web_media_contract.rs": {
+      "bytes": 51774,
+      "working_tree_sha256": "2b958c666bee5d4b6d091e8c77f232fbd8e0559feb447df9c164a45fac928bde",
+      "git_blob_sha": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "normalized_worktree_blob_sha": "315cda26d1e62b0616881857d6f9047fc883abd1"
+    },
+    "source/host/tests/runner_effect_custody_contract.rs": {
+      "bytes": 116678,
+      "working_tree_sha256": "71472f4e1a5a0113728ad147035591517150972bf6160fcd9fc1aa380f7d4671",
+      "git_blob_sha": "08751e9c99d854391db862641b35ec2f6d43e969",
+      "normalized_worktree_blob_sha": "08751e9c99d854391db862641b35ec2f6d43e969"
+    },
+    "source/host/tests/sand_agent_management_tools_contract.rs": {
+      "bytes": 6593,
+      "working_tree_sha256": "daf192dd7138d120f7f50244b131c7893ba26447221843648eae318a13390250",
+      "git_blob_sha": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "normalized_worktree_blob_sha": "28372cd0046620bc88e9d84ca016692e0c89fa24"
+    },
+    "source/host/tests/send_message_tool_contract.rs": {
+      "bytes": 30747,
+      "working_tree_sha256": "c7e43be6a31c6d6a2831f3f07526bdcbca8ed7f59886e193e1a61a639baa4754",
+      "git_blob_sha": "396c27b41d8b223dcde3d550f45b61939a5c4295",
+      "normalized_worktree_blob_sha": "396c27b41d8b223dcde3d550f45b61939a5c4295"
+    },
+    "source/local-exec-daemon/production-executor.ts": {
+      "bytes": 16152,
+      "working_tree_sha256": "2b4dbe4e7b3098f44b15ed64a2461bdd102bdb40b14d4952cb7f341a9e06dc27",
+      "git_blob_sha": "f5b8b8276a7fa1bf31c2b7c7a8a16d1b29a639e7",
+      "normalized_worktree_blob_sha": "f5b8b8276a7fa1bf31c2b7c7a8a16d1b29a639e7"
+    },
+    "source/local-exec-daemon/production-outcome.contract.test.ts": {
+      "bytes": 8501,
+      "working_tree_sha256": "7f8ae1242ee97f823cabb7e49c670a09415ab4cea63d7ab44a80e1d8d17cdaf3",
+      "git_blob_sha": "051c9458b71666e4d73f1ccda7c8430dd07c4a9d",
+      "normalized_worktree_blob_sha": "051c9458b71666e4d73f1ccda7c8430dd07c4a9d"
+    },
+    "source/packages/agent-exec/controlled.ts": {
+      "bytes": 10623,
+      "working_tree_sha256": "61164e7630d54fd47b91e8fed968cd552f9ea9ba687ee7070b233a39526e0b35",
+      "git_blob_sha": "4260b6ece63ca2b3c35482ff68762799703c8acd",
+      "normalized_worktree_blob_sha": "4260b6ece63ca2b3c35482ff68762799703c8acd"
+    },
+    "source/shared/local-exec-gateway.ts": {
+      "bytes": 2356,
+      "working_tree_sha256": "27fdbcf6f9b2fffd028452315cd06799f9f227869b9380a0ad00c987d058d604",
+      "git_blob_sha": "845a1116fee2b51051a604d22d258c78a3633761",
+      "normalized_worktree_blob_sha": "845a1116fee2b51051a604d22d258c78a3633761"
+    }
+  },
+  "limits": [
+    "Successful LXR owned-child files are removed only after exact test/PID/token post-assertion receipt acceptance. This assessment verifies the enclosing hash-bound gateway logs and source enforcement, not separately retained successful child transcripts.",
+    "No registered Runner or App/protocol consumer proof is inferred. Linux/macOS, physical providers/devices, full process-tree settlement, file-publication outcome propagation, hostile Windows open deadlines, native 32-bit, package/signing/upgrade/rollback and G01-G12/AC01-AC24 remain separate.",
+    "This pre-LDB execution does not validate the new daemon build, dependency, header, library or startup changes."
+  ]
+}
