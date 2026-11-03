@@ -373,7 +373,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 })
             })
         }),
-        "retryHumanMessage" => {
+        "retryHumanMessage" => (|| -> Result<Value, SessionGatewayError> {
             // Exact two-field admission: the renderer cannot change the stored
             // text, reply, media or sender when retrying a durable intent.
             let fields = args.as_object().ok_or_else(|| {
@@ -390,7 +390,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .ok_or_else(|| SessionGatewayError::bad("retryHumanMessage clientNonce is invalid"))?;
             session.retry_human_message(conversation_id, nonce)
                 .map_err(SessionGatewayError::internal)
-        },
+        })(),
         "sendHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
             let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
             if let Some(requested) = optional_string(args, "senderId")? {

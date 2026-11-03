@@ -283,6 +283,13 @@ impl SandAgentDb {
                 let raw = read_kv(&snapshot, "metadata")?
                     .ok_or_else(|| AgentDbProjectionError::HumanRetryInvalid(
                         "existing Human store has no committed identity".into()))?;
+                // decode_hex slices byte pairs. Refuse non-ASCII metadata
+                // before slicing so corrupt user data cannot unwind the
+                // Session owner or poison its shared lock.
+                if !raw.is_ascii() {
+                    return Err(AgentDbProjectionError::MetadataHex(
+                        "existing Human metadata contains non-ASCII hex".into()));
+                }
                 let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
                 let metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
                 admit(&metadata).map_err(AgentDbProjectionError::HumanRetryInvalid)?;

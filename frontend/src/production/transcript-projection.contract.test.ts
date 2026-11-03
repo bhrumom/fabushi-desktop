@@ -112,7 +112,8 @@ test("HRR-05 restart projects only persisted local Human pending errors as retry
   assert.equal(project({ clientNonce: "other" }).delivery, "pending");
   assert.equal(project({ authorKind: "agent" }).delivery, "pending");
   assert.equal(project({ role: "assistant" }).delivery, "pending");
-  assert.equal(project({ kind: "notice" }).kind, "notice");
+  const notice = projectTranscriptEntry({ ...base, kind: "notice" }, 0, "Fabushi", "human-a");
+  assert.equal(notice?.kind, "notice", "notice is not a message and must bypass the message-only assertion");
 });
 
 test("NMR-49 existing Human and Agent delivery projections remain unchanged", () => {

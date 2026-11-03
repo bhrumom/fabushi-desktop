@@ -3708,7 +3708,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       && acknowledgementScopeRef.current.accountSlot === accountSlot
       && activeAgentIdRef.current === agentId
       && accountRef.current?.kind === "logged-in";
-    const isHuman = humanConversationsRef.current.some((conversation) => conversation.id === agentId);
+    // A temporarily missing Human roster must not downgrade a Human retry
+    // to the Agent resend path (which intentionally mints a new nonce).
+    const isHuman = entry.authorKind === "human"
+      || humanConversationsRef.current.some((conversation) => conversation.id === agentId);
     if (isHuman) {
       if (!originalNonce || entry.role !== "user" || entry.authorKind !== "human"
         || entry.id !== `human-message:${originalNonce}` && entry.id !== `pending-${originalNonce}`) return;
