@@ -2,6 +2,8 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
 import { join, resolve } from "node:path";
 
+import { resolveAppHostExecutable } from "../app-host-executable.js";
+
 type CarrierChannel =
   | "coordinator-control"
   | "coordinator-data"
@@ -46,19 +48,6 @@ function coordinatorExecutablePath(): string {
     return join(process.resourcesPath, "bin", coordinatorExecutableName());
   }
   return resolve(__dirname, "..", "..", "resources", "bin", coordinatorExecutableName());
-}
-
-function appHostExecutableName(): string {
-  return process.platform === "win32" ? "mahayana-app-host.exe" : "mahayana-app-host";
-}
-
-function appHostExecutablePath(): string {
-  const override = process.env.MAHAYANA_APP_HOST_BIN;
-  if (override != null && override.trim().length > 0) return override;
-  if (process.env.SAND_PACKAGED === "1") {
-    return join(process.resourcesPath, "bin", appHostExecutableName());
-  }
-  return resolve(__dirname, "..", "..", "resources", "bin", appHostExecutableName());
 }
 
 function writeEnvelope(
@@ -122,7 +111,11 @@ utilityParentPort.once("message", (event) => {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
-        MAHAYANA_APP_HOST_BIN: appHostExecutablePath(),
+        MAHAYANA_APP_HOST_BIN: resolveAppHostExecutable(process.env, {
+          platform: process.platform,
+          resourcesPath: process.resourcesPath,
+          moduleDirectory: __dirname,
+        }),
       },
       windowsHide: true,
     },

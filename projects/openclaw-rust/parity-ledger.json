@@ -1666,7 +1666,9 @@
         "source/host/app/src/tests/local_exec_outcome_tests.rs",
         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json"
       ],
       "existing_owner_candidates": [
         {
@@ -1703,7 +1705,8 @@
         "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller",
         "Actual local system.run reports EXECUTION_OUTCOME_UNKNOWN with stable operation/result identity when no authoritative Exit or durable settlement is available; known refusal stays EXECUTION_ERROR",
         "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
-        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
+        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade.",
+        "LDB-v1 restores the already selected legacy daemon build under the current Rust Coordinator/Host owners; its TypeScript executor business, complete shell/LS parity, physical platform and packaged acceptance remain open. Native and startup verification requires the integrated exact-H Actions receipts."
       ],
       "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
       "oracle_ids": [],
@@ -1765,7 +1768,9 @@
         "source/host/src/extensions/node_host/runtime_state.rs::tests::replacement_drains_predecessor_invocations_before_successor",
         "source/host/app/src/tests/local_exec_outcome_tests.rs",
         "source/node-agent-coordinator/tests/local_exec_supervisor_runtime.rs",
-        "source/electron-main/coordinator/local-exec-process-identity.contract.test.ts"
+        "source/electron-main/coordinator/local-exec-process-identity.contract.test.ts",
+        "source/local-exec-daemon/startup.contract.test.ts",
+        "desktop/scripts/local-exec-dependencies.contract.test.mjs"
       ],
       "typed_contracts": [
         "NodeHostRuntimeState",
@@ -9757,7 +9762,9 @@
         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json"
       ],
       "existing_owner_candidates": [
         {
@@ -9789,7 +9796,8 @@
         "Distinct permission facades from one Host extension share one lazy operation owner and one ordered journal publication transaction",
         "A refused or duplicate invocation cannot mutate another operation; identity and agent checks precede owner-scoped cancellation",
         "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
-        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
+        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade.",
+        "LDB-v1 restores the already selected legacy daemon build under the current Rust Coordinator/Host owners; its TypeScript executor business, complete shell/LS parity, physical platform and packaged acceptance remain open. Native and startup verification requires the integrated exact-H Actions receipts."
       ],
       "migration_rollback": "Disable sandboxed tool execution in runner config; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
       "oracle_ids": [
@@ -9842,7 +9850,9 @@
         "source/host/tests/local_exec_production_codec_contract.rs",
         "source/host/tests/gateway_local_exec_sand_box_contract.rs::exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel",
         "source/node-agent-coordinator/tests/local_exec_supervisor_runtime.rs",
-        "source/electron-main/coordinator/local-exec-process-identity.contract.test.ts"
+        "source/electron-main/coordinator/local-exec-process-identity.contract.test.ts",
+        "source/local-exec-daemon/startup.contract.test.ts",
+        "desktop/scripts/local-exec-dependencies.contract.test.mjs"
       ],
       "typed_contracts": [
         "GatewayLocalExecSandBox::ensure_ready",

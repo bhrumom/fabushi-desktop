@@ -1,0 +1,1901 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 792c1eb2287053e83f0ee4160e8d5137c5459275..9574d29d4e494d0f3a30b6ffcad275e222b07275 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -16,6 +16,8 @@ on:
+           - full
+           - ocrm-config
+           - ocrm-mcp-native
++          - ocrm-custody-recovery
++          - ocrm-local-exec-runtime
+   push:
+     branches:
+       - main
+@@ -74,7 +76,7 @@ concurrency:
+ 
+ jobs:
+   rust-host:
+-    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
+     runs-on: macos-15
+     timeout-minutes: 90
+     steps:
+@@ -1459,6 +1461,7 @@ jobs:
+               "join_expiry_is_rechecked_after_a_delayed_successful_commit",
+               "join_concurrent_file_owners_publish_one_payload",
+               "join_gateway_reports_storage_failure_and_preserves_public_recovery",
++              "join_deferred_commit_refusal_is_qualified_and_preserves_recovery",
+           ]
+           passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
+           missing = [name for name in required if passed.count(name) != 1]
+@@ -3193,7 +3196,7 @@ jobs:
+           retention-days: 90
+ 
+   config-restore-linux:
+-    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
+     name: OCRM installation key restore boundary / Linux
+     runs-on: ubuntu-24.04
+     timeout-minutes: 45
+@@ -3354,7 +3357,7 @@ jobs:
+           retention-days: 90
+ 
+   sqlite-native-path:
+-    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
+     runs-on: ubuntu-24.04
+     # LDB adds two native domains and normal Host/Coordinator builds; existing
+     # product observation deadlines and failure assertions remain unchanged.
+@@ -4656,7 +4659,7 @@ jobs:
+           retention-days: 90
+ 
+   media-store-windows:
+-    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
+     name: OCRM media cleanup / Windows
+     runs-on: windows-2025
+     timeout-minutes: 45
+@@ -4703,7 +4706,7 @@ jobs:
+           retention-days: 90
+ 
+   pressure-profiler-platform:
+-    if: ${{ (github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
++    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
+     name: Pressure profiler / ${{ matrix.os }}
+     runs-on: ${{ matrix.os }}
+     timeout-minutes: 45
+@@ -4759,7 +4762,7 @@ jobs:
+           -- --exact --nocapture
+ 
+   platform-worker:
+-    if: ${{ (github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
++    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 45
+     steps:
+@@ -4799,10 +4802,11 @@ jobs:
+         run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+ 
+   renderer:
++    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 30
+     env:
+-      OCRM_PLUGIN_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'ocrm-config' || inputs.validation_scope == 'ocrm-mcp-native')) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && 'true' || 'false' }}
++      OCRM_PLUGIN_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'ocrm-config' || inputs.validation_scope == 'ocrm-mcp-native' || inputs.validation_scope == 'ocrm-local-exec-runtime')) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && 'true' || 'false' }}
+     steps:
+       - uses: actions/checkout@v6
+         with:
+@@ -4945,7 +4949,77 @@ jobs:
+         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+       - name: Build Grok-shaped Electron runtime
+         id: mab_shipping_electron_build
+-        run: npm --prefix desktop run build:electron -- --plugin-skills-contracts
++        env:
++          FABUSHI_LOCAL_EXEC_BUILD_WORK_ROOT: ${{ github.workspace }}/.evidence/ocrm-local-exec-native-build/native-build-work
++        shell: bash
++        run: |
++          set -euo pipefail
++          python3 - <<'PY'
++          import hashlib, importlib.util, json, os, pathlib, subprocess
++          source = pathlib.Path("projects/openclaw-rust/scripts/capture_local_exec_identity.py")
++          spec = importlib.util.spec_from_file_location("ldb_capture", source)
++          capture = importlib.util.module_from_spec(spec)
++          spec.loader.exec_module(capture)
++          root = pathlib.Path(".evidence/ocrm-local-exec-native-build")
++          root.mkdir(parents=True, exist_ok=False)
++          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
++          assert head == os.environ["FABUSHI_TARGET_SHA"], "LDB native build subject mismatch"
++          binding = capture.bind_native_build_work(root)
++          assert binding["absolute_path"] == os.environ["FABUSHI_LOCAL_EXEC_BUILD_WORK_ROOT"]
++          paths = [".github/workflows/rust-desktop-runtime.yml", str(source),
++              "desktop/scripts/build-electron-runtime.mjs", "desktop/scripts/build-local-exec-dependencies.mjs",
++              "desktop/package.json", "desktop/package-lock.json", "projects/openclaw-rust/upstream.lock.json"]
++          inputs = {}
++          for path in paths:
++              raw = pathlib.Path(path).read_bytes()
++              assert raw == subprocess.check_output(["git", "show", f"{head}:{path}"]), path
++              inputs[path] = {"git_blob": subprocess.check_output(["git", "rev-parse", f"{head}:{path}"], text=True).strip(),
++                  "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
++          receipt = {"contract": "LDB-v1-native-build-work", "subject_commit": head,
++              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
++              "job": os.environ["GITHUB_JOB"], "binding": binding, "inputs_before": inputs,
++              "result": "bound-before-build; execution pending"}
++          (root / "binding.json").write_text(json.dumps(receipt, indent=2) + "\n")
++          PY
++          npm --prefix desktop run build:electron -- --plugin-skills-contracts
++      - name: Retain exact owned LocalExec native build work
++        if: ${{ always() && steps.mab_shipping_electron_build.outcome != 'skipped' }}
++        env:
++          LDB_BUILD_STEP_OUTCOME: ${{ steps.mab_shipping_electron_build.outcome }}
++        shell: bash
++        run: |
++          set -euo pipefail
++          python3 - <<'PY'
++          import hashlib, importlib.util, json, os, pathlib
++          source = pathlib.Path("projects/openclaw-rust/scripts/capture_local_exec_identity.py")
++          spec = importlib.util.spec_from_file_location("ldb_capture", source)
++          capture = importlib.util.module_from_spec(spec)
++          spec.loader.exec_module(capture)
++          root = pathlib.Path(".evidence/ocrm-local-exec-native-build")
++          receipt = json.loads((root / "binding.json").read_text())
++          receipt["build_step_outcome"] = os.environ["LDB_BUILD_STEP_OUTCOME"]
++          assert receipt["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
++          receipt["retained_work"] = capture.retain_native_build_work(receipt["binding"], root)
++          receipt["inputs_after_sha256"] = {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
++              for path in receipt["inputs_before"]}
++          receipt["source_unchanged"] = all(receipt["inputs_after_sha256"][path] == value["sha256"]
++              for path, value in receipt["inputs_before"].items())
++          receipt["result"] = "owned work archived; build outcome retained separately"
++          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
++          print(json.dumps(receipt, indent=2), flush=True)
++          assert receipt["source_unchanged"], "Native build changed a causal source input"
++          PY
++      - name: Upload selected LocalExec native build evidence
++        if: ${{ always() && steps.mab_shipping_electron_build.outcome != 'skipped' }}
++        uses: actions/upload-artifact@v4
++        with:
++          name: ocrm-local-exec-native-build-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
++          path: |
++            .evidence/ocrm-local-exec-native-build/binding.json
++            .evidence/ocrm-local-exec-native-build/receipt.json
++            .evidence/ocrm-local-exec-native-build/native-build-work.tar
++          if-no-files-found: error
++          retention-days: 90
+       - name: Test Plugin Skills, model settings bridge and routed MCP carrier
+         env:
+           FABUSHI_COORDINATOR_CARRIER_ARTIFACT: ${{ github.workspace }}/desktop/dist/node-agent-coordinator/main.cjs
+@@ -4967,7 +5041,7 @@ jobs:
+         shell: bash
+         env:
+           PLUGIN_EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+-          DESKTOP_VALIDATION_SCOPE: ${{ inputs.validation_scope || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) && 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && 'ocrm-config') || 'full' }}
++          DESKTOP_VALIDATION_SCOPE: ${{ inputs.validation_scope || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) && 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):') && 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && 'ocrm-config') || 'full' }}
+         run: |
+           mkdir -p .evidence
+           python3 - <<'PY'
+@@ -5653,3 +5727,217 @@ jobs:
+       - name: Check Grok final architecture gate
+         if: ${{ env.OCRM_PLUGIN_SCOPE != 'true' }}
+         run: node scripts/check-grok-architecture.mjs --strict
++
++
++  custody-recovery:
++    if: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
++    name: OCRM custody recovery / ${{ matrix.os }}
++    runs-on: ${{ matrix.os }}
++    timeout-minutes: 60
++    strategy:
++      fail-fast: false
++      matrix:
++        os: [ubuntu-24.04, macos-15]
++    env:
++      CARGO_TERM_COLOR: never
++      CARGO_BUILD_JOBS: '2'
++      CARGO_PROFILE_DEV_DEBUG: '0'
++      CARGO_PROFILE_TEST_DEBUG: '0'
++      CARGO_INCREMENTAL: '0'
++      OCRM_PORTABLE_SCOPE: custody-recovery
++      OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/custody-recovery/unselected-palette.json
++      TMPDIR: ${{ github.workspace }}/.evidence/custody-recovery/owned-tmp
++      PYTHONUTF8: '1'
++    steps:
++      - uses: actions/checkout@v6
++        with:
++          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          fetch-depth: 1
++      - name: Bind exact focused subject and owned evidence root
++        id: bind
++        shell: bash
++        run: |
++          set -euo pipefail
++          actual="$(git rev-parse HEAD)"
++          test "$actual" = "$FABUSHI_TARGET_SHA"
++          if [ -n "$EXPECTED_DISPATCH_SHA" ]; then
++            [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
++            test "$actual" = "$EXPECTED_DISPATCH_SHA"
++          fi
++          mkdir -p "$TMPDIR"
++          echo "Focused custody subject: $actual" >> "$GITHUB_STEP_SUMMARY"
++      - uses: dtolnay/rust-toolchain@stable
++        with:
++          toolchain: 1.97.1
++      - uses: Swatinem/rust-cache@v2
++        with:
++          workspaces: |
++            source/host -> target
++            source/host/app -> target
++            source/box-exec-daemon -> target
++          shared-key: desktop-restored-rust-1.97.1
++      - name: Install existing Linux Host native dependencies
++        if: ${{ runner.os == 'Linux' }}
++        shell: bash
++        run: |
++          set -euo pipefail
++          sudo apt-get update
++          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
++      - name: Compile the exact shipping Host for the selected recovery
++        id: shipping_host
++        shell: bash
++        run: |
++          set -euo pipefail
++          set +e
++          cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml > .evidence/custody-recovery/shipping-host.log 2>&1
++          command_status=$?
++          set -e
++          export CRF_HOST_COMPILE_EXIT="$command_status"
++          python3 - <<'PY'
++          import hashlib, json, os, pathlib, subprocess
++          root = pathlib.Path(".evidence/custody-recovery")
++          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
++          assert head == os.environ["FABUSHI_TARGET_SHA"]
++          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
++          raw = (root / "shipping-host.log").read_bytes()
++          status = int(os.environ["CRF_HOST_COMPILE_EXIT"])
++          receipt = {
++              "contract": "CRF-v1-shipping-compile", "validation_scope": "custody-recovery",
++              "subject_commit": head,
++              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
++              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
++              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
++              "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
++              "command": ["cargo", "check", "--locked", "--profile", "ci", "--bin", "mahayana-app-host",
++                  "--manifest-path", "source/host/app/Cargo.toml"],
++              "command_exit": status, "capture_exit": 0,
++              "log": "shipping-host.log", "log_sha256": hashlib.sha256(raw).hexdigest(),
++              "result": "compiled" if status == 0 else "failed-or-incomplete",
++              "scope": "Compilation only, not runtime, full-contract or package acceptance.",
++          }
++          (root / "shipping-host.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
++          print(json.dumps(receipt, indent=2))
++          PY
++          cat .evidence/custody-recovery/shipping-host.log
++          exit "$command_status"
++      - name: Execute selected real custody contracts
++        id: custody_contracts
++        shell: bash
++        run: python3 projects/openclaw-rust/scripts/capture_portable_contracts.py
++      - name: Upload exact-subject focused evidence including owned failures
++        if: ${{ always() && steps.bind.outcome == 'success' }}
++        uses: actions/upload-artifact@v4
++        with:
++          name: ocrm-custody-recovery-${{ runner.os }}-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
++          path: .evidence/custody-recovery/
++          if-no-files-found: error
++          retention-days: 90
++
++
++  local-exec-runtime:
++    if: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
++    name: OCRM selected LocalExec runtime / Linux
++    runs-on: ubuntu-24.04
++    timeout-minutes: 75
++    env:
++      CARGO_TERM_COLOR: never
++      CARGO_BUILD_JOBS: '2'
++      CARGO_PROFILE_DEV_DEBUG: '0'
++      CARGO_PROFILE_TEST_DEBUG: '0'
++      CARGO_INCREMENTAL: '0'
++      OCRM_LOCAL_EXEC_SCOPE: ocrm-local-exec-runtime
++      PYTHONUTF8: '1'
++    steps:
++      - uses: actions/checkout@v6
++        with:
++          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          fetch-depth: 1
++      - name: Bind exact LocalExec subject and owned fixture root
++        id: bind
++        shell: bash
++        run: |
++          set -euo pipefail
++          actual="$(git rev-parse HEAD)"
++          test "$actual" = "$FABUSHI_TARGET_SHA"
++          if [ -n "$EXPECTED_DISPATCH_SHA" ]; then
++            [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
++            test "$actual" = "$EXPECTED_DISPATCH_SHA"
++          fi
++          local_exec_fixtures="$RUNNER_TEMP/ocrm-local-exec-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
++          mkdir "$local_exec_fixtures"
++          printf 'NATIVE_PATH_FIXTURES=%s\n' "$local_exec_fixtures" >> "$GITHUB_ENV"
++          mkdir -p .evidence/sqlite-native-path
++          python3 - <<'PY'
++          import hashlib, json, os, pathlib, subprocess
++          root = pathlib.Path(".evidence/sqlite-native-path")
++          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
++          assert head == os.environ["FABUSHI_TARGET_SHA"]
++          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
++          assert lock["upstream"]["commit"] == "1440bb1771372334bea23d7642bb52deb7db1845"
++          paths = [".github/workflows/rust-desktop-runtime.yml",
++              "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
++              "desktop/package.json", "desktop/package-lock.json", "projects/openclaw-rust/upstream.lock.json"]
++          inputs = {}
++          for path in paths:
++              raw = pathlib.Path(path).read_bytes()
++              assert raw == subprocess.check_output(["git", "show", f"{head}:{path}"]), path
++              inputs[path] = {"git_blob": subprocess.check_output(["git", "rev-parse", f"{head}:{path}"], text=True).strip(),
++                  "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
++          (root / "local-exec-selection.json").write_text(json.dumps({
++              "contract": "LDB-v1-selection", "validation_scope": "ocrm-local-exec-runtime",
++              "subject_commit": head,
++              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
++              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
++              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
++              "job": os.environ["GITHUB_JOB"], "source_inputs": inputs,
++              "result": "selection and inputs bound; installation/build/behavior not yet assessed",
++          }, indent=2) + "\n")
++          PY
++          echo "Selected LocalExec subject: $actual; unrelated failed instruments remain unaccepted" >> "$GITHUB_STEP_SUMMARY"
++      - uses: dtolnay/rust-toolchain@stable
++        with:
++          toolchain: 1.97.1
++      - uses: Swatinem/rust-cache@v2
++        with:
++          workspaces: |
++            source/host -> target
++            source/box-exec-daemon -> target
++          shared-key: desktop-restored-rust-1.97.1
++      - name: Install existing Linux Host native dependencies
++        shell: bash
++        run: |
++          set -euo pipefail
++          sudo apt-get update
++          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
++      - uses: actions/setup-node@v6
++        with:
++          node-version: 24
++          cache: npm
++          cache-dependency-path: desktop/package-lock.json
++      - name: Install frozen desktop dependencies
++        timeout-minutes: 10
++        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
++      - name: Execute actual Coordinator identity and selected LocalExec daemon
++        id: local_exec_identity
++        timeout-minutes: 45
++        env:
++          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
++          CARGO_BUILD_JOBS: '1'
++        shell: bash
++        run: python3 projects/openclaw-rust/scripts/capture_local_exec_identity.py
++      - name: Preserve exact owned LocalExec fixtures on failure
++        if: ${{ always() && steps.local_exec_identity.outcome != 'skipped' && steps.local_exec_identity.outcome != 'success' }}
++        shell: bash
++        run: |
++          set -euo pipefail
++          test -d "$NATIVE_PATH_FIXTURES"
++          test ! -L "$NATIVE_PATH_FIXTURES"
++          tar -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/local-exec-owned-fixtures.tar .
++      - name: Upload exact-subject LocalExec evidence
++        if: ${{ always() && steps.bind.outcome == 'success' }}
++        uses: actions/upload-artifact@v4
++        with:
++          name: ocrm-local-exec-runtime-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
++          path: .evidence/sqlite-native-path/
++          if-no-files-found: error
++          retention-days: 90
+diff --git a/desktop/scripts/build-electron-runtime.mjs b/desktop/scripts/build-electron-runtime.mjs
+index ad2c8534c0d786c33cddf203d189acc993ec12ac..bac90b2888418b81e60196f637a2c143ad5ee083 100644
+--- a/desktop/scripts/build-electron-runtime.mjs
++++ b/desktop/scripts/build-electron-runtime.mjs
+@@ -216,7 +216,9 @@ async function stageLocalExecLegalInputs() {
+ // The production Coordinator already selects this entry. Native parser stages
+ // are required even for file requests because the default executor loads its
+ // parser at module evaluation. Build each actual runtime domain separately.
+-const nativeStages = await stageLocalExecDependencies({ desktopRoot });
++const nativeStages = await stageLocalExecDependencies({
++  desktopRoot, workRoot: process.env.FABUSHI_LOCAL_EXEC_BUILD_WORK_ROOT,
++});
+ const externalLibrary = await stageLocalExecLibrary();
+ const legalInputs = await stageLocalExecLegalInputs();
+ const daemonBuild = await build({
+diff --git a/desktop/scripts/build-local-exec-dependencies.mjs b/desktop/scripts/build-local-exec-dependencies.mjs
+index 449d188226ac190dd3fe0c711b395ea714956e6d..1fed2eccd3fd655a6f3f45a3ae0b32c1c80e32b4 100644
+--- a/desktop/scripts/build-local-exec-dependencies.mjs
++++ b/desktop/scripts/build-local-exec-dependencies.mjs
+@@ -5,7 +5,7 @@
+ // fresh native load. Verification below is structural and never builds or runs.
+ import { createHash } from "node:crypto";
+ import { spawn } from "node:child_process";
+-import { lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
++import { lstat, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, writeFile } from "node:fs/promises";
+ import { createRequire } from "node:module";
+ import path from "node:path";
+ import { fileURLToPath, pathToFileURL } from "node:url";
+@@ -490,7 +490,36 @@ async function downloadHeaders(candidate, target, desktopRoot, gypRoot) {
+ function headerInputs(headers) {
+   return headers.files.map(f => ({ ...f, path: "headers/" + f.path.slice(".headers/".length) }));
+ }
+-async function buildStage(desktopRoot, target, gypRoot) {
++// The capture supplies an existing, invocation-owned directory inside its
++// artifact. Keep publication on the stage filesystem and never follow a
++// redirected work root. Failures retain this exact directory, including hidden
++// headers and any previous stage, for the capture's bounded artifact archive.
++export async function withOwnedNativeBuildWork({ stageRoot, domain, workRoot }, build) {
++  check(domain === "node" || domain === "electron", "unknown build work domain");
++  const stageParent = path.dirname(path.resolve(stageRoot));
++  await mkdir(stageParent, { recursive: true });
++  check(workRoot === undefined || (typeof workRoot === "string" && path.isAbsolute(workRoot)),
++    "native build evidence root must be absolute");
++  const parent = workRoot === undefined ? stageParent : path.resolve(workRoot);
++  const owner = await lstat(parent);
++  check(owner.isDirectory() && !owner.isSymbolicLink() && await realpath(parent) === parent,
++    "native build evidence root must be an ordinary owned directory");
++  check(owner.dev === (await lstat(stageParent)).dev, "native build evidence root crosses the stage filesystem");
++  const work = await mkdtemp(path.join(parent, "ldb-" + domain + "-"));
++  try {
++    const result = await build(work);
++    await rm(work, { recursive: true });
++    return result;
++  } catch (cause) {
++    // An unsettled child may still hold these files. No deletion, group kill,
++    // directory search or transfer of ownership is performed here.
++    const error = cause instanceof Error ? cause : new Error(String(cause));
++    error.message += "\nLDB-v1 retained owned build evidence at " + work;
++    throw error;
++  }
++}
++
++async function buildStage(desktopRoot, target, gypRoot, workRoot) {
+   const stageRoot = path.join(desktopRoot, "dist", target.domain === "node" ? "node-deps" : "deps");
+   const before = await installedInputs(desktopRoot, target, gypRoot);
+   const prior = qualifiedHere.get(stageRoot);
+@@ -503,114 +532,115 @@ async function buildStage(desktopRoot, target, gypRoot) {
+       return receipt;
+     }
+   }
+-  await mkdir(path.dirname(stageRoot), { recursive: true });
+-  const work = await mkdtemp(path.join(path.dirname(stageRoot), ".ldb-" + target.domain + "-"));
+-  const candidate = path.join(work, "candidate");
+-  await mkdir(candidate);
+-  let published = false;
+-  try {
+-    for (const pinned of PACKAGES) {
+-      await copySource(before.sources.get(pinned.name), path.join(candidate, pinned.name));
+-      if (SUPPORT.has(pinned.name)) await copySource(before.sources.get(pinned.name), path.join(candidate, "node_modules", pinned.name));
+-    }
+-    const binding = path.join(candidate, "tree-sitter/binding.gyp");
+-    await writeFile(binding, patchTreeSitterBinding(await readFile(binding, "utf8")));
+-    const headers = await downloadHeaders(candidate, target, desktopRoot, gypRoot);
+-    const nativeHeaderRoot = path.join(candidate, ".headers", target.runtime.version);
+-    const env = cleanEnvironment("node");
+-    env.npm_config_build_from_source = "true";
+-    env.npm_config_runtime = target.domain;
+-    env.npm_config_target = target.runtime.version;
+-    // binding.gyp invokes "node" for node-addon-api and the approved C++ patch.
+-    // Refuse a PATH-selected Node different from the actual build interpreter.
+-    const pathNode = await runOwnedChild("node", ["-p", "process.execPath"], { cwd: desktopRoot, env, timeoutMs: 30000, maxOutputBytes: 65536 });
+-    check(hash(await regularBytes(pathNode.stdout.trim())) === hash(await regularBytes(process.execPath)), "PATH node differs from build Node");
+-    for (const [index, name] of ["tree-sitter", "tree-sitter-bash"].entries()) {
+-      const packageRoot = path.join(candidate, name);
+-      await runOwnedChild(process.execPath, [path.join(gypRoot, "bin/node-gyp.js"), "rebuild", "--directory=" + packageRoot,
+-        "--release", "--target=" + target.runtime.version, "--arch=" + target.runtime.arch, "--nodedir=" + nativeHeaderRoot,
+-        "--devdir=" + path.join(candidate, ".headers")], { cwd: candidate, env, timeoutMs: 600000, forward: true });
+-      const generated = await readFile(path.join(packageRoot, "build/config.gypi"), "utf8");
+-      const config = JSON.parse(generated.replace(/^#.*\n/, ""));
+-      check(path.resolve(config.variables.nodedir) === nativeHeaderRoot && config.variables.target_arch === target.runtime.arch,
+-        "node-gyp used an unowned header directory or architecture");
+-      const native = await regularBytes(path.join(candidate, NATIVE_PATHS[index]));
+-      check(native.length > 0, "native build output is empty");
+-      // Preserve sources/legal artifacts, discard only compiler intermediates and
+-      // alternative native lookup locations, then retain the exact built binary.
+-      await rm(path.join(packageRoot, "build"), { recursive: true });
+-      await mkdir(path.dirname(path.join(candidate, NATIVE_PATHS[index])), { recursive: true });
+-      await writeFile(path.join(candidate, NATIVE_PATHS[index]), native);
+-    }
+-    const after = await installedInputs(desktopRoot, target, gypRoot);
+-    check(same(before.files, after.files), "installed inputs changed during native build");
+-    const currentHeaders = (await inventory(path.join(candidate, ".headers"))).map(f => ({ ...f, path: ".headers/" + f.path }));
+-    check(same(currentHeaders, headers.files), "headers changed during native build");
+-    const stageFiles = await inventory(candidate);
+-    const buildInputs = sorted([...before.files, ...headerInputs(headers)]);
+-    const receipt = {
+-      contract: "LDB-v1", domain: target.domain, runtime: target.runtime,
+-      package_lock_sha256: before.lockSha, build_input_sha256: hash(JSON.stringify(buildInputs)), build_inputs: buildInputs,
+-      packages: PACKAGES.map(p => ({ ...lockIdentity(before.lock, p), files: packageFiles(stageFiles, p.name) })),
+-      headers, native_outputs: stageFiles.filter(f => f.path.endsWith(".node")), stage_files: stageFiles,
+-      load_probe: await nativeProbe(candidate, target),
+-    };
+-    await writeFile(path.join(candidate, MANIFEST), JSON.stringify(receipt, null, 2) + "\n");
+-    await verifyLocalExecDependencyStage({ stageRoot: candidate, desktopRoot, domain: target.domain });
+-    const previous = path.join(work, "previous");
+-    let replaced = false;
+-    try { await rename(stageRoot, previous); replaced = true; }
+-    catch (error) { if (error.code !== "ENOENT") throw error; }
+-    try { await rename(candidate, stageRoot); }
+-    catch (error) {
+-      if (replaced) {
+-        try { await rename(previous, stageRoot); }
+-        catch (restoreError) { throw new AggregateError([error, restoreError], "LDB-v1: publication and previous-stage restoration both failed; retained " + work); }
++  const receipt = await withOwnedNativeBuildWork({ stageRoot, domain: target.domain, workRoot }, async (work) => {
++    const candidate = path.join(work, "candidate");
++    await mkdir(candidate);
++    let published = false;
++    try {
++      for (const pinned of PACKAGES) {
++        await copySource(before.sources.get(pinned.name), path.join(candidate, pinned.name));
++        if (SUPPORT.has(pinned.name)) await copySource(before.sources.get(pinned.name), path.join(candidate, "node_modules", pinned.name));
+       }
++      const binding = path.join(candidate, "tree-sitter/binding.gyp");
++      await writeFile(binding, patchTreeSitterBinding(await readFile(binding, "utf8")));
++      const headers = await downloadHeaders(candidate, target, desktopRoot, gypRoot);
++      const nativeHeaderRoot = path.join(candidate, ".headers", target.runtime.version);
++      const env = cleanEnvironment("node");
++      env.npm_config_build_from_source = "true";
++      env.npm_config_runtime = target.domain;
++      env.npm_config_target = target.runtime.version;
++      // binding.gyp invokes "node" for node-addon-api and the approved C++ patch.
++      // Refuse a PATH-selected Node different from the actual build interpreter.
++      const pathNode = await runOwnedChild("node", ["-p", "process.execPath"], { cwd: desktopRoot, env, timeoutMs: 30000, maxOutputBytes: 65536 });
++      check(hash(await regularBytes(pathNode.stdout.trim())) === hash(await regularBytes(process.execPath)), "PATH node differs from build Node");
++      for (const [index, name] of ["tree-sitter", "tree-sitter-bash"].entries()) {
++        const packageRoot = path.join(candidate, name);
++        await runOwnedChild(process.execPath, [path.join(gypRoot, "bin/node-gyp.js"), "rebuild", "--directory=" + packageRoot,
++          "--release", "--target=" + target.runtime.version, "--arch=" + target.runtime.arch, "--nodedir=" + nativeHeaderRoot,
++          "--devdir=" + path.join(candidate, ".headers")], { cwd: candidate, env, timeoutMs: 600000, forward: true });
++        const generated = await readFile(path.join(packageRoot, "build/config.gypi"), "utf8");
++        const config = JSON.parse(generated.replace(/^#.*\n/, ""));
++        check(path.resolve(config.variables.nodedir) === nativeHeaderRoot && config.variables.target_arch === target.runtime.arch,
++          "node-gyp used an unowned header directory or architecture");
++        const native = await regularBytes(path.join(candidate, NATIVE_PATHS[index]));
++        check(native.length > 0, "native build output is empty");
++        // Preserve sources/legal artifacts, discard only compiler intermediates and
++        // alternative native lookup locations, then retain the exact built binary.
++        await rm(path.join(packageRoot, "build"), { recursive: true });
++        await mkdir(path.dirname(path.join(candidate, NATIVE_PATHS[index])), { recursive: true });
++        await writeFile(path.join(candidate, NATIVE_PATHS[index]), native);
++      }
++      const after = await installedInputs(desktopRoot, target, gypRoot);
++      check(same(before.files, after.files), "installed inputs changed during native build");
++      const currentHeaders = (await inventory(path.join(candidate, ".headers"))).map(f => ({ ...f, path: ".headers/" + f.path }));
++      check(same(currentHeaders, headers.files), "headers changed during native build");
++      const stageFiles = await inventory(candidate);
++      const buildInputs = sorted([...before.files, ...headerInputs(headers)]);
++      const receipt = {
++        contract: "LDB-v1", domain: target.domain, runtime: target.runtime,
++        package_lock_sha256: before.lockSha, build_input_sha256: hash(JSON.stringify(buildInputs)), build_inputs: buildInputs,
++        packages: PACKAGES.map(p => ({ ...lockIdentity(before.lock, p), files: packageFiles(stageFiles, p.name) })),
++        headers, native_outputs: stageFiles.filter(f => f.path.endsWith(".node")), stage_files: stageFiles,
++        load_probe: await nativeProbe(candidate, target),
++      };
++      await writeFile(path.join(candidate, MANIFEST), JSON.stringify(receipt, null, 2) + "\n");
++      await verifyLocalExecDependencyStage({ stageRoot: candidate, desktopRoot, domain: target.domain });
++      const previous = path.join(work, "previous");
++      let replaced = false;
++      try { await rename(stageRoot, previous); replaced = true; }
++      catch (error) { if (error.code !== "ENOENT") throw error; }
++      try { await rename(candidate, stageRoot); }
++      catch (error) {
++        if (replaced) {
++          try { await rename(previous, stageRoot); }
++          catch (restoreError) { throw new AggregateError([error, restoreError], "LDB-v1: publication and previous-stage restoration both failed; retained " + work); }
++        }
++        throw error;
++      }
++      published = true;
++      // Qualify the final published path before handing it to packaging. On a
++      // relocation/load failure, keep the failed candidate and restore the prior
++      // complete stage; never silently accept a partially published replacement.
++      try { await nativeProbe(stageRoot, target); }
++      catch (error) {
++        await rename(stageRoot, path.join(work, "failed-published"));
++        if (replaced) await rename(previous, stageRoot);
++        published = false;
++        throw error;
++      }
++      return receipt;
++    } catch (error) {
++      if (published) qualifiedHere.delete(stageRoot);
+       throw error;
+     }
+-    published = true;
+-    // Qualify the final published path before handing it to packaging. On a
+-    // relocation/load failure, keep the failed candidate and restore the prior
+-    // complete stage; never silently accept a partially published replacement.
+-    try { await nativeProbe(stageRoot, target); }
+-    catch (error) {
+-      await rename(stageRoot, path.join(work, "failed-published"));
+-      if (replaced) await rename(previous, stageRoot);
+-      published = false;
+-      throw error;
+-    }
+-    qualifiedHere.set(stageRoot, receipt);
+-    await rm(work, { recursive: true });
+-    return receipt;
+-  } catch (error) {
+-    // Preserve the exact owned scratch root (and any prior stage) on failure.
+-    // An unsettled child may still hold these files: do not delete or group-kill.
+-    if (published) qualifiedHere.delete(stageRoot);
+-    error.message += "\nLDB-v1 retained owned build evidence at " + work;
+-    throw error;
+-  }
++  });
++  qualifiedHere.set(stageRoot, receipt);
++  return receipt;
+ }
+ 
+-export async function stageLocalExecDependencies({ desktopRoot }) {
++export async function stageLocalExecDependencies({ desktopRoot, workRoot }) {
+   desktopRoot = path.resolve(desktopRoot);
+-  if (activeBuilds.has(desktopRoot)) return activeBuilds.get(desktopRoot);
++  const active = activeBuilds.get(desktopRoot);
++  if (active) {
++    check(active.workRoot === workRoot, "concurrent native build requested a different evidence root");
++    return active.build;
++  }
+   const build = (async () => {
+     check(!process.versions.electron, "the desktop native build owner must run under ordinary Node");
+     const desktopPackage = await json(path.join(desktopRoot, "package.json"));
+     const targets = await targetRuntimes(desktopRoot, desktopPackage);
+     const gypRoot = path.join(desktopRoot, "node_modules", "node-gyp");
+     const result = {};
+-    for (const target of targets) result[target.domain] = await buildStage(desktopRoot, target, gypRoot);
++    for (const target of targets) result[target.domain] = await buildStage(desktopRoot, target, gypRoot, workRoot);
+     return result;
+   })();
+-  activeBuilds.set(desktopRoot, build);
++  activeBuilds.set(desktopRoot, { build, workRoot });
+   try { return await build; }
+   finally { activeBuilds.delete(desktopRoot); }
+ }
+ 
+ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+   const desktopRoot = path.resolve(path.dirname(SELF), "..");
+-  const result = await stageLocalExecDependencies({ desktopRoot });
++  const result = await stageLocalExecDependencies({ desktopRoot, workRoot: process.env.FABUSHI_LOCAL_EXEC_BUILD_WORK_ROOT });
+   console.log(JSON.stringify({ contract: "LDB-v1", node: result.node.runtime, electron: result.electron.runtime }));
+ }
+diff --git a/desktop/scripts/local-exec-dependencies.contract.test.mjs b/desktop/scripts/local-exec-dependencies.contract.test.mjs
+index c32979cef7c93771526c6392137040a8b23eb3e6..7551552b4f69db299dff09ef7b0667637e2c6615 100644
+--- a/desktop/scripts/local-exec-dependencies.contract.test.mjs
++++ b/desktop/scripts/local-exec-dependencies.contract.test.mjs
+@@ -10,7 +10,7 @@ import os from "node:os";
+ import path from "node:path";
+ import { fileURLToPath } from "node:url";
+ import {
+-  patchTreeSitterBinding, runOwnedChild,
++  patchTreeSitterBinding, runOwnedChild, withOwnedNativeBuildWork,
+   verifyLocalExecDependencyLoad, verifyLocalExecDependencyStage,
+ } from "./build-local-exec-dependencies.mjs";
+ import { createLocalExecDependencyFixture, STOCK_TREE_SITTER_BINDING } from "./local-exec-dependencies.fixture.mjs";
+@@ -261,3 +261,46 @@ test("LDB owned child runner waits for close without signaling an exited child",
+   await assert.rejects(runOwnedChild(process.execPath, ["-e", parent, grandchild, marker], { timeoutMs: 5000 }), /deadline exceeded/);
+   assert.equal(await readFile(marker, "utf8"), "finished");
+ });
++
++// This is an actual filesystem/owned-child failure control for the build-work
++// boundary, not a synthetic native compile or parser-load claim.
++test("LDB owned native build failure retains only its bound work root", { timeout: 15000 }, async t => {
++  const f = await fixture(t);
++  const workRoot = path.join(f.desktopRoot, "evidence", "owned-work");
++  await mkdir(workRoot, { recursive: true });
++  const outside = path.join(f.desktopRoot, "unrelated-build");
++  await mkdir(outside);
++  await writeFile(path.join(outside, "marker"), "unrelated");
++  let failedWork;
++  await assert.rejects(withOwnedNativeBuildWork({ stageRoot: f.stageRoot, domain: "node", workRoot }, async work => {
++    failedWork = work;
++    assert.equal(path.dirname(work), workRoot);
++    const child = [
++      "const fs=require('node:fs'),p=require('node:path'),root=process.argv[1];",
++      "fs.mkdirSync(p.join(root,'candidate','.headers'),{recursive:true});",
++      "fs.writeFileSync(p.join(root,'candidate','.headers','archive.tar.gz'),'owned-header');",
++      "fs.mkdirSync(p.join(root,'previous'));",
++      "fs.writeFileSync(p.join(root,'previous','runtime.node'),'prior-native');",
++      "process.exit(17);",
++    ].join("");
++    await runOwnedChild(process.execPath, ["-e", child, work], { timeoutMs: 5000 });
++  }), error => /exit 17/.test(error.message) && error.message.includes(failedWork));
++  assert.equal(await readFile(path.join(failedWork, "candidate/.headers/archive.tar.gz"), "utf8"), "owned-header");
++  assert.equal(await readFile(path.join(failedWork, "previous/runtime.node"), "utf8"), "prior-native");
++  assert.equal(await readFile(path.join(outside, "marker"), "utf8"), "unrelated");
++  assert.deepEqual(await readdir(workRoot), [path.basename(failedWork)]);
++  let successfulWork;
++  assert.equal(await withOwnedNativeBuildWork({ stageRoot: f.stageRoot, domain: "node", workRoot }, async work => {
++    successfulWork = work;
++    await writeFile(path.join(work, "complete"), "settled");
++    return "qualified";
++  }), "qualified");
++  await assert.rejects(lstat(successfulWork), { code: "ENOENT" });
++  assert.deepEqual(await readdir(workRoot), [path.basename(failedWork)]);
++  const link = path.join(f.desktopRoot, "redirected-work");
++  await symlink(workRoot, link, process.platform === "win32" ? "junction" : "dir");
++  await assert.rejects(withOwnedNativeBuildWork({ stageRoot: f.stageRoot, domain: "node", workRoot: link }, async () => {
++    assert.fail("redirected work root must not start a build");
++  }), /ordinary owned directory/);
++  assert.equal(await readFile(path.join(outside, "marker"), "utf8"), "unrelated");
++});
+diff --git a/projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md b/projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md
+index b1a287547fb01fb53124f2d1bdd9292bb8971d88..d798a949b4b277e2f3b004ef79d292e5f375299f 100644
+--- a/projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md
++++ b/projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md
+@@ -236,13 +236,34 @@ for this daemon. Do not replace the executor with a partial file-only or test ow
+   A changed package manifest/lock invalidates dependent build/runtime evidence,
+   not unrelated historical source facts. Preserve failures and source-independent
+   positives. Stop at a failed shared build before promoting downstream evidence.
++  Select this affected batch through an explicit `ocrm-local-exec-runtime`
++  scope in the same workflow (or its declared migration-branch push prefix).
++  Reuse the current Linux identity/startup capture, Node/Rust toolchains and
++  Host target cache; execute actual native domains, normal Host/Coordinator
++  builds, all LPI/LDB names, and the existing renderer build/ONP/LXO and affected
++  bridge receipts. Exclude unrelated native media/restore/platform/pressure
++  jobs from that explicit selection only. Preserve normal full validation and
++  existing scopes; retain historical failed DJC/LPI results without rerunning an
++  unchanged failed instrument or treating an unselected check as approved.
+ 
+ ### Scope, delivery and acceptance
+ 
+ Root integration owns package.json/lock, build and checker scripts, workflow,
+ capture and OCRM evidence/ledger references. Isolated workers may modify only
+-declared daemon source/test paths after this authority is delivered. No public
+-protobuf/schema or Host journal change is included.
++declared paths after this authority is delivered. The existing Electron native
++launch boundary must bind the same staged Host executable used by the Coordinator
++carrier, through one pure platform path resolver with the current packaged and
++development conventions. The actual emitted-entry byte-transfer oracle must
++obtain that binding through this production boundary, with no inherited Host
++path repairing the fixture. This remains thin platform composition under the
++Rust supervisor. The existing shell parser loader must admit a selected stage's
++LDB domain and actual runtime identity before requiring native packages; wrong
++domain/runtime must fail before provider registration, independently of ABI load
++failure. Preserve packaged Electron root selection and terminal load errors.
++Bind each native build's exact owned work root before the build begins and retain
++its failed contents through the existing Actions artifact, without broad searches,
++foreign cleanup or deleting unsettled child files. These clarify LDB-01/04/08/09;
++no public protobuf/schema, Host journal or additional product owner is included.
+ 
+ The build implementation may add a narrow helper and contracts under
+ `desktop/scripts/`, the emitted-entry contract under `source/local-exec-daemon/`,
+diff --git a/projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json
+index 12193498cd9dc4f35db70f10ba3772387e3d00f8..dbd0e22615fbc1bcc6702cf820640afbacd811bc 100644
+--- a/projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json
+@@ -11,8 +11,8 @@
+   },
+   "authority": {
+     "path": "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+-    "blob": "b1a287547fb01fb53124f2d1bdd9292bb8971d88",
+-    "delivered_commit": "c968b1ce0576d62ad911ee33408314ba15cb4fde",
++    "blob": "d798a949b4b277e2f3b004ef79d292e5f375299f",
++    "delivered_commit": "226e9eb00572dd2d7e49dd2cf20a9c706e0fa069",
+     "requirements": [
+       "LDB-01",
+       "LDB-02",
+@@ -24,28 +24,35 @@
+       "LDB-08",
+       "LDB-09"
+     ],
+-    "failure_decision": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-renderer-decision.json"
++    "failure_decision": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-renderer-decision.json",
++    "original_authority_commit": "c968b1ce0576d62ad911ee33408314ba15cb4fde",
++    "review_decisions": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/review-r1/decisions.json"
+   },
+   "integration_base": {
+-    "commit": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e",
+-    "tree": "5dab02b25588b61887c57ee7752f3b3baa997913",
++    "commit": "226e9eb00572dd2d7e49dd2cf20a9c706e0fa069",
++    "tree": "747b10df41c68cbd0e7e4eb13912a7b9e47a94e4",
+     "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+     "preserved_concurrent_changes": [
+-      "Box server and shell capture authority/implementation",
+-      "PluginSkills uninstall/recovery decisions",
+-      "All existing LPI/LXO/LXR and source accounting"
+-    ]
++      "Box foreground custody/output cleanup authority and production source",
++      "PluginSkills v3 oracle recovery and source convergence",
++      "DJC-07 separate causal COMMIT qualification source and authority",
++      "CRF-v1 focused custody workflow/capture selection",
++      "Historical Linux/Windows/macOS exact-H native receipts",
++      "All existing LPI/LXO/LXR and canonical source accounting"
++    ],
++    "original_review_base": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e",
++    "previous_review_candidate": "a8dd0c688973899ac069cc5c429b441c1168fd25"
+   },
+   "review_state": {
+-    "scope": "Complete frozen candidate against integration_base, including all new files and current common-file changes",
+-    "source_review": "Independent general and structure review pending",
++    "scope": "Complete original38path scope, including all33R1paths and the five necessary authority/production owner additions; proper R1-to-current delta retained separately",
++    "source_review": "R1 complete; three accepted owner-preserving repairs implemented in candidate. Fresh focused general/structure re-review pending.",
+     "runtime": "Not run for this candidate; previous H results retain their own identity",
+     "local_or_htch_execution": false
+   },
+   "entry_and_ownership": {
+     "entry": "Rust Coordinator LocalExecDaemonRuntime -> existing Electron spawnLocalExecDaemon -> dist/local-exec-daemon/main.cjs",
+     "producer": "Existing persisted connection/settings/supervisor heartbeat and SSE requests",
+-    "platform_adapter": "Existing daemon main contains only Node event normalization/reporting; no recreated TypeScript Host module",
++    "platform_adapter": "Existing Electron native launcher and Coordinator carrier share one pure staged Host executable resolver. The existing daemon keeps only Node event normalization/reporting, without resurrecting a retired Host module.",
+     "state_owners": [
+       "Rust Coordinator generation/process supervision",
+       "Rust Host local execution journal and permissions",
+@@ -54,16 +61,21 @@
+     ],
+     "service": "Actual SandLocalExecProvider -> createDefaultProductionLocalExecExecutor -> LocalFileAccess -> same-H mahayana-app-host native file helper",
+     "consumer": "Actual SSE/POST request and response transport; selected Host/Runner consumers remain the unique canonical state",
+-    "retained_legacy_scope": "This is a prerequisite repair of the already selected legacy executor. It is not Rust completion of its remaining TypeScript business/policy or shell/LS responsibilities."
++    "retained_legacy_scope": "This is a prerequisite repair of the already selected legacy executor. It is not Rust completion of its remaining TypeScript business/policy or shell/LS responsibilities.",
++    "host_binding": "Clean production native launch resolves existing explicit override or packaged/development resource convention and binds Host only in its child environment. Actual byte oracle copies same-H Host to an owned resources/bin, calls the real launcher without spawnImpl and requires no inherited/fixture Host override.",
++    "parser_admission": "Existing shell-parser loader checks selected LDB manifest domain and exact actual runtime version/node/modules/platform/arch before native require; packaged Electron override selection and terminal selected-stage failure remain."
+   },
+   "requirements": [
+     {
+       "id": "LDB-01",
+       "implementation": [
+         "desktop/scripts/build-electron-runtime.mjs",
+-        "source/local-exec-daemon/main.ts"
++        "source/local-exec-daemon/main.ts",
++        "source/electron-main/local-exec/local-exec-native.ts",
++        "source/electron-main/coordinator/rust-coordinator-carrier.ts",
++        "source/electron-main/app-host-executable.ts"
+       ],
+-      "oracle": "Emitted-entry metadata, runtime checker and actual entry contract require the selected default provider/executor/native consumer."
++      "oracle": "Emitted-entry metadata, runtime checker and actual entry contract require the selected default provider/executor/native consumer. Real native launch byte transfer consumes the shared staged Host path without an inherited or fixture Host override; mapping controls retain packaged/development/explicit override behavior."
+     },
+     {
+       "id": "LDB-02",
+@@ -85,9 +97,10 @@
+       "implementation": [
+         "desktop/scripts/build-local-exec-dependencies.mjs",
+         "desktop/scripts/check-electron-runtime-bundle.mjs",
+-        "desktop/package.json"
++        "desktop/package.json",
++        "source/packages/shell-exec/shell-parser.ts"
+       ],
+-      "oracle": "Separate Node/Electron roots, exact loaded .node paths, complete source/output manifests; selected startup refuses unavailable explicit Node root; structural wrong-domain and fallback controls."
++      "oracle": "Separate Node/Electron roots and actual loaded .node paths; the existing runtime loader admits exact manifest domain/runtime before native require. Actual emitted-entry negatives copy qualified Node bytes, change only declared domain or one of all five runtime fields, and require precise admission errors, exit1, no discovery/SSE/response POST. Synthetic verifier cases remain supplementary."
+     },
+     {
+       "id": "LDB-05",
+@@ -122,23 +135,25 @@
+         "source/local-exec-daemon/startup.contract.test.ts",
+         "projects/openclaw-rust/scripts/capture_local_exec_identity.py"
+       ],
+-      "oracle": "Actual emitted ordinary-Node process, persisted inputs, matching generation/discovery/hello, upload start/chunk/commit/download, independent byte read, owned-child close and discovery retirement. Four exact startup positives; six LXO positives remain unchanged."
++      "oracle": "Actual emitted ordinary-Node process through the real native launch adapter and controlled Electron resource context, same-H staged Host, persisted inputs, matching generation/discovery/hello, upload start/chunk/commit/download, independent byte read, exact child close and discovery retirement. Seven exact startup names include Host mapping, two new actual parser admission negatives and all original cases. Six LXO positives remain unchanged."
+     },
+     {
+       "id": "LDB-09",
+       "implementation": [
+         ".github/workflows/rust-desktop-runtime.yml",
+-        "projects/openclaw-rust/scripts/capture_local_exec_identity.py"
++        "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
++        "desktop/scripts/build-local-exec-dependencies.mjs",
++        "desktop/scripts/local-exec-dependencies.contract.test.mjs"
+       ],
+-      "oracle": "Existing Actions/cache lane binds exactH/U, normal Host/Coordinator binaries, all emitted bundle inputs, actual dependency stage bytes and official header/native artifacts. Includes20native contracts,7Rust+4LPIpositives,4startup positives with strict named result checks."
++      "oracle": "Same workflow with explicit ocrm-local-exec-runtime scope: existing Linux capture and renderer build/bridge/ONP/LXO receipts; exactH/U, normal Host/Coordinator binaries, bundle causal inputs and dependency/header/native identities. 21native,7Rust+4LPI,7startup named contracts. Actual child-failure retention and archive/identity controls qualify exact owned native work preservation, including hidden headers and prior stages. No unchanged failed DJC rerun."
+     }
+   ],
+   "inputs": [
+     {
+       "path": "desktop/package.json",
+       "old_blob": "9710d828a446f0c8ab152f21cb259020e8d267ef",
+       "candidate_blob": "d3a1c70f9a6a3a6dd4a65abb076411c8a3fd6097",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "desktop/package-lock.json",
+@@ -149,74 +164,74 @@
+     {
+       "path": "desktop/scripts/build-electron-runtime.mjs",
+       "old_blob": "36bbc5bcafefc64eb242e8dbf5c83f80513b5253",
+-      "candidate_blob": "ad2c8534c0d786c33cddf203d189acc993ec12ac",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "candidate_blob": "bac90b2888418b81e60196f637a2c143ad5ee083",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "desktop/scripts/check-electron-runtime-bundle.mjs",
+       "old_blob": "737e5d9cdf4952e42e4cc6a26ca968d8f64c3838",
+       "candidate_blob": "3757d5a6e6c73812a275b1838638725179fc3fea",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "desktop/scripts/openclaw-notice.contract.test.mjs",
+       "old_blob": "b5f1163996813583db1db27a0268b845f264fcf3",
+       "candidate_blob": "fad5ae0395c28e8ffec872a91c42b417ff117318",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+       "old_blob": "cc895ade421f0fe7b958c010d475638eed43f500",
+-      "candidate_blob": "27a6aabaae3d5a80005742e29c5e10ce5f4414bb",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "candidate_blob": "ee01ed55d46866f64c156f9c7f0fd65601ea0f06",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": ".github/workflows/rust-desktop-runtime.yml",
+       "old_blob": "0c2b44b51a129ce2deb12599676a94a87ed7a91d",
+-      "candidate_blob": "792c1eb2287053e83f0ee4160e8d5137c5459275",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "candidate_blob": "9574d29d4e494d0f3a30b6ffcad275e222b07275",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "source/local-exec-daemon/main.ts",
+       "old_blob": "6ed3c317002ffcc0c6d745cb4751491ed81e82e0",
+       "candidate_blob": "7b87c3129a6a8b7b37662384f7a2e084a5149320",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "source/host/local-exec/local-exec-daemon.ts",
+       "old_blob": "091d1e9332eb3df062569b3c4ff7242605534ec1",
+       "candidate_blob": "23a0a5f4b0595285f25355be80f2ed368a896301",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "source/host/local-exec/sentry.ts",
+       "old_blob": "3c06c219ff068e5d7fd9c75a522dca31a72936f3",
+       "candidate_blob": "8ba7eb7f53148d2280f582d561df82c9e11e99d8",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "source/local-exec-daemon/startup.contract.test.ts",
+       "old_blob": null,
+-      "candidate_blob": "df46305d1ea17c4d148893dda1f6c2cc303f1cc9",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "candidate_blob": "e935fef8fb0a1d5339eab83b89abf45c03234c4a",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "desktop/scripts/build-local-exec-dependencies.mjs",
+       "old_blob": null,
+-      "candidate_blob": "449d188226ac190dd3fe0c711b395ea714956e6d",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "candidate_blob": "1fed2eccd3fd655a6f3f45a3ae0b32c1c80e32b4",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "desktop/scripts/local-exec-dependencies.contract.test.mjs",
+       "old_blob": null,
+-      "candidate_blob": "c32979cef7c93771526c6392137040a8b23eb3e6",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "candidate_blob": "7551552b4f69db299dff09ef7b0667637e2c6615",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "desktop/scripts/local-exec-dependencies.fixture.mjs",
+       "old_blob": null,
+       "candidate_blob": "f35c65bc4e0f5fbb04093412b4bb0c2fc937540b",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     },
+     {
+       "path": "desktop/resources/licenses/local-exec/iconv-lite/LICENSE",
+@@ -311,14 +326,44 @@
+     {
+       "path": "projects/openclaw-rust/parity-ledger.json",
+       "old_blob": "fc050c02a7cd51ed6ba32f1551ac3b36598d1174",
+-      "candidate_blob": "90d1adf2aa94673f689cbdd972864123ad19a160",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "candidate_blob": "f31a75373c4cee6965edcf9352d5b5739fb008df",
++      "review_depth": "selected responsibilities/references and preservation of all other machine-accounting fields; not full prose read"
+     },
+     {
+       "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+       "old_blob": "073e031c67647c06a848f6ade737b8fca5b1399b",
+       "candidate_blob": "625672c7e2a78de347023b2e0c162e6e123b78a1",
+-      "review_depth": "changed implementation and affected caller/consumer review"
++      "review_depth": "selected responsibilities/references and preservation of all other machine-accounting fields; not full prose read"
++    },
++    {
++      "path": "source/electron-main/app-host-executable.ts",
++      "old_blob": null,
++      "candidate_blob": "1104a23662c9b85feb93174c36ec80bb53dd762f",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
++    },
++    {
++      "path": "source/electron-main/coordinator/rust-coordinator-carrier.ts",
++      "old_blob": "375a706177e9bfa7aa7c9bf591d6688887af12fb",
++      "candidate_blob": "a13abdbdf800f0b13fcf11e36898cbf5fbddabe3",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
++    },
++    {
++      "path": "source/electron-main/local-exec/local-exec-native.ts",
++      "old_blob": "765703e12055721788514f51d90cc5cf311e2d18",
++      "candidate_blob": "93740da968c5918ffee0efa937bc06920b3e3da5",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
++    },
++    {
++      "path": "source/packages/shell-exec/shell-parser.ts",
++      "old_blob": "139844e853647dcbf78cffd38ea4d2f003b74c21",
++      "candidate_blob": "2457e2753d3d7a7f833dadad1bb34e0956973492",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
++    },
++    {
++      "path": "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
++      "old_blob": "b1a287547fb01fb53124f2d1bdd9292bb8971d88",
++      "candidate_blob": "d798a949b4b277e2f3b004ef79d292e5f375299f",
++      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+     }
+   ],
+   "source_findings": {
+@@ -351,7 +396,8 @@
+       },
+       {
+         "path": "source/packages/shell-exec/shell-parser.ts",
+-        "blob": "139844e853647dcbf78cffd38ea4d2f003b74c21"
++        "blob": "139844e853647dcbf78cffd38ea4d2f003b74c21",
++        "candidate_blob": "2457e2753d3d7a7f833dadad1bb34e0956973492"
+       }
+     ],
+     "review_depth": "Actual affected product/build functions and loader/provider/executor/native consumers were read; mature package configuration, install/load source, patch and legal artifacts received contract review. This does not upgrade their entire repositories or historical unread records to full-read.",
+@@ -384,12 +430,16 @@
+       "LDB stock-only C++ patch checks both exact input and output identities",
+       "LDB owned child runner rejects spawn errors and nonzero close",
+       "LDB owned child deadline cleanup leaves an unrelated process alive",
+-      "LDB owned child runner waits for close without signaling an exited child"
++      "LDB owned child runner waits for close without signaling an exited child",
++      "LDB owned native build failure retains only its bound work root"
+     ],
+     "required_startup_tests": [
++      "ldb Host resolver preserves packaged development and explicit override mappings",
+       "ldb emitted daemon transfers bytes through real provider and retires owned discovery",
+       "ldb emitted daemon refuses mismatched generation before registration",
+       "ldb emitted daemon refuses missing configured Node parser domain without fallback",
++      "ldb emitted daemon refuses wrong-domain parser manifest before registration",
++      "ldb emitted daemon refuses mismatched parser runtime before registration",
+       "ldb Node event adapter preserves normalization reporter replacement and clearing"
+     ],
+     "retained_tests": {
+@@ -398,22 +448,46 @@
+       "lpi_actual_consumer": 4,
+       "lxo_protocol": 6
+     },
+-    "budgets": "Before initial LDB execution, Linux job75min and capture45min allow two native domains and normal Host/Coordinator builds. Native build command900s and Host normal build600s are new preparation bounds. Existing product observation/identity deadlines and assertions are unchanged.",
+-    "independence": "Node setup/install and LocalExec capture use actual native-path and dependency installation prerequisites rather than an unrelated portable receipt. Existing portable/palette assertions and overall failed-job outcomes are retained.",
+-    "runtime_evidence_subject": "Only the final pushed and fully read-back H is eligible; no queued/running/historical green result counts."
++    "budgets": "First LDB execution uses75min Linux job and45min capture; native build900s, normalHost600s preparation bounds and original product observation/identity deadlines remain. Renderer keeps its existing30min job boundary.",
++    "independence": "The focused Linux job calls the same capture directly after actual toolchain/native prerequisites/npm installation. Existing full-lane Node/setup and LocalExec capture no longer depend on an unrelated portable receipt. Every existing portable/palette assertion and failed historical result remains.",
++    "runtime_evidence_subject": "Only the final pushed and fully read-back H is eligible; no queued/running/historical green result counts.",
++    "selection": {
++      "scope": "ocrm-local-exec-runtime",
++      "push_prefix": "fix(ocrm-local-exec-runtime):",
++      "selected_jobs": [
++        "local-exec-runtime",
++        "renderer"
++      ],
++      "excluded_only_for_this_selection": [
++        "rust-host",
++        "config-restore-linux",
++        "sqlite-native-path",
++        "media-store-windows",
++        "pressure-profiler-platform",
++        "platform-worker"
++      ],
++      "existing_custody_scope": "Preserved as its owner's independent positive selection",
++      "normal_full": "Unchanged job bodies/requirements; explicit selected omission is never approval",
++      "shared_toolchains_cache": "Node24, Electron43.4.0, Rust1.97.1, existing desktop-restored-rust-1.97.1 Host/Box cache declaration; capture's normal Host/Coordinator builds share source/host/target",
++      "fixture_retention": "Exact precreated TMPDIR is archived on failed/cancelled capture; native work has a separate prebound root inside the existing evidence artifact and is tarred with hidden files without cleanup."
++    }
+   },
+   "historical_evidence": {
+     "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+     "renderer": "Build-input failure retained; actual ONP21proof remains scoped. Six protocol positives were not executed.",
+     "windows_assessment": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json",
+     "windows_limits": "23groups263positives,58LocalExec,97identityinputs; no transfer to changed LDB dependencies/build/startup",
+-    "linux_identity": "At the oldH the identity step was skipped; no LPI acceptance inferred."
++    "linux_identity": "At the oldH the identity step was skipped; no LPI acceptance inferred.",
++    "linux_assessment": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-linux-assessment.json",
++    "macos_assessment": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-macos-assessment.json",
++    "macos_limits": "Native23groups268/58LocalExec verified at oldH. WholejobDJC8s failed, later partial command projections do not replace full raw logs; all limits retained."
+   },
+   "failure_and_recovery": {
+     "build": "Missing/wrong dependency, header, ABI, patch, source or output membership fails closed. Do not accept a parser stub or unrelated native artifact.",
+     "publication": "Each native stage qualifies before publication; previous stage retained/restored on failed replacement. Cross-process native output reuse is disabled because compiler/SDK closure is not established.",
+     "owned_commands": "Exact child handles, close observation, bounded output/deadlines and retained owned failure directories. The existing Linux capture keeps unreaped session identity before group cleanup. No process-name or reused-PID cleanup.",
+-    "runtime": "Malformed generation or unavailable Node parser must fail before gateway registration. Successful startup alone does not settle file-publication uncertainty or arbitrary crash recovery."
++    "runtime": "Malformed generation, unavailable parser root, wrong domain or any mismatched runtime field fails before registration. Successful controlled startup does not establish real installed Electron launch, file-publication uncertainty or arbitrary crash recovery.",
++    "owned_build_evidence": "Before native build, capture/workflow binds one ordinary work-root identity on the stage filesystem; actual helper retains only its mkdtemp child on failure and never deletes unsettled files. The existing capture archives only its bound root including hidden headers/prior stage; renderer uses the same archive functions. Cleanup of successful exact build work occurs only after callback success. Archive success is not child quiescence or build success."
+   },
+   "accounting": {
+     "authority": "OCRM unique inventory/ledger/RTM",
+@@ -431,7 +505,7 @@
+     "source_inventory_not_rebased": true
+   },
+   "remaining": [
+-    "Exact-H source review and Actions build/native-load/protocol/startup evidence",
++    "Fresh focused source re-review and exact-H Actions install/build/native-load/protocol/startup evidence",
+     "Full legacy TypeScript executor/policy Rust migration including existing LocalLsExecutor traversal injection gap",
+     "Native publication outcome propagation LFP, full process-tree settlement and all remaining product scope",
+     "Real provider/channel/plugin/node/device and supported-platform installer/signing, UI/temporal/security/performance/soak, upgrade/rollback and existing Fabushi regression acceptance",
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 90d1adf2aa94673f689cbdd972864123ad19a160..f31a75373c4cee6965edcf9352d5b5739fb008df 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -19654,7 +19654,8 @@
+         "Host read media admission validates exact SHA256 and byte size against recorded provenance",
+         "Pruning filters rows referencing missing files, symbolic links, or hardlinks (nlink != 1)",
+         "NotFound and NotADirectory establish missing-path selection; all other inspection errors retain the original provenance snapshot and confer no read authority",
+-        "SC02 foreground invocation identities never reuse a live or retired registration; a reaped Child with unobserved workers cannot be replaced or erased by a later Capture/Stream sharing numeric PID data. Bounded stop retains unresolved foreground identity; this is not background-controller acceptance."
++        "SC02 foreground invocation identities never reuse a live or retired registration; a reaped Child with unobserved workers cannot be replaced or erased by a later Capture/Stream sharing numeric PID data. Bounded stop retains unresolved foreground identity; this is not background-controller acceptance.",
++        "SC02 exceptional streamed exits retain actual Child and started reader handles under the same invocation. Completed resources are observed after bounded cleanup or at existing ordinary/stream request boundaries; recovery never requires shutdown merely to release completed registrations, never removes pending inherited-pipe custody, and never changes an unknown execution outcome into success."
+       ],
+       "migration_rollback": "Retain uninspectable marker snapshots and fail closed at independent read/trust admission; never enable an HTML text fallback to bypass provenance. HHP-v2 adds no schema or persisted-state migration.",
+       "oracle_ids": [
+@@ -19772,7 +19773,10 @@
+         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
+         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
+         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
+-        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_handoff_retains_reused_pid_capture"
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_handoff_retains_reused_pid_capture",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+       ],
+       "typed_contracts": [
+         "validate_provenance_row",
+diff --git a/projects/openclaw-rust/scripts/capture_local_exec_identity.py b/projects/openclaw-rust/scripts/capture_local_exec_identity.py
+index 27a6aabaae3d5a80005742e29c5e10ce5f4414bb..ee01ed55d46866f64c156f9c7f0fd65601ea0f06 100644
+--- a/projects/openclaw-rust/scripts/capture_local_exec_identity.py
++++ b/projects/openclaw-rust/scripts/capture_local_exec_identity.py
+@@ -11,6 +11,7 @@
+ import shutil
+ import subprocess
+ import sys
++import tarfile
+ import time
+ 
+ 
+@@ -73,12 +74,16 @@
+     "LDB stock-only C++ patch checks both exact input and output identities",
+     "LDB owned child runner rejects spawn errors and nonzero close",
+     "LDB owned child deadline cleanup leaves an unrelated process alive",
+-    "LDB owned child runner waits for close without signaling an exited child"
++    "LDB owned child runner waits for close without signaling an exited child",
++    "LDB owned native build failure retains only its bound work root"
+ ]
+ STARTUP_NAMES = [
++    "ldb Host resolver preserves packaged development and explicit override mappings",
+     "ldb emitted daemon transfers bytes through real provider and retires owned discovery",
+     "ldb emitted daemon refuses mismatched generation before registration",
+     "ldb emitted daemon refuses missing configured Node parser domain without fallback",
++    "ldb emitted daemon refuses wrong-domain parser manifest before registration",
++    "ldb emitted daemon refuses mismatched parser runtime before registration",
+     "ldb Node event adapter preserves normalization reporter replacement and clearing"
+ ]
+ DIRECT_INPUTS = [
+@@ -101,6 +106,9 @@
+     "source/shared/rpc/coordinator-port.ts",
+     "source/shared/local-exec-process-identity.ts",
+     "source/electron-main/local-exec/local-exec-native.ts",
++    "source/electron-main/app-host-executable.ts",
++    "source/electron-main/coordinator/rust-coordinator-carrier.ts",
++    "source/packages/shell-exec/shell-parser.ts",
+     "source/host/local-exec/local-exec-daemon-protocol.ts",
+     "source/shared/node/mcp/mcp-result-factory.ts",
+ ]
+@@ -519,7 +527,10 @@ def all_bundle_inputs():
+             "source/host/local-exec/local-exec-native-file-access.ts",
+             "source/packages/shell-exec/shell-parser.ts",
+         }),
+-        "startup": bundle_inputs(STARTUP_BUNDLE, STARTUP_META, STARTUP_ENTRY, {STARTUP_ENTRY}),
++        "startup": bundle_inputs(STARTUP_BUNDLE, STARTUP_META, STARTUP_ENTRY, {
++            STARTUP_ENTRY, "source/electron-main/local-exec/local-exec-native.ts",
++            "source/electron-main/app-host-executable.ts",
++        }),
+     }
+ 
+ 
+@@ -597,6 +608,75 @@ def staged_inputs():
+     return result
+ 
+ 
++def bind_native_build_work(evidence_root):
++    """Create and bind one invocation-owned native work root before any build."""
++    root = evidence_root / "native-build-work"
++    root.mkdir(parents=False, exist_ok=False)
++    absolute = root.resolve(strict=True)
++    if root.is_symlink() or pathlib.Path(os.path.abspath(root)) != absolute:
++        raise ValueError("Native build work root traverses a symbolic link")
++    info = root.stat()
++    return {"path": root.as_posix(), "absolute_path": str(absolute),
++            "device": info.st_dev, "inode": info.st_ino}
++
++
++def retain_native_build_work(binding, evidence_root):
++    """Archive exactly the pre-bound root, including hidden headers, without cleanup."""
++    root = pathlib.Path(binding["absolute_path"])
++    if root.is_symlink() or root.resolve(strict=True) != root:
++        raise ValueError("Native build work root was redirected")
++    info = root.stat()
++    if (info.st_dev, info.st_ino) != (binding["device"], binding["inode"]) or not root.is_dir():
++        raise ValueError("Native build work root identity changed")
++    expected = (evidence_root / "native-build-work").resolve(strict=True)
++    if root != expected:
++        raise ValueError("Native build work root belongs to another invocation")
++    archive = evidence_root / "native-build-work.tar"
++    def admitted(member):
++        if not (member.isfile() or member.isdir() or member.issym() or member.islnk()):
++            raise ValueError("Unsupported native work member: " + member.name)
++        return member
++    # tar stores links as links and never reads their target. No broad glob or
++    # directory deletion is involved, even if command settlement is unresolved.
++    with tarfile.open(archive, "x", dereference=False) as retained:
++        retained.add(root, arcname="native-build-work", recursive=True, filter=admitted)
++    with tarfile.open(archive, "r") as retained:
++        members = len(retained.getmembers())
++    return {"binding": binding, "archive": digest(archive), "members": members,
++            "scope": "Snapshot of the exact owned work root, including hidden headers and retained prior stages. No child quiescence or successful native build is inferred from archival."}
++
++
++def qualify_native_build_retention():
++    """Qualify the archive instrument on real files, including a hidden member."""
++    evidence_root = ROOT / "native-retention-control"
++    evidence_root.mkdir(exist_ok=False)
++    binding = bind_native_build_work(evidence_root)
++    work = pathlib.Path(binding["absolute_path"])
++    hidden = work / "candidate" / ".headers" / "archive.tar.gz"
++    hidden.parent.mkdir(parents=True)
++    hidden.write_bytes(b"controlled header archive bytes")
++    prior = work / "previous" / "runtime.node"
++    prior.parent.mkdir()
++    prior.write_bytes(b"controlled previous native bytes")
++    peer = evidence_root / "unrelated-marker"
++    peer.write_bytes(b"unrelated retained peer")
++    retained = retain_native_build_work(binding, evidence_root)
++    with tarfile.open(evidence_root / "native-build-work.tar", "r") as archive:
++        if (archive.extractfile("native-build-work/candidate/.headers/archive.tar.gz").read() != hidden.read_bytes()
++                or archive.extractfile("native-build-work/previous/runtime.node").read() != prior.read_bytes()
++                or any("unrelated-marker" in member.name for member in archive.getmembers())):
++            raise ValueError("Owned native work archive lost or widened its members")
++    refused = False
++    try:
++        retain_native_build_work({**binding, "inode": binding["inode"] + 1}, evidence_root)
++    except ValueError:
++        refused = True
++    if not refused or peer.read_bytes() != b"unrelated retained peer" or not hidden.is_file() or not prior.is_file():
++        raise ValueError("Native work retention lost ownership or removed fixture bytes")
++    return {"accepted": True, "archive": retained, "wrong_identity_refused": refused,
++            "scope": "Instrument qualification only; no native compilation or product behavior claim."}
++
++
+ def retain_selected_products():
+     """Keep actual emitted bytes and native receipts; no synthetic replacement."""
+     products = [DAEMON_BUNDLE, DAEMON_META, DAEMON_MANIFEST,
+@@ -625,9 +705,14 @@ def main():
+         raise SystemExit("Executable verification is GitHub Actions-only.")
+     ROOT.mkdir(parents=True, exist_ok=False)
+     receipt = {"contract": "LPI-v1/LDB-v1", "result": "failed-or-incomplete", "executions": [],
+-               "scope": "Actual exact-H Rust Coordinator producer and TypeScript identity consumer, separately qualified Node/Electron parser stages, and emitted packaged-Node daemon through its real provider/executor and same-H Rust Host file helper. Controlled loopback transport exercises actual upload/download bytes, generation refusal, parser-domain refusal, discovery retirement and Node event adapter. Native fixture cases are structural evidence only. Not the Electron native launch adapter end-to-end, full shell/LS parity, physical providers/devices, final dependency legal acceptance, package/upgrade/rollback or global OCRM acceptance."}
++               "scope": "Actual exact-H Rust Coordinator producer and TypeScript identity consumer, separately qualified Node/Electron parser stages, and emitted packaged-Node daemon through its real provider/executor and same-H Rust Host file helper. Controlled loopback transport exercises actual upload/download bytes, generation refusal, parser-domain refusal, discovery retirement and Node event adapter. Native fixture cases are structural evidence only. The actual native launch adapter is exercised under ordinary Node with a controlled Electron resource context and the same-H staged Host. It does not establish real installed Electron launch end-to-end, full shell/LS parity, physical providers/devices, final dependency legal acceptance, package/upgrade/rollback or global OCRM acceptance."}
+     save(receipt)
+     try:
++        selected_scope = os.environ.get("OCRM_LOCAL_EXEC_SCOPE", "full-lane-local-exec")
++        if selected_scope not in ("full-lane-local-exec", "ocrm-local-exec-runtime"):
++            raise ValueError("Unknown LocalExec execution selection")
++        receipt["validation_scope"] = selected_scope
++        receipt["selection_limit"] = "Only the declared LPI/LDB commands are assessed. Unselected historical failures and unrelated full-workflow gates remain unaccepted."
+         if os.environ["RUNNER_OS"] != "Linux" or sys.platform != "linux":
+             raise ValueError("This selected cross-language instrument requires the Linux Actions job")
+         head = git("rev-parse", "HEAD").decode("ascii").strip()
+@@ -660,6 +745,11 @@ def main():
+         save(receipt)
+         if not receipt["oracle_qualification"]["accepted"]:
+             raise ValueError("LPI/LDB result oracle qualification failed")
++        receipt["active_case"] = "native-build-retention-qualification"
++        save(receipt)
++        receipt["native_build_retention_qualification"] = qualify_native_build_retention()
++        receipt["native_build_work"] = bind_native_build_work(ROOT)
++        save(receipt)
+         receipt["active_case"] = "owned-cleanup-qualification"
+         save(receipt)
+         receipt["cleanup_qualification"] = qualify_owned_cleanup()
+@@ -690,7 +780,11 @@ def main():
+         for label, command, timeout, assessor in planned:
+             receipt["active_case"] = label
+             save(receipt)
+-            result = run_command(label, command, timeout, assessor=assessor)
++            command_environment = None
++            if label == "typescript-bundle":
++                command_environment = dict(os.environ,
++                    FABUSHI_LOCAL_EXEC_BUILD_WORK_ROOT=receipt["native_build_work"]["absolute_path"])
++            result = run_command(label, command, timeout, environment=command_environment, assessor=assessor)
+             receipt["executions"].append(result)
+             save(receipt)
+             if not result["oracle_accepted"]:
+@@ -724,15 +818,17 @@ def main():
+                            FABUSHI_LOCAL_EXEC_DAEMON_TEST_ENTRY=str(DAEMON_BUNDLE.resolve(strict=True)),
+                            SAND_TREE_SITTER_NODE_DEPS=str(pathlib.Path("desktop/dist/node-deps").resolve(strict=True)))
+         for key in ("ELECTRON_RUN_AS_NODE", "TREE_SITTER_PREBUILD", "TREE_SITTER_BASH_PREBUILD",
+-                    "PREBUILDS_ONLY", "NODE_OPTIONS", "NODE_PATH"):
++                    "PREBUILDS_ONLY", "NODE_OPTIONS", "NODE_PATH", "MAHAYANA_APP_HOST_BIN",
++                    "SAND_SENTRY_ENVIRONMENT", "SAND_SENTRY_RELEASE"):
+             environment.pop(key, None)
+         receipt["test_environment"] = {
+             "FABUSHI_COORDINATOR_TEST_BIN": BINARY.as_posix(),
+             "FABUSHI_LOCAL_EXEC_HOST_TEST_BIN": HOST_BINARY.as_posix(),
+             "FABUSHI_LOCAL_EXEC_DAEMON_TEST_ENTRY": DAEMON_BUNDLE.as_posix(),
+             "SAND_TREE_SITTER_NODE_DEPS": "desktop/dist/node-deps",
+             "cleared": ["ELECTRON_RUN_AS_NODE", "TREE_SITTER_PREBUILD", "TREE_SITTER_BASH_PREBUILD",
+-                        "PREBUILDS_ONLY", "NODE_OPTIONS", "NODE_PATH"],
++                        "PREBUILDS_ONLY", "NODE_OPTIONS", "NODE_PATH", "MAHAYANA_APP_HOST_BIN",
++                        "SAND_SENTRY_ENVIRONMENT", "SAND_SENTRY_RELEASE"],
+         }
+         for label, command, timeout, names in behavior_cases:
+             receipt["active_case"] = label
+@@ -757,11 +853,19 @@ def main():
+                     and all(case["oracle_accepted"] for case in receipt["executions"])
+                     and receipt["inputs_unchanged"] and receipt["host_sources_unchanged"]
+                     and receipt["producer_unchanged"] and receipt["bundled_inputs_unchanged"]
+-                    and receipt["staged_inputs_unchanged"])
++                    and receipt["staged_inputs_unchanged"]
++                    and receipt["native_build_retention_qualification"]["accepted"])
+         receipt["result"] = "passed" if accepted else "failed-or-incomplete"
+         receipt.pop("active_case", None)
+-    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
++    except (OSError, ValueError, KeyError, TypeError, tarfile.TarError, subprocess.SubprocessError) as error:
+         receipt["capture_error"] = str(error)
++    finally:
++        if "native_build_work" in receipt:
++            try:
++                receipt["retained_native_build_work"] = retain_native_build_work(receipt["native_build_work"], ROOT)
++            except (OSError, ValueError, KeyError, TypeError, tarfile.TarError) as error:
++                receipt["native_build_retention_error"] = str(error)
++                receipt["result"] = "failed-or-incomplete"
+     save(receipt)
+     print(json.dumps(receipt, indent=2), flush=True)
+     return 0 if receipt["result"] == "passed" else 1
+diff --git a/source/electron-main/app-host-executable.ts b/source/electron-main/app-host-executable.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..1104a23662c9b85feb93174c36ec80bb53dd762f 100644
+--- /dev/null
++++ b/source/electron-main/app-host-executable.ts
+@@ -0,0 +1,24 @@
++import { join, resolve } from "node:path";
++
++export interface AppHostExecutableContext {
++  readonly platform: NodeJS.Platform;
++  readonly resourcesPath: string | undefined;
++  readonly moduleDirectory: string;
++}
++
++/** Pure mapping shared by the Electron main and Coordinator carrier boundaries. */
++export function resolveAppHostExecutable(
++  env: NodeJS.ProcessEnv,
++  context: AppHostExecutableContext,
++): string {
++  const override = env.MAHAYANA_APP_HOST_BIN;
++  if (override != null && override.trim().length > 0) return override;
++  const name = context.platform === "win32" ? "mahayana-app-host.exe" : "mahayana-app-host";
++  if (env.SAND_PACKAGED === "1") {
++    if (context.resourcesPath == null || context.resourcesPath.length === 0) {
++      throw new Error("Packaged App Host resolution requires Electron resourcesPath.");
++    }
++    return join(context.resourcesPath, "bin", name);
++  }
++  return resolve(context.moduleDirectory, "..", "..", "resources", "bin", name);
++}
+diff --git a/source/electron-main/coordinator/rust-coordinator-carrier.ts b/source/electron-main/coordinator/rust-coordinator-carrier.ts
+index 375a706177e9bfa7aa7c9bf591d6688887af12fb..a13abdbdf800f0b13fcf11e36898cbf5fbddabe3 100644
+--- a/source/electron-main/coordinator/rust-coordinator-carrier.ts
++++ b/source/electron-main/coordinator/rust-coordinator-carrier.ts
+@@ -2,6 +2,8 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+ import { createInterface } from "node:readline";
+ import { join, resolve } from "node:path";
+ 
++import { resolveAppHostExecutable } from "../app-host-executable.js";
++
+ type CarrierChannel =
+   | "coordinator-control"
+   | "coordinator-data"
+@@ -48,19 +50,6 @@ function coordinatorExecutablePath(): string {
+   return resolve(__dirname, "..", "..", "resources", "bin", coordinatorExecutableName());
+ }
+ 
+-function appHostExecutableName(): string {
+-  return process.platform === "win32" ? "mahayana-app-host.exe" : "mahayana-app-host";
+-}
+-
+-function appHostExecutablePath(): string {
+-  const override = process.env.MAHAYANA_APP_HOST_BIN;
+-  if (override != null && override.trim().length > 0) return override;
+-  if (process.env.SAND_PACKAGED === "1") {
+-    return join(process.resourcesPath, "bin", appHostExecutableName());
+-  }
+-  return resolve(__dirname, "..", "..", "resources", "bin", appHostExecutableName());
+-}
+-
+ function writeEnvelope(
+   child: ChildProcessWithoutNullStreams,
+   channel: CarrierChannel,
+@@ -122,7 +111,11 @@ utilityParentPort.once("message", (event) => {
+       stdio: ["pipe", "pipe", "pipe"],
+       env: {
+         ...process.env,
+-        MAHAYANA_APP_HOST_BIN: appHostExecutablePath(),
++        MAHAYANA_APP_HOST_BIN: resolveAppHostExecutable(process.env, {
++          platform: process.platform,
++          resourcesPath: process.resourcesPath,
++          moduleDirectory: __dirname,
++        }),
+       },
+       windowsHide: true,
+     },
+diff --git a/source/electron-main/local-exec/local-exec-native.ts b/source/electron-main/local-exec/local-exec-native.ts
+index 765703e12055721788514f51d90cc5cf311e2d18..93740da968c5918ffee0efa937bc06920b3e3da5 100644
+--- a/source/electron-main/local-exec/local-exec-native.ts
++++ b/source/electron-main/local-exec/local-exec-native.ts
+@@ -5,6 +5,8 @@ import { mkdir } from "node:fs/promises";
+ import { dirname, join } from "node:path";
+ import { fileURLToPath } from "node:url";
+ 
++import { resolveAppHostExecutable, type AppHostExecutableContext } from "../app-host-executable.js";
++
+ import { readLocalExecDaemonDiscovery } from "../../host/local-exec/local-exec-daemon-protocol.js";
+ import {
+   commandCarriesLocalExecGeneration,
+@@ -32,5 +34,46 @@ export class LocalExecTerminationTimeoutError extends Error { constructor(readon
+ export class LocalExecTerminationSignalError extends Error { constructor(readonly pid: number, readonly code: string | undefined, cause: unknown) { super(`local-exec process ${pid} could not be signalled${code == null ? "" : ` (${code})`}`, { cause }); this.name = "LocalExecTerminationSignalError"; } }
+ export async function waitForProcessExit(pid: number, deps: { readonly isAlive?: (pid: number) => boolean; readonly delay?: (ms: number) => Promise<void> } = {}): Promise<void> { const alive = deps.isAlive ?? isProcessAlive; const wait = deps.delay ?? delay; for (let attempt = 0; attempt < 40; attempt += 1) { if (!alive(pid)) return; await wait(100); } if (alive(pid)) throw new LocalExecTerminationTimeoutError(pid); }
+ export async function terminateProcess(pid: number, deps: { readonly kill?: typeof process.kill; readonly waitForExit?: (pid: number) => Promise<void>; readonly reportFailure?: (error: unknown) => void } = {}): Promise<void> { try { (deps.kill ?? process.kill.bind(process))(pid, "SIGTERM"); } catch (error) { const code = findSystemErrno(error); if (code === "ESRCH") return; (deps.reportFailure ?? ((failure) => reportLocalExecTerminationFailed(pid, failure)))(error); throw new LocalExecTerminationSignalError(pid, code, error); } await (deps.waitForExit ?? waitForProcessExit)(pid); }
+-export async function spawnLocalExecDaemon(args: { readonly logPath: string; readonly env: NodeJS.ProcessEnv; readonly mainPath?: string; readonly spawnImpl?: typeof spawn; readonly generationToken?: string; readonly realpath?: typeof realpathSync; readonly open?: typeof openSync; readonly close?: typeof closeSync }): Promise<SpawnedLocalExecDaemon> { await mkdir(dirname(args.logPath), { recursive: true }); const entryRealpath = resolveLocalExecDaemonEntryRealpath(args.mainPath ?? daemonMainPath(), args.realpath ?? realpathSync); const generationToken = args.generationToken ?? randomUUID(); if (generationToken.length === 0) throw new Error("local-exec generation token must not be empty"); const logFd = (args.open ?? openSync)(args.logPath, "a"); try { const child = (args.spawnImpl ?? spawn)(process.execPath, [entryRealpath, `${LOCAL_EXEC_GENERATION_TOKEN_ARG}${generationToken}`], { detached: true, stdio: ["ignore", logFd, logFd], env: { ...process.env, ...args.env, [LOCAL_EXEC_GENERATION_TOKEN_ENV]: generationToken } }); const spawnedAt = performance.now(); let spawnSucceeded = false; child.once("error", (error) => reportLocalExecSpawnFailed(error)); child.once("spawn", () => { spawnSucceeded = true; reportLocalExecSpawned(child.pid); }); child.once("exit", (exitCode, signal) => { if (spawnSucceeded) reportLocalExecExited({ ...(child.pid === undefined ? {} : { pid: child.pid }), exitCode, signal, uptimeMs: performance.now() - spawnedAt }); }); child.unref(); return { child, entryRealpath, generationToken }; } finally { (args.close ?? closeSync)(logFd); } }
++export async function spawnLocalExecDaemon(args: {
++  readonly logPath: string;
++  readonly env: NodeJS.ProcessEnv;
++  readonly mainPath?: string;
++  readonly spawnImpl?: typeof spawn;
++  readonly generationToken?: string;
++  readonly realpath?: typeof realpathSync;
++  readonly open?: typeof openSync;
++  readonly close?: typeof closeSync;
++  readonly appHostContext?: AppHostExecutableContext;
++}): Promise<SpawnedLocalExecDaemon> {
++  await mkdir(dirname(args.logPath), { recursive: true });
++  const entryRealpath = resolveLocalExecDaemonEntryRealpath(args.mainPath ?? daemonMainPath(), args.realpath ?? realpathSync);
++  const generationToken = args.generationToken ?? randomUUID();
++  if (generationToken.length === 0) throw new Error("local-exec generation token must not be empty");
++  const env: NodeJS.ProcessEnv = { ...process.env, ...args.env, [LOCAL_EXEC_GENERATION_TOKEN_ENV]: generationToken };
++  env.MAHAYANA_APP_HOST_BIN = resolveAppHostExecutable(env, args.appHostContext ?? {
++    platform: process.platform,
++    resourcesPath: process.resourcesPath,
++    moduleDirectory: dirname(fileURLToPath(import.meta.url)),
++  });
++  const logFd = (args.open ?? openSync)(args.logPath, "a");
++  try {
++    const child = (args.spawnImpl ?? spawn)(process.execPath, [entryRealpath, `${LOCAL_EXEC_GENERATION_TOKEN_ARG}${generationToken}`], {
++      detached: true,
++      stdio: ["ignore", logFd, logFd],
++      env,
++    });
++    const spawnedAt = performance.now();
++    let spawnSucceeded = false;
++    child.once("error", (error) => reportLocalExecSpawnFailed(error));
++    child.once("spawn", () => { spawnSucceeded = true; reportLocalExecSpawned(child.pid); });
++    child.once("exit", (exitCode, signal) => {
++      if (spawnSucceeded) reportLocalExecExited({
++        ...(child.pid === undefined ? {} : { pid: child.pid }),
++        exitCode, signal, uptimeMs: performance.now() - spawnedAt,
++      });
++    });
++    child.unref();
++    return { child, entryRealpath, generationToken };
++  } finally { (args.close ?? closeSync)(logFd); }
++}
+ export async function killLocalExecDaemon(discoveryPath: string, deps: { readonly expectedEntryRealpath?: string; readonly readIdentity?: typeof readProcessIdentity; readonly terminate?: (pid: number) => Promise<void>; readonly now?: () => number } = {}): Promise<void> { const existing = await readLocalExecDaemonDiscovery(discoveryPath); if (existing == null || existing.entryRealpath == null || existing.generationToken == null) return; const expectedEntryRealpath = deps.expectedEntryRealpath ?? realpathSync(daemonMainPath()); if (existing.entryRealpath !== expectedEntryRealpath) return; const observed = (deps.readIdentity ?? readProcessIdentity)(existing.pid); if (observed == null || !localExecDiscoveryTimeMatchesProcess(existing.startedAt, observed.startEpochMs, (deps.now ?? Date.now)()) || !commandCarriesLocalExecGeneration(observed.command, expectedEntryRealpath, existing.generationToken)) return; await (deps.terminate ?? terminateProcess)(existing.pid); }
+diff --git a/source/local-exec-daemon/startup.contract.test.ts b/source/local-exec-daemon/startup.contract.test.ts
+index df46305d1ea17c4d148893dda1f6c2cc303f1cc9..e935fef8fb0a1d5339eab83b89abf45c03234c4a 100644
+--- a/source/local-exec-daemon/startup.contract.test.ts
++++ b/source/local-exec-daemon/startup.contract.test.ts
+@@ -1,18 +1,22 @@
+ import assert from "node:assert/strict";
+ import { spawn, type ChildProcess } from "node:child_process";
+ import { createHash, randomUUID } from "node:crypto";
+-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
++import { createReadStream } from "node:fs";
++import { chmod, copyFile, cp, mkdir, mkdtemp, open, readFile, realpath, rm, writeFile } from "node:fs/promises";
+ import { createServer, type ServerResponse } from "node:http";
+ import type { Socket } from "node:net";
+ import { tmpdir } from "node:os";
+-import { dirname, join } from "node:path";
++import { dirname, join, resolve } from "node:path";
+ import { setTimeout as delay } from "node:timers/promises";
+ import test, { type TestContext } from "node:test";
+ 
+-// These contracts launch the emitted entry under ordinary Node with its explicit
+-// packaged-Node stage. Electron's ABI and native launch adapter have separate
+-// contracts. Never import main.ts into this test bundle: its entry guard would
+-// then see the test bundle's own import.meta.url and start a second daemon.
++import { resolveAppHostExecutable } from "../electron-main/app-host-executable.js";
++import { spawnLocalExecDaemon } from "../electron-main/local-exec/local-exec-native.js";
++
++// The byte-transfer contract uses the production native launcher and a controlled
++// Electron resource context, under ordinary Node with its explicit Node stage.
++// Real Electron ABI loading has separate contracts. Never import main.ts here:
++// its entry guard would see this bundle's URL and start a second daemon.
+ const STARTUP_TIMEOUT_MS = 10_000;
+ const CLOSE_TIMEOUT_MS = 5_000;
+ const OUTPUT_LIMIT_BYTES = 64 * 1024;
+@@ -66,13 +70,21 @@ class OwnedChild {
+   stderr = Buffer.alloc(0);
+   outputOverflow = false;
+ 
+-  constructor(args: readonly string[], env: NodeJS.ProcessEnv) {
+-    // Keep the actual child handle; no PID discovery or global process killing.
+-    // stdin is ignored, so no writable stdin/error ownership is left behind.
+-    this.child = spawn(process.execPath, [...args], {
++  static spawn(args: readonly string[], env: NodeJS.ProcessEnv): OwnedChild {
++    return new OwnedChild(spawn(process.execPath, [...args], {
+       env,
+       stdio: ["ignore", "pipe", "pipe"],
+-    });
++    }));
++  }
++
++  static fromNativeLaunch(child: ChildProcess, logPath: string): OwnedChild {
++    return new OwnedChild(child, logPath);
++  }
++
++  private constructor(child: ChildProcess, private readonly logPath?: string) {
++    // Keep the actual child handle, including the one returned by the production
++    // native launcher. No PID discovery or global process killing.
++    this.child = child;
+     this.child.on("error", (error: Error) => { this.spawnError = error; });
+     this.child.stdout?.on("error", (error: Error) => { this.spawnError ??= error; });
+     this.child.stderr?.on("error", (error: Error) => { this.spawnError ??= error; });
+@@ -98,14 +110,30 @@ class OwnedChild {
+       outcome: this.outcome,
+       spawnError: this.spawnError?.message,
+       outputOverflow: this.outputOverflow,
++      logPath: this.logPath,
+       stdout: this.stdout.toString("utf8"),
+       stderr: this.stderr.toString("utf8"),
+     });
+   }
+ 
++  private async captureNativeLog(): Promise<void> {
++    if (this.logPath === undefined) return;
++    const handle = await open(this.logPath, "r");
++    try {
++      const { size } = await handle.stat();
++      if (size > OUTPUT_LIMIT_BYTES) this.outputOverflow = true;
++      const bytes = Buffer.alloc(Math.min(size, OUTPUT_LIMIT_BYTES));
++      const { bytesRead } = await handle.read(bytes, 0, bytes.length, 0);
++      this.stderr = bytes.subarray(0, bytesRead);
++    } finally { await handle.close(); }
++  }
++
+   async waitForClose(timeoutMs = CLOSE_TIMEOUT_MS): Promise<ChildOutcome> {
+-    try { return await within(this.closed, timeoutMs, "owned child close"); }
+-    catch (error) { throw new Error(String(error) + "\n" + this.diagnostics()); }
++    try {
++      const outcome = await within(this.closed, timeoutMs, "owned child close");
++      await this.captureNativeLog();
++      return outcome;
++    } catch (error) { throw new Error(String(error) + "\n" + this.diagnostics()); }
+   }
+ 
+   signal(signal: NodeJS.Signals): void {
+@@ -273,15 +301,14 @@ async function createFixture() {
+       SAND_LOCAL_EXEC_ROOT: fileRoot,
+       SAND_LOCAL_EXEC_GENERATION_TOKEN: generation,
+       SAND_TREE_SITTER_NODE_DEPS: runtime.nodeStage,
+-      MAHAYANA_APP_HOST_BIN: runtime.host,
+       FABUSHI_LOCAL_EXEC_DAEMON_TEST_ENTRY: runtime.entry,
+     };
+     // Ordinary Node must not be misclassified as Electron by node-gyp-build.
+     // Exclude inherited native-loader, preload and external telemetry overrides.
+     for (const name of [
+       "ELECTRON_RUN_AS_NODE", "TREE_SITTER_PREBUILD", "TREE_SITTER_BASH_PREBUILD",
+       "PREBUILDS_ONLY", "NODE_OPTIONS", "NODE_PATH",
+-      "SAND_SENTRY_ENVIRONMENT", "SAND_SENTRY_RELEASE",
++      "SAND_SENTRY_ENVIRONMENT", "SAND_SENTRY_RELEASE", "MAHAYANA_APP_HOST_BIN",
+     ]) delete env[name];
+ 
+     return {
+@@ -296,6 +323,25 @@ async function createFixture() {
+ }
+ type Fixture = Awaited<ReturnType<typeof createFixture>>;
+ 
++async function sha256File(path: string): Promise<string> {
++  const hash = createHash("sha256");
++  for await (const chunk of createReadStream(path)) hash.update(chunk);
++  return hash.digest("hex");
++}
++
++async function stageFixtureHost(fixture: Fixture) {
++  const resourcesPath = join(fixture.directory, "resources");
++  const bin = join(resourcesPath, "bin");
++  const host = join(bin, process.platform === "win32" ? "mahayana-app-host.exe" : "mahayana-app-host");
++  await mkdir(bin, { recursive: true });
++  const sourceHash = await sha256File(fixture.runtime.host);
++  await copyFile(fixture.runtime.host, host);
++  if (process.platform !== "win32") await chmod(host, 0o755);
++  assert.equal(await sha256File(host), sourceHash, "staged Host must retain the same-H executable bytes");
++  assert.equal(await sha256File(fixture.runtime.host), sourceHash, "Host source must remain unchanged while staging");
++  return { resourcesPath, host, sha256: sourceHash };
++}
++
+ async function waitUntil(
+   fixture: Fixture,
+   child: OwnedChild,
+@@ -363,14 +409,56 @@ async function finishFixture(
+   if (cleanupError !== undefined) throw cleanupError;
+ }
+ 
++test("ldb Host resolver preserves packaged development and explicit override mappings", () => {
++  const root = resolve(tmpdir(), "ldb-host-path-contract");
++  const resourcesPath = join(root, "installed", "resources");
++  const moduleDirectory = join(root, "desktop", "dist", "electron-main");
++  for (const platform of ["darwin", "linux", "win32"] as const) {
++    const context = { platform, resourcesPath, moduleDirectory };
++    const name = platform === "win32" ? "mahayana-app-host.exe" : "mahayana-app-host";
++    assert.equal(resolveAppHostExecutable({ SAND_PACKAGED: "1" }, context), join(resourcesPath, "bin", name));
++    assert.equal(resolveAppHostExecutable({ SAND_PACKAGED: "0" }, context), join(root, "desktop", "resources", "bin", name));
++    assert.equal(resolveAppHostExecutable({}, {
++      ...context, moduleDirectory: join(root, "desktop", "dist", "node-agent-coordinator"),
++    }), join(root, "desktop", "resources", "bin", name), "carrier and main share development staging");
++    assert.equal(resolveAppHostExecutable({ SAND_PACKAGED: "1", MAHAYANA_APP_HOST_BIN: "  " }, context), join(resourcesPath, "bin", name));
++    const override = join(root, "developer host", name);
++    for (const packaged of ["0", "1"]) {
++      assert.equal(resolveAppHostExecutable({
++        SAND_PACKAGED: packaged, MAHAYANA_APP_HOST_BIN: override,
++      }, { ...context, resourcesPath: undefined }), override, "explicit developer override takes precedence");
++    }
++    assert.throws(() => resolveAppHostExecutable({ SAND_PACKAGED: "1" }, {
++      ...context, resourcesPath: undefined,
++    }), /requires Electron resourcesPath/, "packaged launch cannot fall back to development resources");
++  }
++});
++
+ test("ldb emitted daemon transfers bytes through real provider and retires owned discovery", { timeout: 90_000 }, async (t) => {
+   const fixture = await createFixture();
+   let child: OwnedChild | undefined;
+   let passed = false;
+   try {
+-    child = new OwnedChild([
+-      fixture.runtime.entry, "--sand-local-exec-generation=" + fixture.generation,
+-    ], fixture.env);
++    assert.equal(process.env.MAHAYANA_APP_HOST_BIN, undefined, "native launch must start without an inherited Host binding");
++    assert.equal(Object.hasOwn(fixture.env, "MAHAYANA_APP_HOST_BIN"), false, "fixture must not supply the Host binding");
++    const stagedHost = await stageFixtureHost(fixture);
++    const logPath = join(fixture.directory, "native-launch.log");
++    const launched = await spawnLocalExecDaemon({
++      logPath,
++      env: fixture.env,
++      mainPath: fixture.runtime.entry,
++      generationToken: fixture.generation,
++      appHostContext: {
++        platform: process.platform,
++        resourcesPath: stagedHost.resourcesPath,
++        moduleDirectory: join(fixture.directory, "dist", "electron-main"),
++      },
++    });
++    child = OwnedChild.fromNativeLaunch(launched.child, logPath);
++    assert.equal(launched.entryRealpath, fixture.runtime.entry);
++    assert.equal(launched.generationToken, fixture.generation);
++    assert.equal(process.env.MAHAYANA_APP_HOST_BIN, undefined, "binding stays in the child environment");
++    assert.equal(Object.hasOwn(fixture.env, "MAHAYANA_APP_HOST_BIN"), false, "launcher must not mutate caller environment");
+     await waitUntil(fixture, child, "matching discovery and real provider hello", async () => {
+       const discovery = await readDiscovery(fixture.discoveryPath);
+       return discovery !== undefined
+@@ -433,7 +521,10 @@ test("ldb emitted daemon transfers bytes through real provider and retires owned
+       assert.equal(fixture.gateway.received.filter(({ frame }) => frame.requestId === id).length, 1);
+     }
+     t.diagnostic(JSON.stringify({
+-      domain: "packaged-node", entry: fixture.runtime.entry, host: fixture.runtime.host,
++      domain: "packaged-node", entry: fixture.runtime.entry, host: stagedHost.host,
++      sourceHost: fixture.runtime.host, hostSha256: stagedHost.sha256,
++      resourcesPath: stagedHost.resourcesPath, hostBinding: "production-native-launch",
++      inheritedHostBinding: false, fixtureHostBinding: false, logPath,
+       nodeStage: fixture.runtime.nodeStage, pid: child.child.pid, generation: fixture.generation,
+       transferredBytes: bytes.length, sha256: hash, close: child.outcome,
+     }));
+@@ -446,7 +537,7 @@ test("ldb emitted daemon refuses mismatched generation before registration", { t
+   let child: OwnedChild | undefined;
+   let passed = false;
+   try {
+-    child = new OwnedChild([
++    child = OwnedChild.spawn([
+       fixture.runtime.entry, "--sand-local-exec-generation=" + fixture.generation + "-wrong",
+     ], fixture.env);
+     await child.waitForClose(STARTUP_TIMEOUT_MS);
+@@ -465,7 +556,7 @@ test("ldb emitted daemon refuses missing configured Node parser domain without f
+   let passed = false;
+   try {
+     const unavailableStage = join(fixture.directory, "unavailable-node-stage");
+-    child = new OwnedChild([
++    child = OwnedChild.spawn([
+       fixture.runtime.entry, "--sand-local-exec-generation=" + fixture.generation,
+     ], { ...fixture.env, SAND_TREE_SITTER_NODE_DEPS: unavailableStage });
+     await child.waitForClose(STARTUP_TIMEOUT_MS);
+@@ -482,6 +573,92 @@ test("ldb emitted daemon refuses missing configured Node parser domain without f
+   } finally { await finishFixture(t, fixture, child, passed); }
+ });
+ 
++async function copyQualifiedNodeStage(fixture: Fixture): Promise<{ root: string; manifest: JsonRecord }> {
++  const root = join(fixture.directory, "copied-node-stage");
++  await cp(fixture.runtime.nodeStage, root, { recursive: true, dereference: false, errorOnExist: true, force: false });
++  const original = await readFile(join(fixture.runtime.nodeStage, "local-exec-dependencies.json"), "utf8");
++  assert.equal(await readFile(join(root, "local-exec-dependencies.json"), "utf8"), original);
++  const manifest: unknown = JSON.parse(original);
++  assert.ok(isRecord(manifest));
++  assert.equal(manifest.contract, "LDB-v1");
++  assert.equal(manifest.domain, "node");
++  assert.deepEqual(manifest.runtime, {
++    version: process.versions.node, node: process.versions.node, modules: process.versions.modules,
++    platform: process.platform, arch: process.arch,
++  });
++  assert.ok(Array.isArray(manifest.native_outputs) && manifest.native_outputs.length === 2);
++  assert.deepEqual(manifest.native_outputs.map(output => {
++    assert.ok(isRecord(output) && typeof output.path === "string");
++    return output.path;
++  }).sort(), ["tree-sitter-bash/build/Release/tree_sitter_bash_binding.node",
++    "tree-sitter/build/Release/tree_sitter_runtime_binding.node"].sort());
++  for (const output of manifest.native_outputs) {
++    assert.ok(isRecord(output) && typeof output.path === "string" && typeof output.sha256 === "string");
++    assert.equal(await sha256File(join(root, output.path)), output.sha256, "copied native bytes retain their qualified identity");
++    assert.equal(await sha256File(join(fixture.runtime.nodeStage, output.path)), output.sha256, "original stage is unchanged");
++  }
++  return { root, manifest };
++}
++
++async function assertNoParserRegistration(fixture: Fixture, child: OwnedChild, stage: string, marker: string): Promise<void> {
++  await child.waitForClose(STARTUP_TIMEOUT_MS);
++  child.assertExit(1);
++  const error = child.stderr.toString("utf8");
++  for (const expected of ["SAND_TREE_SITTER_RUNTIME_UNAVAILABLE", "node dist/node-deps", stage, marker]) {
++    assert.ok(error.includes(expected), child.diagnostics());
++  }
++  assert.equal(await readDiscovery(fixture.discoveryPath), undefined);
++  assert.equal(fixture.gateway.requestStreams, 0);
++  assert.equal(fixture.gateway.responsePosts, 0);
++  assert.deepEqual(fixture.gateway.received, []);
++  assert.deepEqual(fixture.gateway.errors, []);
++}
++
++test("ldb emitted daemon refuses wrong-domain parser manifest before registration", { timeout: 30_000 }, async (t) => {
++  const fixture = await createFixture();
++  let child: OwnedChild | undefined;
++  let passed = false;
++  try {
++    const copied = await copyQualifiedNodeStage(fixture);
++    // Binaries and every other receipt field are still the qualified Node stage;
++    // an incidental Electron/Node ABI failure cannot decide this negative.
++    await writeFile(join(copied.root, "local-exec-dependencies.json"), JSON.stringify({ ...copied.manifest, domain: "electron" }));
++    child = OwnedChild.spawn([
++      fixture.runtime.entry, "--sand-local-exec-generation=" + fixture.generation,
++    ], { ...fixture.env, SAND_TREE_SITTER_NODE_DEPS: copied.root });
++    await assertNoParserRegistration(fixture, child, copied.root, "LDB-v1 stage domain mismatch");
++    passed = true;
++  } finally { await finishFixture(t, fixture, child, passed); }
++});
++
++test("ldb emitted daemon refuses mismatched parser runtime before registration", { timeout: 90_000 }, async (t) => {
++  const fixture = await createFixture();
++  let child: OwnedChild | undefined;
++  let passed = false;
++  try {
++    const copied = await copyQualifiedNodeStage(fixture);
++    assert.ok(isRecord(copied.manifest.runtime));
++    const runtime = copied.manifest.runtime;
++    const changes: Record<string, string> = {
++      version: "0.0.0", node: "0.0.0", modules: "0",
++      platform: process.platform === "linux" ? "darwin" : "linux",
++      arch: process.arch === "x64" ? "arm64" : "x64",
++    };
++    for (const [field, value] of Object.entries(changes)) {
++      assert.notEqual(runtime[field], value);
++      await writeFile(join(copied.root, "local-exec-dependencies.json"), JSON.stringify({
++        ...copied.manifest, runtime: { ...runtime, [field]: value },
++      }));
++      child = OwnedChild.spawn([
++        fixture.runtime.entry, "--sand-local-exec-generation=" + fixture.generation,
++      ], { ...fixture.env, SAND_TREE_SITTER_NODE_DEPS: copied.root });
++      await assertNoParserRegistration(fixture, child, copied.root, "LDB-v1 stage runtime mismatch (" + field + ")");
++      t.diagnostic("actual emitted-entry runtime refusal: " + field);
++    }
++    passed = true;
++  } finally { await finishFixture(t, fixture, child, passed); }
++});
++
+ // Require the emitted entry without an argv[1], so its direct-entry condition
+ // stays false. The callbacks below are the real process EventEmitter listeners;
+ // the probe never imports a source substitute or injects a provider/executor.
+@@ -545,7 +722,7 @@ test("ldb Node event adapter preserves normalization reporter replacement and cl
+   let child: OwnedChild | undefined;
+   let passed = false;
+   try {
+-    child = new OwnedChild(["-e", EVENT_ADAPTER_PROBE], fixture.env);
++    child = OwnedChild.spawn(["-e", EVENT_ADAPTER_PROBE], fixture.env);
+     await child.waitForClose(STARTUP_TIMEOUT_MS);
+     child.assertExit(0);
+     assert.equal(child.stdout.toString("utf8"), "LDB_EVENT_ADAPTER_OK\n");
+diff --git a/source/packages/shell-exec/shell-parser.ts b/source/packages/shell-exec/shell-parser.ts
+index 139844e853647dcbf78cffd38ea4d2f003b74c21..2457e2753d3d7a7f833dadad1bb34e0956973492 100644
+--- a/source/packages/shell-exec/shell-parser.ts
++++ b/source/packages/shell-exec/shell-parser.ts
+@@ -1,4 +1,4 @@
+-import { existsSync } from "node:fs";
++import { existsSync, lstatSync, readFileSync } from "node:fs";
+ import { createRequire } from "node:module";
+ import path from "node:path";
+ import { fileURLToPath, pathToFileURL } from "node:url";
+@@ -77,18 +77,59 @@ function loadDeveloperDependency<T>(name: string): T {
+   return runtimeRequire(localPath) as T;
+ }
+ 
++function isRuntimeManifestRecord(value: unknown): value is Record<string, unknown> {
++  return typeof value === "object" && value !== null && !Array.isArray(value);
++}
++
++function assertRuntimeDependencyStage(root: string): void {
++  const manifestPath = path.join(root, "local-exec-dependencies.json");
++  const manifest: unknown = JSON.parse(readFileSync(manifestPath, "utf8"));
++  if (!isRuntimeManifestRecord(manifest) || manifest.contract !== "LDB-v1") {
++    throw new Error("LDB-v1 stage manifest contract mismatch: " + manifestPath);
++  }
++
++  // ELECTRON_RUN_AS_NODE changes Electron's entry mode, not its native ABI.
++  // Use the running executable's identity, as the stage builder's probe does.
++  const domain = process.versions.electron !== undefined ? "electron" : "node";
++  if (manifest.domain !== domain) {
++    throw new Error("LDB-v1 stage domain mismatch in " + manifestPath + ": expected " + domain);
++  }
++  const actualRuntime = {
++    version: process.versions.electron ?? process.versions.node,
++    node: process.versions.node,
++    modules: process.versions.modules,
++    platform: process.platform,
++    arch: process.arch,
++  };
++  const runtime = manifest.runtime;
++  if (!isRuntimeManifestRecord(runtime) || Object.keys(runtime).length !== Object.keys(actualRuntime).length) {
++    throw new Error("LDB-v1 stage runtime identity is malformed: " + manifestPath);
++  }
++  for (const [field, expected] of Object.entries(actualRuntime)) {
++    if (typeof expected !== "string" || expected.length === 0 || runtime[field] !== expected) {
++      throw new Error("LDB-v1 stage runtime mismatch (" + field + ") in " + manifestPath + ": expected " + expected);
++    }
++  }
++  // Full input/output qualification belongs to the desktop build/checker.
++  // This consumer only admits its declared domain and exact running runtime.
++}
++
+ function loadRuntimeDependency<T>(name: string): T {
+   const roots = runtimeDependencyRoots();
+   if (process.env.SAND_PACKAGED !== "1" && roots.length === 0) return loadDeveloperDependency<T>(name);
+ 
+   for (const root of roots) {
+-    const packageDirectory = path.join(root, name);
+-    if (!existsSync(path.join(packageDirectory, "package.json"))) continue;
+     try {
++      if (lstatSync(root, { throwIfNoEntry: false }) === undefined) continue;
++      assertRuntimeDependencyStage(root);
++      const packageDirectory = path.join(root, name);
++      if (!existsSync(path.join(packageDirectory, "package.json"))) {
++        throw new Error("LDB-v1 stage is missing package " + name + ": " + root);
++      }
+       return runtimeRequire(packageDirectory) as T;
+     } catch (cause: unknown) {
+-      // A native load failure is terminal; never retry another ABI domain or
+-      // the developer's root node_modules.
++      // A selected stage's manifest, package or native load failure is terminal;
++      // never retry another stage or the developer's root node_modules.
+       throw runtimeDependencyError(name, roots, cause);
+     }
+   }

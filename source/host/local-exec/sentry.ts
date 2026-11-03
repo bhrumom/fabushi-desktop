@@ -1,4 +1,4 @@
-import type { ProcessCrashKind } from "../process-crash-guard.js";
+import type { ProcessCrashKind } from "../../local-exec-daemon/main.js";
 import { SAND_SENTRY_DSN, SandSentryPrivacyGate, gateEnvelopeSend, type SandSentryEnvelope } from "../../shared/observability/sentry.js";
 
 interface SentryTransport { send(envelope: SandSentryEnvelope): Promise<unknown>; readonly [key: string]: unknown; }

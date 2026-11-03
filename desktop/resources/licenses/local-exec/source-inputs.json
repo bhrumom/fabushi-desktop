@@ -1,0 +1,250 @@
+{
+  "contract": "LDB-v1-legal-inputs",
+  "purpose": "Pinned source and notice identity for the existing LocalExec build. OCRM inventory/ledger/RTM remain the sole progress and acceptance authority.",
+  "reference": {
+    "repository": "b-nnett/grok-bot-0.18-reconstructed",
+    "commit": "a9f633e09d49a85829b8236331b9e21f7e612634",
+    "package_blob": "7606d112bb38b3ab1e2a749e2e178ecd3ba11a65",
+    "lock_blob": "18cf139bff7d97bf4f568d8382edd6e57d5bf8a7"
+  },
+  "packages": [
+    {
+      "name": "iconv-lite",
+      "version": "0.7.0",
+      "resolved": "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.7.0.tgz",
+      "integrity": "sha512-cf6L2Ds3h57VVmkZe+Pn+5APsT7FpqJtEhhieDCvrE2MK5Qk9MyffgQyuxQTm6BChfeZNtcOLHp9IcWRVcIcBQ==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "iconv-lite/LICENSE",
+          "repository": "pillarjs/iconv-lite",
+          "commit": "165af7178c9c0bdd05623cfdd2f96cb526ca0a5a",
+          "path": "LICENSE",
+          "git_blob": "d518d8376af9faa47af875d83c8cdd51a11f9099",
+          "bytes": 1064,
+          "sha256": "ac779f7314c74f232ef847ea86e714abe25cf6eeb5cc97b69451b74e2af6492d"
+        }
+      ]
+    },
+    {
+      "name": "ignore",
+      "version": "7.0.5",
+      "resolved": "https://registry.npmjs.org/ignore/-/ignore-7.0.5.tgz",
+      "integrity": "sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "ignore/LICENSE-MIT",
+          "repository": "kaelzhang/node-ignore",
+          "commit": "84d052ddfe7c326b01b306154e06709d6e7e2ed8",
+          "path": "LICENSE-MIT",
+          "git_blob": "825533e337fa1d8e6fccfe70318c4abf52600d25",
+          "bytes": 1095,
+          "sha256": "9c94db23dc4b1e9aaee5d195668b916afc71efed54af226b66cf0ccc4389c1c0"
+        }
+      ]
+    },
+    {
+      "name": "jschardet",
+      "version": "3.1.4",
+      "resolved": "https://registry.npmjs.org/jschardet/-/jschardet-3.1.4.tgz",
+      "integrity": "sha512-/kmVISmrwVwtyYU40iQUOp3SUPk2dhNCMsZBQX0R1/jZ8maaXJ/oZIzUOiyOqcgtLnETFKYChbJ5iDC/eWmFHg==",
+      "declared_license": "LGPL-2.1+",
+      "inspected_source_artifacts": [
+        {
+          "file": "jschardet/LICENSE",
+          "repository": "aadsm/jschardet",
+          "commit": "9c59b6e388ddcdf8708a06da2411f88cc5d294c3",
+          "path": "LICENSE",
+          "git_blob": "19e307187ac8b9abc086be686dc81b0f09523ef1",
+          "bytes": 26461,
+          "sha256": "9b872a8a070b8ad329c4bd380fb1bf0000f564c75023ec8e1e6803f15364b9e9"
+        },
+        {
+          "file": "jschardet/CONTRIBUTORS",
+          "repository": "aadsm/jschardet",
+          "commit": "9c59b6e388ddcdf8708a06da2411f88cc5d294c3",
+          "path": "CONTRIBUTORS",
+          "git_blob": "67c674590dbc3f54c52733040f7d3c00128285b4",
+          "bytes": 230,
+          "sha256": "04e509a92a49f81f44c53f717915aeada832ed7b53dac118332ee315ab88eb69"
+        }
+      ]
+    },
+    {
+      "name": "re2js",
+      "version": "1.2.2",
+      "resolved": "https://registry.npmjs.org/re2js/-/re2js-1.2.2.tgz",
+      "integrity": "sha512-xvy4uuynAZWg9SuHbg0lgQncOuK6wssLmbHs8L8+YRbWLKY8Pe1avaHjNaFLOjErq8Oh0HvwQRWqIOCRL7uDDw==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "re2js/LICENSE",
+          "repository": "le0pard/re2js",
+          "commit": "86633215ee18d7ee51d22f42174c40d5050ef4ca",
+          "path": "LICENSE",
+          "git_blob": "4fc0dfc1b18b538f2ef218267b2d992610974b05",
+          "bytes": 1072,
+          "sha256": "46b087b030414ec0af1adfd5940c72eaf67d2610bb8f71269b841c7601936b83"
+        }
+      ]
+    },
+    {
+      "name": "tree-sitter",
+      "version": "0.21.1",
+      "resolved": "https://registry.npmjs.org/tree-sitter/-/tree-sitter-0.21.1.tgz",
+      "integrity": "sha512-7dxoA6kYvtgWw80265MyqJlkRl4yawIjO7S5MigytjELkX43fV2WsAXzsNfO7sBpPPCF5Gp0+XzHk0DwLCq3xQ==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "tree-sitter/LICENSE",
+          "repository": "tree-sitter/node-tree-sitter",
+          "commit": "bbdba663dc0b8487f1212524a83a7c39e8a5c3ca",
+          "path": "LICENSE",
+          "git_blob": "e71ac4498bdeec6e3193f9634371860d14696958",
+          "bytes": 1078,
+          "sha256": "d39420a108609f487bece31800015cccabdb531fee4d543d66595459b3812d9a"
+        },
+        {
+          "file": "tree-sitter/vendor/LICENSE",
+          "repository": "tree-sitter/tree-sitter",
+          "commit": "62cd13a3defd7ca8319c98321d447c088407fbe5",
+          "path": "LICENSE",
+          "git_blob": "451fe1d26ee6043ac94f6c8a81a6143f17748b4d",
+          "bytes": 1085,
+          "sha256": "5f9cf9fb6acb1972b35ae29119ce563bb60ec097656bc4b69b9bac2d04c7a147"
+        },
+        {
+          "file": "tree-sitter/vendor/unicode/LICENSE",
+          "repository": "tree-sitter/tree-sitter",
+          "commit": "62cd13a3defd7ca8319c98321d447c088407fbe5",
+          "path": "lib/src/unicode/LICENSE",
+          "git_blob": "2e01e368768a4b992e22f98c05ead747134492a6",
+          "bytes": 21001,
+          "sha256": "6a18c5fac70d7860b57f5b72b4e2c9a1ba6b3d2741eef7ff9767c5379364f10d"
+        }
+      ]
+    },
+    {
+      "name": "tree-sitter-bash",
+      "version": "0.21.0",
+      "resolved": "https://registry.npmjs.org/tree-sitter-bash/-/tree-sitter-bash-0.21.0.tgz",
+      "integrity": "sha512-UuXf+wliu1mmS/O2Iz7OQghExM4a+lk+GaVPndZVpAJnFuzanaN33UcHOsrmngHxaOXHz5JSZrwp6i2qM/PKag==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "tree-sitter-bash/LICENSE",
+          "repository": "tree-sitter/tree-sitter-bash",
+          "commit": "f3f26f47a126797c011c311cec9d449d855c3eab",
+          "path": "LICENSE",
+          "git_blob": "aa9f858db5722d9576104726471b11cc0e31f131",
+          "bytes": 1080,
+          "sha256": "49bf33cf78ef5897e4e161ce1517df7de1ae5042a65b6bcfd44401e0fc606559"
+        }
+      ]
+    },
+    {
+      "name": "safer-buffer",
+      "version": "2.1.2",
+      "resolved": "https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz",
+      "integrity": "sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "safer-buffer/LICENSE",
+          "repository": "ChALkeR/safer-buffer",
+          "commit": "e8ac214944eda30e1e6c6b7d7e7f6a21cf7dce7c",
+          "path": "LICENSE",
+          "git_blob": "4fe9e6f10036e619c2407f08ead54802bbfbcbd1",
+          "bytes": 1094,
+          "sha256": "4bc935e71be198c67ddf3c2b5fddb195f6edc182bfc155a96a6db61b44b494b9"
+        }
+      ]
+    },
+    {
+      "name": "node-addon-api",
+      "version": "8.5.0",
+      "resolved": "https://registry.npmjs.org/node-addon-api/-/node-addon-api-8.5.0.tgz",
+      "integrity": "sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "node-addon-api/LICENSE.md",
+          "repository": "nodejs/node-addon-api",
+          "commit": "6babc960154752f686a7dca8e712991a976a754b",
+          "path": "LICENSE.md",
+          "git_blob": "819d91a5bd799be3e9444acc9dd1ebe6ee5de529",
+          "bytes": 1150,
+          "sha256": "89024017b88a9f2b763f79b941a4f2db3b4428edfcacdc0b23866b2da633ad0c"
+        }
+      ]
+    },
+    {
+      "name": "node-gyp-build",
+      "version": "4.8.4",
+      "resolved": "https://registry.npmjs.org/node-gyp-build/-/node-gyp-build-4.8.4.tgz",
+      "integrity": "sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "node-gyp-build/LICENSE",
+          "repository": "prebuild/node-gyp-build",
+          "commit": "6822ec52423a2b3ed48ef8960a9fe05902e9e1a3",
+          "path": "LICENSE",
+          "git_blob": "56fce0895e13ffe83650a7274d79fbcfb80d3e2f",
+          "bytes": 1079,
+          "sha256": "7b3638496004b2daed183a91c4ba45d3ef6331db6c9d0eb1dd882a505630c172"
+        }
+      ]
+    },
+    {
+      "name": "web-tree-sitter",
+      "version": "0.21.0",
+      "resolved": "https://registry.npmjs.org/web-tree-sitter/-/web-tree-sitter-0.21.0.tgz",
+      "integrity": "sha512-iJ+QJ6ikN9D9cG7Kh6q3KtAstYFUQbYZ8OjuPEJYWfj2kLrmp5I3C2n6WjE1Y3jvj7nJbkcrJytJGWUEhCxn+g==",
+      "declared_license": "MIT",
+      "inspected_source_artifacts": [
+        {
+          "file": "web-tree-sitter/LICENSE",
+          "repository": "tree-sitter/tree-sitter",
+          "commit": "a5b7c2a584368fcba666dccdbc392df31aebd036",
+          "path": "LICENSE",
+          "git_blob": "3f674119a0383059cbb8a76fca55ccda9e6238dd",
+          "bytes": 1085,
+          "sha256": "70693cc2aedfa6505ddb40c4e5d6c5edf9ed58fc50c697c4065a49f834fca5ac"
+        }
+      ]
+    }
+  ],
+  "special_inputs": [
+    {
+      "package": "tree-sitter",
+      "path": "vendor/tree-sitter",
+      "kind": "gitlink",
+      "repository": "tree-sitter/tree-sitter",
+      "commit": "62cd13a3defd7ca8319c98321d447c088407fbe5",
+      "notes": "Retain vendor root and complete Unicode/ICU notices in addition to npm root MIT license."
+    },
+    {
+      "package": "web-tree-sitter",
+      "repository": "tree-sitter/tree-sitter",
+      "commit": "a5b7c2a584368fcba666dccdbc392df31aebd036",
+      "package_path": "lib/binding_web/package.json",
+      "package_blob": "7710dfb62d0ef57a442e3be8e0ba5442e6fc1c2e",
+      "notes": "Publishing-fix commit declares 0.21.0; the v0.21.0 tag's web package still declares 0.20.9. Frozen npm integrity is the archive byte authority; generated JS/WASM/source correspondence remains separate evidence."
+    }
+  ],
+  "jschardet_distribution": {
+    "module": "dist/node_modules/jschardet",
+    "separately_loaded": true,
+    "source": "Complete unmodified installed package, including source, interface, scripts, dist, LICENSE and CONTRIBUTORS; enumerate and hash every acquired file in the build manifest.",
+    "runtime_replacement": "No startup runtime hash prohibition is introduced. The build checker verifies original candidate artifacts; the emitted daemon uses the ordinary separate module loader.",
+    "acceptance": "Actual npm archive membership, generated output/source correspondence, packaged replacement/source availability and final legal acceptance are not established by this record."
+  },
+  "review": {
+    "depth": "contract",
+    "scope": "Exact frozen dependency nodes, unchanged actual consumers, runtime-domain loader/build/patch controls and primary legal/source artifacts.",
+    "source_full_read_claim": false,
+    "execution": "not-run in this source record"
+  }
+}

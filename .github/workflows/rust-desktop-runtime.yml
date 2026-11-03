@@ -17,6 +17,7 @@ on:
           - ocrm-config
           - ocrm-mcp-native
           - ocrm-custody-recovery
+          - ocrm-local-exec-runtime
   push:
     branches:
       - main
@@ -75,7 +76,7 @@ concurrency:
 
 jobs:
   rust-host:
-    if: ${{ (!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
+    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -3195,7 +3196,7 @@ jobs:
           retention-days: 90
 
   config-restore-linux:
-    if: ${{ (!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
+    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
     name: OCRM installation key restore boundary / Linux
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -3356,9 +3357,11 @@ jobs:
           retention-days: 90
 
   sqlite-native-path:
-    if: ${{ (!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
+    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    # LDB adds two native domains and normal Host/Coordinator builds; existing
+    # product observation deadlines and failure assertions remain unchanged.
+    timeout-minutes: 75
     env:
       CARGO_TERM_COLOR: never
       CARGO_BUILD_JOBS: '2'
@@ -3708,15 +3711,17 @@ jobs:
         run: |
           set -euo pipefail
           python3 projects/openclaw-rust/scripts/capture_portable_contracts.py
-      - name: Set up Node for the same-subject palette consumer
-        if: ${{ steps.channel_pending_recovery.outcome == 'success' }}
+      - name: Set up Node for the same-subject palette and LocalExec consumers
+        id: desktop_node
+        if: ${{ always() && steps.native_paths.outcome == 'success' }}
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: desktop/package-lock.json
-      - name: Install existing desktop dependencies for palette contracts
-        if: ${{ steps.channel_pending_recovery.outcome == 'success' }}
+      - name: Install existing desktop dependencies for palette and LocalExec contracts
+        id: desktop_dependencies
+        if: ${{ always() && steps.native_paths.outcome == 'success' && steps.desktop_node.outcome == 'success' }}
         timeout-minutes: 10
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Consume actual Rust message results and typecheck the production palette
@@ -4627,10 +4632,10 @@ jobs:
           print(json.dumps(receipt, indent=2), flush=True)
           raise SystemExit(0 if accepted else 1)
           PY
-      - name: Test actual Coordinator native process identity wire
+      - name: Test actual Coordinator identity and selected LocalExec daemon
         id: local_exec_identity
-        if: ${{ always() && steps.native_paths.outcome == 'success' && steps.channel_pending_recovery.outcome == 'success' }}
-        timeout-minutes: 12
+        if: ${{ always() && steps.native_paths.outcome == 'success' && steps.desktop_dependencies.outcome == 'success' }}
+        timeout-minutes: 45
         env:
           TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
           CARGO_BUILD_JOBS: '1'
@@ -4654,7 +4659,7 @@ jobs:
           retention-days: 90
 
   media-store-windows:
-    if: ${{ (!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
+    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
     name: OCRM media cleanup / Windows
     runs-on: windows-2025
     timeout-minutes: 45
@@ -4701,7 +4706,7 @@ jobs:
           retention-days: 90
 
   pressure-profiler-platform:
-    if: ${{ ((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
+    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
     name: Pressure profiler / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -4757,7 +4762,7 @@ jobs:
           -- --exact --nocapture
 
   platform-worker:
-    if: ${{ ((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) }}
+    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):')))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -4801,7 +4806,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      OCRM_PLUGIN_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'ocrm-config' || inputs.validation_scope == 'ocrm-mcp-native')) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && 'true' || 'false' }}
+      OCRM_PLUGIN_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'ocrm-config' || inputs.validation_scope == 'ocrm-mcp-native' || inputs.validation_scope == 'ocrm-local-exec-runtime')) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -4852,7 +4857,13 @@ jobs:
               "desktop/resources/licenses/openclaw/.gitattributes",
               "desktop/scripts/check-electron-runtime-bundle.mjs",
               "desktop/scripts/openclaw-notice.contract.test.mjs",
+              "desktop/scripts/build-local-exec-dependencies.mjs",
+              "desktop/scripts/local-exec-dependencies.fixture.mjs",
+              "desktop/package-lock.json",
           ]
+          inputs.extend(path for path in subprocess.check_output(
+              ["git", "ls-files", "-z", "--", "desktop/resources/licenses/local-exec"],
+              text=True).split("\0") if path)
           required = [
               'onp_real_notice_only_uses_locked_source_and_common_mapping',
               'onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts',
@@ -4889,7 +4900,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command} for label, command in cases],
               "required_tests": required, "executions": [], "result": "failed-or-incomplete",
-              "scope": "Actual locked source notice and common electron-builder mapping plus the real checker CLI over owned byte-preserved fixtures. Negative controls cover source/lock/mapping/options, competing common/platform resource writers and packaged-resource validation; default runtime assertions are retained. Actual isolated Git autocrlf checkout consumes the tracked narrow attribute, with an independent no-attribute byte-conversion refusal control. Fixture Resources are not a signed installer or actual packaged artifact. Actual macOS/Windows/Linux packages, signing, complete recursive legal provenance and full migration acceptance remain open."}
+              "scope": "Actual locked source notice and common electron-builder mapping plus the real checker CLI over owned byte-preserved fixtures. Negative controls cover source/lock/mapping/options, competing common/platform resource writers and packaged-resource validation; default runtime assertions are retained. The complete runtime fixture now includes the selected LocalExec entry and explicit synthetic native domains; seven added mutations reject wrong entry, changed bundle, missing actual consumer, wrong domain, changed native bytes, undeclared library files and changed source notices. These structural fixtures do not execute native code. Actual isolated Git autocrlf checkout consumes the tracked narrow attribute, with an independent no-attribute byte-conversion refusal control. Fixture Resources are not a signed installer or actual packaged artifact. Actual macOS/Windows/Linux packages, signing, complete recursive legal provenance and full migration acceptance remain open."}
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           for label, command in cases:
               log_path = root / (label + ".log")
@@ -4938,7 +4949,77 @@ jobs:
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Build Grok-shaped Electron runtime
         id: mab_shipping_electron_build
-        run: npm --prefix desktop run build:electron -- --plugin-skills-contracts
+        env:
+          FABUSHI_LOCAL_EXEC_BUILD_WORK_ROOT: ${{ github.workspace }}/.evidence/ocrm-local-exec-native-build/native-build-work
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, importlib.util, json, os, pathlib, subprocess
+          source = pathlib.Path("projects/openclaw-rust/scripts/capture_local_exec_identity.py")
+          spec = importlib.util.spec_from_file_location("ldb_capture", source)
+          capture = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(capture)
+          root = pathlib.Path(".evidence/ocrm-local-exec-native-build")
+          root.mkdir(parents=True, exist_ok=False)
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"], "LDB native build subject mismatch"
+          binding = capture.bind_native_build_work(root)
+          assert binding["absolute_path"] == os.environ["FABUSHI_LOCAL_EXEC_BUILD_WORK_ROOT"]
+          paths = [".github/workflows/rust-desktop-runtime.yml", str(source),
+              "desktop/scripts/build-electron-runtime.mjs", "desktop/scripts/build-local-exec-dependencies.mjs",
+              "desktop/package.json", "desktop/package-lock.json", "projects/openclaw-rust/upstream.lock.json"]
+          inputs = {}
+          for path in paths:
+              raw = pathlib.Path(path).read_bytes()
+              assert raw == subprocess.check_output(["git", "show", f"{head}:{path}"]), path
+              inputs[path] = {"git_blob": subprocess.check_output(["git", "rev-parse", f"{head}:{path}"], text=True).strip(),
+                  "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+          receipt = {"contract": "LDB-v1-native-build-work", "subject_commit": head,
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "binding": binding, "inputs_before": inputs,
+              "result": "bound-before-build; execution pending"}
+          (root / "binding.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          PY
+          npm --prefix desktop run build:electron -- --plugin-skills-contracts
+      - name: Retain exact owned LocalExec native build work
+        if: ${{ always() && steps.mab_shipping_electron_build.outcome != 'skipped' }}
+        env:
+          LDB_BUILD_STEP_OUTCOME: ${{ steps.mab_shipping_electron_build.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, importlib.util, json, os, pathlib
+          source = pathlib.Path("projects/openclaw-rust/scripts/capture_local_exec_identity.py")
+          spec = importlib.util.spec_from_file_location("ldb_capture", source)
+          capture = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(capture)
+          root = pathlib.Path(".evidence/ocrm-local-exec-native-build")
+          receipt = json.loads((root / "binding.json").read_text())
+          receipt["build_step_outcome"] = os.environ["LDB_BUILD_STEP_OUTCOME"]
+          assert receipt["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+          receipt["retained_work"] = capture.retain_native_build_work(receipt["binding"], root)
+          receipt["inputs_after_sha256"] = {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+              for path in receipt["inputs_before"]}
+          receipt["source_unchanged"] = all(receipt["inputs_after_sha256"][path] == value["sha256"]
+              for path, value in receipt["inputs_before"].items())
+          receipt["result"] = "owned work archived; build outcome retained separately"
+          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2), flush=True)
+          assert receipt["source_unchanged"], "Native build changed a causal source input"
+          PY
+      - name: Upload selected LocalExec native build evidence
+        if: ${{ always() && steps.mab_shipping_electron_build.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-local-exec-native-build-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .evidence/ocrm-local-exec-native-build/binding.json
+            .evidence/ocrm-local-exec-native-build/receipt.json
+            .evidence/ocrm-local-exec-native-build/native-build-work.tar
+          if-no-files-found: error
+          retention-days: 90
       - name: Test Plugin Skills, model settings bridge and routed MCP carrier
         env:
           FABUSHI_COORDINATOR_CARRIER_ARTIFACT: ${{ github.workspace }}/desktop/dist/node-agent-coordinator/main.cjs
@@ -4960,7 +5041,7 @@ jobs:
         shell: bash
         env:
           PLUGIN_EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          DESKTOP_VALIDATION_SCOPE: ${{ inputs.validation_scope || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) && 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && 'ocrm-config') || 'full' }}
+          DESKTOP_VALIDATION_SCOPE: ${{ inputs.validation_scope || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) && 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):') && 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && 'ocrm-config') || 'full' }}
         run: |
           mkdir -p .evidence
           python3 - <<'PY'
@@ -5480,7 +5561,7 @@ jobs:
           root.mkdir(parents=True, exist_ok=False)
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           assert head == os.environ["LXO_EXPECTED_SHA"], "LXO protocol subject mismatch"
-          paths = [".github/workflows/rust-desktop-runtime.yml","projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md","projects/openclaw-rust/upstream.lock.json","desktop/package.json","desktop/package-lock.json","desktop/scripts/build-electron-runtime.mjs","source/local-exec-daemon/production-outcome.contract.test.ts","source/local-exec-daemon/production-executor.ts","source/host/local-exec/local-exec-provider.ts","source/host/local-exec/local-exec-machine.ts","source/host/local-exec/local-exec-native-file-access.ts","source/shared/local-exec-gateway.ts","source/packages/agent-exec/controlled.ts","source/packages/context/core.ts","source/packages/utils/writable-iterable.ts","source/packages/proto/generated/agent/v1/exec_pb.ts","source/packages/proto/generated/agent/v1/agent_service_pb.ts","source/packages/proto/generated/agent/v1/shell_exec_pb.ts","source/packages/local-exec/background-shell.ts","source/packages/local-exec/background-shell-lifecycle.ts"]
+          paths = [".github/workflows/rust-desktop-runtime.yml","projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md","projects/openclaw-rust/upstream.lock.json","desktop/package.json","desktop/package-lock.json","desktop/scripts/build-electron-runtime.mjs","source/local-exec-daemon/production-outcome.contract.test.ts","source/local-exec-daemon/production-executor.ts","source/host/local-exec/local-exec-provider.ts","source/host/local-exec/local-exec-machine.ts","source/host/local-exec/local-exec-native-file-access.ts","source/shared/local-exec-gateway.ts","source/packages/agent-exec/controlled.ts","source/packages/context/core.ts","source/packages/utils/writable-iterable.ts","source/packages/proto/generated/agent/v1/exec_pb.ts","source/packages/proto/generated/agent/v1/agent_service_pb.ts","source/packages/proto/generated/agent/v1/shell_exec_pb.ts","source/packages/local-exec/background-shell.ts","source/packages/local-exec/background-shell-lifecycle.ts","desktop/scripts/build-local-exec-dependencies.mjs","source/packages/shell-exec/shell-parser.ts","source/packages/local-exec/read.ts","source/packages/utils/encoding.ts","source/packages/local-exec/background-shell-observability.ts","source/packages/shell-exec/sandbox/hardcoded-policy.ts"]
           required = ["lxo production codec retains optional preentry code without inventing it","lxo provider permission refusal is tagged before real executor entry","lxo provider generated decode refusal is tagged before executor entry","lxo real default provider preserves no-handler preentry witness","lxo controlled no-handler witness is distinct from entered exceptions","lxo controlled cancellation can close stream without a shell Exit"]
           def bindings():
               result = {}
@@ -5490,6 +5571,22 @@ jobs:
                       "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw),
                       "matches_head_bytes": raw == subprocess.check_output(["git", "show", f"{head}:{path}"])}
               return result
+          def node_stage_inputs():
+              stage = pathlib.Path("desktop/dist/node-deps")
+              manifest = stage / "local-exec-dependencies.json"
+              data = json.loads(manifest.read_text())
+              assert data["contract"] == "LDB-v1" and data["domain"] == "node"
+              assert data["runtime"]["version"] == subprocess.check_output(["node", "-p", "process.versions.node"], text=True).strip()
+              assert data["package_lock_sha256"] == hashlib.sha256(pathlib.Path("desktop/package-lock.json").read_bytes()).hexdigest()
+              files = {}
+              for item in data["stage_files"]:
+                  file = stage / item["path"]
+                  assert file.resolve().is_relative_to(stage.resolve()) and not file.is_symlink()
+                  raw = file.read_bytes()
+                  assert len(raw) == item["bytes"] and hashlib.sha256(raw).hexdigest() == item["sha256"]
+                  files[str(file)] = {"bytes":len(raw), "sha256":hashlib.sha256(raw).hexdigest()}
+              files[str(manifest)] = {"bytes":manifest.stat().st_size, "sha256":hashlib.sha256(manifest.read_bytes()).hexdigest()}
+              return {"receipt":data,"files":files}
           def accepted_tap(text, names, exit_code, capture_exit):
               positives = re.findall(r"^ok \d+ - (.+)$", text.replace("\r\n", "\n"), re.MULTILINE)
               counts = {key: re.findall(r"^# " + key + r" (\d+)$", text, re.MULTILINE)
@@ -5517,20 +5614,26 @@ jobs:
           assert all(value["matches_head_bytes"] for value in before.values())
           executable = pathlib.Path("desktop/.tmp-grok-electron/ocrm-plugin/production-outcome.contract.test.cjs")
           bundle_before = hashlib.sha256(executable.read_bytes()).hexdigest()
+          native_before = node_stage_inputs()
+          test_env = dict(os.environ, SAND_TREE_SITTER_NODE_DEPS=str(pathlib.Path("desktop/dist/node-deps").resolve(strict=True)))
+          for key in ("ELECTRON_RUN_AS_NODE", "TREE_SITTER_PREBUILD", "TREE_SITTER_BASH_PREBUILD", "PREBUILDS_ONLY", "NODE_OPTIONS", "NODE_PATH"):
+              test_env.pop(key, None)
           command = ["node", "--test", "--test-reporter=tap", str(executable)]
           log = root / "protocol.tap"
           exit_code, capture_exit, execution_error = None, 0, None
           try:
               with log.open("wb") as output:
                   exit_code = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT,
-                      check=False, timeout=90).returncode
+                      check=False, timeout=90, env=test_env).returncode
           except (OSError, subprocess.SubprocessError) as error:
               capture_exit, execution_error = 1, str(error)
           raw = log.read_bytes() if log.exists() else b""
           text = raw.decode("utf-8", errors="replace")
           after = bindings()
           bundle_after = hashlib.sha256(executable.read_bytes()).hexdigest()
-          accepted = accepted_tap(text, required, exit_code, capture_exit) and before == after and bundle_before == bundle_after
+          native_after = node_stage_inputs()
+          accepted = (accepted_tap(text, required, exit_code, capture_exit) and before == after
+              and bundle_before == bundle_after and native_before == native_after)
           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {"contract":"LXO-v1-protocol","subject_commit":head,
               "subject_tree":subprocess.check_output(["git","rev-parse","HEAD^{tree}"],text=True).strip(),
@@ -5539,6 +5642,9 @@ jobs:
               "job":os.environ["GITHUB_JOB"],"runner_os":os.environ["RUNNER_OS"],
               "command":command,"exit":exit_code,"capture_exit":capture_exit,"execution_error":execution_error,
               "inputs_before":before,"inputs_after":after,"bundle_sha256_before":bundle_before,
+              "native_node_stage_before":native_before,"native_node_stage_after":native_after,
+              "test_environment":{"SAND_TREE_SITTER_NODE_DEPS":"desktop/dist/node-deps",
+                  "cleared":["ELECTRON_RUN_AS_NODE","TREE_SITTER_PREBUILD","TREE_SITTER_BASH_PREBUILD","PREBUILDS_ONLY","NODE_OPTIONS","NODE_PATH"]},
               "bundle_sha256_after":bundle_after,"required_positive_names":required,
               "observed_positive_names":re.findall(r"^ok \d+ - (.+)$",text,re.MULTILINE),
               "oracle_controls":controls,"log_sha256":hashlib.sha256(raw).hexdigest(),
@@ -5724,5 +5830,114 @@ jobs:
         with:
           name: ocrm-custody-recovery-${{ runner.os }}-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .evidence/custody-recovery/
+          if-no-files-found: error
+          retention-days: 90
+
+
+  local-exec-runtime:
+    if: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) }}
+    name: OCRM selected LocalExec runtime / Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
+      OCRM_LOCAL_EXEC_SCOPE: ocrm-local-exec-runtime
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact LocalExec subject and owned fixture root
+        id: bind
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$FABUSHI_TARGET_SHA"
+          if [ -n "$EXPECTED_DISPATCH_SHA" ]; then
+            [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
+            test "$actual" = "$EXPECTED_DISPATCH_SHA"
+          fi
+          local_exec_fixtures="$RUNNER_TEMP/ocrm-local-exec-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$local_exec_fixtures"
+          printf 'NATIVE_PATH_FIXTURES=%s\n' "$local_exec_fixtures" >> "$GITHUB_ENV"
+          mkdir -p .evidence/sqlite-native-path
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path(".evidence/sqlite-native-path")
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"]
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          assert lock["upstream"]["commit"] == "1440bb1771372334bea23d7642bb52deb7db1845"
+          paths = [".github/workflows/rust-desktop-runtime.yml",
+              "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+              "desktop/package.json", "desktop/package-lock.json", "projects/openclaw-rust/upstream.lock.json"]
+          inputs = {}
+          for path in paths:
+              raw = pathlib.Path(path).read_bytes()
+              assert raw == subprocess.check_output(["git", "show", f"{head}:{path}"]), path
+              inputs[path] = {"git_blob": subprocess.check_output(["git", "rev-parse", f"{head}:{path}"], text=True).strip(),
+                  "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+          (root / "local-exec-selection.json").write_text(json.dumps({
+              "contract": "LDB-v1-selection", "validation_scope": "ocrm-local-exec-runtime",
+              "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "source_inputs": inputs,
+              "result": "selection and inputs bound; installation/build/behavior not yet assessed",
+          }, indent=2) + "\n")
+          PY
+          echo "Selected LocalExec subject: $actual; unrelated failed instruments remain unaccepted" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            source/host -> target
+            source/box-exec-daemon -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Install existing Linux Host native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install frozen desktop dependencies
+        timeout-minutes: 10
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Execute actual Coordinator identity and selected LocalExec daemon
+        id: local_exec_identity
+        timeout-minutes: 45
+        env:
+          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+          CARGO_BUILD_JOBS: '1'
+        shell: bash
+        run: python3 projects/openclaw-rust/scripts/capture_local_exec_identity.py
+      - name: Preserve exact owned LocalExec fixtures on failure
+        if: ${{ always() && steps.local_exec_identity.outcome != 'skipped' && steps.local_exec_identity.outcome != 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$NATIVE_PATH_FIXTURES"
+          test ! -L "$NATIVE_PATH_FIXTURES"
+          tar -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/local-exec-owned-fixtures.tar .
+      - name: Upload exact-subject LocalExec evidence
+        if: ${{ always() && steps.bind.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-local-exec-runtime-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/sqlite-native-path/
           if-no-files-found: error
           retention-days: 90

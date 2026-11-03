@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { createLocalExecDependencyFixture } from "./local-exec-dependencies.fixture.mjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -21,6 +23,13 @@ const runtimeFiles = [
   "dist/electron-preload/preload-miniapp-tools.cjs",
   "dist/node-agent-coordinator/main.cjs",
   "dist/renderer/index.html",
+  "dist/local-exec-daemon/main.cjs",
+  "dist/local-exec-daemon/build-metafile.json",
+  "dist/local-exec-daemon/build-manifest.json",
+  "dist/local-exec-daemon/licenses/source-inputs.json",
+  "dist/node-deps/local-exec-dependencies.json",
+  "dist/deps/local-exec-dependencies.json",
+  "dist/node_modules/jschardet/package.json",
 ];
 const validPreload = 'require("electron").contextBridge.exposeInMainWorld("fabushi", { invoke() {} });\n';
 const validCarrier = 'void process.parentPort; const env = "MAHAYANA_APP_HOST_BIN"; const binary = "mahayana-app-host";\n';
@@ -53,19 +62,93 @@ function fixture(t) {
     [path.join(repoRoot, attributesRelative), tree.attributes],
     [path.join(repoRoot, lockRelative), tree.lock],
     [path.join(repoRoot, "desktop/package.json"), tree.package],
+    [path.join(repoRoot, "desktop/package-lock.json"), path.join(tree.desktop, "package-lock.json")],
+    [path.join(scriptDir, "build-local-exec-dependencies.mjs"), path.join(tree.desktop, "scripts/build-local-exec-dependencies.mjs")],
   ]) {
     fs.mkdirSync(path.dirname(to), { recursive: true });
     fs.copyFileSync(from, to);
   }
+  fs.cpSync(path.join(repoRoot, "desktop/resources/licenses/local-exec"),
+    path.join(tree.desktop, "resources/licenses/local-exec"), { recursive: true });
   return tree;
 }
 
 // These byte fixtures exercise the existing checker, not an Electron build or
 // installer. Copy the production checker unchanged so its actual CLI is used.
+function fixtureHash(bytes) { return createHash("sha256").update(bytes).digest("hex"); }
+
+function fixtureFiles(tree, relative) {
+  const files = [];
+  function visit(directory) {
+    for (const name of fs.readdirSync(path.join(tree.desktop, directory)).sort()) {
+      const member = directory + "/" + name;
+      const absolute = path.join(tree.desktop, member);
+      const stat = fs.lstatSync(absolute);
+      if (stat.isDirectory()) visit(member);
+      else {
+        assert.equal(stat.isFile(), true);
+        const bytes = fs.readFileSync(absolute);
+        files.push({ path: member, bytes: bytes.length, sha256: fixtureHash(bytes) });
+      }
+    }
+  }
+  visit(relative);
+  return files;
+}
+
 function stageRuntimeFixture(tree) {
-  for (const relative of runtimeFiles) write(path.join(tree.desktop, relative), "// controlled artifact fixture\n");
+  for (const relative of runtimeFiles.slice(0, 6)) write(path.join(tree.desktop, relative), "// controlled artifact fixture\n");
   write(path.join(tree.desktop, "dist/electron-preload/preload-miniapp-tools.cjs"), validPreload);
   write(path.join(tree.desktop, "dist/node-agent-coordinator/main.cjs"), validCarrier);
+  // These native/header bytes are explicitly synthetic. The checker remains
+  // read-only; actual parser loading belongs to the separate Actions contract.
+  const node = createLocalExecDependencyFixture({ desktopRoot: tree.desktop, domain: "node" });
+  const electron = createLocalExecDependencyFixture({ desktopRoot: tree.desktop, domain: "electron" });
+  const bundle = Buffer.from("// SYNTHETIC daemon artifact: never executed\n");
+  const inputPaths = [
+    "../source/local-exec-daemon/main.ts",
+    "../source/local-exec-daemon/production-executor.ts",
+    "../source/host/local-exec/local-exec-daemon.ts",
+    "../source/host/local-exec/local-exec-provider.ts",
+    "../source/host/local-exec/local-exec-native-file-access.ts",
+  ];
+  const metadata = {
+    inputs: Object.fromEntries(inputPaths.map(input => [input, { bytes: 1 }])),
+    outputs: { "dist/local-exec-daemon/main.cjs": {
+      entryPoint: inputPaths[0], bytes: bundle.length,
+      imports: [{ path: "jschardet", kind: "require-call", external: true }],
+    } },
+  };
+  const metaBytes = Buffer.from(JSON.stringify(metadata, null, 2) + "\n");
+  write(path.join(tree.desktop, "dist/local-exec-daemon/main.cjs"), bundle);
+  write(path.join(tree.desktop, "dist/local-exec-daemon/build-metafile.json"), metaBytes);
+  const libraryDirectory = "dist/node_modules/jschardet";
+  writeJson(path.join(tree.desktop, libraryDirectory, "package.json"), { name: "jschardet", version: "3.1.4" });
+  write(path.join(tree.desktop, libraryDirectory, "index.js"), "// SYNTHETIC entry: never executed\n");
+  write(path.join(tree.desktop, libraryDirectory, "src/index.js"), "// SYNTHETIC source: never executed\n");
+  for (const file of ["LICENSE", "CONTRIBUTORS"]) {
+    write(path.join(tree.desktop, libraryDirectory, file),
+      fs.readFileSync(path.join(tree.desktop, "resources/licenses/local-exec/jschardet", file)));
+  }
+  const legalDirectory = "dist/local-exec-daemon/licenses";
+  fs.cpSync(path.join(tree.desktop, "resources/licenses/local-exec"),
+    path.join(tree.desktop, legalDirectory), { recursive: true });
+  const lockBytes = fs.readFileSync(path.join(tree.desktop, "package-lock.json"));
+  const pinned = JSON.parse(lockBytes).packages["node_modules/jschardet"];
+  writeJson(path.join(tree.desktop, "dist/local-exec-daemon/build-manifest.json"), {
+    contract: "LDB-v1", entry: "source/local-exec-daemon/main.ts",
+    bundle: "dist/local-exec-daemon/main.cjs", bundle_sha256: fixtureHash(bundle),
+    metafile: "dist/local-exec-daemon/build-metafile.json", metafile_sha256: fixtureHash(metaBytes),
+    node_dependencies: { manifest: "dist/node-deps/local-exec-dependencies.json", runtime: node.runtime },
+    electron_dependencies: { manifest: "dist/deps/local-exec-dependencies.json", runtime: electron.runtime },
+    external_library: {
+      name: "jschardet", version: pinned.version, license: pinned.license,
+      resolved: pinned.resolved, integrity: pinned.integrity,
+      package_lock_sha256: fixtureHash(lockBytes), directory: libraryDirectory,
+      source_and_notices_retained: true, files: fixtureFiles(tree, libraryDirectory),
+    },
+    legal_inputs: { manifest: legalDirectory + "/source-inputs.json", files: fixtureFiles(tree, legalDirectory) },
+  });
 }
 
 function stagePackagedFixture(tree) {
@@ -173,6 +256,48 @@ test("onp_default_mode_accepts_complete_controlled_runtime_and_notice", (t) => {
   const result = run(tree);
   accepted(result, "runtime");
   assert.match(result.stdout, /Desktop runtime artifact graph passed/);
+  // Retain the positive and every previous ONP assertion. These additional
+  // controlled mutations qualify the newly required daemon artifact boundary.
+  const mutations = [
+    ["entry", tree => {
+      const file = path.join(tree.desktop, "dist/local-exec-daemon/build-manifest.json");
+      const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
+      manifest.entry = "source/unselected.ts";
+      writeJson(file, manifest);
+    }, /selected entry\/build identity is invalid/],
+    ["bundle", tree => write(path.join(tree.desktop, "dist/local-exec-daemon/main.cjs"), "changed\n"),
+      /emitted entry or input manifest differs/],
+    ["consumer", tree => {
+      const file = path.join(tree.desktop, "dist/local-exec-daemon/build-metafile.json");
+      const meta = JSON.parse(fs.readFileSync(file, "utf8"));
+      delete meta.inputs["../source/host/local-exec/local-exec-provider.ts"];
+      writeJson(file, meta);
+      const manifestFile = path.join(tree.desktop, "dist/local-exec-daemon/build-manifest.json");
+      const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+      manifest.metafile_sha256 = fixtureHash(fs.readFileSync(file));
+      writeJson(manifestFile, manifest);
+    }, /production consumer is absent/],
+    ["runtime-domain", tree => {
+      const file = path.join(tree.desktop, "dist/node-deps/local-exec-dependencies.json");
+      const receipt = JSON.parse(fs.readFileSync(file, "utf8"));
+      receipt.domain = "electron";
+      writeJson(file, receipt);
+    }, /domain\/contract mismatch/],
+    ["native-bytes", tree => write(path.join(tree.desktop, "dist/node-deps/tree-sitter/build/Release/tree_sitter_runtime_binding.node"), "changed\n"),
+      /membership or file bytes mismatch/],
+    ["library-extra", tree => write(path.join(tree.desktop, "dist/node_modules/jschardet/undeclared.js"), "changed\n"),
+      /charset source membership is incomplete/],
+    ["source-notice", tree => write(path.join(tree.desktop, "dist/local-exec-daemon/licenses/tree-sitter/vendor/unicode/LICENSE"), "changed\n"),
+      /source\/notice member differs/],
+  ];
+  for (const [label, mutate, reason] of mutations) {
+    const controlled = fixture(t);
+    stageRuntimeFixture(controlled);
+    mutate(controlled);
+    const rejected = run(controlled);
+    refused(rejected, reason);
+    assert.doesNotMatch(rejected.stdout, /Desktop runtime artifact graph passed/, label);
+  }
 });
 
 test("onp_missing_source_notice_is_refused_without_repair", (t) => {

@@ -1,0 +1,514 @@
+{
+  "schema_version": 1,
+  "contract": "LDB-v1-selected-runtime-build",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "fixed_upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+    "changed": false
+  },
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+    "blob": "d798a949b4b277e2f3b004ef79d292e5f375299f",
+    "delivered_commit": "226e9eb00572dd2d7e49dd2cf20a9c706e0fa069",
+    "requirements": [
+      "LDB-01",
+      "LDB-02",
+      "LDB-03",
+      "LDB-04",
+      "LDB-05",
+      "LDB-06",
+      "LDB-07",
+      "LDB-08",
+      "LDB-09"
+    ],
+    "failure_decision": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-renderer-decision.json",
+    "original_authority_commit": "c968b1ce0576d62ad911ee33408314ba15cb4fde",
+    "review_decisions": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/review-r1/decisions.json"
+  },
+  "integration_base": {
+    "commit": "226e9eb00572dd2d7e49dd2cf20a9c706e0fa069",
+    "tree": "747b10df41c68cbd0e7e4eb13912a7b9e47a94e4",
+    "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "preserved_concurrent_changes": [
+      "Box foreground custody/output cleanup authority and production source",
+      "PluginSkills v3 oracle recovery and source convergence",
+      "DJC-07 separate causal COMMIT qualification source and authority",
+      "CRF-v1 focused custody workflow/capture selection",
+      "Historical Linux/Windows/macOS exact-H native receipts",
+      "All existing LPI/LXO/LXR and canonical source accounting"
+    ],
+    "original_review_base": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e",
+    "previous_review_candidate": "a8dd0c688973899ac069cc5c429b441c1168fd25"
+  },
+  "review_state": {
+    "scope": "Complete original38path scope, including all33R1paths and the five necessary authority/production owner additions; proper R1-to-current delta retained separately",
+    "source_review": "R1 complete; three accepted owner-preserving repairs implemented in candidate. Fresh focused general/structure re-review pending.",
+    "runtime": "Not run for this candidate; previous H results retain their own identity",
+    "local_or_htch_execution": false
+  },
+  "entry_and_ownership": {
+    "entry": "Rust Coordinator LocalExecDaemonRuntime -> existing Electron spawnLocalExecDaemon -> dist/local-exec-daemon/main.cjs",
+    "producer": "Existing persisted connection/settings/supervisor heartbeat and SSE requests",
+    "platform_adapter": "Existing Electron native launcher and Coordinator carrier share one pure staged Host executable resolver. The existing daemon keeps only Node event normalization/reporting, without resurrecting a retired Host module.",
+    "state_owners": [
+      "Rust Coordinator generation/process supervision",
+      "Rust Host local execution journal and permissions",
+      "Existing daemon connection/discovery files",
+      "Existing native file sandbox"
+    ],
+    "service": "Actual SandLocalExecProvider -> createDefaultProductionLocalExecExecutor -> LocalFileAccess -> same-H mahayana-app-host native file helper",
+    "consumer": "Actual SSE/POST request and response transport; selected Host/Runner consumers remain the unique canonical state",
+    "retained_legacy_scope": "This is a prerequisite repair of the already selected legacy executor. It is not Rust completion of its remaining TypeScript business/policy or shell/LS responsibilities.",
+    "host_binding": "Clean production native launch resolves existing explicit override or packaged/development resource convention and binds Host only in its child environment. Actual byte oracle copies same-H Host to an owned resources/bin, calls the real launcher without spawnImpl and requires no inherited/fixture Host override.",
+    "parser_admission": "Existing shell-parser loader checks selected LDB manifest domain and exact actual runtime version/node/modules/platform/arch before native require; packaged Electron override selection and terminal selected-stage failure remain."
+  },
+  "requirements": [
+    {
+      "id": "LDB-01",
+      "implementation": [
+        "desktop/scripts/build-electron-runtime.mjs",
+        "source/local-exec-daemon/main.ts",
+        "source/electron-main/local-exec/local-exec-native.ts",
+        "source/electron-main/coordinator/rust-coordinator-carrier.ts",
+        "source/electron-main/app-host-executable.ts"
+      ],
+      "oracle": "Emitted-entry metadata, runtime checker and actual entry contract require the selected default provider/executor/native consumer. Real native launch byte transfer consumes the shared staged Host path without an inherited or fixture Host override; mapping controls retain packaged/development/explicit override behavior."
+    },
+    {
+      "id": "LDB-02",
+      "implementation": [
+        "desktop/package.json",
+        "desktop/package-lock.json"
+      ],
+      "oracle": "Exact six direct plus four frozen transitive identities; npm ci and current source/lock checks. Existing node-gyp12.4.0 retained."
+    },
+    {
+      "id": "LDB-03",
+      "implementation": [
+        "desktop/scripts/build-local-exec-dependencies.mjs"
+      ],
+      "oracle": "Actual Node and Electron43.4.0 identity probes, owned official header archive/checksums, stock-source and output hashes, isolated native build and actual parser load before/after publication."
+    },
+    {
+      "id": "LDB-04",
+      "implementation": [
+        "desktop/scripts/build-local-exec-dependencies.mjs",
+        "desktop/scripts/check-electron-runtime-bundle.mjs",
+        "desktop/package.json",
+        "source/packages/shell-exec/shell-parser.ts"
+      ],
+      "oracle": "Separate Node/Electron roots and actual loaded .node paths; the existing runtime loader admits exact manifest domain/runtime before native require. Actual emitted-entry negatives copy qualified Node bytes, change only declared domain or one of all five runtime fields, and require precise admission errors, exit1, no discovery/SSE/response POST. Synthetic verifier cases remain supplementary."
+    },
+    {
+      "id": "LDB-05",
+      "implementation": [
+        "desktop/scripts/build-local-exec-dependencies.mjs",
+        "desktop/resources/licenses/local-exec/source-inputs.json",
+        "desktop/scripts/build-electron-runtime.mjs"
+      ],
+      "oracle": "Frozen stock/patched binding.gyp SHA-256; actual package source/licence retention; jschardet separately required with source and notices; thirteen exact primary legal blobs copied without byte changes."
+    },
+    {
+      "id": "LDB-06",
+      "implementation": [
+        "source/local-exec-daemon/main.ts",
+        "source/host/local-exec/local-exec-daemon.ts",
+        "source/host/local-exec/sentry.ts"
+      ],
+      "oracle": "Actual emitted event adapter preserves Error identity, normalization, reporter replacement/clearing, throw containment and event-loop continuation. Shared canonical root replaces deleted path edge."
+    },
+    {
+      "id": "LDB-07",
+      "implementation": [
+        "desktop/scripts/check-electron-runtime-bundle.mjs",
+        "desktop/scripts/openclaw-notice.contract.test.mjs",
+        "desktop/scripts/local-exec-dependencies.fixture.mjs"
+      ],
+      "oracle": "All21existingONPnames/assertions retained; complete explicitly synthetic native fixture plus seven additional runtime artifact negatives. Fixture success is not native load or signed package evidence."
+    },
+    {
+      "id": "LDB-08",
+      "implementation": [
+        "source/local-exec-daemon/startup.contract.test.ts",
+        "projects/openclaw-rust/scripts/capture_local_exec_identity.py"
+      ],
+      "oracle": "Actual emitted ordinary-Node process through the real native launch adapter and controlled Electron resource context, same-H staged Host, persisted inputs, matching generation/discovery/hello, upload start/chunk/commit/download, independent byte read, exact child close and discovery retirement. Seven exact startup names include Host mapping, two new actual parser admission negatives and all original cases. Six LXO positives remain unchanged."
+    },
+    {
+      "id": "LDB-09",
+      "implementation": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+        "desktop/scripts/build-local-exec-dependencies.mjs",
+        "desktop/scripts/local-exec-dependencies.contract.test.mjs"
+      ],
+      "oracle": "Same workflow with explicit ocrm-local-exec-runtime scope: existing Linux capture and renderer build/bridge/ONP/LXO receipts; exactH/U, normal Host/Coordinator binaries, bundle causal inputs and dependency/header/native identities. 21native,7Rust+4LPI,7startup named contracts. Actual child-failure retention and archive/identity controls qualify exact owned native work preservation, including hidden headers and prior stages. No unchanged failed DJC rerun."
+    }
+  ],
+  "inputs": [
+    {
+      "path": "desktop/package.json",
+      "old_blob": "9710d828a446f0c8ab152f21cb259020e8d267ef",
+      "candidate_blob": "d3a1c70f9a6a3a6dd4a65abb076411c8a3fd6097",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "desktop/package-lock.json",
+      "old_blob": "1655189b893de0d2d09648bdd37a176cc90a5c8d",
+      "candidate_blob": "f98cf92165667c71080f28f6e4a954a83531f452",
+      "review_depth": "dependency identity/closure contract; not whole dependency source review"
+    },
+    {
+      "path": "desktop/scripts/build-electron-runtime.mjs",
+      "old_blob": "36bbc5bcafefc64eb242e8dbf5c83f80513b5253",
+      "candidate_blob": "bac90b2888418b81e60196f637a2c143ad5ee083",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "desktop/scripts/check-electron-runtime-bundle.mjs",
+      "old_blob": "737e5d9cdf4952e42e4cc6a26ca968d8f64c3838",
+      "candidate_blob": "3757d5a6e6c73812a275b1838638725179fc3fea",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "desktop/scripts/openclaw-notice.contract.test.mjs",
+      "old_blob": "b5f1163996813583db1db27a0268b845f264fcf3",
+      "candidate_blob": "fad5ae0395c28e8ffec872a91c42b417ff117318",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+      "old_blob": "cc895ade421f0fe7b958c010d475638eed43f500",
+      "candidate_blob": "ee01ed55d46866f64c156f9c7f0fd65601ea0f06",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "old_blob": "0c2b44b51a129ce2deb12599676a94a87ed7a91d",
+      "candidate_blob": "9574d29d4e494d0f3a30b6ffcad275e222b07275",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "source/local-exec-daemon/main.ts",
+      "old_blob": "6ed3c317002ffcc0c6d745cb4751491ed81e82e0",
+      "candidate_blob": "7b87c3129a6a8b7b37662384f7a2e084a5149320",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "source/host/local-exec/local-exec-daemon.ts",
+      "old_blob": "091d1e9332eb3df062569b3c4ff7242605534ec1",
+      "candidate_blob": "23a0a5f4b0595285f25355be80f2ed368a896301",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "source/host/local-exec/sentry.ts",
+      "old_blob": "3c06c219ff068e5d7fd9c75a522dca31a72936f3",
+      "candidate_blob": "8ba7eb7f53148d2280f582d561df82c9e11e99d8",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "source/local-exec-daemon/startup.contract.test.ts",
+      "old_blob": null,
+      "candidate_blob": "e935fef8fb0a1d5339eab83b89abf45c03234c4a",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "desktop/scripts/build-local-exec-dependencies.mjs",
+      "old_blob": null,
+      "candidate_blob": "1fed2eccd3fd655a6f3f45a3ae0b32c1c80e32b4",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "desktop/scripts/local-exec-dependencies.contract.test.mjs",
+      "old_blob": null,
+      "candidate_blob": "7551552b4f69db299dff09ef7b0667637e2c6615",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "desktop/scripts/local-exec-dependencies.fixture.mjs",
+      "old_blob": null,
+      "candidate_blob": "f35c65bc4e0f5fbb04093412b4bb0c2fc937540b",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/iconv-lite/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "d518d8376af9faa47af875d83c8cdd51a11f9099",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/ignore/LICENSE-MIT",
+      "old_blob": null,
+      "candidate_blob": "825533e337fa1d8e6fccfe70318c4abf52600d25",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/jschardet/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "19e307187ac8b9abc086be686dc81b0f09523ef1",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/jschardet/CONTRIBUTORS",
+      "old_blob": null,
+      "candidate_blob": "67c674590dbc3f54c52733040f7d3c00128285b4",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/re2js/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "4fc0dfc1b18b538f2ef218267b2d992610974b05",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/tree-sitter/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "e71ac4498bdeec6e3193f9634371860d14696958",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/tree-sitter/vendor/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "451fe1d26ee6043ac94f6c8a81a6143f17748b4d",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/tree-sitter/vendor/unicode/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "2e01e368768a4b992e22f98c05ead747134492a6",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/tree-sitter-bash/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "aa9f858db5722d9576104726471b11cc0e31f131",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/node-addon-api/LICENSE.md",
+      "old_blob": null,
+      "candidate_blob": "819d91a5bd799be3e9444acc9dd1ebe6ee5de529",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/node-gyp-build/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "56fce0895e13ffe83650a7274d79fbcfb80d3e2f",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/web-tree-sitter/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "3f674119a0383059cbb8a76fca55ccda9e6238dd",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/safer-buffer/LICENSE",
+      "old_blob": null,
+      "candidate_blob": "4fe9e6f10036e619c2407f08ead54802bbfbcbd1",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/source-inputs.json",
+      "old_blob": null,
+      "candidate_blob": "de188a0691b2bf45ab3a0727cbe26d8b76a708c4",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "desktop/resources/licenses/local-exec/.gitattributes",
+      "old_blob": null,
+      "candidate_blob": "fa1385d99a319b43c06f5309d1aae9fdd3adea46",
+      "review_depth": "dependency/legal contract and exact byte disposition"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "old_blob": "fc050c02a7cd51ed6ba32f1551ac3b36598d1174",
+      "candidate_blob": "f31a75373c4cee6965edcf9352d5b5739fb008df",
+      "review_depth": "selected responsibilities/references and preservation of all other machine-accounting fields; not full prose read"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "old_blob": "073e031c67647c06a848f6ade737b8fca5b1399b",
+      "candidate_blob": "625672c7e2a78de347023b2e0c162e6e123b78a1",
+      "review_depth": "selected responsibilities/references and preservation of all other machine-accounting fields; not full prose read"
+    },
+    {
+      "path": "source/electron-main/app-host-executable.ts",
+      "old_blob": null,
+      "candidate_blob": "1104a23662c9b85feb93174c36ec80bb53dd762f",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "source/electron-main/coordinator/rust-coordinator-carrier.ts",
+      "old_blob": "375a706177e9bfa7aa7c9bf591d6688887af12fb",
+      "candidate_blob": "a13abdbdf800f0b13fcf11e36898cbf5fbddabe3",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "source/electron-main/local-exec/local-exec-native.ts",
+      "old_blob": "765703e12055721788514f51d90cc5cf311e2d18",
+      "candidate_blob": "93740da968c5918ffee0efa937bc06920b3e3da5",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "source/packages/shell-exec/shell-parser.ts",
+      "old_blob": "139844e853647dcbf78cffd38ea4d2f003b74c21",
+      "candidate_blob": "2457e2753d3d7a7f833dadad1bb34e0956973492",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+      "old_blob": "b1a287547fb01fb53124f2d1bdd9292bb8971d88",
+      "candidate_blob": "d798a949b4b277e2f3b004ef79d292e5f375299f",
+      "review_depth": "affected implementation, functions and adjacent caller/consumer review"
+    }
+  ],
+  "source_findings": {
+    "frozen_fabushi": {
+      "repository": "b-nnett/grok-bot-0.18-reconstructed",
+      "commit": "a9f633e09d49a85829b8236331b9e21f7e612634",
+      "package_blob": "7606d112bb38b3ab1e2a749e2e178ecd3ba11a65",
+      "lock_blob": "18cf139bff7d97bf4f568d8382edd6e57d5bf8a7",
+      "node_build_blob": "adb17d777198e7622670b7444d9075770b3082bf",
+      "patch_source_blob": "3b3fd733ccc47c267ffe63b53ce2bbb4411e12c1",
+      "obsolete_electron_build_blob": "d48a3f344ba7b2eb405ebb659f7ea0bc14c2802e",
+      "crash_event_blob": "15725a072efc7301e75c20e9611008f282d04444"
+    },
+    "current_consumers": [
+      {
+        "path": "source/packages/local-exec/read.ts",
+        "blob": "5061fe32d410b417c67e5c98af1bc5f52b13cdbd"
+      },
+      {
+        "path": "source/packages/utils/encoding.ts",
+        "blob": "ab307c017d7f01893462ae874682dbb545c37c94"
+      },
+      {
+        "path": "source/packages/local-exec/background-shell-observability.ts",
+        "blob": "f56b634d2724599b91373e7fc47e2dfc2a103bb5"
+      },
+      {
+        "path": "source/packages/shell-exec/sandbox/hardcoded-policy.ts",
+        "blob": "5454fa41e8eee6aabfc1e5e0d4f5b4421e11e84c"
+      },
+      {
+        "path": "source/packages/shell-exec/shell-parser.ts",
+        "blob": "139844e853647dcbf78cffd38ea4d2f003b74c21",
+        "candidate_blob": "2457e2753d3d7a7f833dadad1bb34e0956973492"
+      }
+    ],
+    "review_depth": "Actual affected product/build functions and loader/provider/executor/native consumers were read; mature package configuration, install/load source, patch and legal artifacts received contract review. This does not upgrade their entire repositories or historical unread records to full-read.",
+    "dependency_scope": "Exact frozen Fabushi dependencies for retained current consumers, distinct from fixed OpenClaw U's versions and global recursive source closure.",
+    "legal_source_manifest": "desktop/resources/licenses/local-exec/source-inputs.json",
+    "legal_limits": "Package declarations alone do not prove archive membership. All actual installed native source/license members are recorded at build; separately copied tree-sitter vendor root MIT and complete Unicode notices fill the known npm file-list omission. LGPL source/library replaceability is supported by separate jschardet distribution; final legal/package acceptance remains open.",
+    "install_risk": "Both native package install scripts run node-gyp-build. Exact published N-API prebuild member availability is not established by source declarations. npm ci may fall back to stock compilation before the isolated patched build; Actions installation evidence is required.",
+    "generated_inputs": "Actual esbuild metafiles bind emitted consumer membership. Native parser generated source/WASM comes from exact locked archives; upstream generator-to-published-output equivalence is not claimed."
+  },
+  "verification_plan": {
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "capture": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+    "required_native_tests": [
+      "LDB real Node and Electron stages load the parser under their actual runtimes",
+      "LDB structural checking accepts complete synthetic stages without installed dependencies",
+      "LDB structural checking refuses wrong-domain stages without fallback",
+      "LDB structural checking refuses absent native outputs even with a rewritten receipt",
+      "LDB structural checking detects changed native bytes",
+      "LDB structural checking rejects undeclared stage members",
+      "LDB structural checking rejects a symlink or junction escape",
+      "LDB structural checking rejects traversal and duplicate manifest paths",
+      "LDB structural checking rejects stale lock and builder identities",
+      "LDB structural checking rejects missing causal source inputs",
+      "LDB structural checking detects changed package source behind rewritten output hashes",
+      "LDB structural checking rejects missing package license artifacts",
+      "LDB structural checking rejects unqualified native fallback locations",
+      "LDB structural checking rejects altered official archive checksums",
+      "LDB structural checking rejects mismatched runtime header ABI",
+      "LDB structural checking rejects a failed parser load receipt",
+      "LDB stock-only C++ patch checks both exact input and output identities",
+      "LDB owned child runner rejects spawn errors and nonzero close",
+      "LDB owned child deadline cleanup leaves an unrelated process alive",
+      "LDB owned child runner waits for close without signaling an exited child",
+      "LDB owned native build failure retains only its bound work root"
+    ],
+    "required_startup_tests": [
+      "ldb Host resolver preserves packaged development and explicit override mappings",
+      "ldb emitted daemon transfers bytes through real provider and retires owned discovery",
+      "ldb emitted daemon refuses mismatched generation before registration",
+      "ldb emitted daemon refuses missing configured Node parser domain without fallback",
+      "ldb emitted daemon refuses wrong-domain parser manifest before registration",
+      "ldb emitted daemon refuses mismatched parser runtime before registration",
+      "ldb Node event adapter preserves normalization reporter replacement and clearing"
+    ],
+    "retained_tests": {
+      "onp": 21,
+      "lpi_rust": 7,
+      "lpi_actual_consumer": 4,
+      "lxo_protocol": 6
+    },
+    "budgets": "First LDB execution uses75min Linux job and45min capture; native build900s, normalHost600s preparation bounds and original product observation/identity deadlines remain. Renderer keeps its existing30min job boundary.",
+    "independence": "The focused Linux job calls the same capture directly after actual toolchain/native prerequisites/npm installation. Existing full-lane Node/setup and LocalExec capture no longer depend on an unrelated portable receipt. Every existing portable/palette assertion and failed historical result remains.",
+    "runtime_evidence_subject": "Only the final pushed and fully read-back H is eligible; no queued/running/historical green result counts.",
+    "selection": {
+      "scope": "ocrm-local-exec-runtime",
+      "push_prefix": "fix(ocrm-local-exec-runtime):",
+      "selected_jobs": [
+        "local-exec-runtime",
+        "renderer"
+      ],
+      "excluded_only_for_this_selection": [
+        "rust-host",
+        "config-restore-linux",
+        "sqlite-native-path",
+        "media-store-windows",
+        "pressure-profiler-platform",
+        "platform-worker"
+      ],
+      "existing_custody_scope": "Preserved as its owner's independent positive selection",
+      "normal_full": "Unchanged job bodies/requirements; explicit selected omission is never approval",
+      "shared_toolchains_cache": "Node24, Electron43.4.0, Rust1.97.1, existing desktop-restored-rust-1.97.1 Host/Box cache declaration; capture's normal Host/Coordinator builds share source/host/target",
+      "fixture_retention": "Exact precreated TMPDIR is archived on failed/cancelled capture; native work has a separate prebound root inside the existing evidence artifact and is tarred with hidden files without cleanup."
+    }
+  },
+  "historical_evidence": {
+    "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+    "renderer": "Build-input failure retained; actual ONP21proof remains scoped. Six protocol positives were not executed.",
+    "windows_assessment": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json",
+    "windows_limits": "23groups263positives,58LocalExec,97identityinputs; no transfer to changed LDB dependencies/build/startup",
+    "linux_identity": "At the oldH the identity step was skipped; no LPI acceptance inferred.",
+    "linux_assessment": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-linux-assessment.json",
+    "macos_assessment": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-macos-assessment.json",
+    "macos_limits": "Native23groups268/58LocalExec verified at oldH. WholejobDJC8s failed, later partial command projections do not replace full raw logs; all limits retained."
+  },
+  "failure_and_recovery": {
+    "build": "Missing/wrong dependency, header, ABI, patch, source or output membership fails closed. Do not accept a parser stub or unrelated native artifact.",
+    "publication": "Each native stage qualifies before publication; previous stage retained/restored on failed replacement. Cross-process native output reuse is disabled because compiler/SDK closure is not established.",
+    "owned_commands": "Exact child handles, close observation, bounded output/deadlines and retained owned failure directories. The existing Linux capture keeps unreaped session identity before group cleanup. No process-name or reused-PID cleanup.",
+    "runtime": "Malformed generation, unavailable parser root, wrong domain or any mismatched runtime field fails before registration. Successful controlled startup does not establish real installed Electron launch, file-publication uncertainty or arbitrary crash recovery.",
+    "owned_build_evidence": "Before native build, capture/workflow binds one ordinary work-root identity on the stage filesystem; actual helper retains only its mkdtemp child on failure and never deletes unsettled files. The existing capture archives only its bound root including hidden headers/prior stage; renderer uses the same archive functions. Cleanup of successful exact build work occurs only after callback success. Archive success is not child quiescence or build success."
+  },
+  "accounting": {
+    "authority": "OCRM unique inventory/ledger/RTM",
+    "responsibilities": [
+      "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001",
+      "OCRM-RESP-EXEC-PROCESS-SPAWN-001"
+    ],
+    "rtm_rows": [
+      "OCRM-R16",
+      "OCRM-AC11",
+      "OCRM-AC16"
+    ],
+    "state_changes": "Only evidence/test references and explicit retained legacy limit added; no read/implementation/wiring/verification/acceptance status promoted",
+    "all_eight_flags_false": true,
+    "source_inventory_not_rebased": true
+  },
+  "remaining": [
+    "Fresh focused source re-review and exact-H Actions install/build/native-load/protocol/startup evidence",
+    "Full legacy TypeScript executor/policy Rust migration including existing LocalLsExecutor traversal injection gap",
+    "Native publication outcome propagation LFP, full process-tree settlement and all remaining product scope",
+    "Real provider/channel/plugin/node/device and supported-platform installer/signing, UI/temporal/security/performance/soak, upgrade/rollback and existing Fabushi regression acceptance",
+    "Complete U recursive source identity/disposition and required risk-depth review; G01-G12 and AC01-AC24 independent acceptance"
+  ]
+}

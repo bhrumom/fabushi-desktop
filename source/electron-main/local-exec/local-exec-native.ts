@@ -5,6 +5,8 @@ import { mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { resolveAppHostExecutable, type AppHostExecutableContext } from "../app-host-executable.js";
+
 import { readLocalExecDaemonDiscovery } from "../../host/local-exec/local-exec-daemon-protocol.js";
 import {
   commandCarriesLocalExecGeneration,
@@ -32,5 +34,46 @@ export class LocalExecTerminationTimeoutError extends Error { constructor(readon
 export class LocalExecTerminationSignalError extends Error { constructor(readonly pid: number, readonly code: string | undefined, cause: unknown) { super(`local-exec process ${pid} could not be signalled${code == null ? "" : ` (${code})`}`, { cause }); this.name = "LocalExecTerminationSignalError"; } }
 export async function waitForProcessExit(pid: number, deps: { readonly isAlive?: (pid: number) => boolean; readonly delay?: (ms: number) => Promise<void> } = {}): Promise<void> { const alive = deps.isAlive ?? isProcessAlive; const wait = deps.delay ?? delay; for (let attempt = 0; attempt < 40; attempt += 1) { if (!alive(pid)) return; await wait(100); } if (alive(pid)) throw new LocalExecTerminationTimeoutError(pid); }
 export async function terminateProcess(pid: number, deps: { readonly kill?: typeof process.kill; readonly waitForExit?: (pid: number) => Promise<void>; readonly reportFailure?: (error: unknown) => void } = {}): Promise<void> { try { (deps.kill ?? process.kill.bind(process))(pid, "SIGTERM"); } catch (error) { const code = findSystemErrno(error); if (code === "ESRCH") return; (deps.reportFailure ?? ((failure) => reportLocalExecTerminationFailed(pid, failure)))(error); throw new LocalExecTerminationSignalError(pid, code, error); } await (deps.waitForExit ?? waitForProcessExit)(pid); }
-export async function spawnLocalExecDaemon(args: { readonly logPath: string; readonly env: NodeJS.ProcessEnv; readonly mainPath?: string; readonly spawnImpl?: typeof spawn; readonly generationToken?: string; readonly realpath?: typeof realpathSync; readonly open?: typeof openSync; readonly close?: typeof closeSync }): Promise<SpawnedLocalExecDaemon> { await mkdir(dirname(args.logPath), { recursive: true }); const entryRealpath = resolveLocalExecDaemonEntryRealpath(args.mainPath ?? daemonMainPath(), args.realpath ?? realpathSync); const generationToken = args.generationToken ?? randomUUID(); if (generationToken.length === 0) throw new Error("local-exec generation token must not be empty"); const logFd = (args.open ?? openSync)(args.logPath, "a"); try { const child = (args.spawnImpl ?? spawn)(process.execPath, [entryRealpath, `${LOCAL_EXEC_GENERATION_TOKEN_ARG}${generationToken}`], { detached: true, stdio: ["ignore", logFd, logFd], env: { ...process.env, ...args.env, [LOCAL_EXEC_GENERATION_TOKEN_ENV]: generationToken } }); const spawnedAt = performance.now(); let spawnSucceeded = false; child.once("error", (error) => reportLocalExecSpawnFailed(error)); child.once("spawn", () => { spawnSucceeded = true; reportLocalExecSpawned(child.pid); }); child.once("exit", (exitCode, signal) => { if (spawnSucceeded) reportLocalExecExited({ ...(child.pid === undefined ? {} : { pid: child.pid }), exitCode, signal, uptimeMs: performance.now() - spawnedAt }); }); child.unref(); return { child, entryRealpath, generationToken }; } finally { (args.close ?? closeSync)(logFd); } }
+export async function spawnLocalExecDaemon(args: {
+  readonly logPath: string;
+  readonly env: NodeJS.ProcessEnv;
+  readonly mainPath?: string;
+  readonly spawnImpl?: typeof spawn;
+  readonly generationToken?: string;
+  readonly realpath?: typeof realpathSync;
+  readonly open?: typeof openSync;
+  readonly close?: typeof closeSync;
+  readonly appHostContext?: AppHostExecutableContext;
+}): Promise<SpawnedLocalExecDaemon> {
+  await mkdir(dirname(args.logPath), { recursive: true });
+  const entryRealpath = resolveLocalExecDaemonEntryRealpath(args.mainPath ?? daemonMainPath(), args.realpath ?? realpathSync);
+  const generationToken = args.generationToken ?? randomUUID();
+  if (generationToken.length === 0) throw new Error("local-exec generation token must not be empty");
+  const env: NodeJS.ProcessEnv = { ...process.env, ...args.env, [LOCAL_EXEC_GENERATION_TOKEN_ENV]: generationToken };
+  env.MAHAYANA_APP_HOST_BIN = resolveAppHostExecutable(env, args.appHostContext ?? {
+    platform: process.platform,
+    resourcesPath: process.resourcesPath,
+    moduleDirectory: dirname(fileURLToPath(import.meta.url)),
+  });
+  const logFd = (args.open ?? openSync)(args.logPath, "a");
+  try {
+    const child = (args.spawnImpl ?? spawn)(process.execPath, [entryRealpath, `${LOCAL_EXEC_GENERATION_TOKEN_ARG}${generationToken}`], {
+      detached: true,
+      stdio: ["ignore", logFd, logFd],
+      env,
+    });
+    const spawnedAt = performance.now();
+    let spawnSucceeded = false;
+    child.once("error", (error) => reportLocalExecSpawnFailed(error));
+    child.once("spawn", () => { spawnSucceeded = true; reportLocalExecSpawned(child.pid); });
+    child.once("exit", (exitCode, signal) => {
+      if (spawnSucceeded) reportLocalExecExited({
+        ...(child.pid === undefined ? {} : { pid: child.pid }),
+        exitCode, signal, uptimeMs: performance.now() - spawnedAt,
+      });
+    });
+    child.unref();
+    return { child, entryRealpath, generationToken };
+  } finally { (args.close ?? closeSync)(logFd); }
+}
 export async function killLocalExecDaemon(discoveryPath: string, deps: { readonly expectedEntryRealpath?: string; readonly readIdentity?: typeof readProcessIdentity; readonly terminate?: (pid: number) => Promise<void>; readonly now?: () => number } = {}): Promise<void> { const existing = await readLocalExecDaemonDiscovery(discoveryPath); if (existing == null || existing.entryRealpath == null || existing.generationToken == null) return; const expectedEntryRealpath = deps.expectedEntryRealpath ?? realpathSync(daemonMainPath()); if (existing.entryRealpath !== expectedEntryRealpath) return; const observed = (deps.readIdentity ?? readProcessIdentity)(existing.pid); if (observed == null || !localExecDiscoveryTimeMatchesProcess(existing.startedAt, observed.startEpochMs, (deps.now ?? Date.now)()) || !commandCarriesLocalExecGeneration(observed.command, expectedEntryRealpath, existing.generationToken)) return; await (deps.terminate ?? terminateProcess)(existing.pid); }

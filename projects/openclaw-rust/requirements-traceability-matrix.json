@@ -1137,7 +1137,8 @@
         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R16",
@@ -2342,7 +2343,8 @@
         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC11",
@@ -2575,7 +2577,8 @@
         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC16",

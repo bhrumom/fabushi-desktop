@@ -5,7 +5,6 @@ import { pathToFileURL } from "node:url";
 import { createDeadlinePolicy, realClock } from "../internal/scheduling.js";
 import { LOCAL_EXEC_GENERATION_TOKEN_ARG, LOCAL_EXEC_GENERATION_TOKEN_ENV } from "../shared/local-exec-process-identity.js";
 import { runLocalExecDaemon, type RunLocalExecDaemonOptions } from "../host/local-exec/local-exec-daemon.js";
-import { installProcessCrashGuards, type ProcessCrashKind } from "../host/process-crash-guard.js";
 import { flushSandSentry, initSandSentryDaemon, type SandSentryDaemonRuntime } from "../host/local-exec/sentry.js";
 import { installInvariantReporter } from "../shared/invariant.js";
 import { writeInvariantViolationLog } from "./invariant-violation-log.js";
@@ -16,6 +15,28 @@ import {
 
 export const LOCAL_EXEC_DAEMON_SHUTDOWN_TIMEOUT_MS = 2_000;
 export const LOCAL_EXEC_DAEMON_LIFETIME_TICK_MS = 60_000;
+
+export type ProcessCrashKind = "uncaughtException" | "unhandledRejection";
+type LocalExecProcessCrashReporter = (error: Error, kind: ProcessCrashKind) => void;
+
+/**
+ * Observe Node process events at this existing daemon boundary. Host panic
+ * reporting remains Rust-owned; this adapter owns no restart or durable state.
+ */
+export function installLocalExecDaemonProcessCrashGuards(options: {
+  readonly scope: string;
+  readonly onError?: LocalExecProcessCrashReporter;
+}): { setReporter(reporter: LocalExecProcessCrashReporter | undefined): void } {
+  let reporter = options.onError;
+  const report = (kind: ProcessCrashKind, value: unknown): void => {
+    const error = value instanceof Error ? value : new Error(String(value));
+    console.error(`[${options.scope}] ${kind} (kept alive):`, error);
+    try { reporter?.(error, kind); } catch {}
+  };
+  process.on("uncaughtException", (value) => report("uncaughtException", value));
+  process.on("unhandledRejection", (value) => report("unhandledRejection", value));
+  return { setReporter(next) { reporter = next; } };
+}
 
 export interface LocalExecDaemonLifetime {
   release(): void;
@@ -55,7 +76,7 @@ export interface LocalExecDaemonMainDeps {
 
 export async function runLocalExecDaemonMain(deps: LocalExecDaemonMainDeps): Promise<{ shutdown(signal: "SIGTERM" | "SIGINT"): void }> {
   const processLike = deps.process ?? process; const log = deps.log ?? console.log; const shutdownDeadline = createDeadlinePolicy(realClock, { name: "local-exec-daemon-shutdown", timeoutMs: LOCAL_EXEC_DAEMON_SHUTDOWN_TIMEOUT_MS });
-  installInvariantReporter((report) => writeInvariantViolationLog(report)); const guards = installProcessCrashGuards({ scope: "sand-local-exec-daemon" }); const reportCrash = deps.initCrashReporter?.(); if (reportCrash !== undefined) guards.setReporter(reportCrash);
+  installInvariantReporter((report) => writeInvariantViolationLog(report)); const guards = installLocalExecDaemonProcessCrashGuards({ scope: "sand-local-exec-daemon" }); const reportCrash = deps.initCrashReporter?.(); if (reportCrash !== undefined) guards.setReporter(reportCrash);
   const lifetime = (deps.holdProcessOpen ?? holdLocalExecDaemonProcessOpen)(); let daemon: { close(): Promise<void> } | undefined; let pendingSignal: "SIGTERM" | "SIGINT" | undefined; let isShuttingDown = false;
   const beginShutdown = (signal: "SIGTERM" | "SIGINT") => { if (isShuttingDown) return; if (daemon === undefined) { pendingSignal ??= signal; log(`[sand-local-exec-daemon] received ${signal} during startup; shutdown queued`); return; } isShuttingDown = true; const runningDaemon = daemon; log(`[sand-local-exec-daemon] received ${signal}, shutting down`); void shutdownDeadline.run(() => runningDaemon.close()).finally(() => { lifetime.release(); processLike.exit(0); }); };
   processLike.on("SIGTERM", () => beginShutdown("SIGTERM")); processLike.on("SIGINT", () => beginShutdown("SIGINT"));

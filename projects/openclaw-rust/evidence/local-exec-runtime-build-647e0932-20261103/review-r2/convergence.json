@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "contract": "LDB-v1-source-review-convergence",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "fixed_upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+    "changed": false
+  },
+  "source_review_subject": {
+    "sha": "9f1bfe0ea9bc658ccbc26ece3a183c4fa6dd1c18",
+    "tree": "7ecc4c7be32beddf30133431c073b5af0ea7d017",
+    "parent": "226e9eb00572dd2d7e49dd2cf20a9c706e0fa069",
+    "original_base": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e",
+    "previous": "a8dd0c688973899ac069cc5c429b441c1168fd25",
+    "refMoved": false
+  },
+  "packet": {
+    "sha": "45455463184731826b5ae432496c351294e9cd6d",
+    "tree": "5f4a04d0d14009563776cc5ae41d3ac1ca01e3a4",
+    "parent": "9f1bfe0ea9bc658ccbc26ece3a183c4fa6dd1c18",
+    "refMoved": false,
+    "full_content_match": true
+  },
+  "reviews": [
+    {
+      "agent": "/root/ldb_r2_general",
+      "verdict": "NO_FINDINGS",
+      "candidate": "9f1bfe0ea9bc658ccbc26ece3a183c4fa6dd1c18",
+      "tree": "7ecc4c7be32beddf30133431c073b5af0ea7d017",
+      "base": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e",
+      "previous": "a8dd0c688973899ac069cc5c429b441c1168fd25",
+      "complete_scope": {
+        "files": 38,
+        "hunks": 103,
+        "adds": 7061,
+        "dels": 113
+      },
+      "proper_delta": {
+        "files": 13,
+        "hunks": 61,
+        "adds": 1050,
+        "dels": 206
+      },
+      "changed_scope_complete": true,
+      "findings": [],
+      "source_only": true,
+      "execution": false,
+      "launch": {
+        "fork_turns": "none",
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "tool_accepted": true,
+        "runtime_introspection": "not available"
+      },
+      "review_depth": {
+        "deep": "Affected product/build/capture implementations and real launcher/Coordinator/provider/default executor/Host CLI callers",
+        "contract": "Ten selected dependency version/resolved/integrity/license records versus frozenGrok; pinned actual loader/build/header contracts",
+        "disposition": "All13legal primary blob+content identities; historical assessment, ledger/RTM affected responsibilities and flags"
+      },
+      "blind": true,
+      "limits": [
+        "Unrelated complete workflow/ledger/dependency implementation/history logs not claimeddeepread",
+        "No current runtime build/native/startup evidence, fullTSmigration, actualinstalledElectron, physicaldevices/packages/signing/fullproductacceptance"
+      ],
+      "final_received": true
+    },
+    {
+      "agent": "/root/ldb_r2_structure",
+      "verdict": "NO_FINDINGS",
+      "candidate": "9f1bfe0ea9bc658ccbc26ece3a183c4fa6dd1c18",
+      "tree": "7ecc4c7be32beddf30133431c073b5af0ea7d017",
+      "base": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e",
+      "previous": "a8dd0c688973899ac069cc5c429b441c1168fd25",
+      "complete_scope": {
+        "files": 38,
+        "hunks": 103
+      },
+      "proper_delta": {
+        "files": 13,
+        "hunks": 61
+      },
+      "changed_scope_complete": true,
+      "findings": [],
+      "source_only": true,
+      "execution": false,
+      "launch": {
+        "fork_turns": "none",
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "xhigh",
+        "tool_accepted": true,
+        "runtime_introspection": "not available"
+      },
+      "review_depth": {
+        "deep": "Changed product/build/capture and relevant callers, consumers, state, publication, cleanup",
+        "contract": "Mature package load/build declarations and six direct/four transitive frozen identities",
+        "disposition": "Legal resources/historical assessment/ledger/RTM identities, purpose, consumers and status"
+      },
+      "adjacent": [
+        "Actual Coordinator control executor and Rust supervisor",
+        "Daemon/default executor/provider/native helper",
+        "Shared data root and Host staging conventions",
+        "Parser package entrypoints and node-gyp-build loader",
+        "Restored dependency consumers/checker/fixtures"
+      ],
+      "blind": true,
+      "limits": [
+        "No unrelated complete workflow/Host entry/dependency implementation/history log deep read claim",
+        "No actual installed Electron launch, utility-process lifecycle, package/signing/upgrade/rollback acceptance",
+        "All eight global flags remain false"
+      ]
+    }
+  ],
+  "prior_round_decisions": {
+    "carrier": "e0dddd68ed7d73b39a853184be2807c0fbc97c8c",
+    "path": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/review-r1/decisions.json",
+    "blob": "932cf3148e5fdbc105f62817828f282c30c2b534",
+    "all_fix_findings_source_repaired": [
+      "LDB-R1-HOST-BINDING",
+      "LDB-R1-RUNTIME-DOMAIN",
+      "LDB-R1-FAILED-BUILD-EVIDENCE"
+    ],
+    "acceptance": "No runtime acceptance follows from source repair"
+  },
+  "integration": {
+    "assessment": {
+      "agent": "/root/ldb_integration_preservation",
+      "verdict": "NO_FINDINGS",
+      "candidate": "d32bc3c44a792f812b01a0a3cf90868f570a940b",
+      "tree": "b477c98c4706fd49eef1b71ac9324f1d0a61eb08",
+      "parent": "2cf4ae9f5aaf143e3828ee5c21003f6415362af6",
+      "parent_tree": "43ed10c5c4eb21d8c37fef80cffa09ad4f526bf9",
+      "source": "9f1bfe0ea9bc658ccbc26ece3a183c4fa6dd1c18",
+      "complete_tree": true,
+      "source_paths": 38,
+      "source_equal_paths": 37,
+      "exception": "parity-ledger intended two incomingCBC hunks only",
+      "changed_leaves": {
+        "total": 39,
+        "modified": 15,
+        "added": 24,
+        "deleted": 0
+      },
+      "all_candidate_leaves": 10322,
+      "all_candidate_directories": 1377,
+      "unrelated_parent_leaves_preserved": 10281,
+      "ledger": {
+        "responsibilities": 242,
+        "ordering_unchanged": true,
+        "source_vs_merged_changed_ids": [
+          "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001"
+        ],
+        "live_vs_merged_changed_ids": [
+          "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001",
+          "OCRM-RESP-EXEC-PROCESS-SPAWN-001"
+        ],
+        "all_statuses_and_top_level_unchanged": true,
+        "all_global_flags_false": true,
+        "whole_text_reconstructed_both_directions": true,
+        "git_hashes_independently_recomputed": true
+      },
+      "findings": [],
+      "source_only": true,
+      "execution": false,
+      "launch": {
+        "requested_model": "gpt-6-astra",
+        "requested_effort": "xhigh",
+        "fork_turns": "none",
+        "tool_accepted": true,
+        "worker_introspection": "Inherited model/session; no independent session override introspection reported"
+      },
+      "limits": [
+        "Concurrent Box implementation not accepted",
+        "No build/runtime/package/global acceptance"
+      ]
+    },
+    "ledger": {
+      "fromR2ChangedResponsibilities": [
+        "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001"
+      ],
+      "fromLiveChangedResponsibilities": [
+        "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001",
+        "OCRM-RESP-EXEC-PROCESS-SPAWN-001"
+      ],
+      "topLevelIdentical": true,
+      "statusesIdentical": true,
+      "rootIdentifiedExactIncomingHunks": 2,
+      "reviewedBlob": "f31a75373c4cee6965edcf9352d5b5739fb008df",
+      "incomingBlob": "ac625ec7a1088b0bcccf37764efbbda6f4279787",
+      "mergedBlob": "b634f9f80b670dfa6342492dcc73a7e1b11fdee4"
+    },
+    "delivery_parent": "80a3087e6fcdd818b03ad2ea2fc5cf0c405d2f12",
+    "delivery_parent_tree": "5cf64d2b562b5797c085d3163dbe0012cf842f6a",
+    "subsequent_changes_preserved": [
+      {
+        "path": "projects/openclaw-rust/evidence/custody-recovery-647e0932-20261103/execution-r1/plan.json",
+        "blob": "b5b96755fcfbd84820be2ddbc85b936ef15f41eb"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/model-selection-recovery-69f645c6-20261103.json",
+        "blob": "30db59b757e85e9581afae8ee1f072fab573c52f"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
+        "blob": "2872f428079705bf2aef12bef9b09adcac18e458"
+      }
+    ],
+    "subsequent_change_scope": "Two evidence records and a separate Box background-custody authority amendment; no overlap with selected source/integration paths. Current parent is preserved without force."
+  },
+  "source_verdict": "CONVERGED; both fresh blind source reviewers and independent integration preservation return NO_FINDINGS",
+  "execution": {
+    "state": "not-run for the delivery subject",
+    "selection": "Existing rust-desktop-runtime workflow; explicit ocrm-local-exec-runtime prefix/scope selects current LocalExec Linux capture plus grouped renderer receipts",
+    "subject_rule": "The workflow must bind the actual containing delivery commit/tree. Source/diff/review carriers and historical receipts are not execution evidence for that H.",
+    "required": [
+      "normal exact-H Host and Coordinator build",
+      "21 actual native-domain/build contracts",
+      "7 Rust lifecycle/wire contracts",
+      "4 actual LPI cross-language consumer contracts",
+      "7 actual emitted-startup contracts",
+      "21 retained ONP contracts",
+      "6 retained LXO protocol contracts",
+      "existing affected renderer bridge/grouped receipts",
+      "bound owned native failure-work archival controls"
+    ],
+    "local_or_htch_execution": false
+  },
+  "scope_limits": [
+    "This repairs the already selected legacy build/startup/Host binding and runtime admission prerequisites.",
+    "Remaining TypeScript business, shell/LS and LFP publication custody are not accepted here.",
+    "Real installed Electron lifecycle, external services/devices, signed packages, upgrades/rollback and all global G01–G12/AC01–AC24 remain open.",
+    "Historical H6d8 Linux/Windows/macOS and renderer outcomes retain their exact subject and failures. Unchanged failed DJC instruments are not rerun by this selection."
+  ],
+  "global_flags": "All eight remain false; no status/read-depth promotion",
+  "delivery_attempts": [
+    {
+      "candidate": "488a900097a6e4783c58c80a20b055aa6c1bd751",
+      "expected_parent": "5c2aeed91291bf35ac5b6b763c3821ab0098c3b6",
+      "ref_update": "GitHub GraphQL UNKNOWN response",
+      "recovery": "Fresh remote read observed80a3087e6fcdd818b03ad2ea2fc5cf0c405d2f12, a child of5c2aeed91291bf35ac5b6b763c3821ab0098c3b6 containing only the concurrent Box authority amendment. Candidate is not in that observed history; rebuild on new parent, no force."
+    }
+  ]
+}

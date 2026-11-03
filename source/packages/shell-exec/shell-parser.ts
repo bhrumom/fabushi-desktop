@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -77,18 +77,59 @@ function loadDeveloperDependency<T>(name: string): T {
   return runtimeRequire(localPath) as T;
 }
 
+function isRuntimeManifestRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function assertRuntimeDependencyStage(root: string): void {
+  const manifestPath = path.join(root, "local-exec-dependencies.json");
+  const manifest: unknown = JSON.parse(readFileSync(manifestPath, "utf8"));
+  if (!isRuntimeManifestRecord(manifest) || manifest.contract !== "LDB-v1") {
+    throw new Error("LDB-v1 stage manifest contract mismatch: " + manifestPath);
+  }
+
+  // ELECTRON_RUN_AS_NODE changes Electron's entry mode, not its native ABI.
+  // Use the running executable's identity, as the stage builder's probe does.
+  const domain = process.versions.electron !== undefined ? "electron" : "node";
+  if (manifest.domain !== domain) {
+    throw new Error("LDB-v1 stage domain mismatch in " + manifestPath + ": expected " + domain);
+  }
+  const actualRuntime = {
+    version: process.versions.electron ?? process.versions.node,
+    node: process.versions.node,
+    modules: process.versions.modules,
+    platform: process.platform,
+    arch: process.arch,
+  };
+  const runtime = manifest.runtime;
+  if (!isRuntimeManifestRecord(runtime) || Object.keys(runtime).length !== Object.keys(actualRuntime).length) {
+    throw new Error("LDB-v1 stage runtime identity is malformed: " + manifestPath);
+  }
+  for (const [field, expected] of Object.entries(actualRuntime)) {
+    if (typeof expected !== "string" || expected.length === 0 || runtime[field] !== expected) {
+      throw new Error("LDB-v1 stage runtime mismatch (" + field + ") in " + manifestPath + ": expected " + expected);
+    }
+  }
+  // Full input/output qualification belongs to the desktop build/checker.
+  // This consumer only admits its declared domain and exact running runtime.
+}
+
 function loadRuntimeDependency<T>(name: string): T {
   const roots = runtimeDependencyRoots();
   if (process.env.SAND_PACKAGED !== "1" && roots.length === 0) return loadDeveloperDependency<T>(name);
 
   for (const root of roots) {
-    const packageDirectory = path.join(root, name);
-    if (!existsSync(path.join(packageDirectory, "package.json"))) continue;
     try {
+      if (lstatSync(root, { throwIfNoEntry: false }) === undefined) continue;
+      assertRuntimeDependencyStage(root);
+      const packageDirectory = path.join(root, name);
+      if (!existsSync(path.join(packageDirectory, "package.json"))) {
+        throw new Error("LDB-v1 stage is missing package " + name + ": " + root);
+      }
       return runtimeRequire(packageDirectory) as T;
     } catch (cause: unknown) {
-      // A native load failure is terminal; never retry another ABI domain or
-      // the developer's root node_modules.
+      // A selected stage's manifest, package or native load failure is terminal;
+      // never retry another stage or the developer's root node_modules.
       throw runtimeDependencyError(name, roots, cause);
     }
   }
