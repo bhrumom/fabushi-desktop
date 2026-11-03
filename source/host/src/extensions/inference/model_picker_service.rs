@@ -372,8 +372,8 @@ pub fn apply_session_model_selection(
     // 7. Check if selection changed
     let effective_ref = format!("{selected_provider}/{selected_model}");
     let current_ref = format!("{}/{}", params.current_provider, params.current_model);
+    // A caller's display hint cannot clear a persisted model override.
     let is_default_selection = reset_to_default
-        || params.request.is_default
         || (model_key(selected_provider, selected_model)
             == model_key(params.default_provider, params.default_model));
 
