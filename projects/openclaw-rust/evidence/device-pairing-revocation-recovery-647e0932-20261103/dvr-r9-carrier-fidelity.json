@@ -1,0 +1,728 @@
+{
+  "schema": "dvr-r9-source-carrier-independent-fidelity-v1",
+  "verdict": "PASS — artifact fidelity verified",
+  "observedAt": "2026-11-03T01:43:05.358437+00:00",
+  "reviewer": {
+    "task": "/root/dvr_security_r9",
+    "model": "configured/inherited GPT-6 Astra Pro",
+    "effort": "xhigh",
+    "metadataSource": "Parent assignment; no in-child runtime introspection claimed",
+    "scope": "Artifact serialization, integrity and provenance only"
+  },
+  "subject": {
+    "recoveryH": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+    "tree": "17ddcd3b19126ece3cadb722ea7b9bbdc5dcb561",
+    "parent": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+    "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "failedOriginalH": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949"
+  },
+  "carrierIndex": {
+    "path": "reviews/dvr-r9-carrier/index.json",
+    "bytes": 6990,
+    "sha256": "691a89828510ef11984b61b2919d5251c87ce4a8cd21a3ce860360a14e017c3d",
+    "gitBlob": "d18e02b8d7bcb2d671e919b9795496a63b5e9b49"
+  },
+  "archive": {
+    "path": "reviews/dvr-r9-carrier/source-recovery-5593e6d9.tar.gz",
+    "bytes": 621978,
+    "sha256": "5ce001a1454b4e12452e71ebeea1e021202f6c18a787923de219f4b3df918515",
+    "gitBlob": "4e80bdc47445a986e020979981af1ba96c1b8a84",
+    "memberCount": 19,
+    "uncompressedMemberBytes": 3298263
+  },
+  "parts": [
+    {
+      "path": "source-recovery-5593e6d9.tar.gz.part0001.bin",
+      "offset": 0,
+      "bytes": 384000,
+      "sha256": "82514d0d39cac56f0bad33cbd529d5593d53533ef59fc9e90909544607db7165",
+      "gitBlob": "a6bd736e9b2a9e96ea81a95700b2df5de4a9b7e3",
+      "offsetMatchesIndex": true,
+      "identityMatchesIndex": true
+    },
+    {
+      "path": "source-recovery-5593e6d9.tar.gz.part0002.bin",
+      "offset": 384000,
+      "bytes": 237978,
+      "sha256": "5c67fc1e3d7b63c538670fe95375725b686500def2067d216d06f5a64b208cce",
+      "gitBlob": "7b38e003e1f2c3bab844105e703440ce2400dacf",
+      "offsetMatchesIndex": true,
+      "identityMatchesIndex": true
+    }
+  ],
+  "checks": {
+    "assignedArchiveIdentity": true,
+    "archiveMatchesIndex": true,
+    "twoParts": true,
+    "partsMatchIndex": true,
+    "reassemblyEqualsArchive": true,
+    "gzipMtimeZero": true,
+    "gzipHasNoOriginalFilename": true,
+    "nineteenRegularFiles": true,
+    "uniqueMemberNames": true,
+    "safeRelativeMemberNames": true,
+    "lexicographicMemberOrder": true,
+    "deterministicTarHeaders": true,
+    "memberSetEqualsIndex": true,
+    "allMemberIdentitiesMatch": true,
+    "allOriginalBytesPreservedDeclarations": true,
+    "allMembersEqualOriginalScratchBytesAtObservation": true,
+    "fifteenFullAPIContents": true,
+    "APIContentPathSetEqualsManifest": true,
+    "publicationPathSetEqualsManifest": true,
+    "manifestCheckPathSetEqualsManifest": true,
+    "fullAPIContentIdentitiesMatch": true,
+    "allOverlappingInputIdentitiesMatch": true,
+    "pathsTextExactlyMatchesManifestOrder": true,
+    "manifestExactlyCopiedInRootDecision": true,
+    "publicationExactlyCopiedInRootDecision": true,
+    "CI011ExactlyCopiedInRootDecision": true,
+    "CI012ExactlyCopiedInRootDecision": true,
+    "allPatchIdentitiesMatchManifest": true,
+    "publicationPatchEqualsFixDelta": true,
+    "rebindingFourPathsMatchDelta": true,
+    "rebindingAfterIdentitiesMatchManifest": true,
+    "sourceInputSelectionEqualsIdentitySet": true,
+    "sourceWorkflowIdentityMatchesFullAPIContent": true,
+    "sourceSnapshotsPreservePrepublicationNullCommit": true,
+    "sourceSnapshotsMatchReviewedTree": true,
+    "sourceRebindingRecordsNoExecution": true,
+    "recoveryCommitIdentityConsistent": true,
+    "recoveryTreeIdentityConsistent": true,
+    "recoveryParentIdentityConsistent": true,
+    "branchIdentityConsistent": true,
+    "repositoryURLsConsistent": true,
+    "upstreamIdentityConsistent": true,
+    "failedOriginalIdentityConsistent": true,
+    "bothReviewHashesMatchRootDecision": true,
+    "rootAdjudicationRemainsSourceOnly": true,
+    "rootConvergenceHasNoExecutionAcceptance": true,
+    "carrierHasNoExecutionAcceptance": true,
+    "checklistEightCompletionFlagsFalse": true,
+    "checklistRemainsTaskLocal": true,
+    "checklistRecoveryRuntimePending": true,
+    "originalSealedIndexIdentity": true,
+    "originalFailureBindingsMatchSealedEvidence": true,
+    "originalLinuxFailedMacQueuedAtSealedObservation": true,
+    "originalEvidenceGrantsNoAcceptance": true,
+    "recordedChronologyConsistent": true
+  },
+  "failedChecks": [],
+  "findings": [],
+  "members": [
+    {
+      "path": "ci-recovery/dvr-exact/r9-input-identities.json",
+      "bytes": 68665,
+      "sha256": "a501467be837bbbf493acc773344730d7003beadfe49cf5c8dde6d054ca3b2ce",
+      "gitBlob": "5a1538e25ec3816c68d31f5f759438d0326c5eb5",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 68665,
+        "sha256": "a501467be837bbbf493acc773344730d7003beadfe49cf5c8dde6d054ca3b2ce",
+        "gitBlob": "5a1538e25ec3816c68d31f5f759438d0326c5eb5"
+      }
+    },
+    {
+      "path": "ci-recovery/dvr-exact/r9-manifest-check.json",
+      "bytes": 5917,
+      "sha256": "4d947ec250be6dc241e4837eded483533fff0315808127a15611f41923f908d9",
+      "gitBlob": "592e6d3a66fa827059e1fd958182fa9310e83ba8",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 5917,
+        "sha256": "4d947ec250be6dc241e4837eded483533fff0315808127a15611f41923f908d9",
+        "gitBlob": "592e6d3a66fa827059e1fd958182fa9310e83ba8"
+      }
+    },
+    {
+      "path": "ci-recovery/dvr-exact/r9-rebinding.json",
+      "bytes": 3192,
+      "sha256": "5d39960e091a97413557bec3685532d1d864e2893c06781a960fdf655c94c39b",
+      "gitBlob": "0efc599e668dcfb2380171fc00725ef3fb35ddf2",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 3192,
+        "sha256": "5d39960e091a97413557bec3685532d1d864e2893c06781a960fdf655c94c39b",
+        "gitBlob": "0efc599e668dcfb2380171fc00725ef3fb35ddf2"
+      }
+    },
+    {
+      "path": "ci-recovery/dvr-exact/r9-source-expectations.json",
+      "bytes": 139461,
+      "sha256": "3e39d3dd50df920bb43e62502b529b259955748e3252cd098c1f82c836751802",
+      "gitBlob": "a9ab684d8225ae0763e2f0c92faa913e52b3f625",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 139461,
+        "sha256": "3e39d3dd50df920bb43e62502b529b259955748e3252cd098c1f82c836751802",
+        "gitBlob": "a9ab684d8225ae0763e2f0c92faa913e52b3f625"
+      }
+    },
+    {
+      "path": "reviews/dvr-ci-011-decision.json",
+      "bytes": 2240,
+      "sha256": "f44ecdb8986bf23bb8c70d001f672f0422067c62df1838981a7f914203b038ae",
+      "gitBlob": "9da0a01620a2c66f9f2f37255bf06ad761817e8b",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 2240,
+        "sha256": "f44ecdb8986bf23bb8c70d001f672f0422067c62df1838981a7f914203b038ae",
+        "gitBlob": "9da0a01620a2c66f9f2f37255bf06ad761817e8b"
+      }
+    },
+    {
+      "path": "reviews/dvr-ci-012-decision.json",
+      "bytes": 2150,
+      "sha256": "78131a2c964d67b696c81b2c8c2a82a86440277cc3ac5c0e50c4358f1d0599fc",
+      "gitBlob": "6764bf93b6a93838766533e6b7e942acf3b2401e",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 2150,
+        "sha256": "78131a2c964d67b696c81b2c8c2a82a86440277cc3ac5c0e50c4358f1d0599fc",
+        "gitBlob": "6764bf93b6a93838766533e6b7e942acf3b2401e"
+      }
+    },
+    {
+      "path": "reviews/dvr-decisions.json",
+      "bytes": 90412,
+      "sha256": "9c531b26c0cea14f2e50aa5b13f54fa0cd2235a839f7bcdd62bd6e0f278c531b",
+      "gitBlob": "c4ab71930f466900fc1b9a0fb427ac919e6d842c",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 90412,
+        "sha256": "9c531b26c0cea14f2e50aa5b13f54fa0cd2235a839f7bcdd62bd6e0f278c531b",
+        "gitBlob": "c4ab71930f466900fc1b9a0fb427ac919e6d842c"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9-security-review.md",
+      "bytes": 17647,
+      "sha256": "ab6735378eda7437455eb548528a1864a27ee17ac8f57742e39278edb5c26784",
+      "gitBlob": "c4fae8ac6cfbec2ab8cab6f70659ee6de0b34eef",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 17647,
+        "sha256": "ab6735378eda7437455eb548528a1864a27ee17ac8f57742e39278edb5c26784",
+        "gitBlob": "c4fae8ac6cfbec2ab8cab6f70659ee6de0b34eef"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9-structure-review.md",
+      "bytes": 16812,
+      "sha256": "6728b9175e69114c8ee199f30052b6bb976ee3123ee11c3e4f45154e64d84f26",
+      "gitBlob": "016f0b48da56215cb1c38b41f36cf3141b83d03e",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 16812,
+        "sha256": "6728b9175e69114c8ee199f30052b6bb976ee3123ee11c3e4f45154e64d84f26",
+        "gitBlob": "016f0b48da56215cb1c38b41f36cf3141b83d03e"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9/api-readback.json",
+      "bytes": 2394153,
+      "sha256": "07f519410318548745fedb876f2109d1aa4178b4f5b473065531ce8e791fd843",
+      "gitBlob": "c48b1cef89990e25b4a8fd394663cd3b1bd464de",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 2394153,
+        "sha256": "07f519410318548745fedb876f2109d1aa4178b4f5b473065531ce8e791fd843",
+        "gitBlob": "c48b1cef89990e25b4a8fd394663cd3b1bd464de"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9/complete.patch",
+      "bytes": 471322,
+      "sha256": "4d11b5b4da00b3bbcddb4beba7befc890dc377ee86c277e39718b12b4b3aaae3",
+      "gitBlob": "aa1898f67fad01916b7e69a321a8ae8c1c5ded4d",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 471322,
+        "sha256": "4d11b5b4da00b3bbcddb4beba7befc890dc377ee86c277e39718b12b4b3aaae3",
+        "gitBlob": "aa1898f67fad01916b7e69a321a8ae8c1c5ded4d"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9/fix-delta.patch",
+      "bytes": 12303,
+      "sha256": "5d683e603d0a4f4c5324512a0309cf1e3f0847759cba90dcd6261d3ffdc2bfb3",
+      "gitBlob": "0735ebfcc86962361e2325bda0a0704aa60f194a",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 12303,
+        "sha256": "5d683e603d0a4f4c5324512a0309cf1e3f0847759cba90dcd6261d3ffdc2bfb3",
+        "gitBlob": "0735ebfcc86962361e2325bda0a0704aa60f194a"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9/manifest.json",
+      "bytes": 6319,
+      "sha256": "1b7c84d7fcf864a86f575260a9de06385a29b7637dc285eff61822278c743a12",
+      "gitBlob": "993f2f78dfcfe042283da95cba510e49f0d12009",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 6319,
+        "sha256": "1b7c84d7fcf864a86f575260a9de06385a29b7637dc285eff61822278c743a12",
+        "gitBlob": "993f2f78dfcfe042283da95cba510e49f0d12009"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9/paths.txt",
+      "bytes": 809,
+      "sha256": "8d6d080f3ce268c3ce00be8ff03a4d400e1391904c387da325a6753123409cd8",
+      "gitBlob": "a2a1ecc9c24dbb9272bb04664f651efe68795cbf",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 809,
+        "sha256": "8d6d080f3ce268c3ce00be8ff03a4d400e1391904c387da325a6753123409cd8",
+        "gitBlob": "a2a1ecc9c24dbb9272bb04664f651efe68795cbf"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9/publication.json",
+      "bytes": 5636,
+      "sha256": "ee2dedfafb66f08fe136d8ff7e0b0293fe51b80d27522e22d129d93ab6bb2e43",
+      "gitBlob": "b9cc4e634f2c2a72d7e5c1367911725ebe1319c9",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 5636,
+        "sha256": "ee2dedfafb66f08fe136d8ff7e0b0293fe51b80d27522e22d129d93ab6bb2e43",
+        "gitBlob": "b9cc4e634f2c2a72d7e5c1367911725ebe1319c9"
+      }
+    },
+    {
+      "path": "reviews/dvr-r9/publication.patch",
+      "bytes": 12303,
+      "sha256": "5d683e603d0a4f4c5324512a0309cf1e3f0847759cba90dcd6261d3ffdc2bfb3",
+      "gitBlob": "0735ebfcc86962361e2325bda0a0704aa60f194a",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 12303,
+        "sha256": "5d683e603d0a4f4c5324512a0309cf1e3f0847759cba90dcd6261d3ffdc2bfb3",
+        "gitBlob": "0735ebfcc86962361e2325bda0a0704aa60f194a"
+      }
+    },
+    {
+      "path": "reviews/freeze_dvr_r9.py",
+      "bytes": 2374,
+      "sha256": "5eb91e992535896e0f8961a038c9d312e32c2d91132159c9b8073c7b3c4a93f6",
+      "gitBlob": "1c91c7de1a531e3bcdb3c9e5ad2a0ea60fd0202b",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 2374,
+        "sha256": "5eb91e992535896e0f8961a038c9d312e32c2d91132159c9b8073c7b3c4a93f6",
+        "gitBlob": "1c91c7de1a531e3bcdb3c9e5ad2a0ea60fd0202b"
+      }
+    },
+    {
+      "path": "reviews/import_dvr_r9_publication.py",
+      "bytes": 3640,
+      "sha256": "a9699dd8b31408e20112c81ed7099db7de16cca9ea3c27e927662e5c1c64b1a8",
+      "gitBlob": "d54ff79b07494d99048006f119ab53a9aa41d028",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 3640,
+        "sha256": "a9699dd8b31408e20112c81ed7099db7de16cca9ea3c27e927662e5c1c64b1a8",
+        "gitBlob": "d54ff79b07494d99048006f119ab53a9aa41d028"
+      }
+    },
+    {
+      "path": "state/requirement-checklist.json",
+      "bytes": 42908,
+      "sha256": "4c8fcfe99336b65c1027d5284989a3d76949c03fb68421c84d9ba186e6124164",
+      "gitBlob": "314570761acce331ff2619ce42733972d2f8ff63",
+      "identityMatchesIndex": true,
+      "originalBytesPreservedDeclared": true,
+      "matchesOriginalScratchBytes": true,
+      "originalAtObservation": {
+        "bytes": 42908,
+        "sha256": "4c8fcfe99336b65c1027d5284989a3d76949c03fb68421c84d9ba186e6124164",
+        "gitBlob": "314570761acce331ff2619ce42733972d2f8ff63"
+      }
+    }
+  ],
+  "fullAPIContentReadback": {
+    "files": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "encoding": "utf-8",
+        "bytes": 458605,
+        "sha256": "7fd4a4871057732c3557ea882d9a284611420ae7e6f02bc1b6bfa5b5f431e144",
+        "gitBlob": "de51fb46918a19f80788cdf72941c7ef45c23953",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+        "encoding": "utf-8",
+        "bytes": 23075,
+        "sha256": "34bed252b82d2389b5e98f86c64a7aee8fededc19328b72ff328beeb449dbf24",
+        "gitBlob": "0a594c04f26b1a7e82e285e0ad11357b0b478511",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "encoding": "utf-8",
+        "bytes": 134922,
+        "sha256": "dd5607d0fc226ffe8f4b1845dc77884bdf34140280a023f47d00fb00241ecdb9",
+        "gitBlob": "95e117dc740b9aee28b3be48396376254e02664f",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": false,
+        "matchesInputIdentity": null
+      },
+      {
+        "path": "source/host/src/device_pairing_owner.rs",
+        "encoding": "utf-8",
+        "bytes": 80837,
+        "sha256": "3f4383dacad3ee2282dda9b2470c9c8f28ec6161a0168a1192022ee181bceb45",
+        "gitBlob": "cf6a5818c665f62d96ffa1af07ee0104c620ec9f",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/src/gateway_server.rs",
+        "encoding": "utf-8",
+        "bytes": 95495,
+        "sha256": "1c71e180de491c13f677d408e1fba34b034294d4143a7e32b8be584a7193a83a",
+        "gitBlob": "0296c5d8cb3b6b75ec13ce964488cec771eff2f8",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "encoding": "utf-8",
+        "bytes": 986775,
+        "sha256": "cdf57d9b7f2f4409bddc9df0b8a53eb9c01b137a46f3417ba54ddcdd9c29cced",
+        "gitBlob": "c3b87212e096b245bbd70081ef3eb33ca1ccda07",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+        "encoding": "utf-8",
+        "bytes": 10371,
+        "sha256": "8dda9609910f4ba90136366db5593540432444642c133db86e97b3f6a1a806f5",
+        "gitBlob": "59dceb45e98a73af50b218899f00e84ba4a8c8a8",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/tests/gateway_server_contract.rs",
+        "encoding": "utf-8",
+        "bytes": 122634,
+        "sha256": "abf2e934f1892f46c9f9f18959cef8f1f3a21029326666a8ccd22536423fb3aa",
+        "gitBlob": "ac35f07de64b9ba77f667bdabb2a00a1a02d9793",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/tests/device_pairing_revocation_authority_contract.rs",
+        "encoding": "utf-8",
+        "bytes": 64783,
+        "sha256": "00faeebb4b0d86cf375545ee7bda39d1f9607ca8ae209c8987d2cf5b845d7eaa",
+        "gitBlob": "60e8dc87d6fdaa94db7b167f15f4808520c62ee1",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/tests/device_pairing_revocation_gateway_contract.rs",
+        "encoding": "utf-8",
+        "bytes": 42942,
+        "sha256": "757422f419325a1d65dad3bf392b8534b62903fee499f3aa605438f2bb95f4f0",
+        "gitBlob": "101f0683f102d9611f22e1011fd9acde1349054c",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/tests/device_pairing_retained_stream_contract.rs",
+        "encoding": "utf-8",
+        "bytes": 58959,
+        "sha256": "cb0cc9ecf4648c49fea24810a628669f99009ba07fe62102f19332d8a7f05c12",
+        "gitBlob": "ee80288c1796bb3781d6832af694fa0f6c1e8fa0",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "encoding": "utf-8",
+        "bytes": 133668,
+        "sha256": "4bc59d27b1b9c3f5fbd8d709e34633ba0f00a54301c18d640dc4c2d03da53f0a",
+        "gitBlob": "2049875451202ba05aecb7e5de9a6841dc378d63",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/tests/openclaw_chat_cron_node_contract.rs",
+        "encoding": "utf-8",
+        "bytes": 28284,
+        "sha256": "81d97d2375ac43b6317a442556c8e8bc3cf0774b2c111f2900a4440cb1696a74",
+        "gitBlob": "b6a107dda12c867e57e7cd6ff38d245308f723ea",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/tests/channel_gateway_authorization_contract.rs",
+        "encoding": "utf-8",
+        "bytes": 33977,
+        "sha256": "fb9584ca7dc25503fd5d90b62bb4bf4e5eaac0f4cbe0c1d3c5c968ff8304815f",
+        "gitBlob": "bd01008a229869e85055b607fcc08615285c7dfc",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      },
+      {
+        "path": "source/host/tests/memory_gateway_authorization_contract.rs",
+        "encoding": "utf-8",
+        "bytes": 29329,
+        "sha256": "927e68c30da73caabdb52307057b9fefdf1a03a3785c91af72e13fa490e3111f",
+        "gitBlob": "1d5e5434a7e7576d68262d39c8d198885cb3beba",
+        "matchesAPIFileSHA": true,
+        "matchesManifest": true,
+        "matchesPublication": true,
+        "publicationRecordsFullContentComparison": true,
+        "matchesManifestCheck": true,
+        "inputIdentityCovered": true,
+        "matchesInputIdentity": true
+      }
+    ],
+    "fileCount": 15,
+    "totalContentBytes": 2304656,
+    "inputIdentityOverlapCount": 14,
+    "notExecutionSelected": [
+      "projects/openclaw-rust/requirements-traceability-matrix.json"
+    ]
+  },
+  "patches": [
+    {
+      "path": "reviews/dvr-r9/complete.patch",
+      "bytes": 471322,
+      "sha256": "4d11b5b4da00b3bbcddb4beba7befc890dc377ee86c277e39718b12b4b3aaae3",
+      "gitBlob": "aa1898f67fad01916b7e69a321a8ae8c1c5ded4d",
+      "matchesManifest": true,
+      "declaredBase": "d95efb8a690750ad8dc78ec375ec5ff2a7ad2660"
+    },
+    {
+      "path": "reviews/dvr-r9/publication.patch",
+      "bytes": 12303,
+      "sha256": "5d683e603d0a4f4c5324512a0309cf1e3f0847759cba90dcd6261d3ffdc2bfb3",
+      "gitBlob": "0735ebfcc86962361e2325bda0a0704aa60f194a",
+      "matchesManifest": true,
+      "declaredBase": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0"
+    },
+    {
+      "path": "reviews/dvr-r9/fix-delta.patch",
+      "bytes": 12303,
+      "sha256": "5d683e603d0a4f4c5324512a0309cf1e3f0847759cba90dcd6261d3ffdc2bfb3",
+      "gitBlob": "0735ebfcc86962361e2325bda0a0704aa60f194a",
+      "matchesManifest": true,
+      "declaredBase": "9345d5c92601f62ee702c9000c0dba7e0f394518"
+    }
+  ],
+  "reviewProvenance": [
+    {
+      "path": "reviews/dvr-r9-security-review.md",
+      "bytes": 17647,
+      "sha256": "ab6735378eda7437455eb548528a1864a27ee17ac8f57742e39278edb5c26784",
+      "gitBlob": "c4fae8ac6cfbec2ab8cab6f70659ee6de0b34eef",
+      "matchesRootDeclaredHash": true,
+      "rootDeclaredModel": "configured GPT-6 Astra Pro",
+      "rootDeclaredEffort": "xhigh",
+      "rootDeclaredTerminal": "APPROVE / focused source repair only",
+      "rootDeclaredFullReportRead": true,
+      "rootDeclaredBlockingFindings": 0
+    },
+    {
+      "path": "reviews/dvr-r9-structure-review.md",
+      "bytes": 16812,
+      "sha256": "6728b9175e69114c8ee199f30052b6bb976ee3123ee11c3e4f45154e64d84f26",
+      "gitBlob": "016f0b48da56215cb1c38b41f36cf3141b83d03e",
+      "matchesRootDeclaredHash": true,
+      "rootDeclaredModel": "gpt-6.1-sol",
+      "rootDeclaredEffort": "xhigh",
+      "rootDeclaredTerminal": "APPROVE / focused source repair only",
+      "rootDeclaredFullReportRead": true,
+      "rootDeclaredBlockingFindings": 0
+    }
+  ],
+  "recordedTimes": {
+    "frozenManifest": "2026-11-03T01:30:21.048611+00:00",
+    "rootSourceAdjudication": "2026-11-03T01:36:55.648785+00:00",
+    "APICommit": "2026-11-03T01:37:05Z",
+    "publicationVerification": "2026-11-03T01:37:31.147541+00:00",
+    "taskLocalChecklist": "2026-11-03T01:37:44.748525+00:00",
+    "carrierPrepared": "2026-11-03T01:39:31.621966+00:00"
+  },
+  "originalEvidenceReference": {
+    "path": "ci-recovery/dvr-exact/published-8bdcf101-evidence-index.json",
+    "bytes": 75024,
+    "sha256": "23cbad8efb3a128f2bebc117bf0fb4f16fac10f0ec31a63d892f50c58ed7709e",
+    "gitBlob": "38adcc7a20b369852d30e9dc734546fe94c7c58e",
+    "observation": "2026-11-03 01:31:25 UTC",
+    "subject": {
+      "commit": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "tree": "9345d5c92601f62ee702c9000c0dba7e0f394518",
+      "parent": "a2f7ac9f6ede2e4c4561f9b82f85de7e074c7323",
+      "runtime_run": 41559093519,
+      "source_run": 41559093710,
+      "run_attempt": 1,
+      "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+      "execution_credit_from_binding": false
+    },
+    "LinuxJob": {
+      "id": 125665070447,
+      "name": "sqlite-native-path",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    "MacJob": {
+      "id": 125665070217,
+      "name": "rust-host",
+      "status": "queued",
+      "conclusion": null
+    },
+    "sourceRunState": "completed success; structural scope only",
+    "runtimeRunState": "queued (macOS job queued; Linux job terminal failure)",
+    "decisionArtifactReferences": [
+      {
+        "decision": "DVR-CI-011",
+        "artifact": 13196816131,
+        "sha256": "365c7162b207d4814730925507829544b5cb641ca78ffef61bd3e802808e545b"
+      },
+      {
+        "decision": "DVR-CI-012",
+        "artifact": 13196766905,
+        "sha256": "697697eaa5cec007e39b7c4430382505056d5b3bb1dd0aeadaacc2170f60d15e"
+      }
+    ]
+  },
+  "liveOriginalDrift": [],
+  "readExtents": {
+    "allCarrierFiles": "Entire index, archive and both binary parts read; all 19 member byte streams independently hashed and compared with complete original files. No archived script executed.",
+    "structuredData": "All 11 JSON members parsed. Scope, R9 adjudication, review hashes, publication, source selection, rebinding and current snapshot flags cross-compared.",
+    "humanProvenanceReading": "Both review verdict/launch/scope/limits sections; relevant R9 root decisions and publication records; original-H CI decisions; task-local status and limitations. This is not a new source review.",
+    "sourceReadback": "All 15 full UTF-8 source contents (2,304,656 bytes) re-encoded and independently hashed; no semantic source reading is claimed.",
+    "additionalEvidence": "Sealed original-H evidence index fully parsed; subject, observation, jobs and the two CI artifact references compared."
+  },
+  "limits": [
+    "This review grants no new source-semantic approval, execution credit, unit verification, OCRM acceptance, or global completion.",
+    "Own earlier security review is compared for artifact fidelity only. No earlier source verdict is reissued.",
+    "Full API contents are re-encoded and hashed from the preserved connector readback. No new GitHub request, independent retrieval-origin attestation, or current branch-tip claim is made.",
+    "rootFullReportRead and model/effort fields are preserved supplied attestations, not facts independently measurable from hashing.",
+    "Pre-publication source expectation, input identity and rebinding records intentionally retain null commit fields; subsequent publication binds their unchanged tree to H5593.",
+    "The checklist is its 2026-11-03T01:37:44.748525+00:00 task-local snapshot, including pending carrier publication; it is not the canonical ledger or a later-state claim.",
+    "publication.verified means recorded content/identity comparison. The preserved GitHub commit verification is false with reason unsigned; no cryptographic signature verification is claimed.",
+    "The 277 selected execution-input identities overlap 14 of the 15 review paths. The RTM is not an execution-selected input and is independently covered by the full API content, review manifest, publication and manifest-check identities."
+  ],
+  "noProductExecution": true,
+  "noGitHubOrRepositoryMutation": true,
+  "sourceSemanticsAcceptanceGranted": false,
+  "executionAcceptanceGranted": false,
+  "unitVerified": false,
+  "globalAcceptance": false
+}
