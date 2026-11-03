@@ -235,6 +235,32 @@ test("UI-NMR-CURSOR-ACTIVATION-001 initial and scope commits activate near-top h
   assert.equal(await f.count(TAIL, { conversationId: B, beforeSeq: 41 }), 2);
 });
 
+test("UI-NMR-SAME-SELECTION-001 reselecting the current conversation preserves its pending and failed continuation", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t);
+  await f.loadInitial();
+  const first = await f.request(TAIL, { conversationId: A, beforeSeq: 41, beforeCursor: ALPHA_41 });
+  for (let selection = 0; selection < 2; selection++) {
+    await f.page.getByRole("button", { name: "Alpha", exact: true }).click();
+    await f.frames();
+    assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: null }), 1);
+    assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 1,
+      "same-selection navigation cannot retire and duplicate the held read");
+  }
+  await f.rejectRequest(first);
+  await f.error().waitFor();
+  await f.page.getByRole("button", { name: "Alpha", exact: true }).click();
+  await f.frames();
+  assert.equal(await f.error().count(), 1, "same-selection navigation preserves the explicit retry requirement");
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 1);
+  await f.retry().click();
+  const retry = await f.request(TAIL, { conversationId: A, beforeSeq: 41, beforeCursor: ALPHA_41 }, first.id);
+  await f.resolveRequest(retry, historyPage(messages(21, 40)));
+  await f.expectRows(ids(21, 64));
+  await f.frames();
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 2);
+  assert.equal(await f.error().count(), 0);
+});
+
 test("UI-NMR-OLDER-RETRY-001 failure pauses automatic pages; keyboard and single-flight retries preserve the root cache", { timeout: 60_000 }, async (t) => {
   const f = await fixture(t);
   await f.loadInitial();

@@ -1810,8 +1810,17 @@ claim of an observed production data-loss incident.
   The implementation candidate disables automatic corruption recovery on the
   existing configured opener. With no nonempty WAL or rollback journal, first
   check the existing main DB through immutable read-only SQLite before any
-  journal-mode/schema writes. Sidecar-backed snapshots remain with the existing
-  WAL-aware owner. Exact-H byte-preservation tests must decide this boundary
+  journal-mode/schema writes. Before deferring any sidecar-backed snapshot,
+  filesystem metadata rejects a missing/empty main beside a nonempty sidecar
+  and a nonempty main shorter than SQLite's 100-byte header. Other existing
+  main files use SQLite's own immutable read-only connection and the header
+  query `PRAGMA user_version`; `SQLITE_NOTADB` refuses before journal/schema
+  writes. Do not open/close a separate raw-file descriptor for this probe:
+  POSIX descriptor close can release another live SQLite owner's locks.
+  Header recognition is not committed-snapshot authority; `SQLITE_CORRUPT`
+  from that main-only query beside a nonempty WAL/rollback journal defers to
+  the existing WAL-aware owner. Other errors refuse. Without that snapshot sidecar, retain the full
+  immutable `quick_check`. Exact-H byte-preservation tests decide this boundary
   before qualification, including a corrupt data page with a readable schema
   in DELETE journal mode. Arbitrary hot/corrupt-sidecar recovery remains open. The unpublished readonly_shm probe is withdrawn:
   the locked SQLite3.51.3 has a known corrupt-WAL read-overrun in that path.

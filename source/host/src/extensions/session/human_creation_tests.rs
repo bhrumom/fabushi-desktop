@@ -661,7 +661,7 @@ fn cached_owner_with_missing_identity_never_relabels_retained_data() {
 
 #[test]
 fn existing_empty_directory_and_schema_only_store_resume_without_replacing_files() {
-    for schema_opened in [false, true] {
+    for store_state in ["directory", "empty-file", "schema"] {
         let root = test_root("empty-restart");
         let mut workers = test_workers(&root);
         let (locked, observed) = mpsc::channel();
@@ -680,7 +680,9 @@ fn existing_empty_directory_and_schema_only_store_resume_without_replacing_files
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         let sibling = path.parent().unwrap().join("retained-empty-directory.bin");
         fs::write(&sibling, b"existing directory sentinel").unwrap();
-        if schema_opened {
+        if store_state == "empty-file" {
+            fs::write(&path, b"").unwrap();
+        } else if store_state == "schema" {
             let previous = SandAgentDb::open_conversation_store(&path, 25).unwrap();
             assert_eq!(previous.read_kv("metadata").unwrap(), None);
             drop(previous);
@@ -714,7 +716,22 @@ fn directory_file_bytes(path: &Path) -> Vec<(String, Vec<u8>)> {
 
 #[test]
 fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings() {
-    for corruption in ["notadb", "schema", "data-page-delete-mode"] {
+    let cases: &[(&str, &[&str])] = &[
+        ("notadb", &["-wal", "-shm", "-journal"]),
+        ("long-notadb", &["-wal"]),
+        ("long-notadb", &["-journal"]),
+        ("long-notadb", &["-shm"]),
+        ("truncated-header", &["-wal", "-shm", "-journal"]),
+        ("missing-main", &["-wal"]),
+        ("missing-main", &["-journal"]),
+        ("missing-main", &["-shm"]),
+        ("empty-main", &["-wal"]),
+        ("empty-main", &["-journal"]),
+        ("empty-main", &["-shm"]),
+        ("schema", &[]),
+        ("data-page-delete-mode", &[]),
+    ];
+    for &(corruption, sidecars) in cases {
         let root = test_root("corrupt-store-refusal");
         let mut workers = test_workers(&root);
         let (locked, observed) = mpsc::channel();
@@ -733,7 +750,7 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         let path = get_native_conversation_db_path(&root, &id).unwrap();
         let directory = path.parent().unwrap();
         fs::create_dir_all(directory).unwrap();
-        if corruption != "notadb" {
+        if matches!(corruption, "schema" | "data-page-delete-mode") {
             let previous = SandAgentDb::open_conversation_store(&path, 25).unwrap();
             seed_entries(&previous);
             previous.close(true);
@@ -761,11 +778,20 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
             bytes[damage_offset] = 0; // Invalid B-tree type, with a valid SQLite header.
             fs::write(&path, bytes).unwrap();
         } else {
-            fs::write(&path, b"retained NOTADB bytes; never quarantine or replace").unwrap();
-            for suffix in ["-wal", "-shm", "-journal"] {
-                fs::write(PathBuf::from(format!("{}{suffix}", path.display())),
-                    format!("retained original {suffix} bytes")).unwrap();
+            match corruption {
+                "notadb" => fs::write(&path, b"retained NOTADB bytes; never quarantine or replace").unwrap(),
+                // Exceeds the metadata length guard, so SQLite itself must
+                // reject this header before a writable open touches sidecars.
+                "long-notadb" => fs::write(&path, [b'X'; 512]).unwrap(),
+                "truncated-header" => fs::write(&path, b"SQLite format 3\0").unwrap(),
+                "empty-main" => fs::write(&path, b"").unwrap(),
+                "missing-main" => {},
+                _ => unreachable!("unknown corruption fixture"),
             }
+        }
+        for suffix in sidecars {
+            fs::write(PathBuf::from(format!("{}{suffix}", path.display())),
+                format!("retained original {suffix} bytes")).unwrap();
         }
         fs::write(directory.join("unrelated-resource.bin"), b"retained resource outside corrupt SQLite").unwrap();
         let saved = directory_file_bytes(directory);
@@ -774,7 +800,7 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         assert!(!error.is_empty());
         assert!(cached_owner(&workers, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
-        assert_eq!(directory_file_bytes(directory), saved);
+        assert_eq!(directory_file_bytes(directory), saved, "{corruption} {sidecars:?}");
         workers.create_human_conversation(PEER, "Retry must preserve corrupt data").expect_err("same-worker refusal");
         assert_eq!(directory_file_bytes(directory), saved);
         workers.shutdown();

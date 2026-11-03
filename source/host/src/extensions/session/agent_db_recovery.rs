@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use rusqlite::{Connection, OpenFlags, params};
+use rusqlite::{Connection, ErrorCode, OpenFlags, params};
 use serde_json::{Map, Value};
 
 use crate::storage::sqlite_busy::{is_sqlite_corrupt_error, is_sqlite_io_error};
@@ -119,37 +119,66 @@ pub fn is_store_db_healthy(db: &Connection) -> bool {
         .unwrap_or(false)
 }
 
-/// Reject an existing corrupt main database before journal-mode/schema writes.
-/// A WAL or rollback journal may contain the current snapshot, so those stores
-/// are left to the existing WAL-aware opener; this probe is never their authority.
+/// Reject an invalid main database before journal-mode/schema writes can remove
+/// its sidecars. A WAL or rollback journal may contain the current snapshot, so
+/// header recognition alone never establishes that store's committed identity.
 pub(super) fn probe_human_conversation_store(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<(), AgentDbRecoveryError> {
-    for suffix in ["-wal", "-journal"] {
+    let mut has_nonempty_sidecar = false;
+    let mut has_snapshot_sidecar = false;
+    for suffix in ["-wal", "-journal", "-shm"] {
         let mut path = db_path.as_os_str().to_os_string();
         path.push(suffix);
         match std::fs::metadata(PathBuf::from(path)) {
-            Ok(metadata) if metadata.len() > 0 => return Ok(()),
+            Ok(metadata) if metadata.len() > 0 => {
+                has_nonempty_sidecar = true;
+                has_snapshot_sidecar |= suffix != "-shm";
+            },
             Ok(_) => {},
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
             Err(error) => return Err(error.into()),
         }
     }
-    match std::fs::metadata(db_path) {
-        Ok(_) => {},
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+    let main_len = match std::fs::metadata(db_path) {
+        Ok(metadata) => metadata.len(),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => 0,
         Err(error) => return Err(error.into()),
+    };
+    if main_len == 0 {
+        if has_nonempty_sidecar {
+            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+        }
+        return Ok(());
+    }
+    if main_len < 100 {
+        return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
     }
     let mut uri = url::Url::from_file_path(db_path).map_err(|_| {
         std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid Human store path")
     })?;
     uri.query_pairs_mut().append_pair("mode", "ro").append_pair("immutable", "1");
+    // SQLite must own this descriptor: closing an ordinary File after a header
+    // read can cancel another connection's POSIX locks on the same database.
+    // Immutable mode leaves WAL/journal files untouched; user_version decodes
+    // the main header without requiring its possibly older schema to load.
     let db = Connection::open_with_flags(
         uri.as_str(),
         OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
     )?;
     db.busy_timeout(Duration::from_millis(busy_timeout_ms))?;
+    if let Err(error) = db.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0)) {
+        // A WAL-backed main file can have an older page count or snapshot.
+        // Only that corruption result defers to the WAL-aware owner. NOTADB
+        // and I/O/access errors must refuse before opening a writable handle.
+        if !has_snapshot_sidecar || error.sqlite_error_code() != Some(ErrorCode::DatabaseCorrupt) {
+            return Err(error.into());
+        }
+    }
+    if has_snapshot_sidecar {
+        return Ok(());
+    }
     let status = db.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))?;
     if status != "ok" {
         return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));

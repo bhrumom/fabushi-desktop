@@ -1,7 +1,7 @@
 name: Native service contracts
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1, checkpoint/tdrp-human-retry-bfafe567-r1]
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
@@ -850,8 +850,8 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# tests 9' artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# pass 9' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 10' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 10' artifacts/native-message-ui/production-transcript.log
           grep -F 'ok 1 - UI-NMR-CURSOR-ACTIVATION-001 initial and scope commits activate near-top history without scroll while pending and failed reads remain fenced' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log

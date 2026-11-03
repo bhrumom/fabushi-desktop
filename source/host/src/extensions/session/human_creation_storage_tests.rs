@@ -10,6 +10,7 @@ use rusqlite::{Connection, OpenFlags, TransactionBehavior, params};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use super::super::agent_db_schema::AGENT_DB_SCHEMA;
 use super::{SandAgentDb, SandAgentDbOptions, encode_hex};
 
 const WAIT: Duration = Duration::from_secs(20);
@@ -93,6 +94,98 @@ impl Drop for ScopedInsertBusyHandler<'_> {
     }
 }
 
+fn committed_wal_schema_and_identity_survive_human_open() {
+    let root = test_root("wal-only-schema");
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("store.db");
+    let writer = Connection::open(&path).unwrap();
+    let mode: String = writer.query_row("PRAGMA journal_mode=WAL", [], |row| row.get(0)).unwrap();
+    assert_eq!(mode, "wal");
+    writer.pragma_update(None, "wal_autocheckpoint", 0).unwrap();
+    writer.execute_batch(AGENT_DB_SCHEMA).unwrap();
+    let winner = metadata("Identity committed only in WAL", 101);
+    let winner_raw = encode_hex(&serde_json::to_vec(&winner).unwrap());
+    writer.execute("INSERT INTO kv (key, value) VALUES ('metadata', ?1)", params![winner_raw]).unwrap();
+    assert!(fs::metadata(root.join("store.db-wal")).unwrap().len() > 32);
+
+    // Independent SQLite inspection proves even the schema is absent from
+    // the main-only snapshot. It cannot decide whether this store is empty.
+    let mut uri = url::Url::from_file_path(&path).unwrap();
+    uri.query_pairs_mut().append_pair("mode", "ro").append_pair("immutable", "1");
+    let main_only = Connection::open_with_flags(
+        uri.as_str(), OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
+    ).unwrap();
+    let main_tables: i64 = main_only.query_row(
+        "SELECT COUNT(*) FROM sqlite_schema WHERE name='kv'", [], |row| row.get(0),
+    ).unwrap();
+    assert_eq!(main_tables, 0);
+    drop(main_only);
+
+    let owner = SandAgentDb::open_human_conversation_store(&path, 1000).unwrap();
+    assert_eq!(owner.read_kv("metadata").unwrap(), Some(winner_raw.clone()));
+    assert_eq!(owner.read_metadata().unwrap(), winner);
+    assert!(!owner.initialize_human_metadata_if_empty(metadata("Must not adopt the main snapshot", 102)).unwrap());
+    drop(owner);
+    drop(writer);
+    let reopened = SandAgentDb::open_human_conversation_store(&path, 1000).unwrap();
+    assert_eq!(reopened.read_kv("metadata").unwrap(), Some(winner_raw));
+    assert_eq!(reopened.read_metadata().unwrap(), winner);
+    drop(reopened);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(target_os = "linux")]
+fn human_probe_preserves_another_connections_posix_lock() {
+    use std::os::fd::AsRawFd;
+
+    let root = test_root("probe-posix-lock");
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("store.db");
+    let mut writer = Connection::open(&path).unwrap();
+    let mode: String = writer.query_row("PRAGMA journal_mode=DELETE", [], |row| row.get(0)).unwrap();
+    assert_eq!(mode, "delete");
+    writer.execute_batch("CREATE TABLE held_identity (value INTEGER); INSERT INTO held_identity VALUES (1);").unwrap();
+
+    // Open before the transaction and keep this descriptor until AFTER every
+    // lock is released. The oracle itself must never close an ordinary File
+    // while SQLite holds a POSIX lock on this inode.
+    let observer = fs::File::open(&path).unwrap();
+    let reserved_lock = || {
+        // SAFETY: flock consists of integer fields; zero initializes padding
+        // and the required input l_pid=0. fcntl receives a live descriptor and
+        // a writable flock for the duration of this non-blocking query.
+        let mut lock: libc::flock = unsafe { std::mem::zeroed() };
+        lock.l_type = libc::F_WRLCK as libc::c_short;
+        lock.l_whence = libc::SEEK_SET as libc::c_short;
+        lock.l_start = 0x4000_0001; // SQLite's RESERVED byte: PENDING_BYTE + 1.
+        lock.l_len = 1;
+        let result = unsafe {
+            libc::fcntl(observer.as_raw_fd(), libc::F_OFD_GETLK, &mut lock as *mut libc::flock)
+        };
+        assert_eq!(result, 0, "query the actual OS lock: {}", std::io::Error::last_os_error());
+        (lock.l_type, lock.l_pid)
+    };
+    let held = (libc::F_WRLCK as libc::c_short, libc::pid_t::try_from(std::process::id()).unwrap());
+    for with_journal in [false, true] {
+        let transaction = writer.transaction_with_behavior(TransactionBehavior::Immediate).unwrap();
+        if with_journal {
+            transaction.execute("UPDATE held_identity SET value = 2", []).unwrap();
+            assert!(fs::metadata(root.join("store.db-journal")).unwrap().len() > 0);
+        }
+        // Unlike F_GETLK or another same-process SQLite connection, the OFD
+        // query observes our own process's POSIX lock and detects a raw-close
+        // bug even when SQLite's in-process lock bookkeeping still says busy.
+        assert_eq!(reserved_lock(), held);
+        super::probe_human_conversation_store(&path, 1000).unwrap();
+        assert_eq!(reserved_lock(), held, "probe closure released the writer's real lock");
+        transaction.rollback().unwrap();
+        assert_eq!(reserved_lock().0, libc::F_UNLCK as libc::c_short);
+    }
+    drop(observer);
+    drop(writer);
+    fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen() {
     let root = test_root("distinct-handles");
@@ -162,6 +255,10 @@ fn distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_r
     assert_eq!(reopened.read_kv("metadata").unwrap(), Some(winner_raw));
     drop(reopened);
     fs::remove_dir_all(root).unwrap();
+
+    committed_wal_schema_and_identity_survive_human_open();
+    #[cfg(target_os = "linux")]
+    human_probe_preserves_another_connections_posix_lock();
 }
 
 #[test]

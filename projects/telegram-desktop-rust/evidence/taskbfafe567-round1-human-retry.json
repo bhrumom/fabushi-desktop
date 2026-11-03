@@ -1,0 +1,101 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-human-retry-bfafe567-r1",
+  "base": "0381cc707ea28e7733397384bbbf2c3a88e58421",
+  "base_pr": 189,
+  "live_main_at_discovery": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "fixed_upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "rebaseline_performed": false,
+    "accepted": false
+  },
+  "authority": {
+    "specs": [
+      "AGENTS.md",
+      "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+      "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+      "docs/specs/fabushi-bot-communication-platform.md",
+      "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+      "docs/specs/fabushi-deferred-ci-migration.md",
+      "docs/specs/fbcp-native-message-reconciliation.md",
+      "docs/specs/fbcp-human-message-retry.md"
+    ],
+    "source_review_contract": "FMEP-SOURCE-01 is already present in parity-ledger.schema.json, tdrp-source-review.mjs and the actual accepted-mode authority entrypoint. Candidate compatibility remains format3/spec_revision9; six source_reviews remain two complete and four pending. No unreviewed source is promoted.",
+    "working_tree": "Fresh clean checkout of exact base; the separate existing e7702709 worktree at f3467c39e1258e2562ddbd7639c2617460a36f46 was read-only and unchanged.",
+    "publication": "New descendant branch preserves PR189 and the shared migration ref; publication must use a non-force expected-head update and GitHub API content/SHA readback."
+  },
+  "existing_production_ownership": {
+    "identity": "FabushiAuthService/private Native credential -> existing Session local_human_id and issuer/user-bound FabushiNativeMessagingClient",
+    "conversation": "ProductionRenderer -> existing Session gateway -> ProductionSessionWorkers -> canonical participant pair / SandAgentDb",
+    "message": "Session durable intent -> FabushiNativeMessagingClient /api/social/messages -> credential-fenced canonical settlement -> existing transcript mutation/feed",
+    "resource": "Existing attachment owner and persisted remoteDispatchAttachments -> Native resource upload; no second staging or resource store",
+    "permission": "Authenticated account, canonical conversation participants, source-forward authorization and service permission",
+    "search": "Existing authorized Session transcript/search; cross-surface final Search acceptance remains open",
+    "legacy": "Desktop FeatureHost MessagingService is a fail-closed retained boundary; Telegram direct C ABI/data are retained for separately qualified compatibility, not used by the actual Human Composer. No user data or legacy reader removed."
+  },
+  "prerequisite_observation": {
+    "head": "64bce6748353eaead0d273d55ee9e2ab0d08e30a",
+    "run": 41533601458,
+    "scope": "Push runs were read through the Actions API; the PR-only workflow wrapper returning zero did not prove there were no exact-head executions.",
+    "reconciliation": {
+      "job": 125579753050,
+      "conclusion": "failure",
+      "positive_evidence": "compaction3, shipping_human69 and upload3 passed",
+      "failure": "human_creation_tests: 11 passed, 1 failed. corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings lost original NOTADB -wal/-shm/-journal bytes at line777; exit101.",
+      "classification": "IMPL_BUG",
+      "cause": "The creation preflight returned early for nonempty WAL/journal before rejecting invalid main bytes; later SQLite opening changed original sidecars.",
+      "unexecuted": "atomic storage and later journal/sharebox/Agent/credential/gateway steps",
+      "artifact_id": 13183781637,
+      "artifact_digest": "sha256:a3b771cd5b5c3e248b7952eaabd3a2eab35a9811be742826cc3ee45c347781b2"
+    },
+    "renderer": {
+      "job": 125579753098,
+      "conclusion": "failure",
+      "positive_evidence": "114 helper/dialog/Settings checks passed; actual Renderer11 had2 pass and9 fail",
+      "failure": "The actual root posted two identical held older-page requests after selecting the already-active conversation; the oracle requires one. Transcript10 remains authored, not executed.",
+      "classification": "IMPL_BUG",
+      "cause": "openAgent reinstalled an already-active cached pagination cursor, retiring its in-flight/failure state and allowing automatic duplicate loading.",
+      "artifact_id": 13184171094,
+      "artifact_digest": "sha256:25dc1d0967b3b18d91ed74ccf6f6be322580bb5d0223300a8f2166c4019f3043"
+    },
+    "shipping": {
+      "job": 125579752184,
+      "conclusion": "success",
+      "artifact_id": 13186028254,
+      "artifact_digest": "sha256:b35d3347acc44820aa8096dc61dac31561af6d29295143b9e6c60c825955ce33",
+      "scope": "Exact64 shipping evidence only; new affected H still needs its own required gates."
+    },
+    "source_contract": {
+      "run": 41533601506,
+      "jobs": [125579751593, 125583367530],
+      "conclusion": "success",
+      "scope": "Existing source contract/candidate checks; not full source or product acceptance."
+    },
+    "base_head_renderer": {
+      "head": "0381cc707ea28e7733397384bbbf2c3a88e58421",
+      "run": 41570660833,
+      "job": 125702515509,
+      "conclusion": "success",
+      "scope": "Renderer only; other runtime jobs skipped. Does not close NMR-AC-06."
+    }
+  },
+  "request_compliance": {
+    "fixed_source_and_complete_accounting": "Fixed U retained; complete external/generated/LFS/legal closure remains open.",
+    "risk_proportionate_source_review": "Existing exact-identity schema/validator contract inspected; no reading/completion status fabricated.",
+    "single_authority_and_shipping_wiring": "Current actual Session/Transcript/native/FeatureHost/legacy relationships inspected; retry must extend that path.",
+    "coherent_behavior_batch": "Prerequisite creation-byte preservation and same-selection pagination repair first; HRR-01..06 is the next dependent behavior, not yet implemented at this checkpoint.",
+    "preserve_existing_capabilities_and_data": "No new owner, schema migration, data removal or legacy registration change.",
+    "parallel_scope": "Three nonoverlapping source/UI/native scopes at exact base; root owns public contracts, workflows and canonical ledger. Workers use explicitly applied xhigh for state/security/lifecycle work; configured model inherited.",
+    "actions_only_verification": "No local or htch-runtime build, test, lint, generator, schema check or acceptance run.",
+    "causal_failure_recovery": "Two actual implementation failures retained with exact logs/artifacts; no rerun-until-green and no weakened assertions.",
+    "canonical_progress": "Existing inventory/ledger/RTM remain authority; this file is scoped task evidence, not a second progress ledger. Authored, executed and independently accepted states stay separate.",
+    "final_acceptance": "Full source/legal, real services, signed supported-platform packages, complete UI/visual/a11y/temporal/security/performance/soak/upgrade/rollback/Bot regression and independent ACCEPT remain open."
+  },
+  "current_execution": [],
+  "independent_acceptance": false,
+  "complete": false
+}

@@ -2755,12 +2755,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setCommandPaletteOpen(false);
     if (hasLoadedEntries) {
       // Reopening a cached conversation must restore its next page as well as
-      // its rows. Scope changes deliberately discard only the active request.
-      transcriptPaginationController.installInitialPage({
-        entries: [],
-        nextBeforeSeq: cachedCursor?.nextBeforeSeq,
-        nextBeforeCursor: cachedCursor?.nextBeforeCursor,
-      });
+      // its rows. A same-selection click retains the current page request,
+      // failure and cursor; reinstalling here would retire its in-flight read
+      // and let the near-top view post that same cursor a second time.
+      if (transcriptPaginationController.getSnapshot().cursor.kind === "unprobed") {
+        transcriptPaginationController.installInitialPage({
+          entries: [],
+          nextBeforeSeq: cachedCursor?.nextBeforeSeq,
+          nextBeforeCursor: cachedCursor?.nextBeforeCursor,
+        });
+      }
       selectionStore.settle(agentId);
     }
     if (hasLoadedEntries || client == null) {
