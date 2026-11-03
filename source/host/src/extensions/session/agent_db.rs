@@ -875,6 +875,62 @@ fn subscribe_agent_db_listener(
     }
 }
 
+/// A causal command fault for one exact media settlement on this owner.
+#[cfg(any(test, feature = "test-support"))]
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MediaSettlementTestFault {
+    LoseCommitAcknowledgement,
+    RefuseRollback,
+}
+
+#[cfg(any(test, feature = "test-support"))]
+#[derive(Debug)]
+struct MediaSettlementFaultState {
+    session_key: String,
+    lifecycle_revision: String,
+    work_id: String,
+    fault: MediaSettlementTestFault,
+    claimed: AtomicBool,
+    applied: AtomicBool,
+}
+
+/// Borrows the existing owner; dropping a lease cannot settle product custody.
+#[cfg(any(test, feature = "test-support"))]
+#[doc(hidden)]
+#[must_use]
+#[derive(Debug)]
+pub struct MediaSettlementFaultLease<'owner> {
+    slot: &'owner Mutex<Option<Arc<MediaSettlementFaultState>>>,
+    // This allocation is the unique lease token. It cannot be reused while an
+    // old lease or the claimed command still retains it.
+    state: Arc<MediaSettlementFaultState>,
+}
+
+#[cfg(any(test, feature = "test-support"))]
+impl MediaSettlementFaultLease<'_> {
+    pub fn was_claimed(&self) -> bool {
+        self.state.claimed.load(Ordering::Acquire)
+    }
+
+    pub fn was_applied(&self) -> bool {
+        self.state.applied.load(Ordering::Acquire)
+    }
+}
+
+#[cfg(any(test, feature = "test-support"))]
+impl Drop for MediaSettlementFaultLease<'_> {
+    fn drop(&mut self) {
+        // Drop takes only the slot, never the connection. Paths that need both
+        // always take the connection first and release the slot before SQL.
+        if let Ok(mut slot) = self.slot.lock() {
+            if slot.as_ref().is_some_and(|state| Arc::ptr_eq(state, &self.state)) {
+                *slot = None;
+            }
+        }
+    }
+}
+
 /// Long-lived Rust owner for the frozen Grok SandAgentDb lifecycle boundary.
 ///
 /// Production keeps one owner per live agent. The held SQLite connection
@@ -888,6 +944,8 @@ pub struct SandAgentDb {
     recovered: AtomicBool,
     handle_registered: AtomicBool,
     closed: AtomicBool,
+    #[cfg(any(test, feature = "test-support"))]
+    media_settlement_test_fault: Mutex<Option<Arc<MediaSettlementFaultState>>>,
 }
 
 impl SandAgentDb {
@@ -975,6 +1033,8 @@ impl SandAgentDb {
             recovered: AtomicBool::new(false),
             handle_registered: AtomicBool::new(true),
             closed: AtomicBool::new(false),
+            #[cfg(any(test, feature = "test-support"))]
+            media_settlement_test_fault: Mutex::new(None),
         };
         if seed_default_agent_metadata {
             if let Err(error) = owner.seed_default_metadata_if_missing() {
@@ -4655,8 +4715,87 @@ impl SandAgentDb {
         }
     }
 
+    /// Arm one exact invocation through this existing owner, without exposing
+    /// its connection or changing durable state. The slot is consumed before
+    /// BEGIN, not retried if the command or its acknowledgement fails.
+    #[cfg(any(test, feature = "test-support"))]
+    #[doc(hidden)]
+    pub fn arm_media_settlement_fault_for_test(
+        &self,
+        session_key: &str,
+        lifecycle_revision: &str,
+        work_id: &str,
+        fault: MediaSettlementTestFault,
+    ) -> Result<MediaSettlementFaultLease<'_>, AgentDbProjectionError> {
+        if [session_key, lifecycle_revision, work_id].iter().any(|identity| {
+            identity.is_empty()
+                || identity.trim() != *identity
+                || identity.chars().any(char::is_control)
+        }) {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "media settlement test fault requires exact nonempty canonical identities".into(),
+            ));
+        }
+        let connection = self.connection.lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = connection.as_ref().filter(|_| !self.is_closed()) else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "media settlement test fault owner is closed".into(),
+            ));
+        };
+        if !db.is_autocommit() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "media settlement test fault owner has an unsettled transaction".into(),
+            ));
+        }
+        let mut slot = self.media_settlement_test_fault.lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        if slot.is_some() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "media settlement test fault slot is occupied".into(),
+            ));
+        }
+        let state = Arc::new(MediaSettlementFaultState {
+            session_key: session_key.to_string(),
+            lifecycle_revision: lifecycle_revision.to_string(),
+            work_id: work_id.to_string(),
+            fault,
+            claimed: AtomicBool::new(false),
+            applied: AtomicBool::new(false),
+        });
+        *slot = Some(Arc::clone(&state));
+        Ok(MediaSettlementFaultLease { slot: &self.media_settlement_test_fault, state })
+    }
+
+    // The caller holds the connection and has established autocommit. Keep
+    // test configuration outside the media transaction's admission guards.
+    fn media_settlement_commands(
+        &self,
+        session_key: &str,
+        lifecycle_revision: &str,
+        work_id: &str,
+    ) -> Result<MediaSettlementCommands, AgentDbProjectionError> {
+        #[cfg(any(test, feature = "test-support"))]
+        {
+            let mut slot = self.media_settlement_test_fault.lock()
+                .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+            if slot.as_ref().is_some_and(|state| {
+                state.session_key == session_key
+                    && state.lifecycle_revision == lifecycle_revision
+                    && state.work_id == work_id
+            }) {
+                let state = slot.take().expect("matching media fault is still reserved");
+                state.claimed.store(true, Ordering::Release);
+                return Ok(MediaSettlementCommands { fault: Some(state) });
+            }
+        }
+        let _ = (session_key, lifecycle_revision, work_id);
+        Ok(MediaSettlementCommands::default())
+    }
+
     /// Atomically append transcript entries and clear one captured outgoing
     /// media fence. A stale or rebound fence rolls back the transcript write.
+    /// Unconfirmed settlement retires this exact connection and never retries.
     pub fn append_transcript_entries_and_release_media(
         &self,
         entries: &[serde_json::Value],
@@ -4674,16 +4813,42 @@ impl SandAgentDb {
                     .into(),
             ));
         }
-        let mut guard = self
-            .connection
-            .lock()
-            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
-        let Some(db) = guard.as_mut() else {
+        let mut guard = match self.connection.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                let mut guard = poisoned.into_inner();
+                self.retire_channel_inbound_connection(&mut guard);
+                return Err(AgentDbProjectionError::TranscriptCommitUnknown(
+                    "media settlement owner lock is poisoned".into(),
+                ));
+            }
+        };
+        let Some(db) = guard.as_ref().filter(|_| !self.is_closed()) else {
             return Err(AgentDbProjectionError::WorkAdmissionInvalid(
                 "agent database is closed".into(),
             ));
         };
-        db.execute_batch("BEGIN IMMEDIATE")?;
+        if !db.is_autocommit() {
+            self.retire_channel_inbound_connection(&mut guard);
+            return Err(AgentDbProjectionError::TranscriptCommitUnknown(
+                "media settlement owner already has an unsettled transaction".into(),
+            ));
+        }
+        let commands = self.media_settlement_commands(
+            expected_session_key,
+            expected_lifecycle_revision,
+            media_work_id,
+        )?;
+        if let Err(error) = db.execute_batch("BEGIN IMMEDIATE") {
+            if db.is_autocommit() {
+                return Err(error.into());
+            }
+            let _ = commands.rollback(db);
+            self.retire_channel_inbound_connection(&mut guard);
+            return Err(AgentDbProjectionError::TranscriptCommitUnknown(format!(
+                "media settlement BEGIN left an unsettled transaction: {error}",
+            )));
+        }
         let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
             if !session_work_write_is_admitted(db)? {
                 return Err(AgentDbProjectionError::WorkAdmissionInvalid(
@@ -4898,11 +5063,24 @@ impl SandAgentDb {
         })();
         match result {
             Ok(inserted) => {
-                if let Err(error) = db.execute_batch("COMMIT") {
-                    let _ = db.execute_batch("ROLLBACK");
-                    return Err(error.into());
+                if let Err(error) = commands.commit(db) {
+                    // A successful rollback cannot disprove a lost COMMIT
+                    // acknowledgement. Retire even an autocommit connection.
+                    if !db.is_autocommit() {
+                        let _ = commands.rollback(db);
+                    }
+                    self.retire_channel_inbound_connection(&mut guard);
+                    return Err(AgentDbProjectionError::TranscriptCommitUnknown(error.to_string()));
+                }
+                if !db.is_autocommit() {
+                    let _ = commands.rollback(db);
+                    self.retire_channel_inbound_connection(&mut guard);
+                    return Err(AgentDbProjectionError::TranscriptCommitUnknown(
+                        "media settlement COMMIT left an unsettled transaction".into(),
+                    ));
                 }
                 let count = inserted.len();
+                drop(guard);
                 if !inserted.is_empty() {
                     publish_entries_upserted(&self.db_path, inserted);
                 }
@@ -4913,7 +5091,13 @@ impl SandAgentDb {
                 Ok(count)
             }
             Err(error) => {
-                let _ = db.execute_batch("ROLLBACK");
+                let rollback = commands.rollback(db);
+                if rollback.is_err() || !db.is_autocommit() {
+                    self.retire_channel_inbound_connection(&mut guard);
+                    return Err(AgentDbProjectionError::TranscriptCommitUnknown(format!(
+                        "media settlement rollback was not confirmed after {error}",
+                    )));
+                }
                 Err(error)
             }
         }
@@ -6053,6 +6237,106 @@ impl SandAgentDb {
 impl Drop for SandAgentDb {
     fn drop(&mut self) {
         self.close(false);
+    }
+}
+
+/// Both builds execute SQLite's commands. Test support may lose only a real
+/// successful COMMIT acknowledgement or deny the actual ROLLBACK invocation;
+/// the media owner alone classifies the resulting transaction state.
+#[derive(Default)]
+struct MediaSettlementCommands {
+    #[cfg(any(test, feature = "test-support"))]
+    fault: Option<Arc<MediaSettlementFaultState>>,
+}
+
+impl MediaSettlementCommands {
+    fn commit(&self, db: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
+        db.execute_batch("COMMIT")?;
+        #[cfg(any(test, feature = "test-support"))]
+        if let Some(state) = self.fault.as_ref().filter(|state| {
+            state.fault == MediaSettlementTestFault::LoseCommitAcknowledgement
+        }) {
+            state.applied.store(true, Ordering::Release);
+            return Err(rusqlite::Error::InvalidQuery);
+        }
+        Ok(())
+    }
+
+    fn rollback(&self, db: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
+        #[cfg(any(test, feature = "test-support"))]
+        let refusal = self.fault.as_ref().filter(|state| {
+            state.fault == MediaSettlementTestFault::RefuseRollback
+        }).map(|state| MediaSettlementRollbackRefusal::install(db, Arc::clone(state)))
+            .transpose()?;
+        let result = db.execute_batch("ROLLBACK");
+        #[cfg(any(test, feature = "test-support"))]
+        drop(refusal);
+        // In particular, no authorizer or borrowed handle survives into the
+        // caller's decision to retire the exact connection.
+        result
+    }
+}
+
+#[cfg(any(test, feature = "test-support"))]
+struct MediaSettlementRollbackRefusal<'connection> {
+    db: &'connection rusqlite::Connection,
+    _state: Arc<MediaSettlementFaultState>,
+}
+
+#[cfg(any(test, feature = "test-support"))]
+impl<'connection> MediaSettlementRollbackRefusal<'connection> {
+    fn install(
+        db: &'connection rusqlite::Connection,
+        state: Arc<MediaSettlementFaultState>,
+    ) -> Result<Self, rusqlite::Error> {
+        unsafe extern "C" fn authorize(
+            user_data: *mut std::ffi::c_void,
+            action: std::ffi::c_int,
+            operation: *const std::ffi::c_char,
+            _second: *const std::ffi::c_char,
+            _database: *const std::ffi::c_char,
+            _trigger: *const std::ffi::c_char,
+        ) -> std::ffi::c_int {
+            if action == rusqlite::ffi::SQLITE_TRANSACTION && !operation.is_null() {
+                // SQLite owns the callback string. The guard retains the Arc
+                // allocation and connection lock for this synchronous command.
+                let operation = unsafe { std::ffi::CStr::from_ptr(operation) };
+                if operation.to_bytes() == b"ROLLBACK" {
+                    let state = unsafe { &*user_data.cast::<MediaSettlementFaultState>() };
+                    state.applied.store(true, Ordering::Release);
+                    return rusqlite::ffi::SQLITE_DENY;
+                }
+            }
+            rusqlite::ffi::SQLITE_OK
+        }
+
+        let result = unsafe {
+            rusqlite::ffi::sqlite3_set_authorizer(
+                db.handle(),
+                Some(authorize),
+                Arc::as_ptr(&state) as *mut std::ffi::c_void,
+            )
+        };
+        if result != rusqlite::ffi::SQLITE_OK {
+            return Err(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error::new(result),
+                Some("media settlement rollback authorizer could not be installed".into()),
+            ));
+        }
+        Ok(Self { db, _state: state })
+    }
+}
+
+#[cfg(any(test, feature = "test-support"))]
+impl Drop for MediaSettlementRollbackRefusal<'_> {
+    fn drop(&mut self) {
+        // The connection is still borrowed and locked here. SQLite removes the
+        // callback synchronously before the retained user-data allocation drops.
+        unsafe {
+            rusqlite::ffi::sqlite3_set_authorizer(
+                self.db.handle(), None, std::ptr::null_mut(),
+            );
+        }
     }
 }
 
@@ -8789,6 +9073,562 @@ mod channel_inbound_append_tests {
         assert!(owner.connection.lock().unwrap().is_none());
         assert_eq!(live_db_handle_count(owner.db_path()), 0);
         let _ = std::fs::remove_dir_all(root);
+    }
+}
+
+#[cfg(test)]
+mod media_settlement_tests {
+    use super::*;
+    use std::sync::atomic::AtomicUsize;
+
+    use crate::storage::store_db::get_sand_agent_db_write_generation;
+    use crate::transcript_mutation_events::{
+        TranscriptMutationSubscription, subscribe_transcript_mutations,
+    };
+    use serde_json::{Value, json};
+
+    const WORK_ID: &str = "media-work";
+    const SEND_ID: &str = "media-send";
+    const RECEIPT_ID: &str = "outgoing-media-settlement:media-work";
+
+    struct Fixture {
+        root: PathBuf,
+        owner: SandAgentDb,
+        admission: SessionWorkAdmissionRecord,
+        original: PathBuf,
+        recoveries: Arc<AtomicUsize>,
+    }
+
+    impl Fixture {
+        fn new(label: &str) -> Self {
+            let token = Uuid::new_v4();
+            let root = std::env::temp_dir().join(format!("fabushi-media-settlement-{label}-{token}"));
+            let db_path = root.join(format!("agent-{token}")).join("store.db");
+            let recoveries = Arc::new(AtomicUsize::new(0));
+            let captured = Arc::clone(&recoveries);
+            let owner = SandAgentDb::open_with_options(&db_path, SandAgentDbOptions {
+                recovery: DbRecoveryOptions {
+                    busy_timeout_ms: 0,
+                    on_corruption_recovered: Some(Arc::new(move |_| {
+                        captured.fetch_add(1, Ordering::SeqCst);
+                    })),
+                    ..DbRecoveryOptions::default()
+                },
+                ..SandAgentDbOptions::default()
+            }).unwrap();
+            let original = root.join("owned-original.bin");
+            std::fs::write(&original, b"retained media original").unwrap();
+            let metadata = owner.read_metadata().unwrap();
+            let agent_id = metadata["agentId"].as_str().unwrap();
+            let admission: SessionWorkAdmissionRecord = serde_json::from_value(json!({
+                "session_key": format!("agent:{agent_id}:main"),
+                "session_id": agent_id,
+                "lifecycle_revision": metadata["lifecycleRevision"],
+                "admitted_media_work_id": WORK_ID,
+                "admitted_media_paths": [original.to_string_lossy()],
+            })).unwrap();
+            assert!(owner.compare_and_set_session_work_admission(None, &admission).unwrap());
+            Self { root, owner, admission, original, recoveries }
+        }
+
+        fn entry(&self) -> Value {
+            json!({
+                "id": SEND_ID,
+                "kind": "send-message",
+                "sessionKey": self.admission.session_key,
+                "message": {
+                    "type": "image",
+                    "path": self.original.to_string_lossy(),
+                },
+            })
+        }
+
+        fn append(&self, entries: &[Value]) -> Result<usize, AgentDbProjectionError> {
+            self.owner.append_transcript_entries_and_release_media(
+                entries,
+                &self.admission.session_key,
+                &self.admission.lifecycle_revision,
+                WORK_ID,
+            )
+        }
+
+        fn arm(&self, fault: MediaSettlementTestFault) -> MediaSettlementFaultLease<'_> {
+            self.owner.arm_media_settlement_fault_for_test(
+                &self.admission.session_key,
+                &self.admission.lifecycle_revision,
+                WORK_ID,
+                fault,
+            ).unwrap()
+        }
+
+        fn reader(&self) -> rusqlite::Connection {
+            rusqlite::Connection::open(self.owner.db_path()).unwrap()
+        }
+
+        fn rows(&self) -> Vec<Value> {
+            let reader = self.reader();
+            let mut statement = reader.prepare("SELECT entry FROM transcript_entries ORDER BY seq").unwrap();
+            let rows = statement.query_map([], |row| row.get::<_, String>(0)).unwrap()
+                .map(|row| serde_json::from_str(&row.unwrap()).unwrap()).collect();
+            rows
+        }
+
+        fn durable_admission(&self) -> SessionWorkAdmissionRecord {
+            let raw: String = self.reader().query_row(
+                "SELECT value FROM kv WHERE key = 'sessionWorkAdmission'", [], |row| row.get(0),
+            ).unwrap();
+            serde_json::from_str(&raw).unwrap()
+        }
+
+        fn assert_pending_storage(&self) {
+            assert!(self.rows().is_empty());
+            assert_eq!(self.durable_admission(), self.admission);
+            assert_eq!(std::fs::read(&self.original).unwrap(), b"retained media original");
+        }
+
+        fn assert_committed_storage(&self, entry: &Value) {
+            assert_eq!(self.rows(), vec![entry.clone(), json!({
+                "id": RECEIPT_ID,
+                "kind": "outgoing-media-settlement",
+                "sessionKey": self.admission.session_key,
+                "mediaWorkId": WORK_ID,
+                "lifecycleRevision": self.admission.lifecycle_revision,
+                "mediaPaths": [self.original.to_string_lossy()],
+                "transcriptEntryIds": [SEND_ID],
+            })]);
+            let mut released = self.admission.clone();
+            released.admitted_media_work_id = None;
+            released.admitted_media_paths.clear();
+            assert_eq!(self.durable_admission(), released);
+            assert_eq!(std::fs::read(&self.original).unwrap(), b"retained media original");
+        }
+
+        fn assert_retired(&self, remaining_handles: usize) {
+            assert!(self.owner.is_closed());
+            let connection = self.owner.connection.lock().unwrap_or_else(|error| error.into_inner());
+            assert!(connection.is_none());
+            drop(connection);
+            assert_eq!(live_db_handle_count(self.owner.db_path()), remaining_handles);
+            assert_eq!(self.recoveries.load(Ordering::SeqCst), 0);
+        }
+
+        fn refuse_receipt_after_prefix(&self) {
+            // The diagnostic can only be selected after SQLite has inserted
+            // the real send row in this same transaction, before its receipt.
+            self.reader().execute_batch(
+                "CREATE TRIGGER msu_refuse_receipt BEFORE INSERT ON transcript_entries
+                 WHEN NEW.id = 'outgoing-media-settlement:media-work'
+                 BEGIN SELECT CASE
+                   WHEN EXISTS(SELECT 1 FROM transcript_entries WHERE id = 'media-send')
+                     THEN RAISE(ABORT, 'msu receipt refused after inserted send')
+                   ELSE RAISE(ABORT, 'msu receipt missing send prefix')
+                 END; END;",
+            ).unwrap();
+        }
+
+        fn defer_commit_failure(&self) {
+            let guard = self.owner.connection.lock().unwrap();
+            guard.as_ref().unwrap().execute_batch(
+                "PRAGMA foreign_keys = ON;
+                 CREATE TABLE msu_parent(id TEXT PRIMARY KEY);
+                 CREATE TABLE msu_child(parent_id TEXT REFERENCES msu_parent(id)
+                     DEFERRABLE INITIALLY DEFERRED);
+                 CREATE TRIGGER msu_defer_commit AFTER INSERT ON transcript_entries
+                 BEGIN INSERT INTO msu_child(parent_id) VALUES ('missing'); END;",
+            ).unwrap();
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            self.owner.close(false);
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
+    struct Publications {
+        entries: Arc<Mutex<Vec<Value>>>,
+        admissions: Arc<AtomicUsize>,
+        transcript: Option<TranscriptMutationSubscription>,
+        _metadata: AgentDbSubscription,
+    }
+
+    impl Publications {
+        fn new(owner: &SandAgentDb) -> Self {
+            let entries = Arc::new(Mutex::new(Vec::new()));
+            let captured = Arc::clone(&entries);
+            let agent = agent_id_for_db_path(owner.db_path());
+            let transcript = subscribe_transcript_mutations(move |mutation| {
+                if mutation.get("agentId").and_then(Value::as_str) == Some(agent.as_str()) {
+                    captured.lock().unwrap().push(Value::Object(mutation.clone()));
+                }
+            });
+            let admissions = Arc::new(AtomicUsize::new(0));
+            let captured = Arc::clone(&admissions);
+            let metadata = owner.subscribe_metadata(KV_SESSION_WORK_ADMISSION, Arc::new(move || {
+                captured.fetch_add(1, Ordering::SeqCst);
+            }));
+            Self { entries, admissions, transcript: Some(transcript), _metadata: metadata }
+        }
+
+        fn assert_none(&self) {
+            assert!(self.entries.lock().unwrap().is_empty());
+            assert_eq!(self.admissions.load(Ordering::SeqCst), 0);
+        }
+    }
+
+    impl Drop for Publications {
+        fn drop(&mut self) {
+            self.transcript.take().unwrap().unsubscribe();
+        }
+    }
+
+    #[test]
+    fn media_settlement_success_and_exact_replay_preserve_durable_contract() {
+        let fixture = Fixture::new("success-replay");
+        let events = Publications::new(&fixture.owner);
+        let entry = fixture.entry();
+        assert_eq!(fixture.append(std::slice::from_ref(&entry)).unwrap(), 1);
+        fixture.assert_committed_storage(&entry);
+        assert!(!fixture.owner.is_closed());
+        assert!(fixture.owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+        assert_eq!(*events.entries.lock().unwrap(), vec![json!({
+            "kind": "entries-upserted", "agentId": fixture.owner.agent_dir_name,
+            "entries": [entry.clone()],
+        })]);
+        assert_eq!(events.admissions.load(Ordering::SeqCst), 1);
+
+        assert_eq!(fixture.append(std::slice::from_ref(&entry)).unwrap(), 0);
+        fixture.assert_committed_storage(&entry);
+        assert_eq!(events.entries.lock().unwrap().len(), 1);
+        assert_eq!(events.admissions.load(Ordering::SeqCst), 2);
+        let mut conflicting = entry.clone();
+        conflicting["message"]["path"] = json!("another original");
+        assert!(matches!(fixture.append(&[conflicting]),
+            Err(AgentDbProjectionError::WorkAdmissionInvalid(_))));
+        assert!(matches!(fixture.owner.append_transcript_entries_and_release_media(
+            &[entry.clone()], &fixture.admission.session_key, "stale-revision", WORK_ID,
+        ), Err(AgentDbProjectionError::WorkAdmissionInvalid(_))));
+        fixture.assert_committed_storage(&entry);
+        assert_eq!(events.entries.lock().unwrap().len(), 1);
+        assert_eq!(events.admissions.load(Ordering::SeqCst), 2);
+        assert_eq!(fixture.recoveries.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn media_settlement_known_refusal_rolls_back_a_real_receipt_failure_prefix() {
+        let fixture = Fixture::new("known-refusal");
+        fixture.refuse_receipt_after_prefix();
+        let events = Publications::new(&fixture.owner);
+        let error = fixture.append(&[fixture.entry()]).unwrap_err();
+        assert!(matches!(error, AgentDbProjectionError::Sqlite(_)));
+        assert!(error.to_string().contains("msu receipt refused after inserted send"));
+        fixture.assert_pending_storage();
+        assert!(!fixture.owner.is_closed());
+        assert!(fixture.owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+        events.assert_none();
+        assert_eq!(fixture.recoveries.load(Ordering::SeqCst), 0);
+
+        fixture.reader().execute_batch("DROP TRIGGER msu_refuse_receipt").unwrap();
+        assert_eq!(fixture.append(&[fixture.entry()]).unwrap(), 1);
+        fixture.assert_committed_storage(&fixture.entry());
+        assert_eq!(events.entries.lock().unwrap().len(), 1);
+        assert_eq!(events.admissions.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn media_settlement_lost_commit_acknowledgement_retires_without_publication() {
+        let fixture = Fixture::new("lost-commit-ack");
+        let events = Publications::new(&fixture.owner);
+        let generation = get_sand_agent_db_write_generation(fixture.owner.db_path());
+        let fault = fixture.arm(MediaSettlementTestFault::LoseCommitAcknowledgement);
+        assert!(!fault.was_claimed());
+        assert!(!fault.was_applied());
+        let entry = fixture.entry();
+        let error = fixture.append(std::slice::from_ref(&entry)).unwrap_err();
+        assert!(matches!(error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+        assert!(fault.was_claimed());
+        assert!(fault.was_applied(), "the real COMMIT acknowledgement must be lost");
+        fixture.assert_retired(0);
+        fixture.assert_committed_storage(&entry);
+        events.assert_none();
+        assert_eq!(get_sand_agent_db_write_generation(fixture.owner.db_path()), generation);
+        assert!(fixture.append(std::slice::from_ref(&entry)).is_err());
+        assert!(fixture.owner.get_transcript_entries().unwrap().is_empty());
+        events.assert_none();
+
+        for _ in 0..2 {
+            let reopened = SandAgentDb::open_existing_agent(fixture.owner.db_path(), 0).unwrap();
+            assert_eq!(reopened.get_transcript_entries().unwrap(), vec![entry.clone()]);
+            assert!(reopened.read_session_work_admission().unwrap().unwrap()
+                .admitted_media_work_id.is_none());
+            reopened.close(false);
+            fixture.assert_committed_storage(&entry);
+        }
+        events.assert_none();
+    }
+
+    #[test]
+    fn media_settlement_receipt_failure_with_real_rollback_denial_is_unknown() {
+        let fixture = Fixture::new("rollback-denied");
+        fixture.refuse_receipt_after_prefix();
+        let events = Publications::new(&fixture.owner);
+        let generation = get_sand_agent_db_write_generation(fixture.owner.db_path());
+        let fault = fixture.arm(MediaSettlementTestFault::RefuseRollback);
+        let error = fixture.append(&[fixture.entry()]).unwrap_err();
+        assert!(matches!(error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+        assert!(error.to_string().contains("msu receipt refused after inserted send"));
+        assert!(fault.was_claimed());
+        assert!(fault.was_applied(), "SQLite must actually deny this ROLLBACK");
+        fixture.assert_retired(0);
+        fixture.assert_pending_storage();
+        events.assert_none();
+        assert_eq!(get_sand_agent_db_write_generation(fixture.owner.db_path()), generation);
+        for _ in 0..2 {
+            let reopened = SandAgentDb::open_existing_agent(fixture.owner.db_path(), 0).unwrap();
+            assert_eq!(reopened.read_session_work_admission().unwrap(), Some(fixture.admission.clone()));
+            assert!(reopened.get_transcript_entries().unwrap().is_empty());
+            reopened.close(false);
+            fixture.assert_pending_storage();
+        }
+        assert!(fixture.append(&[fixture.entry()]).is_err());
+        events.assert_none();
+    }
+
+    #[test]
+    fn media_settlement_deferred_commit_failure_is_unknown_with_clean_or_denied_rollback() {
+        for refuse_rollback in [false, true] {
+            let fixture = Fixture::new(if refuse_rollback { "commit-denied-rollback" } else { "commit-clean-rollback" });
+            fixture.defer_commit_failure();
+            let events = Publications::new(&fixture.owner);
+            let generation = get_sand_agent_db_write_generation(fixture.owner.db_path());
+            let fault = refuse_rollback.then(|| fixture.arm(MediaSettlementTestFault::RefuseRollback));
+            let error = fixture.append(&[fixture.entry()]).unwrap_err();
+            assert!(matches!(error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+            assert!(error.to_string().contains("FOREIGN KEY"), "{error}");
+            if let Some(fault) = fault.as_ref() {
+                assert!(fault.was_claimed());
+                assert!(fault.was_applied());
+            }
+            fixture.assert_retired(0);
+            fixture.assert_pending_storage();
+            assert_eq!(fixture.reader().query_row("SELECT count(*) FROM msu_child", [],
+                |row| row.get::<_, i64>(0)).unwrap(), 0);
+            assert_eq!(get_sand_agent_db_write_generation(fixture.owner.db_path()), generation);
+            events.assert_none();
+        }
+    }
+
+    #[test]
+    fn media_settlement_real_commit_error_is_not_replaced_by_lost_ack_fault() {
+        let fixture = Fixture::new("commit-error-before-ack");
+        fixture.defer_commit_failure();
+        let events = Publications::new(&fixture.owner);
+        let fault = fixture.arm(MediaSettlementTestFault::LoseCommitAcknowledgement);
+        let error = fixture.append(&[fixture.entry()]).unwrap_err();
+        assert!(matches!(error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+        assert!(error.to_string().contains("FOREIGN KEY"), "{error}");
+        assert!(fault.was_claimed());
+        assert!(!fault.was_applied(), "a failed COMMIT has no success acknowledgement to lose");
+        fixture.assert_retired(0);
+        fixture.assert_pending_storage();
+        events.assert_none();
+    }
+
+    #[test]
+    fn media_settlement_prior_transaction_retires_before_claiming_or_appending() {
+        let fixture = Fixture::new("prior-transaction");
+        let events = Publications::new(&fixture.owner);
+        let fault = fixture.arm(MediaSettlementTestFault::LoseCommitAcknowledgement);
+        {
+            let guard = fixture.owner.connection.lock().unwrap();
+            let db = guard.as_ref().unwrap();
+            db.execute_batch("BEGIN IMMEDIATE").unwrap();
+            db.execute(INSERT_TRANSCRIPT_ENTRY_SQL,
+                params!["unsettled-prefix", json!({"id": "unsettled-prefix", "kind": "message", "content": "prior"}).to_string()]).unwrap();
+        }
+        let error = fixture.append(&[fixture.entry()]).unwrap_err();
+        assert!(matches!(error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+        assert!(!fault.was_claimed());
+        assert!(!fault.was_applied());
+        fixture.assert_retired(0);
+        fixture.assert_pending_storage();
+        events.assert_none();
+    }
+
+    #[test]
+    fn media_settlement_poisoned_transaction_is_unknown_and_retired() {
+        let fixture = Fixture::new("poisoned-transaction");
+        let events = Publications::new(&fixture.owner);
+        let unwound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let guard = fixture.owner.connection.lock().unwrap();
+            guard.as_ref().unwrap().execute_batch("BEGIN IMMEDIATE").unwrap();
+            panic!("simulated unwind while owning a media transaction");
+        }));
+        assert!(unwound.is_err());
+        let error = fixture.append(&[fixture.entry()]).unwrap_err();
+        assert!(matches!(error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+        fixture.assert_retired(0);
+        fixture.assert_pending_storage();
+        events.assert_none();
+    }
+
+    #[test]
+    fn media_settlement_clean_begin_refusal_is_known_and_fault_is_one_shot() {
+        let fixture = Fixture::new("begin-busy");
+        let events = Publications::new(&fixture.owner);
+        let fault = fixture.arm(MediaSettlementTestFault::LoseCommitAcknowledgement);
+        let other = fixture.reader();
+        other.execute_batch("BEGIN IMMEDIATE").unwrap();
+        let error = fixture.append(&[fixture.entry()]).unwrap_err();
+        assert!(matches!(error, AgentDbProjectionError::Sqlite(ref sqlite)
+            if sqlite.sqlite_error_code() == Some(rusqlite::ErrorCode::DatabaseBusy)));
+        assert!(fault.was_claimed());
+        assert!(!fault.was_applied());
+        assert!(!fixture.owner.is_closed());
+        assert!(fixture.owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+        fixture.assert_pending_storage();
+        events.assert_none();
+        other.execute_batch("ROLLBACK").unwrap();
+        assert_eq!(fixture.append(&[fixture.entry()]).unwrap(), 1);
+        assert!(!fault.was_applied(), "a later call must not reuse the claimed fault");
+        fixture.assert_committed_storage(&fixture.entry());
+        assert_eq!(events.entries.lock().unwrap().len(), 1);
+        assert_eq!(events.admissions.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn media_settlement_fault_slot_rejects_invalid_occupied_closed_and_unsettled_owners() {
+        let fixture = Fixture::new("fault-admission");
+        for identity in ["", " ", " leading", "trailing ", "embedded\ncontrol"] {
+            for field in 0..3 {
+                let mut identities = [fixture.admission.session_key.as_str(), fixture.admission.lifecycle_revision.as_str(), WORK_ID];
+                identities[field] = identity;
+                assert!(fixture.owner.arm_media_settlement_fault_for_test(
+                    identities[0], identities[1], identities[2],
+                    MediaSettlementTestFault::LoseCommitAcknowledgement,
+                ).is_err());
+            }
+        }
+        let fault = fixture.arm(MediaSettlementTestFault::LoseCommitAcknowledgement);
+        assert!(fixture.owner.arm_media_settlement_fault_for_test(
+            &fixture.admission.session_key, &fixture.admission.lifecycle_revision,
+            "another-work", MediaSettlementTestFault::RefuseRollback,
+        ).is_err());
+        assert!(!fault.was_claimed());
+        drop(fault);
+
+        fixture.owner.connection.lock().unwrap().as_ref().unwrap()
+            .execute_batch("BEGIN IMMEDIATE").unwrap();
+        assert!(fixture.owner.arm_media_settlement_fault_for_test(
+            &fixture.admission.session_key, &fixture.admission.lifecycle_revision,
+            WORK_ID, MediaSettlementTestFault::RefuseRollback,
+        ).is_err());
+        assert!(!fixture.owner.is_closed(), "arming cannot settle an existing transaction");
+        {
+            let connection = fixture.owner.connection.lock().unwrap();
+            let db = connection.as_ref().unwrap();
+            assert!(!db.is_autocommit());
+            db.execute_batch("ROLLBACK").unwrap();
+        }
+        let cancelled = fixture.arm(MediaSettlementTestFault::RefuseRollback);
+        drop(cancelled);
+        fixture.owner.close(false);
+        assert!(fixture.owner.arm_media_settlement_fault_for_test(
+            &fixture.admission.session_key, &fixture.admission.lifecycle_revision,
+            WORK_ID, MediaSettlementTestFault::LoseCommitAcknowledgement,
+        ).is_err());
+        fixture.assert_pending_storage();
+    }
+
+    #[test]
+    fn media_settlement_fault_matches_three_identities_and_only_its_exact_owner() {
+        let fixture = Fixture::new("fault-identity");
+        let fault = fixture.arm(MediaSettlementTestFault::LoseCommitAcknowledgement);
+        let entry = fixture.entry();
+        for field in 0..3 {
+            let mut identities = [fixture.admission.session_key.as_str(), fixture.admission.lifecycle_revision.as_str(), WORK_ID];
+            identities[field] = "different-canonical-identity";
+            assert!(matches!(fixture.owner.append_transcript_entries_and_release_media(
+                std::slice::from_ref(&entry), identities[0], identities[1], identities[2],
+            ), Err(AgentDbProjectionError::WorkAdmissionInvalid(_))));
+            assert!(!fault.was_claimed());
+            assert!(!fault.was_applied());
+            fixture.assert_pending_storage();
+        }
+
+        // Even the same file and exact three identifiers on a different owner
+        // cannot claim this instance's fault slot.
+        let other = SandAgentDb::open_existing_agent(fixture.owner.db_path(), 0).unwrap();
+        assert_eq!(other.append_transcript_entries_and_release_media(
+            std::slice::from_ref(&entry), &fixture.admission.session_key,
+            &fixture.admission.lifecycle_revision, WORK_ID,
+        ).unwrap(), 1);
+        assert!(!fault.was_claimed());
+        assert!(!fault.was_applied());
+        fixture.assert_committed_storage(&entry);
+        let events = Publications::new(&fixture.owner);
+        let error = fixture.append(std::slice::from_ref(&entry)).unwrap_err();
+        assert!(matches!(error, AgentDbProjectionError::TranscriptCommitUnknown(_)));
+        assert!(fault.was_claimed());
+        assert!(fault.was_applied());
+        fixture.assert_retired(1);
+        assert!(!other.is_closed(), "unknown must retire only the invoking connection");
+        assert_eq!(other.get_transcript_entries().unwrap(), vec![entry.clone()]);
+        fixture.assert_committed_storage(&entry);
+        events.assert_none();
+        other.close(false);
+    }
+
+    #[test]
+    fn media_settlement_old_lease_drop_cannot_clear_a_new_arm() {
+        let fixture = Fixture::new("lease-lifetime");
+        let cancelled = fixture.arm(MediaSettlementTestFault::RefuseRollback);
+        drop(cancelled);
+        let old = fixture.arm(MediaSettlementTestFault::LoseCommitAcknowledgement);
+        let mut invalid = fixture.entry();
+        invalid["kind"] = json!("");
+        assert!(matches!(fixture.append(&[invalid]), Err(AgentDbProjectionError::WorkAdmissionInvalid(_))));
+        assert!(old.was_claimed());
+        assert!(!old.was_applied());
+        fixture.assert_pending_storage();
+        let current = fixture.arm(MediaSettlementTestFault::LoseCommitAcknowledgement);
+        drop(old);
+        assert!(!current.was_claimed());
+        assert!(matches!(fixture.append(&[fixture.entry()]),
+            Err(AgentDbProjectionError::TranscriptCommitUnknown(_))));
+        assert!(current.was_claimed());
+        assert!(current.was_applied(), "dropping the consumed token must preserve the new arm");
+        fixture.assert_retired(0);
+        fixture.assert_committed_storage(&fixture.entry());
+    }
+
+    #[test]
+    fn media_settlement_rollback_authorizer_denies_only_rollback_and_is_scoped() {
+        let fixture = Fixture::new("authorizer-scope");
+        let fault = fixture.arm(MediaSettlementTestFault::RefuseRollback);
+        let connection = fixture.owner.connection.lock().unwrap();
+        let db = connection.as_ref().unwrap();
+        let commands = fixture.owner.media_settlement_commands(
+            &fixture.admission.session_key, &fixture.admission.lifecycle_revision, WORK_ID,
+        ).unwrap();
+        {
+            let _refusal = MediaSettlementRollbackRefusal::install(
+                db, Arc::clone(commands.fault.as_ref().unwrap()),
+            ).unwrap();
+            db.execute_batch("BEGIN IMMEDIATE; SAVEPOINT permitted; RELEASE permitted;").unwrap();
+            assert_eq!(db.query_row("SELECT 1", [], |row| row.get::<_, i64>(0)).unwrap(), 1);
+            let denied = db.execute_batch("ROLLBACK").unwrap_err();
+            assert_eq!(denied.sqlite_error().unwrap().extended_code, rusqlite::ffi::SQLITE_AUTH);
+            assert!(!db.is_autocommit());
+            db.execute_batch("COMMIT").unwrap();
+        }
+        assert!(fault.was_claimed());
+        assert!(fault.was_applied());
+        db.execute_batch("BEGIN IMMEDIATE; ROLLBACK").unwrap();
+        assert!(db.is_autocommit(), "the scoped authorizer must be removed before reuse/retirement");
+        drop(connection);
+        fixture.assert_pending_storage();
     }
 }
 

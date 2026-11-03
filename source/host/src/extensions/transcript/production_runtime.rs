@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 
 use crate::extensions::session::agent_session::SandAgentSessionStore;
 use crate::extensions::session::agent_db::{
-    OriginalTurnReference, OriginalTurnScope, SessionWorkAdmissionRecord,
+    AgentDbProjectionError, OriginalTurnReference, OriginalTurnScope, SessionWorkAdmissionRecord,
 };
 use crate::extensions::session::session_paths::resolve_internal_send_route;
 use crate::extensions::session::production::ProductionSessionWorkers;
@@ -1805,8 +1805,9 @@ impl ProductionTranscriptRuntime {
         is_fork: bool,
         expected_lifecycle_revision: &str,
         media_work_id: &str,
-    ) -> Result<Value, String> {
-        let entries = sessions.read_agent_transcript_entries(agent_id)?;
+    ) -> Result<Value, AgentDbProjectionError> {
+        let entries = sessions.read_agent_transcript_entries(agent_id)
+            .map_err(AgentDbProjectionError::WorkAdmissionInvalid)?;
         let mut entry = self
             .lock_state()
             .pipeline
@@ -1821,7 +1822,9 @@ impl ProductionTranscriptRuntime {
         entry
             .get("id")
             .and_then(Value::as_str)
-            .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
+            .ok_or_else(|| AgentDbProjectionError::TranscriptAppendInvalid(
+                "generated send pipeline did not produce an entry id".to_string(),
+            ))?;
         entry["sessionKey"] = Value::String(session_key.trim().to_string());
         sessions.append_agent_transcript_entries_and_release_media(
             agent_id,

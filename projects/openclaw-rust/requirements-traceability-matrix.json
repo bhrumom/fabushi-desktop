@@ -1360,7 +1360,9 @@
       "blocker_ids": [
         "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001",
         "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001",
-        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
+        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001",
+        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
+        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
       ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
@@ -1388,7 +1390,10 @@
         "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
         "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
         "source/host/tests/local_media_file_url_contract.rs",
-        "source/host/app/src/tests/local_media_file_url_tests.rs"
+        "source/host/app/src/tests/local_media_file_url_tests.rs",
+        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -1415,7 +1420,17 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "MSU-01",
+        "MSU-02",
+        "MSU-03",
+        "MSU-04",
+        "MSU-05",
+        "MSU-06",
+        "MSU-07",
+        "MSU-08",
+        "MSU-09",
+        "MSU-10"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1430,7 +1445,8 @@
         "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
         "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001",
         "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
-        "OCRM-RESP-MODEL-IDENTITY-001"
+        "OCRM-RESP-MODEL-IDENTITY-001",
+        "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1448,7 +1464,9 @@
         "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001",
         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001",
         "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001",
-        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
+        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001",
+        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
+        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
       ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
@@ -1529,7 +1547,10 @@
         "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
         "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
         "projects/openclaw-rust/evidence/media-bounded-read-contract-647e0932-20261103.json",
-        "source/host/tests/channel_attachment_contract.rs"
+        "source/host/tests/channel_attachment_contract.rs",
+        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1593,7 +1614,17 @@
         "MSI-04",
         "MSI-05",
         "MSI-06",
-        "MSI-07"
+        "MSI-07",
+        "MSU-01",
+        "MSU-02",
+        "MSU-03",
+        "MSU-04",
+        "MSU-05",
+        "MSU-06",
+        "MSU-07",
+        "MSU-08",
+        "MSU-09",
+        "MSU-10"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -1704,7 +1735,8 @@
         "OCRM-RESP-SHARED-ASYNC-SCOPE-001",
         "OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001",
         "OCRM-RESP-MEDIA-STAGED-INPUTS-001",
-        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001",
+        "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -2848,7 +2880,9 @@
       "blocker_ids": [
         "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001",
         "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001",
-        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
+        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001",
+        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
+        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
       ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
@@ -2876,7 +2910,10 @@
         "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
         "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
         "source/host/tests/local_media_file_url_contract.rs",
-        "source/host/app/src/tests/local_media_file_url_tests.rs"
+        "source/host/app/src/tests/local_media_file_url_tests.rs",
+        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -2903,7 +2940,17 @@
         "OCRM-MODEL-IDENTITY-O06",
         "OCRM-MODEL-IDENTITY-O07",
         "CMI-O1",
-        "CMI-O2"
+        "CMI-O2",
+        "MSU-01",
+        "MSU-02",
+        "MSU-03",
+        "MSU-04",
+        "MSU-05",
+        "MSU-06",
+        "MSU-07",
+        "MSU-08",
+        "MSU-09",
+        "MSU-10"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -2918,7 +2965,8 @@
         "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
         "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001",
         "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
-        "OCRM-RESP-MODEL-IDENTITY-001"
+        "OCRM-RESP-MODEL-IDENTITY-001",
+        "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -2936,7 +2984,9 @@
         "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001",
         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001",
         "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001",
-        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
+        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001",
+        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
+        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
       ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
@@ -3040,7 +3090,10 @@
         "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
         "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
         "projects/openclaw-rust/evidence/media-bounded-read-contract-647e0932-20261103.json",
-        "source/host/tests/channel_attachment_contract.rs"
+        "source/host/tests/channel_attachment_contract.rs",
+        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
@@ -3104,7 +3157,17 @@
         "MSI-04",
         "MSI-05",
         "MSI-06",
-        "MSI-07"
+        "MSI-07",
+        "MSU-01",
+        "MSU-02",
+        "MSU-03",
+        "MSU-04",
+        "MSU-05",
+        "MSU-06",
+        "MSU-07",
+        "MSU-08",
+        "MSU-09",
+        "MSU-10"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -3209,7 +3272,8 @@
         "OCRM-RESP-SECURITY-OPENgrep-CRABBOX-001",
         "OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001",
         "OCRM-RESP-MEDIA-STAGED-INPUTS-001",
-        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
+        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001",
+        "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     }

@@ -5,6 +5,9 @@
 //! SGF-v1 additionally drives the actual generated Runner and private App sink
 //! with controlled Responses, preserving canonical wire and Journal projection.
 
+#[path = "media_settlement_unknown_tests.rs"]
+mod media_settlement_unknown;
+
 use super::super::*;
 use mahayana_host_runtime::connectors::channel_delivery::{
     ChannelDeliveryPort, ChannelDeliveryRouter, ChannelOutboundMessage,
@@ -1698,10 +1701,10 @@ mod generated_send_message_fidelity {
             .map_err(|error| format!("request JSON: {error}"))
     }
 
-    struct Responses {
-        endpoint: String,
-        credential: PathBuf,
-        requests: Arc<Mutex<Vec<Value>>>,
+    pub(super) struct Responses {
+        pub(super) endpoint: String,
+        pub(super) credential: PathBuf,
+        pub(super) requests: Arc<Mutex<Vec<Value>>>,
         stop: Arc<AtomicBool>,
         worker: Option<thread::JoinHandle<Result<(), String>>>,
         outcome: Option<Result<(), String>>,
@@ -1709,6 +1712,13 @@ mod generated_send_message_fidelity {
 
     impl Responses {
         fn new(root: &Path, case: Case) -> Self {
+            Self::with_events(root, move |root, ordinal| response_events(root, case, ordinal))
+        }
+
+        pub(super) fn with_events(
+            root: &Path,
+            events: impl Fn(&Path, usize) -> Result<Vec<Value>, String> + Send + 'static,
+        ) -> Self {
             let listener = TcpListener::bind("127.0.0.1:0").expect("owned Responses listener");
             listener.set_nonblocking(true).expect("bounded Responses accept");
             let origin = format!("http://{}", listener.local_addr().unwrap());
@@ -1750,7 +1760,7 @@ mod generated_send_message_fidelity {
                         captured.push(request);
                         ordinal
                     };
-                    let body = response_events(&worker_root, case, ordinal)?.iter()
+                    let body = events(&worker_root, ordinal)?.iter()
                         .map(|event| format!("data: {event}\n\n")).collect::<String>();
                     write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len())
                         .map_err(|error| format!("Responses write: {error}"))?;
@@ -1761,7 +1771,7 @@ mod generated_send_message_fidelity {
                 stop, worker: Some(worker), outcome: None }
         }
 
-        fn finish(&mut self) -> Result<(), String> {
+        pub(super) fn finish(&mut self) -> Result<(), String> {
             self.stop.store(true, Ordering::Release);
             if let Some(outcome) = &self.outcome {
                 let outcome = outcome.clone();
@@ -1792,10 +1802,10 @@ mod generated_send_message_fidelity {
         }
     }
 
-    struct OwnedChild(Option<Child>);
+    pub(super) struct OwnedChild(pub(super) Option<Child>);
 
     impl OwnedChild {
-        fn wait(&mut self) -> Result<ExitStatus, String> {
+        pub(super) fn wait(&mut self) -> Result<ExitStatus, String> {
             let deadline = Instant::now() + Duration::from_secs(60);
             loop {
                 match self.0.as_mut().expect("owned App child").try_wait() {
@@ -1826,7 +1836,7 @@ mod generated_send_message_fidelity {
         }
     }
 
-    fn optional_bytes(path: &Path) -> Option<Vec<u8>> {
+    pub(super) fn optional_bytes(path: &Path) -> Option<Vec<u8>> {
         match fs::read(path) {
             Ok(bytes) => Some(bytes),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
@@ -1834,7 +1844,7 @@ mod generated_send_message_fidelity {
         }
     }
 
-    fn file_bytes(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
+    pub(super) fn file_bytes(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
         fn visit(root: &Path, directory: &Path, files: &mut BTreeMap<PathBuf, Vec<u8>>) {
             if !directory.exists() { return; }
             for entry in fs::read_dir(directory).unwrap() {
@@ -1861,9 +1871,9 @@ mod generated_send_message_fidelity {
     }
 
     #[derive(Debug, PartialEq)]
-    enum Field<'a> { Number(u64), Bytes(&'a [u8]) }
+    pub(super) enum Field<'a> { Number(u64), Bytes(&'a [u8]) }
 
-    fn fields(bytes: &[u8]) -> BTreeMap<u64, Field<'_>> {
+    pub(super) fn fields(bytes: &[u8]) -> BTreeMap<u64, Field<'_>> {
         // This reads the frozen producer's observed wire for byte/identity
         // assertions only; production decoding remains with its actual owners.
         let mut position = 0;

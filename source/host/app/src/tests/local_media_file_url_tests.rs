@@ -122,7 +122,8 @@ impl SendMessageSink for ObservedProductionSendSink {
         let admission = media_admission(&self.production.sessions, &self.production.agent_id);
         let pending_work_id = self.production.pending_media.lock()
             .expect("actual in-flight custody map")
-            .get(tool_call_id).and_then(|pending| pending.media_work_id.clone());
+            .get(tool_call_id).cloned()
+            .and_then(|pending| pending.lock().expect("actual media entry").media_work_id.clone());
         let owned_bytes = admission.paths.iter().map(|path| {
             let path = PathBuf::from(path);
             let bytes = fs::read(&path).expect("actual admitted bytes already exist");
@@ -279,8 +280,20 @@ impl LocalMediaAppFixture {
         let admission = self.admission();
         assert!(admission.work_id.is_none(), "durable media identity must be released");
         assert!(admission.paths.is_empty(), "durable media paths must be released");
-        assert!(self.sink.as_ref().expect("actual sink").pending_media.lock()
-            .expect("actual custody map").is_empty());
+        let pending = self.sink.as_ref().expect("actual sink").pending_media.lock()
+            .expect("actual custody map").values().cloned().collect::<Vec<_>>();
+        // MSU retains terminal identities to prevent same-ID recreation.
+        // Idle still requires no live cleanup/admission authority, in addition
+        // to the unchanged durable work-id/path assertions above.
+        for entry in pending {
+            let entry = entry.try_lock().expect("idle entry is neither busy nor poisoned");
+            assert!(matches!(entry.phase,
+                PendingOutgoingMediaPhase::Committed | PendingOutgoingMediaPhase::Aborted));
+            assert!(!entry.custody.is_owner_settlement_pending());
+            assert!(!entry.has_owned_media);
+            assert!(entry.media_work_id.is_none());
+            assert!(entry.resolved_sources.is_empty());
+        }
     }
 
     fn assert_no_host_request(&self) {

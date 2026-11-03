@@ -1805,7 +1805,8 @@ impl ProductionSessionWorkers {
             let Some(verified_path) = Self::verify_pending_media_path(&path, &media_roots)? else {
                 continue;
             };
-            custody.track(verified_path);
+            custody.track(verified_path)
+                .map_err(|_| "recovery media custody is already settled".to_string())?;
         }
         let cleanup_errors = custody.rollback();
         if !cleanup_errors.is_empty() {
@@ -4066,18 +4067,20 @@ impl ProductionSessionWorkers {
         entries: &[serde_json::Value],
         expected_lifecycle_revision: &str,
         media_work_id: &str,
-    ) -> Result<usize, String> {
+    ) -> Result<usize, AgentDbProjectionError> {
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_transcript_write_admission_locked(agent_id)?;
-            self.open_agent_db_owner_locked(agent_id)?
-                .append_transcript_entries_and_release_media(
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            // The outer boundary can refuse before the operation. The inner
+            // result must retain uncertain transaction outcomes for custody.
+            Ok(owner.append_transcript_entries_and_release_media(
                     entries,
                     session_key,
                     expected_lifecycle_revision,
                     media_work_id,
-                )
-                .map_err(|error| error.to_string())
+                ))
         })
+        .map_err(AgentDbProjectionError::WorkAdmissionInvalid)?
     }
 
     pub fn commit_agent_compaction(

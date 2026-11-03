@@ -214,6 +214,10 @@ inputs = [
     "projects/fabushi-communication-platform/current-owner-inventory.md",
     "projects/fabushi-communication-platform/owner-resolution-matrix.md",
     "projects/openclaw-rust/docs/specs/generated-send-message-fidelity.md",
+    "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+    "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+    "source/host/src/attachment_paths.rs",
+    "source/host/app/src/tests/media_settlement_unknown_tests.rs",
     "source/host/src/runner/turn_agent_composition/tool_call_recorder.rs",
     "source/host/src/runner/turn_agent_composition/tool_call_recorder_tests.rs",
     "source/host/src/runner/agent_v1_wire.rs",
@@ -361,6 +365,14 @@ required_claim_integration = [
     "inbound_turn_claim_is_released_on_refusal_or_duplicate_and_completed_only_after_commit",
     "inbound_turn_completion_precedes_partner_bookkeeping",
     "legacy_inbound_uses_occupied_physical_ids_and_preserves_no_admission_compatibility",
+    "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+    "media_commit_oracle_rejects_missing_duplicate_or_conditional_helper",
+    "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+    "media_commit_oracle_rejects_changed_commit_or_rollback_commands",
+    "media_commit_oracle_rejects_extra_aliased_or_macro_callers",
+    "media_commit_oracle_rejects_discarded_or_changed_settlement_handling",
+    "media_commit_oracle_rejects_changed_unknown_entry_handling",
+    "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
 ]
 fresh_filter = "extensions::session::agent_db::fresh_append_tests"
 required_fresh = [fresh_filter + "::" + name for name in (
@@ -633,6 +645,8 @@ cases = [
         "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
         "lfa_send_message_file_url_facade_preserves_admitted_metadata",
         "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+        "send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
+        "send_message_bridge_aborts_prepared_custody_on_known_resolution_error",
         "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
         "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
         "generated_send_message_text_success_survives_session_backfill_reopen",
@@ -1033,6 +1047,7 @@ for label, output, cargo_exit, capture_exit, expected in [
     assert actual == expected, f"CRA result oracle control failed: {label}"
 
 receipt = {
+    "media_settlement_support_scope": "MSU-v1 support only: actual Tool construction-error classification and the independently bounded media COMMIT adapter/consumer proof, composed with all retained channel/admission/raw-COMMIT controls. Real file-backed media DB faults and local cleanup states are required by the separate native-media receipt; eight private App/Session/Runner cases and ordinary shipping feature-off compilation are required by the separate Linux App receipt. No runtime or full acceptance is inferred from source-oracle positives.",
     "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
     "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DRT-v1", "DTR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1", "MSI-v1", "OCRM-CANONICAL-PRIOR-ROOT-IDENTITY-v1"],
     "memory_synthesis_identity_scope": "Per-snapshot MemorySynthesis uses one admitted model/credential identity across proposal, verification and retries. Native and Codex controls reach the production factory, actual HTTP assembly, Session apply gate and FileMemoryStore with owned credentials. Same-context token rotation is accepted; account/workspace drift and cancellation preserve memory/temporal bytes. Stale starts a new snapshot admission. Detached-worker drain, atomic cancellation/commit, original evidence account binding, durable synthesis recovery and real providers remain unaccepted.",
@@ -1082,7 +1097,7 @@ for label, command, required in cases:
             r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
         accepted = accepted and counts == [(len(required), 0, 0)] and complete_counts == [(len(required), 0, 0, 0, 0)]
     if label == "generated-send-message-contracts":
-        accepted = (accepted and sorted(counts) == [(13, 0, 0), (14, 0, 0), (17, 0, 0)]
+        accepted = (accepted and sorted(counts) == [(13, 0, 0), (14, 0, 0), (19, 0, 0)]
             and len(passed) == len(required))
     if label == "canonical-root-admission-contracts":
         accepted = accepted and canonical_contract_results_accepted(cargo_exit, capture_exit, required, text)

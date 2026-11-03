@@ -131,6 +131,24 @@ path after commit.
 - Cleanup failure: preserve the original failure and emit a diagnostic with the
   exact owned path; do not report a committed send.
 
+## MSU-v1 correction — 2026-11-03
+
+The earlier source wiring record below is historical. An ordinary returned
+error is not proof that COMMIT did not happen. [MSU-v1](media-settlement-unknown.md)
+now requires typed unknown propagation, sealing cleanup authority before the
+owner call, retirement of every unknown DB connection, and retained media on
+unknown/abort/Drop. Only a confirmed precommit refusal authorizes cleanup.
+Confirmed success settles local custody before publication, ACK or success count.
+Same-ID terminal entries remain in the existing App index to prevent recreation;
+multiple distinct images and exact-source reuse remain supported before seal.
+
+`OCRM-RESP-MEDIA-FINAL-CUSTODY-001`, previously named only by this specification,
+is registered in the sole OCRM ledger under the existing Session/AgentDb owner.
+The separate read-scope/file-identity responsibility remains incomplete. Fixed-U
+source reads retain their exact identities and scoped/full-reading distinctions;
+current-H Actions and full final-media equivalence remain pending. No historical
+source-wiring statement below is promoted to execution or acceptance evidence.
+
 ## Current implementation evidence — 2026-11-01
 
 The narrow source-level chain is present:

@@ -18,6 +18,7 @@ signal-hook = "0.3"
 uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
+mahayana-host-runtime = { path = "..", features = ["test-support"] }
 rusqlite = { version = "0.39", features = ["bundled"] }
 
 [profile.dev]

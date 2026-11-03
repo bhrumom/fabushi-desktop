@@ -405,7 +405,10 @@ impl RoutedToolBridge for SendMessageToolBridge {
         let message = match build_sand_send_message(&input, self.sink.as_ref(), tool_call_id) {
             Ok(message) => message,
             Err(error) => {
-                self.sink.abort_attachment_custody(tool_call_id);
+                // An unresolved attempt may still own this call's prepared custody.
+                if !matches!(&error, ProviderSessionError::ToolOutcomeUnknown(_)) {
+                    self.sink.abort_attachment_custody(tool_call_id);
+                }
                 return Err(error);
             }
         };

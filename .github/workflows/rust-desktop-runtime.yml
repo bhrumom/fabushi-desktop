@@ -1856,6 +1856,8 @@ jobs:
                   "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
                   "lfa_send_message_file_url_facade_preserves_admitted_metadata",
                   "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+                  "send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
+                  "send_message_bridge_aborts_prepared_custody_on_known_resolution_error",
                   "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
                   "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
                   "generated_send_message_text_success_survives_session_backfill_reopen",
@@ -3966,6 +3968,21 @@ jobs:
               "source/host/app/src/tests/config_secret_boundary_tests.rs",
               "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
               "source/host/app/src/tests/local_media_file_url_tests.rs",
+              "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+              "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+              "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+              "source/host/src/attachment_paths.rs",
+              "source/host/src/lib.rs",
+              "source/host/src/extensions/session/agent_db_schema.rs",
+              "source/host/src/extensions/session/production_agent_store.rs",
+              "source/host/src/extensions/transcript/ack_obligations.rs",
+              "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
+              "source/host/src/agent_isolation/conversation_blob_db.rs",
+              "source/host/src/runner/tools/mcp_meta_tools.rs",
+              "source/host/src/runner/stream_attempt.rs",
+              "source/host/src/runner/production_turn_agent_owner.rs",
+              "source/host/src/runner/production_turn_run_shell_adapter.rs",
+              "source/host/tests/openclaw_sessions_and_config_contract.rs",
               "source/host/src/extensions/attachments/media_reference.rs",
               "source/host/src/runner/tools/send_message_tool.rs",
               "source/host/src/runner/tools/sand_agent_management_tools.rs",
@@ -4061,6 +4078,11 @@ jobs:
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
               "model_contract": "CMI-v1/CWB-v1",
               "local_media_file_url_contract": "LFA-v1",
+              "media_settlement_contract": "MSU-v1",
+              "media_settlement_sqlite_environment": {key: os.environ.get(key) for key in (
+                  "LIBSQLITE3_SYS_USE_PKG_CONFIG", "LIBSQLITE3_FLAGS",
+                  "SQLITE3_LIB_DIR", "SQLITE3_INCLUDE_DIR", "SQLITE3_STATIC")},
+              "media_settlement_scope": "Actual file-backed App SendMessage/Session/Transcript/AgentDb path with real successful COMMIT followed by lost acknowledgement and actual receipt refusal followed by SQLite-denied rollback. Unknown retains owned bytes and exact identity through same-ID retry, abort, last-Arc Drop and two fresh owners; confirmed refusal cleans only owned files. Real pending ACK, channel, success counter, cache/multi-image, busy-entry/Tool cleanup and sealed unwind controls remain explicit. One generated Runner case requires sticky DownstreamOutcomeUnknown, no retry, no fabricated canonical history or completion. Controlled Responses/faults do not establish live provider/channel, arbitrary crash, full read-scope or packaged-platform acceptance.",
               "local_media_file_url_scope": "Actual production SendMessage and AgentManagement sinks with Session/Transcript/ForeverBox owners: malformed file URL refusal before local read/materialization/outward send; prior-image custody cleanup and durable fence release after later refusal; native and Unicode materialization, original-byte preservation, repeated refusal and successful repair across real owner reopen; HTTPS passthrough without local custody. Controlled transport is not live channel/provider or packaged-platform acceptance, and persistence unknown-outcome handling remains separate.",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
@@ -4107,14 +4129,41 @@ jobs:
               if result.returncode != 0:
                   raise RuntimeError("command failed: " + stem)
               return out.decode("utf-8", errors="replace")
+          def host_feature_observation(output, test_support):
+              matches = []
+              for line in output.splitlines():
+                  if not line.startswith("{"):
+                      continue
+                  event = json.loads(line)
+                  target = event.get("target", {})
+                  if (event.get("reason") == "compiler-artifact"
+                      and target.get("name") == "mahayana_host_runtime"
+                      and target.get("kind") == ["lib"]
+                      and pathlib.Path(event.get("manifest_path", "")).resolve() == pathlib.Path("source/host/Cargo.toml").resolve()
+                      and pathlib.Path(target.get("src_path", "")).resolve() == pathlib.Path("source/host/src/lib.rs").resolve()):
+                      matches.append(event)
+              if len(matches) != 1:
+                  raise RuntimeError("expected one actual Host dependency artifact for feature observation")
+              event = matches[0]
+              features = event.get("features")
+              if (event.get("profile", {}).get("test") is not False
+                  or not isinstance(features, list)
+                  or not all(isinstance(feature, str) for feature in features)
+                  or ("test-support" in features) != test_support):
+                  raise RuntimeError("actual Host dependency has the wrong test-support feature mode")
+              return {key: event[key] for key in ("package_id", "manifest_path", "features", "profile", "fresh")}
           try:
               if head != os.environ["FABUSHI_TARGET_SHA"]:
                   raise RuntimeError("actual App subject HEAD mismatch")
               save()
               cargo = ["cargo", "check", "--locked", "--manifest-path", "source/host/app/Cargo.toml", "--bin", "mahayana-app-host"]
-              run(cargo, "shipping-check")
+              shipping_output = run(cargo + ["--message-format=json"], "shipping-check", print_stdout=False)
+              receipt["shipping_host_feature_observation"] = host_feature_observation(shipping_output, False)
+              save()
               cargo[1] = "test"
               build_output = run(cargo + ["--no-run", "--message-format=json"], "test-build", print_stdout=False)
+              receipt["app_test_host_feature_observation"] = host_feature_observation(build_output, True)
+              save()
               executables = set()
               for line in build_output.splitlines():
                   event = json.loads(line)
@@ -4258,6 +4307,18 @@ jobs:
               ]]
               required += local_media_file_url_required
               receipt["local_media_file_url_required_tests"] = local_media_file_url_required
+              media_settlement_required = ["tests::channel_host_lane_tests::media_settlement_unknown::" + name for name in [
+                  "media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",
+                  "media_settlement_app_lost_commit_ack_retains_rows_bytes_and_same_id_fence",
+                  "media_settlement_app_denied_rollback_retains_until_first_open_recovery",
+                  "media_settlement_app_collecting_cache_multi_image_and_terminal_identity",
+                  "media_settlement_app_busy_entry_refuses_promptly_and_bridge_preserves_winner",
+                  "media_settlement_app_poisoned_entry_and_sealed_unwind_retain_for_recovery",
+                  "media_settlement_app_generated_runner_lost_ack_retains_unknown_custody",
+                  "media_settlement_app_legacy_owned_refusal_retains_without_inventing_receipt",
+              ]]
+              required += media_settlement_required
+              receipt["media_settlement_required_tests"] = media_settlement_required
               receipt["required_tests"] = required
               save()
               for index, name in enumerate(required):

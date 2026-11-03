@@ -23,25 +23,66 @@ pub enum AgentMediaKind {
 #[derive(Debug, Default)]
 pub struct OutgoingMediaCustody {
     paths: Vec<PathBuf>,
-    committed: bool,
+    disposition: OutgoingMediaDisposition,
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+enum OutgoingMediaDisposition {
+    #[default]
+    RollbackEligible,
+    OwnerSettlementPending,
+    Committed,
 }
 
 impl OutgoingMediaCustody {
-    pub fn track(&mut self, path: PathBuf) {
+    pub fn track(&mut self, path: PathBuf) -> Result<(), PathBuf> {
+        if self.disposition != OutgoingMediaDisposition::RollbackEligible {
+            return Err(path);
+        }
         self.paths.push(path);
+        Ok(())
     }
 
-    pub fn absorb(&mut self, mut other: Self) {
+    pub fn absorb(&mut self, mut other: Self) -> Result<(), Self> {
+        if self.disposition != OutgoingMediaDisposition::RollbackEligible
+            || other.disposition != OutgoingMediaDisposition::RollbackEligible
+        {
+            return Err(other);
+        }
         self.paths.append(&mut other.paths);
+        Ok(())
+    }
+
+    /// Transfer deletion authority to the existing durable owner before the
+    /// call that may commit. An unknown result or unwind cannot take it back.
+    pub fn begin_owner_settlement(&mut self) -> bool {
+        if self.disposition != OutgoingMediaDisposition::RollbackEligible {
+            return false;
+        }
+        self.disposition = OutgoingMediaDisposition::OwnerSettlementPending;
+        true
+    }
+
+    pub fn is_owner_settlement_pending(&self) -> bool {
+        self.disposition == OutgoingMediaDisposition::OwnerSettlementPending
+    }
+
+    /// Only the same attempt's confirmed precommit refusal authorizes this
+    /// transition. Ordinary abort and Drop deliberately cannot perform it.
+    pub fn rollback_after_confirmed_refusal(&mut self) -> Vec<io::Error> {
+        if self.is_owner_settlement_pending() {
+            self.disposition = OutgoingMediaDisposition::RollbackEligible;
+        }
+        self.rollback()
     }
 
     pub fn commit(&mut self) {
-        self.committed = true;
+        self.disposition = OutgoingMediaDisposition::Committed;
         self.paths.clear();
     }
 
     pub fn rollback(&mut self) -> Vec<io::Error> {
-        if self.committed {
+        if self.disposition != OutgoingMediaDisposition::RollbackEligible {
             return Vec::new();
         }
         self.paths
@@ -277,8 +318,8 @@ mod tests {
         std::fs::write(&second, b"second").expect("write second media");
 
         let mut custody = OutgoingMediaCustody::default();
-        custody.track(first.clone());
-        custody.track(second.clone());
+        custody.track(first.clone()).expect("fresh first custody");
+        custody.track(second.clone()).expect("fresh second custody");
         assert!(custody.rollback().is_empty());
         assert!(!first.exists());
         assert!(!second.exists());
@@ -290,10 +331,63 @@ mod tests {
         std::fs::write(&path, b"committed").expect("write committed media");
 
         let mut custody = OutgoingMediaCustody::default();
-        custody.track(path.clone());
+        custody.track(path.clone()).expect("fresh custody");
         custody.commit();
         assert!(custody.rollback().is_empty());
         assert!(path.exists());
         std::fs::remove_file(path).expect("remove committed test media");
+    }
+
+    #[test]
+    fn unknown_owner_settlement_retains_bytes_through_abort_and_drop() {
+        let path = temp_media_path("unknown");
+        std::fs::write(&path, b"possibly referenced").expect("owned media");
+        {
+            let mut custody = OutgoingMediaCustody::default();
+            custody.track(path.clone()).expect("fresh custody");
+            assert!(custody.begin_owner_settlement());
+            assert!(!custody.begin_owner_settlement(), "cannot start a second settlement");
+            assert!(custody.is_owner_settlement_pending());
+            assert!(custody.rollback().is_empty());
+            assert_eq!(std::fs::read(&path).unwrap(), b"possibly referenced");
+        }
+        assert_eq!(std::fs::read(&path).unwrap(), b"possibly referenced");
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn confirmed_refusal_restores_only_its_own_cleanup_authority() {
+        let path = temp_media_path("refused");
+        let sibling = temp_media_path("unrelated");
+        std::fs::write(&path, b"uncommitted").unwrap();
+        std::fs::write(&sibling, b"unrelated").unwrap();
+        let mut custody = OutgoingMediaCustody::default();
+        custody.track(path.clone()).unwrap();
+        assert!(custody.begin_owner_settlement());
+        assert!(custody.rollback_after_confirmed_refusal().is_empty());
+        assert!(!path.exists());
+        assert_eq!(std::fs::read(&sibling).unwrap(), b"unrelated");
+        std::fs::remove_file(sibling).unwrap();
+    }
+
+    #[test]
+    fn sealed_custody_refuses_new_paths_without_reopening_retained_media() {
+        let retained = temp_media_path("retained");
+        let rejected = temp_media_path("rejected");
+        std::fs::write(&retained, b"retained").unwrap();
+        std::fs::write(&rejected, b"new attempt").unwrap();
+        let mut custody = OutgoingMediaCustody::default();
+        custody.track(retained.clone()).unwrap();
+        assert!(custody.begin_owner_settlement());
+        assert_eq!(custody.track(rejected.clone()), Err(rejected.clone()));
+        let mut other = OutgoingMediaCustody::default();
+        other.track(rejected.clone()).unwrap();
+        let refused = custody.absorb(other).expect_err("sealed custody rejects new ownership");
+        drop(refused);
+        assert!(!rejected.exists(), "rejected attempt keeps its own cleanup authority");
+        assert!(custody.is_owner_settlement_pending());
+        drop(custody);
+        assert_eq!(std::fs::read(&retained).unwrap(), b"retained");
+        std::fs::remove_file(retained).unwrap();
     }
 }

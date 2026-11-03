@@ -5,6 +5,10 @@ edition = "2024"
 license = "Apache-2.0"
 publish = false
 
+[features]
+default = []
+test-support = []
+
 [dependencies]
 fabushi-messaging-core = { path = "../../native/mahayana-messaging" }
 mahayana-computer = { path = "../mahayana/mahayana-rs/mahayana-computer" }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture media lifecycle, HTML, file URL, image and bounded-read contracts in Actions only."""
+"""Capture media lifecycle, admission and settlement contracts in Actions only."""
 
 import hashlib
 import json
@@ -197,6 +197,62 @@ SEND_MESSAGE_NAMES = [
     "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
     "lfa_send_message_file_url_facade_preserves_admitted_metadata",
     "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+    "send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
+    "send_message_bridge_aborts_prepared_custody_on_known_resolution_error",
+]
+
+MEDIA_SETTLEMENT_PREFIX = "extensions::session::agent_db::media_settlement_tests::"
+MEDIA_SETTLEMENT_NAMES = [
+    "media_settlement_success_and_exact_replay_preserve_durable_contract",
+    "media_settlement_known_refusal_rolls_back_a_real_receipt_failure_prefix",
+    "media_settlement_lost_commit_acknowledgement_retires_without_publication",
+    "media_settlement_receipt_failure_with_real_rollback_denial_is_unknown",
+    "media_settlement_deferred_commit_failure_is_unknown_with_clean_or_denied_rollback",
+    "media_settlement_real_commit_error_is_not_replaced_by_lost_ack_fault",
+    "media_settlement_prior_transaction_retires_before_claiming_or_appending",
+    "media_settlement_poisoned_transaction_is_unknown_and_retired",
+    "media_settlement_clean_begin_refusal_is_known_and_fault_is_one_shot",
+    "media_settlement_fault_slot_rejects_invalid_occupied_closed_and_unsettled_owners",
+    "media_settlement_fault_matches_three_identities_and_only_its_exact_owner",
+    "media_settlement_old_lease_drop_cannot_clear_a_new_arm",
+    "media_settlement_rollback_authorizer_denies_only_rollback_and_is_scoped",
+]
+MEDIA_CUSTODY_PREFIX = "attachment_paths::tests::"
+MEDIA_CUSTODY_NAMES = [
+    "rollback_removes_every_uncommitted_path",
+    "commit_prevents_cleanup_of_persisted_media",
+    "unknown_owner_settlement_retains_bytes_through_abort_and_drop",
+    "confirmed_refusal_restores_only_its_own_cleanup_authority",
+    "sealed_custody_refuses_new_paths_without_reopening_retained_media",
+]
+TRANSACTION_COMMIT_NAMES = [
+    "config_set_racing_one_owner_hash_has_one_commit_and_one_conflict",
+    "test_cron_owner_writes_rollback_when_commit_fails",
+    "test_archive_owner_rolls_back_when_commit_fails",
+    "test_background_result_owner_rolls_back_when_commit_fails",
+    "test_session_transcript_append_rolls_back_when_commit_fails",
+    "test_session_transcript_update_and_identity_settlement_roll_back_when_commit_fails",
+    "test_session_transcript_delete_and_conversation_clear_roll_back_when_commit_fails",
+    "test_session_checkpoint_and_root_metadata_roll_back_when_commit_fails",
+    "test_session_metadata_owners_roll_back_when_commit_fails",
+    "test_transcript_owners_roll_back_when_commit_fails",
+    "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+    "media_commit_oracle_rejects_missing_duplicate_or_conditional_helper",
+    "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+    "media_commit_oracle_rejects_changed_commit_or_rollback_commands",
+    "media_commit_oracle_rejects_extra_aliased_or_macro_callers",
+    "media_commit_oracle_rejects_discarded_or_changed_settlement_handling",
+    "media_commit_oracle_rejects_changed_unknown_entry_handling",
+    "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+    "test_agent_db_has_no_direct_commit_error_propagation",
+    "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup",
+    "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+    "channel_commit_oracle_rejects_extra_unhandled_callers_and_method_references",
+    "channel_commit_oracle_rejects_changed_missing_or_discarded_error_handling",
+    "channel_commit_oracle_rejects_missing_ambiguous_or_malformed_helper_boundaries",
+    "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source",
+    "test_conversation_blob_cleanup_rolls_back_when_commit_fails",
+    "test_compaction_owner_rolls_back_when_commit_fails",
 ]
 
 AGENT_MANAGEMENT_NAMES = [
@@ -252,6 +308,23 @@ INPUTS = [
     "source/host/app/src/tests/local_media_file_url_tests.rs",
     "source/host/src/runner/tools/sand_agent_management_tools.rs",
     "source/host/tests/sand_agent_management_tools_contract.rs",
+    "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+    "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+    "source/host/src/attachment_paths.rs",
+    "source/host/src/lib.rs",
+    "source/host/src/extensions/session/agent_db.rs",
+    "source/host/src/extensions/session/agent_db_serde.rs",
+    "source/host/src/extensions/session/production.rs",
+    "source/host/src/extensions/transcript/production_runtime.rs",
+    "source/host/src/transcript_mutation_events.rs",
+    "source/host/src/storage/store_db.rs",
+    "source/host/src/extensions/settings/settings_service.rs",
+    "source/host/src/agent_isolation/conversation_blob_store.rs",
+    "source/host/tests/openclaw_sessions_and_config_contract.rs",
+    "source/host/app/Cargo.toml",
+    "source/host/app/Cargo.lock",
+    "source/host/app/src/tests/channel_host_lane_tests.rs",
+    "source/host/app/src/tests/media_settlement_unknown_tests.rs",
 ]
 
 
@@ -373,10 +446,11 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This executable verification is GitHub Actions-only.")
     ROOT.mkdir(parents=True, exist_ok=False)
-    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native"],
+    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native", "MSU-v1-native"],
                "result": "failed-or-incomplete", "executions": [],
                "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
     save(receipt)
+    receipt["media_settlement_scope"] = "MSU-v1 native file-backed AgentDb commands exercise confirmed success/refusal, actual COMMIT acknowledgement loss, actual rollback authorizer denial, deferred COMMIT failure, exact connection retirement, one-shot identity-bound fault leases and zero unknown-success publication; local cleanup custody retains sealed media through abort/Drop. Tool error-class controls prove unknown does not invoke destructive build-error cleanup. These native cases do not execute the actual App, Session first-open recovery or generated Runner consumer; their separate Linux App receipt remains required. No arbitrary crash-point, live service, complete read-scope or final migration acceptance is claimed."
     try:
         head = output(["git", "rev-parse", "HEAD"])
         if head != os.environ["FABUSHI_TARGET_SHA"]:
@@ -399,7 +473,9 @@ def main():
             "python": sys.version,
             "environment": {key: os.environ.get(key) for key in (
                 "CARGO_TERM_COLOR", "CARGO_BUILD_JOBS", "CARGO_PROFILE_DEV_DEBUG",
-                "CARGO_PROFILE_TEST_DEBUG", "CARGO_INCREMENTAL")},
+                "CARGO_PROFILE_TEST_DEBUG", "CARGO_INCREMENTAL",
+                "LIBSQLITE3_SYS_USE_PKG_CONFIG", "LIBSQLITE3_FLAGS",
+                "SQLITE3_LIB_DIR", "SQLITE3_INCLUDE_DIR", "SQLITE3_STATIC")},
             "inputs_before": inputs(), "oracle_qualification": qualify_oracle(),
         })
         save(receipt)
@@ -440,6 +516,9 @@ def main():
             integration.append("test_ocrm_media_store_cleanup_protects_top_level_case_variants")
         base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
         cases = [
+            ("media-settlement-owner", base + ["--lib", MEDIA_SETTLEMENT_PREFIX, "--", "--test-threads=1"], [MEDIA_SETTLEMENT_PREFIX + name for name in MEDIA_SETTLEMENT_NAMES]),
+            ("outgoing-media-custody", base + ["--lib", MEDIA_CUSTODY_PREFIX, "--", "--test-threads=1"], [MEDIA_CUSTODY_PREFIX + name for name in MEDIA_CUSTODY_NAMES]),
+            ("transaction-commit-owners", base + ["--test", "openclaw_sessions_and_config_contract", "commit", "--", "--test-threads=1"], TRANSACTION_COMMIT_NAMES),
             ("cleanup-owner", base + ["--lib", OWNER_PREFIX, "--", "--test-threads=1"], owner),
             ("cleanup-consumers", base + ["--test", "openclaw_media_store_contract", "--", "--test-threads=1"], integration),
             ("html-policy", base + ["--test", "openclaw_html_provenance_contract", "--", "--test-threads=1"], html_policy),

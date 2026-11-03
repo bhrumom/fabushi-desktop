@@ -5,7 +5,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::attachment_paths::{
-    AgentMediaKind, persist_agent_media_bytes,
+    AgentMediaKind, OutgoingMediaCustody, persist_agent_media_bytes,
 };
 use mahayana_host_runtime::runner::tools::send_message_encoding::{
     create_send_message_tool_call, encode_markdown_image_destination, encode_send_message,
@@ -564,6 +564,127 @@ fn send_message_bridge_resolves_text_images_and_standalone_attachments_before_pe
             "file:///workspace/standalone.png".to_string()
         ]
     );
+}
+
+struct RefusingPreparedCustodySink {
+    source_url: String,
+    prepared_path: std::path::PathBuf,
+    custody: Mutex<OutgoingMediaCustody>,
+    resolution_error: Mutex<Option<ProviderSessionError>>,
+    calls: Mutex<Vec<&'static str>>,
+}
+
+impl SendMessageSink for RefusingPreparedCustodySink {
+    fn resolve_attachment_source(
+        &self,
+        source_url: &str,
+        tool_call_id: &str,
+    ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
+        assert_eq!(tool_call_id, "prepared-custody-call");
+        assert_eq!(source_url, self.source_url);
+        assert_eq!(
+            std::fs::read(&self.prepared_path).expect("prepared custody exists before refusal"),
+            b"prepared-custody-witness",
+        );
+        self.calls.lock().expect("custody calls").push("resolve");
+        Err(self.resolution_error.lock().expect("resolution error")
+            .take().expect("exactly one resolution refusal"))
+    }
+
+    fn abort_attachment_custody(&self, tool_call_id: &str) {
+        assert_eq!(tool_call_id, "prepared-custody-call");
+        self.calls.lock().expect("custody calls").push("abort");
+        assert!(self.custody.lock().expect("prepared custody").rollback().is_empty());
+    }
+
+    fn send_message(
+        &self,
+        _message: Value,
+        _timestamp_ms: u64,
+        _tool_call_id: &str,
+    ) -> Result<Option<String>, ProviderSessionError> {
+        self.calls.lock().expect("custody calls").push("send");
+        Ok(Some("unexpected-send".into()))
+    }
+}
+
+fn prepared_custody_resolution_refusal(
+    resolution_error: ProviderSessionError,
+    expect_abort: bool,
+) -> ProviderSessionError {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-send-message-resolution-custody-{}",
+        uuid::Uuid::new_v4(),
+    ));
+    let prepared_path = persist_agent_media_bytes(
+        &root,
+        "prepared.txt",
+        b"prepared-custody-witness",
+        AgentMediaKind::Attachment,
+    ).expect("prepare existing outgoing media");
+    let source_url = url::Url::from_file_path(&prepared_path)
+        .expect("prepared media file URL").to_string();
+    let mut custody = OutgoingMediaCustody::default();
+    custody.track(prepared_path.clone()).expect("fresh prepared cleanup authority");
+    let sink = Arc::new(RefusingPreparedCustodySink {
+        source_url: source_url.clone(),
+        prepared_path: prepared_path.clone(),
+        custody: Mutex::new(custody),
+        resolution_error: Mutex::new(Some(resolution_error)),
+        calls: Mutex::new(Vec::new()),
+    });
+    let counter = SendMessageDeliveryCounter::default();
+    let interactions = Arc::new(RecordingSendMessageInteractionSink::default());
+    let bridge = SendMessageToolBridge::new(
+        Arc::new(Delegate),
+        Arc::new(CountingSendMessageSink::new(sink.clone(), counter.clone())),
+    ).with_interaction_sink(interactions.clone());
+    let tool = bridge.list_tools().expect("tools").remove(0);
+    let error = bridge.call_tool(
+        &tool,
+        json!({"type":"attachment","url":source_url}),
+        "prepared-custody-call",
+    ).expect_err("resolution refusal must not become a successful send");
+
+    if expect_abort {
+        assert_eq!(sink.calls.lock().expect("custody calls").as_slice(), &["resolve", "abort"]);
+        assert!(!prepared_path.exists(), "known refusal must clean prepared custody");
+    } else {
+        assert_eq!(sink.calls.lock().expect("custody calls").as_slice(), &["resolve"]);
+        assert_eq!(
+            std::fs::read(&prepared_path).expect("unknown resolution must retain prepared custody"),
+            b"prepared-custody-witness",
+        );
+    }
+    assert_eq!(counter.count(), 0, "resolution refusal must not count as delivery");
+    assert!(interactions.calls.lock().expect("interaction calls").is_empty(),
+        "message construction refusal must not publish a success interaction");
+
+    // This fixture checks Tool error classification, not Session settlement or Drop recovery.
+    drop(bridge);
+    drop(sink);
+    std::fs::remove_dir_all(root).expect("remove closed prepared-custody fixture");
+    error
+}
+
+#[test]
+fn send_message_bridge_preserves_prepared_custody_on_unknown_resolution() {
+    let error = prepared_custody_resolution_refusal(
+        ProviderSessionError::ToolOutcomeUnknown("prepared custody is busy".into()),
+        false,
+    );
+    assert!(matches!(error, ProviderSessionError::ToolOutcomeUnknown(message)
+        if message == "prepared custody is busy"));
+}
+
+#[test]
+fn send_message_bridge_aborts_prepared_custody_on_known_resolution_error() {
+    let error = prepared_custody_resolution_refusal(
+        ProviderSessionError::Tool("attachment resolution refused".into()),
+        true,
+    );
+    assert!(matches!(error, ProviderSessionError::Tool(message)
+        if message == "attachment resolution refused"));
 }
 
 #[test]

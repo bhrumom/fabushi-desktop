@@ -73,6 +73,7 @@ use mahayana_host_runtime::extensions::session::agent_session::{
 };
 use mahayana_host_runtime::extensions::memory::agent_state::AvatarBoxFileReader;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError;
 use mahayana_host_runtime::extensions::session::session_paths::{
     is_root_main_session_key, resolve_internal_send_route, resolve_public_session_route,
     InternalSessionRouteError, PublicSessionRoute, PublicSessionRouteError, SessionKind,
@@ -718,14 +719,61 @@ struct ProductionSendMessageSink {
     session_key: Option<String>,
     reply_thread_target: Option<String>,
     is_fork: bool,
-    pending_media: Mutex<HashMap<String, PendingOutgoingMedia>>,
+    pending_media: Mutex<HashMap<String, Arc<Mutex<PendingOutgoingMedia>>>>,
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+enum PendingOutgoingMediaPhase {
+    #[default]
+    Collecting,
+    OwnerSettlementPending,
+    Committed,
+    Aborted,
+}
+
+#[derive(Default)]
 struct PendingOutgoingMedia {
+    phase: PendingOutgoingMediaPhase,
     custody: OutgoingMediaCustody,
     session_key: Option<String>,
     lifecycle_revision: Option<String>,
     media_work_id: Option<String>,
+    resolved_sources: HashMap<String, ResolvedAttachmentSource>,
+    has_owned_media: bool,
+}
+
+impl PendingOutgoingMedia {
+    fn assert_collecting(&self) -> Result<(), ProviderSessionError> {
+        match self.phase {
+            PendingOutgoingMediaPhase::Collecting
+                if !self.custody.is_owner_settlement_pending() => Ok(()),
+            PendingOutgoingMediaPhase::Aborted => Err(ProviderSessionError::Tool(
+                "outgoing media attempt was already refused; use a new tool-call id".into(),
+            )),
+            _ => Err(ProviderSessionError::ToolOutcomeUnknown(
+                "outgoing media identity is already settling or settled".into(),
+            )),
+        }
+    }
+
+    fn begin_owner_settlement(&mut self) -> Result<(), ProviderSessionError> {
+        self.assert_collecting()?;
+        if !self.custody.begin_owner_settlement() {
+            return Err(ProviderSessionError::ToolOutcomeUnknown(
+                "outgoing media cleanup authority is already sealed".into(),
+            ));
+        }
+        self.phase = PendingOutgoingMediaPhase::OwnerSettlementPending;
+        Ok(())
+    }
+
+    fn commit(&mut self) {
+        self.custody.commit();
+        self.phase = PendingOutgoingMediaPhase::Committed;
+        self.media_work_id = None;
+        self.resolved_sources.clear();
+        self.has_owned_media = false;
+    }
 }
 
 impl ProductionSendMessageSink {
@@ -744,22 +792,56 @@ impl ProductionSendMessageSink {
         }
     }
 
-    fn assert_pending_media_current(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
-        let fence = self
+    fn pending_media_entry(
+        &self,
+        tool_call_id: &str,
+        create: bool,
+    ) -> Result<Option<Arc<Mutex<PendingOutgoingMedia>>>, ProviderSessionError> {
+        let mut pending = self
             .pending_media
             .lock()
-            .map_err(|_| ProviderSessionError::Tool("outgoing media custody lock poisoned".into()))?
-            .get(tool_call_id)
-            .and_then(|pending| {
-                Some((
-                    pending.session_key.as_deref()?,
-                    pending.lifecycle_revision.as_deref()?,
+            .map_err(|_| ProviderSessionError::ToolOutcomeUnknown(
+                "outgoing media custody index is poisoned".into(),
+            ))?;
+        if create {
+            Ok(Some(Arc::clone(pending.entry(tool_call_id.to_string())
+                .or_insert_with(|| Arc::new(Mutex::new(PendingOutgoingMedia::default()))))))
+        } else {
+            Ok(pending.get(tool_call_id).map(Arc::clone))
+        }
+    }
+
+    fn try_pending_media(
+        entry: &Mutex<PendingOutgoingMedia>,
+    ) -> Result<std::sync::MutexGuard<'_, PendingOutgoingMedia>, ProviderSessionError> {
+        match entry.try_lock() {
+            Ok(pending) => Ok(pending),
+            Err(std::sync::TryLockError::WouldBlock) => Err(ProviderSessionError::ToolOutcomeUnknown(
+                "another operation still owns this outgoing media identity".into(),
+            )),
+            Err(std::sync::TryLockError::Poisoned(poisoned)) => {
+                // Poison recovery may only disarm cleanup. It never resumes
+                // materialization, SQL, publication or a failed operation.
+                let mut pending = poisoned.into_inner();
+                if pending.phase == PendingOutgoingMediaPhase::Collecting {
+                    let _ = pending.custody.begin_owner_settlement();
+                    pending.phase = PendingOutgoingMediaPhase::OwnerSettlementPending;
+                }
+                Err(ProviderSessionError::ToolOutcomeUnknown(
+                    "outgoing media ownership was interrupted".into(),
                 ))
-            })
-            .map(|(session_key, lifecycle_revision)| {
-                (session_key.to_string(), lifecycle_revision.to_string())
-            });
-        let Some((session_key, lifecycle_revision)) = fence else {
+            }
+        }
+    }
+
+    fn assert_pending_media_current(
+        &self,
+        pending: &PendingOutgoingMedia,
+    ) -> Result<(), ProviderSessionError> {
+        let (Some(session_key), Some(lifecycle_revision)) = (
+            pending.session_key.as_deref(),
+            pending.lifecycle_revision.as_deref(),
+        ) else {
             return Ok(());
         };
         self.sessions
@@ -769,6 +851,48 @@ impl ProductionSendMessageSink {
                 &lifecycle_revision,
             )
             .map_err(ProviderSessionError::Tool)
+    }
+
+    fn rollback_pending_media(
+        &self,
+        pending: &mut PendingOutgoingMedia,
+        tool_call_id: &str,
+        confirmed_precommit_refusal: bool,
+    ) {
+        let errors = match pending.phase {
+            PendingOutgoingMediaPhase::Collecting => pending.custody.rollback(),
+            PendingOutgoingMediaPhase::OwnerSettlementPending if confirmed_precommit_refusal => {
+                pending.custody.rollback_after_confirmed_refusal()
+            }
+            _ => return,
+        };
+        pending.phase = PendingOutgoingMediaPhase::Aborted;
+        pending.resolved_sources.clear();
+        pending.has_owned_media = false;
+        let cleanup_complete = errors.is_empty();
+        for error in errors {
+            eprintln!(
+                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}",
+                self.agent_id, tool_call_id
+            );
+        }
+        // A failed cleanup retains the durable recovery fence. The map lock
+        // is not held while entering Session or any of its notifications.
+        if !cleanup_complete {
+            return;
+        }
+        if let (Some(revision), Some(work_id)) = (
+            pending.lifecycle_revision.as_deref(),
+            pending.media_work_id.as_deref(),
+        ) {
+            match self.sessions.release_session_media_admission(&self.agent_id, revision, work_id) {
+                Ok(_) => pending.media_work_id = None,
+                Err(error) => eprintln!(
+                    "mahayana-host outgoing_media_admission_release_failed agent={} tool_call={} error={error}",
+                    self.agent_id, tool_call_id
+                ),
+            }
+        }
     }
 }
 
@@ -882,117 +1006,90 @@ impl SendMessageSink for ProductionSendMessageSink {
         source_url: &str,
         tool_call_id: &str,
     ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
-        let admission = if let Some(session_key) = self.session_key.as_deref() {
-            self.sessions
-                .assert_session_work_admission(&self.agent_id, Some(session_key))
-                .map_err(ProviderSessionError::Tool)?;
-            self.sessions
-                .read_session_work_admission(&self.agent_id)
-                .map_err(ProviderSessionError::Tool)?
-                .filter(|record| record.session_key == session_key)
-                .map(|record| (record.session_key, record.lifecycle_revision))
-        } else {
-            None
-        };
-        let admission_session_key = admission.as_ref().map(|(key, _)| key.clone());
-        let admission_lifecycle_revision = admission.map(|(_, revision)| revision);
-        let (resolved, owned_path) = resolve_production_attachment_source(
-            self.sessions.as_ref(),
-            self.forever_box.as_ref(),
-            &self.agent_id,
-            source_url,
-        )
-        .map_err(ProviderSessionError::Tool)?;
-        if let Some(path) = owned_path {
-            let mut custody = OutgoingMediaCustody::default();
-            custody.track(path.clone());
-            let media_work_id = format!("send-media:{tool_call_id}");
-            let media_lifecycle_revision = if let Some(session_key) = admission_session_key.as_deref() {
-                Some(self
-                    .sessions
-                    .capture_session_media_admission(
-                        &self.agent_id,
-                        session_key,
-                        &media_work_id,
-                        Some(&path),
-                    )
-                    .map_err(|error| {
-                        for cleanup_error in custody.rollback() {
-                            eprintln!(
-                                "mahayana-host outgoing_media_cleanup_failed agent={} tool={} error={cleanup_error}",
-                                self.agent_id, tool_call_id
-                            );
-                        }
-                        ProviderSessionError::Tool(error)
-                    })?)
+        let entry = self.pending_media_entry(tool_call_id, true)?.ok_or_else(|| {
+            ProviderSessionError::ToolOutcomeUnknown("outgoing media identity is unavailable".into())
+        })?;
+        let mut pending = Self::try_pending_media(&entry)?;
+        pending.assert_collecting()?;
+        if let Err(error) = self.assert_pending_media_current(&pending) {
+            self.rollback_pending_media(&mut pending, tool_call_id, false);
+            return Err(error);
+        }
+        if let Some(resolved) = pending.resolved_sources.get(source_url) {
+            return Ok(resolved.clone());
+        }
+        let result = (|| {
+            let admission = if let Some(session_key) = self.session_key.as_deref() {
+                self.sessions
+                    .assert_session_work_admission(&self.agent_id, Some(session_key))
+                    .map_err(ProviderSessionError::Tool)?;
+                self.sessions
+                    .read_session_work_admission(&self.agent_id)
+                    .map_err(ProviderSessionError::Tool)?
+                    .filter(|record| record.session_key == session_key)
+                    .map(|record| (record.session_key, record.lifecycle_revision))
             } else {
                 None
             };
-            let mut pending = match self.pending_media.lock() {
-                Ok(pending) => pending,
-                Err(_) => {
-                    for error in custody.rollback() {
-                        eprintln!(
-                            "mahayana-host outgoing_media_cleanup_failed agent={} tool={} error={error}",
-                            self.agent_id, tool_call_id
-                        );
+            let admission_session_key = admission.as_ref().map(|(key, _)| key.clone());
+            let admission_lifecycle_revision = admission.map(|(_, revision)| revision);
+            if (!pending.resolved_sources.is_empty() || pending.has_owned_media)
+                && (pending.session_key != admission_session_key
+                    || pending.lifecycle_revision != admission_lifecycle_revision)
+            {
+                return Err(ProviderSessionError::Tool(
+                    "session generation changed while collecting outgoing media".into(),
+                ));
+            }
+            pending.session_key = admission_session_key.clone();
+            pending.lifecycle_revision = admission_lifecycle_revision.clone();
+            let (resolved, owned_path) = resolve_production_attachment_source(
+                self.sessions.as_ref(),
+                self.forever_box.as_ref(),
+                &self.agent_id,
+                source_url,
+            )
+            .map_err(ProviderSessionError::Tool)?;
+            if let Some(path) = owned_path {
+                pending.custody.track(path.clone()).map_err(|_| {
+                    ProviderSessionError::ToolOutcomeUnknown(
+                        "outgoing media cleanup authority changed during materialization".into(),
+                    )
+                })?;
+                pending.has_owned_media = true;
+                if let Some(session_key) = admission_session_key.as_deref() {
+                    let media_work_id = format!("send-media:{tool_call_id}");
+                    // Keep the exact attempted capture identity even if its
+                    // ordinary pre-send path subsequently needs cleanup.
+                    pending.media_work_id = Some(media_work_id.clone());
+                    let revision = self.sessions.capture_session_media_admission(
+                        &self.agent_id, session_key, &media_work_id, Some(&path),
+                    ).map_err(ProviderSessionError::Tool)?;
+                    pending.lifecycle_revision = Some(revision.clone());
+                    if admission_lifecycle_revision.as_deref() != Some(revision.as_str()) {
+                        return Err(ProviderSessionError::Tool(
+                            "session generation changed while admitting outgoing media".into(),
+                        ));
                     }
-                    if let Some(lifecycle_revision) = media_lifecycle_revision.as_deref() {
-                        let _ = self.sessions.release_session_media_admission(
-                            &self.agent_id,
-                            lifecycle_revision,
-                            &media_work_id,
-                        );
-                    }
-                    return Err(ProviderSessionError::Tool(
-                        "outgoing media custody lock poisoned".into(),
-                    ));
                 }
-            };
-            let pending_media = pending
-                .entry(tool_call_id.to_string())
-                .or_insert_with(|| PendingOutgoingMedia {
-                    custody: OutgoingMediaCustody::default(),
-                    session_key: admission_session_key.clone(),
-                    lifecycle_revision: media_lifecycle_revision
-                        .clone()
-                        .or(admission_lifecycle_revision.clone()),
-                    media_work_id: media_lifecycle_revision
-                        .as_ref()
-                        .map(|_| media_work_id.clone()),
-                });
-            pending_media.custody.absorb(custody);
+            }
+            pending.resolved_sources.insert(source_url.to_string(), resolved.clone());
+            Ok(resolved)
+        })();
+        if let Err(error) = &result {
+            if !matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)) {
+                self.rollback_pending_media(&mut pending, tool_call_id, false);
+            }
         }
-        Ok(resolved)
+        result
     }
 
     fn abort_attachment_custody(&self, tool_call_id: &str) {
-        let mut pending = match self.pending_media.lock() {
-            Ok(pending) => pending,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        let Some(mut custody) = pending.remove(tool_call_id) else { return };
-        for error in custody.custody.rollback() {
-            eprintln!(
-                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}",
-                self.agent_id, tool_call_id
-            );
-        }
-        if let (Some(revision), Some(work_id)) = (
-            custody.lifecycle_revision.as_deref(),
-            custody.media_work_id.as_deref(),
-        ) {
-            if let Err(error) = self.sessions.release_session_media_admission(
-                &self.agent_id,
-                revision,
-                work_id,
-            ) {
-                eprintln!(
-                    "mahayana-host outgoing_media_admission_release_failed agent={} tool_call={} error={error}",
-                    self.agent_id, tool_call_id
-                );
-            }
-        }
+        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };
+        let Ok(mut pending) = Self::try_pending_media(&entry) else { return };
+        // Pending/unknown, committed and previously refused identities retain
+        // their entry. A detached old Arc can never coexist with a replacement.
+        self.rollback_pending_media(&mut pending, tool_call_id, false);
     }
 
     fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
@@ -1015,22 +1112,43 @@ impl SendMessageSink for ProductionSendMessageSink {
             .filter(|value| !value.is_empty())
             .map(ToOwned::to_owned);
 
-        if let Err(error) = self.assert_pending_media_current(tool_call_id) {
-            self.abort_attachment_custody(tool_call_id);
-            return Err(error);
+        let pending_entry = self.pending_media_entry(tool_call_id, false)?;
+        let mut pending = pending_entry.as_ref()
+            .map(|entry| Self::try_pending_media(entry))
+            .transpose()?;
+        if let Some(custody) = pending.as_mut() {
+            custody.assert_collecting()?;
+            if let Err(error) = self.assert_pending_media_current(custody) {
+                self.rollback_pending_media(custody, tool_call_id, false);
+                return Err(error);
+            }
         }
-        let media_fence = self
-            .pending_media
-            .lock()
-            .map_err(|_| ProviderSessionError::Tool("outgoing media custody lock poisoned".into()))?
-            .get(tool_call_id)
-            .and_then(|pending| {
-                Some((
-                    pending.lifecycle_revision.as_ref()?.clone(),
-                    pending.media_work_id.as_ref()?.clone(),
+        let media_fence = pending.as_ref().and_then(|custody| {
+            Some((
+                custody.lifecycle_revision.as_ref()?.clone(),
+                custody.media_work_id.as_ref()?.clone(),
+            ))
+        });
+        let has_owned_media = pending.as_ref().is_some_and(|custody| custody.has_owned_media);
+        if let Some(custody) = pending.as_mut() {
+            // This happens before history allocation or any possibly
+            // committing owner call, including an unwind from that call.
+            custody.begin_owner_settlement()?;
+        }
+        let legacy_error = |error: String| {
+            if has_owned_media {
+                // This legacy no-fence API cannot prove a clean rollback.
+                // Retain bytes conservatively without inventing a receipt.
+                ProviderSessionError::ToolOutcomeUnknown(
+                    "outgoing media compatibility settlement could not be confirmed".into(),
+                )
+            } else {
+                ProviderSessionError::Tool(format!(
+                    "could not persist SendMessage for {}: {error}", self.agent_id,
                 ))
-            });
-        let entry = match (media_fence, self.session_key.as_deref()) {
+            }
+        };
+        let appended = match (media_fence, self.session_key.as_deref()) {
             (Some((revision, work_id)), Some(session_key)) => self
                 .transcript_runtime
                 .append_generated_send_message_entry_with_media_custody(
@@ -1043,7 +1161,17 @@ impl SendMessageSink for ProductionSendMessageSink {
                     self.is_fork,
                     &revision,
                     &work_id,
-                ),
+                )
+                .map_err(|error| match error {
+                    AgentDbProjectionError::TranscriptCommitUnknown(_) => {
+                        ProviderSessionError::ToolOutcomeUnknown(
+                            "outgoing media settlement could not be confirmed".into(),
+                        )
+                    }
+                    error => ProviderSessionError::Tool(format!(
+                        "could not persist SendMessage for {}: {error}", self.agent_id,
+                    )),
+                }),
             (None, Some(session_key)) => self
                 .transcript_runtime
                 .append_generated_send_message_entry(
@@ -1054,7 +1182,7 @@ impl SendMessageSink for ProductionSendMessageSink {
                     timestamp_ms,
                     self.reply_thread_target.as_deref(),
                     self.is_fork,
-                ),
+                ).map_err(legacy_error),
             (None, None) => self
                 .transcript_runtime
                 .append_generated_send_message_entry_compatibility(
@@ -1064,35 +1192,36 @@ impl SendMessageSink for ProductionSendMessageSink {
                     timestamp_ms,
                     self.reply_thread_target.as_deref(),
                     self.is_fork,
-                ),
-            (Some((_revision, _work_id)), None) => Err(
+                ).map_err(legacy_error),
+            (Some((_revision, _work_id)), None) => Err(ProviderSessionError::Tool(
                 "outgoing media fence is missing its admitted session identity".into(),
-            ),
-        }
-            .map_err(|error| {
-                self.abort_attachment_custody(tool_call_id);
-                ProviderSessionError::Tool(format!(
-                    "could not persist SendMessage for {}: {error}",
-                    self.agent_id
-                ))
-            })?;
+            )),
+        };
+        let entry = match appended {
+            Ok(entry) => entry,
+            Err(error) => {
+                if !matches!(&error, ProviderSessionError::ToolOutcomeUnknown(_)) {
+                    if let Some(custody) = pending.as_mut() {
+                        self.rollback_pending_media(custody, tool_call_id, true);
+                    }
+                }
+                return Err(error);
+            }
+        };
         let entry_id = entry
             .get("id")
             .and_then(serde_json::Value::as_str)
+            .filter(|id| !id.is_empty())
             .map(ToOwned::to_owned)
-            .ok_or_else(|| {
-                self.abort_attachment_custody(tool_call_id);
-                ProviderSessionError::Tool(
-                    "persisted SendMessage entry did not contain an id".to_string(),
-                )
-            })?;
-        let mut pending = match self.pending_media.lock() {
-            Ok(pending) => pending,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        if let Some(mut custody) = pending.remove(tool_call_id) {
-            custody.custody.commit();
+            .ok_or_else(|| ProviderSessionError::ToolOutcomeUnknown(
+                "persisted SendMessage entry did not contain an id".into(),
+            ))?;
+        if let Some(custody) = pending.as_mut() {
+            custody.commit();
         }
+        // Publication callbacks can re-enter this sink. They see a compact
+        // terminal identity and never run under either custody mutex.
+        drop(pending);
         if let Some(address_token) = channel_delivery {
             let host_tx = self.host_tx.clone();
             let agent_id = self.agent_id.clone();
