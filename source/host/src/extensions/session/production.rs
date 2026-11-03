@@ -3250,6 +3250,11 @@ impl ProductionSessionWorkers {
         {
             return Err("existing Human conversation participants are invalid".into());
         }
+        let first = participants[0].as_str().expect("validated Human participant");
+        let second = participants[1].as_str().expect("validated Human participant");
+        if Self::human_direct_conversation_id(first, second) != conversation_id {
+            return Err("existing Human conversation participants conflict with the canonical identity".into());
+        }
         Ok(metadata)
     }
 
