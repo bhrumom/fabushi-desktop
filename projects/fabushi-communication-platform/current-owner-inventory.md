@@ -303,3 +303,25 @@ for those bounded scopes. Full signed product/real service/source/legal/ACCEPT
 remain blocked. Whole-destination-plan durability and remote forward provenance
 remain separate gaps in the existing owners. See `projects/telegram-desktop-rust/evidence/round26-forward-account-lifetime.json`.
 
+
+### 2026-11-03 live desktop Human message path (bounded exact-head refresh)
+
+Observed source revision: `abc80633c4be8513284cfb59c850a470475e12d5` (the product code tested in Actions run 41569728771 is unchanged from its parent H `7d7913e513fc10514310cdc4bb76a7f89c3f748a`; the later commits only update task evidence). This is an incremental path refresh, not a global owner inventory acceptance.
+
+| Layer | Verified shipping path / owner | Authority and boundary |
+| --- | --- | --- |
+| Renderer entry | `frontend/src/production/ProductionRenderer.tsx` (blob `fbdcb3174393ff93220c07c909c8615b326266fd`): Human initial/history reads call Coordinator `getHumanConversationTranscriptTail` / `getHumanConversationTranscript`; the visible transcript is a projection. | Renderer caches, cursor state and selection are projections; not canonical message storage. |
+| Process bridge | `source/node-agent-coordinator/src/main.rs` (blob `279dc93569effbba8f49918d9293325dbb0c4ac8`) launches/supervises the configured App Host subprocess over piped stdio; `source/host/app/src/main.rs` (blob `8e19361b3b278d085927a84ea4c8ce8c3fe3de80`) is the Host app entrypoint. | Coordinator and Host process boundaries remain distinct; do not move ordinary Human message ownership into Agent Runner. |
+| Native Human service | `source/host/src/extensions/session/native_messaging.rs` (blob `f1b130e2344fe764ba523f36e3b001b3f25f5491`) is the Session-side native API client. Session/Transcript production paths call this service client and retain the local durable Session/SQLite recovery/outbox path. | This is the actual desktop Human message service path; not the generic FeatureHost messaging API. |
+| FeatureHost composition | `source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs` (blob `26053fc95f5f795f3c9a25527ddf22b292bcd362`) uses `MahayanaHost::create_with_session_transcript_owner` for Electron. `mahayana-host/src/lib.rs` (blob `6d29e3609d371933e3af180ddcfab9923818d2f9`) omits `MahayanaSocialConversationProvider` for this composition and rejects legacy Telegram client/self-user IDs before runtime/storage access. | Desktop composition selects Session/Transcript as the Human conversation owner; legacy Telegram runtime/provider is not selected by this Electron composition. |
+| Generic MessagingService | `FeatureHostController::execute_messaging_sync` is a separate account-scoped `fabushi_messaging_core::MessagingService` with `_messaging/snapshot.json`, `_messaging/blobs`, actor validation and `HostEvent::MessagingEvent`. `ensure_desktop_messaging_owner()` rejects standalone MessagingService in Production Electron; `mahayana:contact:` and `telegram:chat:` social commands are rejected in this composition. | Not the desktop Human conversation/message truth and not a substitute for Session/Transcript wiring. Cross-platform non-Electron use remains a separate scope to audit. |
+
+Current authority disposition for the requested six domains:
+
+- **Conversation / Message:** the desktop write path and local durable recovery owner are Session; remote service message IDs/receipts are consumed through `native_messaging`; Transcript and renderer state are projections. The batch verified the reselect/pagination and non-destructive Human store recovery path, not the entire remote service contract.
+- **Identity:** Electron account authorization and `human-identity.ts` remain the existing identity/account owners; this refresh did not yet prove the full remote identity/device authority, account-epoch mapping and cross-device revocation contract. Keep this open.
+- **Resource:** retain Electron AttachmentManager plus Host Attachment extension and the existing resource lifecycle; this refresh did not prove the complete remote upload/download/cache identity and recovery authority. Keep this open.
+- **Permission:** Session/native service authorization and the existing permission/approval owners remain separate from Agent tool approvals; this refresh did not complete the full room/member/action permission matrix. Keep this open.
+- **Search:** reuse the existing CommandPalette/Find-in-chat and Host content-search owners; this refresh did not prove one fully wired Human remote/local search provider, account scope and picker permission contract. Keep this open.
+
+No new owner is created. No legacy database, user data, Telegram FFI, provider registration or user resource was removed. The unresolved identity/resource/permission/search questions are explicit follow-up requirements, not assumed closed.
