@@ -664,3 +664,33 @@ Exact run/job/artifact identities and independently reviewed blobs remain in the
 existing `task20bf-round1-forward-intent-ui.json` receipt. Fixed U, unique inventory,
 source review counters, final service/package/Bot/quality and independent ACCEPT
 are unchanged; no partial suite or authored case is promoted to full acceptance.
+
+
+## Round11 — run290 native-message reconciliation and transcript UI evidence
+
+At exact H `740f2eee1759874bc97686cddfa29250130ea7db`, run `41691957848`
+completed the requested jobs: reconciliation `126112539527` success (Human73,
+0 failures), UI `126112539660` success (Transcript10, 10 passed/0 failed),
+and shipping compile `126112539665` success. Reconciliation artifact
+`13257813493` and UI artifact `13257063906` were downloaded and inspected.
+The Human73 log includes independent SQLite duplicate clientNonce identity
+and duplicate HTTP canonical identity after restart negatives. UI artifact
+shows UI-NMR-RESELECT-ACTIVE-PAGE-001 passed; browser evidence records one
+in-flight older-page request (id23), settled once, rows m21..m64, no
+diagnostics and no unexpected RPCs.
+
+Run285's nine ProductionRenderer transcript scenarios all failed at fixture
+mount with `ProductionRenderer fixture failed to mount: []`; the screenshot
+showed "No chats yet". Coordinator roster calls succeeded without unexpected
+RPCs, but the fixture's peer-only participantIds were filtered by the
+existing `projectHumanConversation` contract requiring exactly two distinct
+nonempty string identities. The fixture now asserts the Host contract and
+the source contract documents the local-account/peer pair.
+
+At new exact H `50bc3d275dff24be1bf60a13810fce93ae568930`, the foreign
+retry test now prints and compares the actual `SessionGatewayError`; the
+fixture enforces two distinct nonempty string participant identities; the
+NMR-26 specification records the root cause and active-page reselection
+oracle. This is authored evidence only. Run291 `41694984873` and source
+run9649 `41694984872` are the required current-H gates; no current-H pass
+is inferred from run290. PR #189 remains draft.

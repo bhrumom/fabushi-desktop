@@ -425,3 +425,25 @@ publisher/real signed packages and independent ACCEPT remain incomplete.
 The existing workflow now also runs these same Feature10/Runtime9/HTTP6 behavioral
 harnesses on Ubuntu while retaining the queued macOS shipping requirement. This
 focused job is not a signed-package, live-service or independent acceptance gate.
+
+
+## Round11 current execution checkpoint — 2026-11-04
+
+Run290 `41691957848` at exact `740f2eee1759874bc97686cddfa29250130ea7db`
+is terminal: native-message-reconciliation Human73, native-message-ui
+Transcript10 (including UI-NMR-RESELECT-ACTIVE-PAGE-001), shipping compile,
+Electron, Social and Windows publisher jobs passed; native-auth-and-journal
+was skipped by workflow selection. Browser artifacts show one preserved
+in-flight older-page request and no diagnostics. Run285's nine UI failures
+were fixture mount failures: Coordinator returned roster rows, but its
+peer-only participantIds failed the existing exact two-person identity
+projection and yielded "No chats yet".
+
+New exact H `50bc3d275dff24be1bf60a13810fce93ae568930` records the actual
+foreign retry error through an explicit print/assert oracle and validates
+the fixture's local-account/peer participant contract. Run291
+`41694984873` is queued and source run9649 `41694984872` is in progress;
+no current-H execution is yet claimed. PR #189 remains open/draft. Full
+fixed-U source/legal closure, all product capabilities, real service,
+supported signed packages, full Bot/UI/a11y/security/performance/soak,
+upgrade/rollback and independent ACCEPT remain unaccepted.

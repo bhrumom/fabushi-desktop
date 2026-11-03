@@ -1,0 +1,72 @@
+{
+  "format": "FBCP-TDRP-round11-execution-evidence-v1",
+  "task_id": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 11,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+  "parent_h": "50bc3d275dff24be1bf60a13810fce93ae568930",
+  "authored_h": "50bc3d275dff24be1bf60a13810fce93ae568930",
+  "authored_commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/50bc3d275dff24be1bf60a13810fce93ae568930",
+  "run290": {
+    "id": 41691957848,
+    "head_sha": "740f2eee1759874bc97686cddfa29250130ea7db",
+    "jobs": [
+      {
+        "id": 126112539527,
+        "name": "native-message-reconciliation",
+        "conclusion": "success",
+        "human_cases": 73,
+        "failed": 0,
+        "artifact_id": 13257813493
+      },
+      {
+        "id": 126112539660,
+        "name": "native-message-ui",
+        "conclusion": "success",
+        "transcript_cases": 10,
+        "passed": 10,
+        "failed": 0,
+        "artifact_id": 13257063906
+      },
+      {
+        "id": 126112539665,
+        "name": "native-message-shipping-compile",
+        "conclusion": "success"
+      }
+    ],
+    "skipped_jobs": [
+      {
+        "id": 126112542579,
+        "name": "native-auth-and-journal",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  "run285": {
+    "id": 41684453708,
+    "head_sha": "c70386d16a00e547fbebc29674e536b7adf89835",
+    "ui_job": 126086384007,
+    "conclusion": "failure",
+    "actual_failures": 9,
+    "reason": "ProductionRenderer fixture failed to mount: []",
+    "root_cause": "fixture roster returned peer-only participantIds; projectHumanConversation requires exactly two distinct nonempty string identities"
+  },
+  "browser_artifact_observation": {
+    "reselect_case": "UI-NMR-RESELECT-ACTIVE-PAGE-001",
+    "older_page_request_id": 23,
+    "older_page_request_count": 1,
+    "rows": "m21..m64",
+    "diagnostics": [],
+    "unexpected": []
+  },
+  "current_h_gates": {
+    "run291": 41694984873,
+    "status": "queued",
+    "source_run9649": 41694984872,
+    "status_source": "in_progress"
+  },
+  "delivery": {
+    "pr": 189,
+    "draft": true
+  }
+}
