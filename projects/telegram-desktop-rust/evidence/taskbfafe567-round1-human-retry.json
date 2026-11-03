@@ -71,7 +71,10 @@
     },
     "source_contract": {
       "run": 41533601506,
-      "jobs": [125579751593, 125583367530],
+      "jobs": [
+        125579751593,
+        125583367530
+      ],
       "conclusion": "success",
       "scope": "Existing source contract/candidate checks; not full source or product acceptance."
     },
@@ -95,7 +98,85 @@
     "canonical_progress": "Existing inventory/ledger/RTM remain authority; this file is scoped task evidence, not a second progress ledger. Authored, executed and independently accepted states stay separate.",
     "final_acceptance": "Full source/legal, real services, signed supported-platform packages, complete UI/visual/a11y/temporal/security/performance/soak/upgrade/rollback/Bot regression and independent ACCEPT remain open."
   },
-  "current_execution": [],
+  "current_execution": [
+    {
+      "head": "81856d04990738db39fa00b6e1fe79a9b2abdc55",
+      "run": 41572570104,
+      "job": 125708650496,
+      "name": "native-message-ui",
+      "conclusion": "failure",
+      "positive": "Prior duplicate-pagination failures cleared; actual Renderer11 now10passed/1failed; original first114 checks pass. Transcript10 not reached.",
+      "failure": "Old-row reaction test line284: the log container intercepts Add reaction pointer events. Investigate actual hover target and production hit testing before classification or correction.",
+      "artifact_id": 13202018049,
+      "artifact_digest": "sha256:5885886290e8dcd26014ca6767e7e9a4f367cf10b5a19f190a7cee94f8a7be70"
+    }
+  ],
   "independent_acceptance": false,
-  "complete": false
+  "complete": false,
+  "prerequisite_delivery": {
+    "head": "81856d04990738db39fa00b6e1fe79a9b2abdc55",
+    "parent": "0381cc707ea28e7733397384bbbf2c3a88e58421",
+    "tree": "44707018e8f5499367d2bf0542bc90251c40d433",
+    "branch": "checkpoint/tdrp-human-retry-bfafe567-r1",
+    "remote_commit_ref_and_all_nine_changed_file_contents_read_back": true,
+    "native_run": 41572570104,
+    "runtime_run": 41572569956,
+    "validation_status": "in-progress; not a pass at preparation"
+  },
+  "prerequisite_source_review": {
+    "base": "0381cc707ea28e7733397384bbbf2c3a88e58421",
+    "tree": "44707018e8f5499367d2bf0542bc90251c40d433",
+    "scope": "nine-path frozen prerequisite",
+    "general": {
+      "reviewer": "prerequisite_blind_review",
+      "verdict": "NO_MUST_FIX_FOUND",
+      "effort": "xhigh; actually applied",
+      "configured_model": "inherited"
+    },
+    "specialist": {
+      "reviewer": "prerequisite_lifetime_review",
+      "verdict": "NO_MUST_FIX_FOUND",
+      "focus": "SQLite descriptor/sidecar/live-lock and Human creation plus renderer account/selection lifetimes",
+      "effort": "xhigh; actually applied",
+      "configured_model": "inherited"
+    },
+    "qualification_limits": [
+      "No exact-H executable result inferred by static reviewers",
+      "Arbitrary hot/corrupt-sidecar recovery remains open",
+      "POSIX lock runtime oracle is Linux-only",
+      "Dependent Human retry is not part of this prerequisite snapshot"
+    ],
+    "independent_accept": false
+  },
+  "review_decisions": [
+    {
+      "id": "PREREQ-CI-01",
+      "scope": "architecture-semantic-adaptations.json Renderer target",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "rationale": "Exact81856d renderer build/contracts passed but strict architecture checker rejected stale targetBlobSha4d5df5 for actual reviewed Renderer blob0025d54. Refresh only that semantic-adaptation row and explanation; retain the strict checker and all inherited evidence.",
+      "execution_evidence": {
+        "run": 41572569956,
+        "job": 125708649394,
+        "conclusion": "failure"
+      }
+    },
+    {
+      "id": "PREREQ-CI-02",
+      "scope": "desktop/e2e/native-message-projection.spec.ts old-row reaction setup",
+      "classification": "TEST_OR_ORACLE_BUG",
+      "decision": "FIX",
+      "rationale": "Actual H81856d trace call@704 hovered the full m1 row at(780,97), outside the actual message bubble at approximately x1000..1125/y79..115. Existing toolbar correctly requires .sand-message-action-anchor hover/focus and remained opacity0/pointer-events:none. Hover the real message bubble, assert enabled visible toolbar, then retain normal pointer click and all original settlement/cache assertions; do not change production CSS, force click, add sleeps or weaken counts.",
+      "evidence": {
+        "run": 41572570104,
+        "job": 125708650496,
+        "artifact_id": 13202018049,
+        "artifact_digest": "sha256:5885886290e8dcd26014ca6767e7e9a4f367cf10b5a19f190a7cee94f8a7be70"
+      }
+    }
+  ],
+  "prerequisite_followup": {
+    "scope": "Same production bytes as81856d; repair actual reaction hover precondition and bind reviewed Renderer blob in existing semantic adaptation record. No count/gate reductions.",
+    "qualification": "Next containing-H Actions required; retry consumer remains a separately authored, unpublished dependent batch."
+  }
 }

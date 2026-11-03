@@ -26,6 +26,19 @@ test.afterAll(async () => { await server?.close(); });
 const messageRow = (page: Page, id: string) => page.getByRole('log', { name: 'Conversation transcript' }).locator(`[data-entry-id="${id}"]`);
 const domIds = (page: Page) => page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id]').evaluateAll((entries) => entries.map((entry) => entry.getAttribute('data-entry-id')));
 
+async function openReactionPicker(page: Page, id: string) {
+  const row = messageRow(page, id);
+  // Rows span the transcript width; only the actual message anchor reveals
+  // its hover controls. The row center can be empty space beside the bubble.
+  await row.locator('.sand-message').hover();
+  const toolbar = row.getByRole('toolbar');
+  await expect(toolbar).toHaveCSS('opacity', '1');
+  await expect(toolbar).toHaveCSS('pointer-events', 'auto');
+  const trigger = row.getByRole('button', { name: 'Add reaction', exact: true });
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+}
+
 async function openAlice(page: Page, theme = 'dark') {
   await page.goto(`${origin}/native-message-projection.html?theme=${theme}`);
   await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
@@ -280,15 +293,13 @@ for (const oldPhase of ['in-flight', 'queued']) {
 test('NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation', async ({ page }, info) => {
   await openAlice(page);
   await loadOlder(page);
-  await messageRow(page, 'm1').hover();
-  await messageRow(page, 'm1').getByRole('button', { name: 'Add reaction', exact: true }).click();
+  await openReactionPicker(page, 'm1');
   await messageRow(page, 'm1').getByRole('button', { name: 'React with 👍', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(1);
   await page.evaluate(() => window.nativeMessageFixture.settleReaction());
   await expect(messageRow(page, 'm1').locator('.sand-reaction-pill')).toContainText('👍');
 
-  await messageRow(page, 'm2').hover();
-  await messageRow(page, 'm2').getByRole('button', { name: 'Add reaction', exact: true }).click();
+  await openReactionPicker(page, 'm2');
   await messageRow(page, 'm2').getByRole('button', { name: 'React with ❤️', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(2);
   await page.evaluate(() => {
