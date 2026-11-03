@@ -354,18 +354,16 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
     assert_eq!(multi_term_media_array[0]["agentId"], conversation_id);
     assert_eq!(multi_term_media_array[0]["entryId"], human_first["id"]);
 
-    let origin_agent = session
-        .materialize_new_session(Some(&profile("OriginArchitect")), "user", None)
-        .expect("origin agent");
     let origin_message = session
         .append_human_agent_message(
             &conversation_id,
-            &origin_agent.id,
+            "OriginArchitect",
             "stream-origin-1",
             "quarterly architecture roadmap",
             990.0,
         )
         .expect("origin handoff message");
+    assert_eq!(origin_message["authorName"], json!("OriginArchitect"));
     let bob_conversation = session
         .create_human_conversation("human-bob", "Bob")
         .expect("bob conversation");
@@ -381,7 +379,7 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
         .expect("carol conversation id")
         .to_string();
 
-    session
+    let bob_forward = session
         .forward_human_message(
             &conversation_id,
             origin_message["id"].as_str().expect("origin message id"),
@@ -391,7 +389,8 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
             false,
         )
         .expect("forward preserving origin author");
-    session
+    assert_eq!(bob_forward["destinations"][0]["completed"], json!(true));
+    let carol_forward = session
         .forward_human_message(
             &conversation_id,
             origin_message["id"].as_str().expect("origin message id"),
@@ -401,6 +400,7 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
             false,
         )
         .expect("forward dropping origin author");
+    assert_eq!(carol_forward["destinations"][0]["completed"], json!(true));
 
     let bob_forward_matches = dispatch_production_session_gateway_call(
         &session,

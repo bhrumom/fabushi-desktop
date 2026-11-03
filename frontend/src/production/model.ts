@@ -432,7 +432,7 @@ function visibleForwardOriginAuthorName(value: Record<string, unknown>): string 
   const privacy = isRecord(value.forwardContext.privacy) ? value.forwardContext.privacy : null;
   if (privacy?.dropSenderNames === true || privacy?.dropCaptions === true) return undefined;
   const origin = isRecord(value.forwardContext.origin) ? value.forwardContext.origin : null;
-  return origin == null ? undefined : stringValue(origin.authorName);
+  return origin == null ? undefined : (stringValue(origin.authorName) ?? undefined);
 }
 
 export function projectTranscriptEntry(value: unknown, index: number, agentName: string, agentId?: string | null): ProductionTranscriptEntry | null {
@@ -443,7 +443,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     : typeof value.remoteMessageId === "number" && Number.isSafeInteger(value.remoteMessageId) && value.remoteMessageId > 0
       ? String(value.remoteMessageId)
       : undefined;
-  const humanAuthorName = value.authorKind === "human" ? stringValue(value.authorName) : undefined;
+  const humanAuthorName = value.authorKind === "human" ? (stringValue(value.authorName) ?? undefined) : undefined;
   const forwardedFromAuthorName = value.authorKind === "human" ? visibleForwardOriginAuthorName(value) : undefined;
   const transcriptAuthor = {
     ...(value.authorKind === "human" ? {
