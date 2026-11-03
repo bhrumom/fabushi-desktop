@@ -1,0 +1,73 @@
+{
+  "format_version": 3,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "reviewed_base": "1de845141d5e30ae9ff4965caf2915f68df2f650",
+  "input_blob": "20cf65bc7063565c20e8c49e851b68904085581c",
+  "authored_ui_cases": 23,
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+      },
+      "normalize": {
+        "fabushi_target_paths": [],
+        "fabushi_target_symbols": []
+      },
+      "append": {
+        "requirement_ids": [
+          "NMR-RETAINED-TELEGRAM-01a",
+          "NMR-RETAINED-TELEGRAM-01b",
+          "NMR-RETAINED-TELEGRAM-01c",
+          "NMR-RETAINED-TELEGRAM-01d"
+        ],
+        "oracle_ids": [
+          "NMR-AC-RETAINED-TELEGRAM-01"
+        ],
+        "fabushi_target_paths": [
+          "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+          "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs",
+          "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+          "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+          "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
+          "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs"
+        ],
+        "fabushi_target_symbols": [
+          "PreserveDesktopLegacyConversations",
+          "retains_historical_conversation",
+          "create_with_session_transcript_owner"
+        ],
+        "production_entrypoints": [
+          "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs#create_with_session_transcript_owner",
+          "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs#recover_interrupted_turns",
+          "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs#recover_pending_handoffs",
+          "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs#execute"
+        ],
+        "command_event_contracts": [
+          "NMR-RETAINED-TELEGRAM-01: only desktop Session/Transcript composition opts into the new in-memory policy preserving nonempty original Social/telegram:chat: namespaces before turn/handoff recovery mutations. Old None/Social-only policies remain. Production Electron explicit Telegram open/send refuse before authorization, locks, plugin/context work or events; existing wire error and independently tested provider absence remain."
+        ],
+        "unit_case_ids": [
+          "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs#retained_telegram_turns_and_handoffs_survive_desktop_sqlite_restart_without_dispatch",
+          "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs#legacy_telegram_recovery_keeps_default_and_social_only_policies"
+        ],
+        "integration_case_ids": [
+          "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_telegram_owner_preserves_sqlite_turns_and_refuses_bypass"
+        ],
+        "fault_recovery_case_ids": [
+          "NMR-RETAINED-TELEGRAM-01: actual RuntimeStore and Production AppHost restart must preserve active/waiting-user turns, exact questions/input/nonce/generation and queued/running/terminal-target handoffs without provider calls, approval or replay. Original account/credential/encrypted-store and ordinary Agent controls remain."
+        ],
+        "production_evidence": [
+          "Current exact1de845141d5e30ae9ff4965caf2915f68df2f650 freezes the bounded legacy recovery contract. Existing shipping FeatureHost selects MahayanaHost::create_with_session_transcript_owner; existing Runtime recovery owns both early retention checks. This addresses a conditional source defect, not observed user-data presence or a completed legacy import."
+        ],
+        "test_evidence": [
+          "NMR-AC-RETAINED-TELEGRAM-01 retains Feature10, extends original Runtime9 with2 and AppHost7 with1; Linux/macOS selected groups become10+11+6+8+5=40. Require three exact case names and complete containing-H Actions; nested child summaries are not additional top-level cases. Old Social/policy/Agent and every message/UI/Electron/shipping gate remain."
+        ]
+      },
+      "note": "\nNMR-RETAINED-TELEGRAM-01 follows the exact current owner audit: preserve retired Telegram RuntimeStore work only in explicit desktop composition, refuse old explicit sends before side effects, preserve original policies/data and independently prove registry absence. Three new real SQLite/Production AppHost cases and expanded existing Feature matrices are authored, not execution or real-user/service/package acceptance."
+    }
+  ]
+}
