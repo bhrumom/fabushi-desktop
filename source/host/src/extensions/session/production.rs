@@ -6942,6 +6942,14 @@ mod plugin_skills_admission_tests {
             drop(slot);
             self.delegate.is_denied(plugin_id)
         }
+
+        fn acquire(&self, plugin_id: &str) -> Result<Option<PluginSkillsAdmissionLease>, String> {
+            let forwarding = self.forwarding.upgrade().unwrap();
+            let slot = forwarding.reader.try_lock();
+            assert!(slot.is_ok(), "forwarding must release its slot before acquiring the real owner's lease");
+            drop(slot);
+            self.delegate.acquire(plugin_id)
+        }
     }
 
     #[test]
