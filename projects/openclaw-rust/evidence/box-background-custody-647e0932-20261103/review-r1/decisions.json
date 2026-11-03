@@ -1,0 +1,70 @@
+{
+  "schema": "ocrm-review-decisions-v1",
+  "contract": "BGC-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "original_base": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+  "reviewed_candidate": "e453acfea192b0533ec5fcf6a2d250da306435cf",
+  "review_packet": "094ed12bcda8f4088def6278019f4aebc4b7ee86",
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "agent": "/root/bgc_r1_general",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "terminal": "CHANGES_REQUIRED",
+      "evidence_carrier": "completed conversation report; no uploaded full report",
+      "scope": "complete nine-path diff and adjacent process/consumer/build/evidence contracts"
+    },
+    {
+      "lens": "STRUCTURE",
+      "agent": "/root/bgc_r1_structure",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "terminal": "APPROVED",
+      "evidence_carrier": "completed conversation report; no uploaded full report",
+      "scope": "complete nine-path diff and adjacent owner/lifetime/consumer/build contracts"
+    }
+  ],
+  "findings": [
+    {
+      "id": "GENERAL-R1-01",
+      "severity": "P2",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "path": "source/box-exec-daemon/src/server.rs",
+      "symbol": "background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup",
+      "reason": "The entire terminal contains the command text in frontmatter before actual stdout. Searching it for SC_CAPTURE_PREFIX can prematurely release the unwind gate and race the effect-count assertion.",
+      "required_change": "Observe the actual terminal body after its closing frontmatter delimiter before accepting SC_CAPTURE_PREFIX; preserve real effect, reap, reader completion, terminal cleanup, escalation and no-resignal assertions.",
+      "new_product_semantics": false
+    },
+    {
+      "id": "STRUCTURE-R1-M01",
+      "severity": "NON_BLOCKING",
+      "classification": "METADATA",
+      "decision": "COMPROMISE",
+      "reason": "The historical review packet's platform labels were generic/latest, while the immutable workflow pins ubuntu-24.04 and macos-15. Preserve that original packet and record the actual matrix in round-two and execution bindings. This discrepancy does not start a fix round.",
+      "actual_matrix": [
+        "ubuntu-24.04",
+        "macos-15"
+      ]
+    }
+  ],
+  "next_review": {
+    "kind": "fresh-focused",
+    "required_lenses": [
+      "GENERAL",
+      "STRUCTURE"
+    ],
+    "complete_original_scope_retained": true,
+    "delta_from_candidate": "e453acfea192b0533ec5fcf6a2d250da306435cf",
+    "round_cap": 10
+  },
+  "execution": {
+    "state": "not-run-for-BGC",
+    "planned_groups": 15,
+    "planned_exact_names": 121,
+    "full_unit_verified": false,
+    "global_acceptance": false
+  }
+}
