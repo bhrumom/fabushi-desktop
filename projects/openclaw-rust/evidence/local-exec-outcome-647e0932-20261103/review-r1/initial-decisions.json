@@ -1,0 +1,30 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXO-v1",
+  "review_round": 1,
+  "candidate": "e4f1b8d2c4f682d3de7d993ccad5cdd8b3ed23e8",
+  "candidate_tree": "d3fda339f5b7d1dc480287051602d477bfbd5fe7",
+  "frozen_base": "7722759802847348346c538e7eaf3b25058f40f1",
+  "review_state": "Reviews remain active; this is the accepted preliminary finding before its repair, not convergence.",
+  "findings": [
+    {
+      "id": "LXO-R1-NODE-ORACLE",
+      "decision": "FIX",
+      "classification": "test-oracle-integration",
+      "reported_by": "lxo_r1_general",
+      "path": "source/host/tests/openclaw_chat_cron_node_contract.rs",
+      "base_blob": "2bde1d3f9ab87f53e00079140a414ad492ac2ab6",
+      "symbols": [
+        "node_shell_timeout_is_forwarded",
+        "test_ocrm_node_o06_shipping_routes_to_unique_native_owners",
+        "test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout"
+      ],
+      "reason": "Root independently read the two retained selected oracles. They require the old inline execution arguments and match &result; the real method now forwards through execute_local_node_shell_invocation, so these assertions fail deterministically by source inspection. No runtime failure is claimed.",
+      "repair": "Retain both exact test names and all owner/admission/terminal assertions. Bind timeout from request-envelope field to actual helper call, and helper timeout argument to actual manager call. Retain missing-owner, dropped-timeout and wrong-unit refusal controls and add distinct missing-helper and dropped-second-hop controls. Keep direct actual-App behavior cases. Add this necessary adjacent oracle file to full frozen-scope context and causal input capture.",
+      "allowed_added_path": "source/host/tests/openclaw_chat_cron_node_contract.rs",
+      "scope_effect": "One required adjacent test path; no new production owner, policy scope waiver or removed test."
+    }
+  ],
+  "execution": "No executable validation. Repairs require a fresh immutable focused re-review with complete scope and exact-H Actions."
+}
