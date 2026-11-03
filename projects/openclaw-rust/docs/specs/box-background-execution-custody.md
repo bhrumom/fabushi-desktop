@@ -73,6 +73,14 @@ permission capability is authorized.
   error/ended_at footer shape may describe a bounded static stream failure when
   actual writer/cleanup observations permit it; failure to publish remains an
   explicit unresolved observation, never a successful execution claim.
+  Existing Runner parse_shell_terminal_footer must consume the producer's exact
+  final bytes, including its trailing LF. Strip a recognized final closing
+  delimiter before locating the last opening delimiter; the closing delimiter
+  cannot become an empty footer. Preserve existing no-final-newline and declared
+  CRLF-closing compatibility, malformed-exit/error semantics and refusal of
+  incomplete/trailing-content snapshots. Do not trim the Host test input or
+  fabricate a watcher completion. Keep parser policy in background_work.rs and
+  actual poll/settlement in the existing shell_terminal_watch owner.
 - BGC06: Clone the exact invocation's stdin handle/path while holding the map,
   then release the map before pipe write/flush. A blocked input cannot prevent
   stop/admission from inspecting the registry. Cleanup cannot erase a successor
@@ -141,3 +149,20 @@ G01–G12/AC01–AC24 and independent final ACCEPT remain separate required gate
   stronger process-tree/platform/settlement obligations still open in the
   existing OCRM termination responsibility. Imported tree/reaper implementations
   and full upstream controller equivalence are not claimed by this Box slice.
+
+## BGC05 producer/consumer correction recorded before implementation
+
+Decision BGC-PRE-FOOTER-CLOSING-DELIMITER: FIX. Actual daemon
+server.rs blob 9e3e46179bbc25bf323bc886e9e33d1506792306 terminal_footer emits
+a final "\\n---\\n". Runner background_work.rs blob
+ff23459450b9ddad39e53c775be32245e0fa7b35 selects rfind("\\n---\\n") before
+removing the final closing delimiter, leaving an empty suffix for these bytes.
+The real Host read preserves that suffix, so the actual poll cannot settle.
+Current background_work_contract.rs blob
+50670c53ce79a8575a153435b9770e0220be826d covers no-final-newline footers only.
+
+Correct this existing parser and add meaningful canonical producer-ending,
+last-footer, malformed/error, incomplete/trailing-data and actual poll controls.
+Preserve all old assertions and pair these controls with the new real daemon/
+Host/Runner background positives. This is source-established IMPL_BUG evidence;
+no failing or passing executable result is claimed before exact-H Actions.
