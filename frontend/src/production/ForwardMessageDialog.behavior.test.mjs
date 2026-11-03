@@ -289,11 +289,19 @@ test("partial retry only sends failed destination with stable identity", async (
   // source message before snapshot lock, both privacy checkboxes clamp to false
   // and disable; when restored to false, the user can re-enable them.
   await f.call("setForcedForwardInfo", true);
+  await f.page.waitForFunction(() => {
+    const boxes = [...document.querySelectorAll('.fabushi-forward-dialog__privacy input[type="checkbox"]')];
+    return boxes.length === 2 && boxes.every((box) => box.disabled && !box.checked);
+  });
   assert.equal(await sender.isChecked(), false);
   assert.equal(await captions.isChecked(), false);
   assert.equal(await sender.isDisabled(), true);
   assert.equal(await captions.isDisabled(), true);
   await f.call("setForcedForwardInfo", false);
+  await f.page.waitForFunction(() => {
+    const boxes = [...document.querySelectorAll('.fabushi-forward-dialog__privacy input[type="checkbox"]')];
+    return boxes.length === 2 && boxes.every((box) => !box.disabled);
+  });
   assert.equal(await sender.isDisabled(), false);
   assert.equal(await captions.isDisabled(), false);
   await captions.check();

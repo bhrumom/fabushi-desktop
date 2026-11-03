@@ -181,8 +181,14 @@ Object.assign(window, {
     reopen: () => controls?.reopen(),
     close: () => controls?.close(),
     replaceSource: (id: string) => controls?.replaceSource(id),
-    refreshMessage: () => controls?.refreshMessage(),
-    setForcedForwardInfo: (forced: boolean) => controls?.setForcedForwardInfo(forced),
+    refreshMessage: async () => {
+      controls?.refreshMessage();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    },
+    setForcedForwardInfo: async (forced: boolean) => {
+      controls?.setForcedForwardInfo(forced);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    },
     refreshCredential: () => controls?.refreshCredential(),
     setTheme: (mode: "light" | "dark") => themeInstaller.update(mode),
     unmount: () => {

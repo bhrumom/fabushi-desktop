@@ -308,6 +308,8 @@ fn share_recipient_search_uses_canonical_typed_permission_axes_before_exposure()
     let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
     for (id, name) in [
         ("human:owner", "Owner"),
+        ("human:admin", "Admin"),
+        ("human:member", "Member"),
         ("human:restricted", "Restricted"),
     ] {
         service
