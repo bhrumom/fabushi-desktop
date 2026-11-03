@@ -315,11 +315,14 @@ impl SandAgentSessionStore {
     pub fn apply_session_model_selection(
         &self,
         agent_id: &str,
+        expected_session_id: &str,
+        expected_lifecycle_revision: &str,
         params: ApplySessionModelSelectionParams<'_>,
         current_time_ms: u64,
     ) -> Result<ApplySessionModelSelectionResult, String> {
-        self.production
-            .apply_session_model_selection(agent_id, params, current_time_ms)
+        self.production.apply_session_model_selection(
+            agent_id, expected_session_id, expected_lifecycle_revision, params, current_time_ms,
+        )
     }
 
     pub fn read_session_model_entry(

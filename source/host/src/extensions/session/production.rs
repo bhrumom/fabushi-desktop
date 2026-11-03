@@ -2894,6 +2894,8 @@ impl ProductionSessionWorkers {
     pub fn apply_session_model_selection(
         &self,
         agent_id: &str,
+        expected_session_id: &str,
+        expected_lifecycle_revision: &str,
         params: ApplySessionModelSelectionParams<'_>,
         current_time_ms: u64,
     ) -> Result<ApplySessionModelSelectionResult, String> {
@@ -2903,20 +2905,27 @@ impl ProductionSessionWorkers {
         {
             return Err("session model selection requires provider and model".into());
         }
+        if params.agent_id != agent_id
+            || expected_session_id != agent_id
+            || expected_lifecycle_revision.trim().is_empty()
+        {
+            return Err("SESSION_LIFECYCLE_CHANGED".into());
+        }
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission_locked(agent_id)?;
             let db = self.open_agent_db_owner_locked(agent_id)?;
             let admission = db
                 .read_session_work_admission()
                 .map_err(|error| error.to_string())?
-                .ok_or_else(|| "session model selection requires session admission".to_string())?;
-            if admission.session_id != agent_id
-                || admission.session_key.trim().is_empty()
-                || admission.lifecycle_revision.trim().is_empty()
+                .ok_or_else(|| "SESSION_LIFECYCLE_CHANGED".to_string())?;
+            if admission.session_id != expected_session_id
+                || admission.session_key != format!("agent:{agent_id}:main")
+                || admission.session_key != params.session_key
+                || admission.lifecycle_revision != expected_lifecycle_revision
+                || admission.archived_at_ms.is_some()
             {
-                return Err("session model selection admission identity is malformed".into());
+                return Err("SESSION_LIFECYCLE_CHANGED".into());
             }
-            let expected_lifecycle_revision = admission.lifecycle_revision.clone();
             let mut state = read_session_model_entry(&db, agent_id)?;
             let result = apply_model_selection(&mut state, params, current_time_ms);
             if matches!(&result, ApplySessionModelSelectionResult::Applied(_))

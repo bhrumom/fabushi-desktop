@@ -8,8 +8,8 @@ use mahayana_host_runtime::agents::settings_file::{
 };
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::inference::model_picker_service::{
-    ApplySessionModelSelectionParams, ModelCatalogEntry, SessionModelSelectionRequest,
-    SessionModelSelectionRuntime,
+    ApplySessionModelSelectionParams, ApplySessionModelSelectionResult, ModelCatalogEntry,
+    ModelPickerRejectReason, SessionModelSelectionRequest, SessionModelSelectionRuntime,
 };
 use mahayana_host_runtime::extensions::inference::typed_replay_serialization::serialize_responses_replay;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
@@ -1132,8 +1132,12 @@ fn model_selection_does_not_report_applied_when_owner_rejects_persistence() {
         base_url: None,
         reasoning: None,
     }];
+    let revision = production.read_session_work_admission(&record.id)
+        .unwrap().unwrap().lifecycle_revision;
     let result = store.apply_session_model_selection(
         &record.id,
+        &record.id,
+        &revision,
         ApplySessionModelSelectionParams {
             agent_id: &record.id,
             session_key: &format!("agent:{}:main", record.id),
@@ -2355,6 +2359,58 @@ fn session_facade_owns_workflow_import_local_skill_port_and_cross_agent_automati
         2
     );
 
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn model_selection_requires_caller_observed_session_revision_before_sqlite_mutation() {
+    let root = temp_root("model-revision-boundary");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).unwrap();
+    let actual = production.read_session_work_admission(&record.id).unwrap().unwrap();
+    let key = format!("agent:{}:main", record.id);
+    let catalog = [ModelCatalogEntry {
+        provider: "cursor".into(), id: "allowed".into(), name: None,
+        context_window: None, context_tokens: None, api: None,
+        base_url: None, reasoning: None,
+    }];
+    let owner = production.open_agent_db_owner(&record.id).unwrap();
+    let before = owner.read_kv("sessionModelSelection").unwrap();
+    let select = |model: &str| ApplySessionModelSelectionParams {
+        agent_id: &record.id, session_key: &key,
+        default_provider: "cursor", default_model: "configured",
+        current_provider: "cursor", current_model: "configured",
+        model_catalog: &catalog, visibility_policy: None, operator_authority: None,
+        placement_context: None, candidate_execution_mode: None,
+        initial_generation: None, current_generation: None,
+        request: SessionModelSelectionRequest {
+            provider: "cursor".into(), model: model.into(),
+            is_default: false, reset_to_default: false,
+            alias: None, profile_override: None,
+            runtime: SessionModelSelectionRuntime::Unchanged,
+        },
+    };
+    assert_eq!(store.apply_session_model_selection(
+        &record.id, &record.id, "stale-ui-revision", select("allowed"), 1,
+    ).unwrap_err(), "SESSION_LIFECYCLE_CHANGED");
+    assert_eq!(owner.read_kv("sessionModelSelection").unwrap(), before);
+    assert!(matches!(store.apply_session_model_selection(
+        &record.id, &record.id, &actual.lifecycle_revision, select("unknown"), 2,
+    ).unwrap(), ApplySessionModelSelectionResult::Rejected {
+        reason: ModelPickerRejectReason::UnknownProvider, ..
+    }));
+    assert_eq!(owner.read_kv("sessionModelSelection").unwrap(), before);
+    assert!(matches!(store.apply_session_model_selection(
+        &record.id, &record.id, &actual.lifecycle_revision, select("allowed"), 3,
+    ).unwrap(), ApplySessionModelSelectionResult::Applied(_)));
+    assert_eq!(store.read_session_model_entry(&record.id).unwrap().model_override.as_deref(), Some("allowed"));
+    let reopened = SandAgentSessionStore::new(Arc::new(
+        ProductionSessionWorkers::with_agents_root(&agents, 500),
+    ));
+    assert_eq!(reopened.read_session_model_entry(&record.id).unwrap().model_override.as_deref(), Some("allowed"));
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }
