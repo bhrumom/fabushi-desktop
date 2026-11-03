@@ -1,0 +1,23 @@
+{
+  "schema": "ocrm-follow-on-source-finding-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXR-v1",
+  "subject": "4fb025cf9639ab9e7e558b3184d4544fbc80a100",
+  "owner_blob": "cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9",
+  "finding": {
+    "id": "LXO-RETENTION-01",
+    "priority": "P1",
+    "decision": "FIX",
+    "functions": [
+      "GatewayLocalExecManager::load_operation_history",
+      "GatewayLocalExecManager::register_operation",
+      "GatewayLocalExecManager::finish_operation"
+    ],
+    "failure": "A no-Exit OutcomeUnknown record is discarded by ordinary bounded history churn or startup prefix truncation. The existing duplicate predicate then no longer rejects that operation ID. The retained journal is the existing result owner and this erasure contradicts unknown-custody recovery.",
+    "evidence": "Root read the actual source and current LXO authority; no executed reproduction or complete compatibility proof.",
+    "repair": "Existing owner retains all unresolved records, reserves bounded total capacity before dispatch and evicts only known terminal history. A private version3 migration preserves recoverable version2 state and prevents old-reader downgrade from silently discarding custody.",
+    "prior_reviews": "Earlier LXO source approvals are retained for their reviewed scope. This concrete capacity/restart interleaving was not previously weighed; no prior decision is reversed."
+  },
+  "execution": "not-run",
+  "state": "authority and FIX saved before implementation; fresh source review and exact-H Actions required"
+}

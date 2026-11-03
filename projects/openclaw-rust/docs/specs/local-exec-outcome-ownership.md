@@ -68,3 +68,69 @@ Done for this batch means reviewed source and complete production wiring are pus
 - Provider 56a4905d142e12d1be8f642697861f401d57cfc3; controlled manager cf79ca962b78e73d15828181a6e66c6e05e60e4b; production executor ab36e8824bd960750bcf6e0f7b386ed524609244.
 - Actual App eafdf6a0cbae3651bb70d55c5cae719e31a89fdb; node invocation runtime 5fe97531210e9bbf1661e24f51873fe792650249.
 - Independent source assessment /root/external_unknown_contract at H14e637798b7c76c8530f9a3710051461f793924f, source identities unchanged at this batch base. No execution result claimed.
+
+## LXR-v1 — unresolved outcome retention and bounded admission
+
+This follow-on contract is fixed before implementation against source subject
+`4fb025cf9639ab9e7e558b3184d4544fbc80a100`, tree
+`dd38bb0a35dab1f159c069e7457c08fc0b4483d6`. The actual existing owner is
+`source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs`, blob
+`cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9`. Fixed U and all OCRM scope remain
+unchanged. This is a prerequisite shared custody repair, before extending the
+same owner to file publication; that file-transfer outcome work is not implemented
+or accepted by this slice.
+
+The source-established defect is ordinary history churn: finish_operation
+unconditionally pops the oldest record at 128, while load_operation_history
+unconditionally truncates the older prefix. Either can discard OutcomeUnknown.
+The existing duplicate check then forgets that operation ID and may dispatch it
+again despite no observed terminal. No executed reproduction is claimed.
+
+- LXR-01: Keep the existing operation owner, journal, agent-scoped queries,
+  invocation ticket and common Runner guard. Accepted, Running and OutcomeUnknown
+  are protected custody; only Completed, Cancelled and Failed are eligible for
+  bounded historical eviction. Evict oldest eligible known records while
+  preserving every protected record, its identity and bounded observed output.
+- LXR-02: Reserve journal capacity inside the same owner transaction before a
+  provider frame is sent. The existing limit bounds history plus active
+  registrations. If protected history plus active registrations already occupy
+  that capacity, refuse a fresh operation as known pre-entry without provider
+  dispatch or mutation of existing custody. A refusal or duplicate cannot retire
+  another invocation. Do not add a queue, retry fence or second state store.
+- LXR-03: Finishing an operation consumes its already reserved place; it must
+  never evict unresolved custody. Permission-scoped facades share this capacity
+  and the existing ordered durable publication boundary.
+- LXR-04: Upgrade the private journal writer to version 3 as the retention
+  semantic boundary. Accept the existing version-2 record shape for migration,
+  preserve all recoverable records, convert Accepted/Running to OutcomeUnknown
+  as before, and durably publish version 3 before allowing new effects. Version-3
+  records use the same fields; reject unsupported versions, malformed input and
+  duplicate identities. A failed upgrade/publication fails closed without clearing custody. A failure
+  after atomic replacement does not claim that the prior byte image survived
+  or that the new image is durably settled. Do not infer truth for old false Cancelled records or
+  reconstruct records already lost by an earlier reader.
+- LXR-05: A valid legacy image containing more protected records than the current
+  capacity is retained intact and remains queryable; new admission is refused.
+  Only eligible known history can be pruned. Persist any recovery, migration or
+  pruning before using that loaded state. Older version-2-only readers must
+  refuse the version-3 image; rollback retains that image and requires a reader
+  supporting its custody semantics. Never downgrade or clear it for rollback.
+- LXR-06: Extend the existing owner and real-bridge contracts. Require unknown
+  retention through known-result churn, duplicate refusal before another frame,
+  fresh-owner recovery with identical unknown identity/output, full-capacity
+  refusal with no new provider frame, released capacity after a known terminal,
+  shared-facade/concurrent admission ordering, protected legacy over-capacity,
+  exact version-2 to version-3 migration, failed migration and future-version
+  negatives. Keep existing assertions and known refusal/Exit controls.
+- LXR-07: Reuse the existing three-platform native LocalExec capture and cached
+  workflow commands; bind the new authority, owner/test blobs and required names
+  to the same exact H. Existing Runner/App consumers remain required at their
+  selected actual H. No local or htch execution, per-file full campaigns, or
+  transfer of historical green evidence.
+
+LXR supersedes only the initial LXO-v1 version-2 preservation and indiscriminate
+history-retention behavior. The earlier authority remains recoverable at its
+original commit. No public wire/protobuf or package dependency changes are
+authorized. Global source closure, physical devices, full process-tree shutdown,
+file-publication outcome propagation, package/upgrade/rollback acceptance and
+G01–G12/AC01–AC24 remain open; all eight global flags stay false.
