@@ -3529,3 +3529,40 @@ fn test_ocrm_session_o06_work_admission_and_archive() {
     assert_eq!(session_state["archived"], false);
 }
 
+
+#[test]
+fn native_session_model_default_reset_uses_one_authenticated_rust_mutation_path() {
+    let ingress = include_str!("../src/gateway_server.rs");
+    assert!(ingress.contains("pub native_operator_control: bool"));
+    assert!(ingress.contains("authenticated && native_mcp_control"));
+    assert!(ingress.contains("device_authorization.is_none()"));
+    let shipping = include_str!("../app/src/main.rs");
+    let patch = shipping
+        .split("fn call_openclaw_sessions_patch(").nth(1).unwrap()
+        .split("fn call_openclaw_sessions_provider_review_continue(").next().unwrap();
+    assert!(patch.contains("context.native_operator_control"));
+    assert!(patch.contains("modelSelection only accepts resetToDefault=true"));
+    assert!(patch.contains("model reset does not accept provider, catalog or policy fields"));
+    assert!(patch.contains("checked_session_model_default()"));
+    assert!(patch.contains("SandAgentSessionStore::new("));
+    assert!(patch.contains(".apply_session_model_selection("));
+    assert!(patch.contains("expected_revision"));
+    assert!(patch.contains("SessionModelSelectionRuntime::Unchanged"));
+    assert!(patch.contains("ApplySessionModelSelectionResult::Rejected"));
+    assert!(!patch.contains("args.get(\"modelCatalog\")"));
+    assert!(!patch.contains("args.get(\"operatorAuthority\")"));
+    let session_owner = include_str!("../src/extensions/session/production.rs");
+    let mutation = session_owner
+        .split("pub fn apply_session_model_selection(").nth(1).unwrap()
+        .split("pub fn begin_cron_session_run(").next().unwrap();
+    assert!(mutation.contains("admission.lifecycle_revision != expected_lifecycle_revision"));
+    assert!(mutation.contains("admission.archived_at_ms.is_some()"));
+    assert!(mutation.contains("write_session_model_entry("));
+    assert!(mutation.contains("SESSION_MODEL_SELECTION_NOT_COMMITTED_OR_STALE"));
+    let renderer = include_str!("../../../frontend/src/production/ProductionRenderer.tsx");
+    assert!(renderer.contains("getSessionModelSelection"));
+    assert!(renderer.contains("resetSessionModelSelection"));
+    let coordinator = include_str!("../../node-agent-coordinator/src/main.rs");
+    assert!(coordinator.contains("\"getSessionModelSelection\" => \"sessions.get\""));
+    assert!(coordinator.contains("\"resetSessionModelSelection\" => \"sessions.patch\""));
+}

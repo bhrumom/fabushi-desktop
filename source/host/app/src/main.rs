@@ -5012,6 +5012,13 @@ impl UnifiedGatewayApi {
             ));
         }
         if let Some(intent) = model_reset {
+            if !args.as_object().is_some_and(|object| object.keys().all(|key| {
+                matches!(key.as_str(), "key" | "expectedSessionId" | "expectedLifecycleRevision" | "modelSelection")
+            })) {
+                return Err(GatewayCommandError::BadRequest(
+                    "sessions.patch model reset does not accept provider, catalog or policy fields".into(),
+                ));
+            }
             let object = intent.as_object().ok_or_else(|| GatewayCommandError::BadRequest(
                 "sessions.patch modelSelection must be an object".into(),
             ))?;

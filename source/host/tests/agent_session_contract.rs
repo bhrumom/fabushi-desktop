@@ -8,8 +8,9 @@ use mahayana_host_runtime::agents::settings_file::{
 };
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::inference::model_picker_service::{
-    ApplySessionModelSelectionParams, ApplySessionModelSelectionResult, ModelCatalogEntry,
-    ModelPickerRejectReason, SessionModelSelectionRequest, SessionModelSelectionRuntime,
+    AdmittedRunOperatorAuthority, ApplySessionModelSelectionParams, ApplySessionModelSelectionResult,
+    ModelCatalogEntry, ModelPickerRejectReason, ModelVisibilityPolicy,
+    SessionModelSelectionRequest, SessionModelSelectionRuntime, WorkerPlacementContext,
 };
 use mahayana_host_runtime::extensions::inference::typed_replay_serialization::serialize_responses_replay;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
@@ -2411,6 +2412,60 @@ fn model_selection_requires_caller_observed_session_revision_before_sqlite_mutat
         ProductionSessionWorkers::with_agents_root(&agents, 500),
     ));
     assert_eq!(reopened.read_session_model_entry(&record.id).unwrap().model_override.as_deref(), Some("allowed"));
+    let persisted = owner.read_kv("sessionModelSelection").unwrap();
+    let mut stale = select("allowed");
+    stale.initial_generation = Some(5);
+    stale.current_generation = Some(6);
+    assert!(matches!(store.apply_session_model_selection(
+        &record.id, &record.id, &actual.lifecycle_revision, stale, 4,
+    ).unwrap(), ApplySessionModelSelectionResult::Conflict { .. }));
+    assert_eq!(owner.read_kv("sessionModelSelection").unwrap(), persisted);
+
+    let visibility = ModelVisibilityPolicy::new(vec!["cursor/other".into()]);
+    let mut denied = select("allowed");
+    denied.visibility_policy = Some(&visibility);
+    assert!(matches!(store.apply_session_model_selection(
+        &record.id, &record.id, &actual.lifecycle_revision, denied, 5,
+    ).unwrap(), ApplySessionModelSelectionResult::Rejected {
+        reason: ModelPickerRejectReason::NotAllowed, ..
+    }));
+    assert_eq!(owner.read_kv("sessionModelSelection").unwrap(), persisted);
+    let operator = AdmittedRunOperatorAuthority {
+        profile_id: "denied-role".into(), scopes: vec![],
+        allowed_models: Some(vec![]),
+    };
+    let mut unauthorized = select("allowed");
+    unauthorized.operator_authority = Some(&operator);
+    assert!(matches!(store.apply_session_model_selection(
+        &record.id, &record.id, &actual.lifecycle_revision, unauthorized, 6,
+    ).unwrap(), ApplySessionModelSelectionResult::Rejected {
+        reason: ModelPickerRejectReason::NotAllowed, ..
+    }));
+    assert_eq!(owner.read_kv("sessionModelSelection").unwrap(), persisted);
+    let placement = WorkerPlacementContext {
+        session_id: record.id.clone(), state: "active".into(),
+        execution_mode: Some("cloud".into()), generation: 1,
+    };
+    let mut conflict = select("allowed");
+    conflict.placement_context = Some(&placement);
+    conflict.candidate_execution_mode = Some("local");
+    assert!(matches!(store.apply_session_model_selection(
+        &record.id, &record.id, &actual.lifecycle_revision, conflict, 7,
+    ).unwrap(), ApplySessionModelSelectionResult::Rejected {
+        reason: ModelPickerRejectReason::InvalidRuntime, ..
+    }));
+    assert_eq!(owner.read_kv("sessionModelSelection").unwrap(), persisted);
+
+    let mut locked = store.read_session_model_entry(&record.id).unwrap();
+    locked.is_locked = true;
+    let locked_raw = serde_json::to_string(&locked).unwrap();
+    assert!(owner.write_kv("sessionModelSelection", &locked_raw).unwrap());
+    assert!(matches!(store.apply_session_model_selection(
+        &record.id, &record.id, &actual.lifecycle_revision, select("allowed"), 8,
+    ).unwrap(), ApplySessionModelSelectionResult::Rejected {
+        reason: ModelPickerRejectReason::Locked, ..
+    }));
+    assert_eq!(owner.read_kv("sessionModelSelection").unwrap().as_deref(), Some(locked_raw.as_str()));
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }

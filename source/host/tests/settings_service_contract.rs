@@ -2264,3 +2264,40 @@ mod public_settings_owner_contract {
     }
 }
 
+
+#[test]
+fn checked_session_model_source_rejects_invalid_provider_and_never_normalizes_bytes() {
+    let path = temp_path("native-session-model-source");
+    let service = SettingsService::new(&path);
+    assert_eq!(service.get_session_model_source_checked().unwrap(), ("cursor".into(), None));
+    assert!(!path.exists());
+
+    for bad in [
+        serde_json::json!({"version": 1, "inferenceProvider": "unknown"}),
+        serde_json::json!({"version": 1, "inferenceProvider": true}),
+        serde_json::json!({"version": 1, "inferenceProvider": "codex", "agentDefaultModel": {"provider": "codex", "modelId": ""}}),
+        serde_json::json!({"version": 1, "inferenceProvider": "fabushi", "agentDefaultModel": 17}),
+    ] {
+        let bytes = serde_json::to_vec(&bad).unwrap();
+        fs::write(&path, &bytes).unwrap();
+        assert!(service.get_session_model_source_checked().is_err());
+        assert_eq!(fs::read(&path).unwrap(), bytes, "failed projection cannot change Settings");
+    }
+    let valid = serde_json::json!({
+        "version": 1, "inferenceProvider": "fabushi",
+        "agentDefaultModel": {
+            "provider": "fabushi", "modelId": "Org/CaseSensitive",
+            "maxMode": false, "parameters": []
+        }
+    });
+    let bytes = serde_json::to_vec(&valid).unwrap();
+    fs::write(&path, &bytes).unwrap();
+    let (provider, model) = service.get_session_model_source_checked().unwrap();
+    assert_eq!(provider, "fabushi");
+    let model = model.unwrap();
+    assert_eq!(model["provider"], "fabushi");
+    assert_eq!(model["modelId"], "Org/CaseSensitive");
+    assert_eq!(model["maxMode"], true);
+    assert_eq!(fs::read(&path).unwrap(), bytes);
+    let _ = fs::remove_file(path);
+}
