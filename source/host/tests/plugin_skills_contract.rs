@@ -83,6 +83,22 @@ fn auth_failures_are_deduplicated_and_non_auth_failures_are_ignored() {
             error_kind: Some("network".into()),
         },
         PluginLoadFailure {
+            plugin_db_id: Some("3".into()),
+            plugin_id: None,
+            plugin_name: "local cache".into(),
+            marketplace_name: Some("m".into()),
+            error_message: "EACCES: permission denied, mkdir plugin cache".into(),
+            error_kind: Some("install".into()),
+        },
+        PluginLoadFailure {
+            plugin_db_id: Some("4".into()),
+            plugin_id: None,
+            plugin_name: "local authentication-named path".into(),
+            marketplace_name: Some("m".into()),
+            error_message: "authentication directory is not writable".into(),
+            error_kind: Some("install".into()),
+        },
+        PluginLoadFailure {
             plugin_db_id: None,
             plugin_id: Some("1".into()),
             plugin_name: "looks like another canonical ID".into(),
