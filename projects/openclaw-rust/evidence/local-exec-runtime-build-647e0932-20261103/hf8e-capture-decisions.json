@@ -1,0 +1,188 @@
+{
+  "schema": "ocrm-verification-recovery-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "subject": {
+    "commit": "f8e98a307bae97d989a823ec89498a2f9fbc5b7d",
+    "tree": "14b5a5ba520536e2bf7228b3888558d87e6f4e4b",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    }
+  },
+  "runtime": {
+    "run_id": 41632867502,
+    "attempt": 1,
+    "conclusion": "failure",
+    "linux_job": 125906577485,
+    "linux_job_conclusion": "failure",
+    "python_step_exit": 1,
+    "full_decoded_linux_job_log": {
+      "bytes": 3374851,
+      "sha256": "bc37fe1096a6abff040f792c87a616d3f18097a9a0cd65462a78927b093d26a1"
+    },
+    "actual_executions": [
+      {
+        "case": "host-dependency-graph",
+        "command": [
+          "cargo",
+          "metadata",
+          "--locked",
+          "--format-version",
+          "1",
+          "--manifest-path",
+          "source/host/app/Cargo.toml"
+        ],
+        "cwd": "repository root",
+        "timeout_seconds": 120,
+        "command_exit": 0,
+        "capture_exit": 0,
+        "execution_error": null,
+        "log": "host-dependency-graph.log",
+        "oracle_accepted": true,
+        "exit_observation": {
+          "pid": 3650,
+          "state": "exited",
+          "si_code": 1,
+          "si_status": 0,
+          "wait_flags": "WEXITED|WNOHANG|WNOWAIT"
+        },
+        "log_bytes": 3209819,
+        "log_sha256": "41dfafe592fa3c74073815adf40805b8482b0cef48f8ef77f736c83eabf9770a"
+      }
+    ],
+    "final_capture_error": "Expecting value: line 1 column 5 (char 4)",
+    "causal_sources": [
+      {
+        "path": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+        "blob": "ef92d6384cbcf4b344f0864b030cff316c45d87d",
+        "bytes": 54831,
+        "sha256": "31b94c55c5800083e8727e82bef59e261bf3cabc50ff1f3d0e7842b8bb08b919",
+        "matchesReceipt": true
+      },
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "blob": "9574d29d4e494d0f3a30b6ffcad275e222b07275",
+        "bytes": 507847,
+        "sha256": "53542f425f158785ab923a88e1d2f14099ab05869817a20f3632b4c39e7a04b4",
+        "matchesReceipt": true
+      }
+    ]
+  },
+  "prior_attempt": {
+    "subject": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+    "run_id": 41629309257,
+    "attempt": 1,
+    "decision_record": "h8190-recovery-decisions.json",
+    "preserved": true
+  },
+  "independent_exhaustion_assessment": {
+    "actor": "/root/ldb_recovery_assessment",
+    "effort": "xhigh",
+    "verdict": "TEST_FLAW, repairable; not BLOCKED/UNRECOVERABLE",
+    "finding": "run_command merges stderr into stdout then main parses entire host-dependency-graph.log as JSON",
+    "budget": "one normal plus one focused campaign reached; independent exhaustion assessment completed; no unchanged-instrument retry",
+    "next": "Separate file-backed machine stdout and retained stderr, strictly parse stdout, bind/hash both outputs, qualify noisy/invalid/empty/nonzero/deadline/capture-error cases, then only unmet Linux checks through existing workflow selection",
+    "limitations": "Renderer full logs unavailable through connector; success job/step metadata only. ZIP contents not downloaded. No execution, mutations or source acceptance by assessor."
+  },
+  "decisions": [
+    {
+      "id": "LDB-F8E-MACHINE-STDOUT-SEPARATION",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "trigger": "Normal Cargo progress on stderr, beginning with four spaces and Updating crates.io index, precedes otherwise valid metadata JSON because stderr=STDOUT. Parsing combined bytes fails at char 4 after command exit 0.",
+      "fix": "Use separate owned file-backed stdout/stderr only for machine-output commands. Strictly parse stdout; retain paths, lengths and SHA-256 for both channels. Preserve session ownership and deadline/cleanup logic. Record JSON and resolved-source-binding acceptance separately from process completion.",
+      "controls": [
+        "ordinary JSON stdout with empty stderr",
+        "same valid JSON stdout plus noisy Cargo-like stderr",
+        "malformed or empty stdout",
+        "non-JSON prefix or trailing stdout",
+        "valid JSON with nonzero exit",
+        "capture failure and owned timeout retain both partial channels and remain non-passing"
+      ],
+      "forbidden_recovery": [
+        "unchanged-H rerun",
+        "strip arbitrary prefixes or search for first brace",
+        "quiet/suppress stderr",
+        "warm-cache dependence",
+        "skip metadata or resolved source binding"
+      ],
+      "new_instrument_decision": "After this independent assessment and focused source review, authorize one bounded execution of the repaired stream qualification followed only by the unmet Linux LPI/LDB checks. Do not restart the unchanged prior campaign or repeat renderer. Any new failure requires fresh causal assessment; no automatic repeated rerun."
+    }
+  ],
+  "retained_positives": {
+    "subject": "f8e98a307bae97d989a823ec89498a2f9fbc5b7d",
+    "synthetic_result_controls": {
+      "total": 63,
+      "positive": 7,
+      "negative": 56,
+      "all_expected": true,
+      "scope": "Instrument qualification only"
+    },
+    "retention": {
+      "accepted": true,
+      "wrong_identity_refused": true
+    },
+    "owned_cleanup": {
+      "accepted": true,
+      "leader_exit": 23,
+      "reaped_owner_emits_no_signals": true,
+      "peer_survived_and_echoed_challenge": true,
+      "peer_exit": 0
+    },
+    "renderer": {
+      "job_id": 125906577083,
+      "conclusion": "success",
+      "evidence_level": "GitHub job and step metadata only",
+      "raw_log_gap": "Dedicated log connector returned Transport closed; generic jobs/logs endpoint is unsupported. No exact counts, names, native identities or receipt contents inferred."
+    },
+    "source_authority": {
+      "run_id": 41632867486,
+      "conclusion": "success",
+      "scope": "Workflow status only here; no global source closure or semantic acceptance inferred."
+    }
+  },
+  "unexecuted_cases": [
+    "typescript-bundle",
+    "rust-wire-and-lifecycle",
+    "coordinator-normal-build",
+    "host-normal-build",
+    "actual-native-domains",
+    "actual-control-wire",
+    "actual-emitted-daemon"
+  ],
+  "artifact": {
+    "id": 13228917246,
+    "name": "ocrm-local-exec-runtime-f8e98a307bae97d989a823ec89498a2f9fbc5b7d-41632867502-1",
+    "zip_bytes": 282296,
+    "github_digest": "sha256:ebe414427973502d53ade8ed6f7d93d1490182c983058908d5a3f0e5266cd641",
+    "independently_unpacked": false,
+    "retained_native_work": {
+      "binding": {
+        "path": ".evidence/sqlite-native-path/local-exec-process-identity/native-build-work",
+        "absolute_path": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/sqlite-native-path/local-exec-process-identity/native-build-work",
+        "device": 2049,
+        "inode": 9468504
+      },
+      "archive": {
+        "path": ".evidence/sqlite-native-path/local-exec-process-identity/native-build-work.tar",
+        "bytes": 10240,
+        "sha256": "7c8cb10314a9f478970a350491506deef7a3d46221eccc305483d95182e0caa0"
+      },
+      "members": 1,
+      "scope": "Snapshot of the exact owned work root, including hidden headers and retained prior stages. No child quiescence or successful native build is inferred from archival."
+    }
+  },
+  "selection": {
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "new_scope": "ocrm-local-exec-capture",
+    "push_prefix": "fix(ocrm-local-exec-capture):",
+    "existing_job": "local-exec-runtime",
+    "scope": "Only the existing Linux job and its unchanged required product checks; default/full and existing scopes remain. New H binds new script/workflow; old renderer evidence retains Hf8e."
+  },
+  "acceptance": {
+    "state": "pending",
+    "global_flags_promoted": false,
+    "remaining": "Actual Linux native build/load, normal Host/Coordinator builds, identity wire and emitted-daemon byte transfer; renderer raw evidence gap; all full product/source/platform/final acceptance remains open."
+  }
+}

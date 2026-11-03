@@ -246,6 +246,19 @@ for this daemon. Do not replace the executor with a partial file-only or test ow
   existing scopes; retain historical failed DJC/LPI results without rerunning an
   unchanged failed instrument or treating an unselected check as approved.
 
+- LDB-10: Machine-readable command stdout and diagnostic stderr are distinct
+  evidence channels. The existing capture must retain both in owned files with
+  byte counts and hashes, strictly parse stdout, and separately record process,
+  JSON and resolved-source-binding acceptance. Preserve owned-session deadlines
+  and cleanup. Qualify ordinary/noisy-stderr success and malformed, empty,
+  prefixed/trailing, nonzero-exit, capture-error and timeout failures in Actions.
+  Never strip output prefixes, suppress diagnostics or depend on cache warmth.
+  After the independently assessed Hf8e capture failure, the existing workflow's
+  `ocrm-local-exec-capture` scope (or matching migration-branch push prefix)
+  selects only the existing Linux LocalExec job and all its unmet product checks.
+  Preserve default/full and prior scopes. Retain earlier renderer evidence at
+  its original H; job metadata alone does not close missing raw receipts.
+
 ### Scope, delivery and acceptance
 
 Root integration owns package.json/lock, build and checker scripts, workflow,
