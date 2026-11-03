@@ -1,0 +1,17 @@
+{
+  "schema": "ocrm-recovery-decision-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "DJC-v1 / DJC-07",
+  "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+  "test_blob": "da4940bbca310d82a317b61ad6940b51e36a0c42",
+  "owner_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+  "decision": "FIX",
+  "classification": "TEST_FLAW",
+  "finding": "A completion-channel eight-second observation does not decide commit refusal correctness: no such product deadline is specified, and default SQLite busy sleep accounting does not impose an operation-wide monotonic bound.",
+  "independent_assessment": "Fresh read-only directness/exhaustion assessment by djc_mac_bound_recovery_assessment; no local or Actions execution, no new evidence-upload claim.",
+  "implementation": "Add the qualified deferred-foreign-key COMMIT refusal case under the same real public owner and existing owned-child harness. Preserve the original reader-lock test, all existing assertions and historical failure.",
+  "evidence_boundary": "The historical macOS check remains failed. Later refusal/redaction/row/reopen/redeem assertions do not erase its timeout. The elapsed-time cause remains unknown; it is not attributed to macOS, repeated busy attempts or product corruption.",
+  "forbidden": "No larger timeout, retry-until-green, production hook, fabricated error, replacement of the original failed case, skipped-to-pass conversion or global acceptance promotion.",
+  "next_instrument": "Same locked test binary qualifies default foreign-key enforcement, successful BEGIN/UPDATE, exact SQLITE_CONSTRAINT_FOREIGNKEY only at COMMIT and rollback observations; the public owner then proves refusal, redaction, repeat/reopen, explicit repair and single use.",
+  "campaign": "One newly qualified focused instrument after source review, limited to changed/previously unmet claims and required controls. Do not repeat the unchanged lock scenario at the exhausted campaign boundary. Full DJC gate remains incomplete."
+}

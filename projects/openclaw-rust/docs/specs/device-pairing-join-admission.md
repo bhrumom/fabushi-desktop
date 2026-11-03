@@ -131,3 +131,37 @@ were found in tests; this is not evidence of a complete shipping onboarding UI.
 No full source closure, scoped equivalence, platform package, upgrade/rollback,
 unknown-COMMIT/crash recovery or G01–G12 / AC01–AC24 acceptance is claimed. The
 canonical OCRM inventory, ledger and RTM remain the only completion truth.
+
+## DJC-07 — causal COMMIT-refusal qualification (recovery)
+
+The existing reader-lock test and its original 8-second observation assertion
+remain intact. Their failed executions are not replaced by a new positive case.
+The contract does not promise an eight-second product response; rusqlite's
+default busy sleep budget is not an operation-wide monotonic deadline. No new
+production timeout, retry, private connection access or test hook is authorized.
+
+Add one separately named controlled case through the existing owned-child
+harness and public file-backed `DevicePairingOwner`. Fixture-local tables use a
+`DEFERRABLE INITIALLY DEFERRED` foreign key, and an AFTER UPDATE trigger records
+an invalid reference only when the redeemed marker changes. First qualify the
+same fixture mechanism with an independent SQL connection: observe default
+`PRAGMA foreign_keys=1` without enabling it privately, BEGIN IMMEDIATE and
+UPDATE both succeed, the transaction sees its changed marker and invalid child
+row, COMMIT returns exactly SQLITE_CONSTRAINT_FOREIGNKEY while the transaction
+remains open, and explicit ROLLBACK restores the independently observed complete
+row and leaves no child row. Qualification must fail if any prerequisite is absent.
+
+Then invoke the public owner against the same declared obstacle, requiring the
+existing storage-error status/redaction, no payload or fabricated miss, complete
+row equality and no committed child row. Repeat refusal and close/reopen; only
+explicitly removing the fixture trigger permits ordinary successful redemption.
+Preserve the exact payload and single-use marker across the later reopen. Keep
+the existing 8-second completion observation and 120-second owned-child / 5-second
+owned termination boundaries; do not enlarge them. Raw failures remain retained.
+
+This case proves a deterministic, known COMMIT refusal, not arbitrary I/O,
+unknown COMMIT effects, a shipping device, or resolution of the historical
+reader-lock timing failure. A focused recovery campaign may execute the new case
+and its actual harness/SQL controls after source review; it must not rerun the
+unchanged lock case hoping for green. Full DJC acceptance remains open while the
+retained old lock case or any other required check is unresolved.
