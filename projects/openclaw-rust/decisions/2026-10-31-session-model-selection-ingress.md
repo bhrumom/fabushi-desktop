@@ -116,3 +116,23 @@ freeze. The ADR does not promote any completion flag.
 - `source/host/src/extensions/inference/model_picker_service.rs`
 - `source/host/src/extensions/session/agent_session.rs`
 - `source/host/app/src/main.rs`
+
+## Bounded native default-reset producer — 2026-11-03
+
+The exact current source at 004b7562dbf8c58b8089e39e3439e545e4e9457d supplies
+an authenticated sessions.patch owner and checked Inference default resolvers.
+[RMD-v1](../docs/specs/session-model-default-reset.md) authorizes only the
+native canonical-main-session default reset and status through those existing
+owners, with trusted native authority and caller-captured string lifecycle
+expectations. It accepts no arbitrary pair, operator policy or catalog from UI.
+
+Current fixed migration U is 1440bb1771372334bea23d7642bb52deb7db1845, tree
+90c8aab39972da11cfad220361781d49e1bc6700, as fixed by the current source lock.
+Earlier evidence subjects above are retained historical records.
+
+This producer does not supply the missing complete model catalog, paired
+operator model policy, visibility, placement/runtime or live-switch chain.
+Their full picker mutation boundary and pending responsibilities remain open.
+Implementation and exact-H evidence for the bounded reset are required before
+any scoped completion claim; no broad wiring/verification/acceptance or global
+flag is promoted by this decision.
