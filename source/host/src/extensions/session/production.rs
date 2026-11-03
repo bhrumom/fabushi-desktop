@@ -3461,10 +3461,15 @@ impl ProductionSessionWorkers {
                 .get("protectedContent")
                 .and_then(serde_json::Value::as_bool)
                 .unwrap_or(false),
-            source_secret_content: source_entry
+            content_kind: if source_entry
                 .get("secretContent")
                 .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
+                .unwrap_or(false)
+            {
+                fabushi_messaging_core::RecipientContentKind::Secret
+            } else {
+                fabushi_messaging_core::RecipientContentKind::Standard
+            },
             ..fabushi_messaging_core::RecipientSearchRequirements::default()
         }
     }
@@ -3599,17 +3604,16 @@ impl ProductionSessionWorkers {
         {
             input.channel_posting_allowed = v;
         }
-        if let Some(v) = metadata
+        if metadata
             .get("isBroadcastChannel")
             .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+            || metadata
+                .get("conversationSubkind")
+                .and_then(serde_json::Value::as_str)
+                == Some("channel")
         {
-            input.is_broadcast_channel = v;
-        }
-        if let Some(v) = metadata
-            .get("hasAdminAuthority")
-            .and_then(serde_json::Value::as_bool)
-        {
-            input.has_admin_authority = v;
+            input.conversation_kind = fabushi_messaging_core::ConversationKind::Channel;
         }
         if metadata
             .get("secret")
@@ -3620,7 +3624,7 @@ impl ProductionSessionWorkers {
                 .and_then(serde_json::Value::as_str)
                 == Some("secret")
         {
-            input.destination_is_secret = true;
+            input.conversation_kind = fabushi_messaging_core::ConversationKind::Secret;
         }
         input
     }

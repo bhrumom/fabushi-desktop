@@ -61,8 +61,8 @@ jobs:
             "head_sha": "${GITHUB_SHA}",
             "run_id": ${GITHUB_RUN_ID},
             "run_attempt": ${GITHUB_RUN_ATTEMPT},
-            "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-            "source_blob": "f68ea15d650a07ed52839020fb46711012b288ae",
+            "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "source_blob": "1fa4309f2091cf148b0b6f249efa029bdc171c53",
             "policy_path": "source/shared/external-url-policy.ts",
             "account_owner_path": "source/product/fabushi/fabushi-account-adapters.ts",
             "contract_test": "desktop/e2e/tdrp-external-url-auth-policy.spec.ts",
@@ -108,7 +108,7 @@ jobs:
           const fs = require('node:fs');
           const evidence = JSON.parse(fs.readFileSync('artifacts/tdrp-url-auth-producer/evidence.json', 'utf8'));
           if (evidence.head_sha !== process.env.GITHUB_SHA) throw new Error('external URL evidence HEAD drift');
-          if (evidence.source_commit !== 'f23c37857220eb84f8559f0901ea26fb304b564b') throw new Error('external URL source authority drift');
+          if (evidence.source_commit !== 'f985723b552b30fe1c17d377d57f44e61a15a8c4') throw new Error('external URL source authority drift');
           if (evidence.status !== 'passed') throw new Error('external URL producer did not pass');
           const policy = fs.readFileSync('source/shared/external-url-policy.ts', 'utf8');
           const account = fs.readFileSync('source/product/fabushi/fabushi-account-adapters.ts', 'utf8');
@@ -141,7 +141,7 @@ jobs:
             "run_attempt": ${GITHUB_RUN_ATTEMPT},
             "review_scope": "independent-downstream-job-clean-checkout",
             "producer_artifact": "tdrp-external-url-auth-${GITHUB_SHA}",
-            "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+            "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
             "verdict": "ACCEPT"
           }
           JSON
