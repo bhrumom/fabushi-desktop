@@ -3480,6 +3480,12 @@ fn encode_hex(bytes: &[u8]) -> String {
 
 fn decode_hex(raw: &str) -> Result<Vec<u8>, String> {
     let clean = raw.trim();
+    // Every consumer slices two bytes at a time. Reject Unicode before any
+    // slicing, including for a cached owner whose SQLite metadata was damaged
+    // after its original cold-open admission.
+    if !clean.is_ascii() {
+        return Err("non-ASCII hex string".into());
+    }
     if clean.len() % 2 != 0 {
         return Err("odd-length hex string".into());
     }

@@ -4943,6 +4943,73 @@ mod sharebox_shipping_tests {
         restarted.shutdown();
         let _ = fs::remove_dir_all(root);
     }
+
+    #[test]
+    fn forwarding_waiting_on_destination_lock_rechecks_revoked_source_before_dispatch() {
+        let root = std::env::temp_dir().join(format!("fabushi-forward-reauthorize-{}", Uuid::new_v4()));
+        let workers = Arc::new(test_workers(&root));
+        let source = conversation_id(&workers.create_human_conversation("human-source", "Source").unwrap());
+        let destination = conversation_id(&workers.create_human_conversation("human-target", "Target").unwrap());
+        let source_message = workers
+            .append_human_message(&source, "immutable original", "forward-source-1", Some(1.0), None, &[])
+            .unwrap();
+        let source_entry_id = source_message["id"].as_str().unwrap().to_string();
+        let source_owner = workers.open_human_conversation_db_owner(&source).unwrap();
+        let context = serde_json::json!({
+            "batchVersion": 1, "requestId": "forward-late-policy-1",
+            "sourceConversationId": source, "sourceEntryId": source_entry_id,
+            "privacy": {"dropSenderNames": false, "dropCaptions": false}
+        });
+        let batch = HumanForwardBatch::new(
+            "human-local".into(), "local-only".into(), "forward-late-policy-1".into(),
+            source.clone(), source_entry_id.clone(), "immutable original".into(),
+            Vec::new(), context.clone(), &[destination.clone()],
+        );
+        let nonce = batch.destinations[0].client_nonce.clone();
+        store_forward_batch(&source_owner, &batch).unwrap();
+
+        // A real destination mutex is held while the contender begins this
+        // production send. Revocation happens before that guard is released.
+        // The call must check source policy after it acquires the guard.
+        let lock = workers.human_message_lock(&destination).unwrap();
+        let held = lock.lock().unwrap();
+        let (started, receiver) = std::sync::mpsc::channel();
+        let worker_owner = Arc::clone(&workers);
+        let worker_destination = destination.clone();
+        let worker_nonce = nonce.clone();
+        let worker_context = context.clone();
+        let contender = std::thread::spawn(move || {
+            started.send(()).unwrap();
+            worker_owner.append_human_message_with_context(
+                &worker_destination, "immutable original", &worker_nonce,
+                None, None, &[], Some(&worker_context), None,
+            )
+        });
+        receiver.recv_timeout(std::time::Duration::from_secs(10)).unwrap();
+        let mut revoked = source_message.clone();
+        revoked["protectedContent"] = serde_json::Value::Bool(true);
+        assert!(source_owner.update_transcript_entry(&source_entry_id, &revoked).unwrap().is_some());
+        drop(held);
+        let refusal = contender.join().unwrap().unwrap_err();
+        assert!(refusal.contains("protected"), "post-lock source denial: {refusal}");
+        assert!(workers.read_human_conversation_transcript(&destination).unwrap().is_empty());
+        assert_eq!(load_forward_batches(&source_owner, &source).unwrap(), vec![batch.clone()]);
+
+        // No replacement intent or nonce is needed after the original source
+        // becomes authorized again; the original target now settles normally.
+        assert!(source_owner.update_transcript_entry(&source_entry_id, &source_message).unwrap().is_some());
+        let restored = workers.append_human_message_with_context(
+            &destination, "immutable original", &nonce,
+            None, None, &[], Some(&context), None,
+        ).unwrap();
+        assert_eq!(restored["clientNonce"], nonce);
+        assert_eq!(restored["content"], "immutable original");
+        assert_eq!(workers.read_human_conversation_transcript(&destination).unwrap().len(), 1);
+        workers.shutdown();
+        drop(source_owner);
+        drop(workers);
+        fs::remove_dir_all(root).unwrap();
+    }
 }
 
 

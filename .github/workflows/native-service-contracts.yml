@@ -283,7 +283,8 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib sharebox_shipping_tests -- --nocapture 2>&1 | tee artifacts/native-message/forward-sharebox.log
-          grep -Eq 'test result: ok\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-sharebox.log
+          grep -Eq 'test result: ok\. 2 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-sharebox.log
+          grep -F 'forwarding_waiting_on_destination_lock_rechecks_revoked_source_before_dispatch ... ok' artifacts/native-message/forward-sharebox.log
       - name: Durable forwarding journal and stale-write CAS contracts
         shell: bash
         run: |
@@ -317,7 +318,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml --test production_protocol shipping_coordinator_binary_enforces_protocol_and_settles_host_crash -- --exact --nocapture 2>&1 | tee artifacts/native-message/human-retry-coordinator.log
+          cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml --test production_protocol shipping_coordinator_binary_enforces_protocol_and_settles_host_crash -- --nocapture 2>&1 | tee artifacts/native-message/human-retry-coordinator.log
           grep -Eq 'test result: ok\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message/human-retry-coordinator.log
           grep -F 'shipping_coordinator_binary_enforces_protocol_and_settles_host_crash ... ok' artifacts/native-message/human-retry-coordinator.log
       - name: Diagnose locked Session dependency drift (no acceptance)

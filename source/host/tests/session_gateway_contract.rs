@@ -8583,6 +8583,18 @@ fn human_retry_raw_duplicate_and_foreign_author_refuse_without_replacing_durable
         &json!({"conversationId":id,"clientNonce":"retry-7"}))
         .unwrap().is_err(), "one valid row plus a hidden malformed candidate is ambiguous");
     assert_eq!(owner.get_transcript_entries().unwrap().len(), 3);
+    // Raw non-ASCII hex can occur after a long-lived owner was cached. It is
+    // retained and reported without panicking or poisoning the Session mutex.
+    let original_metadata = owner.read_kv("metadata").unwrap().unwrap();
+    assert!(owner.write_kv("metadata", "界").unwrap());
+    assert!(dispatch_production_session_gateway_call(&runtime, "retryHumanMessage",
+        &json!({"conversationId":id,"clientNonce":"retry-7"}))
+        .unwrap().is_err(), "damaged cached Human identity must fail without unwinding");
+    assert_eq!(owner.read_kv("metadata").unwrap().as_deref(), Some("界"));
+    assert!(owner.write_kv("metadata", &original_metadata).unwrap());
+    assert!(dispatch_production_session_gateway_call(&runtime, "retryHumanMessage",
+        &json!({"conversationId":id,"clientNonce":"retry-7"}))
+        .unwrap().is_err(), "restored source is still ambiguous until duplicate row is repaired");
     runtime.shutdown();
     drop(owner);
     drop(runtime);
