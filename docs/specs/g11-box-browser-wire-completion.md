@@ -74,7 +74,7 @@ send_connect_server_stream and daemonserver.rs frozen enum/route/resolve_path re
 from current canonical main. User requests completing real G11 environment and all
 remaining conditions; this repair is necessary to run the existing production path.
 
-## BW07–BW12: Box response completion and outcome custody (BXR-v1)
+## BW07–BW12: Box response completion and outcome custody (BXR-v1.3)
 
 Status: implementation contract, 2026-11-03; execution and acceptance pending.
 Task: OCRM 647e0932-bea4-4113-9a61-65ae3db58955, round 1.
@@ -109,7 +109,7 @@ BXR-v1 allocates no tags, changes no wire schema or generated TS, and does not
 produce raw stdout bytes, a generated-HTML grant, a private capture receipt,
 a second execution lease, or a new persistence record.
 
-### Requirements and shared interface version BXR-v1
+### Requirements and shared interface version BXR-v1.3
 
 - BW07 / BXR01 — Decode the entire existing ExecClientMessage and distinguish its
   declared payload oneof from metadata, regardless of field order. Preserve data
@@ -170,9 +170,35 @@ a second execution lease, or a new persistence record.
   Read, Write and ComputerUse consumers preserve this as the existing
   ProviderSessionError::ToolOutcomeUnknown. A stream with no terminal operation
   result or an invalid post-execution background identifier is also unknown.
+  BXR-v1.3 requires the timed-Shell consumer to inspect the complete received
+  event sequence before publishing a terminal result or registering a watcher.
+  Exactly one decisive terminal is required; repeated or conflicting terminals
+  remain unknown. Preserve stdout/stderr received after Exit through RPC close,
+  and treat field8 hook-context as nonterminal metadata, matching the existing
+  Shell consumer contract. No early terminal may hide later data or outcomes.
+  Preserve the known sandboxUnsupported refusal on background spawn field5
+  and timed Shell field9: their shared frozen ShellSandboxUnsupported message
+  has STRING sandbox_policy_type at field3, with empty-string proto3 default.
+  Retain every legal string occurrence's UTF-8 validation and last-value
+  semantics; malformed/wrong-wire values remain unknown after dispatch.
+  A complete sole valid refusal projects its command, workingDirectory,
+  sandboxPolicyType, reason and isReadonly through the existing consumer,
+  creates no watcher and is not missing-terminal uncertainty. Ordinary
+  ShellResult has no sandboxUnsupported variant; do not invent one.
   The real Runner bridge must retain that class through its effect-custody
   consumer. No retry, new admission, successful settlement, cleanup authority or
   generated origin may be inferred from an unknown result.
+  BXR-v1.3 includes the real Runner's optional MCP output spill: the existing
+  large_output_spill helper and RunnerPromptGlue forwarding methods return
+  Result<Value, ProviderSessionError>. A known write refusal still returns the
+  original inline result, but ToolOutcomeUnknown propagates unchanged through
+  RunnerBoxToolBridge; it cannot be swallowed into Ok and receipt.complete().
+  Do not issue another spill write, publish an outputLocation or delete a path
+  on that unknown outcome. Verify one upstream invocation and one attempted
+  spill, with known-refusal and unknown controls.
+  The pre-existing navigation finally probe remains an independent observation
+  under its existing captured resource owner; it must retain the original
+  delegate error and cannot retry that delegate or settle it as success.
 
 - BW12 / BXR06 — Keep real daemon and current Fabushi consumers connected.
   Preserve bare request compatibility, valid default-zero/default-empty peers,
@@ -221,6 +247,10 @@ missing or multiple one-shot result kinds; pre-write refusal versus post-write
 loss; exactly one request despite a lost completion; ForeverBox and the actual
 Runner's ToolOutcomeUnknown preservation; actual production accessor-to-daemon
 Shell/Write/Read success with a nonzero request and binary bytes.
+Known sandbox refusals additionally require actual background/timed consumer
+controls using the frozen string field, empty default, valid repeated values,
+wrong-wire and invalid UTF-8 occurrence negatives, with one request and no
+watcher. Retain every existing repeated/conflicting timed-terminal control.
 
 Keep all existing valid assertions and repair simplified test peers to echo the
 decoded request identity and close it. A cancellation test observed to use
@@ -238,6 +268,17 @@ success or unchanged historical receipt substitutes for a direct positive.
 Keep source G01/G02 scoped authority and independent fresh general/structure
 source review separate from runtime evidence. Campaign failures use the existing
 classification/recovery policy; no rerun-until-green.
+
+BXR-v1.3 execution input clarification: the existing box-exec-daemon crate has
+no tracked Cargo.lock at the selected baseline, and its established workflow
+builds it without --locked. The new same-H real-producer control must not invent
+a locked build or reuse an unbound cached executable. Build that existing crate
+once, preserve the generated Cargo.lock as an output with full bytes and hash,
+and bind the resulting executable before and after the control. The Host test
+graph remains --locked. Review and persist the actual generated daemon lock
+before claiming reproducible producer dependency closure; this output is not
+a source input fixed by H and does not close OCRM source accounting. A failed
+build prevents the live-producer case from running a stale binary.
 
 BXR acceptance requires every family above and the affected existing regressions
 at the final H, plus independent source-review convergence. Source-ready or

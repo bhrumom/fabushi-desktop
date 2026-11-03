@@ -1,0 +1,121 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "round": 4,
+  "subject_commit": "0e876a91527fdb0bac673be5df6ef0b18ef4f29b",
+  "subject_tree": "5270a4a9bebc6742217c6f83b28a629945bbe15d",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "shared_contract": {
+    "name": "BXR-v1.3",
+    "path": "docs/specs/g11-box-browser-wire-completion.md",
+    "blob": "3c9e819e46efc79392c4079dabf4c3a27c2f443d"
+  },
+  "frozen_scope": {
+    "scope_blob": "d8fff1e6dc61749242e178ab60fe1cb279963a63",
+    "complete_diff_blob": "4859c0833bfa7092e072a01a95d723635f48e217",
+    "fix_delta_blob": "ef4abffdd0e6b447a371410bd3220fa48bdfc575",
+    "complete_paths": 18,
+    "fix_paths": 3,
+    "rename_binary_mode_changes": false
+  },
+  "received_reports": [
+    {
+      "lens": "general/security/lifetime",
+      "reviewer": "/root/bxr_r4_general",
+      "verdict": "APPROVED_FOCUSED_SOURCE_REVIEW",
+      "minimal_receipt_blob": "f422ab737f69561a8df8370cf550b992443c4d6d",
+      "full_root_read": true,
+      "full_report_location": "task conversation, reviewer final answer",
+      "full_report_cloud_published": false,
+      "model_effort": "Configured parent retained; actual hidden effort setting not independently queryable."
+    },
+    {
+      "lens": "structure/reuse/performance",
+      "reviewer": "/root/bxr_r4_structure",
+      "verdict": "APPROVED_FOCUSED_SOURCE_REVIEW",
+      "minimal_receipt_blob": "645fc3f5b7874b7447a579525f9289db8b14a9c7",
+      "full_root_read": true,
+      "full_report_location": "task conversation, reviewer final answer",
+      "full_report_cloud_published": false,
+      "model_effort": "Fresh fork-none launch applied exposed gpt-6.1-sol/xhigh fields."
+    }
+  ],
+  "new_findings": [],
+  "new_fix_decisions": [],
+  "prior_findings": [
+    {
+      "ids": [
+        "BXR-GEN-001",
+        "BXR-SRP-001",
+        "BXR-R1-ROOT-01",
+        "BXR-R1-ROOT-02"
+      ],
+      "decision_blob": "61e447248004217d901bf92e64002b6f32811390",
+      "source_fix_snapshot": "10eb09be90e946e5e9ee72f5ae6f87d6b3ea803f",
+      "state": "accepted repairs retained; source review converged; executable proof pending"
+    },
+    {
+      "ids": [
+        "BXR-GEN-BACKGROUND-SANDBOX-STRING-001",
+        "BXR-GEN-TIMED-SANDBOX-OUTCOME-002"
+      ],
+      "decision_blob": "27407bfc75c95f5e00ed9d6bbc70626346d8225b",
+      "source_fix_snapshot": "7ba15a8dd24554c9d796702468576e970cad93d5",
+      "state": "accepted repairs retained; source review converged; executable proof pending"
+    },
+    {
+      "ids": [
+        "BXR-R3-GENERAL-01",
+        "BXR-R3-ROOT-01"
+      ],
+      "decision_blob": "189df06b318cb811a80dda232fd643c81b867889",
+      "source_fix_snapshot": "0e876a91527fdb0bac673be5df6ef0b18ef4f29b",
+      "state": "registered-consumer oracle coverage repair accepted by both fresh R4 reviews; executable proof pending"
+    }
+  ],
+  "convergence": "Both complete focused reports read. No actionable source finding remains in declared scope. Publish unchanged reviewed production/capture/spec/accounting blobs on reconciled current branch, then acquire exact published-H Actions proof.",
+  "prepublication_reconciliation": {
+    "reviewed_original_base": "b35408891546694606ed0750c60af0302669aac9",
+    "observed_live_head": "8283caf23a4a3c4a14f57f5920a3d2bf1ce236cf",
+    "observed_live_tree": "d19b1f31c5869baeeddc95bfe62c270855bc44e8",
+    "incoming_commits": [
+      "9eb2d5ef6f28116a2f6c4933e75794f94c2b991d",
+      "593e1ad605abffe25c50f95e301bf4a65df95516",
+      "8283caf23a4a3c4a14f57f5920a3d2bf1ce236cf"
+    ],
+    "incoming_changed_paths": 20,
+    "overlap_with_18_reviewed_paths": [],
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "policy": "One ordinary parent at current branch; preserve incoming tree; compare-and-swap ref update, no force. A changed lease requires new reconciliation."
+  },
+  "execution_plan": {
+    "owner_workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "ordinary_host_compile": "cargo check --locked --manifest-path source/host/Cargo.toml --tests",
+    "direct_required_names": 74,
+    "codec_target_names": 41,
+    "reused_custody_names": 14,
+    "causal_source_inputs": 43,
+    "daemon": "Build actual producer in same-H Actions; preserve generated Cargo.lock and binary identities; run actual-daemon positive. No tracked daemon lock exists at this boundary; generated lock still requires review/persistence before reproducible dependency closure.",
+    "local_or_htch_execution": false,
+    "dispatch": "Reuse push-triggered workflows; no duplicate dispatch."
+  },
+  "retained_limits": [
+    "Generated HTML origin grant and persistence not implemented by this prerequisite",
+    "No all-repository caller-absence claim from bounded API search",
+    "No external provider/channel/plugin/node/device or platform package acceptance",
+    "No final G01-G12 or AC01-AC24 acceptance"
+  ],
+  "report_storage_limits": "R1/R2 structure full-report optional writes were automatically rejected. Their exact rejected payloads were not retried; only permitted materially smaller non-code receipts are referenced. R3/R4 detailed structure reports stay in task conversation. Full report cloud archival is not claimed.",
+  "completion_flags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "unit_status_promotion": false,
+  "root_model_effort": "Configured parent; complex xhigh-class synthesis, same-session setting override not exposed."
+}

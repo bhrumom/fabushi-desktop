@@ -12,8 +12,8 @@ use crate::r#box::box_shell_command::{
     HostShellArgsInput, build_host_shell_args,
 };
 use crate::r#box::generated_production::{
-    ProductionBackgroundShellSpawnResult, ProductionReadArgs, ProductionReadOutput,
-    ProductionReadResult, ProductionShellResult, ProductionShellStreamArgs,
+    ProductionBackgroundShellSpawnResult, ProductionBoxExecError, ProductionReadArgs,
+    ProductionReadOutput, ProductionReadResult, ProductionShellResult, ProductionShellStreamArgs,
     ProductionShellStreamEvent,
 };
 use crate::runner::background_work::{
@@ -413,7 +413,7 @@ impl ForeverBoxRunnerResourcePort {
                                 .unwrap_or_else(|poisoned| poisoned.into_inner())
                                 .clear_connection();
                         }
-                        ProviderSessionError::Tool(format!("Computer use failed: {error}"))
+                        project_box_exec_error("Computer use failed", error)
                     })
             },
         )
@@ -438,7 +438,6 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         let should_start_in_background = request.should_start_in_background();
         let requested_block_until_ms = request.block_until_ms;
         let command = request.command.clone();
-        let working_directory = request.working_directory.clone();
         let (turn_id, box_id) = self.shell_lifecycle_identity();
         let preconnect = if should_start_in_background || requested_block_until_ms.is_some() {
             vec![
@@ -525,9 +524,7 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                         let result = accessor
                             .execute_background_shell_spawn(&(), args.into())
                             .map_err(|error| {
-                                ProviderSessionError::Tool(format!(
-                                    "Box background Shell failed: {error}"
-                                ))
+                                project_box_exec_error("Box background Shell failed", error)
                             })?;
                         Ok(match result {
                             ProductionBackgroundShellSpawnResult::Success {
@@ -537,7 +534,7 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                                 pid,
                             } => {
                                 if shell_id == 0 {
-                                    return Err(ProviderSessionError::Tool(
+                                    return Err(ProviderSessionError::ToolOutcomeUnknown(
                                         "Box background Shell returned an invalid shellId=0".into(),
                                     ));
                                 }
@@ -640,18 +637,36 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                                 },
                             )
                             .map_err(|error| {
-                                ProviderSessionError::Tool(format!(
-                                    "Box timed Shell failed: {error}"
-                                ))
+                                project_box_exec_error("Box timed Shell failed", error)
                             })?;
                         let mut stdout = String::new();
                         let mut stderr = String::new();
+                        let mut terminal_count = 0usize;
+                        // The complete Vec is already received. Resolve its disposition
+                        // before publishing a result or registering background work.
+                        for event in &events {
+                            match event {
+                                ProductionShellStreamEvent::Start => {}
+                                ProductionShellStreamEvent::Stdout(delta) => stdout.push_str(delta),
+                                ProductionShellStreamEvent::Stderr(delta) => stderr.push_str(delta),
+                                // Frozen hook-context field8 is nonterminal metadata.
+                                ProductionShellStreamEvent::Other { case }
+                                    if case == "shell_stream_event_field_8" => {}
+                                _ => terminal_count += 1,
+                            }
+                        }
+                        if terminal_count > 1 {
+                            return Err(ProviderSessionError::ToolOutcomeUnknown(
+                                "Box timed Shell stream returned repeated or conflicting terminal outcomes"
+                                    .into(),
+                            ));
+                        }
                         let mut last_other = None::<String>;
                         for event in events {
                             match event {
-                                ProductionShellStreamEvent::Start => {}
-                                ProductionShellStreamEvent::Stdout(delta) => stdout.push_str(&delta),
-                                ProductionShellStreamEvent::Stderr(delta) => stderr.push_str(&delta),
+                                ProductionShellStreamEvent::Start
+                                | ProductionShellStreamEvent::Stdout(_)
+                                | ProductionShellStreamEvent::Stderr(_) => {}
                                 ProductionShellStreamEvent::Exit {
                                     code,
                                     cwd,
@@ -696,6 +711,22 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                                         "isReadonly": is_readonly,
                                     }));
                                 }
+                                ProductionShellStreamEvent::SandboxUnsupported {
+                                    command,
+                                    working_directory,
+                                    sandbox_policy_type,
+                                    reason,
+                                    is_readonly,
+                                } => {
+                                    return Ok(json!({
+                                        "kind": "sandboxUnsupported",
+                                        "command": command,
+                                        "workingDirectory": working_directory,
+                                        "sandboxPolicyType": sandbox_policy_type,
+                                        "reason": reason,
+                                        "isReadonly": is_readonly,
+                                    }));
+                                }
                                 ProductionShellStreamEvent::Backgrounded {
                                     shell_id,
                                     command,
@@ -705,7 +736,7 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                                     reason,
                                 } => {
                                     if shell_id == 0 {
-                                        return Err(ProviderSessionError::Tool(
+                                        return Err(ProviderSessionError::ToolOutcomeUnknown(
                                             "Box timed Shell returned an invalid shellId=0".into(),
                                         ));
                                     }
@@ -728,18 +759,20 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                                     }));
                                 }
                                 ProductionShellStreamEvent::Other { case } => {
-                                    last_other = Some(case);
+                                    if case != "shell_stream_event_field_8" {
+                                        last_other = Some(case);
+                                    }
                                 }
                             }
                         }
-                        Err(ProviderSessionError::Tool(format!(
-                            "Box timed Shell stream closed without exit/backgrounded settlement for command {command:?} in {working_directory:?}: {}",
+                        Err(ProviderSessionError::ToolOutcomeUnknown(format!(
+                            "Box timed Shell stream closed without exit/backgrounded settlement: {}",
                             last_other.unwrap_or_else(|| "no terminal event".into())
                         )))
                     }
                     RemoteResourceKind::Shell => {
                         let result = accessor.execute_shell_result(&(), args).map_err(|error| {
-                            ProviderSessionError::Tool(format!("Box Shell failed: {error}"))
+                            project_box_exec_error("Box Shell failed", error)
                         })?;
                         Ok(project_shell_result(result))
                     }
@@ -768,9 +801,7 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                     encoding_hint: request.encoding_hint,
                 },
             )
-            .map_err(|error| {
-                ProviderSessionError::Tool(format!("Box Read failed: {error}"))
-            })?;
+            .map_err(|error| project_box_exec_error("Box Read failed", error))?;
         Ok(match result {
             ProductionReadResult::Success {
                 path,
@@ -866,9 +897,7 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         let mut accessor = accessor.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         let result = accessor
             .execute_write(&(), &request.path, &request.data, &request.tool_call_id)
-            .map_err(|error| {
-                ProviderSessionError::Tool(format!("Box Write failed: {error}"))
-            })?;
+            .map_err(|error| project_box_exec_error("Box Write failed", error))?;
         match result {
             WriteExecResult::Success => Ok(()),
             WriteExecResult::Error { error } => Err(ProviderSessionError::Tool(format!(
@@ -884,6 +913,16 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
     }
 
 }
+
+fn project_box_exec_error(context: &str, error: ProductionBoxExecError) -> ProviderSessionError {
+    let message = format!("{context}: {error}");
+    if error.outcome_unknown() {
+        ProviderSessionError::ToolOutcomeUnknown(message)
+    } else {
+        ProviderSessionError::Tool(message)
+    }
+}
+
 fn project_shell_result(result: ProductionShellResult) -> Value {
     match result {
         ProductionShellResult::Success {
@@ -936,8 +975,22 @@ fn project_shell_result(result: ProductionShellResult) -> Value {
 
 #[cfg(test)]
 mod tests {
-    use super::project_shell_result;
-    use crate::r#box::generated_production::ProductionShellResult;
+    use std::io::{ErrorKind, Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::{Arc, Mutex, mpsc};
+    use std::thread;
+    use std::time::{Duration, Instant};
+
+    use super::{ForeverBoxRunnerResourcePort, project_shell_result};
+    use crate::extensions::box_lifecycle::RecreateSandBoxResponse;
+    use crate::extensions::forever_box::{ForeverBoxLifecycle, ForeverBoxService, HostBox};
+    use crate::extensions::inference::provider_session::ProviderSessionError;
+    use crate::ports::r#box::SAND_BOX_PRIMARY_WINDOW_INDEX;
+    use crate::r#box::generated_production::{
+        CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, ProductionShellResult,
+    };
+    use crate::r#box::production::ProductionBoxEnvironment;
+    use crate::runner::remote_box_resources::{RemoteBoxResourceCoordinator, RemoteConnection};
 
     #[test]
     fn normal_shell_projection_preserves_stdout_for_navigation_probes() {
@@ -968,5 +1021,181 @@ mod tests {
         assert_eq!(value["stdout"], "partial");
         assert_eq!(value["stderr"], "failed");
         assert_eq!(value["aborted"], true);
+    }
+
+    struct PreparedComputerLifecycle;
+
+    impl ForeverBoxLifecycle for PreparedComputerLifecycle {
+        fn fetch_image_update_available(&self) -> Result<bool, String> {
+            panic!("the prepared ComputerUse connection must not refresh Box images")
+        }
+
+        fn recreate_in_box(
+            &self,
+            _preserve_data: bool,
+            _force: Option<bool>,
+        ) -> Result<RecreateSandBoxResponse, String> {
+            panic!("the prepared ComputerUse connection must not recreate Box")
+        }
+    }
+
+    fn computer_contract_frame(flags: u8, payload: &[u8]) -> Vec<u8> {
+        let mut frame = vec![flags];
+        frame.extend_from_slice(&u32::try_from(payload.len()).expect("fixture length").to_be_bytes());
+        frame.extend_from_slice(payload);
+        frame
+    }
+
+    fn read_computer_contract_request(stream: &mut TcpStream) -> Vec<u8> {
+        let mut request = Vec::new();
+        let mut buffer = [0_u8; 1024];
+        loop {
+            let count = stream.read(&mut buffer).expect("read production Exec request");
+            assert_ne!(count, 0, "production request ended before its declared body");
+            request.extend_from_slice(&buffer[..count]);
+            assert!(request.len() <= 32_768, "unexpectedly large contract request");
+            let Some(header_end) = request.windows(4).position(|bytes| bytes == b"\r\n\r\n") else {
+                continue;
+            };
+            let headers = std::str::from_utf8(&request[..header_end]).expect("request headers");
+            assert!(headers.starts_with(&format!("POST {EXEC_PATH} HTTP/1.1\r\n")));
+            let content_length = headers.lines().find_map(|line| {
+                let (name, value) = line.split_once(':')?;
+                name.eq_ignore_ascii_case("content-length")
+                    .then(|| value.trim().parse::<usize>().expect("request content length"))
+            }).expect("request content length header");
+            assert!(content_length <= 16_384, "unexpectedly large contract body");
+            let body_start = header_end + 4;
+            if request.len() >= body_start + content_length {
+                assert_eq!(request.len(), body_start + content_length);
+                return request[body_start..].to_vec();
+            }
+        }
+    }
+
+    fn run_computer_completion_contract(
+        computer_response: Vec<u8>,
+    ) -> (Result<Vec<u8>, ProviderSessionError>, Vec<Vec<u8>>) {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind ComputerUse peer");
+        let port_number = listener.local_addr().expect("peer address").port();
+        listener.set_nonblocking(true).expect("bounded accept loop");
+        let (done_tx, done_rx) = mpsc::channel();
+        let server = thread::spawn(move || {
+            // The existing desktop lifecycle first touches its monitor lease.
+            // Its id0 Shell response is complete before ComputerUse uses id1.
+            let mut lease_response = computer_contract_frame(
+                0,
+                &[0x0a, 0x04, 0x12, 0x02, 0x0a, 0x00],
+            );
+            lease_response.extend(computer_contract_frame(0, &[0x12, 0x02, 0x0a, 0x00]));
+            lease_response.extend(computer_contract_frame(0x02, b"{}"));
+            let responses = [lease_response, computer_response];
+            let mut requests = Vec::new();
+            let deadline = Instant::now() + Duration::from_secs(10);
+            loop {
+                match done_rx.try_recv() {
+                    Ok(()) | Err(mpsc::TryRecvError::Disconnected) => break,
+                    Err(mpsc::TryRecvError::Empty) => {}
+                }
+                assert!(Instant::now() < deadline, "ComputerUse contract did not finish");
+                match listener.accept() {
+                    Ok((mut stream, _)) => {
+                        stream.set_nonblocking(false).expect("blocking accepted socket");
+                        stream.set_read_timeout(Some(Duration::from_secs(5))).expect("read bound");
+                        stream.set_write_timeout(Some(Duration::from_secs(5))).expect("write bound");
+                        let request = read_computer_contract_request(&mut stream);
+                        let response = responses.get(requests.len());
+                        requests.push(request);
+                        if let Some(response) = response {
+                            write!(
+                                stream,
+                                "HTTP/1.1 200 OK\r\nContent-Type: {CONNECT_STREAM_CONTENT_TYPE}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                                response.len(),
+                            ).expect("response headers");
+                            stream.write_all(response).expect("response body");
+                            stream.flush().expect("flush response");
+                        }
+                    }
+                    Err(error) if error.kind() == ErrorKind::WouldBlock => {
+                        thread::sleep(Duration::from_millis(1));
+                    }
+                    Err(error) => panic!("accept ComputerUse request: {error}"),
+                }
+            }
+            requests
+        });
+
+        let environment = ProductionBoxEnvironment::new(
+            "127.0.0.1", port_number, "computer-completion-contract",
+        );
+        let accessor = Arc::new(Mutex::new(environment.remote_resource_accessor()));
+        let service = Arc::new(ForeverBoxService::new(
+            HostBox::new(environment),
+            Arc::new(PreparedComputerLifecycle),
+            false,
+            false,
+            false,
+        ));
+        let resources = ForeverBoxRunnerResourcePort::new(service, "computer-completion-agent");
+        *resources.coordinator.lock().expect("prepared coordinator") =
+            RemoteBoxResourceCoordinator::new(
+                true,
+                Some(RemoteConnection {
+                    terminals_folder: "/workspace/terminals".into(),
+                    resource: accessor,
+                    owns_monitor: true,
+                    window_index: SAND_BOX_PRIMARY_WINDOW_INDEX,
+                }),
+            );
+        let result = resources.execute_computer_use_with_action_case(Vec::new(), Some("screenshot"));
+        done_tx.send(()).expect("finish peer");
+        let requests = server.join().expect("ComputerUse peer");
+        (result, requests)
+    }
+
+    #[test]
+    fn computer_use_preserves_unknown_outcomes_from_incomplete_wire_completion() {
+        // Frozen ExecClientMessage: id1, ComputerUseResult tag22, empty success.
+        let data = computer_contract_frame(
+            0,
+            &[0x0a, 0x07, 0x08, 0x01, 0xb2, 0x01, 0x02, 0x0a, 0x00],
+        );
+        let close = computer_contract_frame(0, &[0x12, 0x04, 0x0a, 0x02, 0x08, 0x01]);
+        let end = computer_contract_frame(0x02, b"{}");
+        let complete = [data.clone(), close.clone(), end.clone()].concat();
+        let missing_close = [data.clone(), end].concat();
+        let missing_end = [data.clone(), close].concat();
+        let mut truncated = data;
+        truncated.pop();
+        for (label, response, succeeds) in [
+            ("complete", complete, true),
+            ("missing StreamClose", missing_close, false),
+            ("missing Connect end", missing_end, false),
+            ("truncated Connect frame", truncated, false),
+        ] {
+            let (result, requests) = run_computer_completion_contract(response);
+            assert_eq!(requests.len(), 2, "{label}: one lease and one ComputerUse, without replay");
+            assert!(
+                requests[0].windows(b"sand-monitor-busy-lease".len())
+                    .any(|bytes| bytes == b"sand-monitor-busy-lease"),
+                "{label}: the real desktop lifecycle must touch its existing lease",
+            );
+            let computer_request = &requests[1];
+            assert_eq!(computer_request.first(), Some(&0), "{label}: Connect data request");
+            assert!(
+                computer_request.ends_with(&[0x08, 0x01, 0xb2, 0x01, 0x00]),
+                "{label}: the actual ComputerUse RPC must use id1 and frozen tag22",
+            );
+            if succeeds {
+                assert_eq!(result.expect("complete ComputerUse response"), vec![0x0a, 0x00]);
+            } else {
+                match result {
+                    Err(ProviderSessionError::ToolOutcomeUnknown(detail)) => {
+                        assert!(detail.contains("Computer use failed"), "{label}: actual adapter context");
+                    }
+                    other => panic!("{label}: incomplete ComputerUse must remain unknown, got {other:?}"),
+                }
+            }
+        }
     }
 }

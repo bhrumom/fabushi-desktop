@@ -1,0 +1,39 @@
+{
+  "schema_version": "minimal-independent-review-attestation-v1",
+  "round": 2,
+  "repository": "bhrumom/fabushi-desktop",
+  "subject_commit": "10eb09be90e946e5e9ee72f5ae6f87d6b3ea803f",
+  "subject_tree": "89334bde8bbf47426f4ed87ca6c246cff8d51675",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "lens": [
+    "structure",
+    "reuse",
+    "performance"
+  ],
+  "worker": "/root/bxr_r2_structure",
+  "launch": {
+    "model": "gpt-6.1-sol",
+    "effort": "xhigh",
+    "visibility": "Explicit accepted worker launch; hidden runtime metadata not independently exposed"
+  },
+  "verdict": "NO_BLOCKING_SOURCE_FINDINGS",
+  "finding_count": 0,
+  "source_only": true,
+  "read_depth": "Complete eight-path focused delta and affected functions with necessary adjacent consumers; original18-path scope retained as context. No claim of fresh full reread of every unchanged function/historical assertion.",
+  "independence": "No prior reports, runner decision ledgers, peer conclusions or later snapshots read.",
+  "full_report": {
+    "location": "task conversation /root/bxr_r2_structure final response",
+    "root_read_complete": true,
+    "remote_blob": null,
+    "worker_reported_utf8_bytes": 13538,
+    "worker_reported_sha256": "65119dde305695fd480d9a1ad5189b6e3b2f3b65107c086b1ddd9b657813fd59",
+    "digest_scope": "Exact cached rejected report payload including final newline; not a hash of the rendered conversation preface."
+  },
+  "storage": {
+    "automatic_approval_rejected": true,
+    "reason": "The optional full source-derived report disclosure was rejected because the approval reviewer did not establish explicit end-user authorization to a verified trusted destination.",
+    "rejected_payload_retried": false,
+    "alternative": "This materially smaller non-code attestation only; full report is not claimed as remotely archived."
+  },
+  "limits": "No local/htch validation, CI execution, dependency closure, external compatibility or global acceptance. This lens verdict does not decide other lenses or the whole batch."
+}

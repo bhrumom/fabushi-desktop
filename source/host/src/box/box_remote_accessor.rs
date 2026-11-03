@@ -296,7 +296,11 @@ pub enum BoxRemoteExecControlMessage {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BoxRemoteExecEnvelope<ClientMessage> {
-    ExecClientMessage(ClientMessage),
+    ExecClientMessage {
+        id: u64,
+        exec_id: String,
+        message: ClientMessage,
+    },
     ExecClientControlMessage(BoxRemoteExecControlMessage),
     None,
 }
@@ -313,6 +317,10 @@ pub trait BoxRemoteExecClient<Ctx, ServerMessage, ClientMessage> {
 
 #[derive(Debug)]
 pub enum BoxRemoteExecError<E> {
+    /// No request was serialized or sent after the uint32 wire identity was exhausted.
+    IdExhausted,
+    /// A response cannot prove the identity and completion of the dispatched request.
+    ProtocolViolation(&'static str),
     Transport(E),
     RemoteThrow {
         error: String,
@@ -324,6 +332,10 @@ pub enum BoxRemoteExecError<E> {
 impl<E: fmt::Display> fmt::Display for BoxRemoteExecError<E> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::IdExhausted => formatter.write_str("box ExecService request identity exhausted"),
+            Self::ProtocolViolation(reason) => {
+                write!(formatter, "box ExecService response protocol violation: {reason}")
+            }
             Self::Transport(error) => error.fmt(formatter),
             Self::RemoteThrow { error, .. } => formatter.write_str(error),
         }
@@ -334,7 +346,7 @@ impl<E: Error + 'static> Error for BoxRemoteExecError<E> {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Transport(error) => Some(error),
-            Self::RemoteThrow { .. } => None,
+            Self::IdExhausted | Self::ProtocolViolation(_) | Self::RemoteThrow { .. } => None,
         }
     }
 }
@@ -362,33 +374,98 @@ impl<Client> BoxRemoteExecManager<Client> {
         Client: BoxRemoteExecClient<Ctx, ServerMessage, ClientMessage>,
         Serialize: FnOnce(u64) -> ServerMessage,
     {
+        // The frozen Exec schema uses uint32. Never truncate, saturate or reuse a
+        // request identity, including after a transport or protocol failure.
+        if self.next_id > u64::from(u32::MAX) {
+            return Err(BoxRemoteExecError::IdExhausted);
+        }
         let id = self.next_id;
-        self.next_id = self.next_id.saturating_add(1);
+        self.next_id += 1;
         let messages = self
             .client
             .exec(ctx, serialize(id))
             .map_err(BoxRemoteExecError::Transport)?;
         let mut output = Vec::new();
+        let mut closed = false;
         for message in messages {
+            if closed {
+                return Err(BoxRemoteExecError::ProtocolViolation(
+                    "message received after StreamClose",
+                ));
+            }
             match message {
-                BoxRemoteExecEnvelope::ExecClientMessage(message) => output.push(message),
+                BoxRemoteExecEnvelope::ExecClientMessage {
+                    id: response_id,
+                    exec_id,
+                    message,
+                } => {
+                    if response_id != id {
+                        return Err(BoxRemoteExecError::ProtocolViolation(
+                            "data request identity mismatch",
+                        ));
+                    }
+                    // BXR-v1 keeps the actual encoder's existing empty exec_id.
+                    // An unexpected nonempty identity is not an empty-value fallback.
+                    if !exec_id.is_empty() {
+                        return Err(BoxRemoteExecError::ProtocolViolation(
+                            "data execution identity mismatch",
+                        ));
+                    }
+                    output.push(message);
+                }
+                BoxRemoteExecEnvelope::ExecClientControlMessage(
+                    BoxRemoteExecControlMessage::StreamClose { id: response_id },
+                ) => {
+                    if response_id != id {
+                        return Err(BoxRemoteExecError::ProtocolViolation(
+                            "StreamClose request identity mismatch",
+                        ));
+                    }
+                    closed = true;
+                }
+                BoxRemoteExecEnvelope::ExecClientControlMessage(
+                    BoxRemoteExecControlMessage::Heartbeat { id: response_id },
+                ) => {
+                    if response_id != id {
+                        return Err(BoxRemoteExecError::ProtocolViolation(
+                            "heartbeat request identity mismatch",
+                        ));
+                    }
+                }
                 BoxRemoteExecEnvelope::ExecClientControlMessage(
                     BoxRemoteExecControlMessage::Throw {
+                        id: response_id,
                         error,
                         stack_trace,
                         error_code,
-                        ..
                     },
                 ) => {
+                    // Omitted proto3 scalar identity means zero, not a broadcast.
+                    if response_id.unwrap_or_default() != id {
+                        return Err(BoxRemoteExecError::ProtocolViolation(
+                            "Throw request identity mismatch",
+                        ));
+                    }
                     return Err(BoxRemoteExecError::RemoteThrow {
                         error,
                         stack_trace,
                         error_code,
                     });
                 }
-                BoxRemoteExecEnvelope::ExecClientControlMessage(_)
-                | BoxRemoteExecEnvelope::None => {}
+                BoxRemoteExecEnvelope::ExecClientControlMessage(
+                    BoxRemoteExecControlMessage::None,
+                )
+                | BoxRemoteExecEnvelope::None => {
+                    return Err(BoxRemoteExecError::ProtocolViolation(
+                        "missing or unsupported response envelope",
+                    ));
+                }
             }
+        }
+        if !closed {
+            return Err(BoxRemoteExecError::ProtocolViolation(
+                "response ended without StreamClose",
+            ));
         }
         Ok(output)
     }
@@ -439,4 +516,46 @@ where
         create_exec_client,
         create_resource_accessor,
     )
+}
+
+#[cfg(test)]
+mod response_identity_tests {
+    use super::{
+        BoxRemoteExecClient, BoxRemoteExecControlMessage, BoxRemoteExecEnvelope,
+        BoxRemoteExecError, BoxRemoteExecManager,
+    };
+
+    #[derive(Default)]
+    struct BoundaryClient {
+        calls: Vec<u64>,
+    }
+
+    impl BoxRemoteExecClient<(), u64, ()> for BoundaryClient {
+        type Error = std::io::Error;
+
+        fn exec(
+            &mut self,
+            _ctx: &(),
+            id: u64,
+        ) -> Result<Vec<BoxRemoteExecEnvelope<()>>, Self::Error> {
+            self.calls.push(id);
+            Ok(vec![BoxRemoteExecEnvelope::ExecClientControlMessage(
+                BoxRemoteExecControlMessage::StreamClose { id },
+            )])
+        }
+    }
+
+    #[test]
+    fn box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport() {
+        let mut manager = BoxRemoteExecManager::new(BoundaryClient::default());
+        manager.next_id = u64::from(u32::MAX);
+        assert!(manager.create_exec_instance(&(), |id| id).unwrap().is_empty());
+        assert_eq!(manager.next_id(), u64::from(u32::MAX) + 1);
+        let result = manager.create_exec_instance(&(), |_| -> u64 {
+            panic!("exhausted request must not be serialized")
+        });
+        assert!(matches!(result, Err(BoxRemoteExecError::IdExhausted)));
+        assert_eq!(manager.next_id(), u64::from(u32::MAX) + 1);
+        assert_eq!(manager.into_client().calls, vec![u64::from(u32::MAX)]);
+    }
 }

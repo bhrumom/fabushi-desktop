@@ -1,0 +1,320 @@
+{
+  "schema_version": "review-snapshot-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_root": "GitHub Git tree; no local index",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "starting_head": "b35408891546694606ed0750c60af0302669aac9",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "base_tree": "158826d8a7483ad0c7182052419a48c5fb4cc210",
+  "round": 2,
+  "prior_candidate_commit": "19baca121c79f99a4955d5a0307afc4eb175601b",
+  "prior_candidate_tree": "6037d903de1abe954db973d0da92ba1aed4e8502",
+  "candidate_commit": "10eb09be90e946e5e9ee72f5ae6f87d6b3ea803f",
+  "candidate_tree": "89334bde8bbf47426f4ed87ca6c246cff8d51675",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "shared_contract": {
+    "name": "BXR-v1.2",
+    "path": "docs/specs/g11-box-browser-wire-completion.md",
+    "blob": "6008233a6974cb57c173ad0c5183606cbc3698bb"
+  },
+  "scope_mode": "Same original18paths; focused second review receives complete scope and8-path delta plus adjacent sources",
+  "complete_diff_blob": "2544d6c1c2b0d36fa8372c4d0361ba1264bda2d8",
+  "fix_delta_blob": "679019260dd0326d8c7a6c9da31f49eceeb5bcd5",
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "modified",
+      "base_blob": "21027a8dac6fc0b23959cf84c946f88fe24fad26",
+      "candidate_blob": "722919391a64e55f13fae68bb41fc549c70eaf23",
+      "mode": "100644",
+      "additions": 4,
+      "deletions": 2,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "docs/specs/g11-box-browser-wire-completion.md",
+      "status": "modified",
+      "base_blob": "eaff5baca97b61100592227497883483019a5e08",
+      "candidate_blob": "6008233a6974cb57c173ad0c5183606cbc3698bb",
+      "mode": "100644",
+      "additions": 30,
+      "deletions": 2,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+      "status": "added",
+      "base_blob": null,
+      "candidate_blob": "bed2af1c096e8090e0804a6be1701f3371b53027",
+      "mode": "100644",
+      "additions": 408,
+      "deletions": 0,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "modified",
+      "base_blob": "a5b005be86ceee0230448d16f24a0d7cadbbcb25",
+      "candidate_blob": "0e3c53c0e6d8c5a4ccee8f274e3da61941c56dbe",
+      "mode": "100644",
+      "additions": 21,
+      "deletions": 5,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "modified",
+      "base_blob": "9a59949b150ef7f9b31ecbc45b2a65283074ec68",
+      "candidate_blob": "635a1d2fa49fec8d34b89636f6c03d004a608e82",
+      "mode": "100644",
+      "additions": 22,
+      "deletions": 4,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "modified",
+      "base_blob": "18bf24178b066f063391d395e3b30d888205b442",
+      "candidate_blob": "5b97befad52ed4333a1824280ca15d3efe5319c3",
+      "mode": "100644",
+      "additions": 318,
+      "deletions": 6,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/src/box/box_remote_accessor.rs",
+      "status": "modified",
+      "base_blob": "fd74139f8e75e9635c85faf43de2637bbcbe4686",
+      "candidate_blob": "e6470d1769972f73c90835c368f2164c7055c7e0",
+      "mode": "100644",
+      "additions": 126,
+      "deletions": 7,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/src/box/generated_production.rs",
+      "status": "modified",
+      "base_blob": "81f5a74dbf0ebc3700f177639bdd875f8c00eb56",
+      "candidate_blob": "5ed8317500a9fc62a670fd7bfe4f16ab671dd741",
+      "mode": "100644",
+      "additions": 820,
+      "deletions": 541,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/src/extensions/forever_box/runner_tools.rs",
+      "status": "modified",
+      "base_blob": "c38b3dda53e5d9eccb1581ed3bd6ec38599f7ff6",
+      "candidate_blob": "bc6208a6614634715272851ee3b703339849bf91",
+      "mode": "100644",
+      "additions": 241,
+      "deletions": 27,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/src/runner/box_tool_access.rs",
+      "status": "modified",
+      "base_blob": "7d856c9f39bf50642d3d757451f0cc954bc47b1b",
+      "candidate_blob": "35f217614fd832b3a482394cd70638f67d865efc",
+      "mode": "100644",
+      "additions": 3,
+      "deletions": 3,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/src/runner/large_output_spill.rs",
+      "status": "modified",
+      "base_blob": "f33b9a2964e3c4ee9ca75be847aa2354930261f8",
+      "candidate_blob": "ebdea4323cbcb77216a1d9648717c274ed5e7a10",
+      "mode": "100644",
+      "additions": 18,
+      "deletions": 17,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/src/runner/runner_prompt_glue.rs",
+      "status": "modified",
+      "base_blob": "fed229ea2c4226eba00466bd5413ec9b85c6aee5",
+      "candidate_blob": "e099d06120c6593d6d08f644abc03e753c027cbc",
+      "mode": "100644",
+      "additions": 4,
+      "deletions": 4,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "status": "modified",
+      "base_blob": "06506be3ce37c43ff02dff1da820859cab86eb3b",
+      "candidate_blob": "f3df2cc147226266c6e12b297888f61934102365",
+      "mode": "100644",
+      "additions": 105,
+      "deletions": 0,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/tests/box_generated_production_contract.rs",
+      "status": "modified",
+      "base_blob": "13787b4f3e30c399b99eeb0ec8169ffff8479526",
+      "candidate_blob": "c1e2c565871dc12ca3267eff0c9b8b61753eb00a",
+      "mode": "100644",
+      "additions": 1416,
+      "deletions": 11,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/tests/box_remote_accessor_contract.rs",
+      "status": "modified",
+      "base_blob": "1831b82f99d145500dd2cd509b580b8ea26b1c51",
+      "candidate_blob": "81d182554769cd99c012c9d2cb5800c93cc5429f",
+      "mode": "100644",
+      "additions": 189,
+      "deletions": 3,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/tests/large_output_spill_contract.rs",
+      "status": "modified",
+      "base_blob": "a68a4d716fe0c7b5111a28be58346e64dc477e79",
+      "candidate_blob": "af895ac7fb8b170278c6fa07f46aef1ae50bc690",
+      "mode": "100644",
+      "additions": 53,
+      "deletions": 5,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/tests/runner_box_tool_composition_contract.rs",
+      "status": "modified",
+      "base_blob": "65d6142be02840f89bfcf7408287e00663272ade",
+      "candidate_blob": "8a805357be0fbed1192b7094d630b7cf493705db",
+      "mode": "100644",
+      "additions": 196,
+      "deletions": 0,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/tests/runner_prompt_glue_contract.rs",
+      "status": "modified",
+      "base_blob": "f87f84dbf27343706a5d01ca0f4907fd7dfd7dbc",
+      "candidate_blob": "f80d1451906b1eac2fced34a1e0e60b7489e8d6e",
+      "mode": "100644",
+      "additions": 31,
+      "deletions": 3,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    }
+  ],
+  "delta_paths": [
+    {
+      "path": "docs/specs/g11-box-browser-wire-completion.md",
+      "status": "modified",
+      "base_blob": "49acb2114574739690b0e3eeef48f6ae98c9b271",
+      "candidate_blob": "6008233a6974cb57c173ad0c5183606cbc3698bb",
+      "mode": "100644",
+      "additions": 10,
+      "deletions": 4,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+      "status": "modified",
+      "base_blob": "405c206f89f96b52af90d96fc7a3a4d472cdd599",
+      "candidate_blob": "bed2af1c096e8090e0804a6be1701f3371b53027",
+      "mode": "100644",
+      "additions": 41,
+      "deletions": 9,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "modified",
+      "base_blob": "d60c5490dc687f17a6871adf1fa7fa8e1becd8b1",
+      "candidate_blob": "0e3c53c0e6d8c5a4ccee8f274e3da61941c56dbe",
+      "mode": "100644",
+      "additions": 10,
+      "deletions": 10,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "modified",
+      "base_blob": "ed56a95a9bc143a35ceef7f68566f6c1d598c2a3",
+      "candidate_blob": "635a1d2fa49fec8d34b89636f6c03d004a608e82",
+      "mode": "100644",
+      "additions": 12,
+      "deletions": 12,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "modified",
+      "base_blob": "b3afeb5d6b4f1ed7963b6f7b781b149c526f9738",
+      "candidate_blob": "5b97befad52ed4333a1824280ca15d3efe5319c3",
+      "mode": "100644",
+      "additions": 12,
+      "deletions": 4,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/src/box/generated_production.rs",
+      "status": "modified",
+      "base_blob": "7b1f50c27b30870c7a59d41774decc660e454f71",
+      "candidate_blob": "5ed8317500a9fc62a670fd7bfe4f16ab671dd741",
+      "mode": "100644",
+      "additions": 31,
+      "deletions": 14,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/src/extensions/forever_box/runner_tools.rs",
+      "status": "modified",
+      "base_blob": "71b7eff4049b6930315bd082be69ecb767e28ed4",
+      "candidate_blob": "bc6208a6614634715272851ee3b703339849bf91",
+      "mode": "100644",
+      "additions": 27,
+      "deletions": 4,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    },
+    {
+      "path": "source/host/tests/box_generated_production_contract.rs",
+      "status": "modified",
+      "base_blob": "a521c3d899ce59bf6aaaa1a5d2c77b902603f012",
+      "candidate_blob": "c1e2c565871dc12ca3267eff0c9b8b61753eb00a",
+      "mode": "100644",
+      "additions": 316,
+      "deletions": 0,
+      "full_changed_lines_accounted": true,
+      "encoding": "UTF-8; no binary or renamed path"
+    }
+  ],
+  "isolated_snapshot": "Unpublished Git commit with prior snapshot parent; immutable full UTF-8 blobs, complete API rename/status manifest and reconciled patch changed-line counts. Original frozen base remains fixed.",
+  "execution": "No local/htch validation. No runtime acceptance; final exact-H Actions still required.",
+  "publication_reconciliation": {
+    "current_branch_head": "9eb2d5ef6f28116a2f6c4933e75794f94c2b991d",
+    "scope_overlap": [],
+    "note": "Separate incoming two-line Electron fixture correction and6 evidence paths are outside this18-path frozen scope; final publication must preserve them and verify all reviewed source blob identities."
+  }
+}

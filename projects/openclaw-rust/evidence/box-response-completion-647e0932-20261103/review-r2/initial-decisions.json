@@ -1,0 +1,81 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "round": 2,
+  "subject_commit": "10eb09be90e946e5e9ee72f5ae6f87d6b3ea803f",
+  "subject_tree": "89334bde8bbf47426f4ed87ca6c246cff8d51675",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "status": "Initial source-grounded decisions before any R2 repair; complete fresh reviewer reports are still pending and will be reconciled without overwriting this record.",
+  "decisions": [
+    {
+      "id": "BXR-R2-ROOT-01",
+      "decision": "FIX",
+      "severity": "P2",
+      "classification": "IMPL_BUG_AND_MIRRORED_TEST_ORACLE",
+      "path": "source/host/src/box/generated_production.rs",
+      "symbols": [
+        "ProductionBackgroundShellSpawnResult::SandboxUnsupported",
+        "decode_background_shell_spawn_result"
+      ],
+      "failure": "Frozen ShellSandboxUnsupported field3 is STRING, but the Rust variant and retained fixture use i32/varint. Strict typed wire validation therefore rejects a valid background sandbox refusal and promotes it into unknown execution.",
+      "source": [
+        {
+          "path": "source/packages/proto/generated/agent/v1/shell_exec_pb.ts",
+          "blob": "43079a2f5df12a5f570589ce312fd7fcfb71bd1f",
+          "contract": "ShellSandboxUnsupported field3 STRING; absent scalar default empty string"
+        },
+        {
+          "path": "source/packages/proto/generated/agent/v1/background_shell_exec_pb.ts",
+          "blob": "71a9c516dd1ca89b2e389a85115407ad06b3bac2",
+          "contract": "BackgroundShellSpawnResult field5 selects the shared ShellSandboxUnsupported message"
+        },
+        {
+          "path": "source/packages/local-exec/background-shell.ts",
+          "blob": "b7468894536d7e432e34bd52820dfc93956552a5",
+          "contract": "SandboxUnsupportedError produces policy?.type ?? unknown as a string and no success shell id"
+        }
+      ],
+      "repair": "Use String and the existing all-occurrence UTF-8 string reader, repair the invalid integer fixture against the frozen schema, and retain exact reason/readonly projection without watcher or replay.",
+      "required_oracle": "Actual complete accessor responses accept real UTF-8/empty-default/valid-repeated-last policy strings, reject wrong wire or invalid UTF-8 occurrences, and actual ForeverBox background consumer publishes the known refusal with zero watchers and one request."
+    },
+    {
+      "id": "BXR-R2-ROOT-02",
+      "decision": "FIX",
+      "severity": "P2",
+      "classification": "IMPL_BUG_NEW_UNKNOWN_CLASSIFICATION_AT_EXISTING_PROJECTION_GAP",
+      "path": "source/host/src/extensions/forever_box/runner_tools.rs",
+      "symbols": [
+        "timed Shell full-sequence adjudication",
+        "decode_shell_stream_event"
+      ],
+      "failure": "A valid sole ShellStream field9 refusal is counted as a decisive terminal but decoded as Other, then returned as ToolOutcomeUnknown. Missing typed projection predates BXR; its promotion from ordinary refusal into effect uncertainty is introduced by this candidate.",
+      "source": [
+        {
+          "path": "source/packages/proto/generated/agent/v1/shell_exec_pb.ts",
+          "blob": "43079a2f5df12a5f570589ce312fd7fcfb71bd1f",
+          "contract": "ShellStream field9 selects ShellSandboxUnsupported; ordinary ShellResult has no such variant"
+        },
+        {
+          "path": "source/packages/agent/tools/core/shell/create-shell-tool.ts",
+          "blob": "f7e875e6e08ac6df9afc0bf904b2a814510b981f",
+          "contract": "Stream sandboxUnsupported produces ToolCallUnexpectedEnvironmentError(reason), not missing-exit uncertainty"
+        }
+      ],
+      "repair": "Add the existing field9 typed refusal to ProductionShellStreamEvent and project it through the existing timed Shell consumer as sandboxUnsupported with its frozen string/reason/readonly fields. Keep field8 nonterminal metadata and full-sequence conflicting-terminal rejection. Do not invent a foreground ShellResult variant.",
+      "required_oracle": "Actual timed ForeverBox complete sole field9 returns the known refusal with zero watchers and one request. All existing 25 ordered repeated/conflicting terminal pairs remain unknown; all late output/hook positives remain required."
+    }
+  ],
+  "fix_scope": [
+    "docs/specs/g11-box-browser-wire-completion.md",
+    "source/host/src/box/generated_production.rs",
+    "source/host/src/extensions/forever_box/runner_tools.rs",
+    "source/host/tests/box_generated_production_contract.rs",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "projects/openclaw-rust/parity-ledger.json",
+    "projects/openclaw-rust/requirements-traceability-matrix.json",
+    "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json"
+  ],
+  "phase_effort": "Configured root retained; xhigh-class source diagnosis/repair/review. No same-session model override exposed.",
+  "execution": "No local/htch validation; source-proven defects, not observed Actions failures. R3 fresh focused review and final exact-H Actions remain mandatory.",
+  "acceptance_flags_unchanged": true
+}

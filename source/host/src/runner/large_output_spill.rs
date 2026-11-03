@@ -3,6 +3,8 @@ use std::env;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::extensions::inference::provider_session::ProviderSessionError;
+
 use super::box_tool_access::{RunnerBoxResourcePort, RunnerBoxWriteRequest};
 
 pub const MCP_TEXT_FILE_THRESHOLD_BYTES: usize = 40_000;
@@ -34,19 +36,19 @@ fn cap_text(text: &str) -> String {
 }
 
 /// Materializes oversized MCP text output into the Agent box, matching Grok's
-/// Runner-owned spill boundary. Failure to write is deliberately non-fatal:
-/// the original inline tool result is returned unchanged.
+/// Runner-owned spill boundary. Known write refusals keep the original inline
+/// result; an uncertain dispatched write must remain unknown to effect custody.
 pub fn maybe_spill_mcp_text_result(
     box_resources: &dyn RunnerBoxResourcePort,
     result: Value,
     tool_call_id: &str,
     threshold_bytes: usize,
-) -> Value {
+) -> Result<Value, ProviderSessionError> {
     if result.get("isError").and_then(Value::as_bool) == Some(true) {
-        return result;
+        return Ok(result);
     }
     let Some(content) = result.get("content").and_then(Value::as_array) else {
-        return result;
+        return Ok(result);
     };
     let inline = content
         .iter()
@@ -54,25 +56,24 @@ pub fn maybe_spill_mcp_text_result(
         .filter_map(|item| item.get("text").and_then(Value::as_str))
         .collect::<Vec<_>>();
     if inline.is_empty() {
-        return result;
+        return Ok(result);
     }
     let aggregate = inline.join("\n\n");
     if threshold_bytes == 0 || aggregate.len() <= threshold_bytes {
-        return result;
+        return Ok(result);
     }
 
     let capped = cap_text(&aggregate);
     let relative_path = format!("{AGENT_TOOLS_DIR}/{}.txt", Uuid::new_v4());
     let data = capped.as_bytes().to_vec();
-    if box_resources
-        .execute_write(RunnerBoxWriteRequest {
-            path: relative_path.clone(),
-            data: data.clone(),
-            tool_call_id: tool_call_id.to_string(),
-        })
-        .is_err()
-    {
-        return result;
+    match box_resources.execute_write(RunnerBoxWriteRequest {
+        path: relative_path.clone(),
+        data: data.clone(),
+        tool_call_id: tool_call_id.to_string(),
+    }) {
+        Ok(()) => {}
+        Err(error @ ProviderSessionError::ToolOutcomeUnknown(_)) => return Err(error),
+        Err(_) => return Ok(result),
     }
 
     let output_location = json!({
@@ -101,5 +102,5 @@ pub fn maybe_spill_mcp_text_result(
     if let Some(object) = spilled.as_object_mut() {
         object.insert("content".into(), Value::Array(materialized));
     }
-    spilled
+    Ok(spilled)
 }

@@ -1,0 +1,59 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "round": 3,
+  "subject_commit": "7ba15a8dd24554c9d796702468576e970cad93d5",
+  "subject_tree": "c5ce21f37416257cc38d05649d9a6a8a48b493a4",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "initial_pre_fix_decisions_blob": "6e2c060d1e8a8cd0ccc985265184e86d8912fd1a",
+  "received_reports": [
+    {
+      "lens": "general/security/lifetime",
+      "blob": "81c5b989517473bf565596d1be6700c74c27c0ea",
+      "full_root_read": true,
+      "verdict": "REQUEST_CHANGES",
+      "finding_ids": [
+        "BXR-R3-GENERAL-01"
+      ]
+    },
+    {
+      "lens": "structure/reuse/performance",
+      "minimal_receipt_blob": "918e04884ebe1eea04934438d224c5966d0ebcfd",
+      "full_root_read": true,
+      "full_report_location": "task conversation /root/bxr_r3_structure final response",
+      "full_report_blob": null,
+      "verdict": "NO_BLOCKING_SOURCE_FINDINGS",
+      "finding_count": 0
+    }
+  ],
+  "decisions": [
+    {
+      "finding_ids": [
+        "BXR-R3-GENERAL-01",
+        "BXR-R3-ROOT-01"
+      ],
+      "decision": "FIX",
+      "classification": "CONSUMER_ORACLE_COVERAGE_GAP",
+      "rationale": "Preserve the explicit existing BXR-v1.3 consumer requirement. Accessor negatives and a separate missing-close consumer control cannot substitute for actual malformed-policy InvalidResult forwarding. Share the same raw cases across direct and registered consumer paths; test all background/block-zero/timed routes, exact unknown cause, one Exec, zero watches and no fallback.",
+      "fix_paths": [
+        "source/host/tests/box_generated_production_contract.rs",
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json"
+      ],
+      "preserved": "All production/spec bytes, earlier assertions,25 terminal pairs and actual-daemon requirements remain unchanged."
+    }
+  ],
+  "synthesis": "Both complete reports read. The structure no-blocker verdict does not erase the general lens's required direct observation gap. Its FIX was recorded before repair; no requirement or oracle was weakened.",
+  "repair_snapshot": {
+    "commit": "0e876a91527fdb0bac673be5df6ef0b18ef4f29b",
+    "tree": "5270a4a9bebc6742217c6f83b28a629945bbe15d",
+    "scope_blob": "d8fff1e6dc61749242e178ab60fe1cb279963a63",
+    "full_paths": 18,
+    "fix_paths": 3,
+    "authored_direct_names": 74,
+    "source_binding_paths": 43
+  },
+  "phase_status": "One synthesized oracle repair authored; fresh independent R4 review in progress. No runtime acceptance or whole-batch convergence yet.",
+  "execution": "No local/htch validation; final exact-H Actions required.",
+  "all8global_flags_remain_false": true
+}

@@ -63,6 +63,7 @@ impl TransferBox<()> for MemoryBox {
 #[derive(Default)]
 struct BoxResources {
     writes: Mutex<Vec<RunnerBoxWriteRequest>>,
+    unknown_write: bool,
 }
 impl RunnerBoxResourcePort for BoxResources {
     fn execute_shell(
@@ -82,7 +83,11 @@ impl RunnerBoxResourcePort for BoxResources {
         request: RunnerBoxWriteRequest,
     ) -> Result<(), ProviderSessionError> {
         self.writes.lock().unwrap().push(request);
-        Ok(())
+        if self.unknown_write {
+            Err(ProviderSessionError::ToolOutcomeUnknown("spill write outcome unknown".into()))
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -141,7 +146,7 @@ fn glue_applies_single_large_output_spill_policy() {
         result.clone(),
         "tool-1",
         4,
-    );
+    ).expect("disabled spill retains inline result");
     assert_eq!(unchanged, result);
     assert!(resources.writes.lock().unwrap().is_empty());
 
@@ -151,7 +156,7 @@ fn glue_applies_single_large_output_spill_policy() {
         result,
         "tool-2",
         4,
-    );
+    ).expect("confirmed spill");
     assert_eq!(resources.writes.lock().unwrap().len(), 1);
     assert_eq!(spilled["content"][0]["type"], "text");
     assert_eq!(spilled["content"][0]["text"], "");
@@ -332,4 +337,27 @@ fn shipping_host_routes_mutable_prompt_surfaces_through_runner_owner() {
             "shipping Host must not bypass Runner prompt glue with {stale}"
         );
     }
+}
+
+#[test]
+fn glue_preserves_unknown_spill_and_disabled_policy_without_replay() {
+    let resources = BoxResources { unknown_write: true, ..BoxResources::default() };
+    let original = json!({"content":[{"type":"text","text":"x".repeat(40_001)}]});
+    let disabled = RunnerPromptGlue::new(transfer_controller(), false);
+    assert_eq!(
+        disabled.spill_mcp_text_result(&resources, original.clone(), "disabled").unwrap(),
+        original,
+    );
+    assert!(resources.writes.lock().unwrap().is_empty());
+    let enabled = RunnerPromptGlue::new(transfer_controller(), true);
+    match enabled.spill_mcp_text_result(&resources, original, "unknown") {
+        Err(ProviderSessionError::ToolOutcomeUnknown(message)) => {
+            assert_eq!(message, "spill write outcome unknown");
+        }
+        other => panic!("glue erased the dispatched write's uncertainty: {other:?}"),
+    }
+    let writes = resources.writes.lock().unwrap();
+    assert_eq!(writes.len(), 1);
+    assert_eq!(writes[0].tool_call_id, "unknown");
+    assert_eq!(writes[0].data.len(), 40_001);
 }

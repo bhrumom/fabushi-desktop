@@ -320,7 +320,7 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
     ) -> Result<Value, ProviderSessionError> {
         if !Self::is_box_tool(tool) {
             let result = self.upstream.call_tool(tool, args, tool_call_id)?;
-            return Ok(if is_large_output_spill_enabled() {
+            return if is_large_output_spill_enabled() {
                 maybe_spill_mcp_text_result(
                     self.box_resources.as_ref(),
                     result,
@@ -328,8 +328,8 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
                     MCP_TEXT_FILE_THRESHOLD_BYTES,
                 )
             } else {
-                result
-            });
+                Ok(result)
+            };
         }
         match tool.name.as_str() {
             RUNNER_BOX_SHELL_TOOL_NAME => {

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "round": 4,
+  "review_type": "structure/reuse/performance",
+  "reviewer": "/root/bxr_r4_structure",
+  "repository": "bhrumom/fabushi-desktop",
+  "candidate_commit": "0e876a91527fdb0bac673be5df6ef0b18ef4f29b",
+  "candidate_tree": "5270a4a9bebc6742217c6f83b28a629945bbe15d",
+  "original_base": "b35408891546694606ed0750c60af0302669aac9",
+  "focused_delta_base": "7ba15a8dd24554c9d796702468576e970cad93d5",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "scope_blob": "d8fff1e6dc61749242e178ab60fe1cb279963a63",
+  "complete_diff_blob": "4859c0833bfa7092e072a01a95d723635f48e217",
+  "fix_delta_blob": "ef4abffdd0e6b447a371410bd3220fa48bdfc575",
+  "verdict": "APPROVED_FOCUSED_SOURCE_REVIEW",
+  "actionable_blockers": [],
+  "read_depth": "Complete three-path delta; complete source contract and Runner Box bridge; affected test/capture functions, typed decoder/accessor, actual ForeverBox consumers, watcher registration, schema, producer and downstream custody boundaries. Complete original 18-path diff retained as context; unchanged unrelated source not claimed as a new full audit.",
+  "review_independence": "Fresh reviewer; no prior or peer report or root arbitration consulted.",
+  "full_report_location": "Task conversation, reviewer final answer; root read complete report. This receipt is not the full report.",
+  "source_counts_only": {
+    "direct_required_names": 74,
+    "codec_required_names": 41,
+    "reused_custody_names": 14,
+    "bound_source_inputs": 43
+  },
+  "executable_validation_performed": false,
+  "ci_dispatch_performed": false,
+  "production_mutation_performed": false,
+  "remaining_proof": [
+    "Exact published-H ordinary Host compile and specified contracts",
+    "Same-H actual daemon execution and generated dependency-lock preservation/review",
+    "Platform, ecosystem and final migration acceptance"
+  ],
+  "global_or_unit_status_promotion": false,
+  "worker_setting": {
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "xhigh",
+    "source": "Accepted fresh fork-none launch fields; no independent query of hidden runtime setting"
+  }
+}

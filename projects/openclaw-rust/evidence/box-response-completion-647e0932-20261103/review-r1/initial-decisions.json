@@ -1,0 +1,80 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "round": 1,
+  "subject_commit": "19baca121c79f99a4955d5a0307afc4eb175601b",
+  "subject_tree": "6037d903de1abe954db973d0da92ba1aed4e8502",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "received_reports": [
+    {
+      "lens": "general/security/lifetime",
+      "blob": "846b787d3e443decdd2e6b4d699b98610b759ccf",
+      "full_root_read": true,
+      "erratum": "The report's daemon.rs wording denotes source/box-exec-daemon/src/server.rs at the correctly recorded blob a40dc3b5f78e414c3ac302137668f1d5be8dc73f; no other file or claim is substituted."
+    }
+  ],
+  "decisions": [
+    {
+      "finding_ids": [
+        "BXR-GEN-001"
+      ],
+      "decision": "FIX",
+      "rationale": "Both source-byte examples enter typed success because an earlier malformed known occurrence is overwritten. Validate every occurrence before legal last-value retention, preserve valid duplicate semantics and existing identity/oneof fences. Include the same direct uint32-reader class where an overflowing earlier typed value can be hidden, without inventing int32 restrictions.",
+      "scope": [
+        "source/host/src/box/generated_production.rs",
+        "source/host/tests/box_generated_production_contract.rs"
+      ],
+      "required_oracle": "Complete actual-accessor responses with invalid early UTF-8/nested metadata/uint32 then valid duplicate, plus valid duplicate positives, one dispatch/no retry."
+    },
+    {
+      "finding_ids": [
+        "BXR-R1-ROOT-01"
+      ],
+      "decision": "FIX",
+      "rationale": "Canonical new oracle IDs must exactly match existing BW07-BW12 spec IDs BXR01-BXR06. Change only the six new ID spellings; preserve source refs, all prior oracles and all status/flag values.",
+      "scope": [
+        "projects/openclaw-rust/parity-ledger.json",
+        "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json"
+      ]
+    },
+    {
+      "finding_ids": [
+        "BXR-R1-ROOT-02"
+      ],
+      "decision": "FIX",
+      "rationale": "The already received timed-Shell Vec can contain contradictory terminals or legitimate late stdout. Returning at the first Exit both hides conflicts and drops data. Validate exactly one decisive terminal before publication/watcher registration and collect the whole stream's stdout/stderr. Preserve field8 hook context as nonterminal metadata; frozen TS consumer continues after Exit, so a blanket no-post-exit-data rule would regress that contract.",
+      "source_evidence": [
+        {
+          "path": "source/packages/proto/generated/agent/v1/shell_exec_pb.ts",
+          "blob": "43079a2f5df12a5f570589ce312fd7fcfb71bd1f",
+          "fact": "ShellStream field8 is hook_context metadata; field9 is sandbox_unsupported, not a second metadata variant"
+        },
+        {
+          "path": "source/packages/agent/tools/core/shell/create-shell-tool.ts",
+          "blob": "f7e875e6e08ac6df9afc0bf904b2a814510b981f",
+          "fact": "executeStream stores Exit rather than returning, continues collecting stdout/stderr through stream completion, and ignores hookContext metadata"
+        },
+        {
+          "path": "source/box-exec-daemon/src/server.rs",
+          "blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+          "fact": "actual current producer drains output before its single Exit and returns after Backgrounded; source-only confirmation"
+        }
+      ],
+      "scope": [
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/tests/box_generated_production_contract.rs"
+      ],
+      "required_oracle": "Actual ForeverBox conflicting/repeated terminals => ToolOutcomeUnknown, one request and no watcher; valid late stdout/stderr and hook metadata remain accepted."
+    }
+  ],
+  "shared_contract": {
+    "name": "BXR-v1.2",
+    "path": "docs/specs/g11-box-browser-wire-completion.md",
+    "blob": "6008233a6974cb57c173ad0c5183606cbc3698bb",
+    "created_before_fix": true
+  },
+  "phase_status": "All received complete report findings and root findings decided before any fix. Structure report remains pending; no review convergence or execution acceptance asserted.",
+  "execution": "No local/htch execution; future final exact-H Actions only",
+  "root_model_effort": "Configured parent; complex xhigh-class phase, same-session override not exposed."
+}

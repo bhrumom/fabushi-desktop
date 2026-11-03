@@ -1,0 +1,193 @@
+diff --git a/projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json
+index 68185e7511efae406eb1370b4b0dd8b856f58917..70666d493584ba59e78cdf20dab5eb4eda239f82 100644
+--- a/projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json
+@@ -156,7 +156,8 @@
+         "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata",
+         "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
+         "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
+-        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay"
++        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
++        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay"
+       ],
+       "command": [
+         "cargo",
+@@ -391,9 +392,11 @@
+     "decisions_blob": "d1548850db93952aaf4920eee05c2d3098e9ed60",
+     "typed_fields": "Validate each known string, message metadata and uint32 occurrence before retaining a legal repeated value.",
+     "timed_shell": "Inspect all events before terminal publication/watcher; preserve late stdout/stderr and hook metadata, refuse conflicting terminal results.",
+-    "state": "Prior three corrections retained and two R2 source-grounded known-refusal corrections authored; fresh R3 focused review and exact-H runtime proof pending.",
++    "state": "Production corrections retained; direct consumer-oracle gap repaired without requirement relaxation. Fresh R4 focused review and final exact-H runtime proof pending.",
+     "prior_round_decisions_blob": "61e447248004217d901bf92e64002b6f32811390",
+-    "sandbox_refusal": "Use frozen STRING policy field3 on background field5 and timed field9, preserve valid known refusal without watcher/replay, reject malformed occurrences, and retain all conflicting-terminal controls. Do not invent a foreground ShellResult variant."
++    "sandbox_refusal": "Use frozen STRING policy field3 on background field5 and timed field9, preserve valid known refusal without watcher/replay, reject malformed occurrences, and retain all conflicting-terminal controls. Do not invent a foreground ShellResult variant.",
++    "consumer_oracle_decision_blob": "6e2c060d1e8a8cd0ccc985265184e86d8912fd1a",
++    "consumer_oracle": "The same frozen raw malformed-policy cases now pass through the actual registered Runner→ForeverBox→TCP chain for background, block-zero and timed modes, retaining exact ToolOutcomeUnknown causes, one Exec and zero watches. The actual consumer positive also includes valid repeated-last policy strings."
+   },
+   "adjacent_shell_semantic_inputs": [
+     {
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index 9bc91cc8ff3dc0616aaf2f7259eb68c1e546df38..9e06fcd7d173479f26a02d342d83b311a84d5b56 100644
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -1126,7 +1126,8 @@
+         "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata",
+         "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
+         "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
+-        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay"
++        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
++        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay"
+ ]),
+     ("box-response-runner-bridge", base + ["--test","runner_box_tool_composition_contract","--","--test-threads=1"], [
+         "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",
+diff --git a/source/host/tests/box_generated_production_contract.rs b/source/host/tests/box_generated_production_contract.rs
+index 76fa07b6116c7d3d22951fae2d6d43c68e42c95f..c30f95dee6ffe531c4d62ecdd6e1dde8b1642054 100644
+--- a/source/host/tests/box_generated_production_contract.rs
++++ b/source/host/tests/box_generated_production_contract.rs
+@@ -2578,16 +2578,20 @@ fn production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_va
+     }
+ }
+ 
+-#[test]
+-fn production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay() {
+-    let cases = [
++fn bxr_malformed_sandbox_policy_cases() -> [(&'static str, Vec<u8>, &'static str); 6] {
++    [
+         ("varint instead of STRING", vec![0x18, 0x07], "wrong wire type"),
+         ("varint before valid STRING", vec![0x18, 0x07, 0x1a, 0x00], "wrong wire type"),
+         ("varint after valid STRING", vec![0x1a, 0x00, 0x18, 0x07], "wrong wire type"),
+         ("invalid UTF-8", vec![0x1a, 0x01, 0xff], "non-UTF-8 protobuf string"),
+         ("invalid then valid UTF-8", vec![0x1a, 0x01, 0xff, 0x1a, 0x00], "non-UTF-8 protobuf string"),
+         ("valid then invalid UTF-8", vec![0x1a, 0x00, 0x1a, 0x01, 0xff], "non-UTF-8 protobuf string"),
+-    ];
++    ]
++}
++
++#[test]
++fn production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay() {
++    let cases = bxr_malformed_sandbox_policy_cases();
+     for (scenario, policy_fields, expected_cause) in cases {
+         for field in [16, 14] {
+             let element = bxr_sandbox_refusal_element(
+@@ -2629,46 +2633,66 @@ impl RoutedToolBridge for BxrUnusedUpstream {
+     }
+ }
+ 
++fn bxr_call_registered_runner_shell(
++    port: u16,
++    pending: Arc<AtomicUsize>,
++    mode: &str,
++) -> Result<serde_json::Value, ProviderSessionError> {
++    let bridge = RunnerBoxToolBridge::new(
++        Arc::new(BxrUnusedUpstream),
++        Arc::new(bxr_forever_box_port(port, pending)),
++    );
++    let shell = bridge.list_tools().expect("real Runner Box tool catalog")
++        .into_iter()
++        .find(|tool| tool.name == RUNNER_BOX_SHELL_TOOL_NAME)
++        .expect("real Runner Shell registration");
++    let block_until_ms = match mode {
++        "timed" => Some(75),
++        "block-zero" => Some(0),
++        _ => None,
++    };
++    bridge.call_tool(&shell, serde_json::json!({
++        "command": "printf bxr-contract",
++        "workingDirectory": "/workspace",
++        "is_background": mode == "background",
++        "block_until_ms": block_until_ms,
++    }), "bxr-runner-shell")
++}
++
++fn bxr_sandbox_consumer_elements(mode: &str, nested: &[u8]) -> Vec<Vec<u8>> {
++    if mode == "timed" {
++        vec![
++            shell_stream_start_element(),
++            shell_stream_element(8, &[]),
++            bxr_sandbox_refusal_element(14, nested),
++            shell_stream_element(8, &[]),
++        ]
++    } else {
++        vec![bxr_sandbox_refusal_element(16, nested)]
++    }
++}
++
+ #[test]
+ fn forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay() {
+     for mode in ["background", "block-zero", "timed"] {
++        let mut policy_cases = Vec::new();
+         for policy in ["", "unknown", "workspace_readonly", "workspace_readonly/策略"] {
+             let mut policy_fields = Vec::new();
+             if !policy.is_empty() {
+                 push_len(3, policy.as_bytes(), &mut policy_fields);
+             }
++            policy_cases.push((policy, policy_fields));
++        }
++        let mut repeated = Vec::new();
++        push_len(3, b"old-policy", &mut repeated);
++        push_len(3, b"workspace_readonly", &mut repeated);
++        policy_cases.push(("workspace_readonly", repeated));
++        for (policy, policy_fields) in policy_cases {
+             let nested = bxr_sandbox_refusal_payload(&policy_fields);
+-            let elements = if mode == "timed" {
+-                vec![
+-                    shell_stream_start_element(),
+-                    shell_stream_element(8, &[]),
+-                    bxr_sandbox_refusal_element(14, &nested),
+-                    shell_stream_element(8, &[]),
+-                ]
+-            } else {
+-                vec![bxr_sandbox_refusal_element(16, &nested)]
+-            };
++            let elements = bxr_sandbox_consumer_elements(mode, &nested);
+             let pending = Arc::new(AtomicUsize::new(0));
+             let result = with_counted_complete_exec_reply(elements, true, |port| {
+-                let bridge = RunnerBoxToolBridge::new(
+-                    Arc::new(BxrUnusedUpstream),
+-                    Arc::new(bxr_forever_box_port(port, Arc::clone(&pending))),
+-                );
+-                let shell = bridge.list_tools().expect("real Runner Box tool catalog")
+-                    .into_iter()
+-                    .find(|tool| tool.name == RUNNER_BOX_SHELL_TOOL_NAME)
+-                    .expect("real Runner Shell registration");
+-                let block_until_ms = match mode {
+-                    "timed" => Some(75),
+-                    "block-zero" => Some(0),
+-                    _ => None,
+-                };
+-                bridge.call_tool(&shell, serde_json::json!({
+-                    "command": "printf bxr-contract",
+-                    "workingDirectory": "/workspace",
+-                    "is_background": mode == "background",
+-                    "block_until_ms": block_until_ms,
+-                }), "bxr-runner-shell")
++                bxr_call_registered_runner_shell(port, Arc::clone(&pending), mode)
+             }).expect("complete known sandbox refusal through the real Runner bridge");
+             assert_eq!(result, serde_json::json!({
+                 "kind": "sandboxUnsupported",
+@@ -2683,3 +2707,25 @@ fn forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay()
+         }
+     }
+ }
++
++
++#[test]
++fn forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay() {
++    for mode in ["background", "block-zero", "timed"] {
++        for (scenario, policy_fields, expected_cause) in bxr_malformed_sandbox_policy_cases() {
++            let nested = bxr_sandbox_refusal_payload(&policy_fields);
++            let elements = bxr_sandbox_consumer_elements(mode, &nested);
++            let pending = Arc::new(AtomicUsize::new(0));
++            let result = with_counted_complete_exec_reply(elements, true, |port| {
++                bxr_call_registered_runner_shell(port, Arc::clone(&pending), mode)
++            });
++            let error = result.expect_err(scenario);
++            assert!(matches!(&error, ProviderSessionError::ToolOutcomeUnknown(_)),
++                "{mode}, {scenario}: the real Runner must retain typed outcome uncertainty: {error:?}");
++            assert!(error.to_string().contains(expected_cause),
++                "{mode}, {scenario}: preserve the specific typed-field cause: {error:?}");
++            assert_eq!(pending.load(Ordering::SeqCst), 0,
++                "{mode}, {scenario}: malformed refusal cannot register background work");
++        }
++    }
++}

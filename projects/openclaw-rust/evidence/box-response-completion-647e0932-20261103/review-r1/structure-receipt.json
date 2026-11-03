@@ -1,0 +1,37 @@
+{
+  "schema_version": "BXR-v1.1-minimal-review-receipt",
+  "reviewer": "/root/bxr_r1_structure",
+  "lens": "structure/reuse/performance",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "configuration_provenance": "Assignment/launch record; no independent model-identity introspection",
+  "repository": "bhrumom/fabushi-desktop",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "base_tree": "158826d8a7483ad0c7182052419a48c5fb4cc210",
+  "candidate_commit": "19baca121c79f99a4955d5a0307afc4eb175601b",
+  "candidate_tree": "6037d903de1abe954db973d0da92ba1aed4e8502",
+  "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "scope_manifest_blob": "3e31be5f2e5cddc333f80f1b49071c8eaaf2ec21",
+  "complete_diff_blob": "37869b1b111db59a70a4dfc0ecd18aaaf651f5c0",
+  "declared_paths": 18,
+  "complete_declared_diff_read": true,
+  "fresh_blind_review": true,
+  "verdict": "REQUEST_CHANGES",
+  "findings": [
+    {
+      "finding_id": "BXR-SRP-001",
+      "severity": "P2"
+    }
+  ],
+  "source_execution": "None; no build, test, parser, validator, generator, benchmark or application execution",
+  "original_full_report": {
+    "digest_subject": "Exact cached UTF-8 report payload submitted to the rejected create_blob call; excludes subsequent chat preface and formatting changes",
+    "utf8_bytes": 18418,
+    "sha256": "fe1529b9ce0af858ca20ad0e9f4112e4df4e4328111847da851b8c248ff2715d",
+    "retention": "Current task conversation only",
+    "github_blob": null,
+    "save_status": "Rejected by automatic approval review",
+    "cloud_save_claimed": false
+  },
+  "followup_actions": "Cached payload byte accounting only in reviewer. Root saves this materially smaller non-code attestation, not the rejected source-derived report."
+}

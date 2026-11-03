@@ -118,3 +118,108 @@ fn shipping_supervisor_spawns_authenticates_and_closes_real_daemon_when_provided
     );
     let _ = fs::remove_dir_all(root);
 }
+
+#[cfg(unix)]
+#[test]
+#[ignore = "requires the actual daemon binary built by the exact-H Actions lane"]
+fn box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion() {
+    use mahayana_host_runtime::r#box::box_file_transfer::{FileTransferAccessor, WriteExecResult};
+    use mahayana_host_runtime::r#box::box_shell_command::{HostShellArgsInput, build_host_shell_args};
+    use mahayana_host_runtime::r#box::generated_production::{
+        ProductionReadArgs, ProductionReadOutput, ProductionReadResult,
+        ProductionShellResult, create_production_box_resource_accessor,
+    };
+
+    let executable = PathBuf::from(
+        std::env::var_os("FABUSHI_BOX_EXEC_DAEMON_TEST_BIN")
+            .expect("this explicitly selected live contract requires the real daemon binary"),
+    );
+    assert!(executable.is_file(), "real daemon executable is absent");
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-box-response-roundtrip-{}",
+        uuid::Uuid::new_v4(),
+    ));
+    let workspace = root.join("workspace");
+    fs::create_dir_all(&workspace).expect("private fixture workspace");
+    let port = free_loopback_port();
+    let auth_token = format!("bxr-test-{}", uuid::Uuid::new_v4());
+    let mut owned = start_box_exec_daemon_process(BoxExecDaemonProcessOptions {
+        executable_path: executable,
+        host: "127.0.0.1".into(),
+        port,
+        auth_token: auth_token.clone(),
+        workspace_root: workspace.clone(),
+        terminals_directory: root.join("terminals"),
+        start_timeout_ms: 5_000,
+        stop_timeout_ms: 2_000,
+    }).expect("start the actual owned daemon");
+    assert!(owned.pid > 0);
+
+    let endpoint = BoxEndpoint::new("127.0.0.1", port, auth_token);
+    let transport = ProductionBoxTransport::from_endpoint(&endpoint);
+    let mut accessor = create_production_box_resource_accessor(&transport);
+
+    // The same real accessor starts at proto3 id0 and then uses nonzero IDs.
+    // Every returned success passes the production identity, close, Connect and
+    // chunked-HTTP checks against the actual daemon producer.
+    let shell = accessor.execute_shell_result(
+        &(),
+        build_host_shell_args(HostShellArgsInput {
+            command: "printf bxr-real-daemon".into(),
+            name: "printf".into(),
+            working_directory: "/workspace".into(),
+            tool_call_id: "bxr-live-shell".into(),
+        }),
+    ).expect("actual default-zero Shell response completed");
+    assert_eq!(
+        shell,
+        ProductionShellResult::Success {
+            exit_code: 0,
+            stdout: "bxr-real-daemon".into(),
+            stderr: String::new(),
+        },
+    );
+
+    let binary = vec![0, 0xff, b'B', b'X', b'R', b'\n', 0x80];
+    assert_eq!(
+        accessor.execute_write(&(), "/workspace/roundtrip.bin", &binary, "bxr-live-write")
+            .expect("actual nonzero Write response completed"),
+        WriteExecResult::Success,
+    );
+    assert_eq!(fs::read(workspace.join("roundtrip.bin")).expect("real file bytes"), binary);
+    let read = accessor.execute_read(&(), ProductionReadArgs {
+        path: "/workspace/roundtrip.bin".into(),
+        tool_call_id: "bxr-live-read".into(),
+        offset: None,
+        limit: None,
+        encoding_hint: None,
+    }).expect("actual nonzero binary Read response completed");
+    match read {
+        ProductionReadResult::Success { output: ProductionReadOutput::Data(bytes), .. } => {
+            assert_eq!(bytes, binary);
+        }
+        other => panic!("binary output was lost or lossily decoded: {other:?}"),
+    }
+
+    assert_eq!(
+        accessor.execute_write(&(), "/workspace/roundtrip.txt", b"readable", "bxr-live-text-write")
+            .expect("actual text Write completed"),
+        WriteExecResult::Success,
+    );
+    let text = accessor.execute_read(&(), ProductionReadArgs {
+        path: "/workspace/roundtrip.txt".into(),
+        tool_call_id: "bxr-live-text-read".into(),
+        offset: None,
+        limit: None,
+        encoding_hint: None,
+    }).expect("actual text Read completed");
+    match text {
+        ProductionReadResult::Success { output: ProductionReadOutput::Content(text), .. } => {
+            assert_eq!(text, "readable");
+        }
+        other => panic!("text output changed representation: {other:?}"),
+    }
+
+    owned.close().expect("close only the daemon owned by this fixture");
+    fs::remove_dir_all(&root).expect("remove only the owned fixture directory");
+}

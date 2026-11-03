@@ -75,7 +75,8 @@ fn large_mcp_text_is_materialized_into_agent_box_once() {
             {"type":"text","text":"beta"}
         ]
     });
-    let spilled = maybe_spill_mcp_text_result(&box_port, original, "tool-call-7", 4);
+    let spilled = maybe_spill_mcp_text_result(&box_port, original, "tool-call-7", 4)
+        .expect("confirmed spill");
 
     let content = spilled["content"].as_array().expect("content");
     assert_eq!(content.len(), 2);
@@ -103,7 +104,7 @@ fn small_error_and_failed_write_results_stay_inline() {
     let box_port = RecordingBox::default();
     let small = json!({"content":[{"type":"text","text":"short"}]});
     assert_eq!(
-        maybe_spill_mcp_text_result(&box_port, small.clone(), "small", 100),
+        maybe_spill_mcp_text_result(&box_port, small.clone(), "small", 100).expect("small result"),
         small
     );
     let errored = json!({
@@ -111,12 +112,12 @@ fn small_error_and_failed_write_results_stay_inline() {
         "content":[{"type":"text","text":"x".repeat(100)}]
     });
     assert_eq!(
-        maybe_spill_mcp_text_result(&box_port, errored.clone(), "error", 1),
+        maybe_spill_mcp_text_result(&box_port, errored.clone(), "error", 1).expect("existing error result"),
         errored
     );
     let large = json!({"content":[{"type":"text","text":"x".repeat(100)}]});
     assert_eq!(
-        maybe_spill_mcp_text_result(&FailingBox, large.clone(), "failed", 1),
+        maybe_spill_mcp_text_result(&FailingBox, large.clone(), "failed", 1).expect("known refusal keeps inline output"),
         large
     );
     assert!(box_port.writes.lock().expect("writes").is_empty());
@@ -137,7 +138,54 @@ fn spill_policy_matches_frozen_threshold_disable_and_cap_contracts() {
         json!({"content":[{"type":"text","text":oversized}]}),
         "cap",
         1,
-    );
+    ).expect("bounded spill");
     let writes = box_port.writes.lock().expect("writes");
     assert_eq!(writes[0].data.len(), MAX_OUTPUT_FILE_SIZE);
+}
+
+#[derive(Default)]
+struct UnknownWriteBox {
+    writes: Mutex<Vec<RunnerBoxWriteRequest>>,
+}
+
+impl RunnerBoxResourcePort for UnknownWriteBox {
+    fn execute_shell(
+        &self,
+        _request: RunnerBoxShellRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        unreachable!("spill must not execute Shell")
+    }
+
+    fn execute_read(
+        &self,
+        _request: RunnerBoxReadRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        unreachable!("spill must not execute Read")
+    }
+
+    fn execute_write(
+        &self,
+        request: RunnerBoxWriteRequest,
+    ) -> Result<(), ProviderSessionError> {
+        self.writes.lock().expect("writes").push(request);
+        Err(ProviderSessionError::ToolOutcomeUnknown("box unavailable".into()))
+    }
+}
+
+#[test]
+fn unknown_spill_write_is_not_published_as_inline_success_or_retried() {
+    let box_port = UnknownWriteBox::default();
+    let original = json!({"content":[{"type":"text","text":"large tool output"}]});
+    let result = maybe_spill_mcp_text_result(&box_port, original, "unknown-spill", 1);
+    match result {
+        Err(ProviderSessionError::ToolOutcomeUnknown(message)) => {
+            assert_eq!(message, "box unavailable");
+        }
+        other => panic!("unknown write must not publish a successful result: {other:?}"),
+    }
+    let writes = box_port.writes.lock().expect("writes");
+    assert_eq!(writes.len(), 1, "an ambiguous write must never be replayed");
+    assert_eq!(writes[0].tool_call_id, "unknown-spill");
+    assert_eq!(writes[0].data, b"large tool output");
+    assert!(writes[0].path.starts_with(".sand/tools/"));
 }

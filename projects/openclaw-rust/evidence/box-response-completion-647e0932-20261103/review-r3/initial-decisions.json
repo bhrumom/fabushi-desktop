@@ -1,0 +1,35 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "round": 3,
+  "subject_commit": "7ba15a8dd24554c9d796702468576e970cad93d5",
+  "subject_tree": "c5ce21f37416257cc38d05649d9a6a8a48b493a4",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "status": "Initial source-grounded oracle decision before repair; complete R3 reports remain pending.",
+  "decisions": [
+    {
+      "id": "BXR-R3-ROOT-01",
+      "decision": "FIX",
+      "severity": "P2",
+      "classification": "SOURCE_PROVEN_CONSUMER_ORACLE_COVERAGE_GAP_NOT_OBSERVED_RUNTIME_FAILURE",
+      "path": "source/host/tests/box_generated_production_contract.rs",
+      "requirement": {
+        "path": "docs/specs/g11-box-browser-wire-completion.md",
+        "blob": "3c9e819e46efc79392c4079dabf4c3a27c2f443d",
+        "contract": "BXR-v1.3 requires actual background/timed consumer repeated-string positives and malformed-policy negatives with one request and no watcher."
+      },
+      "failure": "Current raw typed-policy cases exercise ProductionBoxResourceAccessor. The actual registered Runner→ForeverBox positive covers omission and single valid policy strings only. This cannot directly decide the stipulated consumer behavior for a valid repeated string or malformed policy occurrence.",
+      "repair": "Retain every current assertion and requirement. Reuse the same frozen raw-case data and real Runner setup, extend the existing consumer positive with valid repeated-last strings, and add a named actual Runner/ForeverBox malformed-policy negative for background, block-zero and timed modes. Require ToolOutcomeUnknown with the specific original cause, one Exec and zero watcher registration.",
+      "necessary_oracle": "Wrong wire, wrong wire before/after a valid occurrence, invalid UTF-8, invalid before/after a valid occurrence at the actual registered Runner route; repeated valid string retains last value. No fallback/upstream dispatch, no watcher, one request.",
+      "fix_paths": [
+        "source/host/tests/box_generated_production_contract.rs",
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json"
+      ],
+      "reason_no_spec_relaxation": "The existing v1.3 requirement remains unchanged; the direct observation is made strong enough to decide it."
+    }
+  ],
+  "phase_effort": "Configured root retained; xhigh-class oracle repair and evidence design. Accepted launch metadata, not prompt wording, governs worker settings.",
+  "execution": "No local/htch validation or CI campaign. This is a source coverage gap, not a failed Actions observation.",
+  "all8global_flags_remain_false": true
+}

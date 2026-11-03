@@ -233,6 +233,54 @@ inputs = [
 inputs = sorted(set(inputs) | {"source/host/build.rs", "source/host/tests/generated_occurrence_codec_contract.rs"} | {
     str(path) for path in pathlib.Path("source/packages/proto/generated").rglob("*.ts")
 })
+# BXR-v1.3 binds the actual Box owner, all changed consumers and the existing
+# daemon producer separately from unrelated portable-source coverage.
+box_response_inputs = [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "docs/specs/g11-box-browser-wire-completion.md",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "projects/openclaw-rust/upstream.lock.json",
+    "source/box-exec-daemon/Cargo.toml",
+    "source/box-exec-daemon/src/cli.rs",
+    "source/box-exec-daemon/src/lib.rs",
+    "source/box-exec-daemon/src/main.rs",
+    "source/box-exec-daemon/src/server.rs",
+    "source/box-exec-daemon/src/workspace_write.rs",
+    "source/host/Cargo.lock",
+    "source/host/Cargo.toml",
+    "source/host/build.rs",
+    "source/host/src/box/box_file_transfer.rs",
+    "source/host/src/box/box_remote_accessor.rs",
+    "source/host/src/box/box_shell_command.rs",
+    "source/host/src/box/exec_daemon_process.rs",
+    "source/host/src/box/generated_production.rs",
+    "source/host/src/box/mod.rs",
+    "source/host/src/box/protected_path_guard.rs",
+    "source/host/src/extensions/forever_box/runner_tools.rs",
+    "source/host/src/extensions/inference/provider_session.rs",
+    "source/host/src/runner/box_tool_access.rs",
+    "source/host/src/runner/large_output_spill.rs",
+    "source/host/src/runner/remote_box_resources.rs",
+    "source/host/src/runner/runner_prompt_glue.rs",
+    "source/host/src/runner/sand_action_audit.rs",
+    "source/host/src/runner/tools/mcp_meta_tools.rs",
+    "source/host/tests/box_exec_daemon_process_contract.rs",
+    "source/host/tests/box_generated_production_contract.rs",
+    "source/host/tests/box_remote_accessor_contract.rs",
+    "source/host/tests/large_output_spill_contract.rs",
+    "source/host/tests/runner_box_tool_composition_contract.rs",
+    "source/host/tests/runner_effect_custody_contract.rs",
+    "source/host/tests/runner_prompt_glue_contract.rs",
+    "source/packages/agent-exec/shell-stream.ts",
+    "source/packages/agent/tools/core/shell/create-shell-tool.ts",
+    "source/packages/local-exec/background-shell.ts",
+    "source/packages/local-exec/shell-stream.ts",
+    "source/packages/proto/generated/agent/v1/background_shell_exec_pb.ts",
+    "source/packages/proto/generated/agent/v1/exec_pb.ts",
+    "source/packages/proto/generated/agent/v1/exec_service_pb.ts",
+    "source/packages/proto/generated/agent/v1/shell_exec_pb.ts"
+]
+inputs = sorted(set(inputs) | set(box_response_inputs))
 base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
 integration = base + ["--no-fail-fast"]
 for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
@@ -755,6 +803,20 @@ cases = [
         "accepted_checkpoint_retry_refuses_a_changed_fabushi_account",
         "accepted_checkpoint_retry_accepts_same_context_token_rotation",
         "admitted_turn_summary_retains_fabushi_model_and_request_binding",
+        "responses_effects_after_checkpoint_without_checkpoint_and_between_calls_do_not_replay",
+        "responses_checkpoint_io_failure_expiry_and_new_effect_cannot_accept_stale_coverage",
+        "responses_pre_effect_retry_and_safe_checkpoint_retry_keep_model_and_completed_tool",
+        "downstream_unknown_outcomes_block_responses_checkpoint_and_replay_after_local_return",
+        "definitive_relay_results_remain_checkpoint_eligible_and_preserve_returned_data",
+        "prepublication_refusal_and_list_failure_add_no_unknown_effect_custody",
+        "timed_out_tool_keeps_worker_receipt_and_late_result_stays_unknown_across_attempts",
+        "a_lost_tool_worker_cannot_turn_error_json_into_an_accepted_checkpoint",
+        "user_cancellation_between_tools_and_during_checkpoint_io_wins_without_retry",
+        "real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects",
+        "real_mcp_response_loss_refuses_more_effects_on_the_same_attempt",
+        "real_mcp_effect_prevents_provider_retry_after_attempt_expiry",
+        "production_fabushi_executor_refuses_replay_after_tool_expiry",
+        "production_generated_runner_preserves_terminal_tool_custody",
     ]),
     ("memory-account-binding", base + ["--test", "fabushi_model_identity_production_contract", "same_runner_nudges_and_turn_memory_", "--", "--test-threads=1"], [
         "same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account",
@@ -1012,6 +1074,96 @@ cases = [
         "host_runner_composition_owns_transcript_checkpoint_wiring",
         "shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror",
     ]),
+    ("box-response-manager", base + ["--test","box_remote_accessor_contract","--","--test-threads=1"], [
+        "box_remote_accessor_builds_authenticated_binary_http11_transport",
+        "box_remote_accessor_classifies_ping_failures_and_latency_like_grok",
+        "box_remote_exec_manager_allocates_ids_filters_control_and_surfaces_remote_throw",
+        "box_remote_resource_accessor_composes_transport_client_and_manager",
+        "box_remote_exec_manager_preserves_ordered_data_and_heartbeat_before_close",
+        "box_remote_exec_manager_requires_matching_data_and_control_identity",
+        "box_remote_exec_manager_requires_one_final_stream_close",
+        "box_remote_exec_manager_default_throw_id_is_only_request_zero",
+        "box_remote_exec_manager_foreign_throw_cannot_become_remote_error",
+        "box_remote_exec_manager_preserves_transport_loss_without_replay_or_id_reuse"
+]),
+    ("box-response-codec", base + ["--test","box_generated_production_contract","--","--test-threads=1"], [
+        "production_exec_service_background_shell_spawn_uses_frozen_field_16_and_real_shell_id",
+        "production_exec_service_preserves_shell_stdout_for_internal_consumers",
+        "production_exec_service_streams_shell_and_write_through_shipping_accessor",
+        "production_loopback_factory_gates_exec_accessor_on_authenticated_readiness",
+        "production_exec_service_reads_through_protected_shipping_accessor",
+        "production_exec_service_computer_use_has_remote_and_no_monitor_paths",
+        "production_exec_service_shell_stream_uses_frozen_field_14_and_real_backgrounded_wire",
+        "forever_box_runner_resource_port_background_spawn_registers_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_positive_block_backgrounds_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_reuses_authenticated_shipping_exec_service_for_turn",
+        "production_exec_service_accepts_default_identity_and_nonzero_sequential_echo",
+        "production_exec_service_decodes_metadata_on_both_sides_of_exec_and_shell_payloads",
+        "production_exec_service_preserves_binary_read_bytes_with_complete_identity_and_framing",
+        "production_exec_service_accepts_valid_chunk_extensions_trailers_and_length_or_close_delimiting",
+        "production_exec_service_retains_matching_throw_and_connect_error_details",
+        "production_exec_service_rejects_malformed_identity_metadata_and_ambiguous_oneofs",
+        "production_exec_service_rejects_foreign_data_exec_id_heartbeat_close_and_throw",
+        "production_exec_service_does_not_accept_omitted_zero_identity_for_a_nonzero_request",
+        "production_exec_service_requires_exactly_one_close_after_data",
+        "production_exec_service_requires_one_legal_final_connect_end",
+        "production_exec_service_rejects_incomplete_or_ambiguous_http_framing",
+        "production_exec_service_all_one_shot_accessors_require_one_expected_result",
+        "production_exec_service_preserves_ordered_shell_stream_and_rejects_mixed_operations",
+        "production_exec_service_distinguishes_pre_write_refusal_and_local_guards_from_unknown",
+        "production_exec_service_rejects_out_of_range_direct_client_id_before_connect",
+        "production_exec_service_wraps_post_write_status_and_eof_once_with_original_cause",
+        "production_exec_service_never_replays_a_request_after_lost_completion",
+        "forever_box_runner_resource_port_preserves_unknown_shell_read_write_and_background_outcomes",
+        "forever_box_runner_resource_port_preserves_unknown_missing_terminal_and_invalid_background_id",
+        "forever_box_runner_resource_port_keeps_no_monitor_as_pre_dispatch_refusal",
+        "production_exec_service_rejects_invalid_control_identity_and_multiple_control_cases",
+        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results",
+        "production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once",
+        "production_exec_service_rejects_shadowed_uint32_overflow_once",
+        "production_exec_service_preserves_valid_repeated_typed_fields_and_last_values",
+        "forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch",
+        "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata",
+        "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
+        "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
+        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
+        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay"
+]),
+    ("box-response-runner-bridge", base + ["--test","runner_box_tool_composition_contract","--","--test-threads=1"], [
+        "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",
+        "runner_box_bridge_preserves_explicit_background_and_positive_block_until_semantics",
+        "runner_box_bridge_preserves_upstream_dispatch_and_fails_closed_on_name_collision",
+        "runner_box_bridge_validates_model_arguments_before_host_resource_execution",
+        "runner_box_shell_review_fences_side_effect_before_resource_execution",
+        "runner_box_bridge_preserves_unknown_box_execution_outcomes",
+        "runner_box_bridge_preserves_known_box_refusals",
+        "runner_box_bridge_preserves_unknown_mcp_spill_write_without_replay",
+        "runner_box_bridge_keeps_known_mcp_spill_refusal_inline_without_replay"
+]),
+    ("box-response-spill", base + ["--test","large_output_spill_contract","--","--test-threads=1"], [
+        "large_mcp_text_is_materialized_into_agent_box_once",
+        "small_error_and_failed_write_results_stay_inline",
+        "spill_policy_matches_frozen_threshold_disable_and_cap_contracts",
+        "unknown_spill_write_is_not_published_as_inline_success_or_retried"
+]),
+    ("box-response-prompt-glue", base + ["--test","runner_prompt_glue_contract","--","--test-threads=1"], [
+        "glue_reuses_file_transfer_owner_and_prompt_collector_projection",
+        "glue_applies_single_large_output_spill_policy",
+        "live_owner_reads_mutable_prompt_inputs_at_phase_time",
+        "shipping_host_routes_mutable_prompt_surfaces_through_runner_owner",
+        "glue_preserves_unknown_spill_and_disabled_policy_without_replay"
+]),
+    ("box-response-manager-exhaustion", base + ["--lib","box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport","--","--test-threads=1"], [
+        "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
+]),
+    ("box-response-forever-box", base + ["--lib","extensions::forever_box::runner_tools::tests::","--","--test-threads=1"], [
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_stdout_for_navigation_probes",
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_failure_diagnostics",
+        "extensions::forever_box::runner_tools::tests::computer_use_preserves_unknown_outcomes_from_incomplete_wire_completion"
+]),
+    ("box-response-real-daemon", base + ["--test","box_exec_daemon_process_contract","box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion","--","--exact","--ignored","--test-threads=1"], [
+        "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+]),
 ]
 def successful_test_names(output):
     # libtest decorates an expected-panic success without changing its name.
@@ -1056,7 +1208,90 @@ for label, output, cargo_exit, capture_exit, expected in [
     oracle_controls.append({"case": label, "expected": expected, "actual": actual})
     assert actual == expected, f"CRA result oracle control failed: {label}"
 
+
+# BXR name normalization is limited to the source spelling of the one raw
+# keyword module. Both legal libtest spellings map to one exact required name;
+# duplicate aliases, foreign owners and additional positives are rejected.
+box_response_exhaustion_name = "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
+box_response_filtered_cases = {"box-response-manager-exhaustion", "box-response-forever-box", "box-response-real-daemon"}
+
+def box_response_observed_names(output):
+    names = successful_test_names(output.replace("\r\n", "\n"))
+    return [box_response_exhaustion_name if name == "r#" + box_response_exhaustion_name else name
+        for name in names]
+
+def box_response_results_accepted(label, cargo_exit, capture_exit, required, output):
+    text = output.replace("\r\n", "\n")
+    names = box_response_observed_names(text)
+    complete = [tuple(map(int, row)) for row in re.findall(
+        r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$", text, re.MULTILINE)]
+    return (cargo_exit == 0 and capture_exit == 0 and bool(required)
+        and len(set(required)) == len(required)
+        and sorted(names) == sorted(required)
+        and len(complete) == 1
+        and complete[0][:4] == (len(required), 0, 0, 0)
+        and (label in box_response_filtered_cases or complete[0][4] == 0))
+
+box_response_positive = (
+    f"test {box_response_exhaustion_name} ... ok\n"
+    "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s\n"
+)
+box_response_oracle_controls = []
+for label, case, output, cargo_exit, capture_exit, expected in [
+    ("exact-owner-positive", "box-response-manager-exhaustion", box_response_positive, 0, 0, True),
+    ("raw-keyword-owner-positive", "box-response-manager-exhaustion", box_response_positive.replace("test box::", "test r#box::"), 0, 0, True),
+    ("crlf-positive", "box-response-manager-exhaustion", box_response_positive.replace("\n", "\r\n"), 0, 0, True),
+    ("missing-positive", "box-response-manager-exhaustion", box_response_positive.split("\n", 1)[1], 0, 0, False),
+    ("duplicate-positive", "box-response-manager-exhaustion", box_response_positive + f"test {box_response_exhaustion_name} ... ok\n", 0, 0, False),
+    ("duplicate-raw-alias", "box-response-manager-exhaustion", box_response_positive + f"test r#{box_response_exhaustion_name} ... ok\n", 0, 0, False),
+    ("foreign-owner", "box-response-manager-exhaustion", box_response_positive.replace("box::box_remote_accessor::", "other::box_remote_accessor::"), 0, 0, False),
+    ("unexpected-positive", "box-response-manager-exhaustion", box_response_positive + "test unrelated ... ok\n", 0, 0, False),
+    ("ignored-positive", "box-response-manager-exhaustion", box_response_positive.replace(" ... ok", " ... ignored"), 0, 0, False),
+    ("ignored-summary", "box-response-manager-exhaustion", box_response_positive.replace("0 ignored", "1 ignored"), 0, 0, False),
+    ("zero-tests", "box-response-manager-exhaustion", "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n", 0, 0, False),
+    ("duplicate-summary", "box-response-manager-exhaustion", box_response_positive + box_response_positive.split("\n", 1)[1], 0, 0, False),
+    ("command-refusal", "box-response-manager-exhaustion", box_response_positive, 101, 0, False),
+    ("capture-refusal", "box-response-manager-exhaustion", box_response_positive, 0, 1, False),
+    ("unexpected-measured", "box-response-manager-exhaustion", box_response_positive.replace("0 measured", "1 measured"), 0, 0, False),
+    ("filtered-whole-target", "box-response-manager", box_response_positive, 0, 0, False),
+]:
+    actual = box_response_results_accepted(case, cargo_exit, capture_exit,
+        [box_response_exhaustion_name], output)
+    box_response_oracle_controls.append({"case": label, "expected": expected, "actual": actual})
+    assert actual == expected, f"BXR result oracle control failed: {label}"
+
+box_daemon_lock = pathlib.Path("source/box-exec-daemon/Cargo.lock")
+box_daemon_lock_tracked = subprocess.run(
+    ["git", "cat-file", "-e", f"{head}:source/box-exec-daemon/Cargo.lock"],
+    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode == 0
+if box_daemon_lock_tracked:
+    box_response_inputs.append(str(box_daemon_lock))
+    inputs = sorted(set(inputs) | {str(box_daemon_lock)})
+else:
+    assert not box_daemon_lock.exists(), "Untracked daemon lock would be an unbound build input"
+
+def box_response_source_bindings():
+    bindings = {}
+    for path in box_response_inputs:
+        actual = pathlib.Path(path).read_bytes()
+        committed = subprocess.check_output(["git", "show", f"{head}:{path}"])
+        bindings[path] = {
+            "git_blob": subprocess.check_output(["git", "rev-parse", f"{head}:{path}"], text=True).strip(),
+            "sha256": hashlib.sha256(actual).hexdigest(), "bytes": len(actual),
+            "matches_head_bytes": actual == committed,
+        }
+    return bindings
+
+box_response_inputs_before = box_response_source_bindings()
+assert all(item["matches_head_bytes"] for item in box_response_inputs_before.values()), "BXR source input differs from exact H"
+
+
 receipt = {
+    "box_response_contract": "BXR-v1.3",
+    "box_response_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
+    "box_response_inputs_before": box_response_inputs_before,
+    "box_response_result_oracle_controls": box_response_oracle_controls,
+    "box_response_required_downstream_custody_names": ["responses_effects_after_checkpoint_without_checkpoint_and_between_calls_do_not_replay","responses_checkpoint_io_failure_expiry_and_new_effect_cannot_accept_stale_coverage","responses_pre_effect_retry_and_safe_checkpoint_retry_keep_model_and_completed_tool","downstream_unknown_outcomes_block_responses_checkpoint_and_replay_after_local_return","definitive_relay_results_remain_checkpoint_eligible_and_preserve_returned_data","prepublication_refusal_and_list_failure_add_no_unknown_effect_custody","timed_out_tool_keeps_worker_receipt_and_late_result_stays_unknown_across_attempts","a_lost_tool_worker_cannot_turn_error_json_into_an_accepted_checkpoint","user_cancellation_between_tools_and_during_checkpoint_io_wins_without_retry","real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects","real_mcp_response_loss_refuses_more_effects_on_the_same_attempt","real_mcp_effect_prevents_provider_retry_after_attempt_expiry","production_fabushi_executor_refuses_replay_after_tool_expiry","production_generated_runner_preserves_terminal_tool_custody"],
     "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
     "fresh_bearer_admission_scope": "Actual existing pairing owner refuses a fresh proof when the approved role or whole canonical live grant is no longer current, preserves fixed decisive-storage errors and exact durable state, and admits repaired valid state after reopen. Retained proof checks keep their existing issuer and late-admission semantics. Actual HTTP config.set through the App Settings helper and shipping source bindings are separately required in the App receipt; these owner controls do not establish full App construction, remote handshake, last-use writes, issuer-generation or physical-device acceptance.",
     "media_settlement_support_scope": "MSU-v1 support only: actual Tool construction-error classification and the independently bounded media COMMIT adapter/consumer proof, composed with all retained channel/admission/raw-COMMIT controls. Real file-backed media DB faults and local cleanup states are required by the separate native-media receipt; eight private App/Session/Runner cases and ordinary shipping feature-off compilation are required by the separate Linux App receipt. No runtime or full acceptance is inferred from source-oracle positives.",
@@ -1107,22 +1342,82 @@ print(constructor_raw.decode("utf-8", errors="replace"), flush=True)
 print(json.dumps({"mcp_origin_constructor_compile": constructor_check}), flush=True)
 if not constructor_passed:
     raise SystemExit(constructor_check["cargo_exit"] or constructor_check["capture_exit"] or 1)
+
+# The existing producer has no tracked lock at the initial BXR base. Preserve
+# its generated resolution as an output, never describe it as an H-bound input,
+# and use --locked automatically after that exact output has been committed.
+daemon_command = ["cargo", "build", "--manifest-path", "source/box-exec-daemon/Cargo.toml",
+    "--bin", "box-exec-daemon", "--target-dir", "source/box-exec-daemon/target"]
+if box_daemon_lock_tracked:
+    daemon_command.insert(2, "--locked")
+daemon_log = root / "box-response-daemon-build.log"
+daemon_binary = pathlib.Path("source/box-exec-daemon/target/debug/box-exec-daemon").resolve()
+daemon_build = {"command": daemon_command, "cargo_exit": None, "capture_exit": 0,
+    "log": daemon_log.name, "execution_error": None, "result": "failed-or-incomplete",
+    "lock_was_exact_h_source_input": box_daemon_lock_tracked,
+    "binary": str(daemon_binary), "binary_sha256_before_cases": None}
+receipt["box_response_daemon_build"] = daemon_build
+(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+daemon_raw = b""
+try:
+    with daemon_log.open("wb") as output:
+        daemon_build["cargo_exit"] = subprocess.run(daemon_command,
+            stdout=output, stderr=subprocess.STDOUT, check=False).returncode
+    daemon_raw = daemon_log.read_bytes()
+except OSError as error:
+    daemon_build["capture_exit"] = 1
+    daemon_build["execution_error"] = str(error)
+daemon_build["log_sha256"] = hashlib.sha256(daemon_raw).hexdigest()
+daemon_passed = (daemon_build["cargo_exit"] == 0 and daemon_build["capture_exit"] == 0
+    and box_daemon_lock.is_file() and daemon_binary.is_file())
+if box_daemon_lock.is_file():
+    resolved_lock = box_daemon_lock.read_bytes()
+    (root / "box-response-daemon-resolved.Cargo.lock").write_bytes(resolved_lock)
+    daemon_build["resolved_lock"] = {
+        "path": "box-response-daemon-resolved.Cargo.lock",
+        "sha256": hashlib.sha256(resolved_lock).hexdigest(), "bytes": len(resolved_lock),
+        "utf8": resolved_lock.decode("utf-8"),
+        "role": "exact-H source input" if box_daemon_lock_tracked else "build-generated output; dependency closure not yet source-frozen",
+    }
+if daemon_passed:
+    daemon_bytes = daemon_binary.read_bytes()
+    daemon_build["binary_sha256_before_cases"] = hashlib.sha256(daemon_bytes).hexdigest()
+    daemon_build["binary_bytes"] = len(daemon_bytes)
+daemon_build["result"] = "compiled-and-bound" if daemon_passed else "failed-or-incomplete"
+(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+print(daemon_raw.decode("utf-8", errors="replace"), flush=True)
+print(json.dumps({"box_response_daemon_build": daemon_build}), flush=True)
+
 for label, command, required in cases:
     receipt["active_case"] = label
     (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     log_path = root / (label + ".log")
     cargo_exit, capture_exit, execution_error = None, 0, None
     raw = b""
+    child_environment_overrides = {}
+    if label.startswith("box-response-"):
+        child_environment_overrides["SAND_DISABLE_LARGE_OUTPUT_SPILL"] = "0"
+    if label == "box-response-real-daemon" and daemon_passed:
+        child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_TEST_BIN"] = str(daemon_binary)
+    child_environment = dict(os.environ, **child_environment_overrides) if child_environment_overrides else None
     try:
-        with log_path.open("wb") as output:
-            completed = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)
-        cargo_exit = completed.returncode
-        raw = log_path.read_bytes()
+        if label == "box-response-real-daemon" and not daemon_passed:
+            capture_exit = 1
+            execution_error = "BXR real daemon control blocked: the current build did not produce a bound executable"
+            raw = (execution_error + "\n").encode("utf-8")
+            log_path.write_bytes(raw)
+        else:
+            with log_path.open("wb") as output:
+                completed = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT,
+                    check=False, env=child_environment)
+            cargo_exit = completed.returncode
+            raw = log_path.read_bytes()
     except OSError as error:
         capture_exit, execution_error = 1, str(error)
     text = raw.decode("utf-8", errors="replace")
     print(text, flush=True)
-    passed = successful_test_names(text)
+    raw_passed = successful_test_names(text)
+    passed = box_response_observed_names(text) if label.startswith("box-response-") else raw_passed
     missing = [name for name in required if passed.count(name) != 1]
     counts = successful_test_summaries(text)
     accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
@@ -1145,8 +1440,15 @@ for label, command, required in cases:
     if label == "mcp-origin-canonical-boundary":
         accepted = (accepted and len(counts) == 1 and counts[0][2] == 0
             and counts[0][0] == len(passed) and len(passed) >= len(required))
+    if label.startswith("box-response-"):
+        accepted = box_response_results_accepted(label, cargo_exit, capture_exit, required, text)
+        complete_counts = [tuple(map(int, count)) for count in re.findall(
+            r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
+            text.replace("\r\n", "\n"), re.MULTILINE)]
     receipt["executions"].append({
         "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,
+        "child_environment_overrides": child_environment_overrides,
+        "observed_raw_passed_test_names": raw_passed,
         "execution_error": execution_error, "required_positive_names": required,
         "missing_or_nonunique_positive_results": missing, "observed_passed_test_names": passed,
         "summaries_passed_failed_ignored": counts, "complete_summaries": complete_counts, "oracle_accepted": accepted,
@@ -1158,7 +1460,23 @@ palette_exported = palette_fixture.is_file()
 receipt["palette_export"] = {"path": str(palette_fixture),
     "sha256": hashlib.sha256(palette_fixture.read_bytes()).hexdigest() if palette_exported else None,
     "produced_by": "palette_message_gateway_exports_persisted_rust_search_results"}
-accepted = palette_exported and len(receipt["executions"]) == len(cases) and all(case["oracle_accepted"] for case in receipt["executions"])
+box_response_inputs_after = box_response_source_bindings()
+receipt["box_response_inputs_after"] = box_response_inputs_after
+box_response_sources_unchanged = (box_response_inputs_after == box_response_inputs_before
+    and all(item["matches_head_bytes"] for item in box_response_inputs_after.values()))
+receipt["box_response_sources_unchanged"] = box_response_sources_unchanged
+daemon_build["binary_sha256_after_cases"] = (
+    hashlib.sha256(daemon_binary.read_bytes()).hexdigest()
+    if daemon_passed and daemon_binary.is_file() else None)
+daemon_build["lock_sha256_after_cases"] = (
+    hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest() if box_daemon_lock.is_file() else None)
+daemon_unchanged = (daemon_passed
+    and daemon_build["binary_sha256_after_cases"] == daemon_build["binary_sha256_before_cases"]
+    and daemon_build["lock_sha256_after_cases"] == daemon_build["resolved_lock"]["sha256"])
+receipt["box_response_producer_unchanged"] = daemon_unchanged
+accepted = (palette_exported and len(receipt["executions"]) == len(cases)
+    and all(case["oracle_accepted"] for case in receipt["executions"])
+    and box_response_sources_unchanged and daemon_unchanged)
 receipt["result"] = "passed" if accepted else "failed-or-incomplete"
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(json.dumps(receipt, indent=2), flush=True)

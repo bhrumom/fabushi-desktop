@@ -1408,7 +1408,10 @@
         "source/host/app/src/tests/local_media_file_url_tests.rs",
         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+        "docs/specs/g11-box-browser-wire-completion.md",
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -1445,7 +1448,13 @@
         "MSU-07",
         "MSU-08",
         "MSU-09",
-        "MSU-10"
+        "MSU-10",
+        "BXR01",
+        "BXR02",
+        "BXR03",
+        "BXR04",
+        "BXR05",
+        "BXR06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -2945,7 +2954,10 @@
         "source/host/app/src/tests/local_media_file_url_tests.rs",
         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+        "docs/specs/g11-box-browser-wire-completion.md",
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -2982,7 +2994,13 @@
         "MSU-07",
         "MSU-08",
         "MSU-09",
-        "MSU-10"
+        "MSU-10",
+        "BXR01",
+        "BXR02",
+        "BXR03",
+        "BXR04",
+        "BXR05",
+        "BXR06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [

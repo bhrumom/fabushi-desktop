@@ -1,5 +1,5 @@
 use std::cell::Cell;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::fmt;
 use std::io;
 
@@ -153,8 +153,14 @@ impl BoxRemoteExecClient<String, u64, String> for FakeExecClient {
                 BoxRemoteExecEnvelope::ExecClientControlMessage(
                     BoxRemoteExecControlMessage::Heartbeat { id: args },
                 ),
-                BoxRemoteExecEnvelope::ExecClientMessage(format!("message-{args}")),
-                BoxRemoteExecEnvelope::None,
+                BoxRemoteExecEnvelope::ExecClientMessage {
+                    id: args,
+                    exec_id: String::new(),
+                    message: format!("message-{args}"),
+                },
+                BoxRemoteExecEnvelope::ExecClientControlMessage(
+                    BoxRemoteExecControlMessage::StreamClose { id: args },
+                ),
             ])
         }
     }
@@ -206,4 +212,184 @@ fn box_remote_resource_accessor_composes_transport_client_and_manager() {
         |manager| manager.next_id(),
     );
     assert_eq!(next_id, 0);
+}
+
+struct ScriptedExecClient {
+    calls: Vec<u64>,
+    responses: VecDeque<Result<Vec<BoxRemoteExecEnvelope<String>>, io::Error>>,
+}
+
+impl BoxRemoteExecClient<(), u64, String> for ScriptedExecClient {
+    type Error = io::Error;
+
+    fn exec(
+        &mut self,
+        _ctx: &(),
+        id: u64,
+    ) -> Result<Vec<BoxRemoteExecEnvelope<String>>, Self::Error> {
+        self.calls.push(id);
+        self.responses.pop_front().expect("one response per actual request")
+    }
+}
+
+fn scripted_manager(
+    responses: Vec<Result<Vec<BoxRemoteExecEnvelope<String>>, io::Error>>,
+) -> BoxRemoteExecManager<ScriptedExecClient> {
+    BoxRemoteExecManager::new(ScriptedExecClient {
+        calls: Vec::new(),
+        responses: responses.into(),
+    })
+}
+
+fn data(id: u64, text: &str) -> BoxRemoteExecEnvelope<String> {
+    BoxRemoteExecEnvelope::ExecClientMessage {
+        id,
+        exec_id: String::new(),
+        message: text.into(),
+    }
+}
+
+fn close(id: u64) -> BoxRemoteExecEnvelope<String> {
+    BoxRemoteExecEnvelope::ExecClientControlMessage(
+        BoxRemoteExecControlMessage::StreamClose { id },
+    )
+}
+
+fn heartbeat(id: u64) -> BoxRemoteExecEnvelope<String> {
+    BoxRemoteExecEnvelope::ExecClientControlMessage(
+        BoxRemoteExecControlMessage::Heartbeat { id },
+    )
+}
+
+fn remote_throw(id: Option<u64>) -> BoxRemoteExecEnvelope<String> {
+    BoxRemoteExecEnvelope::ExecClientControlMessage(
+        BoxRemoteExecControlMessage::Throw {
+            id,
+            error: "remote error detail".into(),
+            stack_trace: Some("remote stack".into()),
+            error_code: Some("E_REMOTE".into()),
+        },
+    )
+}
+
+#[test]
+fn box_remote_exec_manager_preserves_ordered_data_and_heartbeat_before_close() {
+    let mut manager = scripted_manager(vec![
+        Ok(vec![heartbeat(0), data(0, "first"), heartbeat(0), data(0, "second"), close(0)]),
+        Ok(vec![data(1, "third"), close(1)]),
+    ]);
+    assert_eq!(
+        manager.create_exec_instance(&(), |id| id).expect("completed stream"),
+        vec!["first", "second"],
+    );
+    assert_eq!(
+        manager.create_exec_instance(&(), |id| id).expect("nonzero identity"),
+        vec!["third"],
+    );
+    assert_eq!(manager.into_client().calls, vec![0, 1]);
+}
+
+#[test]
+fn box_remote_exec_manager_requires_matching_data_and_control_identity() {
+    for (case, frames) in [
+        ("data", vec![data(1, "foreign"), close(0)]),
+        ("exec-id", vec![
+            BoxRemoteExecEnvelope::ExecClientMessage {
+                id: 0,
+                exec_id: "foreign-execution".into(),
+                message: "foreign".into(),
+            },
+            close(0),
+        ]),
+        ("heartbeat", vec![heartbeat(1), data(0, "value"), close(0)]),
+        ("close", vec![data(0, "value"), close(1)]),
+    ] {
+        let mut manager = scripted_manager(vec![Ok(frames)]);
+        let result = manager.create_exec_instance(&(), |id| id);
+        assert!(
+            matches!(result, Err(BoxRemoteExecError::ProtocolViolation(_))),
+            "{case}: foreign identity must not be accepted: {result:?}",
+        );
+        assert_eq!(manager.into_client().calls, vec![0], "{case}: no replay");
+    }
+}
+
+#[test]
+fn box_remote_exec_manager_requires_one_final_stream_close() {
+    for (case, frames) in [
+        ("empty", vec![]),
+        ("missing-close", vec![data(0, "value")]),
+        ("duplicate-close", vec![data(0, "value"), close(0), close(0)]),
+        ("data-after-close", vec![data(0, "value"), close(0), data(0, "late")]),
+        ("heartbeat-after-close", vec![data(0, "value"), close(0), heartbeat(0)]),
+        ("throw-after-close", vec![data(0, "value"), close(0), remote_throw(Some(0))]),
+        ("absent-envelope", vec![BoxRemoteExecEnvelope::None, close(0)]),
+        ("absent-control", vec![
+            BoxRemoteExecEnvelope::ExecClientControlMessage(BoxRemoteExecControlMessage::None),
+            close(0),
+        ]),
+    ] {
+        let mut manager = scripted_manager(vec![Ok(frames)]);
+        let result = manager.create_exec_instance(&(), |id| id);
+        assert!(
+            matches!(result, Err(BoxRemoteExecError::ProtocolViolation(_))),
+            "{case}: incomplete/contradictory terminal must fail: {result:?}",
+        );
+        assert_eq!(manager.into_client().calls, vec![0], "{case}: no replay");
+    }
+}
+
+#[test]
+fn box_remote_exec_manager_default_throw_id_is_only_request_zero() {
+    let mut first = scripted_manager(vec![Ok(vec![remote_throw(None)])]);
+    let error = first.create_exec_instance(&(), |id| id).expect_err("matching default throw");
+    match error {
+        BoxRemoteExecError::RemoteThrow { error, stack_trace, error_code } => {
+            assert_eq!(error, "remote error detail");
+            assert_eq!(stack_trace.as_deref(), Some("remote stack"));
+            assert_eq!(error_code.as_deref(), Some("E_REMOTE"));
+        }
+        other => panic!("default-zero Throw lost its detail: {other:?}"),
+    }
+    assert_eq!(first.into_client().calls, vec![0]);
+
+    let mut later = scripted_manager(vec![Ok(vec![close(0)]), Ok(vec![remote_throw(None)])]);
+    assert!(later.create_exec_instance(&(), |id| id).unwrap().is_empty());
+    assert!(matches!(
+        later.create_exec_instance(&(), |id| id),
+        Err(BoxRemoteExecError::ProtocolViolation(_)),
+    ));
+    assert_eq!(later.into_client().calls, vec![0, 1]);
+}
+
+#[test]
+fn box_remote_exec_manager_foreign_throw_cannot_become_remote_error() {
+    let mut manager = scripted_manager(vec![Ok(vec![remote_throw(Some(1))])]);
+    assert!(matches!(
+        manager.create_exec_instance(&(), |id| id),
+        Err(BoxRemoteExecError::ProtocolViolation(_)),
+    ));
+    assert_eq!(manager.into_client().calls, vec![0]);
+}
+
+#[test]
+fn box_remote_exec_manager_preserves_transport_loss_without_replay_or_id_reuse() {
+    let mut manager = scripted_manager(vec![
+        Err(io::Error::new(io::ErrorKind::UnexpectedEof, "dispatched response lost")),
+        Ok(vec![data(1, "next invocation"), close(1)]),
+    ]);
+    let first = manager.create_exec_instance(&(), |id| id);
+    match first {
+        Err(BoxRemoteExecError::Transport(error)) => {
+            assert_eq!(error.kind(), io::ErrorKind::UnexpectedEof);
+            assert_eq!(error.to_string(), "dispatched response lost");
+        }
+        other => panic!("transport loss was rewritten: {other:?}"),
+    }
+    assert_eq!(manager.next_id(), 1);
+    assert_eq!(
+        manager.create_exec_instance(&(), |id| id).unwrap(),
+        vec!["next invocation"],
+    );
+    assert_eq!(manager.into_client().calls, vec![0, 1]);
 }

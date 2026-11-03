@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serde_json::Value;
 
 use crate::r#box::box_transfer::TransferBox;
-use crate::extensions::inference::provider_session::ProviderMessage;
+use crate::extensions::inference::provider_session::{ProviderMessage, ProviderSessionError};
 
 use super::box_tool_access::RunnerBoxResourcePort;
 use super::large_output_spill::{
@@ -206,7 +206,7 @@ impl<AgentBoxType, UserBoxType> RunnerPromptGlue<AgentBoxType, UserBoxType> {
         box_resources: &dyn RunnerBoxResourcePort,
         result: Value,
         tool_call_id: &str,
-    ) -> Value {
+    ) -> Result<Value, ProviderSessionError> {
         self.spill_mcp_text_result_with_threshold(
             box_resources,
             result,
@@ -221,9 +221,9 @@ impl<AgentBoxType, UserBoxType> RunnerPromptGlue<AgentBoxType, UserBoxType> {
         result: Value,
         tool_call_id: &str,
         threshold_bytes: usize,
-    ) -> Value {
+    ) -> Result<Value, ProviderSessionError> {
         if !self.mcp_text_spill_enabled {
-            return result;
+            return Ok(result);
         }
         maybe_spill_mcp_text_result(
             box_resources,

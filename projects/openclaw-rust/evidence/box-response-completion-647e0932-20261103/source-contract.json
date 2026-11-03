@@ -1,0 +1,428 @@
+{
+  "schema_version": "BXR-v1.3-source-contract",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "integration_base": "b35408891546694606ed0750c60af0302669aac9",
+  "spec": "docs/specs/g11-box-browser-wire-completion.md",
+  "purpose": "Existing Box execution completion is a prerequisite for safe generated-media work and preserves current Fabushi Tool semantics. This batch adds no HTML provenance authority.",
+  "owners": [
+    {
+      "path": "source/host/src/box/box_remote_accessor.rs",
+      "role": "Single request-ID allocator; identity and per-call Open/Closed state; no persistence or retry"
+    },
+    {
+      "path": "source/host/src/box/generated_production.rs",
+      "role": "Existing protobuf/HTTP/Connect codec and post-write outcome classification"
+    },
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "role": "Unchanged actual producer; identity echo, close and transport completion"
+    },
+    {
+      "path": "source/host/src/extensions/forever_box/runner_tools.rs",
+      "role": "Existing Shell/Read/Write/ComputerUse consumer preserves typed unknown outcomes"
+    },
+    {
+      "path": "source/host/src/runner/box_tool_access.rs",
+      "role": "Existing Runner bridge retains original tool error through Box and MCP spill"
+    },
+    {
+      "path": "source/host/src/runner/large_output_spill.rs",
+      "role": "One owned spill write; known refusal retains inline result; unknown outcome propagates"
+    },
+    {
+      "path": "source/host/src/runner/tools/mcp_meta_tools.rs",
+      "role": "Unchanged existing downstream effect-custody consumer; no second authority"
+    }
+  ],
+  "responsibility_id": "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+  "upstream_source_refs_retained": [
+    {
+      "blob_sha": "d00a635b7ee764126236a7f7c4c32969acf3f893",
+      "path": "src/media/generated-html-provenance.ts",
+      "range": {
+        "end_line": 97,
+        "start_line": 1
+      },
+      "symbol": "readGeneratedHtmlProvenance, writeGeneratedHtmlProvenance, pruneGeneratedHtmlProvenance"
+    },
+    {
+      "blob_sha": "e49c01be45ac77f6275498eeeece0b83feb648a1",
+      "path": "src/media/generated-html-provenance.test.ts",
+      "range": {
+        "end_line": 293,
+        "start_line": 1
+      },
+      "symbol": "generated HTML provenance worker boundary test suite"
+    },
+    {
+      "blob_sha": "0dd1b22b82eb26d4c53e00a8bc8bf9ae62b035fa",
+      "path": "src/media/generated-html-provenance.worker.ts",
+      "range": {
+        "end_line": 90,
+        "start_line": 1
+      },
+      "symbol": "generatedHtmlProvenanceReadOperations, generatedHtmlProvenanceOperations"
+    },
+    {
+      "blob_sha": "3d1ad1f65212e1b7dd166e647c426c38fe4283d6",
+      "path": "src/media/generated-html-provenance.worker-contract.ts",
+      "range": {
+        "end_line": 23,
+        "start_line": 1
+      },
+      "symbol": "GeneratedHtmlProvenanceRow, GeneratedHtmlProvenanceOperations"
+    }
+  ],
+  "review_claim": "Retains prior fixed-U source review identities and literal read states. This batch does not claim new full-file upstream reading, generator-input closure or all-source disposition. High-risk current owner implementation and real call/response/consumer paths are reviewed for this prerequisite.",
+  "oracle_ids": [
+    "BXR01",
+    "BXR02",
+    "BXR03",
+    "BXR04",
+    "BXR05",
+    "BXR06"
+  ],
+  "required_direct_cases": [
+    {
+      "case": "box-response-manager",
+      "required_names": [
+        "box_remote_accessor_builds_authenticated_binary_http11_transport",
+        "box_remote_accessor_classifies_ping_failures_and_latency_like_grok",
+        "box_remote_exec_manager_allocates_ids_filters_control_and_surfaces_remote_throw",
+        "box_remote_resource_accessor_composes_transport_client_and_manager",
+        "box_remote_exec_manager_preserves_ordered_data_and_heartbeat_before_close",
+        "box_remote_exec_manager_requires_matching_data_and_control_identity",
+        "box_remote_exec_manager_requires_one_final_stream_close",
+        "box_remote_exec_manager_default_throw_id_is_only_request_zero",
+        "box_remote_exec_manager_foreign_throw_cannot_become_remote_error",
+        "box_remote_exec_manager_preserves_transport_loss_without_replay_or_id_reuse"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "box_remote_accessor_contract",
+        "--",
+        "--test-threads=1"
+      ]
+    },
+    {
+      "case": "box-response-codec",
+      "required_names": [
+        "production_exec_service_background_shell_spawn_uses_frozen_field_16_and_real_shell_id",
+        "production_exec_service_preserves_shell_stdout_for_internal_consumers",
+        "production_exec_service_streams_shell_and_write_through_shipping_accessor",
+        "production_loopback_factory_gates_exec_accessor_on_authenticated_readiness",
+        "production_exec_service_reads_through_protected_shipping_accessor",
+        "production_exec_service_computer_use_has_remote_and_no_monitor_paths",
+        "production_exec_service_shell_stream_uses_frozen_field_14_and_real_backgrounded_wire",
+        "forever_box_runner_resource_port_background_spawn_registers_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_positive_block_backgrounds_real_shell_id_with_unique_watcher",
+        "forever_box_runner_resource_port_reuses_authenticated_shipping_exec_service_for_turn",
+        "production_exec_service_accepts_default_identity_and_nonzero_sequential_echo",
+        "production_exec_service_decodes_metadata_on_both_sides_of_exec_and_shell_payloads",
+        "production_exec_service_preserves_binary_read_bytes_with_complete_identity_and_framing",
+        "production_exec_service_accepts_valid_chunk_extensions_trailers_and_length_or_close_delimiting",
+        "production_exec_service_retains_matching_throw_and_connect_error_details",
+        "production_exec_service_rejects_malformed_identity_metadata_and_ambiguous_oneofs",
+        "production_exec_service_rejects_foreign_data_exec_id_heartbeat_close_and_throw",
+        "production_exec_service_does_not_accept_omitted_zero_identity_for_a_nonzero_request",
+        "production_exec_service_requires_exactly_one_close_after_data",
+        "production_exec_service_requires_one_legal_final_connect_end",
+        "production_exec_service_rejects_incomplete_or_ambiguous_http_framing",
+        "production_exec_service_all_one_shot_accessors_require_one_expected_result",
+        "production_exec_service_preserves_ordered_shell_stream_and_rejects_mixed_operations",
+        "production_exec_service_distinguishes_pre_write_refusal_and_local_guards_from_unknown",
+        "production_exec_service_rejects_out_of_range_direct_client_id_before_connect",
+        "production_exec_service_wraps_post_write_status_and_eof_once_with_original_cause",
+        "production_exec_service_never_replays_a_request_after_lost_completion",
+        "forever_box_runner_resource_port_preserves_unknown_shell_read_write_and_background_outcomes",
+        "forever_box_runner_resource_port_preserves_unknown_missing_terminal_and_invalid_background_id",
+        "forever_box_runner_resource_port_keeps_no_monitor_as_pre_dispatch_refusal",
+        "production_exec_service_rejects_invalid_control_identity_and_multiple_control_cases",
+        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results",
+        "production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once",
+        "production_exec_service_rejects_shadowed_uint32_overflow_once",
+        "production_exec_service_preserves_valid_repeated_typed_fields_and_last_values",
+        "forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch",
+        "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata",
+        "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
+        "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
+        "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
+        "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "box_generated_production_contract",
+        "--",
+        "--test-threads=1"
+      ]
+    },
+    {
+      "case": "box-response-runner-bridge",
+      "required_names": [
+        "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",
+        "runner_box_bridge_preserves_explicit_background_and_positive_block_until_semantics",
+        "runner_box_bridge_preserves_upstream_dispatch_and_fails_closed_on_name_collision",
+        "runner_box_bridge_validates_model_arguments_before_host_resource_execution",
+        "runner_box_shell_review_fences_side_effect_before_resource_execution",
+        "runner_box_bridge_preserves_unknown_box_execution_outcomes",
+        "runner_box_bridge_preserves_known_box_refusals",
+        "runner_box_bridge_preserves_unknown_mcp_spill_write_without_replay",
+        "runner_box_bridge_keeps_known_mcp_spill_refusal_inline_without_replay"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "runner_box_tool_composition_contract",
+        "--",
+        "--test-threads=1"
+      ]
+    },
+    {
+      "case": "box-response-spill",
+      "required_names": [
+        "large_mcp_text_is_materialized_into_agent_box_once",
+        "small_error_and_failed_write_results_stay_inline",
+        "spill_policy_matches_frozen_threshold_disable_and_cap_contracts",
+        "unknown_spill_write_is_not_published_as_inline_success_or_retried"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "large_output_spill_contract",
+        "--",
+        "--test-threads=1"
+      ]
+    },
+    {
+      "case": "box-response-prompt-glue",
+      "required_names": [
+        "glue_reuses_file_transfer_owner_and_prompt_collector_projection",
+        "glue_applies_single_large_output_spill_policy",
+        "live_owner_reads_mutable_prompt_inputs_at_phase_time",
+        "shipping_host_routes_mutable_prompt_surfaces_through_runner_owner",
+        "glue_preserves_unknown_spill_and_disabled_policy_without_replay"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "runner_prompt_glue_contract",
+        "--",
+        "--test-threads=1"
+      ]
+    },
+    {
+      "case": "box-response-manager-exhaustion",
+      "required_names": [
+        "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport",
+        "--",
+        "--test-threads=1"
+      ]
+    },
+    {
+      "case": "box-response-forever-box",
+      "required_names": [
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_stdout_for_navigation_probes",
+        "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_failure_diagnostics",
+        "extensions::forever_box::runner_tools::tests::computer_use_preserves_unknown_outcomes_from_incomplete_wire_completion"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::forever_box::runner_tools::tests::",
+        "--",
+        "--test-threads=1"
+      ]
+    },
+    {
+      "case": "box-response-real-daemon",
+      "required_names": [
+        "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "box_exec_daemon_process_contract",
+        "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion",
+        "--",
+        "--exact",
+        "--ignored",
+        "--test-threads=1"
+      ]
+    }
+  ],
+  "reused_downstream_case": {
+    "case": "codex-model-regressions",
+    "required_effect_custody_names": [
+      "responses_effects_after_checkpoint_without_checkpoint_and_between_calls_do_not_replay",
+      "responses_checkpoint_io_failure_expiry_and_new_effect_cannot_accept_stale_coverage",
+      "responses_pre_effect_retry_and_safe_checkpoint_retry_keep_model_and_completed_tool",
+      "downstream_unknown_outcomes_block_responses_checkpoint_and_replay_after_local_return",
+      "definitive_relay_results_remain_checkpoint_eligible_and_preserve_returned_data",
+      "prepublication_refusal_and_list_failure_add_no_unknown_effect_custody",
+      "timed_out_tool_keeps_worker_receipt_and_late_result_stays_unknown_across_attempts",
+      "a_lost_tool_worker_cannot_turn_error_json_into_an_accepted_checkpoint",
+      "user_cancellation_between_tools_and_during_checkpoint_io_wins_without_retry",
+      "real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects",
+      "real_mcp_response_loss_refuses_more_effects_on_the_same_attempt",
+      "real_mcp_effect_prevents_provider_retry_after_attempt_expiry",
+      "production_fabushi_executor_refuses_replay_after_tool_expiry",
+      "production_generated_runner_preserves_terminal_tool_custody"
+    ],
+    "reason": "Reuse the existing same-H command; require every effect-custody target name once without a duplicate run"
+  },
+  "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+  "source_binding_paths": [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "docs/specs/g11-box-browser-wire-completion.md",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "projects/openclaw-rust/upstream.lock.json",
+    "source/box-exec-daemon/Cargo.toml",
+    "source/box-exec-daemon/src/cli.rs",
+    "source/box-exec-daemon/src/lib.rs",
+    "source/box-exec-daemon/src/main.rs",
+    "source/box-exec-daemon/src/server.rs",
+    "source/box-exec-daemon/src/workspace_write.rs",
+    "source/host/Cargo.lock",
+    "source/host/Cargo.toml",
+    "source/host/build.rs",
+    "source/host/src/box/box_file_transfer.rs",
+    "source/host/src/box/box_remote_accessor.rs",
+    "source/host/src/box/box_shell_command.rs",
+    "source/host/src/box/exec_daemon_process.rs",
+    "source/host/src/box/generated_production.rs",
+    "source/host/src/box/mod.rs",
+    "source/host/src/box/protected_path_guard.rs",
+    "source/host/src/extensions/forever_box/runner_tools.rs",
+    "source/host/src/extensions/inference/provider_session.rs",
+    "source/host/src/runner/box_tool_access.rs",
+    "source/host/src/runner/large_output_spill.rs",
+    "source/host/src/runner/remote_box_resources.rs",
+    "source/host/src/runner/runner_prompt_glue.rs",
+    "source/host/src/runner/sand_action_audit.rs",
+    "source/host/src/runner/tools/mcp_meta_tools.rs",
+    "source/host/tests/box_exec_daemon_process_contract.rs",
+    "source/host/tests/box_generated_production_contract.rs",
+    "source/host/tests/box_remote_accessor_contract.rs",
+    "source/host/tests/large_output_spill_contract.rs",
+    "source/host/tests/runner_box_tool_composition_contract.rs",
+    "source/host/tests/runner_effect_custody_contract.rs",
+    "source/host/tests/runner_prompt_glue_contract.rs",
+    "source/packages/agent-exec/shell-stream.ts",
+    "source/packages/agent/tools/core/shell/create-shell-tool.ts",
+    "source/packages/local-exec/background-shell.ts",
+    "source/packages/local-exec/shell-stream.ts",
+    "source/packages/proto/generated/agent/v1/background_shell_exec_pb.ts",
+    "source/packages/proto/generated/agent/v1/exec_pb.ts",
+    "source/packages/proto/generated/agent/v1/exec_service_pb.ts",
+    "source/packages/proto/generated/agent/v1/shell_exec_pb.ts"
+  ],
+  "producer_dependency_limit": "Existing daemon crate has no tracked Cargo.lock at this base. The same-H build records full generated lock output and binary identity; it never uses a stale binary after build failure. Persist/review the actual generated resolution before claiming reproducible producer dependency closure. Host remains --locked.",
+  "recovery": "Unknown outcomes preserve existing effect custody and do not replay. Fresh connection/accessor lifetime creates a fresh request sequence; no process/device cancellation or external outcome reconciliation is added.",
+  "navigation_observation": "Existing ComputerUse finally navigation probe remains curl -sf --max-time 2 against loopback /json/list in sand_action_audit.rs; it is an independent read observation, not a retry of the original operation.",
+  "verification": {
+    "state": "not-run",
+    "source_review": "pending independent complete candidate review",
+    "runtime": "pending final exact-H Actions",
+    "real_daemon": "pending",
+    "external_services_devices_platforms": "blocked/not exercised; controlled peers are not real compatibility acceptance"
+  },
+  "unchanged_completion_flags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "open_work": [
+    "Private raw-byte capture and EOF/read-error/cap/attempt-to-socket cancellation contract",
+    "Generated-origin producer grant and existing Session durable provenance/consumer wiring",
+    "Daemon generated lock source freezing and dependency/legal accounting",
+    "Real external Box/provider/device/platform acceptance",
+    "Full fixed-U source closure, OCRM G01-G12/AC01-AC24, shipping artifacts and independent ACCEPT"
+  ],
+  "review_corrections": {
+    "contract": "BXR-v1.3",
+    "decisions_blob": "d1548850db93952aaf4920eee05c2d3098e9ed60",
+    "typed_fields": "Validate each known string, message metadata and uint32 occurrence before retaining a legal repeated value.",
+    "timed_shell": "Inspect all events before terminal publication/watcher; preserve late stdout/stderr and hook metadata, refuse conflicting terminal results.",
+    "state": "Production corrections retained; direct consumer-oracle gap repaired without requirement relaxation. Fresh R4 focused review and final exact-H runtime proof pending.",
+    "prior_round_decisions_blob": "61e447248004217d901bf92e64002b6f32811390",
+    "sandbox_refusal": "Use frozen STRING policy field3 on background field5 and timed field9, preserve valid known refusal without watcher/replay, reject malformed occurrences, and retain all conflicting-terminal controls. Do not invent a foreground ShellResult variant.",
+    "consumer_oracle_decision_blob": "6e2c060d1e8a8cd0ccc985265184e86d8912fd1a",
+    "consumer_oracle": "The same frozen raw malformed-policy cases now pass through the actual registered Runner→ForeverBox→TCP chain for background, block-zero and timed modes, retaining exact ToolOutcomeUnknown causes, one Exec and zero watches. The actual consumer positive also includes valid repeated-last policy strings."
+  },
+  "adjacent_shell_semantic_inputs": [
+    {
+      "path": "source/packages/proto/generated/agent/v1/shell_exec_pb.ts",
+      "blob": "43079a2f5df12a5f570589ce312fd7fcfb71bd1f",
+      "fact": "ShellStream field8 is hook_context metadata; field9 is sandbox_unsupported, not a second metadata variant"
+    },
+    {
+      "path": "source/packages/agent/tools/core/shell/create-shell-tool.ts",
+      "blob": "f7e875e6e08ac6df9afc0bf904b2a814510b981f",
+      "fact": "executeStream stores Exit rather than returning, continues collecting stdout/stderr through stream completion, and ignores hookContext metadata"
+    },
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+      "fact": "actual current producer drains output before its single Exit and returns after Backgrounded; source-only confirmation"
+    },
+    {
+      "path": "source/packages/proto/generated/agent/v1/background_shell_exec_pb.ts",
+      "blob": "71a9c516dd1ca89b2e389a85115407ad06b3bac2",
+      "fact": "Background field5 selects the same ShellSandboxUnsupported message whose policy field3 is STRING."
+    },
+    {
+      "path": "source/packages/local-exec/background-shell.ts",
+      "blob": "b7468894536d7e432e34bd52820dfc93956552a5",
+      "fact": "The actual existing producer returns policy?.type ?? unknown as a string for a SandboxUnsupportedError."
+    }
+  ]
+}

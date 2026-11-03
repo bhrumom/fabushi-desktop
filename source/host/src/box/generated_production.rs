@@ -42,6 +42,8 @@ pub enum ProductionBoxTransportError {
     Io(std::io::Error),
     InvalidHttpResponse(String),
     HttpStatus { status: u16, body: String },
+    /// The request write was attempted; the operation may already have run.
+    ExecutionOutcomeUnknown(Box<ProductionBoxTransportError>),
 }
 
 impl fmt::Display for ProductionBoxTransportError {
@@ -51,6 +53,9 @@ impl fmt::Display for ProductionBoxTransportError {
             | Self::InvalidHeader(message)
             | Self::InvalidHttpResponse(message) => formatter.write_str(message),
             Self::Io(error) => error.fmt(formatter),
+            Self::ExecutionOutcomeUnknown(cause) => {
+                write!(formatter, "box ExecService execution outcome unknown: {cause}")
+            }
             Self::HttpStatus { status, body } => {
                 write!(formatter, "box ControlService returned HTTP {status}")?;
                 if !body.is_empty() {
@@ -66,6 +71,7 @@ impl std::error::Error for ProductionBoxTransportError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Io(error) => Some(error),
+            Self::ExecutionOutcomeUnknown(cause) => Some(cause.as_ref()),
             _ => None,
         }
     }
@@ -74,6 +80,16 @@ impl std::error::Error for ProductionBoxTransportError {
 impl From<std::io::Error> for ProductionBoxTransportError {
     fn from(error: std::io::Error) -> Self {
         Self::Io(error)
+    }
+}
+
+impl ProductionBoxTransportError {
+    fn execution_outcome_unknown(self) -> Self {
+        if matches!(&self, Self::ExecutionOutcomeUnknown(_)) {
+            self
+        } else {
+            Self::ExecutionOutcomeUnknown(Box::new(self))
+        }
     }
 }
 
@@ -96,6 +112,7 @@ fn http_status_connect_code(status: u16) -> Option<i64> {
 impl BoxPingErrorMetadata for ProductionBoxTransportError {
     fn connect_code(&self) -> Option<ConnectCode> {
         match self {
+            Self::ExecutionOutcomeUnknown(cause) => cause.connect_code(),
             Self::Io(error) if error.kind() == std::io::ErrorKind::TimedOut => {
                 Some(ConnectCode::Number(4))
             }
@@ -108,6 +125,7 @@ impl BoxPingErrorMetadata for ProductionBoxTransportError {
 
     fn system_errno(&self) -> Option<&str> {
         match self {
+            Self::ExecutionOutcomeUnknown(cause) => cause.system_errno(),
             Self::Io(error) if error.kind() == std::io::ErrorKind::ConnectionRefused => {
                 Some("ECONNREFUSED")
             }
@@ -119,6 +137,7 @@ impl BoxPingErrorMetadata for ProductionBoxTransportError {
 impl ConnectErrorCodeSource for ProductionBoxTransportError {
     fn connect_error_code(&self) -> Option<ConnectErrorCode> {
         match self {
+            Self::ExecutionOutcomeUnknown(cause) => cause.connect_error_code(),
             Self::Io(error) if error.kind() == std::io::ErrorKind::TimedOut => {
                 Some(ConnectErrorCode::Number(4))
             }
@@ -258,7 +277,7 @@ pub enum ProductionBackgroundShellSpawnResult {
     Error { command: String, working_directory: String, error: String },
     Rejected { command: String, working_directory: String, reason: String, is_readonly: bool },
     PermissionDenied { command: String, working_directory: String, error: String, is_readonly: bool },
-    SandboxUnsupported { command: String, working_directory: String, sandbox_policy_type: i32, reason: String, is_readonly: bool },
+    SandboxUnsupported { command: String, working_directory: String, sandbox_policy_type: String, reason: String, is_readonly: bool },
     Other { case: String },
 }
 
@@ -290,6 +309,13 @@ pub enum ProductionShellStreamEvent {
         command: String,
         working_directory: String,
         error: String,
+        is_readonly: bool,
+    },
+    SandboxUnsupported {
+        command: String,
+        working_directory: String,
+        sandbox_policy_type: String,
+        reason: String,
         is_readonly: bool,
     },
     Backgrounded {
@@ -392,6 +418,24 @@ pub enum ProductionBoxExecError {
     MissingResult(&'static str),
 }
 
+impl ProductionBoxExecError {
+    /// Whether a dispatched operation lacks a trustworthy completed result.
+    pub fn outcome_unknown(&self) -> bool {
+        match self {
+            Self::Remote(BoxRemoteExecError::Transport(error)) => {
+                matches!(error, ProductionBoxTransportError::ExecutionOutcomeUnknown(_))
+            }
+            Self::Remote(BoxRemoteExecError::ProtocolViolation(_))
+            | Self::Remote(BoxRemoteExecError::RemoteThrow { .. })
+            | Self::InvalidResult(_)
+            | Self::MissingResult(_) => true,
+            Self::Remote(BoxRemoteExecError::IdExhausted)
+            | Self::ProtectedPath(_)
+            | Self::NoMonitor(_) => false,
+        }
+    }
+}
+
 impl fmt::Display for ProductionBoxExecError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -464,6 +508,16 @@ impl<Ctx> BoxRemoteExecClient<Ctx, ProductionExecRequest, ProductionExecClientMe
         _ctx: &Ctx,
         args: ProductionExecRequest,
     ) -> Result<Vec<BoxRemoteExecEnvelope<ProductionExecClientMessage>>, Self::Error> {
+        let id = match &args {
+            ProductionExecRequest::Shell { id, .. }
+            | ProductionExecRequest::Write { id, .. }
+            | ProductionExecRequest::Read { id, .. }
+            | ProductionExecRequest::ComputerUse { id, .. }
+            | ProductionExecRequest::RawResource { id, .. } => *id,
+        };
+        if id > u64::from(u32::MAX) {
+            return Err(invalid_exec_response("request identity exceeds uint32 before dispatch"));
+        }
         let request = encode_exec_server_message(&args);
         send_connect_server_stream(&self.transport, EXEC_PATH, &request)
     }
@@ -509,13 +563,10 @@ impl ProductionBoxResourceAccessor {
         let messages = self.manager.create_exec_instance(ctx, |id| {
             ProductionExecRequest::Read { id, args }
         })?;
-        messages
-            .into_iter()
-            .find_map(|message| match message {
-                ProductionExecClientMessage::Read(result) => Some(result),
-                _ => None,
-            })
-            .ok_or(ProductionBoxExecError::MissingResult("read"))
+        single_exec_result(messages, "read", |message| match message {
+            ProductionExecClientMessage::Read(result) => Some(result),
+            _ => None,
+        })
     }
 
     pub fn execute_computer_use_protobuf<Ctx>(
@@ -529,13 +580,10 @@ impl ProductionBoxResourceAccessor {
         let messages = self.manager.create_exec_instance(ctx, |id| {
             ProductionExecRequest::ComputerUse { id, protobuf_args }
         })?;
-        messages
-            .into_iter()
-            .find_map(|message| match message {
-                ProductionExecClientMessage::ComputerUse(result) => Some(result),
-                _ => None,
-            })
-            .ok_or(ProductionBoxExecError::MissingResult("computer-use"))
+        single_exec_result(messages, "computer-use", |message| match message {
+            ProductionExecClientMessage::ComputerUse(result) => Some(result),
+            _ => None,
+        })
     }
 
     pub fn execute_raw_resource<Ctx>(
@@ -551,16 +599,13 @@ impl ProductionBoxResourceAccessor {
                 protobuf_args,
             }
         })?;
-        messages
-            .into_iter()
-            .find_map(|message| match message {
-                ProductionExecClientMessage::RawResource {
-                    field_number: returned_field,
-                    protobuf_result,
-                } if returned_field == field_number => Some(protobuf_result),
-                _ => None,
-            })
-            .ok_or(ProductionBoxExecError::MissingResult("raw-resource"))
+        single_exec_result(messages, "raw-resource", |message| match message {
+            ProductionExecClientMessage::RawResource {
+                field_number: returned_field,
+                protobuf_result,
+            } if returned_field == field_number => Some(protobuf_result),
+            _ => None,
+        })
     }
 
     pub fn execute_background_shell_spawn<Ctx>(
@@ -589,13 +634,15 @@ impl ProductionBoxResourceAccessor {
         })?;
         let mut events = Vec::new();
         for message in messages {
-            if let ProductionExecClientMessage::RawResource {
-                field_number,
-                protobuf_result,
-            } = message
-            {
-                if field_number == SHELL_STREAM_FIELD_NUMBER {
-                    events.push(decode_shell_stream_event(&protobuf_result)?);
+            match message {
+                ProductionExecClientMessage::RawResource {
+                    field_number: SHELL_STREAM_FIELD_NUMBER,
+                    protobuf_result,
+                } => events.push(decode_shell_stream_event(&protobuf_result)?),
+                _ => {
+                    return Err(invalid_exec_response(
+                        "unexpected operation result in shell-stream",
+                    ).into());
                 }
             }
         }
@@ -613,13 +660,10 @@ impl ProductionBoxResourceAccessor {
         let messages = self.manager.create_exec_instance(ctx, |id| {
             ProductionExecRequest::Shell { id, args }
         })?;
-        messages
-            .into_iter()
-            .find_map(|message| match message {
-                ProductionExecClientMessage::Shell(result) => Some(result),
-                _ => None,
-            })
-            .ok_or(ProductionBoxExecError::MissingResult("shell"))
+        single_exec_result(messages, "shell", |message| match message {
+            ProductionExecClientMessage::Shell(result) => Some(result),
+            _ => None,
+        })
     }
 }
 
@@ -730,26 +774,41 @@ impl<Ctx> FileTransferAccessor<Ctx> for ProductionBoxResourceAccessor {
                 tool_call_id: tool_call_id.to_string(),
             }
         })?;
-        messages
-            .into_iter()
-            .find_map(|message| match message {
-                ProductionExecClientMessage::Write(result) => Some(result),
-                _ => None,
-            })
-            .ok_or(ProductionBoxExecError::MissingResult("write"))
+        single_exec_result(messages, "write", |message| match message {
+            ProductionExecClientMessage::Write(result) => Some(result),
+            _ => None,
+        })
     }
+}
+
+fn single_exec_result<T>(
+    messages: Vec<ProductionExecClientMessage>,
+    kind: &'static str,
+    project: impl FnOnce(ProductionExecClientMessage) -> Option<T>,
+) -> Result<T, ProductionBoxExecError> {
+    let mut messages = messages.into_iter();
+    let message = messages.next().ok_or(ProductionBoxExecError::MissingResult(kind))?;
+    if messages.next().is_some() {
+        return Err(invalid_exec_response("multiple one-shot operation results").into());
+    }
+    project(message).ok_or_else(|| {
+        invalid_exec_response("unexpected one-shot operation result").into()
+    })
 }
 
 fn encode_key(field_number: u32, wire_type: u8, out: &mut Vec<u8>) {
     encode_varint(((field_number as usize) << 3) | usize::from(wire_type), out);
 }
 
-fn encode_uint32_field(field_number: u32, value: u64, out: &mut Vec<u8>) {
+fn encode_uint32_field(field_number: u32, mut value: u64, out: &mut Vec<u8>) {
+    // The manager and client check request IDs before this encoder is reached.
+    // Do not silently change the value if this wire helper is used directly.
     encode_key(field_number, 0, out);
-    encode_varint(
-        usize::try_from(value.min(u64::from(u32::MAX))).unwrap_or(u32::MAX as usize),
-        out,
-    );
+    while value >= 0x80 {
+        out.push(((value as u8) & 0x7f) | 0x80);
+        value >>= 7;
+    }
+    out.push(value as u8);
 }
 
 fn encode_bool_field(field_number: u32, value: bool, out: &mut Vec<u8>) {
@@ -935,23 +994,69 @@ pub fn encode_exec_server_message(request: &ProductionExecRequest) -> Vec<u8> {
     body
 }
 
+fn invalid_exec_response(message: &str) -> ProductionBoxTransportError {
+    ProductionBoxTransportError::InvalidHttpResponse(format!("box ExecService {message}"))
+}
+
+fn decode_protobuf_key(
+    input: &[u8],
+    cursor: &mut usize,
+) -> Result<(u64, u8), ProductionBoxTransportError> {
+    let key = decode_varint(input, cursor)?;
+    let field = key >> 3;
+    if field == 0 || field > 0x1fff_ffff {
+        return Err(invalid_exec_response("returned an invalid protobuf field number"));
+    }
+    Ok((field, (key & 0x07) as u8))
+}
+
+fn require_wire(actual: u8, expected: u8) -> Result<(), ProductionBoxTransportError> {
+    if actual != expected {
+        return Err(invalid_exec_response("returned a known field with the wrong wire type"));
+    }
+    Ok(())
+}
+
 fn decode_len_delimited<'a>(
     input: &'a [u8],
     cursor: &mut usize,
 ) -> Result<&'a [u8], ProductionBoxTransportError> {
-    let length = usize::try_from(decode_varint(input, cursor)?).map_err(|_| {
-        ProductionBoxTransportError::InvalidHttpResponse(
-            "box ExecService protobuf length overflow".into(),
-        )
-    })?;
-    let end = cursor.saturating_add(length);
-    if end > input.len() {
-        return Err(ProductionBoxTransportError::InvalidHttpResponse(
-            "box ExecService returned truncated protobuf".into(),
-        ));
-    }
+    let length = usize::try_from(decode_varint(input, cursor)?)
+        .map_err(|_| invalid_exec_response("protobuf length overflow"))?;
+    let end = cursor.checked_add(length)
+        .filter(|end| *end <= input.len())
+        .ok_or_else(|| invalid_exec_response("returned truncated protobuf"))?;
     let value = &input[*cursor..end];
     *cursor = end;
+    Ok(value)
+}
+
+fn validate_protobuf_message(input: &[u8]) -> Result<(), ProductionBoxTransportError> {
+    let mut cursor = 0;
+    while cursor < input.len() {
+        let (_, wire) = decode_protobuf_key(input, &mut cursor)?;
+        skip_protobuf_field(input, &mut cursor, wire)?;
+    }
+    Ok(())
+}
+
+fn decode_varint_field<T>(
+    input: &[u8],
+    wanted: u64,
+    decode: impl Fn(u64) -> Result<T, ProductionBoxTransportError>,
+) -> Result<Option<T>, ProductionBoxTransportError> {
+    let mut cursor = 0;
+    let mut value = None;
+    while cursor < input.len() {
+        let (field, wire) = decode_protobuf_key(input, &mut cursor)?;
+        if field == wanted {
+            require_wire(wire, 0)?;
+            // Validate each occurrence before retaining the legal final value.
+            value = Some(decode(decode_varint(input, &mut cursor)?)?);
+        } else {
+            skip_protobuf_field(input, &mut cursor, wire)?;
+        }
+    }
     Ok(value)
 }
 
@@ -959,17 +1064,16 @@ fn decode_u64_field(
     input: &[u8],
     wanted: u64,
 ) -> Result<Option<u64>, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if field == wanted && wire == 0 {
-            return Ok(Some(decode_varint(input, &mut cursor)?));
-        }
-        skip_protobuf_field(input, &mut cursor, wire)?;
-    }
-    Ok(None)
+    decode_varint_field(input, wanted, |value| Ok(value))
+}
+
+fn decode_u32_field(
+    input: &[u8],
+    wanted: u64,
+) -> Result<Option<u32>, ProductionBoxTransportError> {
+    decode_varint_field(input, wanted, |value| {
+        u32::try_from(value).map_err(|_| invalid_exec_response("returned uint32 overflow"))
+    })
 }
 
 fn decode_i32_field(
@@ -983,99 +1087,144 @@ fn decode_string_field(
     input: &[u8],
     wanted: u64,
 ) -> Result<Option<String>, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
+    decode_len_delimited_field(input, wanted, |value| {
+        std::str::from_utf8(value)
+            .map(|value| value.to_string())
+            .map_err(|_| invalid_exec_response("returned non-UTF-8 protobuf string"))
+    })
+}
+
+fn decode_len_delimited_field<T>(
+    input: &[u8],
+    wanted: u64,
+    decode: impl Fn(&[u8]) -> Result<T, ProductionBoxTransportError>,
+) -> Result<Option<T>, ProductionBoxTransportError> {
+    let mut cursor = 0;
+    let mut value = None;
     while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if field == wanted && wire == 2 {
-            let value = decode_len_delimited(input, &mut cursor)?;
-            let value = std::str::from_utf8(value).map_err(|_| {
-                ProductionBoxTransportError::InvalidHttpResponse(
-                    "box ExecService returned non-UTF-8 protobuf string".into(),
-                )
-            })?;
-            return Ok(Some(value.to_string()));
+        let (field, wire) = decode_protobuf_key(input, &mut cursor)?;
+        if field == wanted {
+            require_wire(wire, 2)?;
+            // A later valid duplicate must not conceal an earlier typed error.
+            value = Some(decode(decode_len_delimited(input, &mut cursor)?)?);
+        } else {
+            skip_protobuf_field(input, &mut cursor, wire)?;
         }
-        skip_protobuf_field(input, &mut cursor, wire)?;
     }
-    Ok(None)
+    Ok(value)
 }
 
 fn decode_bytes_field(
     input: &[u8],
     wanted: u64,
 ) -> Result<Option<Vec<u8>>, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if field == wanted && wire == 2 {
-            return Ok(Some(decode_len_delimited(input, &mut cursor)?.to_vec()));
-        }
-        skip_protobuf_field(input, &mut cursor, wire)?;
+    decode_len_delimited_field(input, wanted, |value| Ok(value.to_vec()))
+}
+
+fn record_identity<T: PartialEq>(
+    previous: &mut Option<T>,
+    value: T,
+) -> Result<(), ProductionBoxTransportError> {
+    if previous.as_ref().is_some_and(|previous| previous != &value) {
+        return Err(invalid_exec_response("returned contradictory repeated identity"));
     }
-    Ok(None)
+    *previous = Some(value);
+    Ok(())
+}
+
+fn decode_control_identity(input: &[u8]) -> Result<Option<u64>, ProductionBoxTransportError> {
+    let mut cursor = 0;
+    let mut id = None;
+    while cursor < input.len() {
+        let (field, wire) = decode_protobuf_key(input, &mut cursor)?;
+        if field == 1 {
+            require_wire(wire, 0)?;
+            let value = decode_varint(input, &mut cursor)?;
+            u32::try_from(value)
+                .map_err(|_| invalid_exec_response("returned uint32 identity overflow"))?;
+            record_identity(&mut id, value)?;
+        } else {
+            skip_protobuf_field(input, &mut cursor, wire)?;
+        }
+    }
+    Ok(id)
+}
+
+/// Decode one declared message oneof, scanning metadata and trailing fields too.
+/// Unknown fields remain opaque protobuf fields, never inferred operation kinds.
+fn decode_message_oneof<'a>(
+    input: &'a [u8],
+    cases: &[u64],
+    metadata: &[(u64, u8)],
+) -> Result<(u64, &'a [u8]), ProductionBoxTransportError> {
+    let mut cursor = 0;
+    let mut result = None;
+    while cursor < input.len() {
+        let (field, wire) = decode_protobuf_key(input, &mut cursor)?;
+        if cases.contains(&field) {
+            require_wire(wire, 2)?;
+            if result.is_some() {
+                return Err(invalid_exec_response("returned multiple protobuf oneof payloads"));
+            }
+            let nested = decode_len_delimited(input, &mut cursor)?;
+            validate_protobuf_message(nested)?;
+            result = Some((field, nested));
+        } else {
+            if let Some((_, expected_wire)) = metadata.iter().find(|(tag, _)| *tag == field) {
+                require_wire(wire, *expected_wire)?;
+            }
+            skip_protobuf_field(input, &mut cursor, wire)?;
+        }
+    }
+    result.ok_or_else(|| invalid_exec_response("returned no supported protobuf oneof payload"))
 }
 
 fn decode_read_result(
     input: &[u8],
 ) -> Result<ProductionReadResult, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if wire == 2 {
-            let nested = decode_len_delimited(input, &mut cursor)?;
-            return match field {
-                1 => {
-                    let output = if let Some(content) = decode_string_field(nested, 2)? {
-                        ProductionReadOutput::Content(content)
-                    } else if let Some(data) = decode_bytes_field(nested, 5)? {
-                        ProductionReadOutput::Data(data)
-                    } else {
-                        ProductionReadOutput::None
-                    };
-                    Ok(ProductionReadResult::Success {
-                        path: decode_string_field(nested, 1)?.unwrap_or_default(),
-                        output,
-                        total_lines: decode_u64_field(nested, 3)?.unwrap_or_default() as u32 as i32,
-                        file_size: decode_u64_field(nested, 4)?.unwrap_or_default() as i64,
-                        truncated: decode_u64_field(nested, 6)?.unwrap_or_default() != 0,
-                        output_blob_id: decode_bytes_field(nested, 7)?,
-                        range_applied: decode_u64_field(nested, 8)?.unwrap_or_default() != 0,
-                    })
+    let (field, nested) = decode_message_oneof(input, &[1, 2, 3, 4, 5, 6], &[])?;
+    match field {
+        1 => {
+            let content = decode_string_field(nested, 2)?;
+            let data = decode_bytes_field(nested, 5)?;
+            let output = match (content, data) {
+                (Some(_), Some(_)) => {
+                    return Err(invalid_exec_response("returned multiple Read output cases"));
                 }
-                2 => Ok(ProductionReadResult::Error {
-                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
-                    error: decode_string_field(nested, 2)?.unwrap_or_default(),
-                }),
-                3 => Ok(ProductionReadResult::Rejected {
-                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
-                    reason: decode_string_field(nested, 2)?.unwrap_or_default(),
-                }),
-                4 => Ok(ProductionReadResult::FileNotFound {
-                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
-                }),
-                5 => Ok(ProductionReadResult::PermissionDenied {
-                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
-                }),
-                6 => Ok(ProductionReadResult::InvalidFile {
-                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
-                    reason: decode_string_field(nested, 2)?.unwrap_or_default(),
-                }),
-                _ => Ok(ProductionReadResult::Other {
-                    case: format!("read_result_field_{field}"),
-                }),
+                (Some(content), None) => ProductionReadOutput::Content(content),
+                (None, Some(data)) => ProductionReadOutput::Data(data),
+                (None, None) => ProductionReadOutput::None,
             };
+            Ok(ProductionReadResult::Success {
+                path: decode_string_field(nested, 1)?.unwrap_or_default(),
+                output,
+                total_lines: decode_u64_field(nested, 3)?.unwrap_or_default() as u32 as i32,
+                file_size: decode_u64_field(nested, 4)?.unwrap_or_default() as i64,
+                truncated: decode_u64_field(nested, 6)?.unwrap_or_default() != 0,
+                output_blob_id: decode_bytes_field(nested, 7)?,
+                range_applied: decode_u64_field(nested, 8)?.unwrap_or_default() != 0,
+            })
         }
-        skip_protobuf_field(input, &mut cursor, wire)?;
+        2 => Ok(ProductionReadResult::Error {
+            path: decode_string_field(nested, 1)?.unwrap_or_default(),
+            error: decode_string_field(nested, 2)?.unwrap_or_default(),
+        }),
+        3 => Ok(ProductionReadResult::Rejected {
+            path: decode_string_field(nested, 1)?.unwrap_or_default(),
+            reason: decode_string_field(nested, 2)?.unwrap_or_default(),
+        }),
+        4 => Ok(ProductionReadResult::FileNotFound {
+            path: decode_string_field(nested, 1)?.unwrap_or_default(),
+        }),
+        5 => Ok(ProductionReadResult::PermissionDenied {
+            path: decode_string_field(nested, 1)?.unwrap_or_default(),
+        }),
+        6 => Ok(ProductionReadResult::InvalidFile {
+            path: decode_string_field(nested, 1)?.unwrap_or_default(),
+            reason: decode_string_field(nested, 2)?.unwrap_or_default(),
+        }),
+        _ => unreachable!("declared ReadResult oneof"),
     }
-    Ok(ProductionReadResult::Other {
-        case: "missing_read_result".into(),
-    })
 }
 
 fn decode_shell_success(
@@ -1106,281 +1255,316 @@ fn decode_shell_failure(
 fn decode_shell_result(
     input: &[u8],
 ) -> Result<ProductionShellResult, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if wire == 2 {
-            let nested = decode_len_delimited(input, &mut cursor)?;
-            return match field {
-                1 => decode_shell_success(nested),
-                2 => decode_shell_failure(nested),
-                3 => Ok(ProductionShellResult::Timeout {
-                    timeout_ms: decode_u64_field(nested, 3)?.unwrap_or_default(),
-                }),
-                4 => Ok(ProductionShellResult::Rejected {
-                    reason: decode_string_field(nested, 3)?.unwrap_or_default(),
-                }),
-                5 => Ok(ProductionShellResult::SpawnError {
-                    error: decode_string_field(nested, 3)?.unwrap_or_default(),
-                }),
-                7 => Ok(ProductionShellResult::PermissionDenied {
-                    error: decode_string_field(nested, 3)?.unwrap_or_default(),
-                }),
-                _ => Ok(ProductionShellResult::Other {
-                    case: format!("shell_result_field_{field}"),
-                }),
-            };
-        }
-        skip_protobuf_field(input, &mut cursor, wire)?;
+    // Frozen ShellResult metadata is not part of its operation result oneof.
+    let (field, nested) = decode_message_oneof(
+        input, &[1, 2, 3, 4, 5, 7], &[(101, 2), (102, 0), (103, 2), (104, 0)],
+    )?;
+    let _ = decode_len_delimited_field(input, 101, validate_protobuf_message)?;
+    let _ = decode_string_field(input, 103)?;
+    let _ = decode_u32_field(input, 104)?;
+    match field {
+        1 => decode_shell_success(nested),
+        2 => decode_shell_failure(nested),
+        3 => Ok(ProductionShellResult::Timeout {
+            timeout_ms: decode_u64_field(nested, 3)?.unwrap_or_default(),
+        }),
+        4 => Ok(ProductionShellResult::Rejected {
+            reason: decode_string_field(nested, 3)?.unwrap_or_default(),
+        }),
+        5 => Ok(ProductionShellResult::SpawnError {
+            error: decode_string_field(nested, 3)?.unwrap_or_default(),
+        }),
+        7 => Ok(ProductionShellResult::PermissionDenied {
+            error: decode_string_field(nested, 3)?.unwrap_or_default(),
+        }),
+        _ => unreachable!("declared ShellResult oneof"),
     }
-    Ok(ProductionShellResult::Other {
-        case: "missing_shell_result".into(),
-    })
 }
 
 pub fn decode_background_shell_spawn_result(
     input: &[u8],
 ) -> Result<ProductionBackgroundShellSpawnResult, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if wire == 2 {
-            let nested = decode_len_delimited(input, &mut cursor)?;
-            let command = decode_string_field(nested, 1)?.unwrap_or_default();
-            let working_directory = decode_string_field(nested, 2)?.unwrap_or_default();
-            return match field {
-                1 => Ok(ProductionBackgroundShellSpawnResult::Success {
-                    shell_id: decode_u64_field(nested, 1)?.unwrap_or_default().min(u64::from(u32::MAX)) as u32,
-                    command: decode_string_field(nested, 2)?.unwrap_or_default(),
-                    working_directory: decode_string_field(nested, 3)?.unwrap_or_default(),
-                    pid: decode_u64_field(nested, 4)?.map(|value| value.min(u64::from(u32::MAX)) as u32),
-                }),
-                2 => Ok(ProductionBackgroundShellSpawnResult::Error {
-                    command,
-                    working_directory,
-                    error: decode_string_field(nested, 3)?.unwrap_or_default(),
-                }),
-                3 => Ok(ProductionBackgroundShellSpawnResult::Rejected {
-                    command,
-                    working_directory,
-                    reason: decode_string_field(nested, 3)?.unwrap_or_default(),
-                    is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
-                }),
-                4 => Ok(ProductionBackgroundShellSpawnResult::PermissionDenied {
-                    command,
-                    working_directory,
-                    error: decode_string_field(nested, 3)?.unwrap_or_default(),
-                    is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
-                }),
-                5 => Ok(ProductionBackgroundShellSpawnResult::SandboxUnsupported {
-                    command,
-                    working_directory,
-                    sandbox_policy_type: decode_u64_field(nested, 3)?.unwrap_or_default() as u32 as i32,
-                    reason: decode_string_field(nested, 4)?.unwrap_or_default(),
-                    is_readonly: decode_u64_field(nested, 5)?.unwrap_or_default() != 0,
-                }),
-                _ => Ok(ProductionBackgroundShellSpawnResult::Other {
-                    case: format!("background_shell_spawn_result_field_{field}"),
-                }),
-            };
-        }
-        skip_protobuf_field(input, &mut cursor, wire)?;
+    let (field, nested) = decode_message_oneof(input, &[1, 2, 3, 4, 5], &[])?;
+    if field == 1 {
+        return Ok(ProductionBackgroundShellSpawnResult::Success {
+            shell_id: decode_u32_field(nested, 1)?.unwrap_or_default(),
+            command: decode_string_field(nested, 2)?.unwrap_or_default(),
+            working_directory: decode_string_field(nested, 3)?.unwrap_or_default(),
+            pid: decode_u32_field(nested, 4)?,
+        });
     }
-    Ok(ProductionBackgroundShellSpawnResult::Other {
-        case: "missing_background_shell_spawn_result".into(),
-    })
+    let command = decode_string_field(nested, 1)?.unwrap_or_default();
+    let working_directory = decode_string_field(nested, 2)?.unwrap_or_default();
+    match field {
+        2 => Ok(ProductionBackgroundShellSpawnResult::Error {
+            command,
+            working_directory,
+            error: decode_string_field(nested, 3)?.unwrap_or_default(),
+        }),
+        3 => Ok(ProductionBackgroundShellSpawnResult::Rejected {
+            command,
+            working_directory,
+            reason: decode_string_field(nested, 3)?.unwrap_or_default(),
+            is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+        }),
+        4 => Ok(ProductionBackgroundShellSpawnResult::PermissionDenied {
+            command,
+            working_directory,
+            error: decode_string_field(nested, 3)?.unwrap_or_default(),
+            is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+        }),
+        5 => Ok(ProductionBackgroundShellSpawnResult::SandboxUnsupported {
+            command,
+            working_directory,
+            sandbox_policy_type: decode_string_field(nested, 3)?.unwrap_or_default(),
+            reason: decode_string_field(nested, 4)?.unwrap_or_default(),
+            is_readonly: decode_u64_field(nested, 5)?.unwrap_or_default() != 0,
+        }),
+        _ => unreachable!("declared BackgroundShellSpawnResult oneof"),
+    }
 }
 
 pub fn decode_shell_stream_event(
     input: &[u8],
 ) -> Result<ProductionShellStreamEvent, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if wire == 2 {
-            let nested = decode_len_delimited(input, &mut cursor)?;
-            return match field {
-                1 => Ok(ProductionShellStreamEvent::Stdout(
-                    decode_string_field(nested, 1)?.unwrap_or_default(),
-                )),
-                2 => Ok(ProductionShellStreamEvent::Stderr(
-                    decode_string_field(nested, 1)?.unwrap_or_default(),
-                )),
-                3 => Ok(ProductionShellStreamEvent::Exit {
-                    code: decode_u64_field(nested, 1)?
-                        .unwrap_or_default()
-                        .min(u64::from(u32::MAX)) as u32,
-                    cwd: decode_string_field(nested, 2)?.unwrap_or_default(),
-                    aborted: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
-                    local_execution_time_ms: decode_i32_field(nested, 6)?,
-                }),
-                4 => Ok(ProductionShellStreamEvent::Start),
-                5 => Ok(ProductionShellStreamEvent::Rejected {
-                    command: decode_string_field(nested, 1)?.unwrap_or_default(),
-                    working_directory: decode_string_field(nested, 2)?.unwrap_or_default(),
-                    reason: decode_string_field(nested, 3)?.unwrap_or_default(),
-                    is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
-                }),
-                6 => Ok(ProductionShellStreamEvent::PermissionDenied {
-                    command: decode_string_field(nested, 1)?.unwrap_or_default(),
-                    working_directory: decode_string_field(nested, 2)?.unwrap_or_default(),
-                    error: decode_string_field(nested, 3)?.unwrap_or_default(),
-                    is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
-                }),
-                7 => Ok(ProductionShellStreamEvent::Backgrounded {
-                    shell_id: decode_u64_field(nested, 1)?
-                        .unwrap_or_default()
-                        .min(u64::from(u32::MAX)) as u32,
-                    command: decode_string_field(nested, 2)?.unwrap_or_default(),
-                    working_directory: decode_string_field(nested, 3)?.unwrap_or_default(),
-                    pid: decode_u64_field(nested, 4)?
-                        .map(|value| value.min(u64::from(u32::MAX)) as u32),
-                    ms_to_wait: decode_i32_field(nested, 5)?,
-                    reason: decode_i32_field(nested, 6)?,
-                }),
-                _ => Ok(ProductionShellStreamEvent::Other {
-                    case: format!("shell_stream_event_field_{field}"),
-                }),
-            };
-        }
-        skip_protobuf_field(input, &mut cursor, wire)?;
+    let (field, nested) = decode_message_oneof(input, &[1, 2, 3, 4, 5, 6, 7, 8, 9], &[])?;
+    match field {
+        1 => Ok(ProductionShellStreamEvent::Stdout(
+            decode_string_field(nested, 1)?.unwrap_or_default(),
+        )),
+        2 => Ok(ProductionShellStreamEvent::Stderr(
+            decode_string_field(nested, 1)?.unwrap_or_default(),
+        )),
+        3 => Ok(ProductionShellStreamEvent::Exit {
+            code: decode_u32_field(nested, 1)?.unwrap_or_default(),
+            cwd: decode_string_field(nested, 2)?.unwrap_or_default(),
+            aborted: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+            local_execution_time_ms: decode_i32_field(nested, 6)?,
+        }),
+        4 => Ok(ProductionShellStreamEvent::Start),
+        5 => Ok(ProductionShellStreamEvent::Rejected {
+            command: decode_string_field(nested, 1)?.unwrap_or_default(),
+            working_directory: decode_string_field(nested, 2)?.unwrap_or_default(),
+            reason: decode_string_field(nested, 3)?.unwrap_or_default(),
+            is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+        }),
+        6 => Ok(ProductionShellStreamEvent::PermissionDenied {
+            command: decode_string_field(nested, 1)?.unwrap_or_default(),
+            working_directory: decode_string_field(nested, 2)?.unwrap_or_default(),
+            error: decode_string_field(nested, 3)?.unwrap_or_default(),
+            is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+        }),
+        7 => Ok(ProductionShellStreamEvent::Backgrounded {
+            shell_id: decode_u32_field(nested, 1)?.unwrap_or_default(),
+            command: decode_string_field(nested, 2)?.unwrap_or_default(),
+            working_directory: decode_string_field(nested, 3)?.unwrap_or_default(),
+            pid: decode_u32_field(nested, 4)?,
+            ms_to_wait: decode_i32_field(nested, 5)?,
+            reason: decode_i32_field(nested, 6)?,
+        }),
+        9 => Ok(ProductionShellStreamEvent::SandboxUnsupported {
+            command: decode_string_field(nested, 1)?.unwrap_or_default(),
+            working_directory: decode_string_field(nested, 2)?.unwrap_or_default(),
+            sandbox_policy_type: decode_string_field(nested, 3)?.unwrap_or_default(),
+            reason: decode_string_field(nested, 4)?.unwrap_or_default(),
+            is_readonly: decode_u64_field(nested, 5)?.unwrap_or_default() != 0,
+        }),
+        _ => Ok(ProductionShellStreamEvent::Other {
+            case: format!("shell_stream_event_field_{field}"),
+        }),
     }
-    Ok(ProductionShellStreamEvent::Other {
-        case: "missing_shell_stream_event".into(),
-    })
 }
 
 fn decode_write_result(
     input: &[u8],
 ) -> Result<WriteExecResult, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if wire == 2 {
-            let nested = decode_len_delimited(input, &mut cursor)?;
-            return match field {
-                1 => Ok(WriteExecResult::Success),
-                5 => Ok(WriteExecResult::Error {
-                    error: decode_string_field(nested, 2)?.unwrap_or_default(),
-                }),
-                6 => Ok(WriteExecResult::Rejected {
-                    reason: decode_string_field(nested, 2)?.unwrap_or_default(),
-                }),
-                3 => Ok(WriteExecResult::Other {
-                    case: "permission_denied".into(),
-                }),
-                4 => Ok(WriteExecResult::Other {
-                    case: "no_space".into(),
-                }),
-                _ => Ok(WriteExecResult::Other {
-                    case: format!("write_result_field_{field}"),
-                }),
-            };
-        }
-        skip_protobuf_field(input, &mut cursor, wire)?;
+    let (field, nested) = decode_message_oneof(input, &[1, 3, 4, 5, 6], &[])?;
+    match field {
+        1 => Ok(WriteExecResult::Success),
+        5 => Ok(WriteExecResult::Error {
+            error: decode_string_field(nested, 2)?.unwrap_or_default(),
+        }),
+        6 => Ok(WriteExecResult::Rejected {
+            reason: decode_string_field(nested, 2)?.unwrap_or_default(),
+        }),
+        3 => Ok(WriteExecResult::Other { case: "permission_denied".into() }),
+        4 => Ok(WriteExecResult::Other { case: "no_space".into() }),
+        _ => unreachable!("declared WriteResult oneof"),
     }
-    Ok(WriteExecResult::Other {
-        case: "missing_write_result".into(),
-    })
+}
+
+fn is_exec_result_field(field: u64) -> bool {
+    // agent/v1/exec_pb.ts, blob b3d569d1ad5f923444d472a08efb8bad58c5941f.
+    // In particular 15, 39 and 45 are metadata, not raw resource results.
+    matches!(field,
+        2 | 3 | 4 | 5 | 7..=11 | 14 | 16..=18 | 20..=23 | 27..=31
+        | 36..=38 | 40..=44 | 46..=56
+    )
 }
 
 fn decode_exec_client_message(
     input: &[u8],
-) -> Result<ProductionExecClientMessage, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
+) -> Result<BoxRemoteExecEnvelope<ProductionExecClientMessage>, ProductionBoxTransportError> {
+    let mut cursor = 0;
+    let mut id = None;
+    let mut exec_id = None;
+    let mut message = None;
     while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if wire == 2 {
-            let nested = decode_len_delimited(input, &mut cursor)?;
-            return match field {
-                2 => Ok(ProductionExecClientMessage::Shell(decode_shell_result(nested)?)),
-                3 => Ok(ProductionExecClientMessage::Write(decode_write_result(nested)?)),
-                7 => Ok(ProductionExecClientMessage::Read(decode_read_result(nested)?)),
-                22 => Ok(ProductionExecClientMessage::ComputerUse(nested.to_vec())),
-                _ => Ok(ProductionExecClientMessage::RawResource {
-                    field_number: u32::try_from(field).unwrap_or(u32::MAX),
-                    protobuf_result: nested.to_vec(),
-                }),
-            };
+        let (field, wire) = decode_protobuf_key(input, &mut cursor)?;
+        match field {
+            1 => {
+                require_wire(wire, 0)?;
+                let value = decode_varint(input, &mut cursor)?;
+                u32::try_from(value)
+                    .map_err(|_| invalid_exec_response("returned uint32 identity overflow"))?;
+                record_identity(&mut id, value)?;
+            }
+            15 => {
+                require_wire(wire, 2)?;
+                let value = decode_len_delimited(input, &mut cursor)?;
+                let value = std::str::from_utf8(value)
+                    .map_err(|_| invalid_exec_response("returned non-UTF-8 execution identity"))?;
+                record_identity(&mut exec_id, value.to_string())?;
+            }
+            39 => {
+                require_wire(wire, 0)?;
+                let _ = decode_varint(input, &mut cursor)?;
+            }
+            45 => {
+                require_wire(wire, 2)?;
+                validate_protobuf_message(decode_len_delimited(input, &mut cursor)?)?;
+            }
+            field if is_exec_result_field(field) => {
+                require_wire(wire, 2)?;
+                if message.is_some() {
+                    return Err(invalid_exec_response("returned multiple Exec result payloads"));
+                }
+                let nested = decode_len_delimited(input, &mut cursor)?;
+                validate_protobuf_message(nested)?;
+                message = Some(match field {
+                    2 => ProductionExecClientMessage::Shell(decode_shell_result(nested)?),
+                    3 => ProductionExecClientMessage::Write(decode_write_result(nested)?),
+                    7 => ProductionExecClientMessage::Read(decode_read_result(nested)?),
+                    22 => ProductionExecClientMessage::ComputerUse(nested.to_vec()),
+                    _ => ProductionExecClientMessage::RawResource {
+                        field_number: field as u32,
+                        protobuf_result: nested.to_vec(),
+                    },
+                });
+            }
+            _ => skip_protobuf_field(input, &mut cursor, wire)?,
         }
-        skip_protobuf_field(input, &mut cursor, wire)?;
     }
-    Ok(ProductionExecClientMessage::Other)
+    let message = message
+        .ok_or_else(|| invalid_exec_response("returned no supported Exec result payload"))?;
+    Ok(BoxRemoteExecEnvelope::ExecClientMessage {
+        id: id.unwrap_or_default(),
+        exec_id: exec_id.unwrap_or_default(),
+        message,
+    })
 }
 
 fn decode_exec_control_message(
     input: &[u8],
 ) -> Result<BoxRemoteExecControlMessage, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if wire == 2 && (1..=3).contains(&field) {
-            let nested = decode_len_delimited(input, &mut cursor)?;
-            return match field {
-                1 => Ok(BoxRemoteExecControlMessage::StreamClose {
-                    id: decode_u64_field(nested, 1)?.unwrap_or_default(),
-                }),
-                2 => Ok(BoxRemoteExecControlMessage::Throw {
-                    id: decode_u64_field(nested, 1)?,
-                    error: decode_string_field(nested, 2)?
-                        .unwrap_or_else(|| "remote ExecService error".into()),
-                    stack_trace: decode_string_field(nested, 3)?,
-                    error_code: decode_string_field(nested, 4)?,
-                }),
-                3 => Ok(BoxRemoteExecControlMessage::Heartbeat {
-                    id: decode_u64_field(nested, 1)?.unwrap_or_default(),
-                }),
-                _ => Ok(BoxRemoteExecControlMessage::None),
-            };
-        }
-        skip_protobuf_field(input, &mut cursor, wire)?;
+    let (field, nested) = decode_message_oneof(input, &[1, 2, 3], &[])?;
+    let id = decode_control_identity(nested)?;
+    match field {
+        1 => Ok(BoxRemoteExecControlMessage::StreamClose { id: id.unwrap_or_default() }),
+        2 => Ok(BoxRemoteExecControlMessage::Throw {
+            id,
+            error: decode_string_field(nested, 2)?
+                .unwrap_or_else(|| "remote ExecService error".into()),
+            stack_trace: decode_string_field(nested, 3)?,
+            error_code: decode_string_field(nested, 4)?,
+        }),
+        3 => Ok(BoxRemoteExecControlMessage::Heartbeat { id: id.unwrap_or_default() }),
+        _ => unreachable!("declared Exec control oneof"),
     }
-    Ok(BoxRemoteExecControlMessage::None)
 }
 
 fn decode_exec_stream_element(
     input: &[u8],
 ) -> Result<BoxRemoteExecEnvelope<ProductionExecClientMessage>, ProductionBoxTransportError> {
-    let mut cursor = 0usize;
-    while cursor < input.len() {
-        let key = decode_varint(input, &mut cursor)?;
-        let field = key >> 3;
-        let wire = (key & 0x07) as u8;
-        if wire == 2 && (field == 1 || field == 2) {
-            let nested = decode_len_delimited(input, &mut cursor)?;
-            return if field == 1 {
-                Ok(BoxRemoteExecEnvelope::ExecClientMessage(
-                    decode_exec_client_message(nested)?,
-                ))
-            } else {
-                Ok(BoxRemoteExecEnvelope::ExecClientControlMessage(
-                    decode_exec_control_message(nested)?,
-                ))
-            };
-        }
-        skip_protobuf_field(input, &mut cursor, wire)?;
+    let (field, nested) = decode_message_oneof(input, &[1, 2], &[])?;
+    match field {
+        1 => decode_exec_client_message(nested),
+        2 => Ok(BoxRemoteExecEnvelope::ExecClientControlMessage(
+            decode_exec_control_message(nested)?,
+        )),
+        _ => unreachable!("declared Exec stream oneof"),
     }
-    Ok(BoxRemoteExecEnvelope::None)
 }
 
-fn encode_connect_envelope(flags: u8, payload: &[u8]) -> Vec<u8> {
-    let mut envelope = Vec::with_capacity(payload.len() + 5);
+fn encode_connect_envelope(
+    flags: u8,
+    payload: &[u8],
+) -> Result<Vec<u8>, ProductionBoxTransportError> {
+    let length = u32::try_from(payload.len())
+        .map_err(|_| invalid_exec_response("request exceeds Connect frame length"))?;
+    let capacity = payload.len().checked_add(5)
+        .ok_or_else(|| invalid_exec_response("request length overflow"))?;
+    // Match the existing daemon's authenticated Exec request body limit.
+    if capacity > 16 * 1024 * 1024 {
+        return Err(invalid_exec_response("request exceeds the 16 MiB body limit"));
+    }
+    let mut envelope = Vec::with_capacity(capacity);
     envelope.push(flags);
-    envelope.extend_from_slice(&(payload.len() as u32).to_be_bytes());
+    envelope.extend_from_slice(&length.to_be_bytes());
     envelope.extend_from_slice(payload);
-    envelope
+    Ok(envelope)
+}
+
+#[derive(serde::Deserialize)]
+struct ConnectEndEnvelope {
+    // Keep explicit null distinguishable from omission. Deriving the containing
+    // object also rejects duplicate error/metadata keys instead of last-wins.
+    #[serde(default, deserialize_with = "deserialize_present_json")]
+    error: Option<serde_json::Value>,
+    #[serde(default, deserialize_with = "deserialize_present_json")]
+    metadata: Option<serde_json::Value>,
+}
+
+fn deserialize_present_json<'de, D>(
+    deserializer: D,
+) -> Result<Option<serde_json::Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    <serde_json::Value as serde::Deserialize>::deserialize(deserializer).map(Some)
+}
+
+fn decode_connect_end(
+    payload: &[u8],
+) -> Result<Option<ProductionBoxTransportError>, ProductionBoxTransportError> {
+    if payload.iter().find(|byte| !byte.is_ascii_whitespace()) != Some(&b'{') {
+        return Err(invalid_exec_response("returned a malformed Connect end object"));
+    }
+    let end: ConnectEndEnvelope = serde_json::from_slice(payload)
+        .map_err(|_| invalid_exec_response("returned a malformed Connect end object"))?;
+    if let Some(metadata) = end.metadata {
+        let metadata = metadata.as_object()
+            .ok_or_else(|| invalid_exec_response("returned malformed Connect end metadata"))?;
+        for values in metadata.values() {
+            if !values.as_array().is_some_and(|values| values.iter().all(|value| value.is_string())) {
+                return Err(invalid_exec_response("returned malformed Connect end metadata"));
+            }
+        }
+    }
+    if let Some(error) = end.error {
+        let object = error.as_object()
+            .ok_or_else(|| invalid_exec_response("returned a malformed Connect error"))?;
+        if !object.get("code").and_then(|code| code.as_str()).is_some_and(|code| !code.is_empty())
+            || object.get("message").is_some_and(|message| !message.is_string())
+            || object.get("details").is_some_and(|details| !details.is_array())
+        {
+            return Err(invalid_exec_response("returned a malformed Connect error"));
+        }
+        return Ok(Some(ProductionBoxTransportError::InvalidHttpResponse(format!(
+            "box ExecService returned Connect error: {error}"
+        ))));
+    }
+    Ok(None)
 }
 
 fn decode_connect_stream(
@@ -1388,99 +1572,265 @@ fn decode_connect_stream(
 ) -> Result<Vec<BoxRemoteExecEnvelope<ProductionExecClientMessage>>, ProductionBoxTransportError> {
     let mut cursor = 0usize;
     let mut messages = Vec::new();
+    let mut ended = false;
+    let mut remote_error = None;
     while cursor < body.len() {
-        if body.len().saturating_sub(cursor) < 5 {
-            return Err(ProductionBoxTransportError::InvalidHttpResponse(
-                "box ExecService returned a truncated Connect envelope".into(),
-            ));
+        if ended {
+            return Err(invalid_exec_response("returned data after the Connect end envelope"));
         }
+        let header_end = cursor.checked_add(5)
+            .filter(|end| *end <= body.len())
+            .ok_or_else(|| invalid_exec_response("returned a truncated Connect envelope"))?;
         let flags = body[cursor];
-        let length = u32::from_be_bytes([
-            body[cursor + 1],
-            body[cursor + 2],
-            body[cursor + 3],
-            body[cursor + 4],
-        ]) as usize;
-        cursor += 5;
-        let end = cursor.saturating_add(length);
-        if end > body.len() {
-            return Err(ProductionBoxTransportError::InvalidHttpResponse(
-                "box ExecService returned a truncated Connect payload".into(),
-            ));
+        if flags != 0 && flags != CONNECT_STREAM_END_FLAG {
+            return Err(invalid_exec_response("returned unsupported Connect envelope flags"));
         }
+        let length = u32::from_be_bytes([
+            body[cursor + 1], body[cursor + 2], body[cursor + 3], body[cursor + 4],
+        ]) as usize;
+        cursor = header_end;
+        let end = cursor.checked_add(length)
+            .filter(|end| *end <= body.len())
+            .ok_or_else(|| invalid_exec_response("returned a truncated Connect payload"))?;
         let payload = &body[cursor..end];
         cursor = end;
-        if flags & CONNECT_STREAM_END_FLAG != 0 {
-            if !payload.is_empty() {
-                let end_stream: serde_json::Value =
-                    serde_json::from_slice(payload).map_err(|error| {
-                        ProductionBoxTransportError::InvalidHttpResponse(format!(
-                            "box ExecService returned an invalid Connect end-stream envelope: {error}"
-                        ))
-                    })?;
-                if let Some(error) = end_stream.get("error") {
-                    return Err(ProductionBoxTransportError::InvalidHttpResponse(format!(
-                        "box ExecService returned Connect error: {error}"
-                    )));
-                }
-            }
-            continue;
+        if flags == CONNECT_STREAM_END_FLAG {
+            remote_error = decode_connect_end(payload)?;
+            ended = true;
+        } else {
+            messages.push(decode_exec_stream_element(payload)?);
         }
-        if flags != 0 {
-            return Err(ProductionBoxTransportError::InvalidHttpResponse(format!(
-                "box ExecService returned unsupported Connect envelope flags 0x{flags:02x}"
-            )));
-        }
-        messages.push(decode_exec_stream_element(payload)?);
+    }
+    if !ended {
+        return Err(invalid_exec_response("ended without a Connect end envelope"));
+    }
+    if let Some(error) = remote_error {
+        return Err(error);
     }
     Ok(messages)
 }
 
-fn decode_chunked_http_body(
-    input: &[u8],
-) -> Result<Vec<u8>, ProductionBoxTransportError> {
+fn is_http_token(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric()
+        || matches!(byte, b'!' | b'#' | b'$' | b'%' | b'&' | b'\'' | b'*' | b'+'
+            | b'-' | b'.' | b'^' | b'_' | 0x60 | b'|' | b'~')
+}
+
+fn parse_http_header_line(line: &str) -> Result<(&str, &str), ProductionBoxTransportError> {
+    let (name, value) = line.split_once(':')
+        .ok_or_else(|| invalid_exec_response("returned a malformed HTTP header"))?;
+    if name.is_empty() || !name.bytes().all(is_http_token)
+        || value.bytes().any(|byte| (byte < b' ' && byte != b'\t') || byte == 0x7f)
+    {
+        return Err(invalid_exec_response("returned a malformed HTTP header"));
+    }
+    Ok((name, value.trim_matches(|character| character == ' ' || character == '\t')))
+}
+
+fn read_http_line<'a>(
+    input: &'a [u8],
+    cursor: &mut usize,
+) -> Result<&'a [u8], ProductionBoxTransportError> {
+    let remainder = input.get(*cursor..)
+        .ok_or_else(|| invalid_exec_response("HTTP framing cursor overflow"))?;
+    let offset = remainder.windows(2).position(|window| window == b"\r\n")
+        .ok_or_else(|| invalid_exec_response("returned incomplete chunk or trailer framing"))?;
+    let end = cursor.checked_add(offset)
+        .ok_or_else(|| invalid_exec_response("HTTP line length overflow"))?;
+    let line = &input[*cursor..end];
+    *cursor = end.checked_add(2)
+        .ok_or_else(|| invalid_exec_response("HTTP line length overflow"))?;
+    Ok(line)
+}
+
+fn validate_chunk_extensions(input: &[u8]) -> Result<(), ProductionBoxTransportError> {
+    let mut cursor = 0;
+    while cursor < input.len() {
+        while input.get(cursor).is_some_and(|byte| matches!(*byte, b' ' | b'\t')) {
+            cursor += 1;
+        }
+        if input.get(cursor) != Some(&b';') {
+            return Err(invalid_exec_response("returned malformed chunk extensions"));
+        }
+        cursor += 1;
+        while input.get(cursor).is_some_and(|byte| matches!(*byte, b' ' | b'\t')) {
+            cursor += 1;
+        }
+        let start = cursor;
+        while input.get(cursor).is_some_and(|byte| is_http_token(*byte)) {
+            cursor += 1;
+        }
+        if cursor == start {
+            return Err(invalid_exec_response("returned malformed chunk extensions"));
+        }
+        while input.get(cursor).is_some_and(|byte| matches!(*byte, b' ' | b'\t')) {
+            cursor += 1;
+        }
+        if input.get(cursor) == Some(&b'=') {
+            cursor += 1;
+            while input.get(cursor).is_some_and(|byte| matches!(*byte, b' ' | b'\t')) {
+                cursor += 1;
+            }
+            if input.get(cursor) == Some(&b'"') {
+                cursor += 1;
+                loop {
+                    let byte = *input.get(cursor)
+                        .ok_or_else(|| invalid_exec_response("returned unterminated chunk extension"))?;
+                    cursor += 1;
+                    if byte == b'"' {
+                        break;
+                    }
+                    if byte == b'\\' {
+                        let escaped = *input.get(cursor)
+                            .ok_or_else(|| invalid_exec_response("returned truncated chunk extension"))?;
+                        if (escaped < b' ' && escaped != b'\t') || escaped == 0x7f {
+                            return Err(invalid_exec_response("returned malformed chunk extension"));
+                        }
+                        cursor += 1;
+                    } else if (byte < b' ' && byte != b'\t') || byte == 0x7f {
+                        return Err(invalid_exec_response("returned malformed chunk extension"));
+                    }
+                }
+            } else {
+                let start = cursor;
+                while input.get(cursor).is_some_and(|byte| is_http_token(*byte)) {
+                    cursor += 1;
+                }
+                if cursor == start {
+                    return Err(invalid_exec_response("returned malformed chunk extension value"));
+                }
+            }
+            while input.get(cursor).is_some_and(|byte| matches!(*byte, b' ' | b'\t')) {
+                cursor += 1;
+            }
+        }
+        if cursor < input.len() && input[cursor] != b';' {
+            return Err(invalid_exec_response("returned malformed chunk extensions"));
+        }
+    }
+    Ok(())
+}
+
+fn decode_chunked_http_body(input: &[u8]) -> Result<Vec<u8>, ProductionBoxTransportError> {
     let mut cursor = 0usize;
     let mut body = Vec::new();
     loop {
-        if cursor >= input.len() {
-            return Err(ProductionBoxTransportError::InvalidHttpResponse(
-                "box ExecService returned incomplete chunked HTTP framing".into(),
-            ));
+        let line = read_http_line(input, &mut cursor)?;
+        let size_end = line.iter().position(|byte| !byte.is_ascii_hexdigit()).unwrap_or(line.len());
+        if size_end == 0 {
+            return Err(invalid_exec_response("returned an invalid HTTP chunk size"));
         }
-        let line_end = input[cursor..]
-            .windows(2)
-            .position(|window| window == b"\r\n")
-            .map(|offset| cursor + offset)
-            .ok_or_else(|| {
-                ProductionBoxTransportError::InvalidHttpResponse(
-                    "box ExecService returned malformed chunked HTTP framing".into(),
-                )
-            })?;
-        let size_text = std::str::from_utf8(&input[cursor..line_end]).map_err(|_| {
-            ProductionBoxTransportError::InvalidHttpResponse(
-                "box ExecService returned a non-UTF-8 chunk size".into(),
-            )
-        })?;
-        let size_text = size_text.split(';').next().unwrap_or_default().trim();
-        let size = usize::from_str_radix(size_text, 16).map_err(|_| {
-            ProductionBoxTransportError::InvalidHttpResponse(format!(
-                "box ExecService returned invalid chunk size {size_text:?}"
-            ))
-        })?;
-        cursor = line_end + 2;
+        validate_chunk_extensions(&line[size_end..])?;
+        let size_text = std::str::from_utf8(&line[..size_end])
+            .map_err(|_| invalid_exec_response("returned an invalid HTTP chunk size"))?;
+        let size = usize::from_str_radix(size_text, 16)
+            .map_err(|_| invalid_exec_response("returned overflowing HTTP chunk size"))?;
         if size == 0 {
-            break;
+            loop {
+                let trailer = read_http_line(input, &mut cursor)?;
+                if trailer.is_empty() {
+                    if cursor != input.len() {
+                        return Err(invalid_exec_response("returned trailing bytes after HTTP trailers"));
+                    }
+                    return Ok(body);
+                }
+                let colon = trailer.iter().position(|byte| *byte == b':')
+                    .ok_or_else(|| invalid_exec_response("returned a malformed HTTP trailer"))?;
+                let (name, value) = trailer.split_at(colon);
+                if name.is_empty() || !name.iter().all(|byte| is_http_token(*byte))
+                    || value.iter().any(|byte| (*byte < b' ' && *byte != b'\t') || *byte == 0x7f)
+                {
+                    return Err(invalid_exec_response("returned a malformed HTTP trailer"));
+                }
+                // Header names are ASCII tokens. Trailer values may contain
+                // HTTP obs-text bytes; no UTF-8 interpretation is required.
+                let name = std::str::from_utf8(name)
+                    .map_err(|_| invalid_exec_response("returned a malformed HTTP trailer name"))?;
+                if name.eq_ignore_ascii_case("content-length")
+                    || name.eq_ignore_ascii_case("transfer-encoding")
+                {
+                    return Err(invalid_exec_response("returned framing fields in HTTP trailers"));
+                }
+            }
         }
-        let end = cursor.saturating_add(size);
-        if end + 2 > input.len() || &input[end..end + 2] != b"\r\n" {
-            return Err(ProductionBoxTransportError::InvalidHttpResponse(
-                "box ExecService returned a truncated HTTP chunk".into(),
-            ));
+        let end = cursor.checked_add(size)
+            .ok_or_else(|| invalid_exec_response("HTTP chunk length overflow"))?;
+        let framed_end = end.checked_add(2)
+            .filter(|end| *end <= input.len())
+            .ok_or_else(|| invalid_exec_response("returned a truncated HTTP chunk"))?;
+        if &input[end..framed_end] != b"\r\n" {
+            return Err(invalid_exec_response("returned a malformed HTTP chunk terminator"));
         }
         body.extend_from_slice(&input[cursor..end]);
-        cursor = end + 2;
+        cursor = framed_end;
     }
-    Ok(body)
+}
+
+fn decode_exec_http_response(
+    response: &[u8],
+) -> Result<Vec<BoxRemoteExecEnvelope<ProductionExecClientMessage>>, ProductionBoxTransportError> {
+    let header_end = response.windows(4).position(|window| window == b"\r\n\r\n")
+        .ok_or_else(|| invalid_exec_response("returned incomplete HTTP headers"))?;
+    let body_start = header_end.checked_add(4)
+        .ok_or_else(|| invalid_exec_response("HTTP header length overflow"))?;
+    let header_text = std::str::from_utf8(&response[..header_end])
+        .map_err(|_| invalid_exec_response("returned non-UTF-8 HTTP headers"))?;
+    let mut lines = header_text.split("\r\n");
+    let status_line = lines.next().unwrap_or_default();
+    let mut status_parts = status_line.splitn(3, ' ');
+    let version = status_parts.next().unwrap_or_default();
+    let status_text = status_parts.next().unwrap_or_default();
+    if !matches!(version, "HTTP/1.1" | "HTTP/1.0")
+        || status_text.len() != 3 || !status_text.bytes().all(|byte| byte.is_ascii_digit())
+        || status_line.bytes().any(|byte| byte < b' ' || byte == 0x7f)
+    {
+        return Err(invalid_exec_response("returned an invalid HTTP status line"));
+    }
+    let status = status_text.parse::<u16>()
+        .map_err(|_| invalid_exec_response("returned an invalid HTTP status"))?;
+    let mut content_length = None;
+    let mut chunked = false;
+    for line in lines {
+        let (name, value) = parse_http_header_line(line)?;
+        if name.eq_ignore_ascii_case("content-length") {
+            // HTTP allows a repeated identical length. Conflicting values and
+            // transfer-encoding plus length are rejected before body decoding.
+            for value in value.split(',') {
+                let value = value.trim_matches(|character| character == ' ' || character == '\t');
+                if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+                    return Err(invalid_exec_response("returned an invalid Content-Length"));
+                }
+                let length = value.parse::<usize>()
+                    .map_err(|_| invalid_exec_response("returned overflowing Content-Length"))?;
+                if content_length.is_some_and(|previous| previous != length) {
+                    return Err(invalid_exec_response("returned conflicting Content-Length fields"));
+                }
+                content_length = Some(length);
+            }
+        } else if name.eq_ignore_ascii_case("transfer-encoding") {
+            if chunked || !value.eq_ignore_ascii_case("chunked") {
+                return Err(invalid_exec_response("returned unsupported or ambiguous Transfer-Encoding"));
+            }
+            chunked = true;
+        }
+    }
+    if chunked && content_length.is_some() {
+        return Err(invalid_exec_response("returned both Transfer-Encoding and Content-Length"));
+    }
+    let raw_body = &response[body_start..];
+    if content_length.is_some_and(|length| length != raw_body.len()) {
+        return Err(invalid_exec_response("returned a Content-Length body mismatch"));
+    }
+    let response_body = if chunked {
+        decode_chunked_http_body(raw_body)?
+    } else {
+        raw_body.to_vec()
+    };
+    if !(200..300).contains(&status) {
+        let body = String::from_utf8_lossy(&response_body).chars().take(512).collect();
+        return Err(ProductionBoxTransportError::HttpStatus { status, body });
+    }
+    decode_connect_stream(&response_body)
 }
 
 fn send_connect_server_stream(
@@ -1491,10 +1841,9 @@ fn send_connect_server_stream(
     let base = Url::parse(&transport.options.base_url)
         .map_err(|error| ProductionBoxTransportError::InvalidBaseUrl(error.to_string()))?;
     if base.scheme() != "http" {
-        return Err(ProductionBoxTransportError::InvalidBaseUrl(format!(
-            "box transport requires http:// loopback, got {}",
-            transport.options.base_url
-        )));
+        return Err(ProductionBoxTransportError::InvalidBaseUrl(
+            "box transport requires an http:// endpoint".into(),
+        ));
     }
     let host = base.host_str().ok_or_else(|| {
         ProductionBoxTransportError::InvalidBaseUrl("box transport base URL has no host".into())
@@ -1502,77 +1851,34 @@ fn send_connect_server_stream(
     let port = base.port_or_known_default().ok_or_else(|| {
         ProductionBoxTransportError::InvalidBaseUrl("box transport base URL has no port".into())
     })?;
+    let body = encode_connect_envelope(0, protobuf_body)?;
+    let mut request = Vec::new();
+    write!(
+        request,
+        "POST {path} HTTP/1.1\r\nHost: {host}:{port}\r\nContent-Type: {CONNECT_STREAM_CONTENT_TYPE}\r\nAccept: {CONNECT_STREAM_CONTENT_TYPE}\r\nConnect-Protocol-Version: {CONNECT_PROTOCOL_VERSION}\r\nContent-Length: {}\r\nConnection: close\r\n",
+        body.len()
+    ).map_err(ProductionBoxTransportError::Io)?;
+    for (name, value) in transport.request_headers()? {
+        write!(request, "{name}: {value}\r\n").map_err(ProductionBoxTransportError::Io)?;
+    }
+    request.extend_from_slice(b"\r\n");
+    request.extend_from_slice(&body);
 
     let timeout = Duration::from_millis(PRODUCTION_BOX_EXEC_TIMEOUT_MS);
     let mut stream = TcpStream::connect((host, port))?;
     stream.set_read_timeout(Some(timeout))?;
     stream.set_write_timeout(Some(timeout))?;
 
-    let body = encode_connect_envelope(0, protobuf_body);
-    let mut request = Vec::new();
-    write!(
-        request,
-        "POST {path} HTTP/1.1\r\nHost: {host}:{port}\r\nContent-Type: {CONNECT_STREAM_CONTENT_TYPE}\r\nAccept: {CONNECT_STREAM_CONTENT_TYPE}\r\nConnect-Protocol-Version: {CONNECT_PROTOCOL_VERSION}\r\nContent-Length: {}\r\nConnection: close\r\n",
-        body.len()
-    )
-    .map_err(ProductionBoxTransportError::Io)?;
-    for (name, value) in transport.request_headers()? {
-        write!(request, "{name}: {value}\r\n").map_err(ProductionBoxTransportError::Io)?;
-    }
-    request.extend_from_slice(b"\r\n");
-    request.extend_from_slice(&body);
-    stream.write_all(&request)?;
-    stream.flush()?;
-
-    let mut response = Vec::new();
-    stream.read_to_end(&mut response)?;
-    let header_end = response
-        .windows(4)
-        .position(|window| window == b"\r\n\r\n")
-        .ok_or_else(|| {
-            ProductionBoxTransportError::InvalidHttpResponse(
-                "box ExecService returned an incomplete HTTP response".into(),
-            )
-        })?;
-    let header_text = std::str::from_utf8(&response[..header_end]).map_err(|_| {
-        ProductionBoxTransportError::InvalidHttpResponse(
-            "box ExecService returned non-UTF-8 HTTP headers".into(),
-        )
-    })?;
-    let status_line = header_text.lines().next().unwrap_or_default();
-    let status = status_line
-        .split_whitespace()
-        .nth(1)
-        .and_then(|value| value.parse::<u16>().ok())
-        .ok_or_else(|| {
-            ProductionBoxTransportError::InvalidHttpResponse(format!(
-                "box ExecService returned an invalid status line: {status_line}"
-            ))
-        })?;
-
-    let raw_body = &response[header_end + 4..];
-    let is_chunked = header_text.lines().any(|line| {
-        line.split_once(':').is_some_and(|(name, value)| {
-            name.eq_ignore_ascii_case("transfer-encoding")
-                && value.to_ascii_lowercase().contains("chunked")
-        })
-    });
-    let response_body = if is_chunked {
-        decode_chunked_http_body(raw_body)?
-    } else {
-        raw_body.to_vec()
-    };
-    if !(200..300).contains(&status) {
-        let body_text = String::from_utf8_lossy(&response_body)
-            .chars()
-            .take(512)
-            .collect::<String>();
-        return Err(ProductionBoxTransportError::HttpStatus {
-            status,
-            body: body_text,
-        });
-    }
-    decode_connect_stream(&response_body)
+    // Even an error from the first write cannot prove that zero request bytes
+    // reached the daemon. Keep every subsequent error in the unknown class.
+    let dispatched = (|| {
+        stream.write_all(&request)?;
+        stream.flush()?;
+        let mut response = Vec::new();
+        stream.read_to_end(&mut response)?;
+        decode_exec_http_response(&response)
+    })();
+    dispatched.map_err(ProductionBoxTransportError::execution_outcome_unknown)
 }
 
 fn validate_header(name: &str, value: &str) -> Result<(), ProductionBoxTransportError> {
@@ -1634,19 +1940,19 @@ pub fn encode_load_mcp_servers_request(request: &BoxMcpLoadRequest) -> Vec<u8> {
 
 fn decode_varint(input: &[u8], cursor: &mut usize) -> Result<u64, ProductionBoxTransportError> {
     let mut value = 0u64;
-    let mut shift = 0u32;
-    while *cursor < input.len() && shift < 64 {
-        let byte = input[*cursor];
+    for shift in (0..=63).step_by(7) {
+        let byte = *input.get(*cursor)
+            .ok_or_else(|| invalid_exec_response("returned truncated protobuf varint"))?;
         *cursor += 1;
+        if shift == 63 && byte > 1 {
+            return Err(invalid_exec_response("returned overflowing protobuf varint"));
+        }
         value |= u64::from(byte & 0x7f) << shift;
         if byte & 0x80 == 0 {
             return Ok(value);
         }
-        shift += 7;
     }
-    Err(ProductionBoxTransportError::InvalidHttpResponse(
-        "box ControlService returned malformed protobuf".into(),
-    ))
+    Err(invalid_exec_response("returned malformed protobuf varint"))
 }
 
 fn skip_protobuf_field(
@@ -1654,35 +1960,22 @@ fn skip_protobuf_field(
     cursor: &mut usize,
     wire_type: u8,
 ) -> Result<(), ProductionBoxTransportError> {
-    match wire_type {
+    let length = match wire_type {
         0 => {
             let _ = decode_varint(input, cursor)?;
+            return Ok(());
         }
-        1 => {
-            *cursor = cursor.saturating_add(8);
-        }
+        1 => 8,
         2 => {
-            let length = usize::try_from(decode_varint(input, cursor)?).map_err(|_| {
-                ProductionBoxTransportError::InvalidHttpResponse(
-                    "box ControlService protobuf length overflow".into(),
-                )
-            })?;
-            *cursor = cursor.saturating_add(length);
+            let _ = decode_len_delimited(input, cursor)?;
+            return Ok(());
         }
-        5 => {
-            *cursor = cursor.saturating_add(4);
-        }
-        _ => {
-            return Err(ProductionBoxTransportError::InvalidHttpResponse(format!(
-                "box ControlService returned unsupported protobuf wire type {wire_type}"
-            )));
-        }
-    }
-    if *cursor > input.len() {
-        return Err(ProductionBoxTransportError::InvalidHttpResponse(
-            "box ControlService returned truncated protobuf".into(),
-        ));
-    }
+        5 => 4,
+        _ => return Err(invalid_exec_response("returned unsupported protobuf wire type")),
+    };
+    *cursor = cursor.checked_add(length)
+        .filter(|end| *end <= input.len())
+        .ok_or_else(|| invalid_exec_response("returned truncated protobuf field"))?;
     Ok(())
 }
 

@@ -1,0 +1,33 @@
+{
+  "schema_version": "minimal-independent-review-attestation-v1",
+  "round": 3,
+  "repository": "bhrumom/fabushi-desktop",
+  "subject_commit": "7ba15a8dd24554c9d796702468576e970cad93d5",
+  "subject_tree": "c5ce21f37416257cc38d05649d9a6a8a48b493a4",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "scope_blob": "77bf06e01c3e3cd11134aab784bc3277efd39c3e",
+  "lens": [
+    "structure",
+    "reuse",
+    "performance"
+  ],
+  "worker": "/root/bxr_r3_structure",
+  "launch": {
+    "model": "gpt-6.1-sol",
+    "effort": "xhigh",
+    "visibility": "Explicit accepted worker launch; no independent hidden runtime measurement"
+  },
+  "verdict": "NO_BLOCKING_SOURCE_FINDINGS",
+  "finding_count": 0,
+  "source_only": true,
+  "read_depth": "Full7-path delta,18-path manifest/context, current manager/codec/ForeverBox/bridge/spill/prompt forwarding, affected tests/capture and necessary frozen schemas/actual producer/consumer/lifetime contracts; not all unchanged history or removed base code.",
+  "independence": "No prior reports, runner decisions, peer conclusions or later snapshots read.",
+  "full_report": {
+    "location": "task conversation /root/bxr_r3_structure final response",
+    "root_read_complete": true,
+    "remote_blob": null,
+    "remote_full_publication_attempted": false,
+    "reason": "Minimal non-code preservation selected; no full report archive claim."
+  },
+  "limits": "No compilation/runtime/global acceptance. Authored73 direct names/14 custody/43 inputs were not executed. Public API compile closure, actual daemon lock resolution and final exact-H evidence remain required."
+}

@@ -1,0 +1,78 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "round": 2,
+  "subject_commit": "10eb09be90e946e5e9ee72f5ae6f87d6b3ea803f",
+  "subject_tree": "89334bde8bbf47426f4ed87ca6c246cff8d51675",
+  "base_commit": "b35408891546694606ed0750c60af0302669aac9",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "initial_pre_fix_decisions_blob": "d1548850db93952aaf4920eee05c2d3098e9ed60",
+  "received_reports": [
+    {
+      "lens": "general/security/lifetime",
+      "blob": "d5ea1e8a036d7bba56847c424522ac544eaf5fd5",
+      "full_root_read": true,
+      "verdict": "BLOCKING_FINDINGS",
+      "findings": [
+        "BXR-GEN-BACKGROUND-SANDBOX-STRING-001",
+        "BXR-GEN-TIMED-SANDBOX-OUTCOME-002"
+      ],
+      "launch_receipt": "Parent invoked fresh fork-none with explicit reasoning_effort=xhigh, configured model retained; actual hidden runtime setting is not independently exposed. The report's child-side inability to query it does not establish that the accepted launch field was absent."
+    },
+    {
+      "lens": "structure/reuse/performance",
+      "full_report_location": "task conversation /root/bxr_r2_structure final response",
+      "full_report_blob": null,
+      "minimal_receipt_blob": "dc937423f6bdbc2c21e0cf4ab81fe46b02b13d7f",
+      "full_root_read": true,
+      "verdict": "NO_BLOCKING_SOURCE_FINDINGS",
+      "finding_count": 0,
+      "storage_limitation": "Optional full report cloud write automatically rejected; no identical payload retry. Only materially smaller non-code receipt is preserved."
+    }
+  ],
+  "decisions": [
+    {
+      "finding_ids": [
+        "BXR-GEN-BACKGROUND-SANDBOX-STRING-001",
+        "BXR-R2-ROOT-01"
+      ],
+      "decision": "FIX",
+      "rationale": "Actual generated schema and producer both use STRING policy field3. The strict reader exposed a latent integer fixture/type mismatch as a new unknown-outcome regression. Use the existing occurrence-validating string reader and correct the fixture against source authority; do not relax wire validation.",
+      "fix_paths": [
+        "source/host/src/box/generated_production.rs",
+        "source/host/tests/box_generated_production_contract.rs"
+      ],
+      "required_oracle": "Complete actual-accessor legal UTF8/default/producer-unknown/repeated strings and wrong-wire/invalid-occurrence negatives; actual registered Runner→ForeverBox known refusal, no watcher/replay."
+    },
+    {
+      "finding_ids": [
+        "BXR-GEN-TIMED-SANDBOX-OUTCOME-002",
+        "BXR-R2-ROOT-02"
+      ],
+      "decision": "FIX",
+      "rationale": "A complete sole field9 is a declared known refusal, not absent settlement. The concrete actual-producer/consumer failure was not weighed by the earlier full-sequence decision. Add its typed projection within existing owners while retaining all repeated/conflicting terminal, hook, late-output and unknown-outcome decisions. Do not invent a foreground ShellResult variant.",
+      "fix_paths": [
+        "source/host/src/box/generated_production.rs",
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/tests/box_generated_production_contract.rs"
+      ],
+      "required_oracle": "Actual registered Runner timed Shell route with sole populated field9 and hooks yields known refusal with exact policy/reason and no watch/replay. Keep the full25 ordered terminal-pair conflict controls and genuine malformed-result unknown tests."
+    }
+  ],
+  "synthesis": "The structure lens's no-blocker verdict does not override the general lens's two source-proven cases. Both map to the durable initial FIX decisions recorded before repair. No finding is deferred to save a round and no prior valid assertion or global gate is removed.",
+  "shared_contract": {
+    "name": "BXR-v1.3",
+    "path": "docs/specs/g11-box-browser-wire-completion.md",
+    "blob": "3c9e819e46efc79392c4079dabf4c3a27c2f443d",
+    "created_before_source_fix": true
+  },
+  "repair_snapshot": {
+    "commit": "7ba15a8dd24554c9d796702468576e970cad93d5",
+    "tree": "c5ce21f37416257cc38d05649d9a6a8a48b493a4",
+    "scope_blob": "77bf06e01c3e3cd11134aab784bc3277efd39c3e",
+    "full_paths": 18,
+    "fix_paths": 7
+  },
+  "phase_status": "Two synthesized fixes authored, all complete reports read. Fresh independent R3 review is in progress; no batch convergence or runtime acceptance yet.",
+  "execution": "No local/htch execution; final published exact-H Actions still required.",
+  "all8global_flags_remain_false": true
+}

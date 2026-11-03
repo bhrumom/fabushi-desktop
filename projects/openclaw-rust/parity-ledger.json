@@ -19556,7 +19556,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning. HHP-v2 corrects the existing read-only stale-row selector: confirmed missing or invalid entries are selected, while permission/transient/other uninspectable failures retain the full row. Durable origin publication, persistence and production consumers remain required under the existing wiring blocker.",
+      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning. HHP-v2 corrects the existing read-only stale-row selector: confirmed missing or invalid entries are selected, while permission/transient/other uninspectable failures retain the full row. Durable origin publication, persistence and production consumers remain required under the existing wiring blocker. BXR-v1.3 implements a necessary existing Box/Runner prerequisite: match response identity, require complete transport and RPC termination, and preserve unknown mutation outcomes through real ForeverBox and MCP spill consumers. It does not produce raw HTML bytes, a private generated-origin grant or durable provenance; the existing wiring blocker and all acceptance states remain open.",
       "blocker_ids": [
         "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001"
       ],
@@ -19564,14 +19564,20 @@
         "media.provenance"
       ],
       "dependencies": [
-        "mahayana_host_runtime::extensions::attachments::host_read_media_policy"
+        "mahayana_host_runtime::extensions::attachments::host_read_media_policy",
+        "mahayana_host_runtime::box::box_remote_accessor::BoxRemoteExecManager (BXR-v1.3 response identity and completion prerequisite only)",
+        "mahayana_host_runtime::box::generated_production::ProductionBoxResourceAccessor (BXR-v1.3 typed post-write outcome prerequisite only)",
+        "mahayana_host_runtime::runner::box_tool_access::RunnerBoxToolBridge (BXR-v1.3 unknown spill outcome preservation)"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_html_provenance_contract.rs",
         "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md",
         "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
         "projects/openclaw-rust/scripts/capture_media_cleanup.py",
-        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+        "docs/specs/g11-box-browser-wire-completion.md",
+        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py"
       ],
       "existing_owner_candidates": [
         {
@@ -19594,7 +19600,13 @@
       ],
       "migration_rollback": "Retain uninspectable marker snapshots and fail closed at independent read/trust admission; never enable an HTML text fallback to bypass provenance. HHP-v2 adds no schema or persisted-state migration.",
       "oracle_ids": [
-        "OCRM-HTML-PROVENANCE-O01"
+        "OCRM-HTML-PROVENANCE-O01",
+        "BXR01",
+        "BXR02",
+        "BXR03",
+        "BXR04",
+        "BXR05",
+        "BXR06"
       ],
       "owner_decision": "Incorporate outbound HTML provenance types and validation into host_read_media_policy module",
       "postconditions": [
@@ -19678,7 +19690,11 @@
         "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_stale_snapshot_order_and_missing_kinds",
         "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_stale_link_kinds_and_recovery",
         "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_permission_denied_retained_and_recovered",
-        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_symlink_loop_retained_and_recovered"
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_symlink_loop_retained_and_recovered",
+        "source/host/tests/box_remote_accessor_contract.rs::box_remote_exec_manager_requires_matching_data_and_control_identity",
+        "source/host/tests/box_generated_production_contract.rs::production_exec_service_requires_one_legal_final_connect_end",
+        "source/host/tests/runner_box_tool_composition_contract.rs::runner_box_bridge_preserves_unknown_mcp_spill_write_without_replay",
+        "source/host/tests/box_exec_daemon_process_contract.rs::box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
       ],
       "typed_contracts": [
         "validate_provenance_row",

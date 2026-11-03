@@ -1,0 +1,776 @@
+diff --git a/docs/specs/g11-box-browser-wire-completion.md b/docs/specs/g11-box-browser-wire-completion.md
+index 49acb2114574739690b0e3eeef48f6ae98c9b271..6008233a6974cb57c173ad0c5183606cbc3698bb 100644
+--- a/docs/specs/g11-box-browser-wire-completion.md
++++ b/docs/specs/g11-box-browser-wire-completion.md
+@@ -74,7 +74,7 @@ send_connect_server_stream and daemonserver.rs frozen enum/route/resolve_path re
+ from current canonical main. User requests completing real G11 environment and all
+ remaining conditions; this repair is necessary to run the existing production path.
+ 
+-## BW07–BW12: Box response completion and outcome custody (BXR-v1.1)
++## BW07–BW12: Box response completion and outcome custody (BXR-v1.2)
+ 
+ Status: implementation contract, 2026-11-03; execution and acceptance pending.
+ Task: OCRM 647e0932-bea4-4113-9a61-65ae3db58955, round 1.
+@@ -109,7 +109,7 @@ BXR-v1 allocates no tags, changes no wire schema or generated TS, and does not
+ produce raw stdout bytes, a generated-HTML grant, a private capture receipt,
+ a second execution lease, or a new persistence record.
+ 
+-### Requirements and shared interface version BXR-v1.1
++### Requirements and shared interface version BXR-v1.2
+ 
+ - BW07 / BXR01 — Decode the entire existing ExecClientMessage and distinguish its
+   declared payload oneof from metadata, regardless of field order. Preserve data
+@@ -170,10 +170,16 @@ a second execution lease, or a new persistence record.
+   Read, Write and ComputerUse consumers preserve this as the existing
+   ProviderSessionError::ToolOutcomeUnknown. A stream with no terminal operation
+   result or an invalid post-execution background identifier is also unknown.
++  BXR-v1.2 requires the timed-Shell consumer to inspect the complete received
++  event sequence before publishing a terminal result or registering a watcher.
++  Exactly one decisive terminal is required; repeated or conflicting terminals
++  remain unknown. Preserve stdout/stderr received after Exit through RPC close,
++  and treat field8 hook-context as nonterminal metadata, matching the existing
++  Shell consumer contract. No early terminal may hide later data or outcomes.
+   The real Runner bridge must retain that class through its effect-custody
+   consumer. No retry, new admission, successful settlement, cleanup authority or
+   generated origin may be inferred from an unknown result.
+-  BXR-v1.1 includes the real Runner's optional MCP output spill: the existing
++  BXR-v1.2 includes the real Runner's optional MCP output spill: the existing
+   large_output_spill helper and RunnerPromptGlue forwarding methods return
+   Result<Value, ProviderSessionError>. A known write refusal still returns the
+   original inline result, but ToolOutcomeUnknown propagates unchanged through
+@@ -250,7 +256,7 @@ Keep source G01/G02 scoped authority and independent fresh general/structure
+ source review separate from runtime evidence. Campaign failures use the existing
+ classification/recovery policy; no rerun-until-green.
+ 
+-BXR-v1.1 execution input clarification: the existing box-exec-daemon crate has
++BXR-v1.2 execution input clarification: the existing box-exec-daemon crate has
+ no tracked Cargo.lock at the selected baseline, and its established workflow
+ builds it without --locked. The new same-H real-producer control must not invent
+ a locked build or reuse an unbound cached executable. Build that existing crate
+diff --git a/projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json
+index 405c206f89f96b52af90d96fc7a3a4d472cdd599..bed2af1c096e8090e0804a6be1701f3371b53027 100644
+--- a/projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json
+@@ -1,5 +1,5 @@
+ {
+-  "schema_version": "BXR-v1.1-source-contract",
++  "schema_version": "BXR-v1.2-source-contract",
+   "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+   "upstream": {
+     "repository": "openclaw/openclaw",
+@@ -80,12 +80,12 @@
+   ],
+   "review_claim": "Retains prior fixed-U source review identities and literal read states. This batch does not claim new full-file upstream reading, generator-input closure or all-source disposition. High-risk current owner implementation and real call/response/consumer paths are reviewed for this prerequisite.",
+   "oracle_ids": [
+-    "BXR-01",
+-    "BXR-02",
+-    "BXR-03",
+-    "BXR-04",
+-    "BXR-05",
+-    "BXR-06"
++    "BXR01",
++    "BXR02",
++    "BXR03",
++    "BXR04",
++    "BXR05",
++    "BXR06"
+   ],
+   "required_direct_cases": [
+     {
+@@ -148,7 +148,12 @@
+         "forever_box_runner_resource_port_preserves_unknown_missing_terminal_and_invalid_background_id",
+         "forever_box_runner_resource_port_keeps_no_monitor_as_pre_dispatch_refusal",
+         "production_exec_service_rejects_invalid_control_identity_and_multiple_control_cases",
+-        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results"
++        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results",
++        "production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once",
++        "production_exec_service_rejects_shadowed_uint32_overflow_once",
++        "production_exec_service_preserves_valid_repeated_typed_fields_and_last_values",
++        "forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch",
++        "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata"
+       ],
+       "command": [
+         "cargo",
+@@ -327,11 +332,11 @@
+     "source/host/src/box/generated_production.rs",
+     "source/host/src/box/mod.rs",
+     "source/host/src/box/protected_path_guard.rs",
+-    "source/host/src/runner/remote_box_resources.rs",
+     "source/host/src/extensions/forever_box/runner_tools.rs",
+     "source/host/src/extensions/inference/provider_session.rs",
+     "source/host/src/runner/box_tool_access.rs",
+     "source/host/src/runner/large_output_spill.rs",
++    "source/host/src/runner/remote_box_resources.rs",
+     "source/host/src/runner/runner_prompt_glue.rs",
+     "source/host/src/runner/sand_action_audit.rs",
+     "source/host/src/runner/tools/mcp_meta_tools.rs",
+@@ -342,6 +347,9 @@
+     "source/host/tests/runner_box_tool_composition_contract.rs",
+     "source/host/tests/runner_effect_custody_contract.rs",
+     "source/host/tests/runner_prompt_glue_contract.rs",
++    "source/packages/agent-exec/shell-stream.ts",
++    "source/packages/agent/tools/core/shell/create-shell-tool.ts",
++    "source/packages/local-exec/shell-stream.ts",
+     "source/packages/proto/generated/agent/v1/exec_pb.ts",
+     "source/packages/proto/generated/agent/v1/exec_service_pb.ts",
+     "source/packages/proto/generated/agent/v1/shell_exec_pb.ts"
+@@ -372,5 +380,29 @@
+     "Daemon generated lock source freezing and dependency/legal accounting",
+     "Real external Box/provider/device/platform acceptance",
+     "Full fixed-U source closure, OCRM G01-G12/AC01-AC24, shipping artifacts and independent ACCEPT"
++  ],
++  "review_corrections": {
++    "contract": "BXR-v1.2",
++    "decisions_blob": "61e447248004217d901bf92e64002b6f32811390",
++    "typed_fields": "Validate each known string, message metadata and uint32 occurrence before retaining a legal repeated value.",
++    "timed_shell": "Inspect all events before terminal publication/watcher; preserve late stdout/stderr and hook metadata, refuse conflicting terminal results.",
++    "state": "all three decided corrections authored; independent R2 review and exact-H runtime proof pending"
++  },
++  "adjacent_shell_semantic_inputs": [
++    {
++      "path": "source/packages/proto/generated/agent/v1/shell_exec_pb.ts",
++      "blob": "43079a2f5df12a5f570589ce312fd7fcfb71bd1f",
++      "fact": "ShellStream field8 is hook_context metadata; field9 is sandbox_unsupported, not a second metadata variant"
++    },
++    {
++      "path": "source/packages/agent/tools/core/shell/create-shell-tool.ts",
++      "blob": "f7e875e6e08ac6df9afc0bf904b2a814510b981f",
++      "fact": "executeStream stores Exit rather than returning, continues collecting stdout/stderr through stream completion, and ignores hookContext metadata"
++    },
++    {
++      "path": "source/box-exec-daemon/src/server.rs",
++      "blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
++      "fact": "actual current producer drains output before its single Exit and returns after Backgrounded; source-only confirmation"
++    }
+   ]
+ }
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index d60c5490dc687f17a6871adf1fa7fa8e1becd8b1..0e3c53c0e6d8c5a4ccee8f274e3da61941c56dbe 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -19556,7 +19556,7 @@
+     },
+     {
+       "adr_refs": [],
+-      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning. HHP-v2 corrects the existing read-only stale-row selector: confirmed missing or invalid entries are selected, while permission/transient/other uninspectable failures retain the full row. Durable origin publication, persistence and production consumers remain required under the existing wiring blocker. BXR-v1.1 implements a necessary existing Box/Runner prerequisite: match response identity, require complete transport and RPC termination, and preserve unknown mutation outcomes through real ForeverBox and MCP spill consumers. It does not produce raw HTML bytes, a private generated-origin grant or durable provenance; the existing wiring blocker and all acceptance states remain open.",
++      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning. HHP-v2 corrects the existing read-only stale-row selector: confirmed missing or invalid entries are selected, while permission/transient/other uninspectable failures retain the full row. Durable origin publication, persistence and production consumers remain required under the existing wiring blocker. BXR-v1.2 implements a necessary existing Box/Runner prerequisite: match response identity, require complete transport and RPC termination, and preserve unknown mutation outcomes through real ForeverBox and MCP spill consumers. It does not produce raw HTML bytes, a private generated-origin grant or durable provenance; the existing wiring blocker and all acceptance states remain open.",
+       "blocker_ids": [
+         "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001"
+       ],
+@@ -19565,9 +19565,9 @@
+       ],
+       "dependencies": [
+         "mahayana_host_runtime::extensions::attachments::host_read_media_policy",
+-        "mahayana_host_runtime::box::box_remote_accessor::BoxRemoteExecManager (BXR-v1.1 response identity and completion prerequisite only)",
+-        "mahayana_host_runtime::box::generated_production::ProductionBoxResourceAccessor (BXR-v1.1 typed post-write outcome prerequisite only)",
+-        "mahayana_host_runtime::runner::box_tool_access::RunnerBoxToolBridge (BXR-v1.1 unknown spill outcome preservation)"
++        "mahayana_host_runtime::box::box_remote_accessor::BoxRemoteExecManager (BXR-v1.2 response identity and completion prerequisite only)",
++        "mahayana_host_runtime::box::generated_production::ProductionBoxResourceAccessor (BXR-v1.2 typed post-write outcome prerequisite only)",
++        "mahayana_host_runtime::runner::box_tool_access::RunnerBoxToolBridge (BXR-v1.2 unknown spill outcome preservation)"
+       ],
+       "evidence_refs": [
+         "source/host/tests/openclaw_html_provenance_contract.rs",
+@@ -19601,12 +19601,12 @@
+       "migration_rollback": "Retain uninspectable marker snapshots and fail closed at independent read/trust admission; never enable an HTML text fallback to bypass provenance. HHP-v2 adds no schema or persisted-state migration.",
+       "oracle_ids": [
+         "OCRM-HTML-PROVENANCE-O01",
+-        "BXR-01",
+-        "BXR-02",
+-        "BXR-03",
+-        "BXR-04",
+-        "BXR-05",
+-        "BXR-06"
++        "BXR01",
++        "BXR02",
++        "BXR03",
++        "BXR04",
++        "BXR05",
++        "BXR06"
+       ],
+       "owner_decision": "Incorporate outbound HTML provenance types and validation into host_read_media_policy module",
+       "postconditions": [
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index ed56a95a9bc143a35ceef7f68566f6c1d598c2a3..635a1d2fa49fec8d34b89636f6c03d004a608e82 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -1449,12 +1449,12 @@
+         "MSU-08",
+         "MSU-09",
+         "MSU-10",
+-        "BXR-01",
+-        "BXR-02",
+-        "BXR-03",
+-        "BXR-04",
+-        "BXR-05",
+-        "BXR-06"
++        "BXR01",
++        "BXR02",
++        "BXR03",
++        "BXR04",
++        "BXR05",
++        "BXR06"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -2995,12 +2995,12 @@
+         "MSU-08",
+         "MSU-09",
+         "MSU-10",
+-        "BXR-01",
+-        "BXR-02",
+-        "BXR-03",
+-        "BXR-04",
+-        "BXR-05",
+-        "BXR-06"
++        "BXR01",
++        "BXR02",
++        "BXR03",
++        "BXR04",
++        "BXR05",
++        "BXR06"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index b3afeb5d6b4f1ed7963b6f7b781b149c526f9738..5b97befad52ed4333a1824280ca15d3efe5319c3 100644
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -233,7 +233,7 @@
+ inputs = sorted(set(inputs) | {"source/host/build.rs", "source/host/tests/generated_occurrence_codec_contract.rs"} | {
+     str(path) for path in pathlib.Path("source/packages/proto/generated").rglob("*.ts")
+ })
+-# BXR-v1.1 binds the actual Box owner, all changed consumers and the existing
++# BXR-v1.2 binds the actual Box owner, all changed consumers and the existing
+ # daemon producer separately from unrelated portable-source coverage.
+ box_response_inputs = [
+     ".github/workflows/rust-desktop-runtime.yml",
+@@ -256,11 +256,11 @@
+     "source/host/src/box/generated_production.rs",
+     "source/host/src/box/mod.rs",
+     "source/host/src/box/protected_path_guard.rs",
+-    "source/host/src/runner/remote_box_resources.rs",
+     "source/host/src/extensions/forever_box/runner_tools.rs",
+     "source/host/src/extensions/inference/provider_session.rs",
+     "source/host/src/runner/box_tool_access.rs",
+     "source/host/src/runner/large_output_spill.rs",
++    "source/host/src/runner/remote_box_resources.rs",
+     "source/host/src/runner/runner_prompt_glue.rs",
+     "source/host/src/runner/sand_action_audit.rs",
+     "source/host/src/runner/tools/mcp_meta_tools.rs",
+@@ -271,6 +271,9 @@
+     "source/host/tests/runner_box_tool_composition_contract.rs",
+     "source/host/tests/runner_effect_custody_contract.rs",
+     "source/host/tests/runner_prompt_glue_contract.rs",
++    "source/packages/agent-exec/shell-stream.ts",
++    "source/packages/agent/tools/core/shell/create-shell-tool.ts",
++    "source/packages/local-exec/shell-stream.ts",
+     "source/packages/proto/generated/agent/v1/exec_pb.ts",
+     "source/packages/proto/generated/agent/v1/exec_service_pb.ts",
+     "source/packages/proto/generated/agent/v1/shell_exec_pb.ts"
+@@ -1113,7 +1116,12 @@
+         "forever_box_runner_resource_port_preserves_unknown_missing_terminal_and_invalid_background_id",
+         "forever_box_runner_resource_port_keeps_no_monitor_as_pre_dispatch_refusal",
+         "production_exec_service_rejects_invalid_control_identity_and_multiple_control_cases",
+-        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results"
++        "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results",
++        "production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once",
++        "production_exec_service_rejects_shadowed_uint32_overflow_once",
++        "production_exec_service_preserves_valid_repeated_typed_fields_and_last_values",
++        "forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch",
++        "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata"
+ ]),
+     ("box-response-runner-bridge", base + ["--test","runner_box_tool_composition_contract","--","--test-threads=1"], [
+         "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",
+@@ -1273,7 +1281,7 @@ def box_response_source_bindings():
+ 
+ 
+ receipt = {
+-    "box_response_contract": "BXR-v1.1",
++    "box_response_contract": "BXR-v1.2",
+     "box_response_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
+     "box_response_inputs_before": box_response_inputs_before,
+     "box_response_result_oracle_controls": box_response_oracle_controls,
+diff --git a/source/host/src/box/generated_production.rs b/source/host/src/box/generated_production.rs
+index 7b1f50c27b30870c7a59d41774decc660e454f71..5ed8317500a9fc62a670fd7bfe4f16ab671dd741 100644
+--- a/source/host/src/box/generated_production.rs
++++ b/source/host/src/box/generated_production.rs
+@@ -1033,31 +1033,40 @@ fn validate_protobuf_message(input: &[u8]) -> Result<(), ProductionBoxTransportE
+     Ok(())
+ }
+ 
+-fn decode_u64_field(
++fn decode_varint_field<T>(
+     input: &[u8],
+     wanted: u64,
+-) -> Result<Option<u64>, ProductionBoxTransportError> {
++    decode: impl Fn(u64) -> Result<T, ProductionBoxTransportError>,
++) -> Result<Option<T>, ProductionBoxTransportError> {
+     let mut cursor = 0;
+     let mut value = None;
+     while cursor < input.len() {
+         let (field, wire) = decode_protobuf_key(input, &mut cursor)?;
+         if field == wanted {
+             require_wire(wire, 0)?;
+-            value = Some(decode_varint(input, &mut cursor)?);
++            // Validate each occurrence before retaining the legal final value.
++            value = Some(decode(decode_varint(input, &mut cursor)?)?);
+         } else {
+             skip_protobuf_field(input, &mut cursor, wire)?;
+         }
+     }
+     Ok(value)
+ }
+ 
++fn decode_u64_field(
++    input: &[u8],
++    wanted: u64,
++) -> Result<Option<u64>, ProductionBoxTransportError> {
++    decode_varint_field(input, wanted, |value| Ok(value))
++}
++
+ fn decode_u32_field(
+     input: &[u8],
+     wanted: u64,
+ ) -> Result<Option<u32>, ProductionBoxTransportError> {
+-    decode_u64_field(input, wanted)?.map(|value| {
++    decode_varint_field(input, wanted, |value| {
+         u32::try_from(value).map_err(|_| invalid_exec_response("returned uint32 overflow"))
+-    }).transpose()
++    })
+ }
+ 
+ fn decode_i32_field(
+@@ -1071,30 +1080,40 @@ fn decode_string_field(
+     input: &[u8],
+     wanted: u64,
+ ) -> Result<Option<String>, ProductionBoxTransportError> {
+-    decode_bytes_field(input, wanted)?.map(|value| {
+-        String::from_utf8(value)
++    decode_len_delimited_field(input, wanted, |value| {
++        std::str::from_utf8(value)
++            .map(|value| value.to_string())
+             .map_err(|_| invalid_exec_response("returned non-UTF-8 protobuf string"))
+-    }).transpose()
++    })
+ }
+ 
+-fn decode_bytes_field(
++fn decode_len_delimited_field<T>(
+     input: &[u8],
+     wanted: u64,
+-) -> Result<Option<Vec<u8>>, ProductionBoxTransportError> {
++    decode: impl Fn(&[u8]) -> Result<T, ProductionBoxTransportError>,
++) -> Result<Option<T>, ProductionBoxTransportError> {
+     let mut cursor = 0;
+     let mut value = None;
+     while cursor < input.len() {
+         let (field, wire) = decode_protobuf_key(input, &mut cursor)?;
+         if field == wanted {
+             require_wire(wire, 2)?;
+-            value = Some(decode_len_delimited(input, &mut cursor)?.to_vec());
++            // A later valid duplicate must not conceal an earlier typed error.
++            value = Some(decode(decode_len_delimited(input, &mut cursor)?)?);
+         } else {
+             skip_protobuf_field(input, &mut cursor, wire)?;
+         }
+     }
+     Ok(value)
+ }
+ 
++fn decode_bytes_field(
++    input: &[u8],
++    wanted: u64,
++) -> Result<Option<Vec<u8>>, ProductionBoxTransportError> {
++    decode_len_delimited_field(input, wanted, |value| Ok(value.to_vec()))
++}
++
+ fn record_identity<T: PartialEq>(
+     previous: &mut Option<T>,
+     value: T,
+@@ -1233,9 +1252,7 @@ fn decode_shell_result(
+     let (field, nested) = decode_message_oneof(
+         input, &[1, 2, 3, 4, 5, 7], &[(101, 2), (102, 0), (103, 2), (104, 0)],
+     )?;
+-    if let Some(policy) = decode_bytes_field(input, 101)? {
+-        validate_protobuf_message(&policy)?;
+-    }
++    let _ = decode_len_delimited_field(input, 101, validate_protobuf_message)?;
+     let _ = decode_string_field(input, 103)?;
+     let _ = decode_u32_field(input, 104)?;
+     match field {
+diff --git a/source/host/src/extensions/forever_box/runner_tools.rs b/source/host/src/extensions/forever_box/runner_tools.rs
+index 71b7eff4049b6930315bd082be69ecb767e28ed4..bc6208a6614634715272851ee3b703339849bf91 100644
+--- a/source/host/src/extensions/forever_box/runner_tools.rs
++++ b/source/host/src/extensions/forever_box/runner_tools.rs
+@@ -641,12 +641,33 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
+                             })?;
+                         let mut stdout = String::new();
+                         let mut stderr = String::new();
++                        let mut terminal_count = 0usize;
++                        // The complete Vec is already received. Resolve its disposition
++                        // before publishing a result or registering background work.
++                        for event in &events {
++                            match event {
++                                ProductionShellStreamEvent::Start => {}
++                                ProductionShellStreamEvent::Stdout(delta) => stdout.push_str(delta),
++                                ProductionShellStreamEvent::Stderr(delta) => stderr.push_str(delta),
++                                // Other contains frozen hook-context field8 or
++                                // sandbox-unsupported field9; only field8 is metadata.
++                                ProductionShellStreamEvent::Other { case }
++                                    if case == "shell_stream_event_field_8" => {}
++                                _ => terminal_count += 1,
++                            }
++                        }
++                        if terminal_count > 1 {
++                            return Err(ProviderSessionError::ToolOutcomeUnknown(
++                                "Box timed Shell stream returned repeated or conflicting terminal outcomes"
++                                    .into(),
++                            ));
++                        }
+                         let mut last_other = None::<String>;
+                         for event in events {
+                             match event {
+-                                ProductionShellStreamEvent::Start => {}
+-                                ProductionShellStreamEvent::Stdout(delta) => stdout.push_str(&delta),
+-                                ProductionShellStreamEvent::Stderr(delta) => stderr.push_str(&delta),
++                                ProductionShellStreamEvent::Start
++                                | ProductionShellStreamEvent::Stdout(_)
++                                | ProductionShellStreamEvent::Stderr(_) => {}
+                                 ProductionShellStreamEvent::Exit {
+                                     code,
+                                     cwd,
+@@ -723,7 +744,9 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
+                                     }));
+                                 }
+                                 ProductionShellStreamEvent::Other { case } => {
+-                                    last_other = Some(case);
++                                    if case != "shell_stream_event_field_8" {
++                                        last_other = Some(case);
++                                    }
+                                 }
+                             }
+                         }
+diff --git a/source/host/tests/box_generated_production_contract.rs b/source/host/tests/box_generated_production_contract.rs
+index a521c3d899ce59bf6aaaa1a5d2c77b902603f012..c1e2c565871dc12ca3267eff0c9b8b61753eb00a 100644
+--- a/source/host/tests/box_generated_production_contract.rs
++++ b/source/host/tests/box_generated_production_contract.rs
+@@ -2185,3 +2185,319 @@ fn production_exec_service_rejects_ambiguous_nested_read_write_background_and_st
+     })).expect_err("two ShellStream event cases");
+     assert!(error.outcome_unknown());
+ }
++
++
++/// Exercise complete production responses while witnessing the actual dispatch
++/// count. No synthetic decoder or direct consumer projection is substituted.
++fn with_counted_complete_exec_reply<T>(
++    elements: Vec<Vec<u8>>,
++    readiness_ping: bool,
++    call: impl FnOnce(u16) -> T,
++) -> T {
++    let listener = TcpListener::bind("127.0.0.1:0").expect("bind counted complete-response peer");
++    let port = listener.local_addr().expect("counted peer address").port();
++    let finished = Arc::new(AtomicBool::new(false));
++    let requests = Arc::new(AtomicUsize::new(0));
++    let server_finished = Arc::clone(&finished);
++    let server_requests = Arc::clone(&requests);
++    let server = thread::spawn(move || {
++        if readiness_ping {
++            serve_unary_success(&listener, PING_PATH);
++        }
++        listener.set_nonblocking(true).expect("nonblocking counted peer");
++        let deadline = Instant::now() + Duration::from_secs(5);
++        loop {
++            assert!(Instant::now() < deadline, "counted complete-response peer timed out");
++            match listener.accept() {
++                Ok((mut stream, _)) => {
++                    let identity = exec_request_identity(&read_request(&mut stream));
++                    assert!(identity.exec_id.is_empty(), "BXR must preserve the actual empty exec_id");
++                    server_requests.fetch_add(1, Ordering::SeqCst);
++                    let elements = elements.iter()
++                        .map(|element| echo_response_identity(element, &identity))
++                        .collect::<Vec<_>>();
++                    let body = complete_connect_body(&elements, identity.id);
++                    stream.write_all(&length_response(&body))
++                        .expect("write complete correlated response");
++                    stream.flush().expect("flush complete correlated response");
++                }
++                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
++                    if server_finished.load(Ordering::SeqCst) {
++                        break;
++                    }
++                    thread::sleep(Duration::from_millis(1));
++                }
++                Err(error) => panic!("counted complete-response peer failed: {error}"),
++            }
++        }
++    });
++    let result = call(port);
++    finished.store(true, Ordering::SeqCst);
++    server.join().expect("counted complete-response peer");
++    assert_eq!(requests.load(Ordering::SeqCst), 1,
++        "the production call must dispatch exactly once and must not retry");
++    result
++}
++
++#[test]
++fn production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once() {
++    // These are raw frozen ShellResult bytes, including both adjudicated
++    // counterexamples. The rest of the HTTP/Connect/RPC response is complete.
++    let cases = [
++        (
++            "early invalid terminals_folder UTF-8",
++            vec![0x0a, 0x00, 0xba, 0x06, 0x01, 0xff, 0xba, 0x06, 0x00],
++            "non-UTF-8 protobuf string",
++        ),
++        (
++            "early malformed sandbox_policy message",
++            vec![0x0a, 0x00, 0xaa, 0x06, 0x01, 0x00, 0xaa, 0x06, 0x00],
++            "invalid protobuf field number",
++        ),
++        (
++            "early invalid stdout UTF-8",
++            vec![0x0a, 0x07, 0x2a, 0x01, 0xff, 0x2a, 0x02, b'o', b'k'],
++            "non-UTF-8 protobuf string",
++        ),
++        (
++            "early invalid stderr UTF-8",
++            vec![0x0a, 0x05, 0x32, 0x01, 0xff, 0x32, 0x00],
++            "non-UTF-8 protobuf string",
++        ),
++        (
++            "late invalid terminals_folder UTF-8 after a valid occurrence",
++            vec![0x0a, 0x00, 0xba, 0x06, 0x00, 0xba, 0x06, 0x01, 0xff],
++            "non-UTF-8 protobuf string",
++        ),
++        (
++            "late malformed sandbox_policy after a valid occurrence",
++            vec![0x0a, 0x00, 0xaa, 0x06, 0x00, 0xaa, 0x06, 0x01, 0x00],
++            "invalid protobuf field number",
++        ),
++        (
++            "late invalid stdout UTF-8 after a valid occurrence",
++            vec![0x0a, 0x07, 0x2a, 0x02, b'o', b'k', 0x2a, 0x01, 0xff],
++            "non-UTF-8 protobuf string",
++        ),
++        (
++            "late invalid stderr UTF-8 after a valid occurrence",
++            vec![0x0a, 0x05, 0x32, 0x00, 0x32, 0x01, 0xff],
++            "non-UTF-8 protobuf string",
++        ),
++    ];
++    for (scenario, shell_result, expected_cause) in cases {
++        let result = with_counted_complete_exec_reply(
++            vec![raw_resource_element(2, &shell_result)], false, |port| {
++                ProductionBoxEnvironment::new("127.0.0.1", port, "secret")
++                    .remote_resource_accessor()
++                    .execute_shell_result(&(), bxr_shell_args())
++            },
++        );
++        let error = result.expect_err(scenario);
++        assert!(error.to_string().contains(expected_cause), "{scenario}: {error:?}");
++        assert_unknown_transport(error, scenario);
++    }
++}
++
++#[test]
++fn production_exec_service_rejects_shadowed_uint32_overflow_once() {
++    // Each UINT32 occurrence 80 80 80 80 10 is 2^32; a following valid value
++    // must not hide it. No new int32 restriction is part of this oracle.
++    let cases = [
++        (
++            "ShellResult pid metadata",
++            2,
++            vec![0x0a, 0x00, 0xc0, 0x06, 0x80, 0x80, 0x80, 0x80, 0x10, 0xc0, 0x06, 0x00],
++        ),
++        (
++            "background shell_id",
++            16,
++            vec![0x0a, 0x08, 0x08, 0x80, 0x80, 0x80, 0x80, 0x10, 0x08, 0x2a],
++        ),
++        (
++            "background pid",
++            16,
++            vec![0x0a, 0x0a, 0x08, 0x2a, 0x20, 0x80, 0x80, 0x80, 0x80, 0x10, 0x20, 0x7b],
++        ),
++        (
++            "ShellStream Exit code",
++            14,
++            vec![0x1a, 0x08, 0x08, 0x80, 0x80, 0x80, 0x80, 0x10, 0x08, 0x00],
++        ),
++        (
++            "ShellStream Backgrounded shell_id",
++            14,
++            vec![0x3a, 0x08, 0x08, 0x80, 0x80, 0x80, 0x80, 0x10, 0x08, 0x2a],
++        ),
++    ];
++    for (scenario, field, protobuf_result) in cases {
++        let result = with_counted_complete_exec_reply(
++            vec![raw_resource_element(field, &protobuf_result)], false, |port| {
++                let environment = ProductionBoxEnvironment::new("127.0.0.1", port, "secret");
++                let mut accessor = environment.remote_resource_accessor();
++                match field {
++                    2 => accessor.execute_shell_result(&(), bxr_shell_args()).map(|_| ()),
++                    16 => accessor.execute_background_shell_spawn(&(), bxr_shell_args().into()).map(|_| ()),
++                    14 => accessor.execute_shell_stream(&(), ProductionShellStreamArgs {
++                        shell_args: bxr_shell_args(), timeout_ms: 75, hard_timeout_ms: None,
++                    }).map(|_| ()),
++                    _ => unreachable!("declared typed occurrence case"),
++                }
++            },
++        );
++        let error = result.expect_err(scenario);
++        assert!(error.outcome_unknown(), "{scenario}: {error:?}");
++        assert!(error.to_string().contains("uint32 overflow"), "{scenario}: {error:?}");
++    }
++}
++
++#[test]
++fn production_exec_service_preserves_valid_repeated_typed_fields_and_last_values() {
++    let mut success = Vec::new();
++    // A normal ten-byte negative int32 followed by zero keeps existing int32
++    // behavior; the uint32-specific fix must not add an int32 range policy.
++    push_varint(3, u64::MAX, &mut success);
++    push_varint(3, 0, &mut success);
++    push_len(5, b"old stdout", &mut success);
++    push_len(5, b"last stdout", &mut success);
++    push_len(6, b"old stderr", &mut success);
++    push_len(6, b"last stderr", &mut success);
++    let mut shell = Vec::new();
++    push_len(1, &success, &mut shell);
++    push_len(101, &[], &mut shell);
++    push_len(101, &[], &mut shell);
++    push_len(103, b"/old/terminals", &mut shell);
++    push_len(103, b"/new/terminals", &mut shell);
++    push_varint(104, 41, &mut shell);
++    push_varint(104, 42, &mut shell);
++    let result = with_counted_complete_exec_reply(
++        vec![raw_resource_element(2, &shell)], false, |port| {
++            ProductionBoxEnvironment::new("127.0.0.1", port, "secret")
++                .remote_resource_accessor().execute_shell_result(&(), bxr_shell_args())
++        },
++    ).expect("valid repeated Shell fields");
++    assert_eq!(result, ProductionShellResult::Success {
++        exit_code: 0, stdout: "last stdout".into(), stderr: "last stderr".into(),
++    });
++
++    let mut success = Vec::new();
++    push_varint(1, 41, &mut success);
++    push_varint(1, 42, &mut success);
++    push_len(2, b"old command", &mut success);
++    push_len(2, b"last command", &mut success);
++    push_len(3, b"/workspace", &mut success);
++    push_varint(4, 123, &mut success);
++    push_varint(4, 124, &mut success);
++    let mut spawn = Vec::new();
++    push_len(1, &success, &mut spawn);
++    let result = with_counted_complete_exec_reply(
++        vec![raw_resource_element(16, &spawn)], false, |port| {
++            ProductionBoxEnvironment::new("127.0.0.1", port, "secret")
++                .remote_resource_accessor().execute_background_shell_spawn(&(), bxr_shell_args().into())
++        },
++    ).expect("valid repeated uint32 and string fields");
++    assert_eq!(result, ProductionBackgroundShellSpawnResult::Success {
++        shell_id: 42, command: "last command".into(), working_directory: "/workspace".into(),
++        pid: Some(124),
++    });
++
++    let mut success = Vec::new();
++    push_len(1, b"/workspace/bxr.txt", &mut success);
++    push_len(5, &[0xff, 0x00], &mut success);
++    push_len(5, &[0x80, 0xfe], &mut success);
++    push_varint(4, 2, &mut success);
++    let mut read = Vec::new();
++    push_len(1, &success, &mut read);
++    let result = with_counted_complete_exec_reply(
++        vec![raw_resource_element(7, &read)], false, |port| {
++            ProductionBoxEnvironment::new("127.0.0.1", port, "secret")
++                .remote_resource_accessor().execute_read(&(), bxr_read_args())
++        },
++    ).expect("bytes remain opaque and retain the valid final value");
++    assert_eq!(result, ProductionReadResult::Success {
++        path: "/workspace/bxr.txt".into(), output: ProductionReadOutput::Data(vec![0x80, 0xfe]),
++        total_lines: 0, file_size: 2, truncated: false, output_blob_id: None, range_applied: false,
++    });
++}
++
++fn bxr_timed_terminal_element(kind: &str) -> Vec<u8> {
++    match kind {
++        "exit" => {
++            let mut exit = Vec::new();
++            push_varint(1, 0, &mut exit);
++            push_len(2, b"/workspace", &mut exit);
++            push_varint(6, 19, &mut exit);
++            shell_stream_element(3, &exit)
++        }
++        "backgrounded" => shell_stream_backgrounded_element(
++            42, "printf bxr-contract", "/workspace", Some(123), Some(75),
++            Some(SHELL_BACKGROUND_REASON_TIMEOUT),
++        ),
++        "rejected" => shell_stream_element(5, &[]),
++        "permission_denied" => shell_stream_element(6, &[]),
++        "sandbox_unsupported" => shell_stream_element(9, &[]),
++        _ => unreachable!("frozen decisive ShellStream terminal"),
++    }
++}
++
++#[test]
++fn forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch() {
++    let terminals = ["exit", "backgrounded", "rejected", "permission_denied", "sandbox_unsupported"];
++    for first in terminals {
++        for second in terminals {
++            let scenario = format!("{first} then {second}");
++            let mut stderr = Vec::new();
++            push_len(1, b"late warning", &mut stderr);
++            let elements = vec![
++                shell_stream_start_element(),
++                shell_stream_stdout_element("before"),
++                bxr_timed_terminal_element(first),
++                shell_stream_element(8, &[]),
++                shell_stream_stdout_element("between"),
++                bxr_timed_terminal_element(second),
++                shell_stream_element(2, &stderr),
++            ];
++            let pending = Arc::new(AtomicUsize::new(0));
++            let result = with_counted_complete_exec_reply(elements, true, |port| {
++                bxr_forever_box_port(port, Arc::clone(&pending)).execute_shell(bxr_runner_shell("timed"))
++            });
++            let error = result.expect_err(&scenario);
++            assert!(matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)),
++                "{scenario}: the full received stream must be adjudicated: {error:?}");
++            assert_eq!(pending.load(Ordering::SeqCst), 0,
++                "{scenario}: no terminal may register work before later terminals are checked");
++        }
++    }
++}
++
++#[test]
++fn forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata() {
++    let mut stderr_before = Vec::new();
++    push_len(1, b"before warning\n", &mut stderr_before);
++    let mut stderr_after = Vec::new();
++    push_len(1, b"after warning\n", &mut stderr_after);
++    let elements = vec![
++        shell_stream_start_element(),
++        shell_stream_element(8, &[]),
++        shell_stream_stdout_element("before "),
++        shell_stream_element(2, &stderr_before),
++        bxr_timed_terminal_element("exit"),
++        shell_stream_element(8, &[]),
++        shell_stream_stdout_element("after "),
++        shell_stream_element(2, &stderr_after),
++        shell_stream_element(8, &[]),
++        shell_stream_stdout_element("tail"),
++    ];
++    let pending = Arc::new(AtomicUsize::new(0));
++    let result = with_counted_complete_exec_reply(elements, true, |port| {
++        bxr_forever_box_port(port, Arc::clone(&pending)).execute_shell(bxr_runner_shell("timed"))
++    }).expect("one Exit with late output and nonterminal hook contexts");
++    assert_eq!(result["kind"], "success");
++    assert_eq!(result["exitCode"], 0);
++    assert_eq!(result["stdout"], "before after tail");
++    assert_eq!(result["stderr"], "before warning\nafter warning\n");
++    assert_eq!(result["workingDirectory"], "/workspace");
++    assert_eq!(result["elapsedMs"], 19);
++    assert_eq!(result["aborted"], false);
++    assert_eq!(pending.load(Ordering::SeqCst), 0);
++}

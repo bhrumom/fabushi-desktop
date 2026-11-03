@@ -3384,7 +3384,9 @@ jobs:
           toolchain: 1.97.1
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: source/host -> target
+          workspaces: |
+            source/host -> target
+            source/box-exec-daemon -> target
           shared-key: desktop-restored-rust-1.97.1
       - name: Install existing Linux Host native dependencies
         shell: bash
@@ -3692,7 +3694,7 @@ jobs:
       - name: Test portable recovery, Memory, pairing, palette, Session, MCP and channel controls on the existing Linux Host cache
         id: channel_pending_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
-        timeout-minutes: 20
+        timeout-minutes: 25
         env:
           TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
           OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/sqlite-native-path/palette-message/${{ github.run_id }}-${{ github.run_attempt }}/palette-rust-results.json
