@@ -1,0 +1,82 @@
+{
+  "schema": "ocrm-root-review-decisions-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "PS-LOCK-RECONCILE-v1",
+  "subject": "694b6d70d50573b738a93d958de5db7647987e19",
+  "incomingSubject": "550909022eba44eb9326d760f8c33d613b40a7bb",
+  "originalBase": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "assessment": "Root read the complete applicable85,054-character spec, five-file incoming diff and affected actual code/oracles; independent read-only integration assessment fully received. All findings below are source-established, not observed Actions failures.",
+  "findings": [
+    {
+      "id": "PS-LOCK-LIVE-NEGATIVE",
+      "severity": "P1",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "symbols": [
+        "PluginSkillsLiveAdmission::acquire",
+        "load_uninstall_image_locked",
+        "run_pass"
+      ],
+      "reason": "A known BeforeRename negative-write failure leaves accepted live9 absent from disk. acquire.retain deletes it and token equality clears recovery; later partial fresh10 can re-admit old9. Retain adverse facts and recovery until the actual AR05 release."
+    },
+    {
+      "id": "PS-LOCK-HEALTHY-READ",
+      "severity": "P2",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "symbols": [
+        "PluginSkillsLiveAdmission",
+        "SandPluginSkillsService::new"
+      ],
+      "reason": "Unconditional refresh-intent denial breaks healthy polling and clean disposed/fenced cache availability under AR01/07, and known failed-reservation availability under AR06. Preserve distinct local-known and inherited-unknown states."
+    },
+    {
+      "id": "PS-LOCK-READER-WAIT",
+      "severity": "P2",
+      "classification": "TEST_FLAW/integration-contract",
+      "decision": "FIX",
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "reason": "Exclusive file lock now spans before_auth_outcome/after_rename, while retained controlling thread synchronously reads and only then releases the writer gate. This source predicts a fixture timeout; no production deadlock is claimed. Reconcile the actual read admission contract first and retain all valid negative/readback/availability assertions; no blanket expectation rewrite."
+    },
+    {
+      "id": "PS-LOCK-REPORT",
+      "severity": "P2",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "symbols": [
+        "import_live_refusals_if_active",
+        "publish_snapshot_if_active"
+      ],
+      "reason": "Keeping every ordinary intent through cache publication makes durable_release true on identical syncs. Restore AR03 settlement and exclude routine token churn from admission-change reporting."
+    },
+    {
+      "id": "PS-LOCK-INITIALIZATION",
+      "severity": "P2",
+      "classification": "IMPL_BUG/integration",
+      "decision": "FIX",
+      "path": "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+      "reason": "persist_uninstall_image opens the parent lock before existing durable initialization, deterministically refusing first_transition_creates_the_missing_directory_chain. Create only the permitted writer-owned directory chain before lock acquisition; pure loads stay side-effect-free."
+    },
+    {
+      "id": "PS-LOCK-PASS-LIFETIME",
+      "severity": "P1",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "symbols": [
+        "LiveRefreshCustody",
+        "finish_refresh_guard",
+        "publish_snapshot_if_active",
+        "prune_committed_if_current"
+      ],
+      "reason": "Process lock stored only in live.refresh survives a completed failed worker's Fenced state, preventing a distinct fresh owner from the explicit offline/recovery call in the retained negative-write oracle. Conversely successful publication drops live.refresh before run_pass cleanup; a different process can refresh/materialize before the old pruner. Root read exact paths. Bind exclusion to actual owned work, release after its terminal/cleanup boundary, and prevent old guards from releasing a successor."
+    }
+  ],
+  "scope": "Repair existing owner and preserve incoming cross-process mutation/admission serialization; no new runtime/permission/scheduler owner.",
+  "execution": "not-run; preserve current Box694 source checkpoint and run one combined affected Actions campaign after source convergence.",
+  "globalFlagsChanged": false
+}

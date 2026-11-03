@@ -1237,3 +1237,54 @@ Also pin the fixed recovery fault projection and one-shot claim after handoff.
 Run only in GitHub Actions after immutable source review; preserve original
 failure logs and still-valid evidence separately. This bounded recovery does
 not relax AR-01–09, private-image integrity, real provider or final acceptance.
+
+### AR-LOCK-R1 — preserve admission semantics under process exclusion
+
+Contract `PS-LOCK-RECONCILE-v1`; source base
+`694b6d70d50573b738a93d958de5db7647987e19`, preserving incoming
+`9864d1c02e7e67881d644800963abc807b3abaab..550909022eba44eb9326d760f8c33d613b40a7bb`.
+The new admission/refresh file locks and held mutation leases stay under the
+existing Plugin Skills owner. They do not supersede AR-01–09 or turn an
+ordinary refresh reservation into a permission refusal.
+
+- Keep accepted live auth refusals and known failed-write custody. Disk absence
+  or matching an operation ID cannot erase a refusal or clear an inherited or
+  panicked unknown. Only the existing exact-ID fresh-materialization and
+  successful publication/recovery boundaries may release them.
+- Healthy local refresh, clean fenced/disposed custody, and a known failed
+  reservation retain their existing same-process availability. Fresh owners
+  seeing an unresolved intent remain unknown. Keep healthy negative import's
+  AR-03 intent settlement; a process lease may outlive that durable intent.
+- Read-only construction and admission must not wait for a paused writer's
+  exclusive file lease. They must retain live negative facts and never infer
+  positive release from a partially published image. Actual protected mutation
+  still holds its shared admission lease through the existing operation, and
+  writers retain exclusive admission ordering. Do not weaken valid retained
+  pause/readback/permission assertions to conceal a changed policy.
+- Refresh process exclusion covers the actual owned loader, staging,
+  publication and cleanup work. A completed/failed worker releases its owned
+  exclusion so an explicit later owner can recover. Retirement may preserve
+  a token's known/unknown facts, but retained reader state is not a permanently
+  active process lease. Old guards cannot release a successor's active lease.
+  Preserve same-process successor and commit-before-cleanup controls; callbacks
+  and reporting remain outside mutation locks.
+- Cross-process uninstall observations still fence stale publication. A
+  mutation lease cannot authorize a stale or different canonical plugin,
+  and fresh disk reads cannot manufacture a second permission owner.
+- Ordinary reserve/settle bookkeeping does not report `changed: true`.
+  Real skill/auth/publisher differences, exact refusal release and
+  unknown-to-known recovery retain their existing once-only report.
+- First explicit durable transition may create its permitted missing directory
+  chain before opening the lock. Construction and pure load do not initialize
+  or rewrite custody data; strict paths, markers, byte checks and barriers remain.
+
+Retain all selected image/sync/auth recovery/Session/workflow/publishing tests.
+Add causal controls for failed negative write → ordinary reads → partial
+refresh (no re-admission), inherited/panic unknown → partial recovery (no old
+fallback), and actual process-lease lifetime through cleanup and later recovery.
+Use the existing owned-process harness and capture owner for process claims.
+Keep all original availability, error, byte-retention and `changed` assertions.
+Source review must retain the incoming five paths plus the repair and its
+adjacent consumers. Freeze the combined candidate with the saved Box batch,
+then run its affected Actions commands once; no local/htch execution and no
+full-source, external-service, platform or release acceptance is implied.
