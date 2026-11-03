@@ -1,0 +1,43 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "contract": "CWB-v1",
+  "base_commit": "b84a6d982ce88c5a01e63913763e6d2b4e847369",
+  "base_tree": "cc3775a9005932237001b581ff81d8f247d5cc1b",
+  "candidate_tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+  "reviewed_source_snapshot_tree": "f1a1b24d1dde0c27b7edf2de6ba77ec12d1b61dd",
+  "patch_sha256": "466929e37fbd9e10265a8519749e91f3f2b5bbdaf8ff5a835e32b7f16488334f",
+  "targets": [
+    {
+      "path": "source/host/app/src/main.rs",
+      "before_blob": "c3b87212e096b245bbd70081ef3eb33ca1ccda07",
+      "after_blob": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+      "after_bytes": 989159,
+      "after_sha256": "87c1536d3a8bb6c4799c8c228bdc40290534903fd18664021387838a0194182c"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "before_blob": "284bcb60bbb3e298b83c3ccccb97a6d6d5c2e941",
+      "after_blob": "32cedcdb059dacace773bd66cdb3507b06a83d08",
+      "after_bytes": 1407068,
+      "after_sha256": "7202bc798171e7cd7dab59a9135e7fb511aefe98120b274e307adee7c93503bc"
+    }
+  ],
+  "purpose": "Stage only exact Host/merged-ledger Git objects after the concurrent media owner commit. All endpoint, two-path allowlist, task, exact parent, exact bytes/blob, no-ref-write and no-product-execution gates remain identical to the reviewed CWB staging code. Prior CWB staging is immutable history; isolated r4 paths avoid modifying that workflow or another owner carrier.",
+  "other_carrier_preserved": [
+    {
+      "path": ".github/ocrm-reviewed-objects/manifest.json",
+      "blob": "f466401cba7ccfa42027d6a025b441a822823c44"
+    },
+    {
+      "path": ".github/ocrm-reviewed-objects/object.patch",
+      "blob": "e2046f00d225f2f4bbff33f2490ca0fc53977750"
+    },
+    {
+      "path": ".github/workflows/ocrm-stage-reviewed-objects.yml",
+      "blob": "c06c7d2aaf20f0d479525114cd2a8fa018bde53f"
+    }
+  ],
+  "integration_snapshot_tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35"
+}

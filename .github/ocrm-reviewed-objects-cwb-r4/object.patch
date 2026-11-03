@@ -1,0 +1,850 @@
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 284bcb60bbb3e298b83c3ccccb97a6d6d5c2e941..32cedcdb059dacace773bd66cdb3507b06a83d08 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -29,7 +29,7 @@
+   "responsibilities": [
+     {
+       "adr_refs": [],
+-      "behavior": "Preserve a provider-bound default through the existing desktop bridge and Rust Settings; resolve an authorized Fabushi or Codex turn once and retain identity in actual Responses JSON, metadata, attempts/nudges, accepted known-model checkpoint retry, summarization and turn-memory. Generic Codex model-less legacy checkpoints remain compatible. The broader catalog, picker mutation and interrupted-turn recovery remain separate responsibilities.",
++      "behavior": "Preserve a provider-bound default through the existing desktop bridge and Rust Settings; resolve an authorized Fabushi or Codex turn once and retain identity in actual Responses JSON, metadata, attempts/nudges, accepted known-model checkpoint retry, summarization and turn-memory. Generic Codex model-less legacy checkpoints remain compatible through a retained admitted binding. CWB-v1 pins the Codex credential source pathname and workspace across that turn, retries, checkpoint continuations, memory and both automatic compaction summary phases, while allowing same-workspace token rotation and a fresh later admission. The broader catalog, picker mutation and interrupted-turn recovery remain separate responsibilities.",
+       "blocker_ids": [
+         "OCRM-MODEL-IDENTITY-SCOPED-AUTHORITY-PENDING",
+         "OCRM-MODEL-IDENTITY-EXACT-H-BEHAVIOR-PENDING",
+@@ -40,7 +40,8 @@
+         "models.provider_bound_default",
+         "inference.frozen_fabushi_model",
+         "runner.accepted_checkpoint_model_identity",
+-        "inference.frozen_codex_model"
++        "inference.frozen_codex_model",
++        "inference.codex_turn_workspace_continuity"
+       ],
+       "dependencies": [
+         "SettingsService atomic writer and checked source reader",
+@@ -49,7 +50,10 @@
+         "TurnAgentComposition and ProductionTurnRunShellAdapter",
+         "CodexDirectOptions serializer and ProductionRoutedProviderCheckpointStore",
+         "Fixed-U source reading and incomplete broader dependency graph are itemized in model-picker-scoped.md",
+-        "OCRM-RESP-MODEL-PICKER-001 retains broader catalog/operator/visibility/placement and session mutation obligations"
++        "OCRM-RESP-MODEL-PICKER-001 retains broader catalog/operator/visibility/placement and session mutation obligations",
++        "Existing provider_session private Codex credential reader, fixed Responses transport and one-401 refresh owner",
++        "Locked reqwest 0.12.28 and base64 0.22.1 selected API/security/license contracts; full transitive closure and external-login writeback contract remain open",
++        "Existing compaction planner and canonical Session/DB commit guards; fixed-U bounded compaction caller/auth/summary graph is recorded without claiming complete dynamic-plugin or MemorySynthesis closure"
+       ],
+       "evidence_refs": [
+         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+@@ -69,7 +73,14 @@
+         "source/electron-main/main-edge-model.contract.test.ts",
+         "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+         "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+-        "source/host/app/src/tests/codex_model_admission_tests.rs"
++        "source/host/app/src/tests/codex_model_admission_tests.rs",
++        "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
++        "source/host/src/extensions/inference/codex_request_binding.rs",
++        "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
++        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
++        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
++        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -91,9 +102,9 @@
+       ],
+       "id": "OCRM-RESP-MODEL-IDENTITY-001",
+       "integration": {
+-        "consumer": "Existing Fabushi and Codex Responses serializers, runtime model metadata, production Runner attempts/nudges, accepted known-model checkpoint retry, turn-memory and independent summarization producer",
++        "consumer": "Existing Fabushi and Codex Responses serializers, runtime model metadata, production Runner attempts/nudges, accepted known-model checkpoint retry, turn-memory and independent summarization producer; real Codex credential loading/HTTP refresh, recreated attempts and bound memory enforce the captured workspace/source; automatic history/split-prefix summaries consume admitted models/bindings through the same Inference summary assembly and refuse identity errors before any degraded-history commit",
+         "entrypoint": "Existing agents.setDefaultModel appWindow RPC to Host Settings; source/host/app/src/main.rs::prepare_routed_turn_model_admission after route/session authorization",
+-        "owner": "ProductionAgentInferenceOwner selects; existing Settings and Session persist; Runner carries immutable identity",
++        "owner": "ProductionAgentInferenceOwner selects; existing Settings and Session persist; Runner carries immutable identity; provider_session owns ephemeral Codex source/workspace binding and existing credential refresh",
+         "producer": "Authenticated config.set / setHostSettings / specialized Settings writer and existing Session model read"
+       },
+       "invariants": [
+@@ -101,9 +112,13 @@
+         "Legacy unbound defaults retain Cursor semantics; another provider binding cannot select a Fabushi or Cursor default",
+         "Raw explicit presence is validated before priority selection; invalid persistent source is never absence",
+         "Accepted checkpoint identity cannot silently fall back to environment or a new default",
+-        "Generic Codex model-less legacy checkpoints remain compatible; known Codex identities must match the captured model, while Fabushi also refuses model-less legacy resume"
++        "Generic Codex model-less legacy checkpoints remain compatible only through a retained admitted request binding; known Codex identities must match the captured model, while Fabushi also refuses model-less legacy resume",
++        "A Codex logical turn never rebinds to a different credential source or workspace; token rotation within that workspace is allowed",
++        "Local access-token metadata is compared exactly with the same parsed file account_id; this does not verify signatures or human-principal identity",
++        "Refreshed access-token workspace must match before the existing persistence/resend path; concurrent external-login writeback is separately open",
++        "Automatic compaction is not a fresh account admission: history/prefix retain admitted route/model/binding and usage/cancellation/no-tool semantics; Authentication/Configuration stops before Session compaction mutation, ordinary Transport fallback remains; independent summaries capture their own current identity"
+       ],
+-      "migration_rollback": "Retain the additive optional checkpoint field and stored default fields; never replay accepted Fabushi effects under an unknown or changed model. Revert composition only with compatible persisted data and a verified release.",
++      "migration_rollback": "Retain the additive optional checkpoint field and stored default fields; never replay accepted Fabushi effects under an unknown or changed model. Revert composition only with compatible persisted data and a verified release. Revert ephemeral workspace binding only with its App/Runner/Memory consumers together; do not rewrite login/model/checkpoint data or authorize an unbound old continuation.",
+       "oracle_ids": [
+         "OCRM-MODEL-IDENTITY-O01",
+         "OCRM-MODEL-IDENTITY-O02",
+@@ -113,18 +128,24 @@
+         "OCRM-MODEL-IDENTITY-O06",
+         "OCRM-MODEL-IDENTITY-O07",
+         "CMI-O1",
+-        "CMI-O2"
++        "CMI-O2",
++        "CWB-O1",
++        "CWB-O2",
++        "CWB-O3"
+       ],
+       "owner_decision": "Extend existing Settings/Inference/Runner boundaries; no new runtime owner or store. Host remains a thin authorized composition and lease bridge.",
+       "postconditions": [
+         "Actual Fabushi/Codex request model and runtime metadata equal the frozen authorized turn model",
+         "An updated default affects a later turn, while accepted tool continuation and retry retain the old model",
+-        "Identity refusal releases an already accepted lease before permission direction, attachments, auth, HTTP or tools advance"
++        "Model identity refusal releases an already accepted lease before permission direction, attachments, credential loading, HTTP or tools advance",
++        "Codex credential refusal releases the same accepted lease after credential validation and before permission direction/attachments/HTTP/tool admission, preserving accepted transcript and settings",
++        "Codex continuation without an initialized retained binding refuses before credential loading, request dispatch or tools; checkpoint payload never creates account authority"
+       ],
+       "preconditions": [
+         "Provider and Session authorization already succeeded; a model choice never grants a route",
+         "Default settings are readable and valid when consulted; session provider/model and raw explicit fields are syntactically valid",
+-        "Accepted Fabushi checkpoint resume has a captured normalized model matching the selected identity"
++        "Accepted Fabushi checkpoint resume has a captured normalized model matching the selected identity",
++        "A Codex admission has a direct private ChatGPT credential image whose access-token workspace matches account_id; other providers ignore this binding"
+       ],
+       "required_evidence_dimensions": [
+         "scoped-source-authority",
+@@ -168,8 +189,8 @@
+         "OCRM-AC23"
+       ],
+       "responsibility_kind": "business-runtime",
+-      "reviewer": "Current production chain reconciled read-only at 0533ca72870a2794c2db32959b9d01427abf325a; new bridge and source-tool review pending; no scoped acceptance; CMI-v1 extends the same production owner to Codex. Independent frozen review and exact-subject Actions remain required; historical source reads, statuses and blockers are retained.",
+-      "risk": "High: provider identity, persisted configuration, accepted tool effects, stale settings, cancellation and lease/permission ordering. Full relevant implementation/call-state review required; no source-wide contract-only completion claim.",
++      "reviewer": "Current production chain reconciled read-only at 0533ca72870a2794c2db32959b9d01427abf325a; new bridge and source-tool review pending; no scoped acceptance; CMI-v1 extends the same production owner to Codex. Independent frozen review and exact-subject Actions remain required; historical source reads, statuses and blockers are retained. CWB-v1 adds bounded source/dependency assessment with exact ranges and a still-pending implementation review/Actions subject; no read-history, global completion or unit authority upgrade.",
++      "risk": "High: provider identity, persisted configuration, accepted tool effects, stale settings, cancellation and lease/permission ordering. Full relevant implementation/call-state review required; no source-wide contract-only completion claim. CWB-v1 additionally covers workspace/source continuity, strict token metadata, one-401 refresh identity, cancellation precedence and process-local binding lifetime.",
+       "selected_owner": "source/host/src/extensions/inference/production.rs",
+       "source_refs": [
+         {
+@@ -659,6 +680,448 @@
+             "read_status": "read-complete"
+           },
+           "symbol": null
++        },
++        {
++          "blob_sha": "5861377169b54c96e42164997a8cf078d7ed0e8c",
++          "path": "src/agents/execution-auth-binding.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "end_line": 295,
++                "start_line": 1
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "c6e51477f738eabebe67360c0633dd426e9be673",
++          "path": "packages/ai/src/providers/openai-chatgpt-responses.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "end_line": 100,
++                "start_line": 1
++              },
++              {
++                "end_line": 265,
++                "start_line": 227
++              },
++              {
++                "end_line": 378,
++                "start_line": 353
++              },
++              {
++                "end_line": 565,
++                "start_line": 380
++              },
++              {
++                "end_line": 1383,
++                "start_line": 1369
++              },
++              {
++                "end_line": 1385,
++                "start_line": 1360
++              },
++              {
++                "end_line": 1416,
++                "start_line": 1389
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "01155083b3d310ca6491889a110d30d339e2c076",
++          "path": "packages/ai/src/utils/oauth/openai-chatgpt-jwt.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "end_line": 32,
++                "start_line": 1
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "a7dbeb0864316a06c8eb14a5086a74b6f5a51537",
++          "path": "packages/ai/src/providers/openai-chatgpt-request-headers.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "end_line": 32,
++                "start_line": 1
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "959d2185f78d8d2135556a42506a2f3a73a1d7ec",
++          "path": "extensions/openai/openai-chatgpt-oauth-flow.runtime.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "end_line": 45,
++                "start_line": 1
++              },
++              {
++                "end_line": 91,
++                "start_line": 49
++              },
++              {
++                "end_line": 180,
++                "start_line": 171
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "af91d5efc6ff90b29623d5a20416df978362bf16",
++          "path": "src/agents/embedded-agent-runner/run/attempt-finalize.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 205,
++                "end_line": 320
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "674007e41e588021fb83fee8c5f8c8aafa8ef47b",
++          "path": "src/agents/embedded-agent-runner/run/attempt-prompt-helpers.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 350,
++                "end_line": 472
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "aec5f3992a61d6f43b19c1e9e0b94411073b5c44",
++          "path": "src/agents/embedded-agent-runner/compaction-runtime-context.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 91,
++                "end_line": 147
++              },
++              {
++                "start_line": 279,
++                "end_line": 348
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "67cc1a115ed76d246af17fc1a49b33a49c5efe3d",
++          "path": "src/agents/embedded-agent-runner/context-engine-maintenance.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 254,
++                "end_line": 310
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "f724518a8f5e9db9a8c65316d7c796a74ccac5a5",
++          "path": "src/agents/embedded-agent-runner/context-engine-maintenance-execution.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 136
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "099b2d14d18b00f20a9adb4adbe0ffb14176b214",
++          "path": "src/agents/embedded-agent-runner/compact.types.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 172
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "a555f37cbc4caa8056a59cbc6e8f5ca06d6f7b82",
++          "path": "src/agents/embedded-agent-runner/compaction-runtime-preparation.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 254
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "78ce1616200e22c0926b3a537063f0be85e73e81",
++          "path": "src/agents/embedded-agent-runner/direct-compaction-preparation.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 161,
++                "end_line": 289
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "03267c63f18efa56dfba9eaa0b9f7f8f0a8c23b4",
++          "path": "src/agents/embedded-agent-runner/prepared-compaction-runtime.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 72,
++                "end_line": 107
++              },
++              {
++                "start_line": 168,
++                "end_line": 240
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "d11e6e202af75483219b87e2b0a9fed9c30fd3ef",
++          "path": "src/agents/embedded-agent-runner/compaction-session-execution.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 75,
++                "end_line": 112
++              },
++              {
++                "start_line": 278,
++                "end_line": 311
++              },
++              {
++                "start_line": 482,
++                "end_line": 584
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "0783677fd762d642169eed15189222942b92a4c5",
++          "path": "src/agents/embedded-agent-runner/compact.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 422,
++                "end_line": 490
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "0f3967e921acb9119e29dd606d9e258362ec1885",
++          "path": "src/agents/embedded-agent-runner/run/compaction-runtime.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 51,
++                "end_line": 100
++              },
++              {
++                "start_line": 130,
++                "end_line": 214
++              },
++              {
++                "start_line": 235,
++                "end_line": 282
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "125330c1c82bc66846cca341df3d1852888fa2a8",
++          "path": "src/agents/embedded-agent-runner/run/params.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 140,
++                "end_line": 182
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "c5230ec9cb44d857edee5a7dac4134dfdf701f45",
++          "path": "src/agents/compaction.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 127
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "b6aafed0640c1f0a765c14068040b7e209df501c",
++          "path": "src/agents/sessions/index.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 15
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "8cc6dc9c87269c5d64de1bf4352365a79bfd57dd",
++          "path": "src/agents/sessions/compaction/compaction.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 50
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "adfc2f1cca3d58d0ebfd0391dde16a8cd7d6fed1",
++          "path": "src/agents/sessions/compaction/runtime.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 11
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "53d1b5e172aad55161086281df7297416bb03dbf",
++          "path": "src/agents/runtime/index.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 38
++              }
++            ],
++            "read_status": "read-complete"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "438f5c49265021b9f674944133d4d06aa8430409",
++          "path": "src/plugin-sdk/agent-core.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 1,
++                "end_line": 31
++              },
++              {
++                "start_line": 44,
++                "end_line": 69
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "3a4395f8e0991e85c6f7fe3a7af5ec65d95391fb",
++          "path": "packages/agent-core/src/index.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 29,
++                "end_line": 50
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "9ee5706cfd94a75f36e43752e16d1f75d9975147",
++          "path": "packages/agent-core/src/harness/compaction/compaction.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 310,
++                "end_line": 366
++              },
++              {
++                "start_line": 555,
++                "end_line": 627
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
++        },
++        {
++          "blob_sha": "7e4b86c73a22a0cd942f36dd73d857f4cb3c5669",
++          "path": "packages/agent-core/src/harness/compaction/summarization-completion.ts",
++          "range": {
++            "read_ranges": [
++              {
++                "start_line": 63,
++                "end_line": 203
++              }
++            ],
++            "read_status": "partial"
++          },
++          "symbol": null
+         }
+       ],
+       "status": {
+@@ -687,7 +1150,12 @@
+         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+         "source/electron-main/main-edge-model.contract.test.ts",
+         "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+-        "source/host/app/src/tests/codex_model_admission_tests.rs"
++        "source/host/app/src/tests/codex_model_admission_tests.rs",
++        "source/host/src/extensions/inference/codex_request_binding.rs",
++        "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
++        "source/host/src/extensions/inference/codex_request_workspace_tests.rs::codex_workspace_admitted_summary_keeps_identity_across_compaction_phases",
++        "source/host/app/src/tests/codex_model_admission_tests.rs::cwb_shipping_compaction_uses_admitted_identity_and_preserves_refused_history",
++        "source/host/tests/fabushi_model_identity_production_contract.rs::admitted_turn_summary_retains_fabushi_model_and_request_binding"
+       ],
+       "typed_contracts": [
+         "OCRM-MODEL-IDENTITY-v1",
+@@ -700,7 +1168,12 @@
+         "OCRM-CODEX-MODEL-IDENTITY-v1",
+         "ProductionRunnerCompositionInput::codex_model",
+         "RoutedProviderOptions::codex_model",
+-        "resolve_codex_request_model"
++        "resolve_codex_request_model",
++        "OCRM-CODEX-REQUEST-WORKSPACE-BINDING-v1",
++        "CodexResponsesRequestBinding",
++        "ProductionRunnerCompositionInput::codex_request_binding",
++        "RoutedProviderOptions::codex_request_binding",
++        "ProductionInferenceExtension::run_turn_summarization_prompt"
+       ],
+       "unit_id": "OCRM-UNIT-MODEL-IDENTITY-001"
+     },
+diff --git a/source/host/app/src/main.rs b/source/host/app/src/main.rs
+index c3b87212e096b245bbd70081ef3eb33ca1ccda07..4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3 100644
+--- a/source/host/app/src/main.rs
++++ b/source/host/app/src/main.rs
+@@ -210,10 +210,11 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
+     request_disk_saver_audit, run_created_agent_kickstart,
+ };
+ use mahayana_host_runtime::extensions::inference::provider_session::{
+-    FabushiResponsesRequestBinding, McpCatalogKind, McpCatalogReason, McpCatalogRefusal,
++    CodexResponsesRequestBinding, FabushiResponsesRequestBinding,
++    McpCatalogKind, McpCatalogReason, McpCatalogRefusal,
+     ProviderMessage, ProviderSessionError, RoutedProvider,
+     RoutedMcpMetaToolDefinition, RoutedToolDefinition, configured_routed_provider,
+-    capture_fabushi_responses_request_binding,
++    capture_codex_responses_request_binding, capture_fabushi_responses_request_binding,
+ };
+ use mahayana_host_runtime::extensions::session::agent_db::{
+     ChannelInboundAppendAttempt, ChannelInboundAppendFailure,
+@@ -1407,6 +1408,7 @@ struct RoutedTurnModelAdmission {
+     persisted_session_model: SessionModelEntryState,
+     fabushi_model: Option<String>,
+     codex_model: Option<String>,
++    codex_request_binding: Option<CodexResponsesRequestBinding>,
+     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
+     direction_epoch: u64,
+     original_turn: Option<OriginalTurnReference>,
+@@ -1541,6 +1543,19 @@ fn prepare_routed_turn_model_admission_with_guard(
+     } else {
+         None
+     };
++    let codex_request_binding = if provider == RoutedProvider::Codex {
++        lease_guard.check_start()?;
++        let binding = capture_codex_responses_request_binding();
++        // A cancellation observed during credential I/O owns this refusal.
++        lease_guard.check_start()?;
++        Some(binding.map_err(|error| match &error {
++            ProviderSessionError::Authentication(_) => GatewayCommandError::Unauthorized(error.to_string()),
++            ProviderSessionError::Configuration(_) => GatewayCommandError::BadRequest(error.to_string()),
++            _ => GatewayCommandError::Internal(error.to_string()),
++        })?)
++    } else {
++        None
++    };
+     let original_turn = if let Some(model_id) = fabushi_model.as_deref() {
+         // Optional original-work proof cannot bypass the independent checked
+         // start admission below. Session I/O remains outside the owner mutex.
+@@ -1564,6 +1579,7 @@ fn prepare_routed_turn_model_admission_with_guard(
+         persisted_session_model,
+         fabushi_model,
+         codex_model,
++        codex_request_binding,
+         fabushi_request_binding,
+         direction_epoch,
+         original_turn,
+@@ -8545,9 +8561,13 @@ fn resolve_split_compaction_summary(
+         Ok(prompt) => Some(summarize_prefix(&prompt)),
+         Err(_) => None,
+     };
+-    // Typed provider cancellation is authoritative even without a shared-token
+-    // change. Only ordinary errors may select the fitted degraded fallback.
+-    if matches!(prefix, Some(Err(ProviderSessionError::Cancelled(_))))
++    // Cancellation and identity/configuration refusal cannot authorize a
++    // compaction commit. Only ordinary errors select the fitted fallback.
++    if matches!(prefix, Some(Err(
++        ProviderSessionError::Cancelled(_)
++            | ProviderSessionError::Authentication(_)
++            | ProviderSessionError::Configuration(_)
++    )))
+         || should_cancel()
+     {
+         return None;
+@@ -8576,6 +8596,24 @@ fn starts_new_local_tool_direction(
+         && !has_generated_parent
+ }
+ 
++fn compose_admitted_turn_summarization_prompt(
++    inference: Arc<ProductionInferenceExtension>,
++    data_dir: PathBuf,
++    provider: RoutedProvider,
++    fabushi_model: Option<String>,
++    codex_model: Option<String>,
++    codex_request_binding: Option<CodexResponsesRequestBinding>,
++    fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
++) -> ProductionTurnSummarizationPrompt {
++    Arc::new(move |system_prompt, user_prompt, should_cancel| {
++        inference.run_turn_summarization_prompt(
++            &data_dir, provider, fabushi_model.as_deref(), codex_model.as_deref(),
++            codex_request_binding.as_ref(), fabushi_request_binding.as_ref(),
++            system_prompt, user_prompt, should_cancel,
++        )
++    })
++}
++
+ /// Runs the shipping post-turn compaction producer through the existing Runner
+ /// summarizer and Session writer. Cancellation is checked at each inference
+ /// boundary and immediately before submitting the fitted result for commit.
+@@ -8672,9 +8710,13 @@ fn run_post_turn_compaction(
+             eprintln!(
+                 "mahayana-host compaction_summary_failed agent={agent_id} run={source_turn_id} error={error}"
+             );
+-            if matches!(error, ProviderSessionError::Cancelled(_)) || should_cancel() {
++            if matches!(error,
++                ProviderSessionError::Cancelled(_)
++                    | ProviderSessionError::Authentication(_)
++                    | ProviderSessionError::Configuration(_)
++            ) || should_cancel() {
+                 eprintln!(
+-                    "mahayana-host compaction_cancelled_after_summary agent={agent_id} run={source_turn_id}"
++                    "mahayana-host compaction_stopped_after_summary agent={agent_id} run={source_turn_id}"
+                 );
+                 return;
+             }
+@@ -9279,6 +9321,7 @@ fn start_routed_provider_task(
+         persisted_session_model,
+         fabushi_model,
+         codex_model,
++        codex_request_binding,
+         fabushi_request_binding,
+         direction_epoch: turn_local_tool_direction_epoch,
+         original_turn,
+@@ -12224,6 +12267,7 @@ fn start_routed_provider_task(
+                     provider,
+                     fabushi_model: fabushi_model.clone(),
+                     codex_model: codex_model.clone(),
++                    codex_request_binding: codex_request_binding.clone(),
+                     fabushi_request_binding: fabushi_request_binding.clone(),
+                     bridge,
+                     cursor_auth: Some(cursor_auth),
+@@ -12293,17 +12337,11 @@ fn start_routed_provider_task(
+                 },
+             )
+             .with_silence_allowed(prompt_is_silence_allowed);
+-            let summarization_inference = Arc::clone(&inference);
+-            let summarization_data_dir = data_dir.clone();
+-            let summarization_prompt: ProductionTurnSummarizationPrompt =
+-                Arc::new(move |system_prompt, user_prompt, should_cancel| {
+-                    summarization_inference.run_summarization_prompt(
+-                        &summarization_data_dir,
+-                        system_prompt,
+-                        user_prompt,
+-                        should_cancel,
+-                    )
+-                });
++            let summarization_prompt = compose_admitted_turn_summarization_prompt(
++                Arc::clone(&inference), data_dir.clone(), provider,
++                fabushi_model.clone(), codex_model.clone(),
++                codex_request_binding.clone(), fabushi_request_binding.clone(),
++            );
+             let turn_static_config = ProductionTurnAgentStaticConfig {
+                 model_id: turn_model_id.clone(),
+                 agent_token_limit: SAND_AGENT_TOKEN_LIMIT,
+@@ -12731,6 +12769,7 @@ fn start_routed_provider_task(
+                                     let should_cancel = || memory_cancellation.is_cancelled();
+                                     inference.run_turn_memory_prompt(
+                                         &data_dir, provider, fabushi_model.as_deref(), codex_model.as_deref(),
++                                        codex_request_binding.as_ref(),
+                                         fabushi_request_binding.as_ref(), system_prompt,
+                                         user_prompt, &should_cancel,
+                                     ).map_err(|error| error.to_string())
+@@ -18114,7 +18153,18 @@ mod tests {
+     // planning, fitting and Session/SQLite writes stay real.
+     fn post_turn_compaction_runner(
+         fixture: &PostTurnCompactionFixture,
+-        response: impl Fn(usize) -> Result<String, super::ProviderSessionError> + Send + Sync + 'static,
++        response: impl Fn(usize, &str, &str, &dyn Fn() -> bool) -> Result<String, super::ProviderSessionError> + Send + Sync + 'static,
++    ) -> (super::SandAgentRunner, std::sync::Arc<std::sync::atomic::AtomicUsize>) {
++        post_turn_compaction_runner_for_context(
++            &fixture.root, &fixture.agent_id, &fixture.cancellation, response,
++        )
++    }
++
++    fn post_turn_compaction_runner_for_context(
++        root: &std::path::Path,
++        agent_id: &str,
++        cancellation: &super::RoutedProviderCancellation,
++        response: impl Fn(usize, &str, &str, &dyn Fn() -> bool) -> Result<String, super::ProviderSessionError> + Send + Sync + 'static,
+     ) -> (super::SandAgentRunner, std::sync::Arc<std::sync::atomic::AtomicUsize>) {
+         use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+         use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
+@@ -18128,12 +18178,12 @@ mod tests {
+                 context: mahayana_host_runtime::host_request_context::HostRequestContext {
+                     os_version: "compaction-contract".into(), shell: None,
+                     time_zone: Some("UTC".into()),
+-                    transcripts_folder: fixture.root.join("transcripts").to_string_lossy().into_owned(),
++                    transcripts_folder: root.join("transcripts").to_string_lossy().into_owned(),
+                     user_full_name: None,
+                 },
+                 rules: None,
+             },
+-            fixture.cancellation.clone(),
++            cancellation.clone(),
+             Arc::new(UnusedCompactionProviderPorts),
+         );
+         let calls = Arc::new(AtomicUsize::new(0));
+@@ -18152,13 +18202,13 @@ mod tests {
+                 }
+                 _ => panic!("unexpected extra summarization request"),
+             }
+-            response(index)
++            response(index, system, user, should_cancel)
+         });
+         let bindings = super::ProductionTurnAgentBuildBindings::new(
+             super::ProductionTurnAgentStaticConfig {
+                 model_id: "compaction-contract".into(),
+                 agent_token_limit: super::SAND_AGENT_TOKEN_LIMIT,
+-                conversation_id: fixture.agent_id.clone(),
++                conversation_id: agent_id.to_string(),
+                 is_box_scoped_subagent: false, is_subagent_runner: false,
+                 is_shared_room_runner: false, sand_send_message_delivery_owed: false,
+                 transcripts_folder_available: true,
+@@ -18179,7 +18229,7 @@ mod tests {
+                 let before = fixture.snapshot();
+                 let publications = PostTurnCompactionPublications::new(&fixture);
+                 let cancellation = fixture.cancellation.clone();
+-                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
++                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index, _, _, _| {
+                     if index < phase {
+                         return Ok(COMPACTION_HISTORY_SUMMARY.into());
+                     }
+@@ -18204,7 +18254,7 @@ mod tests {
+         let fixture = PostTurnCompactionFixture::new("cancelled-before-start");
+         let before = fixture.snapshot();
+         let publications = PostTurnCompactionPublications::new(&fixture);
+-        let (runner, calls) = post_turn_compaction_runner(&fixture, |_| panic!("cancelled attempt must not summarize"));
++        let (runner, calls) = post_turn_compaction_runner(&fixture, |_, _, _, _| panic!("cancelled attempt must not summarize"));
+         fixture.cancellation.cancel("cancelled before compaction");
+         fixture.run(&runner, &|| fixture.cancellation.is_cancelled());
+         assert_eq!(calls.load(Ordering::SeqCst), 0);
+@@ -18223,7 +18273,7 @@ mod tests {
+                 let publications = PostTurnCompactionPublications::new(&fixture);
+                 let cancel_after_sample = Arc::new(AtomicBool::new(false));
+                 let arm_after_return = Arc::clone(&cancel_after_sample);
+-                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
++                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index, _, _, _| {
+                     if index == phase {
+                         arm_after_return.store(true, Ordering::SeqCst);
+                         if provider_failed {
+@@ -18259,7 +18309,7 @@ mod tests {
+             let fixture = PostTurnCompactionFixture::new(&format!("provider-failed-{phase}"));
+             let before = fixture.snapshot();
+             let publications = PostTurnCompactionPublications::new(&fixture);
+-            let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
++            let (runner, calls) = post_turn_compaction_runner(&fixture, move |index, _, _, _| {
+                 if index == phase {
+                     Err(super::ProviderSessionError::Transport("ordinary provider failure".into()))
+                 } else {
+@@ -18287,7 +18337,7 @@ mod tests {
+         let fixture = PostTurnCompactionFixture::new("successful-split-turn");
+         let before = fixture.snapshot();
+         let publications = PostTurnCompactionPublications::new(&fixture);
+-        let (runner, calls) = post_turn_compaction_runner(&fixture, |index| {
++        let (runner, calls) = post_turn_compaction_runner(&fixture, |index, _, _, _| {
+             Ok((if index == 0 { COMPACTION_HISTORY_SUMMARY } else { COMPACTION_PREFIX_SUMMARY }).into())
+         });
+         fixture.run(&runner, &|| fixture.cancellation.is_cancelled());
