@@ -1,0 +1,82 @@
+{
+  "schema": "ocrm-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 2,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "original_base": "6c1f95b92c9ca7b4289259dfd340dafff0956c4c",
+  "starting_head": "5be510971d36c1768c3757e01c5a5b57787dba31",
+  "subject": "10a307002a6e3e748c5e063ba2e4ed6d2ce6ac7a",
+  "tree": "1044bdb21adaff883f00e26edaa662bc8dc7f040",
+  "previous_snapshot": "850b197058e10e46bfeb20d9fd50f6986084f582",
+  "scope_mode": "Completeonepath originalscope plusproper previoussnapshot fixdelta; isolatedGitHubobjects",
+  "files": [
+    {
+      "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+      "old_blob": "3f36315eb6ca999bb1fc467019dc03efdc548746",
+      "new_blob": "da4940bbca310d82a317b61ad6940b51e36a0c42",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 5,
+      "adds": 429,
+      "dels": 56,
+      "complete": true
+    }
+  ],
+  "delta_files": [
+    {
+      "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+      "old_blob": "b69c095b11c05d58225b5bc4e453e0f74bc18713",
+      "new_blob": "da4940bbca310d82a317b61ad6940b51e36a0c42",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 5,
+      "adds": 48,
+      "dels": 5,
+      "complete": true
+    }
+  ],
+  "full_diff": {
+    "path": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/review-diagnostic-r2/full.diff",
+    "utf8_bytes": 27059,
+    "sha256": "e53c5f8b34571a7695ff95087d3bf07d266bfa1ff897d9400a73f6eb48546e96",
+    "complete": true
+  },
+  "fix_delta": {
+    "path": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/review-diagnostic-r2/fix-delta.diff",
+    "utf8_bytes": 5405,
+    "sha256": "7712af4da34352bd8aa90f64bd7233a1c8902f5f6d9f7def7470a4faeb16a07c",
+    "complete": true
+  },
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+    "blob": "db2763c061d6808038a4f699695d44b31571067b"
+  },
+  "required_review": {
+    "general": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh"
+    },
+    "reason": "Nativeblockingcall andchildevidence lifetime, completeoriginalscope pluschangedharness/adjoiningconsumers"
+  },
+  "execution": "not-run; GitHub Actions only",
+  "limits": [
+    "Frozenreviewcandidate is notshippingH.",
+    "All8testbodies byteidentical toprevioussnapshot; sixunaffectedbodiesalsoequaloriginalbase.",
+    "No capture/workflow/production/dependency changes. Originalfailedobservationsremaingating.",
+    "HistoricalH14results andfailures keeporiginalsubject; all8globalflags unchanged."
+  ]
+}

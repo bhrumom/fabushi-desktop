@@ -1,0 +1,104 @@
+diff --git a/source/host/tests/device_pairing_join_admission_contract.rs b/source/host/tests/device_pairing_join_admission_contract.rs
+index b69c095b11c05d58225b5bc4e453e0f74bc18713..da4940bbca310d82a317b61ad6940b51e36a0c42 100644
+--- a/source/host/tests/device_pairing_join_admission_contract.rs
++++ b/source/host/tests/device_pairing_join_admission_contract.rs
+@@ -80,19 +80,26 @@ struct Fixture {
+     db_path: PathBuf,
+     owner: Option<Arc<DevicePairingOwner>>,
+     gateway: Option<(GatewayServer, mpsc::Receiver<()>)>,
++    remove_directory_on_drop: bool,
+ }
+ 
+ impl Fixture {
+     fn new(label: &str) -> Self {
+         let root = std::env::temp_dir().join(format!("fabushi-join-{label}-{}", uuid::Uuid::new_v4()));
+-        Self::in_owned_root(root)
++        Self::open_root(root, true)
+     }
+ 
+     fn in_owned_root(root: PathBuf) -> Self {
++        // The supervising parent retains the directory through completion
++        // receipt validation and terminal acceptance, including child success.
++        Self::open_root(root, false)
++    }
++
++    fn open_root(root: PathBuf, remove_directory_on_drop: bool) -> Self {
+         fs::create_dir(&root).expect("exclusively create owned fixture directory");
+         let db_path = root.join("device-pairing.db");
+         let owner = DevicePairingOwner::new(&db_path).expect("open durable pairing owner");
+-        Self { root, db_path, owner: Some(Arc::new(owner)), gateway: None }
++        Self { root, db_path, owner: Some(Arc::new(owner)), gateway: None, remove_directory_on_drop }
+     }
+ 
+     fn owner(&self) -> &DevicePairingOwner {
+@@ -224,7 +231,9 @@ impl Drop for Fixture {
+             return;
+         }
+         retirement.expect("retire every owned Gateway connection before cleanup");
+-        fs::remove_dir_all(&self.root).expect("remove only this owned fixture after handles close");
++        if self.remove_directory_on_drop {
++            fs::remove_dir_all(&self.root).expect("remove only this owned fixture after handles close");
++        }
+     }
+ }
+ 
+@@ -419,6 +428,14 @@ fn supervise_join_child(case: &str, mode: &str) -> JoinChildReport {
+     JoinChildReport { outcome, terminal: owned.terminal, ready, root, details }
+ }
+ 
++fn complete_receipt_control_fixture(root: &Path) {
++    let fixture = Fixture::in_owned_root(root.join("receipt-control"));
++    let code = fixture.register(&payload());
++    assert!(fixture.observe(&code).redeemed_at_ms.is_none());
++    // Returning drops every fixture-owned connection before receipt handling.
++    // The parent must still be able to inspect this real SQLite database.
++}
++
+ fn isolated_join_case(case: &str, body: fn(&Path)) {
+     if let Some(selected) = std::env::var_os(JOIN_CHILD_CASE) {
+         assert_eq!(selected.to_str(), Some(case), "child must run its exact selected case");
+@@ -436,8 +453,12 @@ fn isolated_join_case(case: &str, body: fn(&Path)) {
+         match mode.as_str() {
+             "actual" => body(&root),
+             "control-valid" => {}
+-            "control-missing" => return,
++            "control-missing" => {
++                complete_receipt_control_fixture(&root);
++                return;
++            }
+             "control-mismatch" => {
++                complete_receipt_control_fixture(&root);
+                 write_child_receipt(&root, "complete", "wrong-invocation\n");
+                 return;
+             }
+@@ -455,7 +476,29 @@ fn isolated_join_case(case: &str, body: fn(&Path)) {
+             ("control-mismatch", JoinChildOutcome::MismatchedReceipt),
+             ("control-timeout", JoinChildOutcome::TimedOut),
+         ] {
+-            supervise_join_child(case, mode).accept(expected);
++            let report = supervise_join_child(case, mode);
++            let retained_root = report.root.clone();
++            let checks_fixture_custody = matches!(mode, "control-missing" | "control-mismatch");
++            if checks_fixture_custody {
++                assert!(report.terminal,
++                    "DJC receipt control termination unconfirmed; retained {}: {}",
++                    retained_root.display(), report.details);
++                let db_path = retained_root.join("receipt-control").join("device-pairing.db");
++                assert!(db_path.is_file(),
++                    "completed child fixture lost before parent receipt acceptance; retained {}: {}",
++                    retained_root.display(), report.details);
++                let connection = Connection::open_with_flags(&db_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
++                    .expect("inspect retained real SQLite fixture after child termination");
++                let rows: i64 = connection.query_row(
++                    "SELECT COUNT(*) FROM device_pairing_join_codes", [], |row| row.get(0),
++                ).expect("read completed child fixture before accepting rejected receipt");
++                assert_eq!(rows, 1, "retained fixture must contain the completed control's real row");
++                connection.close().expect("close parent observer before accepted control cleanup");
++            }
++            report.accept(expected);
++            if checks_fixture_custody {
++                assert!(!retained_root.exists(), "accepted terminal control must remove its owned directory");
++            }
+         }
+         eprintln!("DJC owned-child harness controls passed; these are not SQL refusal evidence");
+     }

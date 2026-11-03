@@ -1,0 +1,128 @@
+{
+  "schema": "ocrm-scoped-source-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "batch": "DJC-H14 diagnostic custody",
+  "date": "2026-11-03",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "source_lock": {
+    "path": "projects/openclaw-rust/upstream.lock.json",
+    "blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+    "blob": "db2763c061d6808038a4f699695d44b31571067b"
+  },
+  "original_base": "6c1f95b92c9ca7b4289259dfd340dafff0956c4c",
+  "previous_snapshot": "850b197058e10e46bfeb20d9fd50f6986084f582",
+  "review_subject": "10a307002a6e3e748c5e063ba2e4ed6d2ce6ac7a",
+  "review_tree": "1044bdb21adaff883f00e26edaa662bc8dc7f040",
+  "production_changed": false,
+  "source_blob": "da4940bbca310d82a317b61ad6940b51e36a0c42",
+  "source_path": "source/host/tests/device_pairing_join_admission_contract.rs",
+  "scope": {
+    "files": 1,
+    "full_hunks": 5,
+    "full_additions": 429,
+    "full_deletions": 56,
+    "fix_delta_hunks": 5,
+    "fix_delta_additions": 48,
+    "fix_delta_deletions": 5,
+    "complete_old_to_new_reconstruction": true
+  },
+  "round_one_decision": {
+    "carrier": "5be510971d36c1768c3757e01c5a5b57787dba31",
+    "path": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/review-diagnostic-r1/decisions.json",
+    "blob": "5da5bcd49b293a4d6c9e0cffb0fa7dc0bd5b4c4f",
+    "finding": "DJC-R1-G-EVIDENCE-RETENTION-01",
+    "decision": "FIX",
+    "severity": "P2",
+    "resolution": "The supervising parent owns nested child fixture directories through receipt and terminal adjudication. Missing and mismatched receipt controls complete a real SQLite fixture, then the parent reads its retained row before accepting the negative and removing the owned directory. Ordinary in-process fixture cleanup remains unchanged."
+  },
+  "round_two": [
+    {
+      "lens": "general",
+      "agent": "/root/djc_r2_general",
+      "verdict": "NO_FINDINGS",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "launch_setting_accepted": true,
+      "backend_introspection": false,
+      "read_scope": "Complete 854-line candidate, full original scope and proper fix delta, all changed harness functions and eight test bodies, applicable authority, actual owner and Gateway lifecycle, build and capture contracts.",
+      "execution": "not-run"
+    },
+    {
+      "lens": "structure",
+      "agent": "/root/djc_r2_structure",
+      "verdict": "NO_FINDINGS",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "launch_setting_accepted": true,
+      "backend_introspection": false,
+      "read_scope": "Complete old and new source, full original scope and proper fix delta independently reconstructed, applicable authority, actual owner and Gateway consumers, fixed-U join dispatch and capture acceptance.",
+      "execution": "not-run"
+    }
+  ],
+  "integration": {
+    "parent": "96121a0234fcc65d20a1edc6352ef0f17eb39654",
+    "parent_tree": "f47bf01f2bed41cdae6204f25cbc4fa247e630d8",
+    "expected_blobs": {
+      "AGENTS.md": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+      "projects/openclaw-rust/SOURCE_OF_TRUTH.md": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+      "docs/specs/openclaw-rust-equivalence-migration.md": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+      "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md": "db2763c061d6808038a4f699695d44b31571067b",
+      "source/host/tests/device_pairing_join_admission_contract.rs": "3f36315eb6ca999bb1fc467019dc03efdc548746",
+      "source/host/src/device_pairing_owner.rs": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+      ".github/workflows/rust-desktop-runtime.yml": "0c2b44b51a129ce2deb12599676a94a87ed7a91d",
+      "projects/openclaw-rust/scripts/capture_media_cleanup.py": "9e9e49980faf730b5277a12fcf20f249430753a5",
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py": "94020e6d2ff811d3fd897f312e3f545b0863e5d3",
+      "source/host/Cargo.toml": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "source/host/Cargo.lock": "9895ce7752768b1c8d3fe107ef95e513457ca518"
+    },
+    "incoming_preserved_commits": [
+      "ade72fa1b1f201c94767cff723fccc07055cb058",
+      "f49768b06161f811452d425a8445f85b6fe247f1",
+      "96121a0234fcc65d20a1edc6352ef0f17eb39654"
+    ],
+    "method": "Serial tree overlay changes only the reviewed test and four new review records. Exact test preimage, owner, authority, captures, dependency inputs and workflow are unchanged. Concurrent Box authority/production repair and Skills convergence records are preserved.",
+    "reviewed_source_unchanged": true,
+    "publication_recovery": {
+      "unpublished_commit": "0b07514b3d4e7b47beb2e62d99edc403ea57b302",
+      "attempted_parent": "f49768b06161f811452d425a8445f85b6fe247f1",
+      "update_result": "UNKNOWN",
+      "observed_new_parent": "96121a0234fcc65d20a1edc6352ef0f17eb39654",
+      "action": "Re-read exact branch and changed files; preserve the concurrent Box commit using a new serial tree overlay. No force update and no claim that the earlier candidate reached the branch."
+    }
+  },
+  "validation": {
+    "state": "not-run",
+    "environment": "GitHub Actions only",
+    "trigger": "Publish the reviewed source without a skip-ci marker; the existing push workflow binds all execution to the delivered github.sha.",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "workflow_blob": "0c2b44b51a129ce2deb12599676a94a87ed7a91d",
+    "device_join_oracle": "All eight unchanged top-level positive names, one complete 8 passed / 0 failed / 0 ignored summary, command exit 0, capture exit 0, exact H/tree/source hashes. Linux portable capture and macOS native lane remain authoritative only for their actual executions.",
+    "coalesced_scopes": [
+      "LXO actual outcome custody",
+      "LPI native process identity",
+      "LXR retained operation custody",
+      "DJC diagnostic repair",
+      "Existing Skills admission checks"
+    ],
+    "historical_h14": "14e637798b7c76c8530f9a3710051461f793924f remains failed for its macOS join check. Its positive media evidence retains its original subject; it is not current-H evidence."
+  },
+  "preserved_invariants": [
+    "The original 2s journal, 8s refusal, 3s expiry and 4s delayed-result observations remain gating even if later diagnostic work completes.",
+    "Actual redemption Result ownership is retained independently of notification-channel delivery.",
+    "The actual reader fence, row-preservation, restart, fresh-redemption, expiry and consumed-marker assertions remain.",
+    "Only the exact fresh owned child is stopped and reaped; no process-name or stale process-group cleanup.",
+    "The timeout control proves ready/park/owned-stop handling only. It does not prove completed SQLite work; missing and mismatched receipt controls cover that directory-custody boundary."
+  ],
+  "limits": [
+    "This record establishes source-review convergence, not runtime approval.",
+    "No unit is promoted to verified before its scoped exact-H positive execution evidence.",
+    "Box registration and stream-ownership fixes remain separate unresolved work.",
+    "Actual provider bundle startup, physical providers/devices, package/signing and final independent acceptance remain open.",
+    "All eight OCRM global flags and G01-G12 / AC01-AC24 acceptance states remain unchanged."
+  ]
+}
